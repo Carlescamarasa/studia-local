@@ -31,6 +31,35 @@ const startOfMonday = (date) => {
   return d;
 };
 
+/**
+ * Normaliza un número, reemplazando valores inválidos por 0
+ * Maneja Infinity, NaN, valores negativos y valores absurdamente grandes
+ */
+function safeNumber(n) {
+  if (n === null || n === undefined) return 0;
+  if (typeof n !== 'number') {
+    const parsed = parseFloat(n);
+    if (isNaN(parsed) || !isFinite(parsed)) return 0;
+    n = parsed;
+  }
+  if (!isFinite(n)) return 0;
+  if (n < 0) return 0;
+  // Limitar valores absurdamente grandes (más de 12 horas en segundos)
+  if (n > 43200) {
+    // Si parece estar en milisegundos, convertir
+    if (n > 43200000) {
+      return Math.floor(n / 1000);
+    }
+    return 43200; // Máximo 12 horas
+  }
+  return Math.round(n);
+}
+
+// Helper para validar y corregir duración (detecta si está en milisegundos en lugar de segundos)
+const validarDuracion = (duracionSeg) => {
+  return safeNumber(duracionSeg);
+};
+
 function EstadisticasPageContent() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -277,14 +306,32 @@ function EstadisticasPageContent() {
   };
 
   const calcularCalidadPromedio = (registrosFiltrados) => {
-    const conCalificacion = registrosFiltrados.filter(r => r.calificacion !== undefined && r.calificacion !== null);
+    const conCalificacion = registrosFiltrados.filter(r => {
+      const cal = safeNumber(r.calificacion);
+      return cal > 0 && cal <= 4; // Solo calificaciones válidas (1-4)
+    });
     if (conCalificacion.length === 0) return 0;
-    const suma = conCalificacion.reduce((acc, r) => acc + r.calificacion, 0);
-    return (suma / conCalificacion.length).toFixed(1);
+    const suma = conCalificacion.reduce((acc, r) => acc + safeNumber(r.calificacion), 0);
+    const promedio = suma / conCalificacion.length;
+    return safeNumber(promedio).toFixed(1);
   };
 
   const registrosFiltrados = useMemo(() => {
-    let filtered = registros;
+    // Filtrar y normalizar registros antes de procesar
+    let filtered = registros
+      .filter(r => {
+        // Filtrar registros con duración inválida
+        const duracion = safeNumber(r.duracionRealSeg);
+        return duracion > 0 && duracion <= 43200; // Entre 0 y 12 horas
+      })
+      .map(r => ({
+        ...r,
+        duracionRealSeg: safeNumber(r.duracionRealSeg),
+        duracionObjetivoSeg: safeNumber(r.duracionObjetivoSeg),
+        bloquesCompletados: safeNumber(r.bloquesCompletados),
+        bloquesOmitidos: safeNumber(r.bloquesOmitidos),
+        calificacion: r.calificacion != null ? safeNumber(r.calificacion) : null,
+      }));
 
     if (isEstu) {
       filtered = filtered.filter(r => r.alumnoId === currentUser.id);
@@ -335,11 +382,21 @@ function EstadisticasPageContent() {
 
   const bloquesFiltrados = useMemo(() => {
     const registrosIds = new Set(registrosFiltrados.map(r => r.id));
-    return bloques.filter(b => registrosIds.has(b.registroSesionId));
+    return bloques
+      .filter(b => registrosIds.has(b.registroSesionId))
+      .map(b => ({
+        ...b,
+        duracionRealSeg: safeNumber(b.duracionRealSeg),
+        duracionObjetivoSeg: safeNumber(b.duracionObjetivoSeg),
+      }));
   }, [bloques, registrosFiltrados]);
 
   const kpis = useMemo(() => {
-    const tiempoTotal = registrosFiltrados.reduce((sum, r) => sum + (r.duracionRealSeg || 0), 0);
+    // Validar y corregir duraciones antes de calcular
+    const tiempoTotal = registrosFiltrados.reduce((sum, r) => {
+      const duracion = validarDuracion(r.duracionRealSeg);
+      return sum + duracion;
+    }, 0);
     const racha = calcularRacha(registrosFiltrados, isEstu ? currentUser?.id : null);
     const calidadPromedio = calcularCalidadPromedio(registrosFiltrados);
     const semanasDistintas = calcularSemanasDistintas(registrosFiltrados);
@@ -358,12 +415,14 @@ function EstadisticasPageContent() {
       if (!agrupado[b.tipo]) {
         agrupado[b.tipo] = { tipo: b.tipo, tiempoReal: 0, count: 0 };
       }
-      agrupado[b.tipo].tiempoReal += b.duracionRealSeg || 0;
+      const duracion = validarDuracion(b.duracionRealSeg);
+      agrupado[b.tipo].tiempoReal += duracion;
       agrupado[b.tipo].count += 1;
     });
     return Object.values(agrupado).map(t => ({
       ...t,
-      tiempoMedio: t.count > 0 ? Math.round(t.tiempoReal / t.count) : 0,
+      tiempoReal: safeNumber(t.tiempoReal),
+      tiempoMedio: t.count > 0 ? safeNumber(t.tiempoReal / t.count) : 0,
     }));
   }, [bloquesFiltrados]);
 
@@ -397,7 +456,8 @@ function EstadisticasPageContent() {
         };
       }
       
-      agrupado[clave].tiempo += (r.duracionRealSeg || 0) / 60;
+      const duracion = validarDuracion(r.duracionRealSeg);
+      agrupado[clave].tiempo += duracion / 60;
       agrupado[clave].completados += r.bloquesCompletados || 0;
       agrupado[clave].omitidos += r.bloquesOmitidos || 0;
       
@@ -416,10 +476,10 @@ function EstadisticasPageContent() {
 
         return {
           fecha: item.fecha,
-          tiempo: Math.round(item.tiempo),
-          satisfaccion: satisfaccion ? Number(satisfaccion.toFixed(1)) : null,
-          completados: item.completados,
-          omitidos: item.omitidos,
+          tiempo: safeNumber(item.tiempo),
+          satisfaccion: satisfaccion ? safeNumber(satisfaccion) : null,
+          completados: safeNumber(item.completados),
+          omitidos: safeNumber(item.omitidos),
         };
       })
       .sort((a, b) => a.fecha.localeCompare(b.fecha));
@@ -441,7 +501,8 @@ function EstadisticasPageContent() {
         };
       }
       
-      ejerciciosMap[key].tiempoTotal += b.duracionRealSeg || 0;
+      const duracion = validarDuracion(b.duracionRealSeg);
+      ejerciciosMap[key].tiempoTotal += duracion;
       if (b.registroSesionId) {
         ejerciciosMap[key].sesiones.add(b.registroSesionId);
       }
@@ -456,6 +517,7 @@ function EstadisticasPageContent() {
     return Object.values(ejerciciosMap)
       .map(e => ({
         ...e,
+        tiempoTotal: safeNumber(e.tiempoTotal),
         sesionesCount: e.sesiones.size,
       }))
       .sort((a, b) => b.tiempoTotal - a.tiempoTotal);
@@ -474,10 +536,14 @@ function EstadisticasPageContent() {
     const comentarios = [];
     
     registrosFiltrados.forEach(r => {
-      if (r.calificacion !== undefined && r.calificacion !== null) {
-        distribucion[r.calificacion]++;
+      const cal = safeNumber(r.calificacion);
+      if (cal > 0 && cal <= 4) {
+        const calInt = Math.round(cal);
+        if (calInt >= 1 && calInt <= 4) {
+          distribucion[calInt]++;
+        }
       }
-      if (r.notas || r.calificacion) {
+      if (r.notas || (cal > 0 && cal <= 4)) {
         comentarios.push(r);
       }
     });
@@ -974,9 +1040,9 @@ function EstadisticasPageContent() {
               ) : (
                 <div className="space-y-3">
                   {tiposBloques.sort((a, b) => b.tiempoReal - a.tiempoReal).map((tipo) => {
-                    const minutos = Math.floor(tipo.tiempoReal / 60);
-                    const totalMinutos = tiposBloques.reduce((sum, t) => sum + t.tiempoReal, 0) / 60;
-                    const porcentaje = totalMinutos > 0 ? ((minutos / totalMinutos) * 100).toFixed(1) : 0;
+                    const minutos = safeNumber(Math.floor(tipo.tiempoReal / 60));
+                    const totalMinutos = safeNumber(tiposBloques.reduce((sum, t) => sum + safeNumber(t.tiempoReal), 0) / 60);
+                    const porcentaje = totalMinutos > 0 ? safeNumber((minutos / totalMinutos) * 100).toFixed(1) : 0;
                     
                     return (
                       <div key={tipo.tipo} className="space-y-1">
@@ -999,7 +1065,7 @@ function EstadisticasPageContent() {
                         </div>
                         <div className="ml-[152px] flex gap-3 text-xs text-muted">
                           <span>Bloques: {tipo.count}</span>
-                          <span>Promedio: {Math.floor(tipo.tiempoMedio / 60)}:{String(tipo.tiempoMedio % 60).padStart(2, '0')} min</span>
+                          <span>Promedio: {Math.floor(safeNumber(tipo.tiempoMedio) / 60)}:{String(Math.floor(safeNumber(tipo.tiempoMedio) % 60)).padStart(2, '0')} min</span>
                         </div>
                       </div>
                     );
@@ -1104,10 +1170,10 @@ function EstadisticasPageContent() {
                               </p>
                               <div className="flex items-center gap-2 mt-2 flex-wrap">
                                 <Badge variant="outline" className="rounded-full text-xs bg-green-50 border-green-300 text-green-800">
-                                  {Math.floor(registro.duracionRealSeg / 60)} min
+                                  {Math.floor(validarDuracion(registro.duracionRealSeg) / 60)} min
                                 </Badge>
                                 <Badge variant="outline" className="rounded-full text-xs">
-                                  Obj: {Math.floor(registro.duracionObjetivoSeg / 60)} min
+                                  Obj: {Math.floor(validarDuracion(registro.duracionObjetivoSeg) / 60)} min
                                 </Badge>
                                 {registro.calificacion !== undefined && registro.calificacion !== null && (
                                   <Badge className="rounded-full bg-purple-100 text-purple-800 text-xs">

@@ -18,6 +18,9 @@ import ImportExport from "@/pages/import-export.jsx";
 import Estadisticas from "@/pages/estadisticas.jsx";
 import Estudiantes from "@/pages/estudiantes.jsx";
 import LocalPage from "@/pages/local.jsx";
+import Plantillas from "@/pages/plantillas.jsx";
+import Design from "@/pages/design.jsx";
+import Testseed from "@/pages/testseed.jsx";
 import Layout from "@/pages/Layout.jsx";
 
 export default function AppRouter() {
@@ -39,6 +42,9 @@ export default function AppRouter() {
         <Route path="/import-export" element={<ImportExport />} />
         <Route path="/estadisticas" element={<Estadisticas />} />
         <Route path="/estudiantes" element={<Estudiantes />} />
+        <Route path="/plantillas" element={<Plantillas />} />
+        <Route path="/design" element={<Design />} />
+        <Route path="/testseed" element={<Testseed />} />
         <Route path="/local" element={<LocalPage />} />
       </Route>
     </Routes>

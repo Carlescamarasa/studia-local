@@ -29,15 +29,24 @@ export function DesignProvider({ children }) {
     return DEFAULT_DESIGN;
   });
 
-  // Guardar preset cuando cambie
+  // Guardar preset cuando cambie (guardar como preset activo en localStorage)
   useEffect(() => {
-    saveCustomPreset(design);
+    try {
+      localStorage.setItem("custom_design_preset", JSON.stringify(design));
+    } catch (e) {
+      console.error("Failed to save design preset", e);
+    }
   }, [design]);
 
   const value = useMemo(
     () => ({
       design,
       setDesign,
+      // Aliases para compatibilidad con código existente
+      config: design,
+      setConfig: setDesign,
+      reset: () => setDesign(DEFAULT_DESIGN),
+      // Funciones originales
       presets: getAllPresets(),
       resetDesign: () => setDesign(DEFAULT_DESIGN),
       deleteDesignPreset: () => {

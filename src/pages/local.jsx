@@ -6,18 +6,84 @@ import { getCurrentUser, setCurrentUser } from '@/api/localDataClient';
 import { createPageUrl } from '@/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ds';
 import { Button } from '@/components/ds/Button';
-import { Users, PlayCircle, Calendar, Target, Activity } from 'lucide-react';
+import { Users, PlayCircle, Calendar, Target, Activity, RefreshCw, Database } from 'lucide-react';
+import { rebuildAllLocalData, rebuildLocalData } from '@/local-data/rebuildLocalData';
+import { printValidationReport } from '@/local-data/verifyLocalData';
+import { toast } from 'sonner';
 
 export default function LocalPage() {
   const navigate = useNavigate();
   const { usuarios } = useLocalData();
   const currentUser = getCurrentUser();
   const [selectedUserId, setSelectedUserId] = useState(currentUser?.id);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [isRepairing, setIsRepairing] = useState(false);
+
+  // Solo mostrar en desarrollo
+  const isDev = import.meta.env.DEV || window.location.hostname === 'localhost';
 
   const handleUserChange = (userId) => {
     setSelectedUserId(userId);
     setCurrentUser(userId);
     window.location.reload(); // Recargar para actualizar estado global
+  };
+
+  const handleRegenerateData = async () => {
+    if (!window.confirm('¿Regenerar todos los datos locales? Esto reemplazará los datos existentes.')) {
+      return;
+    }
+
+    setIsRegenerating(true);
+    try {
+      toast.info('🔄 Regenerando datos locales...');
+      const report = await rebuildAllLocalData({ numSemanas: 4, limpiarExistente: true });
+      toast.success(`✅ Datos regenerados: ${report.stats.asignaciones} asignaciones, ${report.stats.sesiones} sesiones`);
+      
+      // Recargar la app después de un breve delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error('Error regenerando datos:', error);
+      toast.error(`❌ Error: ${error.message}`);
+      setIsRegenerating(false);
+    }
+  };
+
+  const handleValidateData = () => {
+    setIsValidating(true);
+    try {
+      printValidationReport();
+      toast.success('✅ Validación completada. Revisa la consola para ver el reporte.');
+    } catch (error) {
+      console.error('Error validando datos:', error);
+      toast.error(`❌ Error: ${error.message}`);
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleRepairData = async () => {
+    if (!window.confirm('¿Reparar datos locales existentes? Esto corregirá referencias rotas y normalizará valores numéricos.')) {
+      return;
+    }
+
+    setIsRepairing(true);
+    try {
+      toast.info('🔧 Reparando datos locales...');
+      const report = await rebuildLocalData();
+      toast.success(`✅ Datos reparados: ${report.stats.asignaciones} asignaciones, ${report.stats.registrosSesion} sesiones`);
+      
+      // Recargar la app después de un breve delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error('Error reparando datos:', error);
+      toast.error(`❌ Error: ${error.message}`);
+      setIsRepairing(false);
+    }
   };
 
   const roleLabel = {
@@ -78,6 +144,44 @@ export default function LocalPage() {
                 Usuario actual: <strong>{currentUser?.nombreCompleto || currentUser?.full_name}</strong> ({roleLabel[role]})
               </p>
             </div>
+
+            {isDev && (
+              <div className="pt-4 border-t space-y-3">
+                <p className="text-sm font-medium text-ui">🔧 Herramientas de Desarrollo</p>
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    onClick={handleRepairData}
+                    disabled={isRepairing}
+                    variant="outline"
+                    className="h-9 rounded-xl"
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${isRepairing ? 'animate-spin' : ''}`} />
+                    {isRepairing ? 'Reparando...' : 'Reparar Datos'}
+                  </Button>
+                  <Button
+                    onClick={handleRegenerateData}
+                    disabled={isRegenerating}
+                    variant="outline"
+                    className="h-9 rounded-xl"
+                  >
+                    <Database className="w-4 h-4 mr-2" />
+                    {isRegenerating ? 'Regenerando...' : 'Regenerar Datos Locales'}
+                  </Button>
+                  <Button
+                    onClick={handleValidateData}
+                    disabled={isValidating}
+                    variant="outline"
+                    className="h-9 rounded-xl"
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${isValidating ? 'animate-spin' : ''}`} />
+                    {isValidating ? 'Validando...' : 'Validar Datos'}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted">
+                  Estas herramientas solo están disponibles en modo desarrollo.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
