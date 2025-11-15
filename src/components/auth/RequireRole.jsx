@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { getCurrentUser } from "@/api/localDataClient";
 import { useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { roleHome } from "./roleMap";
@@ -14,13 +13,11 @@ export default function RequireRole({ children, anyOf = [] }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { data: currentUser, isLoading } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
+  // Usar getCurrentUser() local en lugar de useQuery
+  const currentUser = getCurrentUser();
 
   useEffect(() => {
-    if (isLoading || !currentUser) return;
+    if (!currentUser) return;
 
     // Detectar simulación
     const simulatingUser = sessionStorage.getItem('simulatingUser');
@@ -38,19 +35,7 @@ export default function RequireRole({ children, anyOf = [] }) {
         navigate(createPageUrl(targetPath), { replace: true });
       }
     }
-  }, [currentUser, isLoading, anyOf, navigate, location.pathname]);
-
-  // Mientras carga, mostrar loading
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-600">Verificando acceso...</p>
-        </div>
-      </div>
-    );
-  }
+  }, [currentUser, anyOf, navigate, location.pathname]);
 
   // Detectar rol efectivo
   const simulatingUser = sessionStorage.getItem('simulatingUser');

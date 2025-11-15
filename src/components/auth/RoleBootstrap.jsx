@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { getCurrentUser } from "@/api/localDataClient";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle, Shield } from "lucide-react";
@@ -8,19 +9,17 @@ export default function RoleBootstrap({ children }) {
   const queryClient = useQueryClient();
   const [bootstrapMessage, setBootstrapMessage] = useState(null);
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
+  // Usar getCurrentUser() local
+  const currentUser = getCurrentUser();
 
   const { data: allUsers } = useQuery({
     queryKey: ['allUsers'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
     enabled: !!currentUser,
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: (data) => base44.auth.updateMe(data),
+    mutationFn: (data) => localDataClient.auth.updateMe(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       queryClient.invalidateQueries({ queryKey: ['allUsers'] });

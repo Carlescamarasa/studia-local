@@ -1,21 +1,12 @@
-import { base44 } from './base44Client';
+import { localDataClient } from './localDataClient';
 
-
-export const Pieza = base44.entities.Pieza;
-
-export const Plan = base44.entities.Plan;
-
-export const Asignacion = base44.entities.Asignacion;
-
-export const Bloque = base44.entities.Bloque;
-
-export const RegistroSesion = base44.entities.RegistroSesion;
-
-export const RegistroBloque = base44.entities.RegistroBloque;
-
-export const FeedbackSemanal = base44.entities.FeedbackSemanal;
-
-
+export const Pieza = localDataClient.entities.Pieza;
+export const Plan = localDataClient.entities.Plan;
+export const Asignacion = localDataClient.entities.Asignacion;
+export const Bloque = localDataClient.entities.Bloque;
+export const RegistroSesion = localDataClient.entities.RegistroSesion;
+export const RegistroBloque = localDataClient.entities.RegistroBloque;
+export const FeedbackSemanal = localDataClient.entities.FeedbackSemanal;
 
 // auth sdk:
-export const User = base44.auth;
+export const User = localDataClient.auth;

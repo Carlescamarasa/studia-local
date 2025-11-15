@@ -25,8 +25,8 @@ import {
   Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { getCurrentUser, setCurrentUser } from "@/api/localDataClient";
+import { useLocalData } from "@/local-data/LocalDataProvider";
 import RoleBootstrap from "@/components/auth/RoleBootstrap";
 import { SidebarProvider, useSidebar } from "@/components/ui/SidebarState";
 import {
@@ -78,6 +78,7 @@ function LayoutContent({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { abierto, toggleSidebar, closeSidebar } = useSidebar();
+  const { usuarios } = useLocalData();
 
   const [simulatingUser, setSimulatingUser] = useState(null);
   const [pointerStart, setPointerStart] = useState({ x: 0, y: 0, id: null });
@@ -103,12 +104,9 @@ function LayoutContent({ children }) {
     safeToggle();
   };
 
-  /* Usuario actual */
-  const { data: currentUser, isLoading } = useQuery({
-    queryKey: ["currentUser"],
-    queryFn: async () => base44.auth.me(),
-    staleTime: 5 * 60 * 1000,
-  });
+  /* Usuario actual - usar getCurrentUser() local */
+  const currentUser = getCurrentUser();
+  const isLoading = false; // No hay loading en local
 
   /* Detector mobile */
   useEffect(() => {
@@ -227,7 +225,7 @@ function LayoutContent({ children }) {
     sessionStorage.removeItem("simulatingUser");
     sessionStorage.removeItem("originalUser");
     sessionStorage.removeItem("originalPath");
-    await base44.auth.logout();
+    // No llamar a base44.auth.logout() - solo limpiar sessionStorage
   };
 
   const stopSimulation = () => {
@@ -334,6 +332,27 @@ function LayoutContent({ children }) {
 
           {/* Pie del sidebar */}
           <div className="border-t border-ui p-4 pt-3 space-y-3">
+            {/* Selector de usuario local */}
+            <div className="px-2 py-2 rounded-xl bg-muted border border-ui">
+              <label className="text-[11px] font-medium text-ui mb-1 block">
+                Usuario Local:
+              </label>
+              <select
+                value={currentUser?.id || ''}
+                onChange={(e) => {
+                  setCurrentUser(e.target.value);
+                  window.location.reload();
+                }}
+                className="w-full p-1.5 text-xs rounded-lg bg-card border border-ui text-ui"
+              >
+                {usuarios.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.nombreCompleto || user.full_name} ({ROLE_LABEL[user.rolPersonalizado]})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {simulatingUser && (
               <div className="px-2 py-2 rounded-xl bg-amber-50 border border-amber-200">
                 <div className="flex items-start gap-2">

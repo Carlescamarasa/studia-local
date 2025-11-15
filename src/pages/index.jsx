@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { getCurrentUser } from "@/api/localDataClient";
 import { createPageUrl } from "@/utils";
 import { roleHome } from "@/components/auth/roleMap";
 import { Clock } from "lucide-react";
@@ -9,13 +8,11 @@ import { Clock } from "lucide-react";
 export default function IndexPage() {
   const navigate = useNavigate();
   
-  const { data: currentUser, isLoading } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
-
   useEffect(() => {
-    if (!isLoading && currentUser) {
+    // Usar getCurrentUser() local en lugar de useQuery
+    const currentUser = getCurrentUser();
+    
+    if (currentUser) {
       const simulatingUser = sessionStorage.getItem('simulatingUser');
       const role = simulatingUser 
         ? JSON.parse(simulatingUser).rolPersonalizado 
@@ -32,8 +29,11 @@ export default function IndexPage() {
       const targetPage = roleHome[role] || roleHome.ESTU;
       const pageName = targetPage.replace(/^\//, '');
       navigate(createPageUrl(pageName), { replace: true });
+    } else {
+      // Si no hay usuario, ir a página local
+      navigate(createPageUrl('local'), { replace: true });
     }
-  }, [currentUser, isLoading, navigate]);
+  }, [navigate]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
