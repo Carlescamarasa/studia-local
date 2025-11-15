@@ -3,69 +3,86 @@
  * Permite guardar, cargar y gestionar múltiples configuraciones visuales
  */
 
+import { DEFAULT_DESIGN } from './design.config';
+
 export const BUILT_IN_PRESETS = {
   default: {
     name: 'Studia Default',
     description: 'Configuración predeterminada del sistema',
     config: {
+      ...DEFAULT_DESIGN,
       brandHue: 26,
-      serifHeadings: true,
-      radius: {
-        card: 'lg',
-        controls: 'lg',
-        pill: 'lg'
+      typography: {
+        ...DEFAULT_DESIGN.typography,
+        serifHeadings: true,
       },
-      shadow: 'md',
-      density: 'compact',
-      focus: 'orange',
+      layout: {
+        ...DEFAULT_DESIGN.layout,
+        density: 'normal',
+        shadow: 'md',
+      },
     }
   },
   minimal: {
     name: 'Minimal',
     description: 'Diseño limpio y minimalista',
     config: {
+      ...DEFAULT_DESIGN,
       brandHue: 26,
-      serifHeadings: false,
-      radius: {
-        card: 'lg',
-        controls: 'lg',
-        pill: 'lg'
+      typography: {
+        ...DEFAULT_DESIGN.typography,
+        serifHeadings: false,
       },
-      shadow: 'none',
-      density: 'compact',
-      focus: 'orange',
+      layout: {
+        ...DEFAULT_DESIGN.layout,
+        density: 'compact',
+        shadow: 'none',
+      },
     }
   },
   comfortable: {
     name: 'Comfortable',
     description: 'Espaciado amplio y radios generosos',
     config: {
+      ...DEFAULT_DESIGN,
       brandHue: 26,
-      serifHeadings: true,
-      radius: {
-        card: '2xl',
-        controls: 'xl',
-        pill: 'lg'
+      typography: {
+        ...DEFAULT_DESIGN.typography,
+        serifHeadings: true,
       },
-      shadow: 'card',
-      density: 'comfortable',
-      focus: 'orange',
+      layout: {
+        ...DEFAULT_DESIGN.layout,
+        radius: {
+          ...DEFAULT_DESIGN.layout.radius,
+          card: '2xl',
+          controls: 'xl',
+        },
+        density: 'spacious',
+        shadow: 'card',
+      },
     }
   },
   sharp: {
     name: 'Sharp',
     description: 'Esquinas marcadas, alto contraste',
     config: {
+      ...DEFAULT_DESIGN,
       brandHue: 26,
-      serifHeadings: false,
-      radius: {
-        card: 'lg',
-        controls: 'lg',
-        pill: 'lg'
+      typography: {
+        ...DEFAULT_DESIGN.typography,
+        serifHeadings: false,
       },
-      shadow: 'md',
-      density: 'compact',
-      focus: 'system',
+      layout: {
+        ...DEFAULT_DESIGN.layout,
+        radius: {
+          ...DEFAULT_DESIGN.layout.radius,
+          global: 'md',
+          card: 'md',
+          controls: 'md',
+        },
+        density: 'compact',
+        shadow: 'md',
+      },
     }
   }
 };

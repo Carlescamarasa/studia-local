@@ -27,7 +27,11 @@ function LabeledRow({ label, children }) {
 }
 
 function DesignPageContent() {
-  const { config, setConfig, reset } = useDesign();
+  const { design, setDesign, setDesignPartial, resetDesign, exportDesign, importDesign, loadPreset } = useDesign();
+  // Aliases para compatibilidad
+  const config = design;
+  const setConfig = setDesign;
+  const reset = resetDesign;
   const [activeSection, setActiveSection] = useState('presets');
   const [qaOutput, setQaOutput] = useState('');
   const [qaRunning, setQaRunning] = useState(false);
@@ -94,14 +98,13 @@ function DesignPageContent() {
   }, [presetName, presetDescription, config]);
 
   const handleLoadPreset = useCallback((presetId) => {
-    const preset = allPresets[presetId];
-    if (preset) {
-      setConfig(preset.config);
+    const result = loadPreset(presetId);
+    if (result.success) {
       toast.success('✅ Preset cargado');
     } else {
       toast.error('❌ Preset no encontrado');
     }
-  }, [allPresets, setConfig]);
+  }, [loadPreset]);
 
   const handleDeletePreset = useCallback((presetId) => {
     if (!window.confirm('¿Eliminar este preset?')) return;
@@ -547,89 +550,150 @@ function DesignPageContent() {
                 <CardTitle>Controles de Diseño</CardTitle>
               </CardHeader>
               <CardContent className="divide-y divide-ui">
-                <LabeledRow label="Títulos con Serif">
-                  <Switch 
-                    checked={config.serifHeadings} 
-                    onCheckedChange={(v) => setConfig({ ...config, serifHeadings: !!v })} 
-                  />
-                </LabeledRow>
+                {/* Tipografía */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-ui mb-3">Tipografía</h3>
+                  <LabeledRow label="Títulos con Serif">
+                    <Switch 
+                      checked={design?.typography?.serifHeadings || false} 
+                      onCheckedChange={(v) => setDesignPartial('typography.serifHeadings', !!v)} 
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Tamaño Base (px)">
+                    <Input
+                      type="number"
+                      value={design?.typography?.fontSizeBase || 16}
+                      onChange={(e) => setDesignPartial('typography.fontSizeBase', parseInt(e.target.value) || 16)}
+                      className="w-32 h-9 rounded-xl"
+                    />
+                  </LabeledRow>
+                </div>
 
-                <LabeledRow label="Radio de Cards">
-                  <Select 
-                    value={config.radius.card} 
-                    onValueChange={(v) => setConfig({ ...config, radius: { ...config.radius, card: v } })}
-                  >
-                    <SelectTrigger className="w-48 h-9 rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="lg">lg (12px)</SelectItem>
-                      <SelectItem value="xl">xl (16px)</SelectItem>
-                      <SelectItem value="2xl">2xl (20px)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </LabeledRow>
+                {/* Layout */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-ui mb-3">Layout</h3>
+                  <LabeledRow label="Radio de Cards">
+                    <Select 
+                      value={design?.layout?.radius?.card || 'lg'} 
+                      onValueChange={(v) => setDesignPartial('layout.radius.card', v)}
+                    >
+                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sm">sm (4px)</SelectItem>
+                        <SelectItem value="md">md (8px)</SelectItem>
+                        <SelectItem value="lg">lg (12px)</SelectItem>
+                        <SelectItem value="xl">xl (16px)</SelectItem>
+                        <SelectItem value="2xl">2xl (20px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
 
-                <LabeledRow label="Radio de Controles">
-                  <Select 
-                    value={config.radius.controls} 
-                    onValueChange={(v) => setConfig({ ...config, radius: { ...config.radius, controls: v } })}
-                  >
-                    <SelectTrigger className="w-48 h-9 rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="lg">lg (12px)</SelectItem>
-                      <SelectItem value="xl">xl (16px)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </LabeledRow>
+                  <LabeledRow label="Radio de Controles">
+                    <Select 
+                      value={design?.layout?.radius?.controls || 'lg'} 
+                      onValueChange={(v) => setDesignPartial('layout.radius.controls', v)}
+                    >
+                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sm">sm (4px)</SelectItem>
+                        <SelectItem value="md">md (8px)</SelectItem>
+                        <SelectItem value="lg">lg (12px)</SelectItem>
+                        <SelectItem value="xl">xl (16px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
 
-                <LabeledRow label="Sombras">
-                  <Select 
-                    value={config.shadow} 
-                    onValueChange={(v) => setConfig({ ...config, shadow: v })}
-                  >
-                    <SelectTrigger className="w-48 h-9 rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Ninguna</SelectItem>
-                      <SelectItem value="card">Card (sutil)</SelectItem>
-                      <SelectItem value="md">Medium</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </LabeledRow>
+                  <LabeledRow label="Sombras">
+                    <Select 
+                      value={design?.layout?.shadow || 'md'} 
+                      onValueChange={(v) => setDesignPartial('layout.shadow', v)}
+                    >
+                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Ninguna</SelectItem>
+                        <SelectItem value="sm">Small</SelectItem>
+                        <SelectItem value="card">Card (sutil)</SelectItem>
+                        <SelectItem value="md">Medium</SelectItem>
+                        <SelectItem value="lg">Large</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
 
-                <LabeledRow label="Densidad">
-                  <Select 
-                    value={config.density} 
-                    onValueChange={(v) => setConfig({ ...config, density: v })}
-                  >
-                    <SelectTrigger className="w-48 h-9 rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="comfortable">Comfortable</SelectItem>
-                      <SelectItem value="compact">Compact</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </LabeledRow>
+                  <LabeledRow label="Densidad">
+                    <Select 
+                      value={design?.layout?.density || 'normal'} 
+                      onValueChange={(v) => setDesignPartial('layout.density', v)}
+                    >
+                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="compact">Compact</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="spacious">Spacious</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
+                </div>
 
-                <LabeledRow label="Focus Ring">
-                  <Select 
-                    value={config.focus} 
-                    onValueChange={(v) => setConfig({ ...config, focus: v })}
-                  >
-                    <SelectTrigger className="w-48 h-9 rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="orange">Orange (brand)</SelectItem>
-                      <SelectItem value="system">System (blue)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </LabeledRow>
+                {/* Colores */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-ui mb-3">Colores</h3>
+                  <LabeledRow label="Color Primario">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.primary || '#4F46E5'}
+                        onChange={(e) => setDesignPartial('colors.primary', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.primary || '#4F46E5'}
+                        onChange={(e) => setDesignPartial('colors.primary', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Color Secundario">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.secondary || '#6366F1'}
+                        onChange={(e) => setDesignPartial('colors.secondary', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.secondary || '#6366F1'}
+                        onChange={(e) => setDesignPartial('colors.secondary', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Color Accent">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.accent || '#F97316'}
+                        onChange={(e) => setDesignPartial('colors.accent', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.accent || '#F97316'}
+                        onChange={(e) => setDesignPartial('colors.accent', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                </div>
               </CardContent>
             </Card>
 
@@ -642,7 +706,63 @@ function DesignPageContent() {
                 <Copy className="w-4 h-4 mr-2" />
                 Copiar JSON de Configuración
               </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  const json = exportDesign();
+                  navigator.clipboard.writeText(json);
+                  toast.success('✅ Diseño exportado al portapapeles');
+                }} 
+                className="h-10 rounded-xl"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Exportar Diseño
+              </Button>
             </div>
+            
+            <Card className="app-card">
+              <CardHeader className="border-b border-ui">
+                <CardTitle>Importar Diseño</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-4">
+                <Textarea
+                  placeholder="Pega aquí el JSON del diseño a importar..."
+                  rows={6}
+                  className="font-mono text-xs focus-brand"
+                  onChange={(e) => {
+                    try {
+                      const result = importDesign(e.target.value);
+                      if (result.success) {
+                        toast.success('✅ Diseño importado');
+                        e.target.value = '';
+                      } else {
+                        toast.error('❌ Error: ' + result.error);
+                      }
+                    } catch (err) {
+                      // Solo importar cuando sea JSON válido completo
+                    }
+                  }}
+                />
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    const json = prompt('Pega el JSON del diseño:');
+                    if (json) {
+                      const result = importDesign(json);
+                      if (result.success) {
+                        toast.success('✅ Diseño importado');
+                      } else {
+                        toast.error('❌ Error: ' + result.error);
+                      }
+                    }
+                  }} 
+                  className="h-10 rounded-xl"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Importar desde JSON
+                </Button>
+              </CardContent>
+            </Card>
           </>
         )}
 
