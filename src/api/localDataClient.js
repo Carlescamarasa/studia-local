@@ -67,7 +67,7 @@ function createEntityAPI(entityName, dataKey) {
       localDataRef[dataKey].push(newItem);
       // Guardar en localStorage para persistencia
       try {
-        const stored = JSON.parse(localStorage.getItem(`local_${dataKey}`) || '[]');
+        const stored = JSON.parse(localStorage.getItem(`local_${dataKey}`) || "[]");
         stored.push(newItem);
         localStorage.setItem(`local_${dataKey}`, JSON.stringify(stored));
       } catch (e) {
@@ -82,7 +82,7 @@ function createEntityAPI(entityName, dataKey) {
       localDataRef[dataKey][index] = updated;
       // Actualizar localStorage
       try {
-        const stored = JSON.parse(localStorage.getItem(`local_${dataKey}`) || '[]');
+        const stored = JSON.parse(localStorage.getItem(`local_${dataKey}`) || "[]");
         const storedIndex = stored.findIndex(item => item.id === id);
         if (storedIndex !== -1) {
           stored[storedIndex] = updated;
@@ -99,7 +99,7 @@ function createEntityAPI(entityName, dataKey) {
       localDataRef[dataKey].splice(index, 1);
       // Actualizar localStorage
       try {
-        const stored = JSON.parse(localStorage.getItem(`local_${dataKey}`) || '[]`);
+        const stored = JSON.parse(localStorage.getItem(`local_${dataKey}`) || "[]");
         const filtered = stored.filter(item => item.id !== id);
         localStorage.setItem(`local_${dataKey}`, JSON.stringify(filtered));
       } catch (e) {
