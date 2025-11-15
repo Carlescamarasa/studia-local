@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getAppName } from "@/components/utils/appMeta";
 import { DesignProvider } from "@/components/design/DesignProvider";
+import { Outlet } from "react-router-dom";
 
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
@@ -75,7 +76,7 @@ const ROLE_LABEL = { ADMIN: "Administrador", PROF: "Profesor", ESTU: "Estudiante
 const SIDEBAR_WIDTH = 280;
 
 /* ------------------------------- Layout --------------------------------- */
-function LayoutContent({ children }) {
+function LayoutContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const { abierto, toggleSidebar, closeSidebar } = useSidebar();
@@ -500,7 +501,7 @@ function LayoutContent({ children }) {
 
           {/* Área de contenido */}
           <div className="flex-1">
-            {children}
+            <Outlet />
           </div>
 
           {/* Footer global - centrado con nombre de app */}
@@ -524,11 +525,11 @@ function LayoutContent({ children }) {
 }
 
 /* Wrapper con providers del estado del sidebar y diseño */
-export default function Layout({ children }) {
+export default function Layout() {
   return (
     <DesignProvider>
       <SidebarProvider>
-        <LayoutContent>{children}</LayoutContent>
+        <LayoutContent />
       </SidebarProvider>
     </DesignProvider>
   );
