@@ -10,7 +10,7 @@ import {
   ChevronDown, ChevronRight, Clock, Layers, Plus, Edit, Trash2,
   GripVertical, Copy, PlayCircle, AlertCircle
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
@@ -24,6 +24,7 @@ import { getNombreVisible } from "@/components/utils/helpers";
 export default function AdaptarAsignacionPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [expandedSemanas, setExpandedSemanas] = useState(new Set([0]));
   const [expandedSesiones, setExpandedSesiones] = useState(new Set());
   const [expandedEjercicios, setExpandedEjercicios] = useState(new Set());
@@ -32,16 +33,32 @@ export default function AdaptarAsignacionPage() {
   const [editingEjercicio, setEditingEjercicio] = useState(null);
   const [planData, setPlanData] = useState(null);
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const asignacionId = urlParams.get('id');
+  const asignacionId = searchParams.get('id');
 
-  const { data: asignacion, isLoading } = useQuery({
+  const { data: asignacion, isLoading, error } = useQuery({
     queryKey: ['asignacion', asignacionId],
     queryFn: async () => {
+      if (!asignacionId) {
+        throw new Error('ID de asignación no proporcionado');
+      }
       const result = await base44.entities.Asignacion.list();
-      return result.find(a => a.id === asignacionId);
+      const found = result.find(a => a.id === asignacionId);
+      if (!found) {
+        throw new Error(`Asignación con ID ${asignacionId} no encontrada`);
+      }
+      
+      // Validar que la asignación tiene estructura válida
+      if (!found.alumnoId) {
+        throw new Error('Asignación sin alumnoId válido');
+      }
+      if (!found.plan || !Array.isArray(found.plan.semanas)) {
+        throw new Error('Asignación sin plan válido');
+      }
+      
+      return found;
     },
     enabled: !!asignacionId,
+    retry: false,
   });
 
   const { data: usuarios = [] } = useQuery({
@@ -309,28 +326,66 @@ export default function AdaptarAsignacionPage() {
     AD: 'bg-slate-100 text-slate-800 border-slate-200',
   };
 
-  if (isLoading || !planData) {
+  // Validar que existe el ID
+  if (!asignacionId) {
+    return (
+      <div className="flex items-center justify-center min-h-[80vh]">
+        <Card className="max-w-md app-card">
+          <CardContent className="pt-6 text-center space-y-4">
+            <AlertCircle className="w-12 h-12 text-amber-500 mx-auto" />
+            <p className="text-lg font-semibold text-ui">ID de asignación no proporcionado</p>
+            <p className="text-sm text-muted">Por favor, proporciona un ID válido en la URL.</p>
+            <Button onClick={() => navigate(createPageUrl('asignaciones'))} className="mt-4 btn-primary h-10 rounded-xl shadow-sm">
+              Volver a Asignaciones
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted">Cargando...</p>
+          <p className="text-muted">Cargando asignación...</p>
         </div>
       </div>
     );
   }
 
-  if (!asignacion) {
+  if (error || !asignacion) {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
         <Card className="max-w-md app-card">
-          <CardContent className="pt-6 text-center">
-            <p className="text-muted">Asignación no encontrada</p>
-            <Button onClick={() => navigate(createPageUrl('asignaciones'))} className="mt-4 btn-primary h-10 rounded-xl shadow-sm">
-              Volver
-            </Button>
+          <CardContent className="pt-6 text-center space-y-4">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
+            <p className="text-lg font-semibold text-ui">Asignación no encontrada</p>
+            <p className="text-sm text-muted">
+              {error?.message || `No se encontró la asignación con ID: ${asignacionId}`}
+            </p>
+            <div className="flex gap-2 justify-center">
+              <Button onClick={() => navigate(createPageUrl('asignaciones'))} className="btn-primary h-10 rounded-xl shadow-sm">
+                Volver a Asignaciones
+              </Button>
+              <Button onClick={() => window.location.reload()} variant="outline" className="h-10 rounded-xl">
+                Reintentar
+              </Button>
+            </div>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (!planData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-muted">Cargando plan...</p>
+        </div>
       </div>
     );
   }

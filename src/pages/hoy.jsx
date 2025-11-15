@@ -90,16 +90,37 @@ function HoyPageContent() {
   const isSimulacion = !!simulatingUser;
   const alumnoActual = usuarios.find(u => u.id === userIdActual) || currentUser;
 
-  const { data: asignaciones = [] } = useQuery({
+  const { data: asignacionesRaw = [] } = useQuery({
     queryKey: ['asignaciones'],
     queryFn: () => base44.entities.Asignacion.list(),
+  });
+
+  // Filtrar y validar asignaciones
+  const asignaciones = asignacionesRaw.filter(a => {
+    // Validar que tiene alumnoId válido
+    if (!a.alumnoId) return false;
+    const alumno = usuarios.find(u => u.id === a.alumnoId);
+    if (!alumno) return false;
+    
+    // Validar que tiene plan y semanas
+    if (!a.plan || !Array.isArray(a.plan.semanas) || a.plan.semanas.length === 0) return false;
+    
+    // Validar que tiene semanaInicioISO válida
+    if (!a.semanaInicioISO || typeof a.semanaInicioISO !== 'string') return false;
+    
+    return true;
   });
 
   const asignacionActiva = asignaciones.find(a => {
     if (a.alumnoId !== userIdActual) return false;
     if (a.estado !== 'publicada' && a.estado !== 'en_curso') return false;
-    const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
-    return offset >= 0 && offset < (a.plan?.semanas?.length || 0);
+    try {
+      const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
+      return offset >= 0 && offset < (a.plan?.semanas?.length || 0);
+    } catch (error) {
+      console.warn('Error calculando offset de semana:', error, a);
+      return false;
+    }
   });
 
   const semanaDelPlan = asignacionActiva ?

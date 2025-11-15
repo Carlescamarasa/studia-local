@@ -11,6 +11,7 @@ import Semana from "@/pages/semana.jsx";
 import Semanas from "@/pages/semanas.jsx";
 import Asignaciones from "@/pages/asignaciones.jsx";
 import AsignacionDetalle from "@/pages/asignacion-detalle.jsx";
+import AdaptarAsignacion from "@/pages/adaptar-asignacion.jsx";
 import Hoy from "@/pages/hoy.jsx";
 import Agenda from "@/pages/agenda.jsx";
 import Perfil from "@/pages/perfil.jsx";
@@ -36,6 +37,7 @@ export default function AppRouter() {
         <Route path="/semanas" element={<Semanas />} />
         <Route path="/asignaciones" element={<Asignaciones />} />
         <Route path="/asignacion-detalle" element={<AsignacionDetalle />} />
+        <Route path="/adaptar-asignacion" element={<AdaptarAsignacion />} />
         <Route path="/hoy" element={<Hoy />} />
         <Route path="/agenda" element={<Agenda />} />
         <Route path="/perfil" element={<Perfil />} />
