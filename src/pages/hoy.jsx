@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ds/Button"; // Updated import path
 import { Badge } from "@/components/ds";
@@ -75,10 +76,7 @@ function HoyPageContent() {
 
   const sidebarCerradoRef = useRef(false);
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
+  const currentUser = getCurrentUser();
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],

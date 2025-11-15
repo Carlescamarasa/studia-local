@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { getCurrentUser } from "@/api/localDataClient";
 import { Music, BookOpen, Layers } from "lucide-react";
 import PiezasTab from "../components/editor/PiezasTab";
 import PlanesTab from "../components/editor/PlanesTab";
@@ -19,10 +19,8 @@ export default function PlantillasPage() {
 }
 
 function PlantillasPageContent() {
-  const { data: currentUser, isLoading } = useQuery({
-    queryKey: ["currentUser"],
-    queryFn: () => base44.auth.me(),
-  });
+  const currentUser = getCurrentUser();
+  const isLoading = false;
 
   const [activeTab, setActiveTab] = useState("piezas");
 

@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,10 +35,8 @@ export default function ImportExportPage() {
   const [importFile, setImportFile] = useState(null);
   const [importResults, setImportResults] = useState(null);
 
-  const { data: currentUser, isLoading } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
+  const currentUser = getCurrentUser();
+  const isLoading = false;
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],

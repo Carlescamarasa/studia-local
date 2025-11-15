@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,10 +37,7 @@ function EstudiantesPageContent() {
   const [previewUrls, setPreviewUrls] = useState([]);
   const [previewIndex, setPreviewIndex] = useState(0);
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
+  const currentUser = getCurrentUser();
 
   const isProf = currentUser?.rolPersonalizado === 'PROF';
   const isAdmin = currentUser?.rolPersonalizado === 'ADMIN';

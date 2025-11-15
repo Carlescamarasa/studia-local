@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { getCurrentUser, setCurrentUser } from "@/api/localDataClient";
 import { useLocalData } from "@/local-data/LocalDataProvider";
+import logoLTS from "@/assets/Logo_LTS.png";
 import RoleBootstrap from "@/components/auth/RoleBootstrap";
 import { SidebarProvider, useSidebar } from "@/components/ui/SidebarState";
 import {
@@ -288,7 +289,7 @@ function LayoutContent({ children }) {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-card overflow-hidden">
                 <img 
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6913f837bb2b72a49b9d25d1/e8eba4bf1_Logocuadradado.png" 
+                  src={logoLTS} 
                   alt={appName}
                   className="w-full h-full object-cover"
                 />

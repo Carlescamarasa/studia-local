@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
 import { Input } from "@/components/ui/input";
@@ -57,10 +58,7 @@ function AgendaPageContent() {
   const [previewIndex, setPreviewIndex] = useState(0);
   const [expandedSessions, setExpandedSessions] = useState(new Set());
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
+  const currentUser = getCurrentUser();
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],

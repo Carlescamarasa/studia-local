@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
 import { Input } from "@/components/ui/input";
@@ -66,10 +67,7 @@ function EstadisticasPageContent() {
   const [searchEjercicio, setSearchEjercicio] = useState('');
   const [viewingMedia, setViewingMedia] = useState(null);
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
+  const currentUser = getCurrentUser();
 
   const isAdmin = currentUser?.rolPersonalizado === 'ADMIN';
   const isProf = currentUser?.rolPersonalizado === 'PROF';

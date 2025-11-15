@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent } from "@/components/ds"; // Changed import path here
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shield, Music, BookOpen, Layers } from "lucide-react";
@@ -12,10 +12,7 @@ import BloquesTab from "@/components/editor/BloquesTab";
 export default function EditorPage() {
   const [activeTab, setActiveTab] = useState("planes");
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
+  const currentUser = getCurrentUser();
 
   if (currentUser?.rolPersonalizado === 'ESTU') {
     return (

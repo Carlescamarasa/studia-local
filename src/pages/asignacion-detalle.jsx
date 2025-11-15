@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCurrentUser } from "@/api/localDataClient";
 // Updated Card, Badge, Alert paths from @/components/ui to @/components/ds
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ui/button";
@@ -37,10 +38,7 @@ export default function AsignacionDetallePage() {
   const urlParams = new URLSearchParams(window.location.search);
   const asignacionId = urlParams.get('id');
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
+  const currentUser = getCurrentUser();
 
   const { data: asignacion, isLoading } = useQuery({
     queryKey: ['asignacion', asignacionId],

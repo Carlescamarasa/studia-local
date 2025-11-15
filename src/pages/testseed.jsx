@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCurrentUser } from "@/api/localDataClient";
 import { Button } from "@/components/ds/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ds";
 import { Badge } from "@/components/ds";
@@ -60,10 +61,7 @@ export default function TestSeedPage() {
     'S&A': 'bg-brand-100 text-brand-800',
   };
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
+  const currentUser = getCurrentUser();
 
   const { data: stats, isLoading, refetch: refetchStats } = useQuery({
     queryKey: ['seedStats'],

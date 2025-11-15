@@ -125,6 +125,21 @@ export const localDataClient = {
     me: async () => {
       return getCurrentUser();
     },
+    getCurrentUser: () => {
+      return getCurrentUser();
+    },
+    login: async (credentials) => {
+      // En modo local, simplemente establecer el usuario si existe
+      const user = localDataRef.usuarios.find(u => 
+        u.email === credentials?.email || 
+        u.id === credentials?.userId
+      );
+      if (user) {
+        setCurrentUser(user.id);
+        return { user, success: true };
+      }
+      throw new Error('Usuario no encontrado');
+    },
     logout: async () => {
       // No hacer nada en local, solo limpiar sessionStorage
       sessionStorage.clear();

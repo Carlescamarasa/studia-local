@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ds";
@@ -34,10 +35,7 @@ function AsignacionesPageContent() {
   const [estadoFilter, setEstadoFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
+  const currentUser = getCurrentUser();
 
   const { data: asignaciones = [] } = useQuery({
     queryKey: ['asignaciones'],

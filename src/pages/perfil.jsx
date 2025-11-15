@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCurrentUser } from "@/api/localDataClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ds";
 import { Badge } from "@/components/ds";
@@ -29,15 +30,12 @@ export default function PerfilPage() {
   const [editedData, setEditedData] = useState(null);
   const [saveResult, setSaveResult] = useState(null);
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
+  const currentUser = getCurrentUser();
 
   const { data: allUsers } = useQuery({
     queryKey: ['allUsers'],
     queryFn: () => base44.entities.User.list(),
-    enabled: !!currentUser,
+    enabled: true,
   });
 
   const { data: targetUser, isLoading } = useQuery({
@@ -49,7 +47,7 @@ export default function PerfilPage() {
       }
       return currentUser;
     },
-    enabled: !!currentUser,
+    enabled: true,
   });
 
   const getNombreCompleto = (user) => {
