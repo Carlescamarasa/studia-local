@@ -1,0 +1,225 @@
+
+import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ds"; // Changed import
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, BookOpen, Edit, Copy, Trash2 } from "lucide-react";
+import PlanEditor from "./PlanEditor";
+import { toast } from "sonner";
+import UnifiedTable from "@/components/tables/UnifiedTable";
+
+export default function PlanesTab() {
+  const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [focoFilter, setFocoFilter] = useState('all');
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [showEditor, setShowEditor] = useState(false);
+
+  const { data: planes = [], isLoading } = useQuery({
+    queryKey: ['planes'],
+    queryFn: () => base44.entities.Plan.list('-created_date'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Plan.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['planes'] });
+      toast.success('✅ Plan eliminado');
+    },
+  });
+
+  const duplicarMutation = useMutation({
+    mutationFn: async (plan) => {
+      const copia = {
+        ...plan,
+        nombre: `${plan.nombre} (copia)`,
+      };
+      delete copia.id;
+      delete copia.created_date;
+      delete copia.updated_date;
+      delete copia.created_by;
+      return base44.entities.Plan.create(copia);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['planes'] });
+      toast.success('✅ Plan duplicado');
+    },
+  });
+
+  const filteredPlanes = planes.filter(p => {
+    const matchesSearch = p.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFoco = focoFilter === 'all' || p.focoGeneral === focoFilter;
+    return matchesSearch && matchesFoco;
+  });
+
+  const handleCreate = () => {
+    setSelectedPlan(null);
+    setShowEditor(true);
+  };
+
+  const handleEdit = (plan) => {
+    setSelectedPlan(plan);
+    setShowEditor(true); // Ensure editor shows on edit
+  };
+
+  const handleDelete = (plan) => {
+    if (window.confirm(`¿Eliminar "${plan.nombre}"?`)) {
+      deleteMutation.mutate(plan.id);
+    }
+  };
+
+  const handleDuplicate = (plan) => {
+    duplicarMutation.mutate(plan);
+  };
+
+  const focoLabels = {
+    GEN: 'General',
+    LIG: 'Ligaduras',
+    RIT: 'Ritmo',
+    ART: 'Articulación',
+    'S&A': 'Sonido y Afinación',
+  };
+
+  const focoVariants = { // New object
+    GEN: 'neutral',
+    LIG: 'info',
+    RIT: 'warning',
+    ART: 'success',
+    'S&A': 'primary',
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
+        <div className="flex gap-2 flex-wrap flex-1 w-full md:w-auto">
+          <Input
+            placeholder="Buscar planes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1 min-w-[200px] h-10 rounded-xl"
+          />
+          <Select value={focoFilter} onValueChange={setFocoFilter}>
+            <SelectTrigger className="w-full md:w-48 h-10 rounded-xl">
+              <SelectValue placeholder="Todos los focos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los focos</SelectItem>
+              {Object.entries(focoLabels).map(([key, label]) => (
+                <SelectItem key={key} value={key}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button onClick={handleCreate} className="w-full md:w-auto btn-primary h-10 rounded-xl shadow-sm">
+          <Plus className="w-4 h-4 mr-2" />
+          Nuevo Plan
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="text-center py-8">
+          <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
+        </div>
+      ) : filteredPlanes.length === 0 ? (
+        <div className="text-center py-12 border-2 border-dashed rounded-lg">
+          <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+          <p className="text-gray-500 mb-2">
+            {searchTerm || focoFilter !== 'all' ? 'No se encontraron planes' : 'Aún no hay planes'}
+          </p>
+          <Button onClick={handleCreate} variant="outline" className="mt-2 rounded-xl">
+            <Plus className="w-4 h-4 mr-2" />
+            Crear el primero
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div className="hidden md:block">
+            <UnifiedTable
+              columns={[
+                { key: 'nombre', label: 'Nombre', sortable: true, render: (p) => <span className="font-medium">{p.nombre}</span> },
+                { key: 'foco', label: 'Foco', sortable: true, render: (p) => p.focoGeneral ? (
+                  <Badge variant={focoVariants[p.focoGeneral]}>{focoLabels[p.focoGeneral]}</Badge>
+                ) : <span className="text-muted">—</span>, sortValue: (p) => p.focoGeneral },
+                { key: 'semanas', label: 'Semanas', sortable: true, render: (p) => <span className="text-sm text-muted">{p.semanas?.length || 0}</span>, sortValue: (p) => p.semanas?.length || 0 }
+              ]}
+              data={filteredPlanes}
+              getRowActions={(p) => [ // Changed from 'actions' to 'getRowActions' and updated structure
+                { id: 'edit', label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => handleEdit(p) },
+                { id: 'duplicate', label: 'Duplicar', icon: <Copy className="w-4 h-4" />, onClick: () => handleDuplicate(p) },
+                { id: 'delete', label: 'Eliminar', icon: <Trash2 className="w-4 h-4" />, onClick: () => handleDelete(p) }
+              ]}
+              keyField="id"
+            />
+          </div>
+
+          <div className="md:hidden space-y-3">
+            {filteredPlanes.map((plan) => (
+              <Card key={plan.id} className="border hover:shadow-sm transition-shadow app-card">
+                <CardContent className="pt-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        {plan.focoGeneral && (
+                          <Badge variant={focoVariants[plan.focoGeneral]} className="mb-2"> {/* Changed to variant */}
+                            {focoLabels[plan.focoGeneral]}
+                          </Badge>
+                        )}
+                        <h3 className="font-semibold text-base mb-1">{plan.nombre}</h3>
+                        <p className="text-xs text-muted"> {/* Changed text color */}
+                          {plan.semanas?.length || 0} semanas
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2 border-t border-ui"> {/* Added border-ui */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(plan)}
+                        className="flex-1 btn-secondary h-10" // Changed className
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDuplicate(plan)}
+                        className="flex-1 btn-secondary h-10" // Changed className
+                      >
+                        <Copy className="w-4 h-4 mr-1" />
+                        Duplicar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(plan)}
+                        className="btn-danger h-10 px-3" // Changed className
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
+      {(showEditor || selectedPlan) && (
+        <PlanEditor
+          plan={selectedPlan}
+          onClose={() => {
+            setShowEditor(false);
+            setSelectedPlan(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}

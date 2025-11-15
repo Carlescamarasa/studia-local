@@ -1,0 +1,39 @@
+import React from "react";
+import { Check, X } from "lucide-react";
+
+export default function ItinerarioMini({ listaEjecucion, indiceActual, completados, omitidos, onNavegar }) {
+  return (
+    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+      {listaEjecucion.map((ej, idx) => {
+        const isActual = idx === indiceActual;
+        const isCompletado = completados.has(idx);
+        const isOmitido = omitidos.has(idx);
+        
+        return (
+          <button
+            key={idx}
+            onClick={() => onNavegar(idx)}
+            className={`shrink-0 relative rounded-full transition-all ${
+              isActual 
+                ? 'w-7 h-7 bg-[hsl(var(--brand-500))] ring-2 ring-[hsl(var(--brand-500))] ring-offset-2' 
+                : isCompletado
+                ? 'w-5 h-5 bg-green-500 hover:bg-green-600'
+                : isOmitido
+                ? 'w-5 h-5 bg-gray-400 hover:bg-gray-500'
+                : 'w-5 h-5 bg-gray-300 hover:bg-gray-400'
+            }`}
+            title={`${idx + 1}. ${ej.nombre} ${isCompletado ? '(✓)' : isOmitido ? '(omitido)' : ''}`}
+            aria-label={`Ejercicio ${idx + 1}: ${ej.nombre}`}
+          >
+            {isCompletado && !isActual && (
+              <Check className="w-3 h-3 text-white absolute inset-0 m-auto" />
+            )}
+            {isOmitido && !isActual && (
+              <X className="w-3 h-3 text-white absolute inset-0 m-auto" />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
