@@ -571,11 +571,83 @@ function DesignPageContent({ embedded = false }) {
                       className="w-32 h-9 rounded-xl"
                     />
                   </LabeledRow>
+                  <LabeledRow label="Escala de Tamaño">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={design?.typography?.fontSizeScale || 1.25}
+                      onChange={(e) => setDesignPartial('typography.fontSizeScale', parseFloat(e.target.value) || 1.25)}
+                      className="w-32 h-9 rounded-xl"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Fuente Base">
+                    <Input
+                      type="text"
+                      value={design?.typography?.fontFamilyBase || 'Inter, system-ui, -apple-system, sans-serif'}
+                      onChange={(e) => setDesignPartial('typography.fontFamilyBase', e.target.value)}
+                      className="w-64 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Fuente Títulos">
+                    <Input
+                      type="text"
+                      value={design?.typography?.fontFamilyHeadings || 'Inter, system-ui, -apple-system, sans-serif'}
+                      onChange={(e) => setDesignPartial('typography.fontFamilyHeadings', e.target.value)}
+                      className="w-64 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Interlineado Tight">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={design?.typography?.lineHeight?.tight || 1.25}
+                      onChange={(e) => setDesignPartial('typography.lineHeight.tight', parseFloat(e.target.value) || 1.25)}
+                      className="w-32 h-9 rounded-xl"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Interlineado Normal">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={design?.typography?.lineHeight?.normal || 1.5}
+                      onChange={(e) => setDesignPartial('typography.lineHeight.normal', parseFloat(e.target.value) || 1.5)}
+                      className="w-32 h-9 rounded-xl"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Interlineado Relaxed">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={design?.typography?.lineHeight?.relaxed || 1.75}
+                      onChange={(e) => setDesignPartial('typography.lineHeight.relaxed', parseFloat(e.target.value) || 1.75)}
+                      className="w-32 h-9 rounded-xl"
+                    />
+                  </LabeledRow>
                 </div>
 
                 {/* Layout */}
                 <div className="py-2">
                   <h3 className="text-sm font-semibold text-ui mb-3">Layout</h3>
+                  <LabeledRow label="Radio Global">
+                    <Select 
+                      value={design?.layout?.radius?.global || 'lg'} 
+                      onValueChange={(v) => setDesignPartial('layout.radius.global', v)}
+                    >
+                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">none (0px)</SelectItem>
+                        <SelectItem value="sm">sm (4px)</SelectItem>
+                        <SelectItem value="md">md (8px)</SelectItem>
+                        <SelectItem value="lg">lg (12px)</SelectItem>
+                        <SelectItem value="xl">xl (16px)</SelectItem>
+                        <SelectItem value="2xl">2xl (20px)</SelectItem>
+                        <SelectItem value="3xl">3xl (24px)</SelectItem>
+                        <SelectItem value="full">full (9999px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
                   <LabeledRow label="Radio de Cards">
                     <Select 
                       value={design?.layout?.radius?.card || 'lg'} 
@@ -585,15 +657,17 @@ function DesignPageContent({ embedded = false }) {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">none (0px)</SelectItem>
                         <SelectItem value="sm">sm (4px)</SelectItem>
                         <SelectItem value="md">md (8px)</SelectItem>
                         <SelectItem value="lg">lg (12px)</SelectItem>
                         <SelectItem value="xl">xl (16px)</SelectItem>
                         <SelectItem value="2xl">2xl (20px)</SelectItem>
+                        <SelectItem value="3xl">3xl (24px)</SelectItem>
+                        <SelectItem value="full">full (9999px)</SelectItem>
                       </SelectContent>
                     </Select>
                   </LabeledRow>
-
                   <LabeledRow label="Radio de Controles">
                     <Select 
                       value={design?.layout?.radius?.controls || 'lg'} 
@@ -603,14 +677,57 @@ function DesignPageContent({ embedded = false }) {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">none (0px)</SelectItem>
                         <SelectItem value="sm">sm (4px)</SelectItem>
                         <SelectItem value="md">md (8px)</SelectItem>
                         <SelectItem value="lg">lg (12px)</SelectItem>
                         <SelectItem value="xl">xl (16px)</SelectItem>
+                        <SelectItem value="2xl">2xl (20px)</SelectItem>
+                        <SelectItem value="3xl">3xl (24px)</SelectItem>
+                        <SelectItem value="full">full (9999px)</SelectItem>
                       </SelectContent>
                     </Select>
                   </LabeledRow>
-
+                  <LabeledRow label="Radio de Pills">
+                    <Select 
+                      value={design?.layout?.radius?.pill || 'lg'} 
+                      onValueChange={(v) => setDesignPartial('layout.radius.pill', v)}
+                    >
+                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">none (0px)</SelectItem>
+                        <SelectItem value="sm">sm (4px)</SelectItem>
+                        <SelectItem value="md">md (8px)</SelectItem>
+                        <SelectItem value="lg">lg (12px)</SelectItem>
+                        <SelectItem value="xl">xl (16px)</SelectItem>
+                        <SelectItem value="2xl">2xl (20px)</SelectItem>
+                        <SelectItem value="3xl">3xl (24px)</SelectItem>
+                        <SelectItem value="full">full (9999px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
+                  <LabeledRow label="Radio de Modales">
+                    <Select 
+                      value={design?.layout?.radius?.modal || 'xl'} 
+                      onValueChange={(v) => setDesignPartial('layout.radius.modal', v)}
+                    >
+                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">none (0px)</SelectItem>
+                        <SelectItem value="sm">sm (4px)</SelectItem>
+                        <SelectItem value="md">md (8px)</SelectItem>
+                        <SelectItem value="lg">lg (12px)</SelectItem>
+                        <SelectItem value="xl">xl (16px)</SelectItem>
+                        <SelectItem value="2xl">2xl (20px)</SelectItem>
+                        <SelectItem value="3xl">3xl (24px)</SelectItem>
+                        <SelectItem value="full">full (9999px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
                   <LabeledRow label="Sombras">
                     <Select 
                       value={design?.layout?.shadow || 'md'} 
@@ -625,10 +742,10 @@ function DesignPageContent({ embedded = false }) {
                         <SelectItem value="card">Card (sutil)</SelectItem>
                         <SelectItem value="md">Medium</SelectItem>
                         <SelectItem value="lg">Large</SelectItem>
+                        <SelectItem value="xl">Extra Large</SelectItem>
                       </SelectContent>
                     </Select>
                   </LabeledRow>
-
                   <LabeledRow label="Densidad">
                     <Select 
                       value={design?.layout?.density || 'normal'} 
@@ -646,9 +763,9 @@ function DesignPageContent({ embedded = false }) {
                   </LabeledRow>
                 </div>
 
-                {/* Colores */}
+                {/* Colores Principales */}
                 <div className="py-2">
-                  <h3 className="text-sm font-semibold text-ui mb-3">Colores</h3>
+                  <h3 className="text-sm font-semibold text-ui mb-3">Colores Principales</h3>
                   <LabeledRow label="Color Primario">
                     <div className="flex items-center gap-2">
                       <Input
@@ -661,6 +778,22 @@ function DesignPageContent({ embedded = false }) {
                         type="text"
                         value={design?.colors?.primary || '#4F46E5'}
                         onChange={(e) => setDesignPartial('colors.primary', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Color Primario Soft">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.primarySoft || '#EEF2FF'}
+                        onChange={(e) => setDesignPartial('colors.primarySoft', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.primarySoft || '#EEF2FF'}
+                        onChange={(e) => setDesignPartial('colors.primarySoft', e.target.value)}
                         className="w-32 h-9 rounded-xl font-mono text-xs"
                       />
                     </div>
@@ -696,6 +829,433 @@ function DesignPageContent({ embedded = false }) {
                         className="w-32 h-9 rounded-xl font-mono text-xs"
                       />
                     </div>
+                  </LabeledRow>
+                </div>
+
+                {/* Colores de Estado */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-ui mb-3">Colores de Estado</h3>
+                  <LabeledRow label="Success">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.success || '#10B981'}
+                        onChange={(e) => setDesignPartial('colors.success', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.success || '#10B981'}
+                        onChange={(e) => setDesignPartial('colors.success', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Warning">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.warning || '#F59E0B'}
+                        onChange={(e) => setDesignPartial('colors.warning', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.warning || '#F59E0B'}
+                        onChange={(e) => setDesignPartial('colors.warning', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Danger">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.danger || '#EF4444'}
+                        onChange={(e) => setDesignPartial('colors.danger', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.danger || '#EF4444'}
+                        onChange={(e) => setDesignPartial('colors.danger', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Info">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.info || '#3B82F6'}
+                        onChange={(e) => setDesignPartial('colors.info', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.info || '#3B82F6'}
+                        onChange={(e) => setDesignPartial('colors.info', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                </div>
+
+                {/* Colores de Superficie */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-ui mb-3">Colores de Superficie</h3>
+                  <LabeledRow label="Background">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.background || '#FFFFFF'}
+                        onChange={(e) => setDesignPartial('colors.background', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.background || '#FFFFFF'}
+                        onChange={(e) => setDesignPartial('colors.background', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Surface">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.surface || '#F9FAFB'}
+                        onChange={(e) => setDesignPartial('colors.surface', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.surface || '#F9FAFB'}
+                        onChange={(e) => setDesignPartial('colors.surface', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Surface Elevated">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.surfaceElevated || '#FFFFFF'}
+                        onChange={(e) => setDesignPartial('colors.surfaceElevated', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.surfaceElevated || '#FFFFFF'}
+                        onChange={(e) => setDesignPartial('colors.surfaceElevated', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Surface Muted">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.surfaceMuted || '#F3F4F6'}
+                        onChange={(e) => setDesignPartial('colors.surfaceMuted', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.surfaceMuted || '#F3F4F6'}
+                        onChange={(e) => setDesignPartial('colors.surfaceMuted', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                </div>
+
+                {/* Colores de Texto */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-ui mb-3">Colores de Texto</h3>
+                  <LabeledRow label="Texto Primario">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.text?.primary || '#111827'}
+                        onChange={(e) => setDesignPartial('colors.text.primary', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.text?.primary || '#111827'}
+                        onChange={(e) => setDesignPartial('colors.text.primary', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Texto Secundario">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.text?.secondary || '#6B7280'}
+                        onChange={(e) => setDesignPartial('colors.text.secondary', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.text?.secondary || '#6B7280'}
+                        onChange={(e) => setDesignPartial('colors.text.secondary', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Texto Muted">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.text?.muted || '#9CA3AF'}
+                        onChange={(e) => setDesignPartial('colors.text.muted', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.text?.muted || '#9CA3AF'}
+                        onChange={(e) => setDesignPartial('colors.text.muted', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Texto Inverse">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.text?.inverse || '#FFFFFF'}
+                        onChange={(e) => setDesignPartial('colors.text.inverse', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.text?.inverse || '#FFFFFF'}
+                        onChange={(e) => setDesignPartial('colors.text.inverse', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                </div>
+
+                {/* Colores de Borde */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-ui mb-3">Colores de Borde</h3>
+                  <LabeledRow label="Borde Default">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.border?.default || '#E5E7EB'}
+                        onChange={(e) => setDesignPartial('colors.border.default', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.border?.default || '#E5E7EB'}
+                        onChange={(e) => setDesignPartial('colors.border.default', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Borde Muted">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.border?.muted || '#F3F4F6'}
+                        onChange={(e) => setDesignPartial('colors.border.muted', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.border?.muted || '#F3F4F6'}
+                        onChange={(e) => setDesignPartial('colors.border.muted', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Borde Strong">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.border?.strong || '#D1D5DB'}
+                        onChange={(e) => setDesignPartial('colors.border.strong', e.target.value)}
+                        className="w-16 h-9 rounded-xl"
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.border?.strong || '#D1D5DB'}
+                        onChange={(e) => setDesignPartial('colors.border.strong', e.target.value)}
+                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                </div>
+
+                {/* Componentes */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-ui mb-3">Componentes</h3>
+                  <LabeledRow label="Radio de Botones">
+                    <Select 
+                      value={design?.components?.button?.radius || 'lg'} 
+                      onValueChange={(v) => setDesignPartial('components.button.radius', v)}
+                    >
+                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">none (0px)</SelectItem>
+                        <SelectItem value="sm">sm (4px)</SelectItem>
+                        <SelectItem value="md">md (8px)</SelectItem>
+                        <SelectItem value="lg">lg (12px)</SelectItem>
+                        <SelectItem value="xl">xl (16px)</SelectItem>
+                        <SelectItem value="2xl">2xl (20px)</SelectItem>
+                        <SelectItem value="3xl">3xl (24px)</SelectItem>
+                        <SelectItem value="full">full (9999px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
+                  <LabeledRow label="Padding Botón SM">
+                    <Input
+                      type="text"
+                      value={design?.components?.button?.padding?.sm || '0.375rem 0.75rem'}
+                      onChange={(e) => setDesignPartial('components.button.padding.sm', e.target.value)}
+                      className="w-48 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Padding Botón MD">
+                    <Input
+                      type="text"
+                      value={design?.components?.button?.padding?.md || '0.5rem 1rem'}
+                      onChange={(e) => setDesignPartial('components.button.padding.md', e.target.value)}
+                      className="w-48 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Padding Botón LG">
+                    <Input
+                      type="text"
+                      value={design?.components?.button?.padding?.lg || '0.75rem 1.5rem'}
+                      onChange={(e) => setDesignPartial('components.button.padding.lg', e.target.value)}
+                      className="w-48 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Radio de Inputs">
+                    <Select 
+                      value={design?.components?.input?.radius || 'lg'} 
+                      onValueChange={(v) => setDesignPartial('components.input.radius', v)}
+                    >
+                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">none (0px)</SelectItem>
+                        <SelectItem value="sm">sm (4px)</SelectItem>
+                        <SelectItem value="md">md (8px)</SelectItem>
+                        <SelectItem value="lg">lg (12px)</SelectItem>
+                        <SelectItem value="xl">xl (16px)</SelectItem>
+                        <SelectItem value="2xl">2xl (20px)</SelectItem>
+                        <SelectItem value="3xl">3xl (24px)</SelectItem>
+                        <SelectItem value="full">full (9999px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
+                  <LabeledRow label="Padding de Inputs">
+                    <Input
+                      type="text"
+                      value={design?.components?.input?.padding || '0.5rem 0.75rem'}
+                      onChange={(e) => setDesignPartial('components.input.padding', e.target.value)}
+                      className="w-48 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Radio de Cards">
+                    <Select 
+                      value={design?.components?.card?.radius || 'lg'} 
+                      onValueChange={(v) => setDesignPartial('components.card.radius', v)}
+                    >
+                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">none (0px)</SelectItem>
+                        <SelectItem value="sm">sm (4px)</SelectItem>
+                        <SelectItem value="md">md (8px)</SelectItem>
+                        <SelectItem value="lg">lg (12px)</SelectItem>
+                        <SelectItem value="xl">xl (16px)</SelectItem>
+                        <SelectItem value="2xl">2xl (20px)</SelectItem>
+                        <SelectItem value="3xl">3xl (24px)</SelectItem>
+                        <SelectItem value="full">full (9999px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
+                  <LabeledRow label="Ancho Sidebar">
+                    <Input
+                      type="text"
+                      value={design?.components?.sidebar?.width || '16rem'}
+                      onChange={(e) => setDesignPartial('components.sidebar.width', e.target.value)}
+                      className="w-32 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Ancho Sidebar Colapsado">
+                    <Input
+                      type="text"
+                      value={design?.components?.sidebar?.widthCollapsed || '4rem'}
+                      onChange={(e) => setDesignPartial('components.sidebar.widthCollapsed', e.target.value)}
+                      className="w-32 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Altura Header">
+                    <Input
+                      type="text"
+                      value={design?.components?.header?.height || '4rem'}
+                      onChange={(e) => setDesignPartial('components.header.height', e.target.value)}
+                      className="w-32 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                </div>
+
+                {/* Focus */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-ui mb-3">Focus y Accesibilidad</h3>
+                  <LabeledRow label="Ancho Ring Focus">
+                    <Input
+                      type="text"
+                      value={design?.focus?.ring?.width || '2px'}
+                      onChange={(e) => setDesignPartial('focus.ring.width', e.target.value)}
+                      className="w-32 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Color Ring Focus">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="text"
+                        value={design?.focus?.ring?.color || 'rgba(79, 70, 229, 0.5)'}
+                        onChange={(e) => setDesignPartial('focus.ring.color', e.target.value)}
+                        className="w-48 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Offset Ring Focus">
+                    <Input
+                      type="text"
+                      value={design?.focus?.ring?.offset || '2px'}
+                      onChange={(e) => setDesignPartial('focus.ring.offset', e.target.value)}
+                      className="w-32 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                </div>
+
+                {/* Brand Hue (compatibilidad) */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-ui mb-3">Brand (Compatibilidad)</h3>
+                  <LabeledRow label="Brand Hue">
+                    <Input
+                      type="number"
+                      min="0"
+                      max="360"
+                      value={design?.brandHue || 26}
+                      onChange={(e) => setDesignPartial('brandHue', parseInt(e.target.value) || 26)}
+                      className="w-32 h-9 rounded-xl"
+                    />
                   </LabeledRow>
                 </div>
               </CardContent>
