@@ -81,3 +81,127 @@ Objetivo: que un re-temeado se resuelva aquí y/o en tokens, no en componentes a
 4. `index.css` (`@layer components`): clases semánticas (`.btn-*`, `.ctrl-field`, `.app-card/panel`).
 
 El `DesignProvider` añade/quita `.dark` en `<html>` según `design.theme`, activando el tema oscuro y aplicando todas las CSS vars en runtime.
+
+---
+
+## 8) Inventario de elementos y atributos estandarizados
+
+Esta sección recoge todos los elementos/atributos ya mapeados a tokens y CSS globales (fuente de verdad).
+
+1) Tipografía
+- Tokens: `typography.fontFamilyBase`, `fontFamilyHeadings/Serif`, `fontSizeBase`, `lineHeight.*`.
+- Clases semánticas (componentStyles.typography):
+  - `pageTitle`, `pageSubtitle`, `sectionTitle`, `cardTitle`, `bodyText`, `smallMetaText`.
+- Reglas:
+  - Textos primarios: `text-ui`.
+  - Textos secundarios: `text-ui/80` (no usar `text-muted` para contenido primario).
+
+2) Colores
+- Tokens (colors): `primary`, `primarySoft`, `secondary`, `background`, `surface`, `surfaceElevated`, `surfaceMuted`, `text{primary,secondary,muted,inverse}`, `border{default,muted,strong}`, `ring`.
+- Vars generadas: `--color-*` (kebab-case), p. ej. `--color-primary-soft`, `--color-surface-elevated`.
+- HSL base (`index.css`):
+  - Light y `.dark` para: `--background`, `--foreground`, `--primary`, `--muted`, `--border`, `--ring`, etc.
+- Escala de marca:
+  - `--brand-50..--brand-900` (HSL), derivada de `brandHue`. Úsese para realces/accent.
+
+3) Layout, radius y sombras
+- Tokens: `layout.radius.{global,card,controls,pill,modal}`, `layout.density`, `layout.shadow`.
+- Vars generadas:
+  - `--radius-card`, `--radius-ctrl`, `--shadow-card`, `--space-*`, `--gap-*`.
+- Densidad en `body`: `ds-density-{compact|normal|spacious}`.
+
+4) Controles (Inputs/Selects)
+- Clase: `.ctrl-field` (via `Input`/`SelectTrigger` o `useClassTokens.control`).
+- Atributos gobernados por tokens/vars:
+  - `padding: var(--input-padding)`
+  - `border-radius: var(--radius-ctrl)`
+  - `border-color: var(--color-border-default)`
+  - `focus: box-shadow: var(--focus-ring)`
+
+5) Botones
+- Clases semánticas (`index.css`):
+  - `.btn-primary|secondary|outline|ghost|danger`, tamaños `.btn-sm|md|lg|icon`, y `.btn-disabled`.
+- Vía componente `Button` (ui): `variant/size` mapean a `.btn-*`.
+
+6) Cards y Paneles
+- Clases: `.app-card`, `.app-panel`.
+- Atributos:
+  - `background-color: var(--color-surface|surface-elevated)`
+  - `color: var(--color-text-primary)`
+  - `border: var(--color-border-strong|muted)`
+  - `border-radius: var(--radius-card)`
+  - Sombra (cards): `var(--shadow-card)`
+- Variantes (componentStyles.components):
+  - `cardBase`, `cardElevated`, `cardKpi`, `panelBase`, plus Agenda.
+
+7) Tabs
+- `Tabs` (DS) → `segmented`/`underline` usando `componentStyles.components.tabs*`.
+- Estados activos con `primarySoft` + borde `primary`.
+
+8) Menú lateral
+- `menuSectionTitle`, `menuItem`, `menuItemActive` (componentStyles.components).
+
+9) Tema Light/Dark
+- `DesignProvider` alterna `.dark` en `<html>` según `design.theme`.
+- Componente `/design` permite seleccionar y aplicar el preset.
+
+---
+
+## 9) Atributos no estandarizados (a vigilar y migrar)
+
+Patrones detectados en el proyecto que conviene normalizar hacia tokens/clases semánticas:
+
+1) `text-muted` en contenido primario (fondos claros)
+- Riesgo de contraste bajo. Sustituir por `text-ui` o `text-ui/80`.
+- Áreas comunes: meta de tarjetas, contadores “Total: …”, textos de ayuda en paneles.
+
+2) Estilos de controles duplicados
+- No añadir `h-10`, `rounded-xl`, `border-ui` ad-hoc a Inputs/Selects.
+- Confiar en `.ctrl-field` (padding, radius, focus ring, border).
+
+3) Colores literales Tailwind fuera de tokens
+- Ej.: `bg-slate-50`, `text-gray-500/600/700`, `border-gray-200`.
+- Sustituir por tokens equivalentes:
+  - Fondo claro → `var(--color-surface|surface-elevated|surface-muted)`
+  - Texto meta → `text-ui/80`
+  - Bordes → `var(--color-border-default|strong)`
+
+4) `border-ui` u otras clases no mapeadas a tokens
+- Alinear con `var(--color-border-*)` según contexto (`default/muted/strong`).
+
+5) Uso de escala `brand` en texto de cuerpo
+- Reservar `--brand-*` para acentos/badges/borders ligeros, no para cuerpo.
+
+6) Inline styles no dinámicos
+- Evitarlos para padding/margins/width/height fijos. Preferir utilidades o clases de `componentStyles`.
+
+7) Clases heredadas/obsoletas
+- Evitar `icon-tile`, `page-header-*`. Usar `PageHeader` + `componentStyles.typography`.
+
+Sugerencias de auditoría (expresiones útiles):
+- Restos `text-muted`: `rg -n "text-muted" src/`
+- Colores literales: `rg -n "text-(gray|slate|stone)-[3-9]00" src/` y `rg -n "bg-(gray|slate|stone)-[1-9]0" src/`
+- Control styles duplicados: `rg -n "h-10|rounded-xl|border-ui" src/pages src/components`
+
+---
+
+## 10) Procedimiento de auditoría
+
+1) QA Visual (runtime)
+- `/design` → pestaña “QA”. Ejecuta verificaciones sobre:
+  - Vars críticas: `--radius-card/ctrl`, `--shadow-card`, `--focus-ring`.
+  - Clases en `<body>`: `ds-serif`, densidad.
+  - Presencia de patrones esperados.
+- `QAVisualContent` admite `embedded` para integrarlo en otras vistas si se quiere.
+
+2) Greps dirigidos (estáticos)
+- Buscar usos no estandarizados (ver expresiones arriba).
+- Priorizar reemplazos en páginas de mayor uso (Agenda, Estadísticas, Asignaciones).
+
+3) Validación multi-tema
+- Cambiar Light/Dark en `/design` y revisar:
+  - Contraste en cards/paneles, inputs, tabs, badges y tablas.
+  - Headers claros con `text-[var(--color-primary)]`.
+
+4) Documentar decisiones
+- Cualquier caso especial de color/contraste que se mantenga fuera de tokens debe anotarse aquí con justificación.
