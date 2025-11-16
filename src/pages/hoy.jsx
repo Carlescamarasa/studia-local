@@ -666,7 +666,7 @@ function HoyPageContent() {
     return (
       <div className="min-h-screen bg-background" style={{ paddingBottom: '160px' }}>
         {/* Header del Player */}
-        <div className="bg-card border-b px-4 py-4 lg:sticky lg:top-0 z-10 shadow-card">
+        <div className="bg-card border-b border-ui px-4 py-4 lg:sticky lg:top-0 z-10 shadow-card">
           <div className="max-w-5xl mx-auto">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -695,13 +695,13 @@ function HoyPageContent() {
             </div>
 
             {/* Breadcrumbs */}
-            <div className="flex items-center gap-2 flex-wrap text-xs text-muted">
+            <div className="flex items-center gap-2 flex-wrap text-xs text-ui/80">
               <Music className="w-3 h-3 text-brand-700" />
               <span className="font-medium">{asignacionActiva.piezaSnapshot?.nombre}</span>
-              <span className="text-muted">•</span>
+              <span className="text-ui/60">•</span>
               <Target className="w-3 h-3 text-blue-600" />
               <span>{asignacionActiva.plan?.nombre}</span>
-              <span className="text-muted">•</span>
+              <span className="text-ui/60">•</span>
               <Badge className={focoColors[sesionActiva.foco]} variant="outline">
                 {focoLabels[sesionActiva.foco]}
               </Badge>
@@ -971,7 +971,7 @@ function HoyPageContent() {
 
             {/* Info de progreso */}
             <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs text-muted">
+              <div className="flex items-center justify-between text-xs text-ui/80">
                 <span>Bloque {indiceActual + 1}/{listaEjecucion.length}</span>
                 <span>{completados.size} ✓ • {omitidos.size} omitidos</span>
               </div>
@@ -984,7 +984,7 @@ function HoyPageContent() {
                 />
               </div>
 
-              <p className="text-center text-xs text-muted">
+              <p className="text-center text-xs text-ui/80">
                 Espacio: ⏯ • Enter: ✓ • N: omitir • P: ← • Esc: cancelar • Ctrl/Cmd+M: menú
               </p>
             </div>
@@ -1052,15 +1052,15 @@ function HoyPageContent() {
                   <button
                     key={idx}
                     onClick={() => navegarA(idx)}
-                    className={`w-full text-left p-3 rounded-lg border transition-all min-h-[52px] focus-brand ${
-                      idx === indiceActual
-                        ? 'bg-brand-500 text-white border-brand-500 shadow-sm'
-                        : completados.has(idx)
-                        ? 'bg-green-50 border-green-200'
-                        : omitidos.has(idx)
-                        ? 'bg-muted border-border'
-                        : 'hover:bg-muted border-border'
-                    }`}
+                        className={`w-full text-left p-3 rounded-lg border transition-all min-h-[52px] focus-brand ${
+                          idx === indiceActual
+                            ? 'bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border-[var(--color-primary)] shadow-sm'
+                            : completados.has(idx)
+                            ? 'bg-green-50 border-green-200'
+                            : omitidos.has(idx)
+                            ? 'bg-amber-50 border-amber-200'
+                            : 'bg-[var(--color-surface)] border-[var(--color-border-strong)] hover:bg-[var(--color-surface-muted)]'
+                        }`}
                     aria-label={`Ir a ejercicio ${idx + 1}: ${ej.nombre}`}
                   >
                     <div className="flex items-center gap-2">
@@ -1068,7 +1068,7 @@ function HoyPageContent() {
                       <Badge variant="outline" className={`${tipoColors[ej.tipo]} text-xs border`}>
                         {ej.tipo}
                       </Badge>
-                      <span className="flex-1 text-sm font-medium truncate">{ej.nombre}</span>
+                          <span className="flex-1 text-sm font-medium truncate text-ui">{ej.nombre}</span>
                       {completados.has(idx) && <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />}
                       {omitidos.has(idx) && <XCircle className="w-4 h-4 text-muted-foreground shrink-0" />}
                     </div>

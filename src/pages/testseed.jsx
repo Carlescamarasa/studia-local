@@ -845,7 +845,7 @@ export default function TestSeedPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm text-muted">
+              <p className="text-sm text-ui/80">
                 Genera datos de prueba realistas para todos los estudiantes existentes.
               </p>
               <Alert className="rounded-xl border-blue-200 bg-blue-50">
@@ -859,7 +859,7 @@ export default function TestSeedPage() {
                   variant="primary"
                   onClick={() => generarSemillasRealistas(1)}
                   disabled={isSeeding}
-                  className="w-full h-10 rounded-xl focus-brand"
+                  className="w-full btn-primary"
                   aria-label="Generar 1 semana de semillas realistas"
                 >
                   {isSeeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Zap className="w-4 h-4 mr-2" />}
@@ -869,7 +869,7 @@ export default function TestSeedPage() {
                   variant="primary"
                   onClick={() => generarSemillasRealistas(3)}
                   disabled={isSeeding}
-                  className="w-full h-10 rounded-xl shadow-sm focus-brand"
+                  className="w-full btn-primary"
                   aria-label="Generar 3 semanas de semillas realistas"
                 >
                   {isSeeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sprout className="w-4 h-4 mr-2" />}
@@ -879,7 +879,7 @@ export default function TestSeedPage() {
                   variant="outline"
                   onClick={refrescarTodo}
                   disabled={isRefreshing || isSeeding}
-                  className="w-full h-10 rounded-xl focus-brand"
+                  className="w-full btn-outline"
                   aria-label="Actualizar datos y ejecutar pruebas"
                 >
                   {isRefreshing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
@@ -897,14 +897,14 @@ export default function TestSeedPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted mb-4">
+              <p className="text-sm text-ui/80 mb-4">
                 ⚠️ Elimina todas las semillas de prueba (asignaciones, registros, feedbacks, plantillas seed).
               </p>
               <Button
                 variant="danger"
                 onClick={borrarSemillas}
                 disabled={isSeeding}
-                className="w-full h-10 rounded-xl focus-brand"
+                className="w-full btn-danger"
                 aria-label="Borrar todas las semillas de prueba"
               >
                 {isSeeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
@@ -932,7 +932,7 @@ export default function TestSeedPage() {
                 onClick={ejecutarPruebas}
                 disabled={isSeeding}
                 size="sm"
-                className="h-9 rounded-xl shadow-sm focus-brand"
+                className="btn-primary"
                 aria-label="Ejecutar pruebas"
               >
                 {isSeeding ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ejecutar'}
@@ -986,7 +986,7 @@ export default function TestSeedPage() {
                 variant="primary"
                 onClick={auditarEnlaces}
                 disabled={isSeeding}
-                className="h-9 rounded-xl shadow-sm focus-brand"
+                className="btn-primary"
                 aria-label="Auditar enlaces"
               >
                 {isSeeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
@@ -996,7 +996,7 @@ export default function TestSeedPage() {
           </CardHeader>
           <CardContent>
             {!linkAudit ? (
-              <div className="text-center py-8 text-muted">
+              <div className="text-center py-8 text-ui/80">
                 <LinkIcon className="w-12 h-12 mx-auto mb-3 icon-empty" />
                 <p>Ejecuta la auditoría</p>
               </div>
@@ -1062,7 +1062,7 @@ export default function TestSeedPage() {
                 onChange={(e) => setAuditSpec(e.target.value)}
                 placeholder="pattern: toISOString\s*\(&#10;include: /src/**/*.{js,jsx}&#10;exclude: **/node_modules/**"
                 rows={6}
-                className="font-mono text-xs rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                className="font-mono text-xs ctrl-field"
                 aria-label="Especificación de auditoría"
               />
             </div>
@@ -1076,7 +1076,7 @@ export default function TestSeedPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => cargarPerfil(key)}
-                    className="text-xs h-8 rounded-xl"
+                    className="text-xs btn-outline"
                     aria-label={`Cargar perfil ${profile.name}`}
                   >
                     {profile.name}
@@ -1090,7 +1090,7 @@ export default function TestSeedPage() {
                 variant="primary"
                 onClick={ejecutarAuditoria}
                 disabled={isAuditing}
-                className="h-10 rounded-xl shadow-sm focus-brand"
+                className="btn-primary"
                 aria-label="Ejecutar auditoría"
               >
                 {isAuditing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Search className="w-4 h-4 mr-2" />}
@@ -1100,7 +1100,7 @@ export default function TestSeedPage() {
                 onClick={refrescarAuditoria}
                 disabled={!lastAuditSpec || isAuditing}
                 variant="outline"
-                className="h-10 rounded-xl"
+                className="btn-outline"
                 aria-label="Refrescar auditoría"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -1110,7 +1110,7 @@ export default function TestSeedPage() {
                 <Button
                   onClick={exportarAuditoriaCSV}
                   variant="outline"
-                  className="h-10 rounded-xl"
+                  className="btn-outline"
                   aria-label="Exportar resultados a CSV"
                 >
                   <FileDown className="w-4 h-4 mr-2" />
@@ -1238,7 +1238,7 @@ export default function TestSeedPage() {
           </CardHeader>
           <CardContent>
             {seedLogs.length === 0 ? (
-              <div className="text-center py-8 text-muted">
+              <div className="text-center py-8 text-ui/80">
                 <p>No hay logs aún</p>
               </div>
             ) : (
@@ -1276,7 +1276,7 @@ export default function TestSeedPage() {
             <CardContent className="pt-4 text-center">
               <Music className="w-6 h-6 mx-auto mb-2 text-pink-600" />
               <p className="text-2xl font-bold text-ui">{countPiezas}</p>
-              <p className="text-xs text-muted">Piezas</p>
+              <p className="text-xs text-ui/80">Piezas</p>
             </CardContent>
           </Card>
 
@@ -1284,7 +1284,7 @@ export default function TestSeedPage() {
             <CardContent className="pt-4 text-center">
               <Calendar className="w-6 h-6 mx-auto mb-2 text-blue-600" />
               <p className="text-2xl font-bold text-ui">{countPlanes}</p>
-              <p className="text-xs text-muted">Planes</p>
+              <p className="text-xs text-ui/80">Planes</p>
             </CardContent>
           </Card>
 
@@ -1292,7 +1292,7 @@ export default function TestSeedPage() {
             <CardContent className="pt-4 text-center">
               <Layers className="w-6 h-6 mx-auto mb-2 text-purple-600" />
               <p className="text-2xl font-bold text-ui">{countBloques}</p>
-              <p className="text-xs text-muted">Ejercicios</p>
+              <p className="text-xs text-ui/80">Ejercicios</p>
             </CardContent>
           </Card>
 
@@ -1300,7 +1300,7 @@ export default function TestSeedPage() {
             <CardContent className="pt-4 text-center">
               <Target className="w-6 h-6 mx-auto mb-2 text-brand-600" />
               <p className="text-2xl font-bold text-ui">{countAsignaciones}</p>
-              <p className="text-xs text-muted">Asignaciones</p>
+              <p className="text-xs text-ui/80">Asignaciones</p>
             </CardContent>
           </Card>
         </div>
