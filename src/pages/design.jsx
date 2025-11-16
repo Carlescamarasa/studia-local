@@ -319,6 +319,7 @@ function DesignPageContent({ embedded = false }) {
       />
 
       <div className="max-w-5xl mx-auto p-6 space-y-6">
+        {/* Selector de tema movido al sidebar (Layout) */}
         <Card className="app-card border-[var(--color-border-default)] bg-[var(--color-primary-soft)]">
           <CardContent className="pt-4 text-ui">
             <div className="flex items-start gap-3">

@@ -3,6 +3,15 @@
  * No aplica lógica; sólo define combinaciones de clases/tokens reutilizables.
  * Los componentes se irán migrando progresivamente a usar estas claves.
  */
+// Base strings para compactar variantes de card/panel
+const CARD_BASE = "rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] shadow-sm";
+const CARD_ELEVATED = "rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-card)]";
+const PANEL_BASE = "rounded-xl border border-[var(--color-border-muted)] bg-[var(--color-surface)]";
+const CARD_TONE_PRIMARY = "rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm";
+const CARD_TONE_ACCENT = "rounded-xl border-2 border-[var(--color-accent)] bg-[var(--color-surface)] shadow-sm";
+const CARD_TONE_SECONDARY = "rounded-xl border-2 border-[var(--color-secondary)] bg-[var(--color-surface)] shadow-sm";
+const PANEL_SESSION = "rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-muted)] hover:shadow-md transition-all";
+
 export const componentStyles = {
   layout: {
     appBackground: "bg-background text-foreground",
@@ -38,25 +47,24 @@ export const componentStyles = {
     selectDefault: "ctrl-field",
 
     // Cards y paneles (más contraste frente al fondo)
-    cardBase:
-      "rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] shadow-sm",
-    cardElevated:
-      "rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-card)]",
+    cardBase: CARD_BASE,
+    cardElevated: CARD_ELEVATED,
     // KPIs: borde y fondo ligados al color primario para destacar
     cardKpi:
       "rounded-xl border border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm hover:shadow-md transition-shadow",
     // Paneles neutros (filtros, contenedores secundarios)
-    panelBase:
-      "rounded-xl border border-[var(--color-border-muted)] bg-[var(--color-surface)]",
+    panelBase: PANEL_BASE,
     // TODO(FASE1-DS4): Duplicidad de patrones: `rounded-xl border bg-*` repetido en cardBase/cardElevated/panelBase/cardStudent.
     // Candidato a factorizar como `cardBase` + variaciones de background/border/shadow para reducir repetición (compactación).
 
     // Variantes por tipo de entidad (Agenda)
-    cardStudent: "rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] shadow-sm",
-    cardAsignacion: "rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm",
-    cardPlan: "rounded-xl border-2 border-[var(--color-accent)] bg-[var(--color-surface)] shadow-sm",
-    cardSemana: "rounded-xl border-2 border-[var(--color-secondary)] bg-[var(--color-surface)] shadow-sm",
-    panelSesion: "rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-muted)] hover:shadow-md transition-all",
+    // Compactación: misma base que cardBase
+    cardStudent: CARD_BASE,
+    // Variantes tonales unificadas (aliases de compatibilidad)
+    cardAsignacion: CARD_TONE_PRIMARY,
+    cardPlan: CARD_TONE_ACCENT,
+    cardSemana: CARD_TONE_SECONDARY,
+    panelSesion: PANEL_SESSION,
     // TODO(FASE1-DS4): `cardStudent` ≈ `cardBase`; `cardAsignacion/Plan/Semana` podrían ser (cardBase + tone/border var).
     // `panelSesion` quizá deba ser (panelBase + surface-muted + hover-shadow) para maximizar reutilización.
 
@@ -69,7 +77,7 @@ export const componentStyles = {
     menuSectionTitle:
       "text-xs uppercase tracking-wide text-ui/70 font-semibold px-2.5 py-2",
     menuItem:
-      "flex items-center gap-2 px-2.5 py-2 rounded-lg text-ui/90 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+      "flex items-center gap-2 px-2.5 py-2 rounded-lg text-ui/90 hover:bg-[var(--color-surface-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
     menuItemActive:
       "bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border border-[var(--color-primary)] shadow-sm",
     // TODO(FASE1-DS4): `menuItem` usa `hover:bg-muted`; considerar reemplazo por `--color-surface-muted` para coherencia con resto del sistema.
@@ -95,9 +103,9 @@ export const componentStyles = {
 
     // Tabs - variantes estandarizadas
     tabsSegmentedContainer:
-      "inline-flex items-center gap-1 rounded-full bg-muted p-1 shadow-sm",
+      "inline-flex items-center gap-1 rounded-full bg-[var(--color-surface-muted)] p-1 shadow-sm",
     tabsSegmentedButton:
-      "px-3 py-1.5 text-xs sm:text-sm rounded-full transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] text-ui/80 hover:bg-muted",
+      "px-3 py-1.5 text-xs sm:text-sm rounded-full transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] text-ui/80 hover:bg-[var(--color-surface-muted)]",
     tabsSegmentedButtonActive:
       "bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border border-[var(--color-primary)] shadow-sm",
 

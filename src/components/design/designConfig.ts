@@ -484,13 +484,16 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
       if (controlsRadius) {
         vars['--radius-ctrl'] = getRadiusValue(controlsRadius as RadiusValue);
       }
+      const cardRadius = (normalized.layout.radius as any).card;
+      if (cardRadius) {
+        // Alinear nombre consumido por CSS global
+        vars['--radius-card'] = getRadiusValue(cardRadius as RadiusValue);
+      }
     } catch (_e) {
       // no-op
     }
-    // TODO(auditoría-DS3): Alias de compatibilidad con CSS global:
-    // - En `index.css` y componentes se usa `--radius-ctrl`, pero aquí generamos `--radius-controls`.
-    //   Marcar para emitir alias `--radius-ctrl` = `--radius-controls` durante la fase de limpieza (FASE 3).
-    //   No cambiamos comportamiento ahora para evitar side-effects.
+    // Alias de compatibilidad con CSS global aplicado en FASE 3:
+    // - Se emite `--radius-ctrl` y `--radius-card` desde layout.radius
   }
   
   // Shadows
@@ -543,8 +546,8 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
       vars['--card-padding-header'] = normalized.components.card.padding?.header || DEFAULT_DESIGN.components.card.padding.header;
       vars['--card-padding-content'] = normalized.components.card.padding?.content || DEFAULT_DESIGN.components.card.padding.content;
       vars['--card-radius'] = getRadiusValue(normalized.components.card.radius || DEFAULT_DESIGN.components.card.radius);
-      // TODO(auditoría-DS3): Alias de compatibilidad: `--radius-card` es el nombre consumido por estilos globales.
-      // Actualmente generamos `--card-radius` (y `--radius-card` proviene del bloque radius). Mantener una sola fuente en FASE 3.
+      // Asegurar alias consistente con consumo en CSS global
+      vars['--radius-card'] = vars['--radius-card'] || vars['--card-radius'];
     }
     if (normalized.components.sidebar) {
       vars['--sidebar-width'] = normalized.components.sidebar.width || DEFAULT_DESIGN.components.sidebar.width;

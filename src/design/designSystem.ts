@@ -14,13 +14,14 @@ export const designSystem = {
 
     background: "var(--color-background)",
     surface: "var(--color-surface)",
+    surfaceElevated: "var(--color-surface-elevated)",
     surfaceMuted: "var(--color-surface-muted)",
 
     // Texto
     textPrimary: "var(--color-text-primary)",
     textSecondary: "var(--color-text-secondary)",
     textMuted: "var(--color-text-muted)",
-    // TODO(FASE1-DS4): Falta mapeo explícito para `textInverse` si lo usamos en botones (btn-primary). (A: esencial)
+    textInverse: "var(--color-text-inverse)",
     // Candidatos (B/C):
     // - textMuted (B: podría ser derivado/opacidad de textSecondary si deseamos compactar)
 
@@ -28,7 +29,8 @@ export const designSystem = {
     success: "var(--color-success)",
     warning: "var(--color-warning)",
     danger: "var(--color-danger)",
-    // TODO(FASE1-DS4): Evaluar si 'info' y 'accent' deberían existir aquí para alineación 1:1 con DEFAULT_DESIGN. (A: esenciales si se usan en badges y acentos)
+    info: "var(--color-info)",
+    accent: "var(--color-accent)",
 
     // Bordes y anillos
     border: "var(--color-border-default)",
