@@ -45,21 +45,21 @@ export default function TestSeedPage() {
   const [activeTab, setActiveTab] = useState('seeds');
 
   const tipoColors = {
-    CA: 'bg-brand-100 text-brand-800 border-brand-200',
-    CB: 'bg-blue-100 text-blue-800 border-blue-200',
-    TC: 'bg-purple-100 text-purple-800 border-purple-200',
-    TM: 'bg-green-100 text-green-800 border-green-200',
-    FM: 'bg-pink-100 text-pink-800 border-pink-200',
-    VC: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-    AD: 'bg-gray-100 text-gray-800 border-gray-200',
+    CA: componentStyles.status.badgeDefault, // brand -> default
+    CB: componentStyles.status.badgeInfo,
+    TC: componentStyles.status.badgeDefault, // purple -> default
+    TM: componentStyles.status.badgeSuccess,
+    FM: componentStyles.status.badgeDefault, // pink -> default
+    VC: componentStyles.status.badgeInfo, // cyan -> info
+    AD: componentStyles.status.badgeDefault,
   };
 
   const focoColors = {
-    GEN: 'bg-gray-100 text-gray-800',
-    LIG: 'bg-blue-100 text-blue-800',
-    RIT: 'bg-purple-100 text-purple-800',
-    ART: 'bg-green-100 text-green-800',
-    'S&A': 'bg-brand-100 text-brand-800',
+    GEN: componentStyles.status.badgeDefault,
+    LIG: componentStyles.status.badgeInfo,
+    RIT: componentStyles.status.badgeDefault, // purple -> default
+    ART: componentStyles.status.badgeSuccess,
+    'S&A': componentStyles.status.badgeDefault, // brand -> default
   };
 
   const currentUser = getCurrentUser();
@@ -838,20 +838,20 @@ export default function TestSeedPage() {
       icon: Database,
       content: (
         <div className="space-y-4">
-          <Card className="app-card">
+          <Card className={componentStyles.containers.cardBase}>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Sprout className="w-5 h-5 text-green-600" />
+              <CardTitle className={`${componentStyles.typography.cardTitle} flex items-center gap-2`}>
+                <Sprout className="w-5 h-5 text-[var(--color-success)]" />
                 Semillas Realistas
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm text-muted">
+              <p className={componentStyles.typography.bodyText}>
                 Genera datos de prueba realistas para todos los estudiantes existentes.
               </p>
-              <Alert className="rounded-xl border-blue-200 bg-blue-50">
-                <AlertTriangle className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-xs text-blue-900">
+              <Alert className={`rounded-xl ${componentStyles.containers.panelBase} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
+                <AlertTriangle className="h-4 w-4 text-[var(--color-info)]" />
+                <AlertDescription className={`${componentStyles.typography.smallMetaText} text-[var(--color-info)]`}>
                   <strong>Importante:</strong> Usa estudiantes existentes. Crea usuarios con rol ESTU antes de semillar.
                 </AlertDescription>
               </Alert>
@@ -860,7 +860,7 @@ export default function TestSeedPage() {
                   variant="primary"
                   onClick={() => generarSemillasRealistas(1)}
                   disabled={isSeeding}
-                  className="w-full h-10 rounded-xl focus-brand"
+                  className={`w-full ${componentStyles.buttons.primary} focus-brand`}
                   aria-label="Generar 1 semana de semillas realistas"
                 >
                   {isSeeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Zap className="w-4 h-4 mr-2" />}
@@ -870,7 +870,7 @@ export default function TestSeedPage() {
                   variant="primary"
                   onClick={() => generarSemillasRealistas(3)}
                   disabled={isSeeding}
-                  className="w-full h-10 rounded-xl shadow-sm focus-brand"
+                  className={`w-full ${componentStyles.buttons.primary} shadow-sm focus-brand`}
                   aria-label="Generar 3 semanas de semillas realistas"
                 >
                   {isSeeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sprout className="w-4 h-4 mr-2" />}
@@ -880,7 +880,7 @@ export default function TestSeedPage() {
                   variant="outline"
                   onClick={refrescarTodo}
                   disabled={isRefreshing || isSeeding}
-                  className="w-full h-10 rounded-xl focus-brand"
+                  className={`w-full ${componentStyles.buttons.outline} focus-brand`}
                   aria-label="Actualizar datos y ejecutar pruebas"
                 >
                   {isRefreshing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
@@ -890,22 +890,22 @@ export default function TestSeedPage() {
             </CardContent>
           </Card>
 
-          <Card className="app-card">
+          <Card className={componentStyles.containers.cardBase}>
             <CardHeader>
-              <CardTitle className="text-red-700 flex items-center gap-2">
+              <CardTitle className={`${componentStyles.typography.cardTitle} text-[var(--color-danger)] flex items-center gap-2`}>
                 <Trash2 className="w-5 h-5" />
                 Limpiar Datos
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted mb-4">
+              <p className={`${componentStyles.typography.bodyText} mb-4`}>
                 ⚠️ Elimina todas las semillas de prueba (asignaciones, registros, feedbacks, plantillas seed).
               </p>
               <Button
                 variant="danger"
                 onClick={borrarSemillas}
                 disabled={isSeeding}
-                className="w-full h-10 rounded-xl focus-brand"
+                className={`w-full ${componentStyles.buttons.danger} focus-brand`}
                 aria-label="Borrar todas las semillas de prueba"
               >
                 {isSeeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
@@ -921,11 +921,11 @@ export default function TestSeedPage() {
       label: 'Tests',
       icon: PlayCircle,
       content: (
-        <Card className="app-card">
+        <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-brand-600" />
+              <CardTitle className={`${componentStyles.typography.cardTitle} flex items-center gap-2`}>
+                <CheckCircle2 className="w-5 h-5 text-[var(--color-primary)]" />
                 Pruebas Automáticas
               </CardTitle>
               <Button
@@ -933,7 +933,7 @@ export default function TestSeedPage() {
                 onClick={ejecutarPruebas}
                 disabled={isSeeding}
                 size="sm"
-                className="h-9 rounded-xl shadow-sm focus-brand"
+                className={`${componentStyles.buttons.primary} shadow-sm focus-brand`}
                 aria-label="Ejecutar pruebas"
               >
                 {isSeeding ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ejecutar'}
@@ -942,26 +942,26 @@ export default function TestSeedPage() {
           </CardHeader>
           <CardContent>
             {testResults.length === 0 ? (
-              <div className="text-center py-8 text-muted">
-                <AlertCircle className="w-12 h-12 mx-auto mb-3 icon-empty" />
+              <div className={`text-center py-8 ${componentStyles.empty.emptyText}`}>
+                <AlertCircle className={`w-12 h-12 mx-auto mb-3 ${componentStyles.empty.emptyIcon}`} />
                 <p>Ejecuta las pruebas</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {testResults.map((test, idx) => (
-                  <div key={idx} className={`flex items-start gap-3 p-3 rounded-xl border ${test.passed ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                  <div key={idx} className={`flex items-start gap-3 p-3 rounded-xl border ${test.passed ? `bg-[var(--color-success)]/10 border-[var(--color-success)]` : `bg-[var(--color-danger)]/10 border-[var(--color-danger)]`}`}>
                     {test.passed ?
-                      <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" /> :
-                      <XCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-5 h-5 text-[var(--color-success)] shrink-0 mt-0.5" /> :
+                      <XCircle className="w-5 h-5 text-[var(--color-danger)] shrink-0 mt-0.5" />
                     }
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-ui">{test.name}</p>
-                      <p className="text-xs text-muted">{test.detail}</p>
+                      <p className={`${componentStyles.typography.cardTitle} font-semibold`}>{test.name}</p>
+                      <p className={componentStyles.typography.smallMetaText}>{test.detail}</p>
                     </div>
                   </div>
                 ))}
-                <div className="pt-3 border-t border-ui">
-                  <Badge className={`rounded-full ${testResults.every(t => t.passed) ? 'bg-green-600 text-white' : 'bg-amber-600 text-white'}`}>
+                <div className="pt-3 border-t border-[var(--color-border-default)]">
+                  <Badge className={testResults.every(t => t.passed) ? componentStyles.status.badgeSuccess : componentStyles.status.badgeWarning}>
                     {testResults.filter(t => t.passed).length}/{testResults.length} exitosas
                   </Badge>
                 </div>
@@ -976,18 +976,18 @@ export default function TestSeedPage() {
       label: 'Links',
       icon: Link2,
       content: (
-        <Card className="app-card">
+        <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <LinkIcon className="w-5 h-5 text-brand-600" />
+              <CardTitle className={`${componentStyles.typography.cardTitle} flex items-center gap-2`}>
+                <LinkIcon className="w-5 h-5 text-[var(--color-primary)]" />
                 Auditoría de Enlaces
               </CardTitle>
               <Button
                 variant="primary"
                 onClick={auditarEnlaces}
                 disabled={isSeeding}
-                className="h-9 rounded-xl shadow-sm focus-brand"
+                className={`${componentStyles.buttons.primary} shadow-sm focus-brand`}
                 aria-label="Auditar enlaces"
               >
                 {isSeeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
@@ -1019,13 +1019,13 @@ export default function TestSeedPage() {
                       </div>
                       {data.orphans.length > 0 && (
                         <div className="pt-2 border-t border-ui">
-                          <p className="text-sm font-semibold text-amber-700 flex items-center gap-2">
+                          <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-warning)] flex items-center gap-2`}>
                             <AlertTriangle className="w-4 h-4" />
                             Páginas huérfanas:
                           </p>
                           <div className="flex flex-wrap gap-2 mt-1">
                             {data.orphans.map(url => (
-                              <Badge key={url} className="bg-amber-100 text-amber-800 text-xs rounded-full">
+                              <Badge key={url} className={componentStyles.status.badgeWarning}>
                                 {url}
                               </Badge>
                             ))}
@@ -1046,16 +1046,16 @@ export default function TestSeedPage() {
       label: 'Audit',
       icon: Search,
       content: (
-        <Card className="app-card">
+        <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileSearch className="w-5 h-5 text-brand-600" />
+            <CardTitle className={`${componentStyles.typography.cardTitle} flex items-center gap-2`}>
+              <FileSearch className="w-5 h-5 text-[var(--color-primary)]" />
               Auditoría Personalizada
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-2 block text-ui">
+              <label className={`${componentStyles.typography.sectionTitle} mb-2 block`}>
                 Especificación de auditoría (DSL)
               </label>
               <Textarea
@@ -1063,13 +1063,13 @@ export default function TestSeedPage() {
                 onChange={(e) => setAuditSpec(e.target.value)}
                 placeholder="pattern: toISOString\s*\(&#10;include: /src/**/*.{js,jsx}&#10;exclude: **/node_modules/**"
                 rows={6}
-                className="font-mono text-xs rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                className={`font-mono ${componentStyles.controls.inputDefault} focus-brand`}
                 aria-label="Especificación de auditoría"
               />
             </div>
 
             <div>
-              <p className="text-sm font-medium mb-2 text-ui">Perfiles rápidos:</p>
+              <p className={`${componentStyles.typography.sectionTitle} mb-2`}>Perfiles rápidos:</p>
               <div className="flex flex-wrap gap-2">
                 {Object.entries(QUICK_PROFILES).map(([key, profile]) => (
                   <Button
@@ -1077,7 +1077,7 @@ export default function TestSeedPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => cargarPerfil(key)}
-                    className="text-xs h-8 rounded-xl"
+                    className={`${componentStyles.buttons.outline} text-xs h-8`}
                     aria-label={`Cargar perfil ${profile.name}`}
                   >
                     {profile.name}
@@ -1091,7 +1091,7 @@ export default function TestSeedPage() {
                 variant="primary"
                 onClick={ejecutarAuditoria}
                 disabled={isAuditing}
-                className="h-10 rounded-xl shadow-sm focus-brand"
+                className={`${componentStyles.buttons.primary} shadow-sm focus-brand`}
                 aria-label="Ejecutar auditoría"
               >
                 {isAuditing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Search className="w-4 h-4 mr-2" />}
@@ -1101,7 +1101,7 @@ export default function TestSeedPage() {
                 onClick={refrescarAuditoria}
                 disabled={!lastAuditSpec || isAuditing}
                 variant="outline"
-                className="h-10 rounded-xl"
+                className={componentStyles.buttons.outline}
                 aria-label="Refrescar auditoría"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -1111,7 +1111,7 @@ export default function TestSeedPage() {
                 <Button
                   onClick={exportarAuditoriaCSV}
                   variant="outline"
-                  className="h-10 rounded-xl"
+                  className={componentStyles.buttons.outline}
                   aria-label="Exportar resultados a CSV"
                 >
                   <FileDown className="w-4 h-4 mr-2" />
@@ -1136,9 +1136,9 @@ export default function TestSeedPage() {
                 </div>
 
                 {auditResults.reason && (
-                  <Alert className="mt-3 rounded-xl border-amber-200 bg-amber-50">
-                    <AlertTriangle className="h-4 w-4 text-amber-700" />
-                    <AlertDescription className="text-amber-800 text-sm">
+                  <Alert className={`mt-3 rounded-xl ${componentStyles.containers.panelBase} border-[var(--color-warning)] bg-[var(--color-warning)]/10`}>
+                    <AlertTriangle className="h-4 w-4 text-[var(--color-warning)]" />
+                    <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-warning)]`}>
                       <strong>{auditResults.reason}</strong>
                       <details className="mt-2 text-xs">
                         <summary className="cursor-pointer">Ver configuración aplicada</summary>
@@ -1156,9 +1156,9 @@ export default function TestSeedPage() {
                   <div className="mt-4 space-y-2">
                     <p className="text-sm font-semibold text-ui">Resultados por archivo:</p>
                     {auditResults.perFile.map((file, idx) => (
-                      <Card key={idx} className="app-panel">
+                      <Card key={idx} className={componentStyles.containers.panelBase}>
                         <CardHeader
-                          className="cursor-pointer hover:bg-muted py-3 rounded-t-xl"
+                          className="cursor-pointer hover:bg-[var(--color-surface-muted)] py-3 rounded-t-xl"
                           onClick={() => toggleFileExpanded(file.path)}
                         >
                           <div className="flex items-center justify-between">
@@ -1168,9 +1168,9 @@ export default function TestSeedPage() {
                               ) : (
                                 <ChevronRight className="w-4 h-4 text-ui" />
                               )}
-                              <span className="font-mono text-sm text-brand-600 break-all">{file.path}</span>
+                              <span className={`font-mono ${componentStyles.typography.bodyText} text-[var(--color-primary)] break-all`}>{file.path}</span>
                             </div>
-                            <Badge variant="outline" className="bg-amber-50 text-amber-800 shrink-0 ml-2 rounded-full">
+                            <Badge variant="outline" className={componentStyles.status.badgeWarning}>
                               {file.matches.length}
                             </Badge>
                           </div>
@@ -1190,7 +1190,7 @@ export default function TestSeedPage() {
                                     )}
                                     <div>
                                       {match.context.current.substring(0, match.start)}
-                                      <mark className="bg-yellow-200 font-semibold">
+                                      <mark className={`bg-[var(--color-warning)]/30 font-semibold`}>
                                         {match.context.current.substring(match.start, match.end)}
                                       </mark>
                                       {match.context.current.substring(match.end)}
@@ -1219,18 +1219,18 @@ export default function TestSeedPage() {
       label: 'Logs',
       icon: ScrollText,
       content: (
-        <Card className="app-card">
+        <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <ClipboardList className="w-5 h-5 text-brand-600" />
+              <CardTitle className={`${componentStyles.typography.cardTitle} flex items-center gap-2`}>
+                <ClipboardList className="w-5 h-5 text-[var(--color-primary)]" />
                 Logs
               </CardTitle>
               <Button
                 onClick={clearLogs}
                 variant="outline"
                 size="sm"
-                className="h-9 rounded-xl"
+                className={componentStyles.buttons.outline}
                 aria-label="Limpiar logs"
               >
                 Limpiar
@@ -1239,19 +1239,19 @@ export default function TestSeedPage() {
           </CardHeader>
           <CardContent>
             {seedLogs.length === 0 ? (
-              <div className="text-center py-8 text-muted">
+              <div className={`text-center py-8 ${componentStyles.empty.emptyText}`}>
                 <p>No hay logs aún</p>
               </div>
             ) : (
               <div className="space-y-1 max-h-96 overflow-y-auto">
                 {seedLogs.map((log, idx) => (
-                  <div key={idx} className={`text-sm font-mono p-2 rounded-xl ${
-                    log.type === 'success' ? 'bg-green-50 text-green-800' :
-                    log.type === 'error' ? 'bg-red-50 text-red-800' :
-                    log.type === 'warning' ? 'bg-amber-50 text-amber-800' :
-                    'bg-muted text-ui'
+                  <div key={idx} className={`${componentStyles.typography.bodyText} font-mono p-2 rounded-xl ${
+                    log.type === 'success' ? `bg-[var(--color-success)]/10 text-[var(--color-success)]` :
+                    log.type === 'error' ? `bg-[var(--color-danger)]/10 text-[var(--color-danger)]` :
+                    log.type === 'warning' ? `bg-[var(--color-warning)]/10 text-[var(--color-warning)]` :
+                    `bg-[var(--color-surface-muted)] text-ui`
                   }`}>
-                    <span className="text-muted mr-2">[{log.timestamp}]</span>
+                    <span className={componentStyles.typography.smallMetaText}>{`[${log.timestamp}]`}</span>
                     {log.message}
                   </div>
                 ))}
