@@ -1,4 +1,6 @@
 import React from "react";
+import { cn } from "@/lib/utils";
+import { componentStyles } from "@/design/componentStyles";
 
 /**
  * Tabs - Componente de pestañas del Design System
@@ -18,7 +20,7 @@ export default function Tabs({
     return (
       <div className="space-y-6">
         <div 
-          className={`segmented-tabs ${className}`}
+          className={cn(componentStyles.components.tabsSegmentedContainer, className)}
           role="tablist"
           aria-label="Pestañas de navegación"
         >
@@ -29,7 +31,10 @@ export default function Tabs({
               <button
                 key={item.value}
                 onClick={() => onChange(item.value)}
-                className={`segmented-btn ${isActive ? 'segmented-btn-active' : ''}`}
+                className={cn(
+                  componentStyles.components.tabsSegmentedButton,
+                  isActive && componentStyles.components.tabsSegmentedButtonActive
+                )}
                 role="tab"
                 aria-selected={isActive}
                 aria-current={isActive ? "true" : undefined}
@@ -55,7 +60,7 @@ export default function Tabs({
   return (
     <div className="space-y-6">
       <div 
-        className={`tabs-underline ${className}`}
+        className={cn(componentStyles.components.tabsUnderlineContainer, className)}
         role="tablist"
         aria-label="Pestañas de navegación"
       >
@@ -66,7 +71,10 @@ export default function Tabs({
             <button
               key={item.value}
               onClick={() => onChange(item.value)}
-              className={`tab-underline ${isActive ? 'tab-underline-active' : ''}`}
+              className={cn(
+                componentStyles.components.tabsUnderlineButton,
+                isActive && componentStyles.components.tabsUnderlineButtonActive
+              )}
               role="tab"
               aria-selected={isActive}
               aria-current={isActive ? "true" : undefined}

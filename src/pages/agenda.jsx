@@ -24,6 +24,8 @@ import MediaPreviewModal from "../components/common/MediaPreviewModal";
 import RequireRole from "@/components/auth/RequireRole";
 import SessionContentView from "../components/study/SessionContentView";
 import { calcularTiempoSesion } from "../components/study/sessionSequence";
+import { componentStyles } from "@/design/componentStyles";
+import PageHeader from "@/components/ds/PageHeader";
 
 const pad2 = (n) => String(n).padStart(2, "0");
 const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
@@ -242,27 +244,20 @@ function AgendaPageContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header unificado */}
-      <div className="bg-card border-b border-ui sticky top-0 z-10 shadow-card">
-        <div className="max-w-7xl mx-auto px-6 md:px-8 py-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="icon-tile">
-              <Calendar className="w-6 h-6" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-3xl font-bold text-ui">Agenda Semanal</h1>
-              <p className="text-sm text-muted hidden md:block">Vista por estudiante y semana</p>
-            </div>
-          </div>
-
+      {/* Header de página unificado */}
+      <PageHeader
+        icon={Calendar}
+        title="Agenda Semanal"
+        subtitle="Vista por estudiante y semana"
+        filters={
           <WeekNavigator 
             mondayISO={semanaActualISO}
             onPrev={() => cambiarSemana(-1)}
             onNext={() => cambiarSemana(1)}
             onToday={irSemanaActual}
           />
-        </div>
-      </div>
+        }
+      />
 
       <div className="max-w-7xl mx-auto p-4 md:p-6 lg:px-8 space-y-4">
         {/* Búsqueda */}
@@ -273,7 +268,7 @@ function AgendaPageContent() {
             placeholder="Buscar estudiante... (Ctrl/⌘+K)"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 pr-9 h-10 rounded-xl border-ui focus-brand"
+            className="w-full pl-9 pr-9 h-10 bg-transparent rounded-none border-0 border-b-2 border-[var(--color-border-strong)] text-ui placeholder:text-ui/60 focus:outline-none focus:ring-0 focus:border-[hsl(var(--ring))]"
           />
           {searchTerm && (
             <button
@@ -316,8 +311,16 @@ function AgendaPageContent() {
               const semana = asignacionActiva?.plan?.semanas?.[semanaIdx];
 
               return (
-                <Card key={alumno.id} className="app-card hover:shadow-md transition-shadow">
-                  <CardHeader>
+                <Card
+                  key={alumno.id}
+                  className={
+                    (asignacionActiva
+                      ? componentStyles.components.cardAsignacion
+                      : componentStyles.components.cardStudent)
+                    + " transition-shadow"
+                  }
+                >
+                  <CardHeader className="p-4 pb-2">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3 min-w-0 flex-1">
                         <div className="w-10 h-10 bg-gradient-to-br from-muted to-muted-foreground/20 rounded-full flex items-center justify-center shrink-0">
@@ -327,7 +330,7 @@ function AgendaPageContent() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <CardTitle className="text-lg break-words">{displayName(alumno)}</CardTitle>
-                          <p className="text-sm text-muted break-all">{alumno.email}</p>
+                          <p className="text-sm text-ui/90 break-all">{alumno.email}</p>
                         </div>
                       </div>
                       {asignacionActiva && (
@@ -343,7 +346,7 @@ function AgendaPageContent() {
                       )}
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-4 p-4">
                     {!asignacionActiva || !semana ? (
                       <div className="text-center py-6 border-2 border-dashed rounded-2xl bg-muted">
                         <Target className="w-10 h-10 mx-auto mb-2 icon-empty" />
@@ -352,21 +355,21 @@ function AgendaPageContent() {
                     ) : (
                       <>
                         <div className="space-y-3">
-                          <div className="flex items-start gap-2">
+                          <div className={"flex items-start gap-2 " + componentStyles.components.toneRowPlan}>
                             <Music className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
                             <div className="min-w-0 flex-1">
-                              <p className="text-xs text-muted">Pieza</p>
+                              <p className="text-xs text-ui/80">Pieza</p>
                               <p className="text-sm font-medium break-words">{asignacionActiva.piezaSnapshot?.nombre}</p>
                             </div>
                           </div>
                           
-                          <div className="flex items-start gap-2">
+                          <div className={"flex items-start gap-2 " + componentStyles.components.toneRowSemana}>
                             <Target className="w-4 h-4 text-purple-600 mt-0.5 shrink-0" />
                             <div className="min-w-0 flex-1">
-                              <p className="text-xs text-muted">Semana del Plan</p>
+                              <p className="text-xs text-ui/80">Semana del Plan</p>
                               <p className="text-sm font-medium break-words">{semana.nombre}</p>
                               {semana.objetivo && (
-                                <p className="text-xs text-muted italic mt-1 break-words">"{semana.objetivo}"</p>
+                                <p className="text-xs text-ui/80 italic mt-1 break-words">"{semana.objetivo}"</p>
                               )}
                             </div>
                           </div>
@@ -387,10 +390,10 @@ function AgendaPageContent() {
                                 return (
                                   <Card 
                                     key={sesionIdx}
-                                    className="app-panel cursor-pointer hover:shadow-md transition-all"
+                                    className={componentStyles.components.panelSesion + " cursor-pointer"}
                                     onClick={() => toggleSession(sesionKey)}
                                   >
-                                    <CardContent className="pt-3 pb-3">
+                                    <CardContent className="pt-3 pb-3 px-3">
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-sm font-medium">{sesion.nombre}</span>
                                         <Badge variant="outline" className="rounded-full text-xs bg-green-50 border-green-300 text-green-800">

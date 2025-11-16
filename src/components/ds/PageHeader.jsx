@@ -1,4 +1,5 @@
 import React from "react";
+import { componentStyles } from "@/design/componentStyles";
 
 /**
  * PageHeader - Componente unificado para headers de página
@@ -18,9 +19,9 @@ export default function PageHeader({
   className = "" 
 }) {
   return (
-    <div className={`page-header ${className}`}>
-      <div className="page-header-container">
-        <div className="flex items-center justify-between gap-4 mb-4">
+    <div className={`page-header px-4 md:px-6 py-4 ${className}`}>
+      <div className="page-header-container max-w-7xl mx-auto">
+        <div className="flex items-center justify-between gap-4 mb-3 md:mb-4">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             {Icon && (
               <div className="icon-tile">
@@ -28,8 +29,12 @@ export default function PageHeader({
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <h1 className="page-header-title">{title}</h1>
-              {subtitle && <p className="page-header-subtitle">{subtitle}</p>}
+              <h1 className={`${componentStyles.typography.pageTitle} mb-1`}>{title}</h1>
+              {subtitle && (
+                <p className={componentStyles.typography.pageSubtitle}>
+                  {subtitle}
+                </p>
+              )}
             </div>
           </div>
           {actions && <div className="flex gap-2 shrink-0">{actions}</div>}

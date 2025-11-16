@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getAppName } from "@/components/utils/appMeta";
 import { DesignProvider } from "@/components/design/DesignProvider";
+import { componentStyles } from "@/design/componentStyles";
 import { Outlet } from "react-router-dom";
 
 /* ------------------------------ Navegación ------------------------------ */
@@ -308,7 +309,7 @@ function LayoutContent() {
           <div className="flex-1 overflow-y-auto p-3">
             {Object.entries(grouped).map(([group, groupItems]) => (
               <div key={group} className="mb-4">
-                <p className="nav-section-title">
+                <p className={componentStyles.components.menuSectionTitle}>
                   {group}
                 </p>
                 <div className="space-y-1">
@@ -318,10 +319,14 @@ function LayoutContent() {
                       <Link
                         key={item.title}
                         to={createPageUrl(item.url.split("/").pop())}
-                        className={isActive ? "nav-item nav-item-active" : "nav-item"}
+                        className={
+                          isActive
+                            ? `${componentStyles.components.menuItem} ${componentStyles.components.menuItemActive}`
+                            : componentStyles.components.menuItem
+                        }
                         onClick={onMenuItemClick}
                       >
-                        <item.icon className="w-5 h-5" />
+                        <item.icon className="w-5 h-5 text-ui/80" />
                         <span className="font-medium">{item.title}</span>
                         {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
                       </Link>
@@ -333,9 +338,9 @@ function LayoutContent() {
           </div>
 
           {/* Pie del sidebar */}
-          <div className="border-t border-ui p-4 pt-3 space-y-3">
+          <div className="border-t border-ui p-4 pt-3 space-y-3 text-ui/90">
             {/* Selector de usuario local */}
-            <div className="px-2 py-2 rounded-xl bg-muted border border-ui">
+            <div className="px-2 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border-strong)]">
               <label className="text-[11px] font-medium text-ui mb-1 block">
                 Usuario Local:
               </label>
@@ -345,7 +350,7 @@ function LayoutContent() {
                   setCurrentUser(e.target.value);
                   window.location.reload();
                 }}
-                className="w-full p-1.5 text-xs rounded-lg bg-card border border-ui text-ui"
+                className="w-full p-1.5 text-xs rounded-lg bg-card border border-[var(--color-border-strong)] text-ui"
               >
                 {usuarios.map((user) => (
                   <option key={user.id} value={user.id}>
@@ -384,7 +389,7 @@ function LayoutContent() {
                 variant="ghost"
                 size="sm"
                 onClick={safeToggle}
-                className="w-full justify-start gap-2 text-muted hover:text-ui hover:bg-muted min-h-[44px] h-10 rounded-xl"
+                className="w-full justify-start gap-2 text-ui/80 hover:text-ui hover:bg-muted min-h-[44px] h-10 rounded-xl"
                 aria-label="Ocultar menú lateral"
               >
                 <PanelLeftClose className="w-4 h-4" />
@@ -408,7 +413,7 @@ function LayoutContent() {
                 <p className="font-medium text-ui text-sm truncate">
                   {simulatingUser?.nombreCompleto || simulatingUser?.full_name || currentUser?.nombreCompleto || currentUser?.full_name || "Usuario"}
                 </p>
-                <p className="text-xs text-muted truncate">{currentUser?.email}</p>
+                <p className="text-xs text-ui/80 truncate">{currentUser?.email}</p>
               </div>
             </button>
 
@@ -416,7 +421,7 @@ function LayoutContent() {
               variant="ghost"
               size="sm"
               onClick={logout}
-              className="w-full justify-start gap-2 text-muted hover:text-ui hover:bg-muted min-h-[44px] h-10 rounded-xl"
+              className="w-full justify-start gap-2 text-ui/80 hover:text-ui hover:bg-muted min-h-[44px] h-10 rounded-xl"
               aria-label="Cerrar sesión"
             >
               <LogOut className="w-4 h-4" />
@@ -505,15 +510,25 @@ function LayoutContent() {
           </div>
 
           {/* Footer global - centrado con nombre de app */}
-          <footer className="border-t border-ui bg-card text-xs text-muted mt-auto">
-            <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-center gap-2 text-center">
+          <footer className="border-t border-ui bg-card text-xs text-ui/80 mt-auto">
+            <div className="max-w-7xl mx-auto px-4 py-4 md:py-5 flex flex-wrap items-center justify-center gap-2 text-center">
               <span>{appName} © {new Date().getFullYear()}</span>
               <span className="opacity-40">-</span>
-              <a href="https://latrompetasonara.com" target="_blank" rel="noreferrer" className="hover:underline hover:text-ui transition-colors">
+              <a
+                href="https://latrompetasonara.com"
+                target="_blank"
+                rel="noreferrer"
+                className="text-ui hover:underline transition-colors"
+              >
                 La Trompeta Sonará
               </a>
               <span className="opacity-40">•</span>
-              <a href="https://instagram.com/latrompetasonara" target="_blank" rel="noreferrer" className="hover:underline hover:text-ui transition-colors">
+              <a
+                href="https://instagram.com/latrompetasonara"
+                target="_blank"
+                rel="noreferrer"
+                className="text-ui hover:underline transition-colors"
+              >
                 Instagram
               </a>
             </div>

@@ -28,6 +28,7 @@ import ModalCancelar from "../components/estudio/ModalCancelar";
 import ResumenFinal from "../components/estudio/ResumenFinal";
 import { toast } from "sonner";
 import { useSidebar } from "@/components/ui/SidebarState";
+import PageHeader from "@/components/ds/PageHeader";
 
 import RequireRole from "@/components/auth/RequireRole";
 
@@ -1143,21 +1144,11 @@ function HoyPageContent() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header con estilo unificado */}
-      <div className="bg-card border-b sticky top-0 z-10 shadow-card">
-        <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 md:py-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-600 rounded-xl flex items-center justify-center shadow-card">
-              <PlayCircle className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl md:text-3xl font-bold text-ui">Estudiar Ahora</h1>
-              <p className="text-sm text-muted hidden md:block">
-                Plan de estudio para {formatearSemana(semanaActualISO)}
-              </p>
-            </div>
-          </div>
-
-          {asignacionActiva && (
+      <PageHeader
+        icon={PlayCircle}
+        title="Estudiar Ahora"
+        subtitle={`Plan de estudio para ${formatearSemana(semanaActualISO)}`}
+        filters={asignacionActiva ? (
             <div className="flex items-center gap-2 flex-wrap text-sm text-ui bg-brand-50 rounded-xl p-3 border border-brand-200">
               <Music className="w-4 h-4 text-brand-700" />
               <span className="font-semibold">{asignacionActiva.piezaSnapshot?.nombre}</span>
@@ -1167,9 +1158,8 @@ function HoyPageContent() {
               <span className="text-muted">•</span>
               <span className="font-medium">{getNombreVisible(alumnoActual)}</span>
             </div>
-          )}
-        </div>
-      </div>
+        ) : null}
+      />
 
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
         {!asignacionActiva || !semanaDelPlan ? (

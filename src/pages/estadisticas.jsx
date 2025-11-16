@@ -19,6 +19,9 @@ import MediaLinksBadges from "../components/common/MediaLinksBadges";
 import MediaViewer from "../components/common/MediaViewer";
 import RequireRole from "@/components/auth/RequireRole";
 import SegmentedTabs from "@/components/ui/SegmentedTabs";
+import { componentStyles } from "@/design/componentStyles";
+import { designSystem } from "@/design/designSystem";
+import PageHeader from "@/components/ds/PageHeader";
 
 const pad2 = (n) => String(n).padStart(2, "0");
 const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
@@ -666,33 +669,24 @@ function EstadisticasPageContent() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="bg-card border-b border-ui sticky top-0 z-10 shadow-card">
-        <div className="max-w-[1600px] mx-auto px-6 md:px-8 py-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="icon-tile">
-              <Activity className="w-6 h-6" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-3xl font-bold text-ui">
-                {isEstu ? 'Mis Estadísticas' : isProf ? 'Estadísticas de Estudiantes' : 'Estadísticas Generales'}
-              </h1>
-              <p className="text-sm text-muted hidden md:block">
-                {isEstu ? 'Tu progreso en la práctica' : 'Análisis del rendimiento y progreso'}
-              </p>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.location.reload()}
-              className="shrink-0 h-9 rounded-xl focus-brand"
-              aria-label="Actualizar datos"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </Button>
-          </div>
-
-          <div className="space-y-3">
+    <div className={componentStyles.layout.appBackground}>
+      <PageHeader
+        icon={Activity}
+        title={isEstu ? 'Mis Estadísticas' : isProf ? 'Estadísticas de Estudiantes' : 'Estadísticas Generales'}
+        subtitle={isEstu ? 'Tu progreso en la práctica' : 'Análisis del rendimiento y progreso'}
+        actions={
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => window.location.reload()}
+            className="shrink-0 h-9 rounded-xl focus-brand"
+            aria-label="Actualizar datos"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+        }
+        filters={
+          <div className={componentStyles.components.panelBase + " p-3 md:p-4 space-y-3"}>
             <div className="flex gap-2 flex-wrap items-center">
               <div className="flex gap-2 items-center flex-wrap">
                 <Input
@@ -711,7 +705,6 @@ function EstadisticasPageContent() {
                   aria-label="Fecha de fin"
                 />
               </div>
-              
               <div className="flex gap-1 flex-wrap">
                 {presets.map(p => (
                   <Button
@@ -727,7 +720,6 @@ function EstadisticasPageContent() {
                 ))}
               </div>
             </div>
-
             <div className="flex gap-2 flex-wrap items-center">
               {!isEstu && (
                 <>
@@ -737,7 +729,6 @@ function EstadisticasPageContent() {
                     value={profesoresSeleccionados}
                     onChange={setProfesoresSeleccionados}
                   />
-                  
                   <MultiSelect
                     label="Alumnos"
                     items={estudiantes.map(a => ({ value: a.id, label: displayName(a) }))}
@@ -746,20 +737,16 @@ function EstadisticasPageContent() {
                   />
                 </>
               )}
-              
               <MultiSelect
                 label="Foco"
-                items={Object.entries(focoLabels).map(([key, label]) => ({ 
-                  value: key, 
-                  label: label 
-                }))}
+                items={Object.entries(focoLabels).map(([key, label]) => ({ value: key, label }))}
                 value={focosSeleccionados}
                 onChange={setFocosSeleccionados}
               />
             </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       <div className="max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         <div className="flex justify-center">
@@ -780,40 +767,40 @@ function EstadisticasPageContent() {
         {tabActiva === 'resumen' && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              <Card className="app-card hover:shadow-md transition-shadow">
+              <Card className={componentStyles.components.cardKpi}>
                 <CardContent className="pt-4 text-center">
                   <Clock className="w-6 h-6 mx-auto mb-2 text-[hsl(var(--brand-500))]" />
                   <p className="text-2xl font-bold text-ui">
                     {formatDuracionHM(kpis.tiempoTotal)}
                   </p>
-                  <p className="text-xs text-muted">Tiempo total</p>
+                  <p className="text-xs text-ui">Tiempo total</p>
                 </CardContent>
               </Card>
 
-              <Card className="app-card hover:shadow-md transition-shadow">
+              <Card className={componentStyles.components.cardKpi}>
                 <CardContent className="pt-4 text-center">
                   <Star className="w-6 h-6 mx-auto mb-2 text-emerald-600" />
                   <p className="text-2xl font-bold text-ui">{kpis.racha.actual}</p>
-                  <p className="text-xs text-muted">Racha</p>
+                  <p className="text-xs text-ui">Racha</p>
                   <p className="text-xs text-muted">Máx: {kpis.racha.maxima}</p>
                 </CardContent>
               </Card>
 
-              <Card className="app-card hover:shadow-md transition-shadow">
+              <Card className={componentStyles.components.cardKpi}>
                 <CardContent className="pt-4 text-center">
                   <Smile className="w-6 h-6 mx-auto mb-2 text-blue-600" />
                   <p className="text-2xl font-bold text-ui">
                     {kpis.calidadPromedio}/4
                   </p>
-                  <p className="text-xs text-muted">Calidad</p>
+                  <p className="text-xs text-ui">Calidad</p>
                 </CardContent>
               </Card>
 
-              <Card className="app-card hover:shadow-md transition-shadow">
+              <Card className={componentStyles.components.cardKpi}>
                 <CardContent className="pt-4 text-center">
                   <Calendar className="w-6 h-6 mx-auto mb-2 text-purple-600" />
                   <p className="text-2xl font-bold text-ui">{kpis.semanasDistintas}</p>
-                  <p className="text-xs text-muted">Semanas</p>
+                  <p className="text-xs text-ui">Semanas</p>
                 </CardContent>
               </Card>
             </div>
@@ -830,7 +817,7 @@ function EstadisticasPageContent() {
               />
             </div>
 
-            <Card className="app-card">
+            <Card className={componentStyles.components.cardBase}>
               <CardHeader>
                 <CardTitle className="text-base md:text-lg flex items-center gap-2">
                   <Clock className="w-5 h-5 text-[hsl(var(--brand-600))]" />
@@ -840,8 +827,8 @@ function EstadisticasPageContent() {
               <CardContent>
                 {datosLinea.length === 0 ? (
                   <div className="text-center py-12">
-                    <TrendingUp className="w-16 h-16 mx-auto mb-4 icon-empty" />
-                    <p className="text-muted">No hay datos en el periodo seleccionado</p>
+                    <TrendingUp className={componentStyles.components.emptyStateIcon} />
+                    <p className={componentStyles.components.emptyStateText}>No hay datos en el periodo seleccionado</p>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={300}>
@@ -885,10 +872,10 @@ function EstadisticasPageContent() {
                       <Line
                         type="monotone"
                         dataKey="tiempo"
-                        stroke="#22C55E"
+                        stroke={designSystem.colors.primary}
                         strokeWidth={2}
                         name="Tiempo (min)"
-                        dot={{ r: 3, stroke: "#22C55E", fill: "#22C55E" }}
+                        dot={{ r: 3, stroke: designSystem.colors.primary, fill: designSystem.colors.primary }}
                         activeDot={{ r: 4 }}
                       />
                     </LineChart>
@@ -897,7 +884,7 @@ function EstadisticasPageContent() {
               </CardContent>
             </Card>
 
-            <Card className="app-card">
+            <Card className={componentStyles.components.cardBase}>
               <CardHeader>
                 <CardTitle className="text-base md:text-lg flex items-center gap-2">
                   <Smile className="w-5 h-5 text-blue-600" />
@@ -907,8 +894,8 @@ function EstadisticasPageContent() {
               <CardContent>
                 {datosLinea.filter(d => d.satisfaccion !== null).length === 0 ? (
                   <div className="text-center py-12">
-                    <Smile className="w-16 h-16 mx-auto mb-4 icon-empty" />
-                    <p className="text-muted">No hay datos de autoevaluación</p>
+                    <Smile className={componentStyles.components.emptyStateIcon} />
+                    <p className={componentStyles.components.emptyStateText}>No hay datos de autoevaluación</p>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={300}>
@@ -951,14 +938,22 @@ function EstadisticasPageContent() {
                           );
                         }}
                       />
-                      <Line type="monotone" dataKey="satisfaccion" stroke="#3B82F6" strokeWidth={2} name="Autoevaluación" dot={{ r: 3 }} connectNulls />
+                      <Line
+                        type="monotone"
+                        dataKey="satisfaccion"
+                        stroke={designSystem.colors.secondary}
+                        strokeWidth={2}
+                        name="Autoevaluación"
+                        dot={{ r: 3, stroke: designSystem.colors.secondary, fill: designSystem.colors.secondary }}
+                        connectNulls
+                      />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
               </CardContent>
             </Card>
 
-            <Card className="app-card">
+            <Card className={componentStyles.components.cardBase}>
               <CardHeader>
                 <CardTitle className="text-base md:text-lg flex items-center gap-2">
                   <Dumbbell className="w-5 h-5 text-purple-600" />
@@ -968,8 +963,8 @@ function EstadisticasPageContent() {
               <CardContent>
                 {datosLinea.length === 0 ? (
                   <div className="text-center py-12">
-                    <Dumbbell className="w-16 h-16 mx-auto mb-4 icon-empty" />
-                    <p className="text-muted">No hay datos</p>
+                    <Dumbbell className={componentStyles.components.emptyStateIcon} />
+                    <p className={componentStyles.components.emptyStateText}>No hay datos</p>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={300}>
@@ -1013,8 +1008,22 @@ function EstadisticasPageContent() {
                           );
                         }}
                       />
-                      <Line type="monotone" dataKey="completados" stroke="#10B981" strokeWidth={2} name="Completados" dot={{ r: 3 }} />
-                      <Line type="monotone" dataKey="omitidos" stroke="#EF4444" strokeWidth={2} name="Omitidos" dot={{ r: 3 }} />
+                      <Line
+                        type="monotone"
+                        dataKey="completados"
+                        stroke={designSystem.colors.success}
+                        strokeWidth={2}
+                        name="Completados"
+                        dot={{ r: 3, stroke: designSystem.colors.success, fill: designSystem.colors.success }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="omitidos"
+                        stroke={designSystem.colors.danger}
+                        strokeWidth={2}
+                        name="Omitidos"
+                        dot={{ r: 3, stroke: designSystem.colors.danger, fill: designSystem.colors.danger }}
+                      />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
@@ -1024,7 +1033,7 @@ function EstadisticasPageContent() {
         )}
 
         {tabActiva === 'evolucion' && (
-          <Card className="app-card">
+          <Card className={componentStyles.components.cardBase}>
             <CardHeader>
               <CardTitle className="text-base md:text-lg">Evolución por Día/Semana/Mes</CardTitle>
             </CardHeader>
@@ -1074,15 +1083,15 @@ function EstadisticasPageContent() {
         )}
 
         {tabActiva === 'tipos' && (
-          <Card className="app-card">
+          <Card className={componentStyles.components.cardBase}>
             <CardHeader>
               <CardTitle className="text-base md:text-lg">Tiempo por Tipo de Bloque</CardTitle>
             </CardHeader>
             <CardContent>
               {tiposBloques.length === 0 ? (
                 <div className="text-center py-12">
-                  <BarChart3 className="w-16 h-16 mx-auto mb-4 icon-empty" />
-                  <p className="text-muted">No hay datos</p>
+                  <BarChart3 className={componentStyles.components.emptyStateIcon} />
+                  <p className={componentStyles.components.emptyStateText}>No hay datos</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1126,7 +1135,7 @@ function EstadisticasPageContent() {
         )}
 
         {tabActiva === 'top' && (
-          <Card className="app-card">
+          <Card className={componentStyles.components.cardBase}>
             <CardHeader>
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <CardTitle className="text-base md:text-lg">Top Ejercicios Practicados</CardTitle>
@@ -1144,8 +1153,8 @@ function EstadisticasPageContent() {
             <CardContent>
               {topEjerciciosFiltrados.length === 0 ? (
                 <div className="text-center py-12">
-                  <Dumbbell className="w-16 h-16 mx-auto mb-4 icon-empty" />
-                  <p className="text-muted">No hay ejercicios registrados</p>
+                  <Dumbbell className={componentStyles.components.emptyStateIcon} />
+                  <p className={componentStyles.components.emptyStateText}>No hay ejercicios registrados</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -1187,15 +1196,15 @@ function EstadisticasPageContent() {
         )}
 
         {tabActiva === 'historial' && (
-          <Card className="app-card">
+          <Card className={componentStyles.components.cardBase}>
             <CardHeader>
               <CardTitle className="text-base md:text-lg">Historial de Sesiones ({registrosFiltradosUnicos.length})</CardTitle>
             </CardHeader>
             <CardContent>
               {registrosFiltradosUnicos.length === 0 ? (
                 <div className="text-center py-12">
-                  <Activity className="w-16 h-16 mx-auto mb-4 icon-empty" />
-                  <p className="text-muted">No hay datos en el periodo seleccionado</p>
+                  <Activity className={componentStyles.components.emptyStateIcon} />
+                  <p className={componentStyles.components.emptyStateText}>No hay datos en el periodo seleccionado</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1249,7 +1258,7 @@ function EstadisticasPageContent() {
         )}
 
         {tabActiva === 'feedback' && (
-          <Card className="app-card">
+          <Card className={componentStyles.components.cardBase}>
             <CardHeader>
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <CardTitle className="text-base md:text-lg">
@@ -1287,8 +1296,8 @@ function EstadisticasPageContent() {
                 <div className="space-y-3">
                   {feedbackProfesor.length === 0 ? (
                     <div className="text-center py-12">
-                      <MessageSquare className="w-16 h-16 mx-auto mb-4 icon-empty" />
-                      <p className="text-muted">No hay feedback del profesor en este periodo</p>
+                    <MessageSquare className={componentStyles.components.emptyStateIcon} />
+                    <p className={componentStyles.components.emptyStateText}>No hay feedback del profesor en este periodo</p>
                     </div>
                   ) : (
                     feedbackProfesor.map(f => {

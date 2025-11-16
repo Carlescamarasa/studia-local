@@ -76,7 +76,7 @@ export default function WeekNavigator({ mondayISO, onPrev, onNext, onToday }) {
               <Calendar className="w-4 h-4 text-brand-500" />
               <span className="text-sm font-semibold text-ui">Semana {weekNumber}</span>
             </div>
-            <p className="text-xs text-muted">
+            <p className="text-xs text-ui">
               {monday.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — {sunday.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
             </p>
           </div>
@@ -112,7 +112,7 @@ export default function WeekNavigator({ mondayISO, onPrev, onNext, onToday }) {
               <Calendar className="w-4 h-4 text-brand-500" />
               <span className="text-sm font-semibold text-ui">Semana {weekNumber}</span>
             </div>
-            <p className="text-xs text-muted">
+            <p className="text-xs text-ui">
               {monday.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — {sunday.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
             </p>
           </div>

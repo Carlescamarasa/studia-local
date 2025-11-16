@@ -17,6 +17,7 @@ import { calcularLunesSemanaISO, calcularOffsetSemanas, calcularTiempoSesion } f
 import { displayName } from "@/components/utils/helpers";
 import WeekNavigator from "../components/common/WeekNavigator";
 import RequireRole from "@/components/auth/RequireRole";
+import PageHeader from "@/components/ds/PageHeader";
 
 // --- Helpers de fechas locales ---
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -105,26 +106,19 @@ function SemanaPageContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="bg-card border-b sticky top-0 z-10 shadow-card">
-        <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 md:py-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="icon-tile">
-              <Calendar className="w-6 h-6" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl md:text-3xl font-bold text-ui">Mi Semana</h1>
-              <p className="text-sm text-muted hidden md:block">Resumen y planificación semanal</p>
-            </div>
-          </div>
-
+      <PageHeader
+        icon={Calendar}
+        title="Mi Semana"
+        subtitle="Resumen y planificación semanal"
+        filters={
           <WeekNavigator 
             mondayISO={semanaActualISO}
             onPrev={() => cambiarSemana(-1)}
             onNext={() => cambiarSemana(1)}
             onToday={irSemanaActual}
           />
-        </div>
-      </div>
+        }
+      />
 
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-6">
         {!asignacionActiva || !semanaDelPlan ? (

@@ -105,7 +105,7 @@ function UsuariosPageContent() {
       render: (u) => (
         <div>
           <p className="font-medium text-sm">{getNombreVisible(u)}</p>
-          <p className="text-xs text-muted">{u.email}</p>
+          <p className="text-xs text-ui/80">{u.email}</p>
         </div>
       ),
     },
@@ -148,7 +148,7 @@ function UsuariosPageContent() {
                 placeholder="Buscar usuario..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-9 h-10 focus-brand"
+                className="w-full pl-9 pr-9 h-10 bg-transparent rounded-none border-0 border-b-2 border-[var(--color-border-strong)] text-ui placeholder:text-ui/60 focus:outline-none focus:ring-0 focus:border-[hsl(var(--ring))]"
               />
               {searchTerm && (
                 <button

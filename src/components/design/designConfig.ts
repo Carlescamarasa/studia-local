@@ -68,6 +68,7 @@ export interface DesignTokens {
   // Colores principales
   colors: {
     primary: string;
+    primarySoft?: string;
     secondary: string;
     accent: string;
     success: string;
@@ -78,6 +79,7 @@ export interface DesignTokens {
     background: string;
     surface: string;
     surfaceElevated: string;
+    surfaceMuted?: string;
     // Colores de texto
     text: {
       primary: string;
@@ -219,6 +221,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
   // Colores principales
   colors: {
     primary: '#4F46E5',        // Indigo
+    primarySoft: '#EEF2FF',    // Indigo muy claro para fondos suaves
     secondary: '#6366F1',      // Indigo claro
     accent: '#F97316',          // Naranja
     success: '#10B981',        // Verde
@@ -230,6 +233,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
     background: '#FFFFFF',
     surface: '#F9FAFB',
     surfaceElevated: '#FFFFFF',
+    surfaceMuted: '#F3F4F6',
     
     // Colores de texto
     text: {

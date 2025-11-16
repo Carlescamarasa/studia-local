@@ -475,7 +475,7 @@ export default function ImportExportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <PageHeader
         icon={FileDown}
         title="Importar y Exportar"
