@@ -697,10 +697,10 @@ function HoyPageContent() {
 
             {/* Breadcrumbs */}
             <div className="flex items-center gap-2 flex-wrap text-xs text-ui/80">
-              <Music className="w-3 h-3 text-brand-700" />
+              <Music className="w-3 h-3 text-[var(--color-primary)]" />
               <span className="font-medium">{asignacionActiva.piezaSnapshot?.nombre}</span>
               <span className="text-ui/60">•</span>
-              <Target className="w-3 h-3 text-blue-600" />
+              <Target className="w-3 h-3 text-[var(--color-info)]" />
               <span>{asignacionActiva.plan?.nombre}</span>
               <span className="text-ui/60">•</span>
               <Badge className={focoColors[sesionActiva.foco]} variant="outline">
@@ -1166,17 +1166,17 @@ function HoyPageContent() {
         {!asignacionActiva || !semanaDelPlan ? (
           <Card className="border-dashed border-2">
             <CardContent className="text-center py-16">
-              <Target className="w-20 h-20 mx-auto mb-4 icon-empty" />
-              <h2 className="text-xl font-semibold text-ui mb-2">
+              <Target className={`w-20 h-20 mx-auto mb-4 ${componentStyles.empty.emptyIcon}`} />
+              <h2 className={`${componentStyles.typography.pageTitle} mb-2`}>
                 No tienes estudio esta semana
               </h2>
-              <p className="text-sm text-ui/80 mb-4">
+              <p className={`${componentStyles.empty.emptyText} mb-4`}>
                 Consulta con tu profesor para obtener asignaciones
               </p>
               <Button
                 variant="outline"
                 onClick={() => navigate(createPageUrl('estadisticas'))}
-                className="rounded-xl focus-brand"
+                className={`${componentStyles.buttons.outline} focus-brand`}
               >
                 Ver mi historial y estadísticas →
               </Button>
@@ -1184,7 +1184,7 @@ function HoyPageContent() {
           </Card>
         ) : (
           <>
-            <Card className="border-2 border-brand-200">
+            <Card className={`border-2 ${componentStyles.containers.cardBase} border-[var(--color-primary)]`}>
               <CardContent className="pt-4">
                 <div className="flex items-start gap-3">
                   <div className="pt-1 cursor-pointer" onClick={() => setPlanDesplegado(!planDesplegado)}>
@@ -1222,8 +1222,8 @@ function HoyPageContent() {
                           key={sesionIdx}
                           className={`border-2 cursor-pointer hover:shadow-sm transition-all ${
                             sesionSeleccionada === sesionIdx
-                              ? 'border-brand-500 bg-brand-50 shadow-sm'
-                              : 'border-blue-200 bg-blue-50/30'
+                              ? `border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm ${componentStyles.items.itemCardHighlight}`
+                              : `border-[var(--color-info)] bg-[var(--color-info)]/10 ${componentStyles.items.itemCard}`
                           }`}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1234,11 +1234,11 @@ function HoyPageContent() {
                             <div className="flex items-start gap-3">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 flex-wrap mb-2">
-                                  <PlayCircle className="w-4 h-4 text-blue-600" />
-                                  <span className="font-semibold text-base">{sesion.nombre}</span>
+                                  <PlayCircle className="w-4 h-4 text-[var(--color-info)]" />
+                                  <span className={`${componentStyles.typography.cardTitle} font-semibold`}>{sesion.nombre}</span>
                                   <Badge
                                     variant="outline"
-                                    className="text-xs bg-green-50 border-green-300 text-green-800"
+                                    className={componentStyles.status.badgeSuccess}
                                   >
                                     ⏱ {minutos}:{String(segundos).padStart(2, '0')} min
                                   </Badge>
@@ -1256,7 +1256,7 @@ function HoyPageContent() {
                                         empezarSesion(sesion, sesionIdx);
                                       }}
                                       size="lg"
-                                      className="w-full h-14 text-lg font-bold shadow-card rounded-xl focus-brand"
+                                      className={`w-full h-14 text-lg font-bold shadow-card ${componentStyles.buttons.primary} focus-brand`}
                                     >
                                       <PlayCircle className="w-6 h-6 mr-2" />
                                       Iniciar Práctica

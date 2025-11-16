@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ds";
 import { createPortal } from "react-dom";
 import PageHeader from "@/components/ds/PageHeader";
 import Tabs from "@/components/ds/Tabs";
+import { componentStyles } from "@/design/componentStyles";
 
 const pad2 = (n) => String(n).padStart(2, "0");
 const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
@@ -453,7 +454,7 @@ export default function ImportExportPage() {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-12 h-12 text-brand-500 animate-spin" />
+          <Loader2 className="w-12 h-12 text-[var(--color-primary)] animate-spin" />
           <p className="text-muted">Cargando...</p>
         </div>
       </div>
@@ -504,14 +505,14 @@ export default function ImportExportPage() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-lg font-bold text-ui mb-4 flex items-center gap-2">
-                      <Music className="w-5 h-5 text-brand-500" />
+                      <Music className="w-5 h-5 text-[var(--color-primary)]" />
                       Plantillas (JSON)
                     </h2>
                     <div className="grid md:grid-cols-3 gap-4">
                       <Card className="app-card hover:shadow-md transition-shadow">
                         <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
-                            <Music className="w-5 h-5 text-brand-500" />
+                            <Music className="w-5 h-5 text-[var(--color-primary)]" />
                             <CardTitle className="text-base">Piezas</CardTitle>
                           </div>
                         </CardHeader>
@@ -537,7 +538,7 @@ export default function ImportExportPage() {
                       <Card className="app-card hover:shadow-md transition-shadow">
                         <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
-                            <Layers className="w-5 h-5 text-brand-500" />
+                            <Layers className="w-5 h-5 text-[var(--color-primary)]" />
                             <CardTitle className="text-base">Ejercicios</CardTitle>
                           </div>
                         </CardHeader>
@@ -563,7 +564,7 @@ export default function ImportExportPage() {
                       <Card className="app-card hover:shadow-md transition-shadow">
                         <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
-                            <BookOpen className="w-5 h-5 text-brand-500" />
+                            <BookOpen className="w-5 h-5 text-[var(--color-primary)]" />
                             <CardTitle className="text-base">Planes</CardTitle>
                           </div>
                         </CardHeader>
@@ -590,14 +591,14 @@ export default function ImportExportPage() {
 
                   <div>
                     <h2 className="text-lg font-bold text-ui mb-4 flex items-center gap-2">
-                      <FileDown className="w-5 h-5 text-brand-500" />
+                      <FileDown className="w-5 h-5 text-[var(--color-primary)]" />
                       Datos y Estadísticas (CSV)
                     </h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                       <Card className="app-card hover:shadow-md transition-shadow">
                         <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
-                            <Users className="w-5 h-5 text-brand-500" />
+                            <Users className="w-5 h-5 text-[var(--color-primary)]" />
                             <CardTitle className="text-base">Usuarios</CardTitle>
                           </div>
                         </CardHeader>
@@ -623,7 +624,7 @@ export default function ImportExportPage() {
                       <Card className="app-card hover:shadow-md transition-shadow">
                         <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
-                            <Target className="w-5 h-5 text-brand-500" />
+                            <Target className="w-5 h-5 text-[var(--color-primary)]" />
                             <CardTitle className="text-base">Asignaciones</CardTitle>
                           </div>
                         </CardHeader>
@@ -649,7 +650,7 @@ export default function ImportExportPage() {
                       <Card className="app-card hover:shadow-md transition-shadow">
                         <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
-                            <Calendar className="w-5 h-5 text-brand-500" />
+                            <Calendar className="w-5 h-5 text-[var(--color-primary)]" />
                             <CardTitle className="text-base">Agenda</CardTitle>
                           </div>
                         </CardHeader>
@@ -677,7 +678,7 @@ export default function ImportExportPage() {
                       <Card className="app-card hover:shadow-md transition-shadow">
                         <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
-                            <Activity className="w-5 h-5 text-brand-500" />
+                            <Activity className="w-5 h-5 text-[var(--color-primary)]" />
                             <CardTitle className="text-base">Sesiones</CardTitle>
                           </div>
                         </CardHeader>
@@ -703,7 +704,7 @@ export default function ImportExportPage() {
                       <Card className="app-card hover:shadow-md transition-shadow">
                         <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
-                            <Layers className="w-5 h-5 text-brand-500" />
+                            <Layers className="w-5 h-5 text-[var(--color-primary)]" />
                             <CardTitle className="text-base">Bloques</CardTitle>
                           </div>
                         </CardHeader>
@@ -729,7 +730,7 @@ export default function ImportExportPage() {
                       <Card className="app-card hover:shadow-md transition-shadow">
                         <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)]">
                           <div className="flex items-center gap-3">
-                            <Layers className="w-5 h-5 text-brand-500" />
+                            <Layers className="w-5 h-5 text-[var(--color-primary)]" />
                             <CardTitle className="text-base">Ejercicios (CSV)</CardTitle>
                           </div>
                         </CardHeader>
@@ -754,10 +755,10 @@ export default function ImportExportPage() {
                     </div>
                   </div>
 
-                  <Alert className="rounded-2xl border-blue-200 bg-blue-50">
-                    <AlertTriangle className="h-4 w-4 text-blue-600" />
-                    <AlertDescription className="text-sm text-ui/80 space-y-1">
-                      <p className="font-semibold text-ui">Información sobre exportación</p>
+                  <Alert className={`rounded-2xl ${componentStyles.containers.panelBase} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
+                    <AlertTriangle className="h-4 w-4 text-[var(--color-info)]" />
+                    <AlertDescription className={`${componentStyles.typography.bodyText} space-y-1`}>
+                      <p className={`${componentStyles.typography.sectionTitle}`}>Información sobre exportación</p>
                       <ul className="list-disc list-inside space-y-1 text-xs mt-2">
                         <li><strong>JSON:</strong> Formato completo ideal para respaldo y migración de plantillas</li>
                         <li><strong>CSV:</strong> Compatible con Excel/Google Sheets para análisis</li>
@@ -773,25 +774,25 @@ export default function ImportExportPage() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-lg font-bold text-ui mb-4 flex items-center gap-2">
-                      <Upload className="w-5 h-5 text-brand-500" />
+                      <Upload className="w-5 h-5 text-[var(--color-primary)]" />
                       Plantillas (JSON)
                     </h2>
                     <div className="grid md:grid-cols-3 gap-4">
-                      <Card className="app-card hover:shadow-md transition-shadow">
+                      <Card className={`${componentStyles.containers.cardBase} hover:shadow-md transition-shadow`}>
                         <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)]">
                           <div className="flex items-center gap-3">
-                            <Music className="w-5 h-5 text-brand-500" />
-                            <CardTitle className="text-base">Piezas</CardTitle>
+                            <Music className="w-5 h-5 text-[var(--color-primary)]" />
+                            <CardTitle className={componentStyles.typography.cardTitle}>Piezas</CardTitle>
                           </div>
                         </CardHeader>
                         <CardContent className="pt-4 space-y-3 text-ui">
-                          <p className="text-sm text-ui/80">
+                          <p className={componentStyles.typography.bodyText}>
                             Importa piezas desde archivo JSON.
                           </p>
                           <Button 
                             onClick={() => { setImportType('piezas'); setShowImportModal(true); setImportResults(null); }}
                             variant="outline"
-                            className="w-full h-9 rounded-xl border-brand-500 text-brand-500 hover:bg-brand-500 hover:text-white"
+                            className={`w-full h-9 ${componentStyles.buttons.outline} border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-[var(--color-text-inverse)]`}
                             size="sm"
                           >
                             <Upload className="w-4 h-4 mr-2" />
@@ -800,21 +801,21 @@ export default function ImportExportPage() {
                         </CardContent>
                       </Card>
 
-                      <Card className="app-card hover:shadow-md transition-shadow">
+                      <Card className={`${componentStyles.containers.cardBase} hover:shadow-md transition-shadow`}>
                         <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)]">
                           <div className="flex items-center gap-3">
-                            <Layers className="w-5 h-5 text-brand-500" />
-                            <CardTitle className="text-base">Ejercicios</CardTitle>
+                            <Layers className="w-5 h-5 text-[var(--color-primary)]" />
+                            <CardTitle className={componentStyles.typography.cardTitle}>Ejercicios</CardTitle>
                           </div>
                         </CardHeader>
                         <CardContent className="pt-4 space-y-3 text-ui">
-                          <p className="text-sm text-ui/80">
+                          <p className={componentStyles.typography.bodyText}>
                             Importa ejercicios desde archivo JSON.
                           </p>
                           <Button 
                             onClick={() => { setImportType('bloques'); setShowImportModal(true); setImportResults(null); }}
                             variant="outline"
-                            className="w-full h-9 rounded-xl border-brand-500 text-brand-500 hover:bg-brand-500 hover:text-white"
+                            className={`w-full h-9 ${componentStyles.buttons.outline} border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-[var(--color-text-inverse)]`}
                             size="sm"
                           >
                             <Upload className="w-4 h-4 mr-2" />
@@ -823,21 +824,21 @@ export default function ImportExportPage() {
                         </CardContent>
                       </Card>
 
-                      <Card className="app-card hover:shadow-md transition-shadow">
+                      <Card className={`${componentStyles.containers.cardBase} hover:shadow-md transition-shadow`}>
                         <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)]">
                           <div className="flex items-center gap-3">
-                            <BookOpen className="w-5 h-5 text-brand-500" />
-                            <CardTitle className="text-base">Planes</CardTitle>
+                            <BookOpen className="w-5 h-5 text-[var(--color-primary)]" />
+                            <CardTitle className={componentStyles.typography.cardTitle}>Planes</CardTitle>
                           </div>
                         </CardHeader>
                         <CardContent className="pt-4 space-y-3 text-ui">
-                          <p className="text-sm text-ui/80">
+                          <p className={componentStyles.typography.bodyText}>
                             Importa planes con resolución automática de IDs.
                           </p>
                           <Button 
                             onClick={() => { setImportType('planes'); setShowImportModal(true); setImportResults(null); }}
                             variant="outline"
-                            className="w-full h-9 rounded-xl border-brand-500 text-brand-500 hover:bg-brand-500 hover:text-white"
+                            className={`w-full h-9 ${componentStyles.buttons.outline} border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-[var(--color-text-inverse)]`}
                             size="sm"
                           >
                             <Upload className="w-4 h-4 mr-2" />
@@ -848,10 +849,10 @@ export default function ImportExportPage() {
                     </div>
                   </div>
 
-                  <Alert className="rounded-2xl border-amber-200 bg-amber-50">
-                    <AlertTriangle className="h-4 w-4 text-amber-700" />
-                    <AlertDescription className="text-sm text-ui/80 space-y-1">
-                      <p className="font-semibold text-ui">Importante sobre importación</p>
+                  <Alert className={`rounded-2xl ${componentStyles.containers.panelBase} border-[var(--color-warning)] bg-[var(--color-warning)]/10`}>
+                    <AlertTriangle className="h-4 w-4 text-[var(--color-warning)]" />
+                    <AlertDescription className={`${componentStyles.typography.bodyText} space-y-1`}>
+                      <p className={componentStyles.typography.sectionTitle}>Importante sobre importación</p>
                       <ul className="list-disc list-inside space-y-1 text-xs mt-2">
                         <li><strong>Ejercicios:</strong> Códigos duplicados se omiten automáticamente</li>
                         <li><strong>Planes:</strong> Resuelve piezas por nombre (campo "piezaNombre") y ejercicios por código</li>
@@ -888,9 +889,9 @@ export default function ImportExportPage() {
               <CardContent className="p-6 space-y-4 text-ui">
                 {!importResults ? (
                   <>
-                    <Alert className="rounded-xl border-blue-200 bg-blue-50">
-                      <AlertTriangle className="h-4 w-4 text-blue-600" />
-                      <AlertDescription className="text-sm text-blue-900">
+                    <Alert className={`rounded-xl ${componentStyles.containers.panelBase} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
+                      <AlertTriangle className="h-4 w-4 text-[var(--color-info)]" />
+                      <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-info)]`}>
                         {importType === 'piezas' && 'Array de objetos con: nombre, nivel, elementos, etc.'}
                         {importType === 'bloques' && 'Array de ejercicios con: code (único), nombre, tipo, duracionSeg, etc.'}
                         {importType === 'planes' && 'Array de planes con: nombre, piezaNombre o piezaId, semanas (con sesiones y bloques por código).'}
@@ -904,18 +905,18 @@ export default function ImportExportPage() {
                         type="file"
                         accept=".json"
                         onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                        className="mt-2 h-10 rounded-xl border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                        className={`mt-2 ${componentStyles.controls.inputDefault} focus-brand`}
                       />
                     </div>
 
                     <div className="flex gap-3">
-                      <Button variant="outline" onClick={() => setShowImportModal(false)} className="flex-1 h-10 rounded-xl">
+                      <Button variant="outline" onClick={() => setShowImportModal(false)} className={`flex-1 ${componentStyles.buttons.outline}`}>
                         Cancelar
                       </Button>
                       <Button 
                         onClick={handleImport} 
                         disabled={!importFile || importMutation.isPending}
-                        className="flex-1 h-10 rounded-xl btn-primary"
+                        className={`flex-1 ${componentStyles.buttons.primary}`}
                       >
                         {importMutation.isPending ? (
                           <>
@@ -933,26 +934,26 @@ export default function ImportExportPage() {
                   </>
                 ) : (
                   <>
-                    <Alert className={`rounded-xl ${importResults.errors.length > 0 ? 'border-amber-200 bg-amber-50' : 'border-green-200 bg-green-50'}`}>
+                    <Alert className={`rounded-xl ${componentStyles.containers.panelBase} ${importResults.errors.length > 0 ? 'border-[var(--color-warning)] bg-[var(--color-warning)]/10' : 'border-[var(--color-success)] bg-[var(--color-success)]/10'}`}>
                       {importResults.errors.length > 0 ? (
-                        <AlertTriangle className="h-4 w-4 text-amber-700" />
+                        <AlertTriangle className="h-4 w-4 text-[var(--color-warning)]" />
                       ) : (
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <CheckCircle2 className="h-4 w-4 text-[var(--color-success)]" />
                       )}
                       <AlertDescription className="space-y-2">
                         <div className="flex items-center gap-2 flex-wrap">
                           {importResults.created > 0 && (
-                            <Badge className="rounded-full bg-green-600 text-white">
+                            <Badge className={componentStyles.status.badgeSuccess}>
                               ✅ {importResults.created} creados
                             </Badge>
                           )}
                           {importResults.skipped > 0 && (
-                            <Badge className="rounded-full bg-blue-600 text-white">
+                            <Badge className={componentStyles.status.badgeInfo}>
                               ⏭️ {importResults.skipped} omitidos
                             </Badge>
                           )}
                           {importResults.errors.length > 0 && (
-                            <Badge className="rounded-full bg-red-600 text-white">
+                            <Badge className={componentStyles.status.badgeDanger}>
                               ❌ {importResults.errors.length} errores
                             </Badge>
                           )}
@@ -961,14 +962,14 @@ export default function ImportExportPage() {
                         {importResults.errors.length > 0 && (
                           <div className="mt-3 max-h-48 overflow-y-auto border border-[var(--color-border-default)] rounded-xl p-2 bg-white text-xs space-y-1">
                             {importResults.errors.map((err, idx) => (
-                              <div key={idx} className="text-red-700">• {err}</div>
+                              <div key={idx} className={`${componentStyles.typography.smallMetaText} text-[var(--color-danger)]`}>• {err}</div>
                             ))}
                           </div>
                         )}
                       </AlertDescription>
                     </Alert>
 
-                    <Button onClick={() => { setShowImportModal(false); setImportFile(null); setImportResults(null); }} className="w-full h-10 rounded-xl btn-primary">
+                    <Button onClick={() => { setShowImportModal(false); setImportFile(null); setImportResults(null); }} className={`w-full ${componentStyles.buttons.primary}`}>
                       Cerrar
                     </Button>
                   </>

@@ -20,6 +20,7 @@ import ExerciseEditor from "@/components/editor/ExerciseEditor";
 import { Alert, AlertDescription } from "@/components/ds";
 import PageHeader from "@/components/ds/PageHeader";
 import { getNombreVisible } from "@/components/utils/helpers";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function AdaptarAsignacionPage() {
   const queryClient = useQueryClient();
@@ -309,33 +310,33 @@ export default function AdaptarAsignacionPage() {
   };
 
   const focoColors = {
-    GEN: 'bg-[var(--color-surface-muted)] text-ui border-[var(--color-border-default)]',
-    LIG: 'bg-blue-100 text-blue-800 border-blue-200',
-    RIT: 'bg-purple-100 text-purple-800 border-purple-200',
-    ART: 'bg-green-100 text-green-800 border-green-200',
-    'S&A': 'bg-brand-100 text-brand-800 border-brand-200',
+    GEN: componentStyles.status.badgeDefault,
+    LIG: componentStyles.status.badgeInfo,
+    RIT: componentStyles.status.badgeDefault, // purple -> default
+    ART: componentStyles.status.badgeSuccess,
+    'S&A': componentStyles.status.badgeDefault, // brand -> default
   };
 
   const tipoColors = {
-    CA: 'bg-brand-100 text-brand-800 border-brand-200',
-    CB: 'bg-blue-100 text-blue-800 border-blue-200',
-    TC: 'bg-purple-100 text-purple-800 border-purple-200',
-    TM: 'bg-green-100 text-green-800 border-green-200',
-    FM: 'bg-pink-100 text-pink-800 border-pink-200',
-    VC: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-    AD: 'bg-[var(--color-surface-muted)] text-ui border-[var(--color-border-default)]',
+    CA: componentStyles.status.badgeDefault, // brand -> default
+    CB: componentStyles.status.badgeInfo,
+    TC: componentStyles.status.badgeDefault, // purple -> default
+    TM: componentStyles.status.badgeSuccess,
+    FM: componentStyles.status.badgeDefault, // pink -> default
+    VC: componentStyles.status.badgeInfo, // cyan -> info
+    AD: componentStyles.status.badgeDefault,
   };
 
   // Validar que existe el ID
   if (!asignacionId) {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
-        <Card className="max-w-md app-card">
+        <Card className={`max-w-md ${componentStyles.containers.cardBase}`}>
           <CardContent className="pt-6 text-center space-y-4">
-            <AlertCircle className="w-12 h-12 text-amber-500 mx-auto" />
-            <p className="text-lg font-semibold text-ui">ID de asignación no proporcionado</p>
-            <p className="text-sm text-ui/80">Por favor, proporciona un ID válido en la URL.</p>
-            <Button onClick={() => navigate(createPageUrl('asignaciones'))} className="mt-4 btn-primary h-10 rounded-xl shadow-sm">
+            <AlertCircle className={`w-12 h-12 ${componentStyles.empty.emptyIcon} text-[var(--color-warning)] mx-auto`} />
+            <p className={componentStyles.typography.pageTitle}>ID de asignación no proporcionado</p>
+            <p className={componentStyles.empty.emptyText}>Por favor, proporciona un ID válido en la URL.</p>
+            <Button onClick={() => navigate(createPageUrl('asignaciones'))} className={`mt-4 ${componentStyles.buttons.primary}`}>
               Volver a Asignaciones
             </Button>
           </CardContent>
@@ -348,7 +349,7 @@ export default function AdaptarAsignacionPage() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
           <p className="text-ui/80">Cargando asignación...</p>
         </div>
       </div>
@@ -358,18 +359,18 @@ export default function AdaptarAsignacionPage() {
   if (error || !asignacion) {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
-        <Card className="max-w-md app-card">
+        <Card className={`max-w-md ${componentStyles.containers.cardBase}`}>
           <CardContent className="pt-6 text-center space-y-4">
-            <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
-            <p className="text-lg font-semibold text-ui">Asignación no encontrada</p>
-            <p className="text-sm text-ui/80">
+            <AlertCircle className={`w-12 h-12 ${componentStyles.empty.emptyIcon} text-[var(--color-danger)] mx-auto`} />
+            <p className={componentStyles.typography.pageTitle}>Asignación no encontrada</p>
+            <p className={componentStyles.empty.emptyText}>
               {error?.message || `No se encontró la asignación con ID: ${asignacionId}`}
             </p>
             <div className="flex gap-2 justify-center">
-              <Button onClick={() => navigate(createPageUrl('asignaciones'))} className="btn-primary h-10 rounded-xl shadow-sm">
+              <Button onClick={() => navigate(createPageUrl('asignaciones'))} className={componentStyles.buttons.primary}>
                 Volver a Asignaciones
               </Button>
-              <Button onClick={() => window.location.reload()} variant="outline" className="h-10 rounded-xl">
+              <Button onClick={() => window.location.reload()} variant="outline" className={componentStyles.buttons.outline}>
                 Reintentar
               </Button>
             </div>
@@ -383,7 +384,7 @@ export default function AdaptarAsignacionPage() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
           <p className="text-ui/80">Cargando plan...</p>
         </div>
       </div>
@@ -401,7 +402,7 @@ export default function AdaptarAsignacionPage() {
         subtitle={`Estudiante: ${getNombreVisible(alumno)} • Pieza: ${asignacion.piezaSnapshot?.nombre}`}
         actions={
           <div className="flex gap-2 flex-wrap">
-            <Button variant="ghost" onClick={() => navigate(createPageUrl('asignaciones'))} className="h-10 rounded-xl">
+            <Button variant="ghost" onClick={() => navigate(createPageUrl('asignaciones'))} className={componentStyles.buttons.ghost}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver
             </Button>
@@ -409,7 +410,7 @@ export default function AdaptarAsignacionPage() {
               onClick={handleGuardar}
               disabled={guardarMutation.isPending}
               variant="outline"
-              className="h-10 rounded-xl"
+              className={componentStyles.buttons.outline}
             >
               <Save className="w-4 h-4 mr-2" />
               Guardar cambios
@@ -418,7 +419,7 @@ export default function AdaptarAsignacionPage() {
               <Button
                 onClick={handlePublicar}
                 disabled={publicarMutation.isPending}
-                className="btn-primary h-10 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-300))]"
+                className={`${componentStyles.buttons.primary} shadow-sm focus-brand`}
               >
                 Publicar asignación
               </Button>
@@ -429,9 +430,9 @@ export default function AdaptarAsignacionPage() {
 
       {isCerrada && (
         <div className="max-w-[1600px] mx-auto px-6 md:px-8 mt-4">
-          <Alert className="border-amber-200 bg-amber-50 rounded-xl">
-            <AlertCircle className="h-4 w-4 text-amber-700" />
-            <AlertDescription className="text-amber-800">
+          <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-warning)] bg-[var(--color-warning)]/10 rounded-xl`}>
+            <AlertCircle className="h-4 w-4 text-[var(--color-warning)]" />
+            <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-warning)]`}>
               <strong>Advertencia:</strong> Esta asignación está cerrada. Los cambios se guardarán pero considera duplicar como borrador para preservar el histórico.
             </AlertDescription>
           </Alert>
@@ -439,11 +440,11 @@ export default function AdaptarAsignacionPage() {
       )}
 
       <div className="max-w-[1600px] mx-auto p-6 md:p-8">
-        <Card className="app-card">
+        <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Árbol del Plan ({planData.semanas.length} semanas)</CardTitle>
-              <Button onClick={addSemana} size="sm" className="btn-primary h-9 rounded-xl shadow-sm">
+              <Button onClick={addSemana} size="sm" className={`${componentStyles.buttons.primary} h-9 shadow-sm`}>
                 <Plus className="w-4 h-4 mr-2" />
                 Añadir Semana
               </Button>
@@ -453,7 +454,7 @@ export default function AdaptarAsignacionPage() {
             {planData.semanas.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-ui/80 mb-4">No hay semanas en este plan</p>
-                <Button onClick={addSemana} variant="outline" className="h-10 rounded-xl">
+                <Button onClick={addSemana} variant="outline" className={componentStyles.buttons.outline}>
                   <Plus className="w-4 h-4 mr-2" />
                   Crear Primera Semana
                 </Button>
@@ -543,13 +544,11 @@ export default function AdaptarAsignacionPage() {
 
                                                               <div className="flex-1">
                                                                 <div className="flex items-center gap-2 flex-wrap">
-                                                                  <PlayCircle className="w-4 h-4 text-blue-600" />
-                                                                  <span className="font-medium text-sm text-ui">{sesion.nombre}</span>
+                                                                  <PlayCircle className="w-4 h-4 text-[var(--color-info)]" />
+                                                                  <span className={`${componentStyles.typography.cardTitle} font-medium`}>{sesion.nombre}</span>
                                                                   <Badge
                                                                     variant="outline"
-                                                                    className={`text-xs rounded-full ${
-                                                                      tiempoTotal > 0 ? 'bg-green-50 border-green-300 text-green-800' : 'bg-[var(--color-surface-muted)]'
-                                                                    }`}
+                                                                    className={tiempoTotal > 0 ? componentStyles.status.badgeSuccess : componentStyles.status.badgeDefault}
                                                                   >
                                                                     ⏱ {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
                                                                   </Badge>
@@ -581,10 +580,10 @@ export default function AdaptarAsignacionPage() {
                                                                     </div>
 
                                                                     {expandedEjercicios.has(`${sesionKey}-ej`) && (
-                                                                      <div className="border-l-2 border-brand-200 pl-3 space-y-2">
+                                                                      <div className={`border-l-2 border-[var(--color-primary)] pl-3 space-y-2`}>
                                                                         {sesion.bloques && sesion.bloques.length > 0 && (
                                                                           <div className="space-y-1">
-                                                                            <p className="text-xs font-semibold text-brand-900 mb-1">Ejercicios:</p>
+                                                                            <p className={`${componentStyles.typography.smallMetaText} font-semibold text-[var(--color-primary)] mb-1`}>Ejercicios:</p>
                                                                             {sesion.bloques.map((ejercicio, ejercicioIndex) => (
                                                                               <div key={ejercicioIndex} className="flex items-center gap-2 p-2 bg-card border border-[var(--color-border-default)] rounded-xl text-xs">
                                                                                 <Badge variant="outline" className={`${tipoColors[ejercicio.tipo]} rounded-full`}>
