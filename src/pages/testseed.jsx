@@ -818,12 +818,12 @@ export default function TestSeedPage() {
   if (currentUser?.rolPersonalizado !== 'ADMIN') {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
-        <Card className="max-w-md app-card">
+        <Card className={`max-w-md ${componentStyles.containers.cardBase}`}>
           <CardContent className="pt-6 text-center space-y-4">
-            <Shield className="w-16 h-16 mx-auto text-red-500" />
+            <Shield className={`w-16 h-16 mx-auto ${componentStyles.empty.emptyIcon} text-[var(--color-danger)]`} />
             <div>
-              <h2 className="font-semibold text-lg text-ui mb-2">Acceso Denegado</h2>
-              <p className="text-muted">Esta vista requiere permisos de Administrador.</p>
+              <h2 className={componentStyles.typography.pageTitle}>Acceso Denegado</h2>
+              <p className={componentStyles.empty.emptyText}>Esta vista requiere permisos de Administrador.</p>
             </div>
           </CardContent>
         </Card>
@@ -998,13 +998,13 @@ export default function TestSeedPage() {
           <CardContent>
             {!linkAudit ? (
               <div className="text-center py-8 text-muted">
-                <LinkIcon className="w-12 h-12 mx-auto mb-3 icon-empty" />
+                <LinkIcon className={`w-12 h-12 mx-auto mb-3 ${componentStyles.empty.emptyIcon}`} />
                 <p>Ejecuta la auditoría</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {Object.entries(linkAudit).map(([rol, data]) => (
-                  <div key={rol} className="app-panel p-4">
+                  <div key={rol} className={`${componentStyles.containers.panelBase} p-4`}>
                     <h3 className="font-bold text-lg text-ui mb-3">{rol}</h3>
                     <div className="space-y-2">
                       <div>
@@ -1273,33 +1273,33 @@ export default function TestSeedPage() {
 
       <div className="max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <Card className="app-card hover:shadow-md transition-shadow">
+          <Card className={`${componentStyles.containers.cardBase} hover:shadow-md transition-shadow`}>
             <CardContent className="pt-4 text-center">
-              <Music className="w-6 h-6 mx-auto mb-2 text-pink-600" />
+              <Music className="w-6 h-6 mx-auto mb-2 text-[var(--color-accent)]" />
               <p className="text-2xl font-bold text-ui">{countPiezas}</p>
               <p className="text-xs text-muted">Piezas</p>
             </CardContent>
           </Card>
 
-          <Card className="app-card hover:shadow-md transition-shadow">
+          <Card className={`${componentStyles.containers.cardBase} hover:shadow-md transition-shadow`}>
             <CardContent className="pt-4 text-center">
-              <Calendar className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+              <Calendar className="w-6 h-6 mx-auto mb-2 text-[var(--color-info)]" />
               <p className="text-2xl font-bold text-ui">{countPlanes}</p>
               <p className="text-xs text-muted">Planes</p>
             </CardContent>
           </Card>
 
-          <Card className="app-card hover:shadow-md transition-shadow">
+          <Card className={`${componentStyles.containers.cardBase} hover:shadow-md transition-shadow`}>
             <CardContent className="pt-4 text-center">
-              <Layers className="w-6 h-6 mx-auto mb-2 text-purple-600" />
+              <Layers className="w-6 h-6 mx-auto mb-2 text-[var(--color-accent)]" />
               <p className="text-2xl font-bold text-ui">{countBloques}</p>
               <p className="text-xs text-muted">Ejercicios</p>
             </CardContent>
           </Card>
 
-          <Card className="app-card hover:shadow-md transition-shadow">
+          <Card className={`${componentStyles.containers.cardBase} hover:shadow-md transition-shadow`}>
             <CardContent className="pt-4 text-center">
-              <Target className="w-6 h-6 mx-auto mb-2 text-brand-600" />
+              <Target className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />
               <p className="text-2xl font-bold text-ui">{countAsignaciones}</p>
               <p className="text-xs text-muted">Asignaciones</p>
             </CardContent>
