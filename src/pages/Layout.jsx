@@ -42,6 +42,9 @@ import { componentStyles } from "@/design/componentStyles";
 import { Outlet } from "react-router-dom";
 import { displayName } from "@/components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import RequireRole from "@/components/auth/RequireRole";
+import { DesignPageContent } from "@/pages/design.jsx";
 
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
@@ -90,6 +93,7 @@ function LayoutContent() {
   const [isMobile, setIsMobile] = useState(false);
   const toggleLockRef = useRef(0);
   const headerToggleButtonRef = useRef(null);
+  const [showDesignModal, setShowDesignModal] = useState(false);
 
   const appName = getAppName();
 
@@ -174,6 +178,11 @@ function LayoutContent() {
       if ((e.metaKey || e.ctrlKey) && (e.key === "m" || e.key === "M")) {
         e.preventDefault();
         safeToggle();
+      }
+      // Abrir panel de diseño en modal: Ctrl/⌘ + Shift + D
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "d" || e.key === "D")) {
+        e.preventDefault();
+        setShowDesignModal((v) => !v);
       }
     };
     window.addEventListener("keydown", handleKey, { capture: true, passive: false });
@@ -569,6 +578,23 @@ function LayoutContent() {
           </footer>
         </main>
       </div>
+      {/* Modal de Panel de Diseño - accesible con Ctrl/⌘+Shift+D */}
+      <Dialog open={showDesignModal} onOpenChange={setShowDesignModal}>
+        <DialogContent className="max-w-5xl w-[95vw] h-[85vh] p-0 overflow-hidden">
+          <div className="h-full flex flex-col">
+            <div className="px-4 py-3 border-b border-ui bg-card">
+              <DialogTitle className="text-ui">Panel de Diseño (modal)</DialogTitle>
+            </div>
+            <div className="flex-1 overflow-auto">
+              <RequireRole anyOf={['ADMIN']}>
+                <div className="p-4">
+                  <DesignPageContent />
+                </div>
+              </RequireRole>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </RoleBootstrap>
   );
 }

@@ -324,7 +324,8 @@ function DesignPageContent() {
               <Settings className="w-5 h-5 text-blue-600 mt-0.5" />
               <div className="flex-1">
                 <p className="text-sm text-blue-900">
-                  <strong>Modo runtime:</strong> Los cambios se guardan en <code className="bg-blue-100 px-1 rounded">localStorage</code> y se aplican mediante CSS variables. Útil para probar variantes sin deployar código.
+                  <strong>Modo runtime:</strong> Los cambios se guardan en <code className="bg-blue-100 px-1 rounded">localStorage</code> y se aplican mediante variables CSS generadas por el <code className="bg-blue-100 px-1 rounded">DesignProvider</code> (desde <code className="bg-blue-100 px-1 rounded">src/components/design/designConfig.ts</code>). 
+                  Los <strong>tokens</strong> de diseño viven en <code className="bg-blue-100 px-1 rounded">src/design/designSystem.ts</code> y las <strong>clases semánticas</strong> en <code className="bg-blue-100 px-1 rounded">src/design/componentStyles.ts</code>, tal y como se describe en el README. Útil para probar variantes sin deployar código.
                 </p>
               </div>
             </div>
@@ -1000,3 +1001,5 @@ export default function DesignPage() {
     </RequireRole>
   );
 }
+
+export { DesignPageContent };

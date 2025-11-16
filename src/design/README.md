@@ -6,33 +6,32 @@ Origen único de verdad para estilos, tokens y clases semánticas.
 
 Archivo: `src/design/designSystem.ts`
 
-Expone categorías:
+Categorías:
 - colors: `primary`, `primarySoft`, `secondary`, `background`, `surface`, `surfaceMuted`, `textPrimary`, `textSecondary`, `textMuted`, `success`, `warning`, `danger`, `border*`, `ring`.
 - typography: familias, tamaños y line-heights.
-- spacing: `spacingXs..spacingXl` (vinculado a densidad).
+- spacing: `spacingXs..spacingXl` (dependiente de densidad).
 - radius: `radiusSm..radiusFull`.
 - shadows: `shadowSm`, `shadowMd` (→ `--shadow-card`), `shadowLg`.
 - motion: `transitionBase/Fast/Slow`.
 
-Los valores se conectan a variables CSS que genera `DesignProvider` (desde `designConfig.ts`) y a los colores HSL definidos en `index.css` (para Tailwind).
+Los valores se conectan a variables CSS que genera `DesignProvider` (desde `designConfig.ts`) y a las HSL base definidas en `src/index.css` (incluye el bloque `.dark`).
 
 ## 2) Variables CSS globales
 
 Archivo: `src/index.css`
 
-- Define las vars HSL base (`--background`, `--foreground`, `--primary`, etc.) y tema dark por `.dark`.
-- Capa `@layer components` centraliza clases semánticas y controles:
+- Vars HSL base: `--background`, `--foreground`, `--primary`, … y tema oscuro mediante `.dark`.
+- `@layer components` centraliza clases semánticas:
   - `.app-card`, `.app-panel`
   - `.ctrl-field`
   - `.btn-*` (`btn-primary`, `btn-secondary`, `btn-outline`, `btn-ghost`, `btn-danger`, tamaños `btn-sm/md/lg/icon`)
 
-Usar estas clases en lugar de estilos inline o utilidades dispersas cuando el elemento sea semánticamente un botón, tarjeta o panel.
+Usar estas clases cuando el elemento sea semánticamente un botón, tarjeta o panel.
 
-## 3) Lista de estilos por componente
+## 3) Mapa de estilos por componente
 
 Archivo: `src/design/componentStyles.ts`
 
-Mapa centralizado para referenciar combinaciones de clases:
 - layout: fondos de app/página/panel.
 - typography: `pageTitle`, `pageSubtitle`, `sectionTitle`, `cardTitle`, `bodyText`, `smallMetaText`.
 - components:
@@ -40,50 +39,45 @@ Mapa centralizado para referenciar combinaciones de clases:
   - Inputs/Selects: `inputDefault`, `inputSm`, `inputLg`, `selectDefault` (todos basados en `ctrl-field`).
   - Cards: `cardBase`, `cardElevated`, `cardKpi`, `panelBase`.
   - Agenda: `cardStudent`, `cardAsignacion`, `cardPlan`, `cardSemana`, `panelSesion`, `toneRowPlan`, `toneRowSemana`.
-  - Tabs (estandarizadas): `tabsSegmented*` y `tabsUnderline*`.
+  - Tabs: `tabsSegmented*` y `tabsUnderline*`.
   - Vacíos: `emptyStateIcon`, `emptyStateText`.
-  - Menú lateral: `menuSectionTitle`, `menuItem`, `menuItemActive`.
+  - Menú: `menuSectionTitle`, `menuItem`, `menuItemActive`.
 
-Objetivo: que un cambio de look se resuelva tocando este archivo y/o los tokens, no componentes sueltos.
+Objetivo: que un re-temeado se resuelva aquí y/o en tokens, no en componentes aislados.
 
-## 4) Componentes base
+## 4) Componentes base conectados
 
-- `PageHeader` (DS): ya consume `componentStyles.typography.pageTitle/pageSubtitle`. Usa `filters`/`actions` para slots.
-- `Tabs` (DS) y `SegmentedTabs` (UI): consumen `componentStyles.components.tabs*` en ambas variantes.
-- `Card` (DS y UI): preferir `Card` con clases semánticas (`app-card` / `panelBase` vía `componentStyles`) en lugar de utilidades sueltas.
-- `Input` y `Select`: basados en `ctrl-field` vía `useClassTokens` o directo (`componentStyles.components.inputDefault`).
+- `PageHeader` (DS): usa `componentStyles.typography.pageTitle/pageSubtitle`, `filters`/`actions`.
+- `Tabs` (DS): variantes segmentada/underline (usa `componentStyles.components.tabs*`).
+- `Card` (UI/DS): preferir `Card` + `app-card/panelBase` via `componentStyles`.
+- `Input`, `SelectTrigger`: basados en `ctrl-field` (via `useClassTokens`).
 
 ## 5) Pautas de uso
 
-1. Headers:
-   - Usar siempre `PageHeader` con `icon`, `title`, `subtitle` y `filters`/`actions` cuando proceda.
-2. Tabs:
-   - Usar `Tabs` (o `SegmentedTabs`) y no clases in situ; el estado activo es `primarySoft + borde primary` (contraste alto sin salto a sólido).
-3. Botones:
-   - Preferir `btn-*` semánticos y tamaños `btn-sm/md/lg` (o `Button` con `variant/size` que mapean a estas clases).
-4. Cards y paneles:
-   - `cardBase`/`cardElevated` para contenedores; `cardKpi` para KPIs; `panelBase` para bloques de filtros o contenedores neutros.
-5. Inputs subrayados (buscadores):
-   - Usar patrón subrayado con `border-b-2 border-[var(--color-border-strong)] text-ui placeholder:text-ui/60`.
-6. Contraste:
-   - Evitar `text-muted` en textos primarios; usar `text-ui` o `text-ui/80`. Reservar `text-muted` para meta o contenido desactivado.
-7. Inline styles:
-   - Evitarlos salvo casos de layout dinámico (ej. width basado en data). Para paddings/márgenes, usar utilidades. Para aspect ratios, `pb-[56.25%]`, etc.
+1. Headers: usar `PageHeader`.
+2. Tabs: `Tabs` unificado; estado activo = `primarySoft` + borde `primary`.
+3. Botones: `btn-*` y tamaños (`btn-sm/md/lg`) o `Button` con `variant/size`.
+4. Cards/Paneles: `cardBase/cardElevated`, `cardKpi`, `panelBase`.
+5. Buscadores (subrayado): `border-b-2 border-[var(--color-border-strong)] text-ui placeholder:text-ui/60`.
+6. Contraste: no usar `text-muted` en contenido primario; usar `text-ui`/`text-ui/80`. Reservar `text-muted` para meta/desactivado.
+7. Inline styles: evitarlos salvo layout dinámico (anchos basados en datos). Preferir utilidades o estilos centralizados.
 
-## 6) Checklist por página (resumen)
+## 6) Checklist por página
 
-- Usa `PageHeader`.
-- Tabs con `Tabs` unificado.
-- Controles de filtro sobre `panelBase`.
-- Contraste: textos base `text-ui`/`text-ui/80`, no `text-muted`.
-- Botones con `btn-*` y tokens.
-- Cards con `app-card` / variantes desde `componentStyles`.
+- `PageHeader` presente.
+- Tabs con `Tabs`.
+- Filtros sobre `panelBase`.
+- Contraste: `text-ui`/`text-ui/80` (no `text-muted` para contenido).
+- Botones con `btn-*`.
+- Cards con `app-card` / variantes en `componentStyles`.
 
-## 7) Dónde tocar para re-temear
+## 7) Re-temear (Light/Dark)
 
-1. `designSystem.ts`: cambiar paleta, tipografía, radios, sombras.
-2. `designConfig.ts` → `DEFAULT_DESIGN` y `generateCSSVariables`: añade/ajusta variables (p. ej. `primarySoft`, `surfaceMuted`).
-3. `componentStyles.ts`: ajustar combinaciones por tipo de UI.
-4. `index.css` (`@layer components`): estilos semánticos globales (`.btn-*`, `.ctrl-field`, `.app-card/panel`).
+1. `designSystem.ts`: paleta, tipografía, radios, sombras.
+2. `designConfig.ts`:
+   - `DEFAULT_DESIGN` y `generateCSSVariables` (camelCase → kebab-case).
+   - Genera escala de marca `--brand-50..--brand-900` a partir de `brandHue`.
+3. `componentStyles.ts`: combinaciones por tipo de UI.
+4. `index.css` (`@layer components`): clases semánticas (`.btn-*`, `.ctrl-field`, `.app-card/panel`).
 
-
+El `DesignProvider` añade/quita `.dark` en `<html>` según `design.theme`, activando el tema oscuro y aplicando todas las CSS vars en runtime.
