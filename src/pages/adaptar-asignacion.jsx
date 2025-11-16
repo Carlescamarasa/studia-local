@@ -470,8 +470,8 @@ export default function AdaptarAsignacionPage() {
                             <Card
                               ref={provided.innerRef}
                               {...provided.draggableProps}
-                              className={`app-panel cursor-pointer hover:shadow-md transition-all ${
-                                snapshot.isDragging ? 'shadow-card border-brand-300' : ''
+                              className={`${componentStyles.containers.panelBase} cursor-pointer hover:shadow-md transition-all ${
+                                snapshot.isDragging ? 'shadow-card border-[var(--color-primary)]' : ''
                               }`}
                               onClick={() => toggleSemana(semanaIndex)}
                             >
@@ -524,7 +524,7 @@ export default function AdaptarAsignacionPage() {
                                                           ref={provided.innerRef}
                                                           {...provided.draggableProps}
                                                           className={`app-panel cursor-pointer hover:shadow-md transition-all ${
-                                                            snapshot.isDragging ? 'shadow-card border-brand-300' : ''
+                                                            snapshot.isDragging ? 'shadow-card border-[var(--color-primary)]' : ''
                                                           }`}
                                                           onClick={() => toggleSesion(semanaIndex, sesionIndex)}
                                                         >
@@ -610,7 +610,7 @@ export default function AdaptarAsignacionPage() {
                                                                                     e.stopPropagation();
                                                                                     removeEjercicio(semanaIndex, sesionIndex, ejercicioIndex);
                                                                                   }}
-                                                                                  className="h-6 px-2 text-red-600 hover:bg-red-50 rounded-xl"
+                                                                                  className={`h-6 px-2 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-xl`}
                                                                                   aria-label={`Eliminar ${ejercicio.nombre}`}
                                                                                 >
                                                                                   <Trash2 className="w-3 h-3" />
@@ -622,14 +622,14 @@ export default function AdaptarAsignacionPage() {
 
                                                                         {sesion.rondas && sesion.rondas.length > 0 && (
                                                                           <div className="space-y-1">
-                                                                            <p className="text-xs font-semibold text-purple-900 mb-1">Rondas:</p>
+                                                                            <p className={`${componentStyles.typography.smallMetaText} font-semibold text-[var(--color-accent)] mb-1`}>Rondas:</p>
                                                                             {sesion.rondas.map((ronda, rondaIndex) => {
                                                                               const rondaKey = `${semanaIndex}-${sesionIndex}-ronda-${rondaIndex}`;
                                                                               const isRondaExpanded = expandedEjercicios.has(rondaKey);
                                                                               return (
                                                                                 <Card
                                                                                   key={rondaIndex}
-                                                                                  className="app-panel cursor-pointer hover:shadow-md transition-all"
+                                                                                  className={`${componentStyles.containers.panelBase} cursor-pointer hover:shadow-md transition-all`}
                                                                                   onClick={(e) => {
                                                                                     e.stopPropagation();
                                                                                     toggleRonda(semanaIndex, sesionIndex, rondaIndex);
@@ -639,17 +639,17 @@ export default function AdaptarAsignacionPage() {
                                                                                     <div className="flex items-center gap-2">
                                                                                       <div className="pt-0.5">
                                                                                         {isRondaExpanded ? (
-                                                                                          <ChevronDown className="w-3 h-3 text-purple-600" />
+                                                                                          <ChevronDown className="w-3 h-3 text-[var(--color-accent)]" />
                                                                                         ) : (
-                                                                                          <ChevronRight className="w-3 h-3 text-purple-600" />
+                                                                                          <ChevronRight className="w-3 h-3 text-[var(--color-accent)]" />
                                                                                         )}
                                                                                       </div>
-                                                                                      <Badge className="bg-purple-600 text-white text-xs rounded-full">Ronda</Badge>
+                                                                                      <Badge className={componentStyles.status.badgeDefault}>Ronda</Badge>
                                                                                       {ronda.aleatoria && (
-                                                                                        <Badge variant="outline" className="text-xs rounded-full">🎲 Random</Badge>
+                                                                                        <Badge variant="outline" className={componentStyles.status.badgeDefault}>🎲 Random</Badge>
                                                                                       )}
-                                                                                      <span className="text-xs text-ui/80">× {ronda.repeticiones} repeticiones</span>
-                                                                                      <span className="text-xs text-ui/80">({ronda.bloques.length} ejercicios)</span>
+                                                                                      <span className={componentStyles.typography.smallMetaText}>× {ronda.repeticiones} repeticiones</span>
+                                                                                      <span className={componentStyles.typography.smallMetaText}>({ronda.bloques.length} ejercicios)</span>
                                                                                       <Button
                                                                                         size="sm"
                                                                                         variant="ghost"
@@ -657,7 +657,7 @@ export default function AdaptarAsignacionPage() {
                                                                                           e.stopPropagation();
                                                                                           removeRonda(semanaIndex, sesionIndex, rondaIndex);
                                                                                         }}
-                                                                                        className="ml-auto text-red-600 hover:text-red-700 hover:bg-red-50 h-5 px-1 rounded-xl"
+                                                                                        className={`ml-auto text-[var(--color-danger)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 h-5 px-1 rounded-xl`}
                                                                                         aria-label="Eliminar ronda"
                                                                                       >
                                                                                         <Trash2 className="w-3 h-3" />
@@ -670,7 +670,7 @@ export default function AdaptarAsignacionPage() {
                                                                                           const ejercicio = sesion.bloques.find(b => b.code === code);
                                                                                           if (!ejercicio) {
                                                                                             return (
-                                                                                              <div key={eIndex} className="text-xs text-red-600 p-1">
+                                                                                              <div key={eIndex} className={`${componentStyles.typography.smallMetaText} text-[var(--color-danger)] p-1`}>
                                                                                                 ⚠️ Referencia huérfana: {code}
                                                                                               </div>
                                                                                             );
@@ -727,7 +727,7 @@ export default function AdaptarAsignacionPage() {
                                                                           e.stopPropagation();
                                                                           removeSesion(semanaIndex, sesionIndex);
                                                                         }}
-                                                                        className="text-xs h-7 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl"
+                                                                        className={`text-xs h-7 text-[var(--color-danger)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-xl`}
                                                                       >
                                                                         <Trash2 className="w-3 h-3 mr-1" />
                                                                         Eliminar
@@ -757,7 +757,7 @@ export default function AdaptarAsignacionPage() {
                                               e.stopPropagation();
                                               addSesion(semanaIndex);
                                             }}
-                                            className="h-8 rounded-xl"
+                                            className={componentStyles.buttons.outline}
                                           >
                                             <Plus className="w-3 h-3 mr-1" />
                                             Añadir Sesión
@@ -769,7 +769,7 @@ export default function AdaptarAsignacionPage() {
                                               e.stopPropagation();
                                               setEditingSemana({ index: semanaIndex, semana });
                                             }}
-                                            className="h-8 rounded-xl"
+                                            className={componentStyles.buttons.outline}
                                           >
                                             <Edit className="w-3 h-3 mr-1" />
                                             Editar Semana
@@ -787,7 +787,7 @@ export default function AdaptarAsignacionPage() {
                                         e.stopPropagation();
                                         duplicateSemana(semanaIndex);
                                       }}
-                                      className="h-8 w-8 p-0 rounded-xl hover:bg-[var(--color-surface-muted)]"
+                                      className={`h-8 w-8 p-0 rounded-xl hover:bg-[var(--color-surface-muted)]`}
                                       title="Duplicar semana"
                                       aria-label="Duplicar semana"
                                     >
@@ -800,7 +800,7 @@ export default function AdaptarAsignacionPage() {
                                         e.stopPropagation();
                                         removeSemana(semanaIndex);
                                       }}
-                                      className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 rounded-xl"
+                                      className={`h-8 w-8 p-0 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-xl`}
                                       aria-label="Eliminar semana"
                                     >
                                       <Trash2 className="w-4 h-4" />
