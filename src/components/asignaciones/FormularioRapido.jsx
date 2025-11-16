@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
-import MultiSelect from "@/components/ui/MultiSelect";
+import StudentSearchBar from "@/components/asignaciones/StudentSearchBar";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -204,23 +204,29 @@ export default function FormularioRapido({ onClose }) {
 
   const modalContent = (
     <>
+      {/* Overlay: alineado con PieceEditor */}
       <div className="fixed inset-0 bg-black/40 z-[80]" onClick={onClose} />
       
-      <div className="fixed inset-0 z-[90] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
-        <Card className="w-full max-w-6xl pointer-events-auto my-8 max-h-[92vh] overflow-y-auto app-card">
-          <CardHeader className="border-b bg-brand-500 text-white sticky top-0 z-10">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Target className="w-6 h-6" />
-                <CardTitle className="text-xl">Nueva Asignación</CardTitle>
+      {/* Contenedor modal: alineado con PieceEditor */}
+      <div className="fixed inset-0 z-[90] flex items-center justify-center pointer-events-none p-4 overflow-y-auto" role="dialog" aria-modal="true">
+        <div 
+          className="bg-white w-full max-w-3xl max-h-[92vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-8"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="border-b px-6 py-4 flex items-center justify-between bg-card rounded-t-2xl">
+            <div className="flex items-center gap-3 text-[var(--color-primary)]">
+              <Target className="w-6 h-6 text-[var(--color-primary)]" />
+              <div>
+                <h2 className="text-xl font-bold text-[var(--color-primary)]">Nueva Asignación</h2>
+                <p className="text-sm text-[var(--color-primary)]/90">Creación rápida de asignación</p>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20 rounded-xl">
-                <X className="w-5 h-5" />
-              </Button>
             </div>
-          </CardHeader>
+            <Button variant="ghost" size="icon" onClick={onClose} className="text-[var(--color-primary)] hover:bg-[var(--color-primary-soft)]">
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
 
-          <CardContent className="p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <Card className="app-panel">
                 <CardHeader>
@@ -230,8 +236,7 @@ export default function FormularioRapido({ onClose }) {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <MultiSelect
-                    label="Estudiantes"
+                  <StudentSearchBar
                     items={estudiantes.map(e => ({
                       value: e.id,
                       label: `${displayName(e)} ${e.email ? `(${e.email})` : ''}`.trim()
@@ -239,7 +244,7 @@ export default function FormularioRapido({ onClose }) {
                     value={formData.estudiantesIds}
                     onChange={(vals) => setFormData({ ...formData, estudiantesIds: vals })}
                   />
-                  <p className="text-xs text-muted">
+                  <p className="text-xs text-ui/80">
                     {formData.estudiantesIds.length > 0 ? `${formData.estudiantesIds.length} seleccionado(s)` : 'Ninguno seleccionado'}
                   </p>
                 </CardContent>
@@ -269,7 +274,7 @@ export default function FormularioRapido({ onClose }) {
                       className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                     >
                       {piezas.length === 0 ? (
-                        <div className="p-2 text-sm text-muted">No hay piezas</div>
+                        <div className="p-2 text-sm text-ui/80">No hay piezas</div>
                       ) : (
                         piezas.map((pieza) => (
                           <SelectItem key={pieza.id} value={pieza.id}>
@@ -280,7 +285,7 @@ export default function FormularioRapido({ onClose }) {
                     </SelectContent>
                   </Select>
                   {piezaSeleccionada && (
-                    <div className="mt-2 text-xs text-muted">
+                    <div className="mt-2 text-xs text-ui/80">
                       <p><strong>Nivel:</strong> {piezaSeleccionada.nivel}</p>
                       <p><strong>Elementos:</strong> {piezaSeleccionada.elementos?.length || 0}</p>
                     </div>
@@ -312,7 +317,7 @@ export default function FormularioRapido({ onClose }) {
                       className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                     >
                       {planes.length === 0 ? (
-                        <div className="p-2 text-sm text-muted">No hay planes</div>
+                        <div className="p-2 text-sm text-ui/80">No hay planes</div>
                       ) : (
                         planes.map((plan) => (
                           <SelectItem key={plan.id} value={plan.id}>
@@ -323,7 +328,7 @@ export default function FormularioRapido({ onClose }) {
                     </SelectContent>
                   </Select>
                   {planSeleccionado && (
-                    <div className="mt-2 text-xs text-muted">
+                    <div className="mt-2 text-xs text-ui/80">
                       <p><strong>Semanas:</strong> {planSeleccionado.semanas?.length || 0}</p>
                       {planSeleccionado.focoGeneral && (
                         <p><strong>Foco:</strong> {focoLabels[planSeleccionado.focoGeneral]}</p>
@@ -390,7 +395,7 @@ export default function FormularioRapido({ onClose }) {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted mt-1">Por defecto: General</p>
+                  <p className="text-xs text-ui/80 mt-1">Por defecto: General</p>
                 </div>
 
                 <div>
@@ -408,7 +413,7 @@ export default function FormularioRapido({ onClose }) {
                 <div className="flex items-center justify-between p-3 border border-ui app-panel hover:bg-muted hover:shadow-sm transition-all">
                   <div className="flex-1">
                     <Label htmlFor="publicar" className="font-medium">Publicar ahora</Label>
-                    <p className="text-xs text-muted">Si está desactivado, se guardará como borrador</p>
+                    <p className="text-xs text-ui/80">Si está desactivado, se guardará como borrador</p>
                   </div>
                   <Switch
                     id="publicar"
@@ -420,7 +425,7 @@ export default function FormularioRapido({ onClose }) {
                 <div className="flex items-center justify-between p-3 border border-ui app-panel bg-blue-50">
                   <div className="flex-1">
                     <Label htmlFor="adaptar" className="font-medium">Adaptar plan ahora (recomendado)</Label>
-                    <p className="text-xs text-muted">Crear en borrador y abrir editor para adaptar el plan</p>
+                    <p className="text-xs text-ui/80">Crear en borrador y abrir editor para adaptar el plan</p>
                   </div>
                   <Switch
                     id="adaptar"
@@ -452,47 +457,45 @@ export default function FormularioRapido({ onClose }) {
                 </AlertDescription>
               </Alert>
             )}
-          </CardContent>
+            </div>
 
-          <div className="border-t border-ui px-6 py-4 bg-muted sticky bottom-0">
-            <div className="flex justify-between gap-3">
-              <Button variant="outline" onClick={onClose} className="rounded-xl">
+          <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl">
+            <div className="flex gap-3 mb-2">
+              <Button variant="outline" onClick={onClose} className="flex-1">
                 Cancelar
               </Button>
-              <div className="flex gap-2">
-                {formData.adaptarPlanAhora ? (
-                  <Button
-                    onClick={handleCrear}
-                    disabled={crearAsignacionesMutation.isPending}
-                    className="bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm"
-                  >
-                    {crearAsignacionesMutation.isPending ? 'Creando...' : 'Crear y adaptar'}
-                  </Button>
-                ) : formData.publicarAhora ? (
-                  <Button
-                    onClick={handleCrear}
-                    disabled={crearAsignacionesMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700 rounded-xl shadow-sm"
-                  >
-                    {crearAsignacionesMutation.isPending ? 'Creando...' : 'Crear y publicar'}
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleCrear}
-                    disabled={crearAsignacionesMutation.isPending}
-                    className="btn-primary rounded-xl shadow-sm"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {crearAsignacionesMutation.isPending ? 'Guardando...' : 'Guardar borrador'}
-                  </Button>
-                )}
-              </div>
+              {formData.adaptarPlanAhora ? (
+                <Button
+                  onClick={handleCrear}
+                  disabled={crearAsignacionesMutation.isPending}
+                  className="flex-1 bg-brand-500 hover:bg-brand-600"
+                >
+                  {crearAsignacionesMutation.isPending ? 'Creando...' : 'Crear y adaptar'}
+                </Button>
+              ) : formData.publicarAhora ? (
+                <Button
+                  onClick={handleCrear}
+                  disabled={crearAsignacionesMutation.isPending}
+                  className="flex-1 bg-brand-500 hover:bg-brand-600"
+                >
+                  {crearAsignacionesMutation.isPending ? 'Creando...' : 'Crear y publicar'}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleCrear}
+                  disabled={crearAsignacionesMutation.isPending}
+                  className="flex-1 bg-brand-500 hover:bg-brand-600"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {crearAsignacionesMutation.isPending ? 'Guardando...' : 'Guardar borrador'}
+                </Button>
+              )}
             </div>
-            <p className="text-xs text-center text-muted mt-2">
+            <p className="text-xs text-center text-gray-500">
               Ctrl/⌘+Intro : acción principal • Ctrl/⌘+. : cancelar
             </p>
           </div>
-        </Card>
+        </div>
       </div>
     </>
   );

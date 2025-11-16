@@ -248,6 +248,12 @@ export default function CrearAsignacionWizard({ onClose }) {
                     value={searchEstudiante}
                     onChange={(e) => setSearchEstudiante(e.target.value)}
                     className="pl-10 h-10 rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    data-lt-active="false"
+                    data-gramm="false"
+                    data-form-type="other"
                     aria-label="Buscar estudiantes"
                   />
                 </div>

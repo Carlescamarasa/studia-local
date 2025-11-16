@@ -437,6 +437,9 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
   const toKebab = (s: string) =>
     s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/_/g, "-").toLowerCase();
   
+  // TODO(auditoría-DS3): El README referencia este archivo como `src/design/designConfig.ts`,
+  // pero la ruta real es `src/components/design/designConfig.ts`. Actualizar README en la limpieza final.
+
   // Colores
   if (normalized.colors) {
     Object.entries(normalized.colors).forEach(([key, value]) => {
@@ -475,6 +478,19 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
     Object.entries(normalized.layout.radius).forEach(([key, value]) => {
       vars[`--radius-${key === 'global' ? 'base' : key}`] = getRadiusValue(value as RadiusValue);
     });
+    // Alias de compatibilidad: emitir también --radius-ctrl (consumido por CSS global)
+    try {
+      const controlsRadius = (normalized.layout.radius as any).controls;
+      if (controlsRadius) {
+        vars['--radius-ctrl'] = getRadiusValue(controlsRadius as RadiusValue);
+      }
+    } catch (_e) {
+      // no-op
+    }
+    // TODO(auditoría-DS3): Alias de compatibilidad con CSS global:
+    // - En `index.css` y componentes se usa `--radius-ctrl`, pero aquí generamos `--radius-controls`.
+    //   Marcar para emitir alias `--radius-ctrl` = `--radius-controls` durante la fase de limpieza (FASE 3).
+    //   No cambiamos comportamiento ahora para evitar side-effects.
   }
   
   // Shadows
@@ -507,6 +523,7 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
       ? (normalized.typography.fontFamilySerif || DEFAULT_DESIGN.typography.fontFamilySerif)
       : (normalized.typography.fontFamilyHeadings || DEFAULT_DESIGN.typography.fontFamilyHeadings);
     vars['--font-size-base'] = `${normalized.typography.fontSizeBase || DEFAULT_DESIGN.typography.fontSizeBase}px`;
+    // TODO(auditoría-DS3): Evaluar si hace falta exponer más escala (sm, md, lg) como CSS vars derivadas de `fontSizeBase` + `fontSizeScale`.
   }
   
   // Componentes
@@ -514,6 +531,7 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
     if (normalized.components.input) {
       vars['--input-padding'] = normalized.components.input.padding || DEFAULT_DESIGN.components.input.padding;
       vars['--input-radius'] = getRadiusValue(normalized.components.input.radius || DEFAULT_DESIGN.components.input.radius);
+      // TODO(auditoría-DS3): Confirmar uso de `--input-radius`. En CSS global se usa principalmente `--radius-ctrl`.
     }
     if (normalized.components.button) {
       vars['--button-padding-sm'] = normalized.components.button.padding?.sm || DEFAULT_DESIGN.components.button.padding.sm;
@@ -525,6 +543,8 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
       vars['--card-padding-header'] = normalized.components.card.padding?.header || DEFAULT_DESIGN.components.card.padding.header;
       vars['--card-padding-content'] = normalized.components.card.padding?.content || DEFAULT_DESIGN.components.card.padding.content;
       vars['--card-radius'] = getRadiusValue(normalized.components.card.radius || DEFAULT_DESIGN.components.card.radius);
+      // TODO(auditoría-DS3): Alias de compatibilidad: `--radius-card` es el nombre consumido por estilos globales.
+      // Actualmente generamos `--card-radius` (y `--radius-card` proviene del bloque radius). Mantener una sola fuente en FASE 3.
     }
     if (normalized.components.sidebar) {
       vars['--sidebar-width'] = normalized.components.sidebar.width || DEFAULT_DESIGN.components.sidebar.width;

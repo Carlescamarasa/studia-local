@@ -165,12 +165,14 @@ button:focus-visible {
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
+    /* TODO(auditoría-DS3): Confirmar que `--radius-card` proviene de `designConfig` (alias consistente con `--card-radius`). */
   }
   .app-panel {
     background-color: var(--color-surface);
     color: var(--color-text-primary);
     border: 1px solid var(--color-border-muted);
     border-radius: var(--radius-card);
+    /* TODO(auditoría-DS3): Mantener paneles sin sombra por defecto según guía. */
   }
 
   /* Tipografía semántica */
@@ -180,6 +182,7 @@ button:focus-visible {
   .text-muted {
     /* Mezclar con la superficie (no transparente) para evitar bajar opacidad y perder contraste */
     color: var(--color-text-secondary);
+    /* TODO(auditoría-DS3): Usar sólo para meta/desactivado. No en contenido primario (ver README §5.6). */
   }
 
   /* Controles unificados */
@@ -190,6 +193,8 @@ button:focus-visible {
     border-radius: var(--radius-ctrl);
     padding: var(--input-padding);
     line-height: 1.5;
+    /* TODO(auditoría-DS3): `--radius-ctrl` no lo genera `designConfig` (emite `--radius-controls`).
+       Añadir alias en `generateCSSVariables` en FASE 3 para evitar incoherencias. */
   }
   .ctrl-field::placeholder {
     color: var(--color-text-secondary);
@@ -206,6 +211,7 @@ button:focus-visible {
     border: 1px solid var(--color-primary);
     border-radius: var(--button-radius);
     padding: var(--button-padding-md);
+    /* TODO(auditoría-DS3): Confirmar hover/active a través de `componentStyles` o variantes en `designConfig.components.button.variants`. */
   }
   .btn-secondary {
     background-color: var(--color-surface);

@@ -1,6 +1,9 @@
 export const designSystem = {
   colors: {
     // Paleta principal
+    // TODO(auditoría-DS3): Confirmar alineación completa con `src/components/design/designConfig.ts`.
+    // - Este archivo define tokens referencia pero actualmente no parece ser consumido directamente por los componentes.
+    // - Verificar si 'accent', 'info', 'surfaceElevated' y 'textInverse' deben existir aquí para reflejar todos los tokens de `DEFAULT_DESIGN.colors`.
     primary: "var(--color-primary)",
     primarySoft: "var(--color-primary-soft)",
     secondary: "var(--color-secondary)",
@@ -13,6 +16,7 @@ export const designSystem = {
     textPrimary: "var(--color-text-primary)",
     textSecondary: "var(--color-text-secondary)",
     textMuted: "var(--color-text-muted)",
+    // TODO(auditoría-DS3): Falta mapeo explícito para `textInverse` si lo usamos en botones (btn-primary).
 
     // Estados
     success: "var(--color-success)",
@@ -51,6 +55,7 @@ export const designSystem = {
     spacingMd: "var(--space-md)",
     spacingLg: "var(--space-lg)",
     spacingXl: "var(--space-xl)",
+    // TODO(auditoría-DS3): Validar si `--space-base` existe. `generateCSSVariables` emite `--space-{sm,base,md,lg,xl}` según densidad; confirmar usos reales.
   },
 
   radius: {
@@ -58,18 +63,22 @@ export const designSystem = {
     radiusMd: "8px",
     radiusLg: "12px",
     radiusFull: "9999px",
+    // TODO(auditoría-DS3): El sistema operativo usa `--radius-card` / `--radius-ctrl` vía CSS vars.
+    // Este bloque es referencia; revisar si se puede derivar todo desde `designConfig` para evitar duplicidad.
   },
 
   shadows: {
     shadowSm: "0 1px 2px rgba(15, 23, 42, 0.06)",
     shadowMd: "var(--shadow-card)",
     shadowLg: "0 20px 40px rgba(15, 23, 42, 0.12)",
+    // TODO(auditoría-DS3): `shadowMd` depende de `--shadow-card`. Confirmar que todas las cartas usan `--shadow-card` exclusivamente.
   },
 
   motion: {
     transitionBase: "150ms ease-out",
     transitionFast: "100ms ease-out",
     transitionSlow: "250ms ease-out",
+    // TODO(auditoría-DS3): Documentar conexión de estos tokens con utilidades/clases. Buscar usos reales.
   },
 } as const;
 

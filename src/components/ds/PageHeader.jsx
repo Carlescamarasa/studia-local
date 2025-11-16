@@ -19,7 +19,7 @@ export default function PageHeader({
   className = "" 
 }) {
   return (
-    <div className={`px-4 md:px-6 py-4 ${className}`}>
+    <div className={`px-4 md:px-6 py-4 page-header ${className}`} data-testid="page-header">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between gap-4 mb-3 md:mb-4">
           <div className="flex items-center gap-3 flex-1 min-w-0">

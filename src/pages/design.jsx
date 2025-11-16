@@ -34,6 +34,7 @@ function DesignPageContent() {
   const setConfig = setDesign;
   const reset = resetDesign;
   const [activeSection, setActiveSection] = useState('presets');
+  const [qaTabsValue, setQaTabsValue] = useState('one');
   const [qaOutput, setQaOutput] = useState('');
   const [qaRunning, setQaRunning] = useState(false);
   const [auditReport, setAuditReport] = useState(null);
@@ -203,7 +204,7 @@ function DesignPageContent() {
         { sel: '.page-header', name: 'PageHeader' },
         { sel: 'button', name: 'Botones' },
         { sel: '.btn-primary', name: 'Botones primary' },
-        { sel: '.segmented', name: 'Tabs segmentadas' },
+        { sel: '[data-testid="tabs-segmented"]', name: 'Tabs segmentadas' },
         { sel: '[data-sidebar-abierto]', name: 'Sidebar state' },
       ];
       
@@ -893,6 +894,32 @@ function DesignPageContent() {
                 <p className="text-sm text-ui/80">
                   Pruebas integradas para detectar problemas comunes de diseño y accesibilidad.
                 </p>
+                {/* Fixtures visibles para QA: aseguran detección por selectores del test */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      className="btn-primary h-9 rounded-xl shadow-sm"
+                      onClick={() => toast.success('✅ Botón Primary funcionando')}
+                      aria-label="Probar botón Primary QA"
+                    >
+                      Primary (QA)
+                    </Button>
+                    <Badge>QA</Badge>
+                  </div>
+                  <div className="app-panel p-3 rounded-xl border border-[var(--color-border-muted)]">
+                    Panel QA
+                  </div>
+                  <div className="icon-tile" aria-hidden />
+                  <Tabs
+                    value={qaTabsValue}
+                    onChange={setQaTabsValue}
+                    items={[
+                      { value: 'one', label: 'Uno' },
+                      { value: 'two', label: 'Dos' },
+                    ]}
+                    variant="segmented"
+                  />
+                </div>
 
                 <div className="flex gap-2 flex-wrap">
                   <Button 
@@ -971,11 +998,11 @@ function DesignPageContent() {
                 <div>
                   <p className="text-sm font-medium text-ui mb-2">Badges:</p>
                   <div className="flex flex-wrap gap-2">
-                    <Badge className="bg-slate-100 text-slate-800 border-slate-200 rounded-full">GEN</Badge>
-                    <Badge className="bg-blue-100 text-blue-800 border-blue-200 rounded-full">LIG</Badge>
-                    <Badge className="bg-purple-100 text-purple-800 border-purple-200 rounded-full">RIT</Badge>
-                    <Badge className="bg-green-100 text-green-800 border-green-200 rounded-full">ART</Badge>
-                    <Badge className="bg-brand-100 text-brand-800 border-brand-200 rounded-full">S&A</Badge>
+                    <Badge className="rounded-full bg-[var(--color-surface-muted)] text-ui text-xs">GEN</Badge>
+                    <Badge className="rounded-full bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border border-[var(--color-primary)]">LIG</Badge>
+                    <Badge className="rounded-full bg-[var(--color-secondary)]/10 text-[var(--color-secondary)] border border-[var(--color-secondary)]/20">RIT</Badge>
+                    <Badge className="rounded-full bg-[var(--color-success)]/10 text-[var(--color-success)] border border-[var(--color-success)]/20">ART</Badge>
+                    <Badge className="rounded-full bg-[hsl(var(--brand-50))] text-[hsl(var(--brand-800))] border border-[hsl(var(--brand-200))]">S&A</Badge>
                   </div>
                 </div>
 

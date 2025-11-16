@@ -23,6 +23,7 @@ export default function Tabs({
           className={cn(componentStyles.components.tabsSegmentedContainer, className)}
           role="tablist"
           aria-label="Pestañas de navegación"
+          data-testid="tabs-segmented"
         >
           {items.map((item) => {
             const Icon = item.icon;

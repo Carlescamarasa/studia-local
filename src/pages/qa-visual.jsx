@@ -285,8 +285,14 @@ function QAVisualContent({ embedded = false }) {
                 <div>
                   <p className="text-sm font-medium text-ui mb-3">Inputs:</p>
                   <div className="grid md:grid-cols-2 gap-4 max-w-2xl">
-                    <Input placeholder="Input estándar" className="focus-brand" />
-                    <Textarea placeholder="Textarea" rows={2} className="focus-brand" />
+                    <div>
+                      <label htmlFor="qa-input" className="text-xs text-ui/80 block mb-1">Input estándar</label>
+                      <Input id="qa-input" placeholder="Input estándar" className="focus-brand" />
+                    </div>
+                    <div>
+                      <label htmlFor="qa-textarea" className="text-xs text-ui/80 block mb-1">Textarea</label>
+                      <Textarea id="qa-textarea" placeholder="Textarea" rows={2} className="focus-brand" />
+                    </div>
                   </div>
                 </div>
 
@@ -319,9 +325,9 @@ function QAVisualContent({ embedded = false }) {
                 <div>
                   <p className="text-sm font-medium text-ui mb-3">Tipografía:</p>
                   <div className="space-y-2">
-                    <h1 className="text-title">Heading 1 con tokens</h1>
-                    <h2 className="text-ui text-2xl font-semibold">Heading 2</h2>
-                    <h3 className="text-ui text-xl font-semibold">Heading 3</h3>
+                    <h2 className="text-ui text-3xl font-bold">Heading 1 con tokens</h2>
+                    <h3 className="text-ui text-2xl font-semibold">Heading 2</h3>
+                    <h4 className="text-ui text-xl font-semibold">Heading 3</h4>
                     <p className="text-ui">Párrafo normal con text-ui</p>
                     <p className="text-ui/80 text-sm">Texto secundario</p>
                   </div>

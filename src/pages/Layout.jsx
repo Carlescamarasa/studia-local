@@ -244,7 +244,7 @@ function LayoutContent() {
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-[hsl(var(--brand-500))] border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted">Cargando {appName}...</p>
+          <p className="text-ui/80">Cargando {appName}...</p>
         </div>
       </div>
     );
@@ -314,7 +314,7 @@ function LayoutContent() {
           inert={!abierto && isMobile ? "" : undefined}
           tabIndex={-1}
           className={`
-            bg-card border-r border-ui z-[90] flex flex-col
+            bg-card border-r border-[var(--color-border-default)] z-[90] flex flex-col
             transition-transform duration-200 will-change-transform transform-gpu
             fixed inset-y-0 left-0 w-[280px]
             ${abierto ? "translate-x-0" : "-translate-x-full lg:-translate-x-full"}
@@ -324,7 +324,7 @@ function LayoutContent() {
           }}
         >
           {/* Header del sidebar */}
-          <div className="border-b border-ui p-6">
+          <div className="border-b border-[var(--color-border-default)] p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-card overflow-hidden">
                 <img 
@@ -375,7 +375,7 @@ function LayoutContent() {
           </div>
 
           {/* Pie del sidebar */}
-          <div className="border-t border-ui p-4 pt-3 space-y-3 text-ui/90">
+          <div className="border-t border-[var(--color-border-default)] p-4 pt-3 space-y-3 text-ui/90">
             {/* Selector de usuario local */}
             <div className="px-2 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border-strong)]">
               <label className="text-[11px] font-medium text-ui mb-1 block">
@@ -482,7 +482,7 @@ function LayoutContent() {
         >
           {/* Header mobile */}
           <header
-            className="bg-card border-b border-ui px-4 py-3 lg:hidden sticky top-0 z-[70] cursor-pointer active:bg-muted transition-colors"
+            className="bg-card border-b border-[var(--color-border-default)] px-4 py-3 lg:hidden sticky top-0 z-[70] cursor-pointer active:bg-muted transition-colors"
             onClick={handleHeaderClick}
             role="button"
             aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
@@ -553,7 +553,7 @@ function LayoutContent() {
           </div>
 
           {/* Footer global - centrado con nombre de app */}
-          <footer className="border-t border-ui bg-card text-xs text-ui/80 mt-auto">
+          <footer className="border-t border-[var(--color-border-default)] bg-card text-xs text-ui/80 mt-auto">
             <div className="max-w-7xl mx-auto px-4 py-4 md:py-5 flex flex-wrap items-center justify-center gap-2 text-center">
               <span>{appName} © {new Date().getFullYear()}</span>
               <span className="opacity-40">-</span>

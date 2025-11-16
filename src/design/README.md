@@ -14,7 +14,7 @@ Categorías:
 - shadows: `shadowSm`, `shadowMd` (→ `--shadow-card`), `shadowLg`.
 - motion: `transitionBase/Fast/Slow`.
 
-Los valores se conectan a variables CSS que genera `DesignProvider` (desde `designConfig.ts`) y a las HSL base definidas en `src/index.css` (incluye el bloque `.dark`).
+Los valores se conectan a variables CSS que genera `DesignProvider` (desde `src/components/design/designConfig.ts`) y a las HSL base definidas en `src/index.css` (incluye el bloque `.dark`).
 
 ## 2) Variables CSS globales
 
@@ -48,7 +48,7 @@ Objetivo: que un re-temeado se resuelva aquí y/o en tokens, no en componentes a
 ## 4) Componentes base conectados
 
 - `PageHeader` (DS): usa `componentStyles.typography.pageTitle/pageSubtitle`, `filters`/`actions`.
-- `Tabs` (DS): variantes segmentada/underline (usa `componentStyles.components.tabs*`).
+- `Tabs` (DS): variantes segmentada/underline (usa `componentStyles.components.tabs*`). La variante segmentada expone `data-testid="tabs-segmented"` para QA.
 - `Card` (UI/DS): preferir `Card` + `app-card/panelBase` via `componentStyles`.
 - `Input`, `SelectTrigger`: basados en `ctrl-field` (via `useClassTokens`).
 
@@ -135,7 +135,7 @@ Esta sección recoge todos los elementos/atributos ya mapeados a tokens y CSS gl
   - `cardBase`, `cardElevated`, `cardKpi`, `panelBase`, plus Agenda.
 
 7) Tabs
-- `Tabs` (DS) → `segmented`/`underline` usando `componentStyles.components.tabs*`.
+- `Tabs` (DS) → `segmented`/`underline` usando `componentStyles.components.tabs*`. La variante segmentada expone `data-testid="tabs-segmented"` para QA.
 - Estados activos con `primarySoft` + borde `primary`.
 
 8) Menú lateral
@@ -143,7 +143,7 @@ Esta sección recoge todos los elementos/atributos ya mapeados a tokens y CSS gl
 
 9) Tema Light/Dark
 - `DesignProvider` alterna `.dark` en `<html>` según `design.theme`.
-- Componente `/design` permite seleccionar y aplicar el preset.
+- Componente `/design` permite seleccionar y aplicar el preset. En la pestaña “QA” se incluyen fixtures estáticos (`.page-header`, `.btn-primary`, `.badge`, `.app-panel`, `[data-testid="tabs-segmented"]`) para auditoría consistente.
 
 ---
 
@@ -167,7 +167,7 @@ Patrones detectados en el proyecto que conviene normalizar hacia tokens/clases s
   - Bordes → `var(--color-border-default|strong)`
 
 4) `border-ui` u otras clases no mapeadas a tokens
-- Alinear con `var(--color-border-*)` según contexto (`default/muted/strong`).
+- Alinear con `border-[var(--color-border-*)]` según contexto (`default/muted/strong`). Evitar `border-ui` legacy.
 
 5) Uso de escala `brand` en texto de cuerpo
 - Reservar `--brand-*` para acentos/badges/borders ligeros, no para cuerpo.
@@ -176,7 +176,7 @@ Patrones detectados en el proyecto que conviene normalizar hacia tokens/clases s
 - Evitarlos para padding/margins/width/height fijos. Preferir utilidades o clases de `componentStyles`.
 
 7) Clases heredadas/obsoletas
-- Evitar `icon-tile`, `page-header-*`. Usar `PageHeader` + `componentStyles.typography`.
+- Evitar `icon-tile`, `page-header-*`. Usar `PageHeader` + `componentStyles.typography`. En `/design` se mantiene `icon-tile` solo como fixture QA.
 
 Sugerencias de auditoría (expresiones útiles):
 - Restos `text-muted`: `rg -n "text-muted" src/`
@@ -191,8 +191,8 @@ Sugerencias de auditoría (expresiones útiles):
 - `/design` → pestaña “QA”. Ejecuta verificaciones sobre:
   - Vars críticas: `--radius-card/ctrl`, `--shadow-card`, `--focus-ring`.
   - Clases en `<body>`: `ds-serif`, densidad.
-  - Presencia de patrones esperados.
-- `QAVisualContent` admite `embedded` para integrarlo en otras vistas si se quiere.
+  - Presencia de patrones esperados (selectores actualizados: `.page-header`, `.btn-primary`, `.badge`, `.app-panel`, `[data-testid="tabs-segmented"]`).
+- `QAVisualContent` admite `embedded` para integrarlo en otras vistas si se quiere. En `/design` (pestaña “QA”) se añaden fixtures para detección estable.
 
 2) Greps dirigidos (estáticos)
 - Buscar usos no estandarizados (ver expresiones arriba).

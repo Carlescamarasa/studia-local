@@ -27,7 +27,15 @@ export default function MultiSelect({ label, items, value = [], onChange }) {
       </PopoverTrigger>
       <PopoverContent className="w-64 p-0" align="start">
         <Command>
-          <CommandInput placeholder={`Buscar ${label.toLowerCase()}...`} />
+          <CommandInput
+            placeholder={`Buscar ${label.toLowerCase()}...`}
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            data-lt-active="false"
+            data-gramm="false"
+            data-form-type="other"
+          />
           <CommandEmpty>Sin resultados</CommandEmpty>
           <CommandGroup className="max-h-64 overflow-auto">
             {items.map((item) => {
