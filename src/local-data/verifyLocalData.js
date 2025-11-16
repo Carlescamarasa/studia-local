@@ -2,59 +2,9 @@
 // Verifica que todas las referencias entre entidades sean válidas
 
 import { localUsers } from './localUsers';
-import AsignacionCSV from './Asignacion_export.csv?raw';
-import BloqueCSV from './Bloque_export.csv?raw';
-import FeedbackSemanalCSV from './FeedbackSemanal_export.csv?raw';
-import PiezaCSV from './Pieza_export.csv?raw';
-import PlanCSV from './Plan_export.csv?raw';
-import RegistroBloqueCSV from './RegistroBloque_export.csv?raw';
-import RegistroSesionCSV from './RegistroSesion_export.csv?raw';
+import { loadFromStorage } from '@/data/localStorageClient';
 
-// Función para parsear CSV (misma que LocalDataProvider)
-function parseCSV(csvText) {
-  const lines = csvText.trim().split('\n');
-  if (lines.length < 2) return [];
-  
-  const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, ''));
-  const rows = [];
-  
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    const values = [];
-    let current = '';
-    let inQuotes = false;
-    
-    for (let j = 0; j < line.length; j++) {
-      const char = line[j];
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        values.push(current.trim().replace(/^"|"$/g, ''));
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    values.push(current.trim().replace(/^"|"$/g, ''));
-    
-    const row = {};
-    headers.forEach((header, idx) => {
-      let value = values[idx] || '';
-      // Intentar parsear JSON si parece ser JSON
-      if (value.startsWith('{') || value.startsWith('[')) {
-        try {
-          value = JSON.parse(value);
-        } catch (e) {
-          // Si falla, dejar como string
-        }
-      }
-      row[header] = value;
-    });
-    rows.push(row);
-  }
-  
-  return rows;
-}
+// Desde ahora, la validación se hace contra la estructura unificada en localStorage (studia_data)
 
 /**
  * Valida la coherencia de todos los datos locales
@@ -69,15 +19,16 @@ export function verifyLocalData() {
   };
 
   try {
-    // Cargar todos los datos
-    const usuarios = localUsers;
-    const asignaciones = parseCSV(AsignacionCSV);
-    const bloques = parseCSV(BloqueCSV);
-    const feedbacksSemanal = parseCSV(FeedbackSemanalCSV);
-    const piezas = parseCSV(PiezaCSV);
-    const planes = parseCSV(PlanCSV);
-    const registrosBloque = parseCSV(RegistroBloqueCSV);
-    const registrosSesion = parseCSV(RegistroSesionCSV);
+    // Cargar todos los datos desde studia_data o usar arrays vacíos
+    const storage = loadFromStorage() || {};
+    const usuarios = storage.usuarios?.length ? storage.usuarios : localUsers;
+    const asignaciones = Array.isArray(storage.asignaciones) ? storage.asignaciones : [];
+    const bloques = Array.isArray(storage.bloques) ? storage.bloques : [];
+    const feedbacksSemanal = Array.isArray(storage.feedbacksSemanal) ? storage.feedbacksSemanal : [];
+    const piezas = Array.isArray(storage.piezas) ? storage.piezas : [];
+    const planes = Array.isArray(storage.planes) ? storage.planes : [];
+    const registrosBloque = Array.isArray(storage.registrosBloque) ? storage.registrosBloque : [];
+    const registrosSesion = Array.isArray(storage.registrosSesion) ? storage.registrosSesion : [];
 
     // Estadísticas básicas
     report.stats = {
