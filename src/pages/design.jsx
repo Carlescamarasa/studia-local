@@ -17,6 +17,7 @@ import { runDesignAudit, QUICK_PROFILES, parseAuditSpec, runAudit } from "@/comp
 import Tabs from "@/components/ds/Tabs";
 import { getAllPresets, saveCustomPreset, deleteCustomPreset, isBuiltInPreset, exportCustomPresets, importCustomPresets } from "@/components/design/DesignPresets";
 import { QAVisualContent } from "@/pages/qa-visual.jsx";
+import { componentStyles } from "@/design/componentStyles";
 
 function LabeledRow({ label, children }) {
   return (
@@ -28,7 +29,7 @@ function LabeledRow({ label, children }) {
 }
 
 function DesignPageContent({ embedded = false }) {
-  const { design, setDesign, setDesignPartial, resetDesign, exportDesign, importDesign, loadPreset } = useDesign();
+  const { design, setDesign, setDesignPartial, resetDesign, exportDesign, importDesign, loadPreset, currentPresetId, setPresetId, basePresets } = useDesign();
   // Aliases para compatibilidad
   const config = design;
   const setConfig = setDesign;
@@ -1539,57 +1540,187 @@ function DesignPageContent({ embedded = false }) {
         )}
 
         {activeSection === 'preview' && (
-          <Card className="app-card">
-            <CardHeader className="border-b border-[var(--color-border-default)]">
-              <CardTitle>Preview de Componentes</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-6 text-ui">
-              <div className="space-y-3">
+          <>
+            {/* Selector de Preset Base */}
+            <Card className="app-card">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
+                <CardTitle>Selector de Estilo Base</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 text-ui">
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium text-ui mb-2 block">
+                      Preset de Estilo:
+                    </Label>
+                    <Select
+                      value={currentPresetId || 'default'}
+                      onValueChange={setPresetId}
+                    >
+                      <SelectTrigger className="w-full h-10 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {basePresets?.map((preset) => (
+                          <SelectItem key={preset.id} value={preset.id}>
+                            <div>
+                              <div className="font-medium">{preset.label}</div>
+                              <div className="text-xs text-ui/70">{preset.description}</div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {currentPresetId && basePresets && (
+                    <div className="p-3 rounded-xl bg-[var(--color-surface-muted)] border border-[var(--color-border-default)]">
+                      <p className="text-xs text-ui/80">
+                        <strong>Preset activo:</strong> {basePresets.find(p => p.id === currentPresetId)?.label || currentPresetId}
+                      </p>
+                      <p className="text-xs text-ui/80 mt-1">
+                        {basePresets.find(p => p.id === currentPresetId)?.description}
+                      </p>
+                      <p className="text-xs text-ui/60 mt-2">
+                        💡 El color de marca (primary) es siempre <code className="bg-[var(--color-primary-soft)] px-1 rounded">#fd9840</code> en todos los presets.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Preview de Componentes */}
+            <Card className="app-card">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
+                <CardTitle>Preview de Componentes</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6 pt-6 text-ui">
+                {/* PageHeader */}
                 <div>
-                  <p className="text-sm font-medium text-ui mb-2">Botones:</p>
-                  <div className="flex gap-2 flex-wrap">
-                    <Button className="btn-primary h-10 rounded-xl shadow-sm">Primary</Button>
-                    <Button variant="outline" className="h-10 rounded-xl">Outline</Button>
-                    <Button variant="ghost" className="h-10 rounded-xl">Ghost</Button>
+                  <p className="text-sm font-medium text-ui mb-3">PageHeader:</p>
+                  <div className={componentStyles.containers.cardBase + " p-4"}>
+                    <h1 className={componentStyles.typography.pageTitle}>Título de Página</h1>
+                    <p className={componentStyles.typography.pageSubtitle}>Subtítulo descriptivo del contenido</p>
                   </div>
                 </div>
 
+                {/* Botones */}
                 <div>
-                  <p className="text-sm font-medium text-ui mb-2">Cards anidadas:</p>
-                  <Card className="app-panel">
-                    <CardContent className="pt-4">
-                      <p className="text-sm text-ui/80">Panel interno con radius variable</p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-ui mb-2">Icon tile:</p>
-                  <div className="icon-tile">
-                    <Palette className="w-5 h-5" />
+                  <p className="text-sm font-medium text-ui mb-3">Botones (todas las variantes):</p>
+                  <div className="flex flex-wrap gap-3">
+                    <Button className={componentStyles.buttons.primary}>Primary</Button>
+                    <Button className={componentStyles.buttons.secondary}>Secondary</Button>
+                    <Button className={componentStyles.buttons.outline}>Outline</Button>
+                    <Button className={componentStyles.buttons.ghost}>Ghost</Button>
+                    <Button className={componentStyles.buttons.danger}>Danger</Button>
                   </div>
                 </div>
 
+                {/* Cards y Paneles */}
                 <div>
-                  <p className="text-sm font-medium text-ui mb-2">Badges:</p>
+                  <p className="text-sm font-medium text-ui mb-3">Cards y Paneles:</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card className={componentStyles.containers.cardBase}>
+                      <CardHeader>
+                        <CardTitle className={componentStyles.typography.cardTitle}>Card Base</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className={componentStyles.typography.bodyText}>Contenido de card base con shadow suave</p>
+                      </CardContent>
+                    </Card>
+                    <Card className={componentStyles.containers.cardElevated}>
+                      <CardHeader>
+                        <CardTitle className={componentStyles.typography.cardTitle}>Card Elevated</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className={componentStyles.typography.bodyText}>Card elevada con shadow más marcada</p>
+                      </CardContent>
+                    </Card>
+                    <Card className={componentStyles.containers.cardMetric}>
+                      <CardContent className="pt-4 text-center">
+                        <p className="text-3xl font-bold text-ui">198</p>
+                        <p className={componentStyles.typography.smallMetaText}>Métrica destacada</p>
+                      </CardContent>
+                    </Card>
+                    <Card className={componentStyles.containers.panelBase}>
+                      <CardContent className="pt-4">
+                        <p className={componentStyles.typography.bodyText}>Panel base con borde sutil</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Inputs y Controles */}
+                <div>
+                  <p className="text-sm font-medium text-ui mb-3">Inputs y Controles:</p>
+                  <div className="space-y-3 max-w-md">
+                    <Input
+                      placeholder="Input por defecto"
+                      className={componentStyles.controls.inputDefault}
+                    />
+                    <Input
+                      placeholder="Input pequeño"
+                      className={componentStyles.controls.inputSm}
+                    />
+                    <Input
+                      placeholder="Input underline"
+                      className={componentStyles.controls.inputUnderline}
+                    />
+                    <Select>
+                      <SelectTrigger className={componentStyles.controls.selectDefault}>
+                        <SelectValue placeholder="Select por defecto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Opción 1</SelectItem>
+                        <SelectItem value="2">Opción 2</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Tabs */}
+                <div>
+                  <p className="text-sm font-medium text-ui mb-3">Tabs:</p>
+                  <Tabs
+                    value="tab1"
+                    onChange={() => {}}
+                    items={[
+                      { value: 'tab1', label: 'Tab 1' },
+                      { value: 'tab2', label: 'Tab 2' },
+                    ]}
+                    variant="segmented"
+                  />
+                </div>
+
+                {/* Badges y Estados */}
+                <div>
+                  <p className="text-sm font-medium text-ui mb-3">Badges y Estados:</p>
                   <div className="flex flex-wrap gap-2">
-                    <Badge className="rounded-full bg-[var(--color-surface-muted)] text-ui text-xs">GEN</Badge>
-                    <Badge className="rounded-full bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border border-[var(--color-primary)]">LIG</Badge>
-                    <Badge className="rounded-full bg-[var(--color-secondary)]/10 text-[var(--color-secondary)] border border-[var(--color-secondary)]/20">RIT</Badge>
-                    <Badge className="rounded-full bg-[var(--color-success)]/10 text-[var(--color-success)] border border-[var(--color-success)]/20">ART</Badge>
-                    <Badge className="rounded-full bg-[hsl(var(--brand-50))] text-[hsl(var(--brand-800))] border border-[hsl(var(--brand-200))]">S&A</Badge>
+                    <Badge className={componentStyles.status.badgeDefault}>Default</Badge>
+                    <Badge className={componentStyles.status.badgeInfo}>Info</Badge>
+                    <Badge className={componentStyles.status.badgeSuccess}>Success</Badge>
+                    <Badge className={componentStyles.status.badgeWarning}>Warning</Badge>
+                    <Badge className={componentStyles.status.badgeDanger}>Danger</Badge>
                   </div>
                 </div>
 
-                <div>
-                  <p className="text-sm font-medium text-ui mb-2">Focus ring:</p>
-                  <Button variant="outline" className="h-10 rounded-xl focus-brand">
-                    Enfócame con Tab
-                  </Button>
+                {/* Verificación de Color de Marca */}
+                <div className="p-4 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary-soft)]">
+                  <p className="text-sm font-semibold text-ui mb-2">✅ Verificación de Color de Marca</p>
+                  <p className="text-xs text-ui/80">
+                    El color primary debe ser siempre <code className="bg-white/50 px-1 rounded">#fd9840</code> en todos los presets.
+                    Este badge usa <code>var(--color-primary)</code> y <code>var(--color-primary-soft)</code>.
+                  </p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <div className="w-12 h-12 rounded-lg" style={{ backgroundColor: '#fd9840' }} />
+                    <div className="text-xs text-ui/80">
+                      <div>Primary: <code>#fd9840</code></div>
+                      <div>Primary Soft: <code>var(--color-primary-soft)</code></div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </>
         )}
       </div>
     </div>

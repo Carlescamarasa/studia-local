@@ -83,7 +83,7 @@ const SIDEBAR_WIDTH = 280;
 
 /* ------------------------------- Layout --------------------------------- */
 function LayoutContent() {
-  const { loadPreset, design } = useDesign();
+  const { loadPreset, design, currentPresetId, setPresetId, basePresets, setDesignPartial } = useDesign();
   const location = useLocation();
   const navigate = useNavigate();
   const { abierto, toggleSidebar, closeSidebar } = useSidebar();
@@ -385,31 +385,35 @@ function LayoutContent() {
 
           {/* Pie del sidebar */}
           <div className="border-t border-[var(--color-border-default)] p-4 pt-3 space-y-3 text-ui/90">
-            {/* Selector rápido de tema */}
+            {/* Selector de Estilo y Tema */}
             <div className="px-2 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border-strong)]">
               <label className="text-[11px] font-medium text-ui mb-1 block">
-                Tema:
+                Estilo y Tema:
               </label>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => loadPreset('light')}
-                  className={`h-8 rounded-xl flex-1 ${design?.theme !== 'dark' ? 'btn-secondary' : ''}`}
-                  aria-label="Activar tema Light"
-                >
-                  Light
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => loadPreset('dark')}
-                  className={`h-8 rounded-xl flex-1 ${design?.theme === 'dark' ? 'btn-secondary' : ''}`}
-                  aria-label="Activar tema Dark"
-                >
-                  Dark
-                </Button>
-              </div>
+              <Select
+                value={`${currentPresetId || 'default'}-${design?.theme || 'light'}`}
+                onValueChange={(value) => {
+                  const [presetId, theme] = value.split('-');
+                  setPresetId(presetId);
+                  setDesignPartial('theme', theme);
+                }}
+              >
+                <SelectTrigger className="h-8 rounded-xl text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {basePresets?.map((preset) => (
+                    <React.Fragment key={preset.id}>
+                      <SelectItem value={`${preset.id}-light`}>
+                        {preset.label} – Light
+                      </SelectItem>
+                      <SelectItem value={`${preset.id}-dark`}>
+                        {preset.label} – Dark
+                      </SelectItem>
+                    </React.Fragment>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             {/* Selector de usuario local */}
             <div className="px-2 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border-strong)]">

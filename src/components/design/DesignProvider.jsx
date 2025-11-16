@@ -17,6 +17,11 @@ import {
   deleteCustomPreset,
   isBuiltInPreset,
 } from "./DesignPresets";
+import {
+  DESIGN_PRESETS,
+  findPresetById,
+  getDefaultPreset,
+} from "./BasePresets";
 
 const DesignContext = createContext({
   design: DEFAULT_DESIGN,
@@ -32,6 +37,10 @@ const DesignContext = createContext({
   presets: {},
   deleteDesignPreset: () => {},
   isBuiltInPreset: () => false,
+  // Nuevos: sistema de presets base
+  currentPresetId: 'default',
+  setPresetId: () => {},
+  basePresets: DESIGN_PRESETS,
 });
 
 export function useDesign() {
@@ -56,6 +65,18 @@ function setNestedValue(obj, path, value) {
 }
 
 export function DesignProvider({ children }) {
+  // Estado para presetId base (default, soft, contrast)
+  const [presetId, setPresetId] = useState(() => {
+    try {
+      const saved = localStorage.getItem("studia_base_preset_id");
+      if (saved && findPresetById(saved)) {
+        return saved;
+      }
+    } catch (_) {}
+    return 'default';
+  });
+
+  // Estado para el diseño actual
   const [design, setDesign] = useState(() => {
     try {
       const custom = localStorage.getItem("custom_design_preset");
@@ -65,8 +86,26 @@ export function DesignProvider({ children }) {
         return normalizeDesign(parsed);
       }
     } catch (_) {}
-    return DEFAULT_DESIGN;
+    // Si no hay custom, usar el preset base por defecto
+    const defaultPreset = findPresetById(presetId) || getDefaultPreset();
+    return normalizeDesign(defaultPreset.design);
   });
+
+  // Función para cambiar de preset base
+  const handleSetPresetId = (id) => {
+    const preset = findPresetById(id);
+    if (preset) {
+      setPresetId(id);
+      // Limpiar preset personalizado al cambiar de preset base
+      localStorage.removeItem("custom_design_preset");
+      setDesign(normalizeDesign(preset.design));
+    }
+  };
+
+  // Cuando cambie presetId, guardar en localStorage
+  useEffect(() => {
+    localStorage.setItem("studia_base_preset_id", presetId);
+  }, [presetId]);
 
   // Generar e inyectar CSS variables en el DOM
   useEffect(() => {
@@ -181,8 +220,12 @@ export function DesignProvider({ children }) {
         setDesign(DEFAULT_DESIGN);
       },
       isBuiltInPreset,
+      // Nuevos: sistema de presets base
+      currentPresetId: presetId,
+      setPresetId: handleSetPresetId,
+      basePresets: DESIGN_PRESETS,
     }),
-    [design]
+    [design, presetId]
   );
 
   return (

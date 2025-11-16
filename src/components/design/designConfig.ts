@@ -220,10 +220,10 @@ export interface DesignTokens {
 export const DEFAULT_DESIGN: DesignTokens = {
   // Colores principales
   colors: {
-    primary: '#4F46E5',        // Indigo
-    primarySoft: '#EEF2FF',    // Indigo muy claro para fondos suaves
-    secondary: '#6366F1',      // Indigo claro
-    accent: '#F97316',          // Naranja
+    primary: '#fd9840',        // Color de marca Studia (naranja)
+    primarySoft: '#FFF5ED',    // Versión muy clara del primary para fondos suaves
+    secondary: '#FB8C3A',      // Versión ligeramente más oscura del primary
+    accent: '#F97316',          // Naranja complementario
     success: '#10B981',        // Verde
     warning: '#F59E0B',         // Ámbar
     danger: '#EF4444',         // Rojo
@@ -359,13 +359,13 @@ export const DEFAULT_DESIGN: DesignTokens = {
     ring: {
       width: '2px',
       style: 'solid',
-      color: 'rgba(79, 70, 229, 0.5)', // primary con opacidad
+      color: 'rgba(253, 152, 64, 0.5)', // primary (#fd9840) con opacidad
       offset: '2px',
     },
   },
   
   // Brand (compatibilidad con sistema anterior)
-  brandHue: 26,
+  brandHue: 28, // Hue de #fd9840
   theme: 'light',
 };
 
