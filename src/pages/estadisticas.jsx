@@ -60,6 +60,29 @@ const validarDuracion = (duracionSeg) => {
   return safeNumber(duracionSeg);
 };
 
+// Normaliza valores agregados (sin límite superior de 12h)
+const normalizeAggregate = (n) => {
+  if (n === null || n === undefined) return 0;
+  if (typeof n !== 'number') {
+    const parsed = parseFloat(n);
+    if (isNaN(parsed) || !isFinite(parsed)) return 0;
+    n = parsed;
+  }
+  if (!isFinite(n)) return 0;
+  if (n < 0) return 0;
+  return Math.round(n);
+};
+
+// Formatea una duración en segundos a "H h M min" (ocultando horas si son 0)
+const formatDuracionHM = (duracionSeg) => {
+  const totalSeg = normalizeAggregate(duracionSeg);
+  const horas = Math.floor(totalSeg / 3600);
+  const minutos = Math.floor((totalSeg % 3600) / 60);
+  if (horas > 0 && minutos > 0) return `${horas} h ${minutos} min`;
+  if (horas > 0) return `${horas} h`;
+  return `${minutos} min`;
+};
+
 function EstadisticasPageContent() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -90,7 +113,7 @@ function EstadisticasPageContent() {
     const stored = searchParams.get('focos');
     return stored ? stored.split(',') : [];
   });
-  const [granularidad, setGranularidad] = useState('semana');
+  const [granularidad, setGranularidad] = useState('dia');
   const [calificacionFilter, setCalificacionFilter] = useState('all');
   const [soloConNotas, setSoloConNotas] = useState(false);
   const [searchEjercicio, setSearchEjercicio] = useState('');
@@ -346,7 +369,11 @@ function EstadisticasPageContent() {
           .map(u => u.id)
           .forEach(id => targetAlumnoIds.add(id));
       } else if (isProf && estudiantesDelProfesor.length > 0) {
+        // Profesor sin filtros explícitos: por defecto, solo sus estudiantes
         estudiantesDelProfesor.forEach(id => targetAlumnoIds.add(id));
+      } else {
+        // Admin u otros roles sin filtros: por defecto, todos los estudiantes visibles
+        estudiantes.forEach(e => targetAlumnoIds.add(e.id));
       }
 
       if (targetAlumnoIds.size > 0) {
@@ -380,8 +407,20 @@ function EstadisticasPageContent() {
     return filtered;
   }, [registros, currentUser, periodoInicio, periodoFin, isEstu, profesoresSeleccionados, alumnosSeleccionados, focosSeleccionados, usuarios, isProf, estudiantesDelProfesor]);
 
+  // Evitar duplicados de sesiones (por id) antes de agregar estadísticas
+  const registrosFiltradosUnicos = useMemo(() => {
+    const map = new Map();
+    registrosFiltrados.forEach((r) => {
+      if (!r || !r.id) return;
+      if (!map.has(r.id)) {
+        map.set(r.id, r);
+      }
+    });
+    return Array.from(map.values());
+  }, [registrosFiltrados]);
+
   const bloquesFiltrados = useMemo(() => {
-    const registrosIds = new Set(registrosFiltrados.map(r => r.id));
+    const registrosIds = new Set(registrosFiltradosUnicos.map(r => r.id));
     return bloques
       .filter(b => registrosIds.has(b.registroSesionId))
       .map(b => ({
@@ -389,17 +428,17 @@ function EstadisticasPageContent() {
         duracionRealSeg: safeNumber(b.duracionRealSeg),
         duracionObjetivoSeg: safeNumber(b.duracionObjetivoSeg),
       }));
-  }, [bloques, registrosFiltrados]);
+  }, [bloques, registrosFiltradosUnicos]);
 
   const kpis = useMemo(() => {
     // Validar y corregir duraciones antes de calcular
-    const tiempoTotal = registrosFiltrados.reduce((sum, r) => {
+    const tiempoTotal = registrosFiltradosUnicos.reduce((sum, r) => {
       const duracion = validarDuracion(r.duracionRealSeg);
       return sum + duracion;
     }, 0);
-    const racha = calcularRacha(registrosFiltrados, isEstu ? currentUser?.id : null);
-    const calidadPromedio = calcularCalidadPromedio(registrosFiltrados);
-    const semanasDistintas = calcularSemanasDistintas(registrosFiltrados);
+    const racha = calcularRacha(registrosFiltradosUnicos, isEstu ? currentUser?.id : null);
+    const calidadPromedio = calcularCalidadPromedio(registrosFiltradosUnicos);
+    const semanasDistintas = calcularSemanasDistintas(registrosFiltradosUnicos);
 
     return {
       tiempoTotal,
@@ -407,7 +446,7 @@ function EstadisticasPageContent() {
       calidadPromedio,
       semanasDistintas,
     };
-  }, [registrosFiltrados, isEstu, currentUser]);
+  }, [registrosFiltradosUnicos, isEstu, currentUser]);
 
   const tiposBloques = useMemo(() => {
     const agrupado = {};
@@ -429,7 +468,7 @@ function EstadisticasPageContent() {
   const datosLinea = useMemo(() => {
     const agrupado = {};
     
-    registrosFiltrados.forEach(r => {
+    registrosFiltradosUnicos.forEach(r => {
       if (!r.inicioISO) return;
       
       const fecha = new Date(r.inicioISO);
@@ -483,7 +522,7 @@ function EstadisticasPageContent() {
         };
       })
       .sort((a, b) => a.fecha.localeCompare(b.fecha));
-  }, [registrosFiltrados, granularidad]);
+  }, [registrosFiltradosUnicos, granularidad]);
 
   const topEjercicios = useMemo(() => {
     const ejerciciosMap = {};
@@ -535,7 +574,7 @@ function EstadisticasPageContent() {
     const distribucion = { 1: 0, 2: 0, 3: 0, 4: 0 };
     const comentarios = [];
     
-    registrosFiltrados.forEach(r => {
+    registrosFiltradosUnicos.forEach(r => {
       const cal = safeNumber(r.calificacion);
       if (cal > 0 && cal <= 4) {
         const calInt = Math.round(cal);
@@ -549,7 +588,7 @@ function EstadisticasPageContent() {
     });
     
     return { distribucion, comentarios };
-  }, [registrosFiltrados]);
+  }, [registrosFiltradosUnicos]);
 
   const feedbackProfesor = useMemo(() => {
     if (!isEstu) return [];
@@ -745,9 +784,9 @@ function EstadisticasPageContent() {
                 <CardContent className="pt-4 text-center">
                   <Clock className="w-6 h-6 mx-auto mb-2 text-[hsl(var(--brand-500))]" />
                   <p className="text-2xl font-bold text-ui">
-                    {Math.floor(kpis.tiempoTotal / 60)}
+                    {formatDuracionHM(kpis.tiempoTotal)}
                   </p>
-                  <p className="text-xs text-muted">Minutos</p>
+                  <p className="text-xs text-muted">Tiempo total</p>
                 </CardContent>
               </Card>
 
@@ -784,9 +823,9 @@ function EstadisticasPageContent() {
                 value={granularidad}
                 onChange={setGranularidad}
                 options={[
-                  { value: 'dia', label: 'Días' },
-                  { value: 'semana', label: 'Semanas' },
-                  { value: 'mes', label: 'Meses' },
+                  { value: 'dia', label: 'Diario' },
+                  { value: 'semana', label: 'Semanal' },
+                  { value: 'mes', label: 'Mensual' },
                 ]}
               />
             </div>
@@ -843,7 +882,15 @@ function EstadisticasPageContent() {
                           );
                         }}
                       />
-                      <Line type="monotone" dataKey="tiempo" stroke="hsl(var(--brand-500))" strokeWidth={2} name="Tiempo (min)" dot={{ r: 3 }} />
+                      <Line
+                        type="monotone"
+                        dataKey="tiempo"
+                        stroke="#22C55E"
+                        strokeWidth={2}
+                        name="Tiempo (min)"
+                        dot={{ r: 3, stroke: "#22C55E", fill: "#22C55E" }}
+                        activeDot={{ r: 4 }}
+                      />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
@@ -1052,7 +1099,7 @@ function EstadisticasPageContent() {
                           </Badge>
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium">{minutos} min</span>
+                              <span className="text-sm font-medium">{formatDuracionHM(tipo.tiempoReal)}</span>
                               <span className="text-xs text-muted">{porcentaje}%</span>
                             </div>
                             <div className="bg-muted rounded-full h-2 overflow-hidden">
@@ -1065,7 +1112,9 @@ function EstadisticasPageContent() {
                         </div>
                         <div className="ml-[152px] flex gap-3 text-xs text-muted">
                           <span>Bloques: {tipo.count}</span>
-                          <span>Promedio: {Math.floor(safeNumber(tipo.tiempoMedio) / 60)}:{String(Math.floor(safeNumber(tipo.tiempoMedio) % 60)).padStart(2, '0')} min</span>
+                          <span>
+                            Promedio: {formatDuracionHM(safeNumber(tipo.tiempoMedio))}
+                          </span>
                         </div>
                       </div>
                     );
@@ -1119,7 +1168,7 @@ function EstadisticasPageContent() {
                               {ejercicio.sesionesCount} sesiones
                             </Badge>
                             <Badge variant="outline" className="rounded-full text-xs bg-brand-50">
-                              {Math.floor(ejercicio.tiempoTotal / 60)} min
+                              {formatDuracionHM(ejercicio.tiempoTotal)}
                             </Badge>
                             {ejercicio.ultimaPractica && (
                               <Badge variant="outline" className="rounded-full text-xs bg-muted">
@@ -1140,17 +1189,17 @@ function EstadisticasPageContent() {
         {tabActiva === 'historial' && (
           <Card className="app-card">
             <CardHeader>
-              <CardTitle className="text-base md:text-lg">Historial de Sesiones ({registrosFiltrados.length})</CardTitle>
+              <CardTitle className="text-base md:text-lg">Historial de Sesiones ({registrosFiltradosUnicos.length})</CardTitle>
             </CardHeader>
             <CardContent>
-              {registrosFiltrados.length === 0 ? (
+              {registrosFiltradosUnicos.length === 0 ? (
                 <div className="text-center py-12">
                   <Activity className="w-16 h-16 mx-auto mb-4 icon-empty" />
                   <p className="text-muted">No hay datos en el periodo seleccionado</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {registrosFiltrados.slice(0, 50).map((registro) => {
+                  {registrosFiltradosUnicos.slice(0, 50).map((registro) => {
                     const alumno = usuarios.find(u => u.id === registro.alumnoId);
                     return (
                       <Card key={registro.id} className="app-panel hover:shadow-md transition-shadow">
@@ -1170,10 +1219,10 @@ function EstadisticasPageContent() {
                               </p>
                               <div className="flex items-center gap-2 mt-2 flex-wrap">
                                 <Badge variant="outline" className="rounded-full text-xs bg-green-50 border-green-300 text-green-800">
-                                  {Math.floor(validarDuracion(registro.duracionRealSeg) / 60)} min
+                                  {formatDuracionHM(registro.duracionRealSeg)}
                                 </Badge>
                                 <Badge variant="outline" className="rounded-full text-xs">
-                                  Obj: {Math.floor(validarDuracion(registro.duracionObjetivoSeg) / 60)} min
+                                  Obj: {formatDuracionHM(registro.duracionObjetivoSeg)}
                                 </Badge>
                                 {registro.calificacion !== undefined && registro.calificacion !== null && (
                                   <Badge className="rounded-full bg-purple-100 text-purple-800 text-xs">
@@ -1280,8 +1329,8 @@ function EstadisticasPageContent() {
                         <p className="text-xl md:text-2xl font-bold text-ui">{feedbackAlumno.distribucion[nivel]}</p>
                         <p className="text-xs text-muted">Nivel {nivel}</p>
                         <p className="text-xs text-muted">
-                          {registrosFiltrados.length > 0 
-                            ? ((feedbackAlumno.distribucion[nivel] / registrosFiltrados.length) * 100).toFixed(1)
+                          {registrosFiltradosUnicos.length > 0 
+                            ? ((feedbackAlumno.distribucion[nivel] / registrosFiltradosUnicos.length) * 100).toFixed(1)
                             : 0}%
                         </p>
                       </div>
