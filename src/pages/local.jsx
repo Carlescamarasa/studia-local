@@ -10,6 +10,7 @@ import { Users, PlayCircle, Calendar, Target, Activity, RefreshCw, Database } fr
 import { rebuildAllLocalData, rebuildLocalData } from '@/local-data/rebuildLocalData';
 import { printValidationReport } from '@/local-data/verifyLocalData';
 import { toast } from 'sonner';
+import { displayName } from '@/components/utils/helpers';
 
 export default function LocalPage() {
   const navigate = useNavigate();
@@ -133,7 +134,7 @@ export default function LocalPage() {
               >
                 {usuarios.map((user) => (
                   <option key={user.id} value={user.id}>
-                    {user.nombreCompleto || user.full_name} ({roleLabel[user.rolPersonalizado]})
+                    {displayName(user)} ({roleLabel[user.rolPersonalizado]})
                   </option>
                 ))}
               </select>
@@ -141,7 +142,7 @@ export default function LocalPage() {
 
             <div className="pt-4 border-t">
               <p className="text-sm text-muted mb-4">
-                Usuario actual: <strong>{currentUser?.nombreCompleto || currentUser?.full_name}</strong> ({roleLabel[role]})
+                Usuario actual: <strong>{displayName(currentUser)}</strong> ({roleLabel[role]})
               </p>
             </div>
 

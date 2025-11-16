@@ -941,7 +941,7 @@ export default function TestSeedPage() {
           </CardHeader>
           <CardContent>
             {testResults.length === 0 ? (
-              <div className="text-center py-8 text-muted">
+              <div className="text-center py-8 text-ui/80">
                 <AlertCircle className="w-12 h-12 mx-auto mb-3 icon-empty" />
                 <p>Ejecuta las pruebas</p>
               </div>

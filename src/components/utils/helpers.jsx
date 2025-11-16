@@ -1,3 +1,5 @@
+import { localUsers } from "@/local-data/localUsers";
+
 /**
  * Obtiene el nombre visible de un usuario según la jerarquía:
  * 1. nombreCompleto (campo personalizado)
@@ -29,10 +31,21 @@ export function displayName(u) {
     return u.name.trim();
   }
   
+  // Si tenemos solo el id, intentar resolver por ID
+  if (u.id) {
+    const byId = displayNameById(u.id);
+    if (byId && byId !== 'Sin nombre') return byId;
+  }
+  
   // Prioridad 5: email (parte local)
   if (u.email) {
-    const parteLocal = u.email.split('@')[0];
-    if (parteLocal) return parteLocal;
+    const email = String(u.email);
+    if (email.includes('@')) {
+      const parteLocal = email.split('@')[0];
+      // Evitar IDs tipo Mongo/ObjectId (24 hex) u otros ids crudos
+      const isLikelyId = /^[a-f0-9]{24}$/i.test(parteLocal);
+      if (parteLocal && !isLikelyId) return parteLocal;
+    }
   }
   
   return 'Sin nombre';
@@ -40,6 +53,32 @@ export function displayName(u) {
 
 // Alias para compatibilidad con código existente
 export const getNombreVisible = displayName;
+
+/**
+ * Obtiene nombre visible por ID buscando en localUsers como fallback local.
+ */
+export function displayNameById(userId) {
+  if (!userId) return 'Sin nombre';
+  const user = Array.isArray(localUsers) ? localUsers.find(u => u.id === userId) : null;
+  if (user) return displayName(user);
+  // Fallback explícito para IDs conocidos en local
+  if (userId === '6913f9c07890d136d35d0a77') return 'Carles Estudiante';
+  if (userId === '691432b999585b6c94028617') return 'La Trompeta Sonará';
+  return 'Sin nombre';
+}
+
+/**
+ * Formatea minutos a cadena humana: "9 h 42 min" u "42 min" si < 1h
+ */
+export function formatDurationMinutes(totalMinutes) {
+  const minutes = Math.max(0, Math.floor(totalMinutes || 0));
+  const hours = Math.floor(minutes / 60);
+  const rem = minutes % 60;
+  if (hours <= 0) {
+    return `${rem} min`;
+  }
+  return `${hours} h ${rem} min`;
+}
 
 /**
  * Normaliza texto para búsquedas (minúsculas, sin espacios extras)

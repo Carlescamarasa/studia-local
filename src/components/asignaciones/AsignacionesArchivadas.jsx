@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { RotateCcw, Trash2, Search, Archive } from "lucide-react";
 import { toast } from "sonner";
+import { displayName, displayNameById } from "@/components/utils/helpers";
 
 export default function AsignacionesArchivadas() {
   const queryClient = useQueryClient();
@@ -44,10 +45,14 @@ export default function AsignacionesArchivadas() {
 
   const filteredAsignaciones = asignaciones.filter(a => {
     const alumno = usuarios.find(u => u.id === a.alumnoId);
+    const alumnoNombreBase = alumno ? displayName(alumno) : '';
+    const alumnoNombreSnap = a.alumno?.nombreCompleto || a.alumno?.full_name || '';
+    const alumnoNombre = (alumnoNombreBase || alumnoNombreSnap).toLowerCase();
+    const term = searchTerm.toLowerCase();
     return (
-      alumno?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.piezaSnapshot?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.plan?.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
+      alumnoNombre.includes(term) ||
+      (a.piezaSnapshot?.nombre || '').toLowerCase().includes(term) ||
+      (a.plan?.nombre || '').toLowerCase().includes(term)
     );
   });
 
@@ -88,7 +93,11 @@ export default function AsignacionesArchivadas() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <h4 className="font-semibold truncate">{alumno?.full_name || 'Estudiante'}</h4>
+                            <h4 className="font-semibold truncate">
+                              {alumno
+                                ? displayName(alumno)
+                                : displayNameById(asignacion.alumnoId)}
+                            </h4>
                             <Badge variant="secondary">Cerrada</Badge>
                           </div>
                           <div className="space-y-1 text-sm text-muted">

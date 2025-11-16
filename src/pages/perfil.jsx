@@ -366,14 +366,14 @@ export default function PerfilPage() {
 
           <div className="pt-4 border-t border-ui">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-muted">
+              <div className="text-sm text-ui/80">
                 <p>ID de usuario: <span className="font-mono">{targetUser?.id}</span></p>
                 <p>Registrado: {targetUser?.created_date ? new Date(targetUser.created_date).toLocaleDateString('es-ES') : '-'}</p>
               </div>
               <Button
                 onClick={handleSave}
                 disabled={updateUserMutation.isPending}
-                className="btn-primary h-10 rounded-xl shadow-sm focus-brand"
+                className="btn-primary"
               >
                 {updateUserMutation.isPending ? (
                   <>

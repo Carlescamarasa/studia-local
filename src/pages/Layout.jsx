@@ -40,6 +40,7 @@ import { getAppName } from "@/components/utils/appMeta";
 import { DesignProvider } from "@/components/design/DesignProvider";
 import { componentStyles } from "@/design/componentStyles";
 import { Outlet } from "react-router-dom";
+import { displayName } from "@/components/utils/helpers";
 
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
@@ -354,7 +355,7 @@ function LayoutContent() {
               >
                 {usuarios.map((user) => (
                   <option key={user.id} value={user.id}>
-                    {user.nombreCompleto || user.full_name} ({ROLE_LABEL[user.rolPersonalizado]})
+                    {displayName(user)} ({ROLE_LABEL[user.rolPersonalizado]})
                   </option>
                 ))}
               </select>
@@ -366,7 +367,7 @@ function LayoutContent() {
                   <UserCog className="w-4 h-4 text-amber-700 mt-0.5" />
                   <div className="text-[11px] text-amber-900 leading-snug">
                     Simulando:{" "}
-                    <span className="font-semibold">{simulatingUser.full_name}</span>
+                    <span className="font-semibold">{displayName(simulatingUser)}</span>
                     <span className="text-amber-700">
                       {" "}
                       ({ROLE_LABEL[simulatingUser.rolPersonalizado]})
@@ -404,14 +405,14 @@ function LayoutContent() {
             >
               <div className="w-10 h-10 bg-gradient-to-br from-[hsl(var(--muted))] to-[hsl(var(--muted-foreground)/0.2)] rounded-full flex items-center justify-center">
                 <span className="text-ui font-semibold text-sm">
-                  {(simulatingUser?.nombreCompleto || simulatingUser?.full_name || currentUser?.nombreCompleto || currentUser?.full_name || "U")
+                  {(displayName(simulatingUser || currentUser || { name: "U" }))
                     .slice(0, 1)
                     .toUpperCase()}
                 </span>
               </div>
               <div className="flex-1 min-w-0 text-left">
                 <p className="font-medium text-ui text-sm truncate">
-                  {simulatingUser?.nombreCompleto || simulatingUser?.full_name || currentUser?.nombreCompleto || currentUser?.full_name || "Usuario"}
+                  {displayName(simulatingUser || currentUser) || "Usuario"}
                 </p>
                 <p className="text-xs text-ui/80 truncate">{currentUser?.email}</p>
               </div>

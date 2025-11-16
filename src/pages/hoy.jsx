@@ -664,7 +664,7 @@ function HoyPageContent() {
       .reduce((sum, e) => sum + (e.duracionSeg || 0), 0);
 
     return (
-      <div className="min-h-screen bg-background" style={{ paddingBottom: '160px' }}>
+      <div className="min-h-screen bg-background pb-[160px]">
         {/* Header del Player */}
         <div className="bg-card border-b border-ui px-4 py-4 lg:sticky lg:top-0 z-10 shadow-card">
           <div className="max-w-5xl mx-auto">

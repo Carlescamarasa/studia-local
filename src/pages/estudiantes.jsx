@@ -15,7 +15,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { displayName, calcularLunesSemanaISO, formatLocalDate, parseLocalDate } from "../components/utils/helpers";
+import { displayName, calcularLunesSemanaISO, formatLocalDate, parseLocalDate, formatDurationMinutes } from "../components/utils/helpers";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import MediaLinksInput from "../components/common/MediaLinksInput";
 import MediaPreviewModal from "../components/common/MediaPreviewModal";
@@ -111,7 +111,7 @@ function EstudiantesPageContent() {
         if (!alumnosMap.has(asig.alumnoId)) {
           const alumnoInfo = {
             id: asig.alumnoId,
-            email: asig.alumnoId,
+            email: '',
             nombreCompleto: null,
             full_name: null,
             rolPersonalizado: 'ESTU',
@@ -119,7 +119,7 @@ function EstudiantesPageContent() {
           };
 
           if (asig.alumno) {
-            alumnoInfo.email = asig.alumno.email || asig.alumnoId;
+            alumnoInfo.email = asig.alumno.email || '';
             alumnoInfo.nombreCompleto = asig.alumno.nombreCompleto || asig.alumno.full_name;
             alumnoInfo.full_name = asig.alumno.full_name;
           }
@@ -327,7 +327,7 @@ function EstudiantesPageContent() {
                     sortable: true,
                     render: (e) => (
                       <div className="min-w-0">
-                        <p className="font-semibold truncate">{displayName(e)}</p>
+                        <p className="font-semibold truncate">{e?.nombreCompleto?.trim() || displayName(e)}</p>
                         <p className="text-xs text-muted truncate">{e.email}</p>
                       </div>
                     ),
@@ -340,7 +340,7 @@ function EstudiantesPageContent() {
                     render: (e) => (
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-blue-600 shrink-0" />
-                        <span className="font-medium">{e.minutosReales} min</span>
+                        <span className="font-medium">{formatDurationMinutes(e.minutosReales)}</span>
                       </div>
                     ),
                     sortValue: (e) => e.minutosReales

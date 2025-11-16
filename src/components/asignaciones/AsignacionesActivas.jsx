@@ -11,6 +11,7 @@ import { Eye, Copy, XCircle, Search, Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
+import { displayName, displayNameById } from "@/components/utils/helpers";
 
 export default function AsignacionesActivas() {
   const queryClient = useQueryClient();
@@ -64,10 +65,14 @@ export default function AsignacionesActivas() {
 
   const filteredAsignaciones = asignaciones.filter(a => {
     const alumno = usuarios.find(u => u.id === a.alumnoId);
-    const matchSearch = 
-      alumno?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.piezaSnapshot?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.plan?.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
+    const alumnoNombreBase = alumno ? displayName(alumno) : '';
+    const alumnoNombreSnap = a.alumno?.nombreCompleto || a.alumno?.full_name || '';
+    const alumnoNombre = (alumnoNombreBase || alumnoNombreSnap).toLowerCase();
+    const term = searchTerm.toLowerCase();
+    const matchSearch =
+      alumnoNombre.includes(term) ||
+      (a.piezaSnapshot?.nombre || '').toLowerCase().includes(term) ||
+      (a.plan?.nombre || '').toLowerCase().includes(term);
     const matchEstado = estadoFilter === 'all' || a.estado === estadoFilter;
     return matchSearch && matchEstado;
   });
@@ -131,7 +136,11 @@ export default function AsignacionesActivas() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <h4 className="font-semibold truncate">{alumno?.full_name || 'Estudiante'}</h4>
+                            <h4 className="font-semibold truncate">
+                              {alumno
+                                ? displayName(alumno)
+                                : displayNameById(asignacion.alumnoId)}
+                            </h4>
                             <Badge className={estadoColors[asignacion.estado]}>
                               {estadoLabels[asignacion.estado]}
                             </Badge>

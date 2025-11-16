@@ -16,7 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { formatLocalDate, parseLocalDate, startOfMonday } from "@/components/utils/helpers";
+import { formatLocalDate, parseLocalDate, startOfMonday, displayName } from "@/components/utils/helpers";
 
 export default function CrearAsignacionWizard({ onClose }) {
   const queryClient = useQueryClient();
@@ -134,7 +134,7 @@ export default function CrearAsignacionWizard({ onClose }) {
   }, [formData.fechaSeleccionada]);
 
   const filteredEstudiantes = estudiantes.filter(e =>
-    e.full_name?.toLowerCase().includes(searchEstudiante.toLowerCase()) ||
+    displayName(e).toLowerCase().includes(searchEstudiante.toLowerCase()) ||
     e.email?.toLowerCase().includes(searchEstudiante.toLowerCase())
   );
 
@@ -279,7 +279,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                         <CardContent className="pt-4 flex items-center gap-3">
                           <Checkbox checked={formData.estudiantesIds.includes(estudiante.id)} />
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate text-ui">{estudiante.full_name}</p>
+                            <p className="font-medium truncate text-ui">{displayName(estudiante)}</p>
                             <p className="text-sm text-muted truncate">{estudiante.email}</p>
                           </div>
                         </CardContent>

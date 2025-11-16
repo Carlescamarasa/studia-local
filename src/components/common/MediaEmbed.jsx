@@ -29,7 +29,7 @@ export default function MediaEmbed({ url, className = '', open = false }) {
   switch (media.kind) {
     case MediaKind.YOUTUBE:
       return (
-        <div className={`relative w-full bg-black rounded-lg overflow-hidden ${className}`} style={{ paddingBottom: '56.25%' }}>
+        <div className={`relative w-full bg-black rounded-lg overflow-hidden pb-[56.25%] ${className}`}>
           <iframe
             {...baseIframeProps}
             src={media.embedUrl}
@@ -42,7 +42,7 @@ export default function MediaEmbed({ url, className = '', open = false }) {
 
     case MediaKind.VIMEO:
       return (
-        <div className={`relative w-full bg-black rounded-lg overflow-hidden ${className}`} style={{ paddingBottom: '56.25%' }}>
+        <div className={`relative w-full bg-black rounded-lg overflow-hidden pb-[56.25%] ${className}`}>
           <iframe
             {...baseIframeProps}
             src={media.embedUrl}
@@ -68,7 +68,7 @@ export default function MediaEmbed({ url, className = '', open = false }) {
 
     case MediaKind.DRIVE:
       return (
-        <div className={`relative w-full bg-gray-100 rounded-lg overflow-hidden ${className}`} style={{ paddingBottom: '75%' }}>
+        <div className={`relative w-full bg-gray-100 rounded-lg overflow-hidden pb-[75%] ${className}`}>
           <iframe
             {...baseIframeProps}
             src={media.embedUrl}
@@ -124,7 +124,7 @@ export default function MediaEmbed({ url, className = '', open = false }) {
 
     case MediaKind.PDF:
       return (
-        <div className={`relative w-full bg-gray-100 rounded-lg overflow-hidden ${className}`} style={{ paddingBottom: '100%' }}>
+        <div className={`relative w-full bg-gray-100 rounded-lg overflow-hidden pb-[100%] ${className}`}>
           <iframe
             {...baseIframeProps}
             src={media.embedUrl}
