@@ -10,7 +10,7 @@ import {
   DEFAULT_DESIGN,
   generateCSSVariables,
   normalizeDesign,
-} from "./design.config";
+} from "./designConfig";
 import {
   getAllPresets,
   saveCustomPreset,
@@ -18,7 +18,21 @@ import {
   isBuiltInPreset,
 } from "./DesignPresets";
 
-const DesignContext = createContext(null);
+const DesignContext = createContext({
+  design: DEFAULT_DESIGN,
+  setDesign: () => {},
+  setDesignPartial: () => {},
+  resetDesign: () => {},
+  loadPreset: () => ({ success: false }),
+  exportDesign: () => '',
+  importDesign: () => ({ success: false }),
+  config: DEFAULT_DESIGN,
+  setConfig: () => {},
+  reset: () => {},
+  presets: {},
+  deleteDesignPreset: () => {},
+  isBuiltInPreset: () => false,
+});
 
 export function useDesign() {
   return useContext(DesignContext);

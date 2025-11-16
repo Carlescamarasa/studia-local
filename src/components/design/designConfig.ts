@@ -1,10 +1,20 @@
 /**
  * Design System Configuration - Origen único de verdad
  * Estructura completa y profesional para todo el sistema de diseño
+ * Con tipos TypeScript para máxima seguridad y autocompletado
  */
 
+// ============================================================================
+// TIPOS Y MAPAS
+// ============================================================================
+
+export type RadiusValue = 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
+export type ShadowValue = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'card';
+export type DensityValue = 'compact' | 'normal' | 'spacious';
+export type ThemeValue = 'light' | 'dark';
+
 // Mapeo de valores de radius a píxeles
-const RADIUS_MAP = {
+export const RADIUS_MAP: Record<RadiusValue, string> = {
   none: '0px',
   sm: '0.25rem',   // 4px
   md: '0.5rem',    // 8px
@@ -16,7 +26,7 @@ const RADIUS_MAP = {
 };
 
 // Mapeo de valores de shadow a CSS
-const SHADOW_MAP = {
+export const SHADOW_MAP: Record<ShadowValue, string> = {
   none: 'none',
   sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
   md: '0 4px 12px rgba(0, 0, 0, 0.08)',
@@ -26,7 +36,7 @@ const SHADOW_MAP = {
 };
 
 // Mapeo de densidad a espaciado
-const DENSITY_MAP = {
+export const DENSITY_MAP: Record<DensityValue, Record<string, string>> = {
   compact: {
     base: '0.5rem',      // 8px
     sm: '0.25rem',       // 4px
@@ -50,10 +60,162 @@ const DENSITY_MAP = {
   },
 };
 
-/**
- * Estructura completa del Design System
- */
-export const DEFAULT_DESIGN = {
+// ============================================================================
+// INTERFACES TYPESCRIPT
+// ============================================================================
+
+export interface DesignTokens {
+  // Colores principales
+  colors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    success: string;
+    warning: string;
+    danger: string;
+    info: string;
+    // Colores de superficie
+    background: string;
+    surface: string;
+    surfaceElevated: string;
+    // Colores de texto
+    text: {
+      primary: string;
+      secondary: string;
+      muted: string;
+      inverse: string;
+    };
+    // Colores de borde
+    border: {
+      default: string;
+      muted: string;
+      strong: string;
+    };
+  };
+  
+  // Layout y espaciado
+  layout: {
+    radius: {
+      global: RadiusValue;
+      card: RadiusValue;
+      controls: RadiusValue;
+      pill: RadiusValue;
+      modal: RadiusValue;
+    };
+    density: DensityValue;
+    shadow: ShadowValue;
+    gaps: {
+      xs: string;
+      sm: string;
+      md: string;
+      lg: string;
+      xl: string;
+      '2xl': string;
+    };
+  };
+  
+  // Tipografía
+  typography: {
+    fontFamilyBase: string;
+    fontFamilyHeadings: string;
+    fontFamilySerif: string;
+    fontSizeBase: number;
+    fontSizeScale: number;
+    serifHeadings: boolean;
+    lineHeight: {
+      tight: number;
+      normal: number;
+      relaxed: number;
+    };
+  };
+  
+  // Componentes específicos
+  components: {
+    input: {
+      padding: string;
+      radius: RadiusValue;
+      border: string;
+      borderColor: string;
+      focusRing: string;
+      focusRingOffset: string;
+    };
+    select: {
+      padding: string;
+      radius: RadiusValue;
+      border: string;
+      borderColor: string;
+    };
+    card: {
+      padding: {
+        header: string;
+        content: string;
+        footer: string;
+      };
+      radius: RadiusValue;
+      shadow: ShadowValue;
+      border: string;
+      borderColor: string;
+      background: string;
+    };
+    button: {
+      padding: {
+        sm: string;
+        md: string;
+        lg: string;
+      };
+      radius: RadiusValue;
+      variants: {
+        primary: {
+          background: string;
+          color: string;
+          hover: string;
+        };
+        secondary: {
+          background: string;
+          color: string;
+          border: string;
+        };
+        outline: {
+          background: string;
+          color: string;
+          border: string;
+        };
+      };
+    };
+    sidebar: {
+      width: string;
+      widthCollapsed: string;
+      background: string;
+      border: string;
+    };
+    header: {
+      height: string;
+      padding: string;
+      background: string;
+      border: string;
+    };
+  };
+  
+  // Focus y accesibilidad
+  focus: {
+    ring: {
+      width: string;
+      style: string;
+      color: string;
+      offset: string;
+    };
+  };
+  
+  // Brand (compatibilidad con sistema anterior)
+  brandHue: number;
+  theme: ThemeValue;
+}
+
+// ============================================================================
+// CONFIGURACIÓN POR DEFECTO
+// ============================================================================
+
+export const DEFAULT_DESIGN: DesignTokens = {
   // Colores principales
   colors: {
     primary: '#4F46E5',        // Indigo
@@ -203,66 +365,71 @@ export const DEFAULT_DESIGN = {
   theme: 'light',
 };
 
+// ============================================================================
+// FUNCIONES HELPER
+// ============================================================================
+
 /**
  * Helper para obtener valor de radius en píxeles
  */
-export function getRadiusValue(radiusKey) {
-  return RADIUS_MAP[radiusKey] || RADIUS_MAP.lg;
+export function getRadiusValue(radiusKey: RadiusValue | string): string {
+  return RADIUS_MAP[radiusKey as RadiusValue] || RADIUS_MAP.lg;
 }
 
 /**
  * Helper para obtener valor de shadow
  */
-export function getShadowValue(shadowKey) {
-  return SHADOW_MAP[shadowKey] || SHADOW_MAP.md;
+export function getShadowValue(shadowKey: ShadowValue | string): string {
+  return SHADOW_MAP[shadowKey as ShadowValue] || SHADOW_MAP.md;
 }
 
 /**
  * Helper para obtener espaciado según densidad
  */
-export function getSpacingForDensity(density) {
-  return DENSITY_MAP[density] || DENSITY_MAP.normal;
+export function getSpacingForDensity(density: DensityValue | string): Record<string, string> {
+  return DENSITY_MAP[density as DensityValue] || DENSITY_MAP.normal;
 }
 
 /**
  * Merge profundo de objetos
  */
-function deepMerge(target, source) {
+function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>): T {
   const output = { ...target };
   if (isObject(target) && isObject(source)) {
-    Object.keys(source).forEach(key => {
-      if (isObject(source[key])) {
-        if (!(key in target)) {
-          Object.assign(output, { [key]: source[key] });
+    Object.keys(source).forEach((key) => {
+      const keyTyped = key as keyof T;
+      if (isObject(source[keyTyped])) {
+        if (!(keyTyped in target)) {
+          Object.assign(output, { [keyTyped]: source[keyTyped] });
         } else {
-          output[key] = deepMerge(target[key], source[key]);
+          output[keyTyped] = deepMerge(target[keyTyped] as any, source[keyTyped] as any);
         }
       } else {
-        Object.assign(output, { [key]: source[key] });
+        Object.assign(output, { [keyTyped]: source[keyTyped] });
       }
     });
   }
   return output;
 }
 
-function isObject(item) {
+function isObject(item: any): item is Record<string, any> {
   return item && typeof item === 'object' && !Array.isArray(item);
 }
 
 /**
  * Normalizar design object para asegurar estructura completa
  */
-export function normalizeDesign(design) {
+export function normalizeDesign(design: Partial<DesignTokens> | null | undefined): DesignTokens {
   return deepMerge(DEFAULT_DESIGN, design || {});
 }
 
 /**
  * Generar CSS variables desde el design object
  */
-export function generateCSSVariables(design) {
+export function generateCSSVariables(design: Partial<DesignTokens> | null | undefined): Record<string, string> {
   // Normalizar design para asegurar estructura completa
   const normalized = normalizeDesign(design);
-  const vars = {};
+  const vars: Record<string, string> = {};
   
   // Colores
   if (normalized.colors) {
@@ -271,7 +438,7 @@ export function generateCSSVariables(design) {
         vars[`--color-${key}`] = value;
       } else if (typeof value === 'object' && value !== null) {
         Object.entries(value).forEach(([subKey, subValue]) => {
-          vars[`--color-${key}-${subKey}`] = subValue;
+          vars[`--color-${key}-${subKey}`] = subValue as string;
         });
       }
     });
@@ -280,7 +447,7 @@ export function generateCSSVariables(design) {
   // Radius
   if (normalized.layout?.radius) {
     Object.entries(normalized.layout.radius).forEach(([key, value]) => {
-      vars[`--radius-${key === 'global' ? 'base' : key}`] = getRadiusValue(value);
+      vars[`--radius-${key === 'global' ? 'base' : key}`] = getRadiusValue(value as RadiusValue);
     });
   }
   
@@ -344,3 +511,4 @@ export function generateCSSVariables(design) {
   
   return vars;
 }
+

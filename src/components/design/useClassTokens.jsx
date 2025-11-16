@@ -1,5 +1,5 @@
 import { useDesign } from "@/components/design/DesignProvider";
-import { DEFAULT_DESIGN } from "./design.config";
+import { DEFAULT_DESIGN, getSpacingForDensity } from "./designConfig";
 
 /**
  * Hook para obtener clases dinámicas basadas en tokens de diseño
@@ -15,13 +15,13 @@ export function useClassTokens() {
   const radiusCtrl = design?.layout?.radius?.controls || 'lg';
   const radiusPill = design?.layout?.radius?.pill || 'lg';
   
-  // Obtener valores de spacing según densidad
+  // Obtener valores de spacing según densidad usando helper del config
   const density = design?.layout?.density || 'normal';
-  const spacing = density === 'compact' 
-    ? { header: '0.75rem', content: '0.75rem' }
-    : density === 'spacious'
-    ? { header: '1.5rem', content: '1.5rem' }
-    : { header: '1rem', content: '1rem' };
+  const densitySpacing = getSpacingForDensity(density);
+  const spacing = {
+    header: densitySpacing.lg || '1rem',
+    content: densitySpacing.lg || '1rem',
+  };
   
   return {
     // Cards y paneles - usando CSS variables

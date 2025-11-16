@@ -3,7 +3,7 @@
  * Permite guardar, cargar y gestionar múltiples configuraciones visuales
  */
 
-import { DEFAULT_DESIGN } from './design.config';
+import { DEFAULT_DESIGN } from './designConfig';
 
 export const BUILT_IN_PRESETS = {
   default: {
