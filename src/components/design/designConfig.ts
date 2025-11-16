@@ -149,15 +149,27 @@ export interface DesignTokens {
     };
     card: {
       padding: {
-        header: string;
-        content: string;
-        footer: string;
+        x: string;
+        y: string;
+        header: {
+          x: string;
+          y: string;
+        };
+        content: {
+          x: string;
+          y: string;
+        };
+        footer: {
+          x: string;
+          y: string;
+        };
       };
       radius: RadiusValue;
       shadow: ShadowValue;
       border: string;
       borderColor: string;
       background: string;
+      gap: string;
     };
     button: {
       padding: {
@@ -305,15 +317,29 @@ export const DEFAULT_DESIGN: DesignTokens = {
     },
     card: {
       padding: {
-        header: '1rem',
-        content: '1rem',
-        footer: '1rem',
+        x: '1rem',      // 16px - padding horizontal base de la card
+        y: '1rem',      // 16px - padding vertical base de la card
+        header: {
+          x: '1rem',    // 16px - padding horizontal del header
+          y: '1rem',    // 16px - padding vertical del header (top)
+          // Nota: el padding-bottom del header suele ser menor (pb-2 ≈ 0.5rem)
+          // pero usamos y para el padding-block completo; ajustar según necesidad
+        },
+        content: {
+          x: '1rem',    // 16px - padding horizontal del content
+          y: '1rem',    // 16px - padding vertical del content
+        },
+        footer: {
+          x: '1rem',    // 16px - padding horizontal del footer
+          y: '1rem',    // 16px - padding vertical del footer
+        },
       },
-      radius: 'lg',
-      shadow: 'md',
+      radius: 'lg',     // rounded-xl en Tailwind = 0.75rem (12px), que corresponde a 'lg' en RADIUS_MAP
+      shadow: 'card',   // shadow-sm equivalente, pero usamos 'card' del SHADOW_MAP
       border: '1px solid',
       borderColor: 'var(--color-border-default)',
       background: 'var(--color-surface-elevated)',
+      gap: '1rem',      // 16px - gap interno entre elementos (equivalente a space-y-4)
     },
     button: {
       padding: {
@@ -543,11 +569,32 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
       vars['--button-radius'] = getRadiusValue(normalized.components.button.radius || DEFAULT_DESIGN.components.button.radius);
     }
     if (normalized.components.card) {
-      vars['--card-padding-header'] = normalized.components.card.padding?.header || DEFAULT_DESIGN.components.card.padding.header;
-      vars['--card-padding-content'] = normalized.components.card.padding?.content || DEFAULT_DESIGN.components.card.padding.content;
-      vars['--card-radius'] = getRadiusValue(normalized.components.card.radius || DEFAULT_DESIGN.components.card.radius);
-      // Asegurar alias consistente con consumo en CSS global
-      vars['--radius-card'] = vars['--radius-card'] || vars['--card-radius'];
+      const card = normalized.components.card;
+      const cardDefault = DEFAULT_DESIGN.components.card;
+      
+      // Padding base de la card (X/Y separados)
+      vars['--card-padding-x'] = card.padding?.x || cardDefault.padding.x;
+      vars['--card-padding-y'] = card.padding?.y || cardDefault.padding.y;
+      
+      // Padding específico de header
+      vars['--card-header-padding-x'] = card.padding?.header?.x || cardDefault.padding.header.x;
+      vars['--card-header-padding-y'] = card.padding?.header?.y || cardDefault.padding.header.y;
+      
+      // Padding específico de content
+      vars['--card-content-padding-x'] = card.padding?.content?.x || cardDefault.padding.content.x;
+      vars['--card-content-padding-y'] = card.padding?.content?.y || cardDefault.padding.content.y;
+      
+      // Padding específico de footer
+      vars['--card-footer-padding-x'] = card.padding?.footer?.x || cardDefault.padding.footer.x;
+      vars['--card-footer-padding-y'] = card.padding?.footer?.y || cardDefault.padding.footer.y;
+      
+      // Radius y shadow
+      vars['--card-radius'] = getRadiusValue(card.radius || cardDefault.radius);
+      vars['--radius-card'] = vars['--radius-card'] || vars['--card-radius']; // Alias consistente
+      vars['--shadow-card'] = getShadowValue(card.shadow || cardDefault.shadow);
+      
+      // Gap interno
+      vars['--card-gap'] = card.gap || cardDefault.gap;
     }
     if (normalized.components.sidebar) {
       vars['--sidebar-width'] = normalized.components.sidebar.width || DEFAULT_DESIGN.components.sidebar.width;

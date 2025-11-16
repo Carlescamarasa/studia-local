@@ -271,15 +271,66 @@ button:focus-visible {
     border-radius: var(--button-radius);
   }
 
-  /* Legacy: Cards y paneles (mantener solo por compatibilidad con usos directos) */
-  /* NOTA: Preferir usar componentStyles.containers.* o componentStyles.items.* en lugar de estas clases */
+  /* ============================================================================
+   * CARDS - Sistema unificado basado en tokens CSS
+   * ============================================================================
+   * 
+   * Las clases de card (.app-card, .card-header, .card-content) se apoyan en
+   * CSS vars generadas desde designConfig.ts (components.card.*).
+   * 
+   * Se usa !important en propiedades críticas (radius, padding, shadow) para
+   * anular utilidades Tailwind (rounded-*, p-*, shadow-*) que están en los JSX,
+   * sin necesidad de modificar componentes de dominio.
+   * 
+   * Tokens disponibles:
+   * - --radius-card: radio de las esquinas
+   * - --card-padding-x/y: padding base de la card
+   * - --card-header-padding-x/y: padding específico del header
+   * - --card-content-padding-x/y: padding específico del content
+   * - --card-footer-padding-x/y: padding específico del footer
+   * - --shadow-card: sombra de la card
+   * - --card-gap: gap interno entre elementos
+   * 
+   * Uso recomendado:
+   * - className="app-card" para el contenedor principal
+   * - className="card-header" para el encabezado
+   * - className="card-content" para el contenido
+   * - className="card-footer" para el pie (si existe)
+   * 
+   * El 100% del look (radius, padding, shadow) se controla desde el panel de
+   * diseño/presets sin tocar JSX.
+   */
+
   .app-card {
     background-color: var(--color-surface);
     color: var(--color-text-primary);
     border: 1px solid var(--color-border-strong);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
+    
+    /* Propiedades controladas por tokens - !important para sobreescribir Tailwind */
+    border-radius: var(--radius-card) !important;
+    padding-inline: var(--card-padding-x) !important;
+    padding-block: var(--card-padding-y) !important;
+    box-shadow: var(--shadow-card) !important;
   }
+
+  .card-header {
+    padding-inline: var(--card-header-padding-x) !important;
+    padding-block: var(--card-header-padding-y) !important;
+    border-bottom: 1px solid var(--color-border-muted);
+  }
+
+  .card-content {
+    padding-inline: var(--card-content-padding-x) !important;
+    padding-block: var(--card-content-padding-y) !important;
+  }
+
+  .card-footer {
+    padding-inline: var(--card-footer-padding-x) !important;
+    padding-block: var(--card-footer-padding-y) !important;
+    border-top: 1px solid var(--color-border-muted);
+  }
+
+  /* Legacy: Paneles (mantener solo por compatibilidad con usos directos) */
   .app-panel {
     background-color: var(--color-surface);
     color: var(--color-text-primary);

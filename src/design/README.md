@@ -61,7 +61,10 @@ Objetivo: que un re-temeado se resuelva aquí y/o en tokens, no en componentes a
 1. Headers: usar `PageHeader` con `componentStyles.typography.pageTitle/pageSubtitle`.
 2. Tabs: `Tabs` unificado; estado activo = `primarySoft` + borde `primary`.
 3. Botones: `btn-*` y tamaños (`btn-sm/md/lg`) o `Button` con `variant/size`.
-4. Cards/Paneles: usar `componentStyles.containers.*` (cardBase, cardElevated, cardMetric, panelBase) o `componentStyles.items.*` (itemCard, itemCardHighlight, itemRow). Las variantes de dominio están unificadas sobre estas bases genéricas.
+4. Cards/Paneles: 
+   - Uso directo: `className="app-card"` para el contenedor, `className="card-header"` / `className="card-content"` para secciones internas.
+   - Variantes: usar `componentStyles.containers.*` (cardBase, cardElevated, cardMetric, panelBase) o `componentStyles.items.*` (itemCard, itemCardHighlight, itemRow). Todas se basan en `.app-card` y solo añaden variantes de color/borde.
+   - El radius, padding y shadow se controlan desde tokens CSS (`components.card.*`) sin tocar JSX. Las clases usan `!important` para anular utilidades Tailwind (`rounded-*`, `p-*`, `shadow-*`).
 5. Contraste: usar `text-ui` para contenido primario, `text-ui/80` para secundario. Reservar `text-muted` solo para meta/desactivado.
 6. Colores: siempre usar tokens `var(--color-*)` o clases semánticas. No usar colores literales Tailwind (`bg-gray-50`, `text-slate-600`, etc.).
 7. Inline styles: evitarlos salvo layout dinámico (anchos/transformaciones basadas en datos). Preferir utilidades o estilos centralizados.
@@ -112,8 +115,10 @@ Esta sección recoge todos los elementos/atributos ya mapeados a tokens y CSS gl
 
 3) Layout, radius y sombras
 - Tokens: `layout.radius.{global,card,controls,pill,modal}`, `layout.density`, `layout.shadow`.
+- Tokens específicos de card: `components.card.*` (padding X/Y, radius, shadow, gap) - ver sección 6) Cards y Paneles.
 - Vars generadas:
   - `--radius-card`, `--radius-ctrl`, `--shadow-card`, `--space-*`, `--gap-*`.
+  - Card específicas: `--card-padding-x/y`, `--card-header-padding-x/y`, `--card-content-padding-x/y`, `--card-footer-padding-x/y`, `--card-gap`.
 - Densidad en `body`: `ds-density-{compact|normal|spacious}`.
 
 4) Controles (Inputs/Selects)
@@ -130,17 +135,35 @@ Esta sección recoge todos los elementos/atributos ya mapeados a tokens y CSS gl
 - Vía componente `Button` (ui): `variant/size` mapean a `.btn-*`.
 
 6) Cards y Paneles
-- **Definición**: `componentStyles.containers.*` y `componentStyles.items.*` (usando utilidades + vars).
-- Atributos gobernados por tokens:
-  - `background-color: var(--color-surface|surface-elevated|surface-muted)`
-  - `color: var(--color-text-primary)`
-  - `border: var(--color-border-strong|muted|default)`
-  - `border-radius: var(--radius-card)`
-  - Sombra (cards): `var(--shadow-card)`
-- Variantes:
-  - **containers**: `cardBase`, `cardElevated`, `cardMetric`, `panelBase`.
+- **Tokens específicos de card** (`designConfig.ts` → `components.card.*`):
+  - `padding.x/y`: padding base de la card (horizontal/vertical)
+  - `padding.header.x/y`: padding específico del header
+  - `padding.content.x/y`: padding específico del content
+  - `padding.footer.x/y`: padding específico del footer
+  - `radius`: radio de las esquinas (mapeado a `--radius-card`)
+  - `shadow`: sombra (mapeado a `--shadow-card`)
+  - `gap`: gap interno entre elementos (mapeado a `--card-gap`)
+- **CSS vars generadas**:
+  - `--radius-card`: radio de las esquinas
+  - `--card-padding-x/y`: padding base
+  - `--card-header-padding-x/y`: padding del header
+  - `--card-content-padding-x/y`: padding del content
+  - `--card-footer-padding-x/y`: padding del footer
+  - `--shadow-card`: sombra
+  - `--card-gap`: gap interno
+- **Clases semánticas** (`index.css` → `@layer components`):
+  - `.app-card`: clase base universal de tarjeta. Incluye radius, padding y shadow desde tokens CSS con `!important` para anular utilidades Tailwind (`rounded-*`, `p-*`, `shadow-*`) sin tocar JSX.
+  - `.card-header`: sección de encabezado con padding específico desde tokens.
+  - `.card-content`: sección de contenido con padding específico desde tokens.
+  - `.card-footer`: sección de pie con padding específico desde tokens.
+  - `.app-panel`: panel base (legacy, mantener por compatibilidad).
+- **Uso recomendado**:
+  - Para cualquier card nueva: `className="app-card"` + `className="card-header"` / `className="card-content"` según estructura.
+  - El 100% del look (radius, padding, shadow) se controla desde el panel de diseño/presets sin tocar JSX.
+  - Variantes de color/borde: usar `componentStyles.containers.*` o `componentStyles.items.*` que se basan en `.app-card` y solo añaden variantes de color/borde.
+- **Variantes en componentStyles**:
+  - **containers**: `cardBase`, `cardElevated`, `cardMetric`, `panelBase` (todos usan `.app-card` como base).
   - **items**: `itemCard`, `itemCardHighlight`, `itemRow`, `itemRowTone`.
-  - **Legacy**: `.app-card`, `.app-panel` (mantener solo por compatibilidad con usos directos).
 
 7) Tabs
 - `Tabs` (DS) → `segmented`/`underline` usando `componentStyles.components.tabs*`. La variante segmentada expone `data-testid="tabs-segmented"` para QA.

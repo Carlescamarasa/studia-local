@@ -4,14 +4,16 @@
  * Los componentes se irán migrando progresivamente a usar estas claves.
  */
 // Helpers base para compactar variantes de card/panel
-const CARD_BASE = "rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] shadow-sm";
-const CARD_ELEVATED = "rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-card)]";
-const PANEL_BASE = "rounded-xl border border-[var(--color-border-muted)] bg-[var(--color-surface)]";
-const CARD_TONE_PRIMARY = "rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm";
-const CARD_TONE_ACCENT = "rounded-xl border-2 border-[var(--color-accent)] bg-[var(--color-surface)] shadow-sm";
-const CARD_TONE_SECONDARY = "rounded-xl border-2 border-[var(--color-secondary)] bg-[var(--color-surface)] shadow-sm";
-const PANEL_SESSION = "rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-muted)] hover:shadow-md transition-all";
-const CARD_METRIC = "rounded-xl border border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm hover:shadow-md transition-shadow";
+// NOTA: .app-card ya incluye radius, padding y shadow desde tokens CSS (index.css)
+// Solo añadimos variantes de color/borde que no están en la clase base
+const CARD_BASE = "app-card border border-[var(--color-border-strong)] bg-[var(--color-surface)]";
+const CARD_ELEVATED = "app-card border border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)]";
+const PANEL_BASE = "app-panel";
+const CARD_TONE_PRIMARY = "app-card border-2 border-[var(--color-primary)] bg-[var(--color-primary-soft)]";
+const CARD_TONE_ACCENT = "app-card border-2 border-[var(--color-accent)] bg-[var(--color-surface)]";
+const CARD_TONE_SECONDARY = "app-card border-2 border-[var(--color-secondary)] bg-[var(--color-surface)]";
+const PANEL_SESSION = "app-panel bg-[var(--color-surface-muted)] hover:shadow-md transition-all";
+const CARD_METRIC = "app-card border border-[var(--color-primary)] bg-[var(--color-primary-soft)] hover:shadow-md transition-shadow";
 
 export const componentStyles = {
   layout: {
