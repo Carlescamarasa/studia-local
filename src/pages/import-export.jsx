@@ -462,7 +462,7 @@ export default function ImportExportPage() {
 
   if (currentUser?.rolPersonalizado !== 'ADMIN') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-[var(--color-surface-muted)] flex items-center justify-center p-6">
         <Card className="max-w-md rounded-2xl border-red-200 shadow-sm">
           <CardContent className="pt-6 text-center text-ui">
             <Shield className="w-16 h-16 mx-auto mb-4 text-red-500" />
@@ -509,7 +509,7 @@ export default function ImportExportPage() {
                     </h2>
                     <div className="grid md:grid-cols-3 gap-4">
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50 text-[var(--color-primary)]">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Music className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Piezas</CardTitle>
@@ -535,7 +535,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50 text-[var(--color-primary)]">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Layers className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Ejercicios</CardTitle>
@@ -561,7 +561,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50 text-[var(--color-primary)]">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <BookOpen className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Planes</CardTitle>
@@ -595,7 +595,7 @@ export default function ImportExportPage() {
                     </h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50 text-[var(--color-primary)]">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Users className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Usuarios</CardTitle>
@@ -621,7 +621,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50 text-[var(--color-primary)]">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Target className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Asignaciones</CardTitle>
@@ -647,7 +647,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50 text-[var(--color-primary)]">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Calendar className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Agenda</CardTitle>
@@ -675,7 +675,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50 text-[var(--color-primary)]">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Activity className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Sesiones</CardTitle>
@@ -701,7 +701,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50 text-[var(--color-primary)]">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Layers className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Bloques</CardTitle>
@@ -727,7 +727,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)]">
                           <div className="flex items-center gap-3">
                             <Layers className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Ejercicios (CSV)</CardTitle>
@@ -756,7 +756,7 @@ export default function ImportExportPage() {
 
                   <Alert className="rounded-2xl border-blue-200 bg-blue-50">
                     <AlertTriangle className="h-4 w-4 text-blue-600" />
-                    <AlertDescription className="text-sm text-slate-700 space-y-1">
+                    <AlertDescription className="text-sm text-ui/80 space-y-1">
                       <p className="font-semibold text-ui">Información sobre exportación</p>
                       <ul className="list-disc list-inside space-y-1 text-xs mt-2">
                         <li><strong>JSON:</strong> Formato completo ideal para respaldo y migración de plantillas</li>
@@ -778,7 +778,7 @@ export default function ImportExportPage() {
                     </h2>
                     <div className="grid md:grid-cols-3 gap-4">
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)]">
                           <div className="flex items-center gap-3">
                             <Music className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Piezas</CardTitle>
@@ -801,7 +801,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)]">
                           <div className="flex items-center gap-3">
                             <Layers className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Ejercicios</CardTitle>
@@ -824,7 +824,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)]">
                           <div className="flex items-center gap-3">
                             <BookOpen className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Planes</CardTitle>
@@ -850,7 +850,7 @@ export default function ImportExportPage() {
 
                   <Alert className="rounded-2xl border-amber-200 bg-amber-50">
                     <AlertTriangle className="h-4 w-4 text-amber-700" />
-                    <AlertDescription className="text-sm text-slate-700 space-y-1">
+                    <AlertDescription className="text-sm text-ui/80 space-y-1">
                       <p className="font-semibold text-ui">Importante sobre importación</p>
                       <ul className="list-disc list-inside space-y-1 text-xs mt-2">
                         <li><strong>Ejercicios:</strong> Códigos duplicados se omiten automáticamente</li>

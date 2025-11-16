@@ -40,7 +40,7 @@ export default function BloquesTab() {
     TM: 'bg-green-100 text-green-800',
     FM: 'bg-pink-100 text-pink-800',
     VC: 'bg-cyan-100 text-cyan-800',
-    AD: 'bg-gray-100 text-gray-800',
+    AD: 'bg-[var(--color-surface-muted)] text-ui',
   };
 
   return (
@@ -58,7 +58,7 @@ export default function BloquesTab() {
         <CardContent>
           <div className="mb-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-ui/60" />
               <Input
                 placeholder="Buscar bloques por nombre o código..."
                 value={searchTerm}
@@ -69,11 +69,11 @@ export default function BloquesTab() {
           </div>
 
           {isLoading ? (
-            <div className="text-center py-12 text-gray-500">Cargando bloques...</div>
+            <div className="text-center py-12 text-ui/80">Cargando bloques...</div>
           ) : filteredBloques.length === 0 ? (
             <div className="text-center py-12">
-              <Layers className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <p className="text-gray-500 mb-4">
+              <Layers className="w-16 h-16 mx-auto mb-4 text-ui/60" />
+              <p className="text-ui/80 mb-4">
                 {searchTerm ? 'No se encontraron bloques' : 'Aún no hay bloques. Crea el primer bloque.'}
               </p>
               {!searchTerm && (
@@ -99,10 +99,10 @@ export default function BloquesTab() {
                       <Badge className={`${tipoColors[bloque.tipo]} rounded-full`}>
                         {tipoLabels[bloque.tipo]}
                       </Badge>
-                      <span className="text-xs text-gray-500 font-mono">{bloque.code}</span>
+                      <span className="text-xs text-ui/80 font-mono">{bloque.code}</span>
                     </div>
                     <h3 className="font-semibold mb-2">{bloque.nombre}</h3>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-ui/80">
                       {Math.floor(bloque.duracionSeg / 60)}:{String(bloque.duracionSeg % 60).padStart(2, '0')}
                     </p>
                   </CardContent>

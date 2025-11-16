@@ -25,8 +25,8 @@ export default function CronometroCompacto({ tiempoActual, tiempoObjetivo, isAD 
   if (isAD) {
     return (
       <div className="flex items-center gap-2">
-        <Clock className="w-4 h-4 text-gray-400" />
-        <span className="text-sm text-gray-400 tabular-nums">--:--</span>
+        <Clock className="w-4 h-4 text-ui/60" />
+        <span className="text-sm text-ui/60 tabular-nums">--:--</span>
         <Badge className="bg-amber-100 text-amber-800 text-xs rounded-full">No suma tiempo</Badge>
       </div>
     );
@@ -34,15 +34,15 @@ export default function CronometroCompacto({ tiempoActual, tiempoObjetivo, isAD 
   
   return (
     <div className="flex items-center gap-2">
-      <Clock className="w-4 h-4 text-gray-600" />
+      <Clock className="w-4 h-4 text-ui/80" />
       <div className="flex items-center gap-1">
         <span className={`text-lg font-bold tabular-nums ${colorClase}`}>
           {minutos}:{String(segundos).padStart(2, '0')}
         </span>
         {tiempoObjetivo > 0 && (
           <>
-            <span className="text-sm text-gray-500">/</span>
-            <span className="text-sm text-gray-600 tabular-nums">
+            <span className="text-sm text-ui/80">/</span>
+            <span className="text-sm text-ui/80 tabular-nums">
               {minutosObj}:{String(segundosObj).padStart(2, '0')}
             </span>
           </>

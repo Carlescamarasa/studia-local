@@ -170,7 +170,7 @@ export default function AsignacionDetallePage() {
   };
 
   const focoColors = {
-    GEN: 'bg-slate-100 text-slate-800 border-slate-200',
+    GEN: 'bg-[var(--color-surface-muted)] text-ui border-[var(--color-border-default)]',
     LIG: 'bg-blue-100 text-blue-800 border-blue-200',
     RIT: 'bg-purple-100 text-purple-800 border-purple-200',
     ART: 'bg-green-100 text-green-800 border-green-200',
@@ -178,7 +178,7 @@ export default function AsignacionDetallePage() {
   };
 
   const estadoColors = {
-    borrador: 'bg-slate-100 text-slate-800',
+    borrador: 'bg-[var(--color-surface-muted)] text-ui',
     publicada: 'bg-green-100 text-green-800',
     en_curso: 'bg-blue-100 text-blue-800',
     cerrada: 'bg-amber-100 text-amber-800',
@@ -446,7 +446,7 @@ export default function AsignacionDetallePage() {
                                             <Badge 
                                               variant="outline" 
                                               className={`rounded-full text-xs ${
-                                                tiempoTotal > 0 ? 'bg-green-50 border-green-300 text-green-800' : 'bg-slate-50'
+                                                tiempoTotal > 0 ? 'bg-green-50 border-green-300 text-green-800' : 'bg-[var(--color-surface-muted)]'
                                               }`}
                                             >
                                               ⏱ {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min

@@ -97,7 +97,7 @@ function SemanaPageContent() {
   };
 
   const focoColors = {
-    GEN: 'bg-gray-100 text-gray-800',
+    GEN: 'bg-[var(--color-surface-muted)] text-ui',
     LIG: 'bg-blue-100 text-blue-800',
     RIT: 'bg-purple-100 text-purple-800',
     ART: 'bg-green-100 text-green-800',

@@ -20,7 +20,7 @@ export default function ModalCancelar({ onGuardarYSalir, onSalirSinGuardar, onCo
           </div>
         </CardHeader>
         <CardContent className="pt-6 space-y-4">
-          <p className="text-gray-700 text-sm">
+          <p className="text-ui text-sm">
             ¿Deseas guardar el estado de la sesión para retomarla más tarde?
           </p>
           

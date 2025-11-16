@@ -48,7 +48,7 @@ export default function MultiSelect({ label, items, value = [], onChange }) {
                 >
                   <div className="flex items-center gap-2 flex-1">
                     <div className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
-                      isSelected ? 'bg-[#F59E42] border-[#F59E42]' : 'border-gray-300'
+                      isSelected ? 'bg-[var(--color-accent)] border-[var(--color-accent)]' : 'border-[var(--color-border-default)]'
                     }`}>
                       {isSelected && <Check className="w-3 h-3 text-white" />}
                     </div>

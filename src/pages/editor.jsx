@@ -22,7 +22,7 @@ export default function EditorPage() {
             <Shield className="w-16 h-16 mx-auto text-red-500" />
             <div>
               <h3 className="font-semibold text-lg text-gray-900 mb-2">Acceso Denegado</h3>
-              <p className="text-gray-600">
+              <p className="text-ui/80">
                 El editor de contenido pedagógico requiere permisos de Profesor o Administrador.
               </p>
             </div>
@@ -50,7 +50,7 @@ export default function EditorPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Macro-Editor de Contenido</h1>
-            <p className="text-gray-500 mt-1">Crea y gestiona piezas, planes y bloques pedagógicos</p>
+            <p className="text-ui/80 mt-1">Crea y gestiona piezas, planes y bloques pedagógicos</p>
           </div>
         </div>
       </div>

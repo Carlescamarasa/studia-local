@@ -121,7 +121,7 @@ export default function StudentSearchBar({
                     <div
                       className={cn(
                         "w-4 h-4 border-2 rounded flex items-center justify-center",
-                        selected ? "bg-[#F59E42] border-[#F59E42]" : "border-gray-300"
+                        selected ? "bg-[var(--color-accent)] border-[var(--color-accent)]" : "border-[var(--color-border-default)]"
                       )}
                     >
                       {selected && <Check className="w-3 h-3 text-white" />}

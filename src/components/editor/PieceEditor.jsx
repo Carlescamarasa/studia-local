@@ -229,8 +229,8 @@ export default function PieceEditor({ pieza, onClose }) {
               </CardHeader>
               <CardContent className="space-y-4">
                 {formData.elementos.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Music className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <div className="text-center py-8 text-ui/80">
+                    <Music className="w-12 h-12 mx-auto mb-3 text-ui/60" />
                     <p className="text-sm">No hay elementos. Añade el primer elemento multimedia.</p>
                   </div>
                 ) : (
@@ -249,7 +249,7 @@ export default function PieceEditor({ pieza, onClose }) {
                                   <CardContent className="pt-4 space-y-3">
                                     <div className="flex items-start gap-3">
                                       <div {...provided.dragHandleProps} className="flex flex-col gap-1 pt-2 cursor-grab active:cursor-grabbing">
-                                        <GripVertical className="w-5 h-5 text-gray-400" />
+                                        <GripVertical className="w-5 h-5 text-ui/60" />
                                       </div>
                                       <div className="flex-1 space-y-3">
                                         <Input
@@ -329,7 +329,7 @@ export default function PieceEditor({ pieza, onClose }) {
             </Card>
           </div>
 
-          <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl">
+          <div className="border-t px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
             <div className="flex gap-3 mb-2">
               <Button variant="outline" onClick={onClose} className="flex-1">
                 Cancelar
@@ -349,7 +349,7 @@ export default function PieceEditor({ pieza, onClose }) {
                 )}
               </Button>
             </div>
-            <p className="text-xs text-center text-gray-500">
+            <p className="text-xs text-center text-ui/80">
               Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar
             </p>
           </div>

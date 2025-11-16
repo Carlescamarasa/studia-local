@@ -164,7 +164,7 @@ function AsignacionesPageContent() {
   };
 
   const estadoColors = {
-    borrador: 'bg-slate-100 text-slate-800',
+    borrador: 'bg-[var(--color-surface-muted)] text-ui',
     publicada: 'bg-green-100 text-green-800',
     en_curso: 'bg-blue-100 text-blue-800',
     cerrada: 'bg-amber-100 text-amber-800',

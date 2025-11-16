@@ -404,7 +404,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
     TM: 'bg-green-100 text-green-800 border-green-200',
     FM: 'bg-pink-100 text-pink-800 border-pink-200',
     VC: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-    AD: 'bg-slate-100 text-slate-800 border-slate-200',
+    AD: 'bg-[var(--color-surface-muted)] text-ui border-[var(--color-border-default)]',
   };
 
   const tiempoTotal = calcularTiempoTotal();
@@ -495,7 +495,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
               <CardContent className="space-y-3">
                 {formData.secuencia.length === 0 ? (
                   <div className="text-center py-12 text-muted">
-                    <PlayCircle className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                    <PlayCircle className="w-16 h-16 mx-auto mb-4 text-ui/60" />
                     <p className="text-sm mb-4">Aún no hay ejercicios ni rondas en esta sesión.</p>
                   </div>
                 ) : (
@@ -538,7 +538,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                           ejercicio: bloque, 
                                           piezaSnapshot: piezaSnapshot || pieza 
                                         })}
-                                        className="h-8 w-8 p-0 rounded-xl hover:bg-slate-50"
+                                        className="h-8 w-8 p-0 rounded-xl hover:bg-[var(--color-surface-muted)]"
                                       >
                                         <Edit className="w-4 h-4" />
                                       </Button>
@@ -696,7 +696,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                                               });
                                                             }
                                                           }}
-                                                          className="h-6 px-2 rounded-xl hover:bg-slate-50"
+                                                          className="h-6 px-2 rounded-xl hover:bg-[var(--color-surface-muted)]"
                                                           title="Editar ejercicio"
                                                         >
                                                           <Edit className="w-3 h-3" />
@@ -759,7 +759,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                         key={key}
                         variant={tiposFilter.has(key) ? "default" : "outline"}
                         className={`cursor-pointer transition-all rounded-full ${
-                          tiposFilter.has(key) ? tipoColors[key] : 'hover:bg-slate-50 hover:shadow-sm'
+                          tiposFilter.has(key) ? tipoColors[key] : 'hover:bg-[var(--color-surface-muted)] hover:shadow-sm'
                         }`}
                         onClick={() => toggleTipoFilter(key)}
                       >

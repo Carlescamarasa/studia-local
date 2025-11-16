@@ -11,8 +11,8 @@ export default function PlanesPage() {
             <BookOpen className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Planes de Estudio</h1>
-            <p className="text-gray-500">Diseña planes pedagógicos estructurados</p>
+            <h1 className="text-3xl font-bold text-ui">Planes de Estudio</h1>
+            <p className="text-ui/80">Diseña planes pedagógicos estructurados</p>
           </div>
         </div>
       </div>
@@ -22,7 +22,7 @@ export default function PlanesPage() {
           <CardTitle>Próximamente</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-600">
+          <p className="text-ui/80">
             Crea planes con semanas y sesiones organizadas.
           </p>
         </CardContent>

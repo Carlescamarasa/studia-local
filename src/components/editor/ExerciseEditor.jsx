@@ -268,7 +268,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
     TM: 'bg-green-100 text-green-800 border-green-200',
     FM: 'bg-pink-100 text-pink-800 border-pink-200',
     VC: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-    AD: 'bg-slate-100 text-slate-800 border-slate-200',
+    AD: 'bg-[var(--color-surface-muted)] text-ui border-[var(--color-border-default)]',
   };
 
   const isAD = formData.tipo === 'AD';

@@ -309,7 +309,7 @@ export default function AdaptarAsignacionPage() {
   };
 
   const focoColors = {
-    GEN: 'bg-slate-100 text-slate-800 border-slate-200',
+    GEN: 'bg-[var(--color-surface-muted)] text-ui border-[var(--color-border-default)]',
     LIG: 'bg-blue-100 text-blue-800 border-blue-200',
     RIT: 'bg-purple-100 text-purple-800 border-purple-200',
     ART: 'bg-green-100 text-green-800 border-green-200',
@@ -323,7 +323,7 @@ export default function AdaptarAsignacionPage() {
     TM: 'bg-green-100 text-green-800 border-green-200',
     FM: 'bg-pink-100 text-pink-800 border-pink-200',
     VC: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-    AD: 'bg-slate-100 text-slate-800 border-slate-200',
+    AD: 'bg-[var(--color-surface-muted)] text-ui border-[var(--color-border-default)]',
   };
 
   // Validar que existe el ID
@@ -548,7 +548,7 @@ export default function AdaptarAsignacionPage() {
                                                                   <Badge
                                                                     variant="outline"
                                                                     className={`text-xs rounded-full ${
-                                                                      tiempoTotal > 0 ? 'bg-green-50 border-green-300 text-green-800' : 'bg-slate-50'
+                                                                      tiempoTotal > 0 ? 'bg-green-50 border-green-300 text-green-800' : 'bg-[var(--color-surface-muted)]'
                                                                     }`}
                                                                   >
                                                                     ⏱ {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
@@ -788,7 +788,7 @@ export default function AdaptarAsignacionPage() {
                                         e.stopPropagation();
                                         duplicateSemana(semanaIndex);
                                       }}
-                                      className="h-8 w-8 p-0 rounded-xl hover:bg-slate-50"
+                                      className="h-8 w-8 p-0 rounded-xl hover:bg-[var(--color-surface-muted)]"
                                       title="Duplicar semana"
                                       aria-label="Duplicar semana"
                                     >

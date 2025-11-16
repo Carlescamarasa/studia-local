@@ -11,8 +11,8 @@ export default function SesionesPage() {
             <PlayCircle className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Sesiones de Práctica</h1>
-            <p className="text-gray-500">Configura bloques y rondas de ejercicios</p>
+            <h1 className="text-3xl font-bold text-ui">Sesiones de Práctica</h1>
+            <p className="text-ui/80">Configura bloques y rondas de ejercicios</p>
           </div>
         </div>
       </div>
@@ -22,7 +22,7 @@ export default function SesionesPage() {
           <CardTitle>Próximamente</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-600">
+          <p className="text-ui/80">
             Diseña sesiones con bloques personalizados y configuración de rondas.
           </p>
         </CardContent>

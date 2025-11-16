@@ -50,11 +50,11 @@ export default function TestSeedPage() {
     TM: 'bg-green-100 text-green-800 border-green-200',
     FM: 'bg-pink-100 text-pink-800 border-pink-200',
     VC: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-    AD: 'bg-gray-100 text-gray-800 border-gray-200',
+    AD: 'bg-[var(--color-surface-muted)] text-ui border-[var(--color-border-default)]',
   };
 
   const focoColors = {
-    GEN: 'bg-gray-100 text-gray-800',
+    GEN: 'bg-[var(--color-surface-muted)] text-ui',
     LIG: 'bg-blue-100 text-blue-800',
     RIT: 'bg-purple-100 text-purple-800',
     ART: 'bg-green-100 text-green-800',

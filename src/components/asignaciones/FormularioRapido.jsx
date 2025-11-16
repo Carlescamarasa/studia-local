@@ -459,7 +459,7 @@ export default function FormularioRapido({ onClose }) {
             )}
             </div>
 
-          <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl">
+          <div className="border-t px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
             <div className="flex gap-3 mb-2">
               <Button variant="outline" onClick={onClose} className="flex-1">
                 Cancelar
@@ -491,7 +491,7 @@ export default function FormularioRapido({ onClose }) {
                 </Button>
               )}
             </div>
-            <p className="text-xs text-center text-gray-500">
+            <p className="text-xs text-center text-ui/80">
               Ctrl/⌘+Intro : acción principal • Ctrl/⌘+. : cancelar
             </p>
           </div>

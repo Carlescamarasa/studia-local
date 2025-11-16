@@ -55,7 +55,7 @@ export default function MediaEmbed({ url, className = '', open = false }) {
 
     case MediaKind.SOUNDCLOUD:
       return (
-        <div className={`w-full bg-gray-100 rounded-lg overflow-hidden ${className}`}>
+        <div className={`w-full bg-[var(--color-surface-muted)] rounded-lg overflow-hidden ${className}`}>
           <iframe
             {...baseIframeProps}
             src={media.embedUrl}
@@ -68,7 +68,7 @@ export default function MediaEmbed({ url, className = '', open = false }) {
 
     case MediaKind.DRIVE:
       return (
-        <div className={`relative w-full bg-gray-100 rounded-lg overflow-hidden pb-[75%] ${className}`}>
+        <div className={`relative w-full bg-[var(--color-surface-muted)] rounded-lg overflow-hidden pb-[75%] ${className}`}>
           <iframe
             {...baseIframeProps}
             src={media.embedUrl}
@@ -81,7 +81,7 @@ export default function MediaEmbed({ url, className = '', open = false }) {
 
     case MediaKind.AUDIO:
       return (
-        <div className={`w-full bg-gray-50 rounded-lg p-4 ${className}`}>
+        <div className={`w-full bg-[var(--color-surface-muted)] rounded-lg p-4 ${className}`}>
           <audio
             controls
             src={media.embedUrl}
@@ -112,7 +112,7 @@ export default function MediaEmbed({ url, className = '', open = false }) {
 
     case MediaKind.IMAGE:
       return (
-        <div className={`w-full bg-gray-100 rounded-lg overflow-hidden ${className}`}>
+        <div className={`w-full bg-[var(--color-surface-muted)] rounded-lg overflow-hidden ${className}`}>
           <img
             src={media.embedUrl}
             alt={media.title}
@@ -124,7 +124,7 @@ export default function MediaEmbed({ url, className = '', open = false }) {
 
     case MediaKind.PDF:
       return (
-        <div className={`relative w-full bg-gray-100 rounded-lg overflow-hidden pb-[100%] ${className}`}>
+        <div className={`relative w-full bg-[var(--color-surface-muted)] rounded-lg overflow-hidden pb-[100%] ${className}`}>
           <iframe
             {...baseIframeProps}
             src={media.embedUrl}
@@ -138,11 +138,11 @@ export default function MediaEmbed({ url, className = '', open = false }) {
     case MediaKind.UNKNOWN:
     default:
       return (
-        <div className={`w-full bg-gray-50 border border-gray-200 rounded-lg p-4 ${className}`}>
+        <div className={`w-full bg-[var(--color-surface-muted)] border border-[var(--color-border-default)] rounded-lg p-4 ${className}`}>
           <div className="flex items-center gap-3">
-            <LinkIcon className="w-5 h-5 text-gray-400 shrink-0" />
+            <LinkIcon className="w-5 h-5 text-ui/60 shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-600 truncate">{media.originalUrl}</p>
+              <p className="text-sm text-ui/80 truncate">{media.originalUrl}</p>
             </div>
             <a
               href={media.originalUrl}

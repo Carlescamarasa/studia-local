@@ -12,7 +12,7 @@ export default function EjerciciosPage() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Ejercicios</h1>
-            <p className="text-gray-500">Biblioteca de ejercicios técnicos</p>
+            <p className="text-ui/80">Biblioteca de ejercicios técnicos</p>
           </div>
         </div>
       </div>
@@ -22,7 +22,7 @@ export default function EjerciciosPage() {
           <CardTitle>Próximamente</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-600">
+          <p className="text-ui/80">
             Aquí podrás gestionar ejercicios técnicos y de calentamiento.
           </p>
         </CardContent>

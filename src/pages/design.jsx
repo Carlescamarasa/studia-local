@@ -27,7 +27,7 @@ function LabeledRow({ label, children }) {
   );
 }
 
-function DesignPageContent() {
+function DesignPageContent({ embedded = false }) {
   const { design, setDesign, setDesignPartial, resetDesign, exportDesign, importDesign, loadPreset } = useDesign();
   // Aliases para compatibilidad
   const config = design;
@@ -311,7 +311,7 @@ function DesignPageContent() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={embedded ? "" : "min-h-screen bg-background"}>
       <PageHeader
         icon={Palette}
         title="Panel de Diseño"
@@ -319,14 +319,14 @@ function DesignPageContent() {
       />
 
       <div className="max-w-5xl mx-auto p-6 space-y-6">
-        <Card className="app-card border-blue-200 bg-blue-50">
+        <Card className="app-card border-[var(--color-border-default)] bg-[var(--color-primary-soft)]">
           <CardContent className="pt-4 text-ui">
             <div className="flex items-start gap-3">
-              <Settings className="w-5 h-5 text-blue-600 mt-0.5" />
+              <Settings className="w-5 h-5 text-[var(--color-primary)] mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm text-blue-900">
-                  <strong>Modo runtime:</strong> Los cambios se guardan en <code className="bg-blue-100 px-1 rounded">localStorage</code> y se aplican mediante variables CSS generadas por el <code className="bg-blue-100 px-1 rounded">DesignProvider</code> (desde <code className="bg-blue-100 px-1 rounded">src/components/design/designConfig.ts</code>). 
-                  Los <strong>tokens</strong> de diseño viven en <code className="bg-blue-100 px-1 rounded">src/design/designSystem.ts</code> y las <strong>clases semánticas</strong> en <code className="bg-blue-100 px-1 rounded">src/design/componentStyles.ts</code>, tal y como se describe en el README. Útil para probar variantes sin deployar código.
+                <p className="text-sm text-ui">
+                  <strong>Modo runtime:</strong> Los cambios se guardan en <code className="bg-[var(--color-primary-soft)] px-1 rounded">localStorage</code> y se aplican mediante variables CSS generadas por el <code className="bg-[var(--color-primary-soft)] px-1 rounded">DesignProvider</code> (desde <code className="bg-[var(--color-primary-soft)] px-1 rounded">src/components/design/designConfig.ts</code>). 
+                  Los <strong>tokens</strong> de diseño viven en <code className="bg-[var(--color-primary-soft)] px-1 rounded">src/design/designSystem.ts</code> y las <strong>clases semánticas</strong> en <code className="bg-[var(--color-primary-soft)] px-1 rounded">src/design/componentStyles.ts</code>, tal y como se describe en el README. Útil para probar variantes sin deployar código.
                 </p>
               </div>
             </div>
@@ -809,11 +809,11 @@ function DesignPageContent() {
               {auditReport ? (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <Card className="bg-slate-50 rounded-lg p-3 border border-[var(--color-border-default)]">
+                    <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
                       <div className="text-xs text-ui/80 uppercase tracking-wide">Archivos escaneados</div>
                       <div className="text-2xl font-bold text-ui">{auditReport?.summary?.filesScanned || 0}</div>
                     </Card>
-                    <Card className="bg-slate-50 rounded-lg p-3 border border-[var(--color-border-default)]">
+                    <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
                       <div className="text-xs text-ui/80 uppercase tracking-wide">Problemas encontrados</div>
                       <div className="text-2xl font-bold text-ui">{auditReport?.summary?.totalIssues || 0}</div>
                     </Card>
@@ -838,7 +838,7 @@ function DesignPageContent() {
                   )}
 
                   {auditReport?.issues && (
-                    <details className="rounded-xl border border-[var(--color-border-default)] p-4 bg-slate-50">
+                  <details className="rounded-xl border border-[var(--color-border-default)] p-4 bg-[var(--color-surface-muted)]">
                       <summary className="cursor-pointer font-medium text-ui">Detalles por categoría</summary>
                       <div className="mt-4 space-y-4 max-h-[420px] overflow-auto">
                         {Object.entries(auditReport.issues).map(([bucket, items]) => (
@@ -854,7 +854,7 @@ function DesignPageContent() {
                                 {items.slice(0, 50).map((it, idx) => (
                                   <li key={idx} className="border-l-2 border-brand-200 pl-3 py-1">
                                     <div className="text-[11px] text-ui/80">{it.file}:{it.line}</div>
-                                    <div className="font-mono text-xs text-ui bg-slate-50 p-1 rounded mt-1">{it.snippet}</div>
+                                    <div className="font-mono text-xs text-ui bg-[var(--color-surface-muted)] p-1 rounded mt-1">{it.snippet}</div>
                                   </li>
                                 ))}
                               </ul>

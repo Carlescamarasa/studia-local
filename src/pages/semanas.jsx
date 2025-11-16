@@ -11,8 +11,8 @@ export default function SemanasPage() {
             <Calendar className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Semanas</h1>
-            <p className="text-gray-500">Organiza semanas dentro de planes</p>
+            <h1 className="text-3xl font-bold text-ui">Semanas</h1>
+            <p className="text-ui/80">Organiza semanas dentro de planes</p>
           </div>
         </div>
       </div>
@@ -22,7 +22,7 @@ export default function SemanasPage() {
           <CardTitle>Próximamente</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-600">
+          <p className="text-ui/80">
             Gestiona las semanas que componen tus planes de estudio.
           </p>
         </CardContent>

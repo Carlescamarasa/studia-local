@@ -349,7 +349,7 @@ export default function PlanEditor({ plan, onClose }) {
   };
 
   const focoColors = {
-    GEN: 'bg-gray-100 text-gray-800',
+    GEN: 'bg-[var(--color-surface-muted)] text-ui',
     LIG: 'bg-blue-100 text-blue-800',
     RIT: 'bg-purple-100 text-purple-800',
     ART: 'bg-green-100 text-green-800',
@@ -363,7 +363,7 @@ export default function PlanEditor({ plan, onClose }) {
     TM: 'bg-green-100 text-green-800',
     FM: 'bg-pink-100 text-pink-800',
     VC: 'bg-cyan-100 text-cyan-800',
-    AD: 'bg-gray-100 text-gray-800',
+    AD: 'bg-[var(--color-surface-muted)] text-ui',
   };
 
   const modalContent = (
@@ -440,7 +440,7 @@ export default function PlanEditor({ plan, onClose }) {
                       className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                     >
                       {piezas.length === 0 ? (
-                        <div className="p-2 text-sm text-gray-500">No hay piezas</div>
+                        <div className="p-2 text-sm text-ui/80">No hay piezas</div>
                       ) : (
                         piezas.map((pieza) => (
                           <SelectItem key={pieza.id} value={pieza.id}>
@@ -502,8 +502,8 @@ export default function PlanEditor({ plan, onClose }) {
               </CardHeader>
               <CardContent className="space-y-2">
                 {formData.semanas.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
-                    <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <div className="text-center py-12 text-ui/80">
+                    <Calendar className="w-16 h-16 mx-auto mb-4 text-ui/60" />
                     <p className="text-sm mb-4">Aún no hay semanas. Crea la primera semana.</p>
                     <Button onClick={addSemana} variant="outline">
                       <Plus className="w-4 h-4 mr-2" />
@@ -527,7 +527,7 @@ export default function PlanEditor({ plan, onClose }) {
                                   <CardContent className="pt-4">
                                     <div className="flex items-start gap-2">
                                       <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing pt-1" onClick={(e) => e.stopPropagation()}>
-                                        <GripVertical className="w-5 h-5 text-gray-400" />
+                                        <GripVertical className="w-5 h-5 text-ui/60" />
                                       </div>
                                       
                                       <div className="pt-1">
@@ -544,7 +544,7 @@ export default function PlanEditor({ plan, onClose }) {
                                           <Badge className={focoColors[semana.foco]}>
                                             {focoLabels[semana.foco]}
                                           </Badge>
-                                          <span className="text-sm text-gray-500">
+                                          <span className="text-sm text-ui/80">
                                             ({semana.sesiones?.length || 0} sesiones)
                                           </span>
                                         </div>
@@ -552,7 +552,7 @@ export default function PlanEditor({ plan, onClose }) {
                                         {expandedSemanas.has(semanaIndex) && (
                                           <div className="ml-4 mt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
                                             {semana.objetivo && (
-                                              <p className="text-sm text-gray-600 italic">"{semana.objetivo}"</p>
+                                              <p className="text-sm text-ui/80 italic">"{semana.objetivo}"</p>
                                             )}
 
                                             {semana.sesiones && semana.sesiones.length > 0 && (
@@ -578,7 +578,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                               <CardContent className="pt-3 pb-3">
                                                                 <div className="flex items-start gap-2">
                                                                   <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing pt-1" onClick={(e) => e.stopPropagation()}>
-                                                                    <GripVertical className="w-4 h-4 text-gray-400" />
+                                                                <GripVertical className="w-4 h-4 text-ui/60" />
                                                                   </div>
                                                                   
                                                                   <div className="pt-1">
@@ -596,7 +596,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                                       <Badge 
                                                                         variant="outline" 
                                                                         className={`text-xs ${
-                                                                          tiempoTotal > 0 ? 'bg-green-50 border-green-300 text-green-800' : 'bg-gray-50'
+                                                                          tiempoTotal > 0 ? 'bg-green-50 border-green-300 text-green-800' : 'bg-[var(--color-surface-muted)]'
                                                                         }`}
                                                                       >
                                                                         ⏱ {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
@@ -608,7 +608,7 @@ export default function PlanEditor({ plan, onClose }) {
 
                                                                     {isExpanded && (
                                                                       <div className="ml-6 mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
-                                                                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                                                                        <div className="flex items-center gap-2 text-xs text-ui/80">
                                                                           <Layers className="w-3 h-3" />
                                                                           <span>
                                                                             {sesion.bloques?.length || 0} ejercicios
@@ -638,7 +638,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                                                       {ejercicio.tipo}
                                                                                     </Badge>
                                                                                     <span className="flex-1">{ejercicio.nombre}</span>
-                                                                                    <span className="text-gray-500">{ejercicio.code}</span>
+                                                                                    <span className="text-ui/80">{ejercicio.code}</span>
                                                                                     <Button
                                                                                       size="sm"
                                                                                       variant="ghost"
@@ -688,8 +688,8 @@ export default function PlanEditor({ plan, onClose }) {
                                                                                             )}
                                                                                           </div>
                                                                                           <Badge className="bg-purple-600 text-white text-xs">Ronda</Badge>
-                                                                                          <span className="text-xs text-gray-600">× {ronda.repeticiones} repeticiones</span>
-                                                                                          <span className="text-xs text-gray-500">({ronda.bloques.length} ejercicios)</span>
+                                                                                          <span className="text-xs text-ui/80">× {ronda.repeticiones} repeticiones</span>
+                                                                                          <span className="text-xs text-ui/80">({ronda.bloques.length} ejercicios)</span>
                                                                                           <Button
                                                                                             size="sm"
                                                                                             variant="ghost"
@@ -865,7 +865,7 @@ export default function PlanEditor({ plan, onClose }) {
             </Card>
           </div>
 
-          <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl">
+          <div className="border-t px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
             <div className="flex gap-3 mb-2">
               <Button variant="outline" onClick={onClose} className="flex-1 h-10 rounded-xl">
                 Cancelar
@@ -885,7 +885,7 @@ export default function PlanEditor({ plan, onClose }) {
                 )}
               </Button>
             </div>
-            <p className="text-xs text-center text-gray-500">
+            <p className="text-xs text-center text-ui/80">
               Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar • Ctrl/⌘+Alt+N : añadir semana
             </p>
           </div>

@@ -174,7 +174,7 @@ export default function PerfilPage() {
       <div className="flex items-center justify-center min-h-[80vh]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-600">Cargando perfil...</p>
+          <p className="text-ui/80">Cargando perfil...</p>
         </div>
       </div>
     );

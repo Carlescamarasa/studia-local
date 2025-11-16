@@ -66,7 +66,7 @@ https://drive.google.com/file/d/ID/view`}
           rows={4}
           className="resize-none font-mono text-xs"
         />
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-ui/80 mt-1">
           Pega una URL por línea. Soporta imágenes, audio, vídeo, PDF, YouTube, Vimeo, SoundCloud y Google Drive.
         </p>
         {errors.length > 0 && (
@@ -90,8 +90,8 @@ https://drive.google.com/file/d/ID/view`}
       </div>
 
       {value.length > 0 && (
-        <div className="border rounded-lg p-3 bg-gray-50 space-y-2">
-          <p className="text-xs font-semibold text-gray-700">
+        <div className="border rounded-lg p-3 bg-[var(--color-surface-muted)] space-y-2">
+          <p className="text-xs font-semibold text-ui">
             Enlaces agregados ({value.length}/{MAX_LINKS}):
           </p>
           <div className="space-y-2">
@@ -104,11 +104,11 @@ https://drive.google.com/file/d/ID/view`}
                   key={idx} 
                   className={`flex items-center gap-2 p-2 rounded-lg border transition-colors ${
                     isValid 
-                      ? 'bg-white border-gray-200 hover:border-gray-300' 
+                      ? 'bg-white border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]' 
                       : 'bg-red-50 border-red-200'
                   }`}
                 >
-                  <MediaIcon url={url} className="w-4 h-4 shrink-0 text-gray-600" />
+                  <MediaIcon url={url} className="w-4 h-4 shrink-0 text-ui/80" />
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -119,7 +119,7 @@ https://drive.google.com/file/d/ID/view`}
                         <span className="text-xs text-red-600 font-medium">Inválido</span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-600 truncate mt-0.5">{url}</p>
+                    <p className="text-xs text-ui/80 truncate mt-0.5">{url}</p>
                   </div>
                   
                   <div className="flex gap-1 shrink-0">

@@ -154,7 +154,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
 
         {/* Tarjeta compacta para audio */}
         <div className="relative z-10 mx-auto w-full max-w-md px-4">
-          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-card border border-gray-200 p-6">
+          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-card border border-[var(--color-border-default)] p-6">
             {/* Header */}
             <div className="flex items-center justify-between gap-4 mb-4">
               <h2 id="media-preview-title" className="font-semibold text-base truncate flex-1">
@@ -196,7 +196,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
 
               {/* Control de velocidad */}
               <div className="flex items-center gap-3">
-                <label className="text-sm text-gray-600 font-medium shrink-0">
+                <label className="text-sm text-ui/80 font-medium shrink-0">
                   Velocidad:
                 </label>
                 <div className="flex gap-1 flex-wrap">
@@ -207,7 +207,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                       className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                         playbackRate === rate
                           ? 'bg-blue-600 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          : 'bg-[var(--color-surface-muted)] text-ui hover:bg-[var(--color-border-default)]/20'
                       }`}
                       aria-label={`Velocidad ${rate}x`}
                     >
@@ -220,7 +220,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
 
             {/* Ayuda de teclado */}
             <div className="mt-4 text-center border-t pt-3">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-ui/80">
                 Ctrl/⌘+. : cerrar
               </p>
             </div>
@@ -260,7 +260,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                 {getMediaLabel(currentUrl)}
               </h2>
               {hasMultiple && (
-                <span className="text-xs lg:text-sm text-gray-500 whitespace-nowrap">
+                <span className="text-xs lg:text-sm text-ui/80 whitespace-nowrap">
                   {currentIndex + 1} de {urls.length}
                 </span>
               )}
@@ -333,7 +333,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                       className={`h-2 rounded-full transition-all ${
                         idx === currentIndex 
                           ? 'bg-blue-600 w-6' 
-                          : 'bg-gray-300 hover:bg-gray-400 w-2'
+                          : 'bg-[var(--color-border-default)] hover:bg-[var(--color-border-strong)] w-2'
                       }`}
                       aria-label={`Ir a medio ${idx + 1}`}
                     />
@@ -344,7 +344,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
 
             {/* Ayuda de teclado */}
             <div className="px-4 lg:px-6 pb-4 text-center">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-ui/80">
                 {hasMultiple && 'Usa las flechas ← → para navegar • '}Ctrl/⌘+. : cerrar
               </p>
             </div>

@@ -42,7 +42,7 @@ import { componentStyles } from "@/design/componentStyles";
 import { Outlet } from "react-router-dom";
 import { displayName } from "@/components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import RequireRole from "@/components/auth/RequireRole";
 import { DesignPageContent } from "@/pages/design.jsx";
 
@@ -116,6 +116,7 @@ function LayoutContent() {
 
   /* Usuario actual - usar getCurrentUser() local */
   const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.rolPersonalizado === 'ADMIN';
   const isLoading = false; // No hay loading en local
 
   /* Detector mobile */
@@ -179,15 +180,22 @@ function LayoutContent() {
         e.preventDefault();
         safeToggle();
       }
-      // Abrir panel de diseño en modal: Ctrl/⌘ + Shift + D
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "d" || e.key === "D")) {
+      // Abrir panel de diseño en modal (solo ADMIN): Ctrl/⌘ + Shift + D
+      if (isAdmin && (e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "d" || e.key === "D")) {
         e.preventDefault();
         setShowDesignModal((v) => !v);
       }
     };
     window.addEventListener("keydown", handleKey, { capture: true, passive: false });
     return () => window.removeEventListener("keydown", handleKey, { capture: true });
-  }, []);
+  }, [isAdmin]);
+
+  // Cerrar modal si deja de ser ADMIN por cualquier motivo
+  useEffect(() => {
+    if (!isAdmin && showDesignModal) {
+      setShowDesignModal(false);
+    }
+  }, [isAdmin, showDesignModal]);
 
   /* Gestos: swipe desde borde para abrir; swipe izq para cerrar */
   useEffect(() => {
@@ -579,22 +587,37 @@ function LayoutContent() {
         </main>
       </div>
       {/* Modal de Panel de Diseño - accesible con Ctrl/⌘+Shift+D */}
-      <Dialog open={showDesignModal} onOpenChange={setShowDesignModal}>
-        <DialogContent className="max-w-5xl w-[95vw] h-[85vh] p-0 overflow-hidden">
-          <div className="h-full flex flex-col">
-            <div className="px-4 py-3 border-b border-[var(--color-border-default)] bg-card">
-              <DialogTitle className="text-ui">Panel de Diseño (modal)</DialogTitle>
-            </div>
-            <div className="flex-1 overflow-auto">
-              <RequireRole anyOf={['ADMIN']}>
-                <div className="p-4">
-                  <DesignPageContent />
+      {isAdmin && showDesignModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 z-[80]"
+            onClick={() => setShowDesignModal(false)}
+          />
+          <div className="fixed inset-0 z-[90] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
+            <div
+              className="bg-card w-full max-w-5xl max-h-[90vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-8"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-4 py-3 border-b border-[var(--color-border-default)] bg-card rounded-t-2xl flex items-center justify-between">
+                <div>
+                  <div className="text-ui font-semibold">Panel de Diseño (modal)</div>
+                  <div className="sr-only">Ajusta tokens visuales en tiempo real sin tocar código</div>
                 </div>
-              </RequireRole>
+                <Button variant="ghost" size="icon" onClick={() => setShowDesignModal(false)} className="text-ui hover:bg-muted rounded-xl">
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                <RequireRole anyOf={['ADMIN']}>
+                  <div className="p-4">
+                    <DesignPageContent embedded />
+                  </div>
+                </RequireRole>
+              </div>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </>
+      )}
     </RoleBootstrap>
   );
 }

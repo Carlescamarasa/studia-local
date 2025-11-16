@@ -59,12 +59,12 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
                   className={`w-full text-left p-3 border rounded-lg transition-colors ${
                     motivo === m.value 
                       ? 'border-brand-500 bg-brand-50' 
-                      : 'border-gray-200 hover:bg-gray-50'
+                      : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      motivo === m.value ? 'border-brand-500 bg-brand-500' : 'border-gray-300'
+                      motivo === m.value ? 'border-brand-500 bg-brand-500' : 'border-[var(--color-border-default)]'
                     }`}>
                       {motivo === m.value && <div className="w-2 h-2 bg-white rounded-full" />}
                     </div>
@@ -85,7 +85,7 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
                   className={`p-3 border-2 rounded-lg transition-all text-center ${
                     calificacion === cal.value 
                       ? cal.color + ' shadow-sm' 
-                      : 'border-gray-200 hover:bg-gray-50'
+                      : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
                   }`}
                 >
                   <div className="text-2xl mb-1">{cal.emoji}</div>

@@ -165,14 +165,15 @@ button:focus-visible {
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
-    /* TODO(auditoría-DS3): Confirmar que `--radius-card` proviene de `designConfig` (alias consistente con `--card-radius`). */
+    /* TODO(FASE1-DS4): Confirmar que `--radius-card` proviene de designConfig.
+       Alias pendiente: `--card-radius` vs `--radius-card` (unificar en FASE 3). */
   }
   .app-panel {
     background-color: var(--color-surface);
     color: var(--color-text-primary);
     border: 1px solid var(--color-border-muted);
     border-radius: var(--radius-card);
-    /* TODO(auditoría-DS3): Mantener paneles sin sombra por defecto según guía. */
+    /* TODO(FASE1-DS4): Mantener paneles sin sombra por defecto según guía. */
   }
 
   /* Tipografía semántica */
@@ -182,7 +183,7 @@ button:focus-visible {
   .text-muted {
     /* Mezclar con la superficie (no transparente) para evitar bajar opacidad y perder contraste */
     color: var(--color-text-secondary);
-    /* TODO(auditoría-DS3): Usar sólo para meta/desactivado. No en contenido primario (ver README §5.6). */
+    /* TODO(FASE1-DS4): Usar sólo para meta/desactivado. No en contenido primario (ver README §5.6). */
   }
 
   /* Controles unificados */
@@ -193,8 +194,8 @@ button:focus-visible {
     border-radius: var(--radius-ctrl);
     padding: var(--input-padding);
     line-height: 1.5;
-    /* TODO(auditoría-DS3): `--radius-ctrl` no lo genera `designConfig` (emite `--radius-controls`).
-       Añadir alias en `generateCSSVariables` en FASE 3 para evitar incoherencias. */
+    /* TODO(FASE1-DS4): `--radius-ctrl` no lo genera designConfig (emite `--radius-controls`).
+       Añadir alias en generateCSSVariables en FASE 3 para evitar incoherencias. */
   }
   .ctrl-field::placeholder {
     color: var(--color-text-secondary);
@@ -211,7 +212,7 @@ button:focus-visible {
     border: 1px solid var(--color-primary);
     border-radius: var(--button-radius);
     padding: var(--button-padding-md);
-    /* TODO(auditoría-DS3): Confirmar hover/active a través de `componentStyles` o variantes en `designConfig.components.button.variants`. */
+    /* TODO(FASE1-DS4): Confirmar hover/active a través de componentStyles o variantes en designConfig.components.button.variants. */
   }
   .btn-secondary {
     background-color: var(--color-surface);
@@ -249,4 +250,6 @@ button:focus-visible {
   .btn-md { padding: var(--button-padding-md); }
   .btn-lg { padding: var(--button-padding-lg); }
   .btn-icon { padding: 0.375rem; border-radius: var(--button-radius); }
+  /* TODO(FASE1-DS4): Núcleo global OK (.btn-*, .ctrl-field, .app-card, .app-panel, tipografía).
+     Verificar si existen clases globales adicionales fuera de este núcleo para eliminarlas en FASE 3. */
 }

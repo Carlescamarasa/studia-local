@@ -11,8 +11,8 @@ export default function PiezasPage() {
             <Music className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Piezas Musicales</h1>
-            <p className="text-gray-500">Gestiona tu biblioteca de piezas</p>
+            <h1 className="text-3xl font-bold text-ui">Piezas Musicales</h1>
+            <p className="text-ui/80">Gestiona tu biblioteca de piezas</p>
           </div>
         </div>
       </div>
@@ -22,7 +22,7 @@ export default function PiezasPage() {
           <CardTitle>Próximamente</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-600">
+          <p className="text-ui/80">
             Aquí podrás crear y editar piezas musicales con todos sus elementos.
           </p>
         </CardContent>

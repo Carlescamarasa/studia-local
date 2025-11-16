@@ -138,8 +138,8 @@ export default function EjerciciosTab() {
         </div>
       ) : ejerciciosFiltrados.length === 0 ? (
         <div className="text-center py-12 border-2 border-dashed rounded-lg">
-          <Dumbbell className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <p className="text-gray-500 mb-2">
+          <Dumbbell className="w-16 h-16 mx-auto mb-4 text-ui/60" />
+          <p className="text-ui/80 mb-2">
             {searchTerm || tipoFilter !== 'all' ? 'No se encontraron ejercicios' : 'Aún no hay ejercicios'}
           </p>
           <Button onClick={handleCrear} variant="outline" className="mt-2 rounded-xl">

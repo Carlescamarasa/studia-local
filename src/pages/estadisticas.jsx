@@ -633,7 +633,7 @@ function EstadisticasPageContent() {
     TM: 'bg-green-100 text-green-800',
     FM: 'bg-pink-100 text-pink-800',
     VC: 'bg-cyan-100 text-cyan-800',
-    AD: 'bg-gray-100 text-gray-800',
+    AD: 'bg-[var(--color-surface-muted)] text-ui',
   };
 
   const focoLabels = {
@@ -645,7 +645,7 @@ function EstadisticasPageContent() {
   };
 
   const focoColors = {
-    GEN: 'bg-gray-100 text-gray-800',
+    GEN: 'bg-[var(--color-surface-muted)] text-ui',
     LIG: 'bg-blue-100 text-blue-800',
     RIT: 'bg-purple-100 text-purple-800',
     ART: 'bg-green-100 text-green-800',
