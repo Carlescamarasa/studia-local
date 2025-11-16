@@ -421,7 +421,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
           className="w-full max-w-6xl my-8 overflow-hidden flex flex-col max-h-[92vh] pointer-events-auto shadow-card rounded-2xl app-card"
           onClick={(e) => e.stopPropagation()}
         >
-          <CardHeader className="border-b border-ui bg-brand-500 text-white rounded-t-2xl">
+          <CardHeader className="border-b border-[var(--color-border-default)] bg-brand-500 text-white rounded-t-2xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <PlayCircle className="w-6 h-6" />
@@ -442,7 +442,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                   placeholder="Ej: Sesión A"
-                  className="h-10 rounded-xl border-ui focus-orange"
+                  className="h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
                 />
               </div>
 
@@ -453,7 +453,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                   onValueChange={(v) => setFormData({ ...formData, foco: v })}
                   modal={false}
                 >
-                  <SelectTrigger id="foco" className="w-full h-10 rounded-xl border-ui focus-orange">
+                  <SelectTrigger id="foco" className="w-full h-10 rounded-xl border-[var(--color-border-default)] focus-orange">
                     <SelectValue placeholder="Selecciona foco..." />
                   </SelectTrigger>
                   <SelectContent 
@@ -514,7 +514,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                     <div
                                       ref={provided.innerRef}
                                       {...provided.draggableProps}
-                                      className={`flex items-center gap-2 p-3 border border-ui rounded-xl bg-card hover:shadow-sm transition-all ${
+                                      className={`flex items-center gap-2 p-3 border border-[var(--color-border-default)] rounded-xl bg-card hover:shadow-sm transition-all ${
                                         snapshot.isDragging ? 'shadow-card border-brand-300' : ''
                                       }`}
                                     >
@@ -598,7 +598,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                             min="1"
                                             value={ronda.repeticiones}
                                             onChange={(e) => updateRondaRepeticiones(ronda.id, e.target.value)}
-                                            className="w-16 h-8 text-center rounded-xl border-ui"
+                                            className="w-16 h-8 text-center rounded-xl border-[var(--color-border-default)]"
                                           />
                                           <span className="text-sm text-muted">repeticiones</span>
                                         </div>
@@ -670,7 +670,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                                       <div 
                                                         ref={p.innerRef}
                                                         {...p.draggableProps}
-                                                        className={`flex items-center gap-2 p-2 bg-card border border-ui rounded-xl ${
+                                                        className={`flex items-center gap-2 p-2 bg-card border border-[var(--color-border-default)] rounded-xl ${
                                                           s.isDragging ? 'shadow-card border-purple-500' : ''
                                                         }`}
                                                       >
@@ -750,7 +750,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                       placeholder="Buscar ejercicios..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 h-10 rounded-xl border-ui focus-orange"
+                      className="pl-10 h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
                     />
                   </div>
                   <div className="flex gap-1 flex-wrap">
@@ -817,7 +817,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                   </Alert>
                 )}
 
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto border border-ui rounded-xl p-3 bg-muted">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto border border-[var(--color-border-default)] rounded-xl p-3 bg-muted">
                   {filteredEjercicios.length === 0 ? (
                     <div className="col-span-full text-center py-8 text-muted">
                       <p className="text-sm">No se encontraron ejercicios</p>
@@ -826,7 +826,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                     filteredEjercicios.map((ejercicio) => (
                       <div
                         key={ejercicio.id}
-                        className={`flex items-center gap-2 p-2 border border-ui rounded-xl cursor-pointer transition-all ${
+                        className={`flex items-center gap-2 p-2 border border-[var(--color-border-default)] rounded-xl cursor-pointer transition-all ${
                           selectedEjercicios.has(ejercicio.id) 
                             ? 'border-brand-300 bg-brand-50 shadow-sm' 
                             : 'bg-card hover:bg-muted hover:shadow-sm'
@@ -860,7 +860,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
             </Card>
           </CardContent>
 
-          <div className="border-t border-ui px-6 py-4 bg-muted rounded-b-2xl">
+          <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-muted rounded-b-2xl">
             <div className="flex gap-3 mb-2">
               <Button variant="outline" onClick={onClose} className="flex-1 h-10 rounded-xl">
                 Cancelar

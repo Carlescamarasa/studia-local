@@ -666,7 +666,7 @@ function HoyPageContent() {
     return (
       <div className="min-h-screen bg-background pb-[160px]">
         {/* Header del Player */}
-        <div className="bg-card border-b border-ui px-4 py-4 lg:sticky lg:top-0 z-10 shadow-card">
+        <div className="bg-card border-b border-[var(--color-border-default)] px-4 py-4 lg:sticky lg:top-0 z-10 shadow-card">
           <div className="max-w-5xl mx-auto">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3 flex-1 min-w-0">

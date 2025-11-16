@@ -267,7 +267,7 @@ function EstudiantesPageContent() {
               placeholder="Buscar estudiantes... (Ctrl/⌘+K)"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-10 rounded-xl border-ui focus-brand"
+              className="pl-10 h-10 rounded-xl border-[var(--color-border-default)] focus-brand"
             />
             {searchTerm && (
               <button
@@ -388,7 +388,7 @@ function EstudiantesPageContent() {
               className="bg-card w-full max-w-2xl h-full shadow-card flex flex-col animate-in slide-in-from-right pointer-events-auto overflow-hidden rounded-l-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="border-b border-ui px-6 py-4 flex items-center justify-between bg-blue-600 sticky top-0 z-10">
+              <div className="border-b border-[var(--color-border-default)] px-6 py-4 flex items-center justify-between bg-blue-600 sticky top-0 z-10">
                 <div className="flex items-center gap-3 text-white">
                   <MessageSquare className="w-6 h-6" />
                   <div>
@@ -418,7 +418,7 @@ function EstudiantesPageContent() {
                       const nuevaSemana = calcularLunesSemanaISO(e.target.value);
                       setFeedbackData({ ...feedbackData, semanaInicioISO: nuevaSemana });
                     }}
-                    className="h-10 rounded-xl border-ui focus-brand"
+                    className="h-10 rounded-xl border-[var(--color-border-default)] focus-brand"
                   />
                   <p className="text-xs text-ui/80 mt-1">
                     Semana ISO: {parseLocalDate(feedbackData.semanaInicioISO).toLocaleDateString('es-ES', {
@@ -463,7 +463,7 @@ function EstudiantesPageContent() {
                     onChange={(e) => setFeedbackData({ ...feedbackData, notaProfesor: e.target.value })}
                     placeholder="Comentarios sobre el progreso, áreas de mejora, logros destacados..."
                     rows={8}
-                    className="resize-none rounded-xl border-ui focus-brand"
+                    className="resize-none rounded-xl border-[var(--color-border-default)] focus-brand"
                   />
                   <p className="text-xs text-ui/80 mt-1">
                     Escribe observaciones sobre el progreso del estudiante esta semana
@@ -477,7 +477,7 @@ function EstudiantesPageContent() {
                 />
               </div>
 
-              <div className="border-t border-ui px-6 py-4 bg-muted sticky bottom-0">
+              <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-muted sticky bottom-0">
                 <div className="flex gap-3">
                   <Button
                     variant="outline"

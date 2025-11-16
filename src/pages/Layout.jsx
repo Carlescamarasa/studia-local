@@ -582,7 +582,7 @@ function LayoutContent() {
       <Dialog open={showDesignModal} onOpenChange={setShowDesignModal}>
         <DialogContent className="max-w-5xl w-[95vw] h-[85vh] p-0 overflow-hidden">
           <div className="h-full flex flex-col">
-            <div className="px-4 py-3 border-b border-ui bg-card">
+            <div className="px-4 py-3 border-b border-[var(--color-border-default)] bg-card">
               <DialogTitle className="text-ui">Panel de Diseño (modal)</DialogTitle>
             </div>
             <div className="flex-1 overflow-auto">

@@ -959,7 +959,7 @@ export default function TestSeedPage() {
                     </div>
                   </div>
                 ))}
-                <div className="pt-3 border-t border-ui">
+                <div className="pt-3 border-t border-[var(--color-border-default)]">
                   <Badge className={`rounded-full ${testResults.every(t => t.passed) ? 'bg-green-600 text-white' : 'bg-amber-600 text-white'}`}>
                     {testResults.filter(t => t.passed).length}/{testResults.length} exitosas
                   </Badge>
@@ -1017,7 +1017,7 @@ export default function TestSeedPage() {
                         </div>
                       </div>
                       {data.orphans.length > 0 && (
-                        <div className="pt-2 border-t border-ui">
+                        <div className="pt-2 border-t border-[var(--color-border-default)]">
                           <p className="text-sm font-semibold text-amber-700 flex items-center gap-2">
                             <AlertTriangle className="w-4 h-4" />
                             Páginas huérfanas:
@@ -1120,7 +1120,7 @@ export default function TestSeedPage() {
             </div>
 
             {auditResults && (
-              <div className="pt-4 border-t border-ui">
+              <div className="pt-4 border-t border-[var(--color-border-default)]">
                 <div className="flex items-center gap-4 text-sm flex-wrap">
                   <span className="text-ui">
                     <strong>Archivos:</strong> {auditResults.filesScanned}

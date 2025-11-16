@@ -66,7 +66,7 @@ export default function ResumenFinal({
     <>
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto app-card">
-          <CardHeader className="text-center border-b border-ui pb-4 sticky top-0 bg-card z-10">
+          <CardHeader className="text-center border-b border-[var(--color-border-default)] pb-4 sticky top-0 bg-card z-10">
             <div className="icon-tile mx-auto mb-3 bg-[hsl(var(--success))]/10">
               <CheckCircle className="w-8 h-8 text-[hsl(var(--success))]" />
             </div>
@@ -97,7 +97,7 @@ export default function ResumenFinal({
               </div>
             </div>
             
-            <div className="border-t border-ui pt-4 space-y-3">
+            <div className="border-t border-[var(--color-border-default)] pt-4 space-y-3">
               <h2 className="font-semibold text-base text-center text-ui">¿Cómo fue la práctica?</h2>
               
               <div className="grid grid-cols-4 gap-2">
@@ -108,7 +108,7 @@ export default function ResumenFinal({
                     className={`flex flex-col items-center justify-center p-3 app-panel border-2 transition-all min-h-[80px] ${
                       calidad === nivel 
                         ? 'border-[hsl(var(--brand-500))] bg-[hsl(var(--brand-50))]' 
-                        : 'border-ui hover:bg-muted'
+                        : 'border-[var(--color-border-default)] hover:bg-muted'
                     }`}
                     aria-label={`Calificar como ${["Muy difícil", "Difícil", "Bien", "Excelente"][nivel - 1]}`}
                   >

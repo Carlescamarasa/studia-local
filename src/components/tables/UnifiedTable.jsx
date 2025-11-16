@@ -169,7 +169,7 @@ export default function UnifiedTable({
           </div>
 
           {selectable && selectedItems.size > 0 && bulkActions && (
-            <div className="sticky bottom-0 bg-background border-t border-ui shadow-card p-4 mt-4 app-card">
+            <div className="sticky bottom-0 bg-background border-t border-[var(--color-border-default)] shadow-card p-4 mt-4 app-card">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-ui">
                   {selectedItems.size} seleccionados
@@ -245,7 +245,7 @@ export default function UnifiedTable({
           </div>
 
           {selectable && selectedItems.size > 0 && bulkActions && (
-            <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-ui shadow-card p-4 z-20 app-panel">
+            <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-[var(--color-border-default)] shadow-card p-4 z-20 app-panel">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-ui">
                   {selectedItems.size} seleccionados

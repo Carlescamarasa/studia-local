@@ -167,7 +167,7 @@ Patrones detectados en el proyecto que conviene normalizar hacia tokens/clases s
   - Bordes → `var(--color-border-default|strong)`
 
 4) `border-ui` u otras clases no mapeadas a tokens
-- Alinear con `border-[var(--color-border-*)]` según contexto (`default/muted/strong`). Evitar `border-ui` legacy.
+- Alinear con `border-[var(--color-border-*)]` según contexto (`default/muted/strong`). Evitar `border-ui` legacy. Ya migrado en vistas clave (Agenda, Estadísticas, Asignaciones, Layout, Editores).
 
 5) Uso de escala `brand` en texto de cuerpo
 - Reservar `--brand-*` para acentos/badges/borders ligeros, no para cuerpo.

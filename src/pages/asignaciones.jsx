@@ -244,7 +244,7 @@ function AsignacionesPageContent() {
                 placeholder="Buscar estudiante o pieza..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-9 h-10 rounded-xl border-ui focus-brand"
+                className="pl-9 pr-9 h-10 rounded-xl border-[var(--color-border-default)] focus-brand"
               />
               {searchTerm && (
                 <button
@@ -258,7 +258,7 @@ function AsignacionesPageContent() {
             </div>
             
             <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-              <SelectTrigger className="w-40 h-10 rounded-xl border-ui">
+              <SelectTrigger className="w-40 h-10 rounded-xl border-[var(--color-border-default)]">
                 <SelectValue placeholder="Estado" />
               </SelectTrigger>
               <SelectContent>

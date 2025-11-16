@@ -410,7 +410,7 @@ export default function FormularioRapido({ onClose }) {
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 border border-ui app-panel hover:bg-muted hover:shadow-sm transition-all">
+                <div className="flex items-center justify-between p-3 border border-[var(--color-border-default)] app-panel hover:bg-muted hover:shadow-sm transition-all">
                   <div className="flex-1">
                     <Label htmlFor="publicar" className="font-medium">Publicar ahora</Label>
                     <p className="text-xs text-ui/80">Si está desactivado, se guardará como borrador</p>
@@ -422,7 +422,7 @@ export default function FormularioRapido({ onClose }) {
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 border border-ui app-panel bg-blue-50">
+                <div className="flex items-center justify-between p-3 border border-[var(--color-border-default)] app-panel bg-blue-50">
                   <div className="flex-1">
                     <Label htmlFor="adaptar" className="font-medium">Adaptar plan ahora (recomendado)</Label>
                     <p className="text-xs text-ui/80">Crear en borrador y abrir editor para adaptar el plan</p>

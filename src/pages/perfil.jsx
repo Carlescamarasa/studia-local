@@ -353,7 +353,7 @@ export default function PerfilPage() {
           </div>
 
           {isProfesor && (
-            <div className="pt-6 border-t border-ui">
+            <div className="pt-6 border-t border-[var(--color-border-default)]">
               <MediaLinksInput
                 value={editedData.mediaLinks}
                 onChange={(links) => setEditedData({ ...editedData, mediaLinks: links })}
@@ -364,7 +364,7 @@ export default function PerfilPage() {
             </div>
           )}
 
-          <div className="pt-4 border-t border-ui">
+          <div className="pt-4 border-t border-[var(--color-border-default)]">
             <div className="flex items-center justify-between">
               <div className="text-sm text-ui/80">
                 <p>ID de usuario: <span className="font-mono">{targetUser?.id}</span></p>

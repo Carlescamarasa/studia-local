@@ -20,7 +20,7 @@ import { QAVisualContent } from "@/pages/qa-visual.jsx";
 
 function LabeledRow({ label, children }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3 border-b border-ui last:border-0">
+    <div className="flex items-center justify-between gap-4 py-3 border-b border-[var(--color-border-default)] last:border-0">
       <Label className="text-sm text-ui font-medium">{label}</Label>
       <div>{children}</div>
     </div>
@@ -350,7 +350,7 @@ function DesignPageContent() {
         {activeSection === 'presets' && (
           <>
             <Card className="app-card">
-              <CardHeader className="border-b border-ui">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
                 <div className="flex items-center justify-between">
                   <CardTitle>Presets Disponibles</CardTitle>
                   <div className="flex gap-2">
@@ -423,7 +423,7 @@ function DesignPageContent() {
                 <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowSavePresetModal(false)} />
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
                   <Card className="w-full max-w-md pointer-events-auto app-card">
-                    <CardHeader className="border-b border-ui">
+                    <CardHeader className="border-b border-[var(--color-border-default)]">
                       <CardTitle>Guardar Preset</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-4 space-y-4 text-ui">
@@ -477,7 +477,7 @@ function DesignPageContent() {
                 <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowImportExportModal(false)} />
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
                   <Card className="w-full max-w-md pointer-events-auto app-card">
-                    <CardHeader className="border-b border-ui flex items-center justify-between">
+                    <CardHeader className="border-b border-[var(--color-border-default)] flex items-center justify-between">
                       <CardTitle>Importar/Exportar Presets</CardTitle>
                       <Button
                         variant="ghost"
@@ -503,7 +503,7 @@ function DesignPageContent() {
                           Copiar al portapapeles
                         </Button>
                       </div>
-                      <div className="space-y-2 pt-4 border-t border-ui">
+                      <div className="space-y-2 pt-4 border-t border-[var(--color-border-default)]">
                         <Label htmlFor="import-json">Importar presets (pegar JSON aquí):</Label>
                         <Textarea
                           id="import-json"
@@ -534,11 +534,11 @@ function DesignPageContent() {
             )}
 
             <Card className="app-card">
-              <CardHeader className="border-b border-ui">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>Configuración Actual</CardTitle>
               </CardHeader>
               <CardContent className="pt-4 text-ui">
-                <pre className="text-xs font-mono bg-muted p-4 rounded-xl border border-ui overflow-x-auto">
+                <pre className="text-xs font-mono bg-muted p-4 rounded-xl border border-[var(--color-border-default)] overflow-x-auto">
                   {JSON.stringify(config, null, 2)}
                 </pre>
               </CardContent>
@@ -549,7 +549,7 @@ function DesignPageContent() {
         {activeSection === 'controls' && (
           <>
             <Card className="app-card">
-              <CardHeader className="border-b border-ui">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>Controles de Diseño</CardTitle>
               </CardHeader>
               <CardContent className="divide-y divide-ui text-ui">
@@ -724,7 +724,7 @@ function DesignPageContent() {
             </div>
             
             <Card className="app-card">
-              <CardHeader className="border-b border-ui">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>Importar Diseño</CardTitle>
               </CardHeader>
               <CardContent className="pt-4 space-y-4">
@@ -771,7 +771,7 @@ function DesignPageContent() {
 
         {activeSection === 'audit' && (
           <Card className="app-card">
-            <CardHeader className="border-b border-ui">
+            <CardHeader className="border-b border-[var(--color-border-default)]">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <Scan className="w-5 h-5" />
@@ -809,11 +809,11 @@ function DesignPageContent() {
               {auditReport ? (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <Card className="bg-slate-50 rounded-lg p-3 border border-ui">
+                    <Card className="bg-slate-50 rounded-lg p-3 border border-[var(--color-border-default)]">
                       <div className="text-xs text-ui/80 uppercase tracking-wide">Archivos escaneados</div>
                       <div className="text-2xl font-bold text-ui">{auditReport?.summary?.filesScanned || 0}</div>
                     </Card>
-                    <Card className="bg-slate-50 rounded-lg p-3 border border-ui">
+                    <Card className="bg-slate-50 rounded-lg p-3 border border-[var(--color-border-default)]">
                       <div className="text-xs text-ui/80 uppercase tracking-wide">Problemas encontrados</div>
                       <div className="text-2xl font-bold text-ui">{auditReport?.summary?.totalIssues || 0}</div>
                     </Card>
@@ -829,7 +829,7 @@ function DesignPageContent() {
                   {(auditReport?.summary?.totalIssues || 0) > 0 && auditReport?.summary?.issues && (
                     <div className="grid md:grid-cols-2 gap-3">
                       {Object.entries(auditReport.summary.issues).map(([k, v]) => (
-                        <Card key={k} className="bg-white rounded-lg p-3 border border-ui">
+                        <Card key={k} className="bg-white rounded-lg p-3 border border-[var(--color-border-default)]">
                           <div className="text-xs uppercase tracking-wide text-ui/80 mb-1">{k}</div>
                           <div className="text-xl font-semibold text-ui">{v}</div>
                         </Card>
@@ -838,12 +838,12 @@ function DesignPageContent() {
                   )}
 
                   {auditReport?.issues && (
-                    <details className="rounded-xl border border-ui p-4 bg-slate-50">
+                    <details className="rounded-xl border border-[var(--color-border-default)] p-4 bg-slate-50">
                       <summary className="cursor-pointer font-medium text-ui">Detalles por categoría</summary>
                       <div className="mt-4 space-y-4 max-h-[420px] overflow-auto">
                         {Object.entries(auditReport.issues).map(([bucket, items]) => (
                           items.length > 0 && (
-                            <Card key={bucket} className="bg-white rounded-lg p-3 border border-ui">
+                            <Card key={bucket} className="bg-white rounded-lg p-3 border border-[var(--color-border-default)]">
                               <div className="mb-3 font-semibold text-ui flex items-center justify-between">
                                 <span>{bucket}</span>
                                 <Badge className="bg-red-50 text-red-800 border-red-200 rounded-full">
@@ -887,18 +887,20 @@ function DesignPageContent() {
         {activeSection === 'qa' && (
           <>
             <Card className="app-card">
-              <CardHeader className="border-b border-ui">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>QA Rápido (Dev)</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 pt-6 text-ui">
+              <CardContent className="space-y-6 pt-6 text-ui">
                 <p className="text-sm text-ui/80">
                   Pruebas integradas para detectar problemas comunes de diseño y accesibilidad.
                 </p>
                 {/* Fixtures visibles para QA: aseguran detección por selectores del test */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="text-sm font-medium text-ui mb-2">Acciones rápidas</h4>
+                    <div className="flex items-center gap-3">
                     <Button
-                      className="btn-primary h-9 rounded-xl shadow-sm"
+                      className="btn-primary h-8 rounded-xl shadow-sm px-3"
                       onClick={() => toast.success('✅ Botón Primary funcionando')}
                       aria-label="Probar botón Primary QA"
                     >
@@ -906,10 +908,14 @@ function DesignPageContent() {
                     </Button>
                     <Badge>QA</Badge>
                   </div>
+                  </div>
                   <div className="app-panel p-3 rounded-xl border border-[var(--color-border-muted)]">
-                    Panel QA
+                    <h4 className="text-sm font-medium text-ui mb-2">Componentes de prueba</h4>
+                    <div className="text-sm text-ui/80">Panel QA</div>
                   </div>
                   <div className="icon-tile" aria-hidden />
+                  <div>
+                    <h4 className="text-sm font-medium text-ui mb-2">Pestañas de ejemplo</h4>
                   <Tabs
                     value={qaTabsValue}
                     onChange={setQaTabsValue}
@@ -919,6 +925,14 @@ function DesignPageContent() {
                     ]}
                     variant="segmented"
                   />
+                    <div className="mt-3 text-sm text-ui/80">
+                      {qaTabsValue === 'one' ? (
+                        <span>Contenido de la pestaña “Uno”: texto de ejemplo.</span>
+                      ) : (
+                        <span>Contenido de la pestaña “Dos”: texto de ejemplo alternativo.</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex gap-2 flex-wrap">
@@ -943,7 +957,7 @@ function DesignPageContent() {
                 </div>
 
                 {qaOutput && (
-                  <div className="bg-muted rounded-xl p-4 border border-ui">
+                  <div className="bg-muted rounded-xl p-4 border border-[var(--color-border-default)]">
                     <pre className="text-xs text-ui whitespace-pre-wrap font-mono overflow-x-auto max-h-96">
                       {qaOutput}
                     </pre>
@@ -953,7 +967,7 @@ function DesignPageContent() {
             </Card>
 
             <Card className="app-card">
-              <CardHeader className="border-b border-ui">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>QA Visual - Design System</CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
@@ -965,7 +979,7 @@ function DesignPageContent() {
 
         {activeSection === 'preview' && (
           <Card className="app-card">
-            <CardHeader className="border-b border-ui">
+            <CardHeader className="border-b border-[var(--color-border-default)]">
               <CardTitle>Preview de Componentes</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pt-6 text-ui">

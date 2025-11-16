@@ -693,7 +693,7 @@ function EstadisticasPageContent() {
                   type="date"
                   value={periodoInicio}
                   onChange={(e) => setPeriodoInicio(e.target.value)}
-                  className="h-10 rounded-xl border-ui focus-brand text-sm w-full md:w-auto"
+                  className="h-10 rounded-xl border-[var(--color-border-default)] focus-brand text-sm w-full md:w-auto"
                   aria-label="Fecha de inicio"
                 />
                 <span className="text-ui/80">—</span>
@@ -701,7 +701,7 @@ function EstadisticasPageContent() {
                   type="date"
                   value={periodoFin}
                   onChange={(e) => setPeriodoFin(e.target.value)}
-                  className="h-10 rounded-xl border-ui focus-brand text-sm w-full md:w-auto"
+                  className="h-10 rounded-xl border-[var(--color-border-default)] focus-brand text-sm w-full md:w-auto"
                   aria-label="Fecha de fin"
                 />
               </div>
@@ -869,7 +869,7 @@ function EstadisticasPageContent() {
                         content={({ active, payload }) => {
                           if (!active || !payload || payload.length === 0) return null;
                           return (
-                            <div className="bg-card border border-ui app-panel shadow-card p-3">
+                            <div className="bg-card border border-[var(--color-border-default)] app-panel shadow-card p-3">
                               <p className="text-xs font-semibold mb-2 text-ui">
                                 {granularidad === 'dia' 
                                   ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
@@ -936,7 +936,7 @@ function EstadisticasPageContent() {
                         content={({ active, payload }) => {
                           if (!active || !payload || payload.length === 0) return null;
                           return (
-                            <div className="bg-card border border-ui app-panel shadow-card p-3">
+                            <div className="bg-card border border-[var(--color-border-default)] app-panel shadow-card p-3">
                               <p className="text-xs font-semibold mb-2 text-ui">
                                 {granularidad === 'dia' 
                                   ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
@@ -1005,7 +1005,7 @@ function EstadisticasPageContent() {
                         content={({ active, payload }) => {
                           if (!active || !payload || payload.length === 0) return null;
                           return (
-                            <div className="bg-card border border-ui app-panel shadow-card p-3">
+                            <div className="bg-card border border-[var(--color-border-default)] app-panel shadow-card p-3">
                               <p className="text-xs font-semibold mb-2 text-ui">
                                 {granularidad === 'dia' 
                                   ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
@@ -1157,7 +1157,7 @@ function EstadisticasPageContent() {
                     placeholder="Buscar ejercicio..."
                     value={searchEjercicio}
                     onChange={(e) => setSearchEjercicio(e.target.value)}
-                    className="h-9 rounded-xl border-ui focus-brand text-sm"
+                    className="h-9 rounded-xl border-[var(--color-border-default)] focus-brand text-sm"
                     aria-label="Buscar ejercicio"
                   />
                 </div>
@@ -1359,7 +1359,7 @@ function EstadisticasPageContent() {
                     ))}
                   </div>
 
-                  <div className="space-y-3 pt-4 border-t border-ui">
+                  <div className="space-y-3 pt-4 border-t border-[var(--color-border-default)]">
                     <h3 className="font-semibold text-sm">Comentarios del estudiante ({comentariosFiltrados.length})</h3>
                     {comentariosFiltrados.length === 0 ? (
                       <p className="text-sm text-ui/80 text-center py-6">No hay comentarios</p>

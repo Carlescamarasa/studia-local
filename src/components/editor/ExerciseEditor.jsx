@@ -286,7 +286,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
           className="bg-card w-full max-w-3xl max-h-[92vh] shadow-card rounded-2xl app-card flex flex-col pointer-events-auto my-8"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="border-b border-ui px-6 py-4 flex items-center justify-between bg-card rounded-t-2xl">
+          <div className="border-b border-[var(--color-border-default)] px-6 py-4 flex items-center justify-between bg-card rounded-t-2xl">
             <div className="flex items-center gap-3 text-[var(--color-primary)]">
               <div>
                 <h2 className="text-xl font-bold text-[var(--color-primary)]">
@@ -350,7 +350,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                       }}
                       modal={false}
                     >
-                      <SelectTrigger id="tipo" className="w-full h-10 rounded-xl border-ui focus-orange">
+                        <SelectTrigger id="tipo" className="w-full h-10 rounded-xl border-[var(--color-border-default)] focus-orange">
                         <SelectValue placeholder="Selecciona un tipo..." />
                       </SelectTrigger>
                       <SelectContent 
@@ -375,7 +375,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                         value={formData.code}
                         onChange={(e) => handleCodeChange(e.target.value)}
                         placeholder="Ej: CA-0001"
-                        className="flex-1 h-10 rounded-xl border-ui focus-orange"
+                        className="flex-1 h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
                       />
                       <Button
                         type="button"
@@ -398,7 +398,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                     value={formData.nombre}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                     placeholder="Ej: Escalas cromáticas"
-                    className="h-10 rounded-xl border-ui focus-orange"
+                    className="h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
                   />
                 </div>
 
@@ -410,7 +410,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                     min="0"
                     value={formData.duracionSeg}
                     onChange={(e) => setFormData({ ...formData, duracionSeg: parseInt(e.target.value || 0) })}
-                    className="h-10 rounded-xl border-ui focus-orange"
+                    className="h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
                   />
                   <p className="text-xs text-muted mt-1">
                     {Math.floor(formData.duracionSeg / 60)}:{String(formData.duracionSeg % 60).padStart(2, '0')} minutos
@@ -425,7 +425,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                     onChange={(e) => setFormData({ ...formData, instrucciones: e.target.value })}
                     placeholder="Instrucciones detalladas para el ejercicio..."
                     rows={3}
-                    className="rounded-xl border-ui focus-orange resize-none"
+                    className="rounded-xl border-[var(--color-border-default)] focus-orange resize-none"
                   />
                 </div>
 
@@ -436,7 +436,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                     value={formData.indicadorLogro}
                     onChange={(e) => setFormData({ ...formData, indicadorLogro: e.target.value })}
                     placeholder="¿Cómo sabe el estudiante que lo logró?"
-                    className="h-10 rounded-xl border-ui focus-orange"
+                    className="h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
                   />
                 </div>
               </CardContent>
@@ -458,7 +458,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                         onValueChange={setPiezaRefId}
                         modal={false}
                       >
-                        <SelectTrigger id="piezaRef" className="w-full h-10 rounded-xl border-ui focus-orange">
+                        <SelectTrigger id="piezaRef" className="w-full h-10 rounded-xl border-[var(--color-border-default)] focus-orange">
                           <SelectValue placeholder="Selecciona una Pieza para previsualizar FM (opcional)" />
                         </SelectTrigger>
                         <SelectContent 
@@ -490,11 +490,11 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                     <>
                       <div>
                         <Label>Elementos disponibles (multi-selección y ordenación)</Label>
-                        <div className="border border-ui rounded-xl p-3 max-h-48 overflow-y-auto space-y-2 bg-muted">
+                        <div className="border border-[var(--color-border-default)] rounded-xl p-3 max-h-48 overflow-y-auto space-y-2 bg-muted">
                           {elementosDisponibles.map((elemento) => (
                             <div 
                               key={elemento.nombre}
-                              className="flex items-center gap-2 p-2 bg-card border border-ui rounded-xl cursor-pointer hover:bg-muted hover:shadow-sm transition-all"
+                              className="flex items-center gap-2 p-2 bg-card border border-[var(--color-border-default)] rounded-xl cursor-pointer hover:bg-muted hover:shadow-sm transition-all"
                               onClick={() => toggleElementoSeleccion(elemento)}
                             >
                               <Checkbox 
@@ -535,7 +535,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                                 </Button>
                               </div>
                             </div>
-                            <div className="border border-ui rounded-xl p-3 space-y-1 bg-card">
+                            <div className="border border-[var(--color-border-default)] rounded-xl p-3 space-y-1 bg-card">
                               {selectedElementos.map((elemento, index) => (
                                 <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-xl">
                                   <div className="flex flex-col gap-0.5">
@@ -585,7 +585,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                               {selectedElementos.map((elemento, idx) => (
                                 <TabsContent key={idx} value={String(idx)} className="space-y-2">
                                   {elemento.media?.video && (
-                                    <div className="border border-ui rounded-xl p-2 bg-card">
+                                    <div className="border border-[var(--color-border-default)] rounded-xl p-2 bg-card">
                                       <div className="flex items-center gap-2 text-sm mb-1">
                                         <Play className="w-4 h-4 text-blue-600" />
                                         <span className="font-medium text-ui">Video</span>
@@ -596,7 +596,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                                     </div>
                                   )}
                                   {elemento.media?.audio && (
-                                    <div className="border border-ui rounded-xl p-2 bg-card">
+                                    <div className="border border-[var(--color-border-default)] rounded-xl p-2 bg-card">
                                       <div className="flex items-center gap-2 text-sm mb-1">
                                         <Volume2 className="w-4 h-4 text-purple-600" />
                                         <span className="font-medium text-ui">Audio</span>
@@ -607,7 +607,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                                     </div>
                                   )}
                                   {elemento.media?.imagen && (
-                                    <div className="border border-ui rounded-xl p-2 bg-card">
+                                    <div className="border border-[var(--color-border-default)] rounded-xl p-2 bg-card">
                                       <div className="flex items-center gap-2 text-sm mb-1">
                                         <ImageIcon className="w-4 h-4 text-green-600" />
                                         <span className="font-medium text-ui">Imagen</span>
@@ -618,7 +618,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                                     </div>
                                   )}
                                   {elemento.media?.pdf && (
-                                    <div className="border border-ui rounded-xl p-2 bg-card">
+                                    <div className="border border-[var(--color-border-default)] rounded-xl p-2 bg-card">
                                       <div className="flex items-center gap-2 text-sm mb-1">
                                         <FileText className="w-4 h-4 text-red-600" />
                                         <span className="font-medium text-ui">PDF</span>
@@ -665,7 +665,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                     value={nuevoMaterial}
                     onChange={(e) => setNuevoMaterial(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addMaterial())}
-                    className="h-10 rounded-xl border-ui focus-orange"
+                    className="h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
                   />
                   <Button onClick={addMaterial} type="button" className="h-10 rounded-xl btn-primary shadow-sm">
                     <Plus className="w-4 h-4" />
@@ -703,7 +703,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                         media: { ...formData.media, video: e.target.value }
                       })}
                       placeholder="https://..."
-                      className="h-10 rounded-xl border-ui focus-orange"
+                      className="h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
                     />
                   </div>
                   <div>
@@ -716,7 +716,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                         media: { ...formData.media, audio: e.target.value }
                       })}
                       placeholder="https://..."
-                      className="h-10 rounded-xl border-ui focus-orange"
+                      className="h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
                     />
                   </div>
                   <div>
@@ -729,7 +729,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                         media: { ...formData.media, imagen: e.target.value }
                       })}
                       placeholder="https://..."
-                      className="h-10 rounded-xl border-ui focus-orange"
+                      className="h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
                     />
                   </div>
                   <div>
@@ -742,7 +742,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                         media: { ...formData.media, pdf: e.target.value }
                       })}
                       placeholder="https://..."
-                      className="h-10 rounded-xl border-ui focus-orange"
+                      className="h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
                     />
                   </div>
                 </CardContent>
@@ -750,7 +750,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
             )}
           </div>
 
-          <div className="border-t border-ui px-6 py-4 bg-muted rounded-b-2xl">
+          <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-muted rounded-b-2xl">
             <div className="flex gap-3 mb-2">
               <Button variant="outline" onClick={() => onClose(null)} className="flex-1 h-10 rounded-xl">
                 Cancelar

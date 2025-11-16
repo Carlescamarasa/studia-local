@@ -90,7 +90,7 @@ export default function StudentSearchBar({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
-          className="pl-10 h-10 rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+          className="pl-10 h-10 rounded-xl border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
@@ -101,7 +101,7 @@ export default function StudentSearchBar({
         />
       </div>
 
-      <div className="border border-ui rounded-xl overflow-hidden">
+      <div className="border border-[var(--color-border-default)] rounded-xl overflow-hidden">
         <div className="max-h-64 overflow-auto">
           {filtered.length === 0 ? (
             <div className="p-3 text-sm text-muted">Sin resultados</div>

@@ -206,7 +206,7 @@ export default function EjerciciosTab() {
                       </Badge>
                     </div>
 
-                    <div className="flex gap-2 pt-2 border-t border-ui"> {/* Added border-ui */}
+                    <div className="flex gap-2 pt-2 border-t border-[var(--color-border-default)]"> {/* Reemplazado a tokens */}
                       <Button
                         variant="outline"
                         size="sm"

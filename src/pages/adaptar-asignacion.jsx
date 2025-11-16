@@ -586,7 +586,7 @@ export default function AdaptarAsignacionPage() {
                                                                           <div className="space-y-1">
                                                                             <p className="text-xs font-semibold text-brand-900 mb-1">Ejercicios:</p>
                                                                             {sesion.bloques.map((ejercicio, ejercicioIndex) => (
-                                                                              <div key={ejercicioIndex} className="flex items-center gap-2 p-2 bg-card border border-ui rounded-xl text-xs">
+                                                                              <div key={ejercicioIndex} className="flex items-center gap-2 p-2 bg-card border border-[var(--color-border-default)] rounded-xl text-xs">
                                                                                 <Badge variant="outline" className={`${tipoColors[ejercicio.tipo]} rounded-full`}>
                                                                                   {ejercicio.tipo}
                                                                                 </Badge>
@@ -677,7 +677,7 @@ export default function AdaptarAsignacionPage() {
                                                                                             );
                                                                                           }
                                                                                           return (
-                                                                                            <div key={eIndex} className="flex items-center gap-2 p-1.5 bg-card border border-ui rounded-xl text-xs">
+                                                                                            <div key={eIndex} className="flex items-center gap-2 p-1.5 bg-card border border-[var(--color-border-default)] rounded-xl text-xs">
                                                                                               <Badge variant="outline" className={`text-xs rounded-full ${tipoColors[ejercicio.tipo]}`}>
                                                                                                 {ejercicio.tipo}
                                                                                               </Badge>

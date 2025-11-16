@@ -509,7 +509,7 @@ export default function ImportExportPage() {
                     </h2>
                     <div className="grid md:grid-cols-3 gap-4">
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50 text-[var(--color-primary)]">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50 text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Music className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Piezas</CardTitle>
@@ -535,7 +535,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50 text-[var(--color-primary)]">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50 text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Layers className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Ejercicios</CardTitle>
@@ -561,7 +561,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50 text-[var(--color-primary)]">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50 text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <BookOpen className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Planes</CardTitle>
@@ -595,7 +595,7 @@ export default function ImportExportPage() {
                     </h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50 text-[var(--color-primary)]">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50 text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Users className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Usuarios</CardTitle>
@@ -621,7 +621,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50 text-[var(--color-primary)]">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50 text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Target className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Asignaciones</CardTitle>
@@ -647,7 +647,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50 text-[var(--color-primary)]">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50 text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Calendar className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Agenda</CardTitle>
@@ -675,7 +675,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50 text-[var(--color-primary)]">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50 text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Activity className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Sesiones</CardTitle>
@@ -701,7 +701,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50 text-[var(--color-primary)]">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50 text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Layers className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Bloques</CardTitle>
@@ -727,7 +727,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50">
                           <div className="flex items-center gap-3">
                             <Layers className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Ejercicios (CSV)</CardTitle>
@@ -778,7 +778,7 @@ export default function ImportExportPage() {
                     </h2>
                     <div className="grid md:grid-cols-3 gap-4">
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50">
                           <div className="flex items-center gap-3">
                             <Music className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Piezas</CardTitle>
@@ -801,7 +801,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50">
                           <div className="flex items-center gap-3">
                             <Layers className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Ejercicios</CardTitle>
@@ -824,7 +824,7 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50">
+                        <CardHeader className="border-b border-[var(--color-border-default)] bg-slate-50">
                           <div className="flex items-center gap-3">
                             <BookOpen className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Planes</CardTitle>
@@ -872,7 +872,7 @@ export default function ImportExportPage() {
           <div className="fixed inset-0 bg-black/40 z-[100]" onClick={() => setShowImportModal(false)} />
           <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4">
             <Card className="w-full max-w-2xl pointer-events-auto rounded-2xl shadow-card">
-              <CardHeader className="border-b border-ui bg-card">
+              <CardHeader className="border-b border-[var(--color-border-default)] bg-card">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Upload className="w-6 h-6 text-[var(--color-primary)]" />
@@ -904,7 +904,7 @@ export default function ImportExportPage() {
                         type="file"
                         accept=".json"
                         onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                        className="mt-2 h-10 rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                        className="mt-2 h-10 rounded-xl border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
                       />
                     </div>
 
@@ -959,7 +959,7 @@ export default function ImportExportPage() {
                         </div>
                         
                         {importResults.errors.length > 0 && (
-                          <div className="mt-3 max-h-48 overflow-y-auto border border-ui rounded-xl p-2 bg-white text-xs space-y-1">
+                          <div className="mt-3 max-h-48 overflow-y-auto border border-[var(--color-border-default)] rounded-xl p-2 bg-white text-xs space-y-1">
                             {importResults.errors.map((err, idx) => (
                               <div key={idx} className="text-red-700">• {err}</div>
                             ))}

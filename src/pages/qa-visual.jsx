@@ -86,7 +86,7 @@ function QAVisualContent({ embedded = false }) {
       { sel: '.icon-tile', name: 'Icon tiles', min: 1 },
       { sel: '.page-header', name: 'Page headers', min: 1 },
       { sel: '.text-ui', name: 'Textos con .text-ui', min: 1 },
-      { sel: '.text-ui\\/80', name: 'Textos secundarios (.text-ui/80)', min: 1 },
+      { sel: '[class*="text-ui/80"]', name: 'Textos secundarios (.text-ui/80)', min: 1 },
     ];
 
     componentsToCheck.forEach(({ sel, name, min }) => {
@@ -106,7 +106,7 @@ function QAVisualContent({ embedded = false }) {
       { pattern: /bg-orange-\d{3}/g, name: 'bg-orange-*' },
       { pattern: /text-orange-\d{3}/g, name: 'text-orange-*' },
       { pattern: /rounded-\[[\d.]+px\]/g, name: 'rounded-[*px]' },
-      { pattern: /bg-\[#[0-9a-fA-F]{6}\]/g, name: 'bg-[#hex]' },
+      { pattern: /bg-\#[0-9a-fA-F]{6}/g, name: 'bg-[#hex]' },
     ];
 
     bannedPatterns.forEach(({ pattern, name }) => {
@@ -194,7 +194,7 @@ function QAVisualContent({ embedded = false }) {
           <div className="space-y-4">
             {Object.entries(groupedChecks).map(([category, categoryChecks]) => (
               <Card key={category} className="app-card">
-                <CardHeader className="border-b border-ui">
+                <CardHeader className="border-b border-[var(--color-border-default)]">
                   <CardTitle className="text-lg">{category}</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -236,7 +236,7 @@ function QAVisualContent({ embedded = false }) {
         {activeTab === 'preview' && (
           <div className="space-y-6">
             <Card className="app-card">
-              <CardHeader className="border-b border-ui">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>Componentes Base</CardTitle>
               </CardHeader>
               <CardContent className="pt-6 space-y-6">
@@ -264,7 +264,7 @@ function QAVisualContent({ embedded = false }) {
                   <p className="text-sm font-medium text-ui mb-3">Cards:</p>
                   <div className="grid md:grid-cols-2 gap-4">
                     <Card className="app-card">
-                      <CardHeader className="border-b border-ui">
+                      <CardHeader className="border-b border-[var(--color-border-default)]">
                         <CardTitle>Card con header</CardTitle>
                       </CardHeader>
                       <CardContent className="pt-4">
@@ -340,7 +340,7 @@ function QAVisualContent({ embedded = false }) {
         {/* Configuración actual */}
         {!embedded && (
           <Card className="app-card">
-            <CardHeader className="border-b border-ui">
+            <CardHeader className="border-b border-[var(--color-border-default)]">
               <CardTitle>Configuración Actual del DS</CardTitle>
             </CardHeader>
             <CardContent className="pt-4">

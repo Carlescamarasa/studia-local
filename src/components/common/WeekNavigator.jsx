@@ -70,7 +70,7 @@ export default function WeekNavigator({ mondayISO, onPrev, onNext, onToday }) {
           Anterior
         </Button>
 
-        <Card className="rounded-2xl border-ui shadow-sm px-6 py-3 min-w-[300px]">
+        <Card className="rounded-2xl border-[var(--color-border-default)] shadow-sm px-6 py-3 min-w-[300px]">
           <div className="text-center">
             <div className="flex items-center justify-center gap-2 mb-1">
               <Calendar className="w-4 h-4 text-brand-500" />
@@ -106,7 +106,7 @@ export default function WeekNavigator({ mondayISO, onPrev, onNext, onToday }) {
 
       {/* Mobile */}
       <div className="md:hidden space-y-2">
-        <Card className="rounded-2xl border-ui shadow-sm p-3">
+        <Card className="rounded-2xl border-[var(--color-border-default)] shadow-sm p-3">
           <div className="text-center mb-2">
             <div className="flex items-center justify-center gap-2 mb-1">
               <Calendar className="w-4 h-4 text-brand-500" />

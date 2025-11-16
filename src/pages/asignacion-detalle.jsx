@@ -366,7 +366,7 @@ export default function AsignacionDetallePage() {
             </div>
 
             {asignacion.notas && (
-              <div className="pt-4 border-t border-ui">
+              <div className="pt-4 border-t border-[var(--color-border-default)]">
                 <p className="text-sm text-ui/80 mb-2">Notas del Profesor</p>
                 <p className="text-ui whitespace-pre-wrap">{asignacion.notas}</p>
               </div>
@@ -489,7 +489,7 @@ export default function AsignacionDetallePage() {
               className="bg-card w-full max-w-2xl h-full shadow-card flex flex-col animate-in slide-in-from-right pointer-events-auto rounded-l-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="border-b border-ui px-6 py-4 flex items-center justify-between bg-brand-500">
+              <div className="border-b border-[var(--color-border-default)] px-6 py-4 flex items-center justify-between bg-brand-500">
                 <div className="flex items-center gap-3 text-white">
                   <Edit className="w-6 h-6" />
                   <h2 className="text-xl font-bold">Editar Información</h2>
@@ -503,7 +503,7 @@ export default function AsignacionDetallePage() {
                 <div>
                   <Label htmlFor="pieza">Pieza *</Label>
                   <Select value={editData.piezaId} onValueChange={(v) => setEditData({ ...editData, piezaId: v })}>
-                    <SelectTrigger className="h-10 rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]">
+                    <SelectTrigger className="h-10 rounded-xl border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]">
                       <SelectValue placeholder="Selecciona una pieza" />
                     </SelectTrigger>
                     <SelectContent className="z-[120]" position="popper">
@@ -523,7 +523,7 @@ export default function AsignacionDetallePage() {
                     type="date"
                     value={editData.fechaSeleccionada}
                     onChange={(e) => setEditData({ ...editData, fechaSeleccionada: e.target.value })}
-                    className="h-10 rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                    className="h-10 rounded-xl border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
                   />
                   {editData.fechaSeleccionada && (
                     <Alert className="mt-2 rounded-xl border-blue-200 bg-blue-50">
@@ -538,7 +538,7 @@ export default function AsignacionDetallePage() {
                 <div>
                   <Label htmlFor="foco">Foco</Label>
                   <Select value={editData.foco} onValueChange={(v) => setEditData({ ...editData, foco: v })}>
-                    <SelectTrigger className="h-10 rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]">
+                    <SelectTrigger className="h-10 rounded-xl border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]">
                       <SelectValue placeholder="Selecciona un foco" />
                     </SelectTrigger>
                     <SelectContent className="z-[120]" position="popper">
@@ -557,12 +557,12 @@ export default function AsignacionDetallePage() {
                     onChange={(e) => setEditData({ ...editData, notas: e.target.value })}
                     placeholder="Comentarios, instrucciones..."
                     rows={4}
-                    className="rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))] resize-none"
+                    className="rounded-xl border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))] resize-none"
                   />
                 </div>
               </div>
 
-              <div className="border-t border-ui px-6 py-4 bg-muted">
+              <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-muted">
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setShowEditDrawer(false)} className="flex-1 h-10 rounded-xl">
                     Cancelar

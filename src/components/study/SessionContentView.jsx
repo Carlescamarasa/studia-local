@@ -54,7 +54,7 @@ export default function SessionContentView({ sesion, compact = false }) {
             }
             
             return (
-              <div key={`b-${item.code}-${idx}`} className="flex items-center gap-2 p-2 app-card border-ui text-xs">
+              <div key={`b-${item.code}-${idx}`} className="flex items-center gap-2 p-2 app-card border-[var(--color-border-default)] text-xs">
                 <Badge variant="outline" className={tipoColors[ej.tipo]}>
                   {ej.tipo}
                 </Badge>
@@ -119,7 +119,7 @@ export default function SessionContentView({ sesion, compact = false }) {
                       }
                       
                       return (
-                        <div key={`r-${key}-${code}-${j}`} className="flex items-center gap-2 p-1.5 app-card border-ui text-xs">
+                        <div key={`r-${key}-${code}-${j}`} className="flex items-center gap-2 p-1.5 app-card border-[var(--color-border-default)] text-xs">
                           <Badge variant="outline" className={tipoColors[ej.tipo]}>
                             {ej.tipo}
                           </Badge>

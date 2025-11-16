@@ -401,7 +401,7 @@ function AgendaPageContent() {
                                         </Badge>
                                       </div>
                                       {isExpanded && (
-                                        <div className="mt-3 pt-3 border-t border-ui" onClick={(e) => e.stopPropagation()}>
+              <div className="mt-3 pt-3 border-t border-[var(--color-border-default)]" onClick={(e) => e.stopPropagation()}>
                                           <SessionContentView sesion={sesion} compact />
                                         </div>
                                       )}
@@ -414,7 +414,7 @@ function AgendaPageContent() {
                         </div>
 
                         {isProfesorOrAdmin && (
-                          <div className="pt-3 border-t border-ui">
+                          <div className="pt-3 border-t border-[var(--color-border-default)]">
                             {feedback ? (
                               <div className="bg-blue-50 rounded-2xl p-3 space-y-2">
                                 <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -493,7 +493,7 @@ function AgendaPageContent() {
               className="bg-card w-full max-w-lg h-full shadow-card flex flex-col animate-in slide-in-from-right pointer-events-auto overflow-y-auto rounded-l-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="border-b border-ui px-6 py-4 flex items-center justify-between bg-[hsl(var(--brand-500))] sticky top-0 z-10">
+              <div className="border-b border-[var(--color-border-default)] px-6 py-4 flex items-center justify-between bg-[hsl(var(--brand-500))] sticky top-0 z-10">
                 <div className="flex items-center gap-3 text-white">
                   <MessageSquare className="w-6 h-6" />
                   <h2 className="text-xl font-bold">
@@ -514,7 +514,7 @@ function AgendaPageContent() {
                     onChange={(e) => setFeedbackDrawer({...feedbackDrawer, notaProfesor: e.target.value})}
                     placeholder="Comentarios, áreas de mejora, felicitaciones..."
                     rows={8}
-                    className="resize-none rounded-xl border-ui focus-brand mt-1"
+                    className="resize-none rounded-xl border-[var(--color-border-default)] focus-brand mt-1"
                   />
                   <p className="text-xs text-ui/80 mt-1">
                     Escribe observaciones sobre el progreso del estudiante esta semana
@@ -528,7 +528,7 @@ function AgendaPageContent() {
                 />
               </div>
 
-              <div className="border-t border-ui px-6 py-4 bg-muted sticky bottom-0">
+              <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-muted sticky bottom-0">
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setFeedbackDrawer(null)} className="flex-1 h-10 rounded-xl">
                     Cancelar
