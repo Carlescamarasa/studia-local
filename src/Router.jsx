@@ -23,6 +23,7 @@ import Plantillas from "@/pages/plantillas.jsx";
 import Design from "@/pages/design.jsx";
 import Testseed from "@/pages/testseed.jsx";
 import Layout from "@/pages/Layout.jsx";
+import QAVisualPage from "@/pages/qa-visual.jsx";
 
 export default function AppRouter() {
   return (
@@ -48,6 +49,7 @@ export default function AppRouter() {
         <Route path="/design" element={<Design />} />
         <Route path="/testseed" element={<Testseed />} />
         <Route path="/local" element={<LocalPage />} />
+        <Route path="/qa-visual" element={<QAVisualPage />} />
       </Route>
     </Routes>
   );

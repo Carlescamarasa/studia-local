@@ -678,7 +678,7 @@ function HoyPageContent() {
                     {ejercicioActual.nombre}
                   </h2>
                   {ejercicioActual.esRonda && (
-                    <p className="text-xs text-muted">
+                    <p className="text-xs text-ui/80">
                       Ronda {ejercicioActual.rondaIdx + 1} • Rep {ejercicioActual.repeticion}/{ejercicioActual.totalRepeticiones}
                     </p>
                   )}
@@ -926,7 +926,7 @@ function HoyPageContent() {
               {!isAD && (
                 <>
                   <div className="flex items-center gap-1.5 bg-muted rounded-lg px-3 py-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    <Clock className="w-4 h-4 text-ui/80" />
                     <span className="text-sm font-mono font-semibold text-ui">
                       {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
                     </span>
@@ -1070,7 +1070,7 @@ function HoyPageContent() {
                       </Badge>
                           <span className="flex-1 text-sm font-medium truncate text-ui">{ej.nombre}</span>
                       {completados.has(idx) && <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />}
-                      {omitidos.has(idx) && <XCircle className="w-4 h-4 text-muted-foreground shrink-0" />}
+                      {omitidos.has(idx) && <XCircle className="w-4 h-4 text-ui/80 shrink-0" />}
                     </div>
                   </button>
                 ))}
@@ -1152,10 +1152,10 @@ function HoyPageContent() {
             <div className="flex items-center gap-2 flex-wrap text-sm text-ui bg-brand-50 rounded-xl p-3 border border-brand-200">
               <Music className="w-4 h-4 text-brand-700" />
               <span className="font-semibold">{asignacionActiva.piezaSnapshot?.nombre}</span>
-              <span className="text-muted">•</span>
+              <span className="text-ui/80">•</span>
               <Target className="w-4 h-4 text-blue-600" />
               <span>{asignacionActiva.plan?.nombre}</span>
-              <span className="text-muted">•</span>
+              <span className="text-ui/80">•</span>
               <span className="font-medium">{getNombreVisible(alumnoActual)}</span>
             </div>
         ) : null}
@@ -1169,7 +1169,7 @@ function HoyPageContent() {
               <h2 className="text-xl font-semibold text-ui mb-2">
                 No tienes estudio esta semana
               </h2>
-              <p className="text-sm text-muted mb-4">
+              <p className="text-sm text-ui/80 mb-4">
                 Consulta con tu profesor para obtener asignaciones
               </p>
               <Button
@@ -1188,9 +1188,9 @@ function HoyPageContent() {
                 <div className="flex items-start gap-3">
                   <div className="pt-1 cursor-pointer" onClick={() => setPlanDesplegado(!planDesplegado)}>
                     {planDesplegado ? (
-                      <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                      <ChevronDown className="w-5 h-5 text-ui/80" />
                     ) : (
-                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                      <ChevronRight className="w-5 h-5 text-ui/80" />
                     )}
                   </div>
                   <div className="flex-1">
@@ -1199,12 +1199,12 @@ function HoyPageContent() {
                       <Badge className={focoColors[semanaDelPlan.foco]}>
                         {focoLabels[semanaDelPlan.foco]}
                       </Badge>
-                      <span className="text-sm text-muted">
+                      <span className="text-sm text-ui/80">
                         ({semanaDelPlan.sesiones?.length || 0} sesiones)
                       </span>
                     </div>
                     {semanaDelPlan.objetivo && (
-                      <p className="text-sm text-muted italic mt-1">"{semanaDelPlan.objetivo}"</p>
+                      <p className="text-sm text-ui/80 italic mt-1">"{semanaDelPlan.objetivo}"</p>
                     )}
                   </div>
                 </div>

@@ -179,7 +179,7 @@ function AsignacionesPageContent() {
         return (
           <div>
             <p className="font-medium text-sm">{getNombreVisible(alumno)}</p>
-            <p className="text-xs text-muted">{alumno?.email}</p>
+          <p className="text-xs text-ui/80">{alumno?.email}</p>
           </div>
         );
       },
@@ -190,7 +190,7 @@ function AsignacionesPageContent() {
       render: (a) => (
         <div>
           <p className="font-medium text-sm">{a.piezaSnapshot?.nombre}</p>
-          <p className="text-xs text-muted">{a.piezaSnapshot?.nivel}</p>
+          <p className="text-xs text-ui/80">{a.piezaSnapshot?.nivel}</p>
         </div>
       ),
     },
@@ -200,7 +200,7 @@ function AsignacionesPageContent() {
       render: (a) => (
         <div>
           <p className="text-sm">{a.plan?.nombre}</p>
-          <p className="text-xs text-muted">{a.plan?.semanas?.length || 0} semanas</p>
+          <p className="text-xs text-ui/80">{a.plan?.semanas?.length || 0} semanas</p>
         </div>
       ),
     },
@@ -239,7 +239,7 @@ function AsignacionesPageContent() {
         filters={
           <div className="flex gap-3 flex-wrap">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ui/80" />
               <Input
                 placeholder="Buscar estudiante o pieza..."
                 value={searchTerm}
@@ -249,7 +249,7 @@ function AsignacionesPageContent() {
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ui"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ui/80 hover:text-ui"
                   aria-label="Limpiar búsqueda"
                 >
                   <X className="w-4 h-4" />

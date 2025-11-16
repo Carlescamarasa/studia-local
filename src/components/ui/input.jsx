@@ -3,7 +3,8 @@ import { cn } from "@/lib/utils"
 import { useClassTokens } from "@/components/design/useClassTokens"
 
 const Input = React.forwardRef(({ className, type, ...props }, ref) => {
-  const { control } = useClassTokens();
+  const tokens = useClassTokens();
+  const control = tokens?.control || 'ctrl-field';
   
   return (
     <input

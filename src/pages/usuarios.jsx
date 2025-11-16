@@ -126,7 +126,7 @@ function UsuariosPageContent() {
         return profe ? (
           <p className="text-sm">{getNombreVisible(profe)}</p>
         ) : (
-          <span className="text-xs text-muted">-</span>
+          <span className="text-xs text-ui/80">-</span>
         );
       },
     },
@@ -143,7 +143,7 @@ function UsuariosPageContent() {
         filters={
           <div className="flex gap-3 flex-wrap">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ui/80" />
               <Input
                 placeholder="Buscar usuario..."
                 value={searchTerm}
@@ -153,7 +153,7 @@ function UsuariosPageContent() {
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ui"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ui/80 hover:text-ui"
                   aria-label="Limpiar búsqueda"
                 >
                   <X className="w-4 h-4" />

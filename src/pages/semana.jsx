@@ -128,7 +128,7 @@ function SemanaPageContent() {
               <h2 className="text-xl font-semibold text-ui mb-2">
                 No tienes asignación esta semana
               </h2>
-              <p className="text-sm text-muted mb-4">
+              <p className="text-sm text-ui/80 mb-4">
                 Consulta con tu profesor para obtener un plan de estudio
               </p>
               <Button
@@ -156,7 +156,7 @@ function SemanaPageContent() {
                 <div className="flex items-start gap-3 text-sm">
                   <Music className="w-5 h-5 text-[hsl(var(--brand-600))] mt-0.5 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-muted text-xs">Pieza</p>
+                    <p className="text-ui/80 text-xs">Pieza</p>
                     <p className="font-semibold text-ui break-words">{asignacionActiva.piezaSnapshot?.nombre}</p>
                   </div>
                 </div>
@@ -164,14 +164,14 @@ function SemanaPageContent() {
                 <div className="flex items-start gap-3 text-sm">
                   <Target className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-muted text-xs">Plan</p>
+                    <p className="text-ui/80 text-xs">Plan</p>
                     <p className="font-semibold text-ui break-words">{asignacionActiva.plan?.nombre}</p>
                   </div>
                 </div>
 
                 {semanaDelPlan.objetivo && (
                   <div className="pt-3 border-t">
-                    <p className="text-sm text-muted mb-1">🎯 Objetivo de la semana</p>
+                    <p className="text-sm text-ui/80 mb-1">🎯 Objetivo de la semana</p>
                     <p className="text-sm md::text-base text-ui italic break-words">"{semanaDelPlan.objetivo}"</p>
                   </div>
                 )}
@@ -185,7 +185,7 @@ function SemanaPageContent() {
                     <p className="text-sm text-ui italic border-l-2 border-blue-300 pl-3 break-words">
                       "{feedbackSemana.notaProfesor}"
                     </p>
-                    <p className="text-xs text-muted mt-2">
+                    <p className="text-xs text-ui/80 mt-2">
                       {(() => {
                         const prof = usuarios.find(u => u.id === feedbackSemana.profesorId);
                         return `Por ${displayName(prof)}`;
@@ -225,7 +225,7 @@ function SemanaPageContent() {
                               </Badge>
                             </div>
                             
-                            <div className="flex items-center gap-2 text-xs text-muted">
+                            <div className="flex items-center gap-2 text-xs text-ui/80">
                               <Layers className="w-3 h-3 shrink-0" />
                               <span>
                                 {sesion.bloques?.length || 0} ejercicios
@@ -238,7 +238,7 @@ function SemanaPageContent() {
                     );
                   })
                 ) : (
-                  <p className="text-center text-muted py-8 text-sm">No hay sesiones planificadas</p>
+                  <p className="text-center text-ui/80 py-8 text-sm">No hay sesiones planificadas</p>
                 )}
               </CardContent>
             </Card>

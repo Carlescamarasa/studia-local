@@ -334,7 +334,7 @@ export default function AdaptarAsignacionPage() {
           <CardContent className="pt-6 text-center space-y-4">
             <AlertCircle className="w-12 h-12 text-amber-500 mx-auto" />
             <p className="text-lg font-semibold text-ui">ID de asignación no proporcionado</p>
-            <p className="text-sm text-muted">Por favor, proporciona un ID válido en la URL.</p>
+            <p className="text-sm text-ui/80">Por favor, proporciona un ID válido en la URL.</p>
             <Button onClick={() => navigate(createPageUrl('asignaciones'))} className="mt-4 btn-primary h-10 rounded-xl shadow-sm">
               Volver a Asignaciones
             </Button>
@@ -349,7 +349,7 @@ export default function AdaptarAsignacionPage() {
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted">Cargando asignación...</p>
+          <p className="text-ui/80">Cargando asignación...</p>
         </div>
       </div>
     );
@@ -362,7 +362,7 @@ export default function AdaptarAsignacionPage() {
           <CardContent className="pt-6 text-center space-y-4">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
             <p className="text-lg font-semibold text-ui">Asignación no encontrada</p>
-            <p className="text-sm text-muted">
+            <p className="text-sm text-ui/80">
               {error?.message || `No se encontró la asignación con ID: ${asignacionId}`}
             </p>
             <div className="flex gap-2 justify-center">
@@ -384,7 +384,7 @@ export default function AdaptarAsignacionPage() {
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted">Cargando plan...</p>
+          <p className="text-ui/80">Cargando plan...</p>
         </div>
       </div>
     );
@@ -452,7 +452,7 @@ export default function AdaptarAsignacionPage() {
           <CardContent className="space-y-2">
             {planData.semanas.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-muted mb-4">No hay semanas en este plan</p>
+                <p className="text-ui/80 mb-4">No hay semanas en este plan</p>
                 <Button onClick={addSemana} variant="outline" className="h-10 rounded-xl">
                   <Plus className="w-4 h-4 mr-2" />
                   Crear Primera Semana
@@ -477,7 +477,7 @@ export default function AdaptarAsignacionPage() {
                               <CardContent className="pt-4">
                                 <div className="flex items-start gap-2">
                                   <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing pt-1" onClick={(e) => e.stopPropagation()}>
-                                    <GripVertical className="w-5 h-5 text-muted" />
+                                    <GripVertical className="w-5 h-5 text-ui/80" />
                                   </div>
 
                                   <div className="pt-1">
@@ -494,7 +494,7 @@ export default function AdaptarAsignacionPage() {
                                       <Badge className={`rounded-full ${focoColors[semana.foco]}`}>
                                         {focoLabels[semana.foco]}
                                       </Badge>
-                                      <span className="text-sm text-muted">
+                                      <span className="text-sm text-ui/80">
                                         ({semana.sesiones?.length || 0} sesiones)
                                       </span>
                                     </div>
@@ -502,7 +502,7 @@ export default function AdaptarAsignacionPage() {
                                     {expandedSemanas.has(semanaIndex) && (
                                       <div className="ml-4 mt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
                                         {semana.objetivo && (
-                                          <p className="text-sm text-muted italic">"{semana.objetivo}"</p>
+                                          <p className="text-sm text-ui/80 italic">"{semana.objetivo}"</p>
                                         )}
 
                                         {semana.sesiones && semana.sesiones.length > 0 && (
@@ -530,7 +530,7 @@ export default function AdaptarAsignacionPage() {
                                                           <CardContent className="pt-3 pb-3">
                                                             <div className="flex items-start gap-2">
                                                               <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing pt-1" onClick={(e) => e.stopPropagation()}>
-                                                                <GripVertical className="w-4 h-4 text-muted" />
+                                                                <GripVertical className="w-4 h-4 text-ui/80" />
                                                               </div>
 
                                                               <div className="pt-1">
@@ -560,7 +560,7 @@ export default function AdaptarAsignacionPage() {
 
                                                                 {isExpanded && (
                                                                   <div className="ml-6 mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
-                                                                    <div className="flex items-center gap-2 text-xs text-muted">
+                                                                    <div className="flex items-center gap-2 text-xs text-ui/80">
                                                                       <Layers className="w-3 h-3" />
                                                                       <span>
                                                                         {sesion.bloques?.length || 0} ejercicios
@@ -591,7 +591,7 @@ export default function AdaptarAsignacionPage() {
                                                                                   {ejercicio.tipo}
                                                                                 </Badge>
                                                                                 <span className="flex-1 text-ui">{ejercicio.nombre}</span>
-                                                                                <span className="text-muted">{ejercicio.code}</span>
+                                                                                <span className="text-ui/80">{ejercicio.code}</span>
                                                                                 <Button
                                                                                   size="sm"
                                                                                   variant="ghost"
@@ -649,8 +649,8 @@ export default function AdaptarAsignacionPage() {
                                                                                       {ronda.aleatoria && (
                                                                                         <Badge variant="outline" className="text-xs rounded-full">🎲 Random</Badge>
                                                                                       )}
-                                                                                      <span className="text-xs text-muted">× {ronda.repeticiones} repeticiones</span>
-                                                                                      <span className="text-xs text-muted">({ronda.bloques.length} ejercicios)</span>
+                                                                                      <span className="text-xs text-ui/80">× {ronda.repeticiones} repeticiones</span>
+                                                                                      <span className="text-xs text-ui/80">({ronda.bloques.length} ejercicios)</span>
                                                                                       <Button
                                                                                         size="sm"
                                                                                         variant="ghost"
@@ -792,7 +792,7 @@ export default function AdaptarAsignacionPage() {
                                       title="Duplicar semana"
                                       aria-label="Duplicar semana"
                                     >
-                                      <Copy className="w-4 h-4 text-muted" />
+                                      <Copy className="w-4 h-4 text-ui/80" />
                                     </Button>
                                     <Button
                                       variant="ghost"

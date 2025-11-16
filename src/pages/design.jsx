@@ -16,6 +16,7 @@ import PageHeader from "@/components/ds/PageHeader";
 import { runDesignAudit, QUICK_PROFILES, parseAuditSpec, runAudit } from "@/components/utils/auditor";
 import Tabs from "@/components/ds/Tabs";
 import { getAllPresets, saveCustomPreset, deleteCustomPreset, isBuiltInPreset, exportCustomPresets, importCustomPresets } from "@/components/design/DesignPresets";
+import { QAVisualContent } from "@/pages/qa-visual.jsx";
 
 function LabeledRow({ label, children }) {
   return (
@@ -882,45 +883,56 @@ function DesignPageContent() {
         )}
 
         {activeSection === 'qa' && (
-          <Card className="app-card">
-            <CardHeader className="border-b border-ui">
-              <CardTitle>QA Rápido (Dev)</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-6 text-ui">
-              <p className="text-sm text-ui/80">
-                Pruebas integradas para detectar problemas comunes de diseño y accesibilidad.
-              </p>
+          <>
+            <Card className="app-card">
+              <CardHeader className="border-b border-ui">
+                <CardTitle>QA Rápido (Dev)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-6 text-ui">
+                <p className="text-sm text-ui/80">
+                  Pruebas integradas para detectar problemas comunes de diseño y accesibilidad.
+                </p>
 
-              <div className="flex gap-2 flex-wrap">
-                <Button 
-                  variant="outline" 
-                  onClick={handleVisualSmoke}
-                  disabled={qaRunning}
-                  className="h-10 rounded-xl"
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  Visual Smoke
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleA11yQuick}
-                  disabled={qaRunning}
-                  className="h-10 rounded-xl"
-                >
-                  <Shield className="w-4 h-4 mr-2" />
-                  A11y Quick-Check
-                </Button>
-              </div>
-
-              {qaOutput && (
-                <div className="bg-muted rounded-xl p-4 border border-ui">
-                  <pre className="text-xs text-ui whitespace-pre-wrap font-mono overflow-x-auto max-h-96">
-                    {qaOutput}
-                  </pre>
+                <div className="flex gap-2 flex-wrap">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleVisualSmoke}
+                    disabled={qaRunning}
+                    className="h-10 rounded-xl"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Visual Smoke
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleA11yQuick}
+                    disabled={qaRunning}
+                    className="h-10 rounded-xl"
+                  >
+                    <Shield className="w-4 h-4 mr-2" />
+                    A11y Quick-Check
+                  </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+
+                {qaOutput && (
+                  <div className="bg-muted rounded-xl p-4 border border-ui">
+                    <pre className="text-xs text-ui whitespace-pre-wrap font-mono overflow-x-auto max-h-96">
+                      {qaOutput}
+                    </pre>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="app-card">
+              <CardHeader className="border-b border-ui">
+                <CardTitle>QA Visual - Design System</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <QAVisualContent embedded />
+              </CardContent>
+            </Card>
+          </>
         )}
 
         {activeSection === 'preview' && (

@@ -262,7 +262,7 @@ function AgendaPageContent() {
       <div className="max-w-7xl mx-auto p-4 md:p-6 lg:px-8 space-y-4">
         {/* Búsqueda */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ui/80" />
           <Input
             id="search-input"
             placeholder="Buscar estudiante... (Ctrl/⌘+K)"
@@ -273,7 +273,7 @@ function AgendaPageContent() {
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ui"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-ui/80 hover:text-ui"
               aria-label="Limpiar búsqueda"
             >
               <X className="w-4 h-4" />
@@ -286,7 +286,7 @@ function AgendaPageContent() {
           <Card className="app-card">
             <CardContent className="text-center py-12">
               <User className="w-16 h-16 mx-auto mb-4 icon-empty" />
-              <p className="text-muted">
+              <p className="text-ui/80">
                 {searchTerm ? 'No se encontraron estudiantes' : 'No hay estudiantes asignados'}
               </p>
             </CardContent>
@@ -350,7 +350,7 @@ function AgendaPageContent() {
                     {!asignacionActiva || !semana ? (
                       <div className="text-center py-6 border-2 border-dashed rounded-2xl bg-muted">
                         <Target className="w-10 h-10 mx-auto mb-2 icon-empty" />
-                        <p className="text-sm text-muted">Sin asignación esta semana</p>
+                        <p className="text-sm text-ui/80">Sin asignación esta semana</p>
                       </div>
                     ) : (
                       <>
@@ -516,7 +516,7 @@ function AgendaPageContent() {
                     rows={8}
                     className="resize-none rounded-xl border-ui focus-brand mt-1"
                   />
-                  <p className="text-xs text-muted mt-1">
+                  <p className="text-xs text-ui/80 mt-1">
                     Escribe observaciones sobre el progreso del estudiante esta semana
                   </p>
                 </div>
@@ -543,7 +543,7 @@ function AgendaPageContent() {
                     Guardar
                   </Button>
                 </div>
-                <p className="text-xs text-center text-muted mt-2">
+                <p className="text-xs text-center text-ui/80 mt-2">
                   Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar
                 </p>
               </div>

@@ -262,7 +262,7 @@ function EstudiantesPageContent() {
         subtitle="Gestiona el progreso y feedback de tus estudiantes"
         filters={
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ui/80" />
             <Input
               placeholder="Buscar estudiantes... (Ctrl/⌘+K)"
               value={searchTerm}
@@ -272,7 +272,7 @@ function EstudiantesPageContent() {
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ui"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ui/80 hover:text-ui"
                 aria-label="Limpiar búsqueda"
               >
                 <X className="w-4 h-4" />
@@ -293,12 +293,12 @@ function EstudiantesPageContent() {
             {loadingAsignaciones ? (
               <div className="text-center py-12">
                 <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-muted">Cargando estudiantes...</p>
+                <p className="text-ui/80">Cargando estudiantes...</p>
               </div>
             ) : estadisticasAlumnos.length === 0 ? (
               <div className="text-center py-12">
                 <Users className="w-16 h-16 mx-auto mb-4 icon-empty" />
-                <p className="text-muted mb-2">
+                <p className="text-ui/80 mb-2">
                   {searchTerm ? 'No se encontraron estudiantes' : 'No tienes estudiantes asignados'}
                 </p>
                 {!searchTerm && isProf && (
@@ -328,7 +328,7 @@ function EstudiantesPageContent() {
                     render: (e) => (
                       <div className="min-w-0">
                         <p className="font-semibold truncate">{e?.nombreCompleto?.trim() || displayName(e)}</p>
-                        <p className="text-xs text-muted truncate">{e.email}</p>
+                        <p className="text-xs text-ui/80 truncate">{e.email}</p>
                       </div>
                     ),
                     sortValue: (e) => displayName(e)
@@ -420,7 +420,7 @@ function EstudiantesPageContent() {
                     }}
                     className="h-10 rounded-xl border-ui focus-brand"
                   />
-                  <p className="text-xs text-muted mt-1">
+                  <p className="text-xs text-ui/80 mt-1">
                     Semana ISO: {parseLocalDate(feedbackData.semanaInicioISO).toLocaleDateString('es-ES', {
                       weekday: 'long', day: 'numeric', month: 'long'
                     })}
@@ -465,7 +465,7 @@ function EstudiantesPageContent() {
                     rows={8}
                     className="resize-none rounded-xl border-ui focus-brand"
                   />
-                  <p className="text-xs text-muted mt-1">
+                  <p className="text-xs text-ui/80 mt-1">
                     Escribe observaciones sobre el progreso del estudiante esta semana
                   </p>
                 </div>
@@ -495,7 +495,7 @@ function EstudiantesPageContent() {
                     {guardarFeedbackMutation.isPending ? 'Guardando...' : 'Guardar'}
                   </Button>
                 </div>
-                <p className="text-xs text-center text-muted mt-2">
+                <p className="text-xs text-center text-ui/80 mt-2">
                   Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar
                 </p>
               </div>

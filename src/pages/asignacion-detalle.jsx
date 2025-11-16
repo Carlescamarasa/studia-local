@@ -196,7 +196,7 @@ export default function AsignacionDetallePage() {
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted">Cargando asignación...</p>
+          <p className="text-ui/80">Cargando asignación...</p>
         </div>
       </div>
     );
@@ -210,7 +210,7 @@ export default function AsignacionDetallePage() {
             <Shield className="w-16 h-16 mx-auto text-red-500" />
             <div>
               <h2 className="font-semibold text-lg text-ui mb-2">Asignación No Encontrada</h2>
-              <p className="text-muted">No tienes acceso a esta asignación o no existe.</p>
+              <p className="text-ui/80">No tienes acceso a esta asignación o no existe.</p>
               <Button onClick={() => navigate(createPageUrl('asignaciones'))} className="mt-4 btn-primary h-10 rounded-xl shadow-sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Volver a Asignaciones
@@ -301,9 +301,9 @@ export default function AsignacionDetallePage() {
                   <User className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Estudiante</p>
+                  <p className="text-sm text-ui/80">Estudiante</p>
                   <p className="font-medium text-ui">{getNombreVisible(alumno)}</p>
-                  <p className="text-sm text-muted">{alumno?.email}</p>
+                  <p className="text-sm text-ui/80">{alumno?.email}</p>
                 </div>
               </div>
               
@@ -312,9 +312,9 @@ export default function AsignacionDetallePage() {
                   <Music className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Pieza</p>
+                  <p className="text-sm text-ui/80">Pieza</p>
                   <p className="font-medium text-ui">{asignacion.piezaSnapshot?.nombre}</p>
-                  <p className="text-sm text-muted">
+                  <p className="text-sm text-ui/80">
                     {asignacion.piezaSnapshot?.nivel} • {asignacion.piezaSnapshot?.elementos?.length || 0} elementos
                   </p>
                 </div>
@@ -325,9 +325,9 @@ export default function AsignacionDetallePage() {
                   <BookOpen className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Plan</p>
+                  <p className="text-sm text-ui/80">Plan</p>
                   <p className="font-medium text-ui">{asignacion.plan?.nombre}</p>
-                  <p className="text-sm text-muted">
+                  <p className="text-sm text-ui/80">
                     {asignacion.plan?.semanas?.length || 0} semanas
                   </p>
                 </div>
@@ -338,7 +338,7 @@ export default function AsignacionDetallePage() {
                   <Calendar className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Semana de Inicio</p>
+                  <p className="text-sm text-ui/80">Semana de Inicio</p>
                   <p className="font-medium text-ui">
                     {parseLocalDate(asignacion.semanaInicioISO).toLocaleDateString('es-ES', { 
                       weekday: 'long', 
@@ -356,7 +356,7 @@ export default function AsignacionDetallePage() {
                     <Settings className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted">Foco</p>
+                    <p className="text-sm text-ui/80">Foco</p>
                     <Badge className={`rounded-full ${focoColors[asignacion.foco]}`}>
                       {focoLabels[asignacion.foco]}
                     </Badge>
@@ -367,7 +367,7 @@ export default function AsignacionDetallePage() {
 
             {asignacion.notas && (
               <div className="pt-4 border-t border-ui">
-                <p className="text-sm text-muted mb-2">Notas del Profesor</p>
+                <p className="text-sm text-ui/80 mb-2">Notas del Profesor</p>
                 <p className="text-ui whitespace-pre-wrap">{asignacion.notas}</p>
               </div>
             )}
@@ -401,7 +401,7 @@ export default function AsignacionDetallePage() {
                         <Badge className={`rounded-full ${focoColors[semana.foco]}`}>
                           {focoLabels[semana.foco]}
                         </Badge>
-                        <span className="text-sm text-muted">
+                        <span className="text-sm text-ui/80">
                           ({semana.sesiones?.length || 0} sesiones)
                         </span>
                       </div>
@@ -409,7 +409,7 @@ export default function AsignacionDetallePage() {
                       {expandedSemanas.has(semanaIndex) && (
                         <div className="ml-4 mt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
                           {semana.objetivo && (
-                            <p className="text-sm text-muted italic">"{semana.objetivo}"</p>
+                            <p className="text-sm text-ui/80 italic">"{semana.objetivo}"</p>
                           )}
 
                           {semana.sesiones && semana.sesiones.length > 0 && (
@@ -572,7 +572,7 @@ export default function AsignacionDetallePage() {
                     {editarMutation.isPending ? 'Guardando...' : 'Guardar'}
                   </Button>
                 </div>
-                <p className="text-xs text-center text-muted mt-2">
+                <p className="text-xs text-center text-ui/80 mt-2">
                   Ctrl/⌘+. : cerrar • Ctrl/⌘+Intro : guardar
                 </p>
               </div>

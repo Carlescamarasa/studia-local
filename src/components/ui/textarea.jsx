@@ -3,7 +3,8 @@ import { cn } from "@/lib/utils"
 import { useClassTokens } from "@/components/design/useClassTokens"
 
 const Textarea = React.forwardRef(({ className, ...props }, ref) => {
-  const { control } = useClassTokens();
+  const tokens = useClassTokens();
+  const control = tokens?.control || 'ctrl-field';
   
   return (
     <textarea
