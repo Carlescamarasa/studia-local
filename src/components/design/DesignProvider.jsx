@@ -91,6 +91,13 @@ export function DesignProvider({ children }) {
       // Aplicar clase de densidad
       document.body.classList.remove('ds-density-compact', 'ds-density-normal', 'ds-density-spacious');
       document.body.classList.add(`ds-density-${normalized.layout?.density || 'normal'}`);
+
+      // Alternar modo oscuro/claro según el preset activo
+      if (normalized.theme === 'dark') {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
     } catch (error) {
       console.error('Error generando CSS variables:', error);
       // En caso de error, usar diseño por defecto

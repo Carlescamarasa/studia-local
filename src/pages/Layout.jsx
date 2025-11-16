@@ -41,6 +41,7 @@ import { DesignProvider } from "@/components/design/DesignProvider";
 import { componentStyles } from "@/design/componentStyles";
 import { Outlet } from "react-router-dom";
 import { displayName } from "@/components/utils/helpers";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
@@ -88,6 +89,7 @@ function LayoutContent() {
   const [pointerStart, setPointerStart] = useState({ x: 0, y: 0, id: null });
   const [isMobile, setIsMobile] = useState(false);
   const toggleLockRef = useRef(0);
+  const headerToggleButtonRef = useRef(null);
 
   const appName = getAppName();
 
@@ -136,6 +138,29 @@ function LayoutContent() {
       closeSidebar();
     }
   }, [location.pathname, isMobile, closeSidebar]);
+
+  // A11y: mover foco fuera del sidebar cuando se cierra en mobile
+  useEffect(() => {
+    const sidebarEl = document.getElementById("sidebar");
+    const active = document.activeElement;
+    if (isMobile && !abierto && sidebarEl && active && sidebarEl.contains(active)) {
+      headerToggleButtonRef.current?.focus?.();
+    }
+  }, [abierto, isMobile]);
+
+  // A11y: al abrir el sidebar en mobile, mover el foco al propio sidebar
+  useEffect(() => {
+    if (!isMobile) return;
+    if (abierto) {
+      const sidebarEl = document.getElementById("sidebar");
+      const mainEl = document.querySelector("main");
+      const active = document.activeElement;
+      if (mainEl && active && mainEl.contains(active)) {
+        // Evitar tener foco en un descendiente de un contenedor aria-hidden/inert
+        sidebarEl?.focus?.();
+      }
+    }
+  }, [abierto, isMobile]);
 
   /* Hotkey: Ctrl/⌘ + M - funciona SIEMPRE (incluso con modales) */
   useEffect(() => {
@@ -277,6 +302,8 @@ function LayoutContent() {
           aria-label="Menú de navegación"
           aria-hidden={!abierto && isMobile}
           data-open={abierto}
+          inert={!abierto && isMobile ? "" : undefined}
+          tabIndex={-1}
           className={`
             bg-card border-r border-ui z-[90] flex flex-col
             transition-transform duration-200 will-change-transform transform-gpu
@@ -299,7 +326,7 @@ function LayoutContent() {
               </div>
               <div>
                 <h2 className="font-bold text-ui text-lg">{appName}</h2>
-                <p className="text-xs text-muted uppercase tracking-wide font-medium">
+                <p className="text-xs text-ui/80 uppercase tracking-wide font-medium">
                   {ROLE_LABEL[userRole] || "Estudiante"}
                 </p>
               </div>
@@ -345,20 +372,24 @@ function LayoutContent() {
               <label className="text-[11px] font-medium text-ui mb-1 block">
                 Usuario Local:
               </label>
-              <select
+              <Select
                 value={currentUser?.id || ''}
-                onChange={(e) => {
-                  setCurrentUser(e.target.value);
+                onValueChange={(val) => {
+                  setCurrentUser(val);
                   window.location.reload();
                 }}
-                className="w-full p-1.5 text-xs rounded-lg bg-card border border-[var(--color-border-strong)] text-ui"
               >
-                {usuarios.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {displayName(user)} ({ROLE_LABEL[user.rolPersonalizado]})
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleccionar usuario" />
+                </SelectTrigger>
+                <SelectContent>
+                  {usuarios.map((user) => (
+                    <SelectItem key={user.id} value={String(user.id)}>
+                      {displayName(user)} ({ROLE_LABEL[user.rolPersonalizado]})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {simulatingUser && (
@@ -438,6 +469,7 @@ function LayoutContent() {
             marginLeft: !isMobile && abierto ? `${SIDEBAR_WIDTH}px` : '0',
           }}
           aria-hidden={isMobile && abierto}
+          inert={isMobile && abierto ? "" : undefined}
         >
           {/* Header mobile */}
           <header
@@ -457,6 +489,7 @@ function LayoutContent() {
           >
             <div className="flex items-center justify-between min-h-[44px]">
               <button
+                ref={headerToggleButtonRef}
                 className="hover:bg-muted p-2 rounded-xl transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
                 onClick={(e) => {
                   e.stopPropagation();

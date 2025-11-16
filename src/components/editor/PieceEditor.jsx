@@ -132,18 +132,18 @@ export default function PieceEditor({ pieza, onClose }) {
           className="bg-white w-full max-w-3xl max-h-[92vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-8"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="border-b px-6 py-4 flex items-center justify-between bg-brand-500 rounded-t-2xl">
-            <div className="flex items-center gap-3 text-white">
-              <Music className="w-6 h-6" />
+          <div className="border-b px-6 py-4 flex items-center justify-between bg-card rounded-t-2xl">
+            <div className="flex items-center gap-3 text-[var(--color-primary)]">
+              <Music className="w-6 h-6 text-[var(--color-primary)]" />
               <div>
-                <h2 className="text-xl font-bold">
+                <h2 className="text-xl font-bold text-[var(--color-primary)]">
                   {pieza ? 'Editar Pieza' : 'Nueva Pieza'}
                 </h2>
-                <p className="text-sm text-white/90">Plantilla de pieza musical</p>
+                <p className="text-sm text-[var(--color-primary)]/90">Plantilla de pieza musical</p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20">
-              <X className="w-5 h-5" />
+            <Button variant="ghost" size="icon" onClick={onClose} className="text-[var(--color-primary)] hover:bg-[var(--color-primary-soft)]">
+              <X className="w-5 h-5 " />
             </Button>
           </div>
 

@@ -100,10 +100,10 @@ export default function PlanesTab() {
             placeholder="Buscar planes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 min-w-[200px] h-10 rounded-xl"
+            className="flex-1 min-w-[200px]"
           />
           <Select value={focoFilter} onValueChange={setFocoFilter}>
-            <SelectTrigger className="w-full md:w-48 h-10 rounded-xl">
+            <SelectTrigger className="w-full md:w-48">
               <SelectValue placeholder="Todos los focos" />
             </SelectTrigger>
             <SelectContent>
@@ -114,7 +114,7 @@ export default function PlanesTab() {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={handleCreate} className="w-full md:w-auto btn-primary h-10 rounded-xl shadow-sm">
+        <Button onClick={handleCreate} className="w-full md:w-auto">
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Plan
         </Button>
@@ -143,8 +143,8 @@ export default function PlanesTab() {
                 { key: 'nombre', label: 'Nombre', sortable: true, render: (p) => <span className="font-medium">{p.nombre}</span> },
                 { key: 'foco', label: 'Foco', sortable: true, render: (p) => p.focoGeneral ? (
                   <Badge variant={focoVariants[p.focoGeneral]}>{focoLabels[p.focoGeneral]}</Badge>
-                ) : <span className="text-muted">—</span>, sortValue: (p) => p.focoGeneral },
-                { key: 'semanas', label: 'Semanas', sortable: true, render: (p) => <span className="text-sm text-muted">{p.semanas?.length || 0}</span>, sortValue: (p) => p.semanas?.length || 0 }
+                ) : <span className="text-ui/80">—</span>, sortValue: (p) => p.focoGeneral },
+                { key: 'semanas', label: 'Semanas', sortable: true, render: (p) => <span className="text-sm text-ui/80">{p.semanas?.length || 0}</span>, sortValue: (p) => p.semanas?.length || 0 }
               ]}
               data={filteredPlanes}
               getRowActions={(p) => [ // Changed from 'actions' to 'getRowActions' and updated structure
@@ -169,7 +169,7 @@ export default function PlanesTab() {
                           </Badge>
                         )}
                         <h3 className="font-semibold text-base mb-1">{plan.nombre}</h3>
-                        <p className="text-xs text-muted"> {/* Changed text color */}
+                        <p className="text-xs text-ui/80"> {/* Mejor contraste en fondo claro */}
                           {plan.semanas?.length || 0} semanas
                         </p>
                       </div>

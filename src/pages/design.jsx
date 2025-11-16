@@ -318,7 +318,7 @@ function DesignPageContent() {
 
       <div className="max-w-5xl mx-auto p-6 space-y-6">
         <Card className="app-card border-blue-200 bg-blue-50">
-          <CardContent className="pt-4">
+          <CardContent className="pt-4 text-ui">
             <div className="flex items-start gap-3">
               <Settings className="w-5 h-5 text-blue-600 mt-0.5" />
               <div className="flex-1">
@@ -369,7 +369,7 @@ function DesignPageContent() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-4">
+              <CardContent className="pt-4 text-ui">
                 <div className="grid md:grid-cols-2 gap-3">
                   {Object.entries(allPresets).map(([id, preset]) => {
                     const isActive = JSON.stringify(config) === JSON.stringify(preset.config);
@@ -391,7 +391,7 @@ function DesignPageContent() {
                                 {isActive && <Badge className="badge-primary">Activo</Badge>}
                                 {isBuiltIn && <Badge className="badge-outline text-[10px]">Built-in</Badge>}
                               </h4>
-                              <p className="text-xs text-muted mt-1">{preset.description}</p>
+                              <p className="text-xs text-ui/80 mt-1">{preset.description}</p>
                             </div>
                             {!isBuiltIn && (
                               <Button
@@ -423,7 +423,7 @@ function DesignPageContent() {
                     <CardHeader className="border-b border-ui">
                       <CardTitle>Guardar Preset</CardTitle>
                     </CardHeader>
-                    <CardContent className="pt-4 space-y-4">
+                    <CardContent className="pt-4 space-y-4 text-ui">
                       <div>
                         <Label htmlFor="preset-name">Nombre del Preset</Label>
                         <Input
@@ -485,7 +485,7 @@ function DesignPageContent() {
                         <X className="w-4 h-4" />
                       </Button>
                     </CardHeader>
-                    <CardContent className="pt-4 space-y-4">
+                    <CardContent className="pt-4 space-y-4 text-ui">
                       <div className="space-y-2">
                         <Label htmlFor="export-json">Exportar presets personalizados:</Label>
                         <Textarea
@@ -534,7 +534,7 @@ function DesignPageContent() {
               <CardHeader className="border-b border-ui">
                 <CardTitle>Configuración Actual</CardTitle>
               </CardHeader>
-              <CardContent className="pt-4">
+              <CardContent className="pt-4 text-ui">
                 <pre className="text-xs font-mono bg-muted p-4 rounded-xl border border-ui overflow-x-auto">
                   {JSON.stringify(config, null, 2)}
                 </pre>
@@ -549,7 +549,7 @@ function DesignPageContent() {
               <CardHeader className="border-b border-ui">
                 <CardTitle>Controles de Diseño</CardTitle>
               </CardHeader>
-              <CardContent className="divide-y divide-ui">
+              <CardContent className="divide-y divide-ui text-ui">
                 {/* Tipografía */}
                 <div className="py-2">
                   <h3 className="text-sm font-semibold text-ui mb-3">Tipografía</h3>
@@ -802,16 +802,16 @@ function DesignPageContent() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent className="pt-4 text-ui">
               {auditReport ? (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <Card className="bg-slate-50 rounded-lg p-3 border border-ui">
-                      <div className="text-xs text-muted uppercase tracking-wide">Archivos escaneados</div>
+                      <div className="text-xs text-ui/80 uppercase tracking-wide">Archivos escaneados</div>
                       <div className="text-2xl font-bold text-ui">{auditReport?.summary?.filesScanned || 0}</div>
                     </Card>
                     <Card className="bg-slate-50 rounded-lg p-3 border border-ui">
-                      <div className="text-xs text-muted uppercase tracking-wide">Problemas encontrados</div>
+                      <div className="text-xs text-ui/80 uppercase tracking-wide">Problemas encontrados</div>
                       <div className="text-2xl font-bold text-ui">{auditReport?.summary?.totalIssues || 0}</div>
                     </Card>
                   </div>
@@ -827,7 +827,7 @@ function DesignPageContent() {
                     <div className="grid md:grid-cols-2 gap-3">
                       {Object.entries(auditReport.summary.issues).map(([k, v]) => (
                         <Card key={k} className="bg-white rounded-lg p-3 border border-ui">
-                          <div className="text-xs uppercase tracking-wide text-muted mb-1">{k}</div>
+                          <div className="text-xs uppercase tracking-wide text-ui/80 mb-1">{k}</div>
                           <div className="text-xl font-semibold text-ui">{v}</div>
                         </Card>
                       ))}
@@ -850,13 +850,13 @@ function DesignPageContent() {
                               <ul className="space-y-2 text-sm">
                                 {items.slice(0, 50).map((it, idx) => (
                                   <li key={idx} className="border-l-2 border-brand-200 pl-3 py-1">
-                                    <div className="text-[11px] text-muted">{it.file}:{it.line}</div>
+                                    <div className="text-[11px] text-ui/80">{it.file}:{it.line}</div>
                                     <div className="font-mono text-xs text-ui bg-slate-50 p-1 rounded mt-1">{it.snippet}</div>
                                   </li>
                                 ))}
                               </ul>
                               {items.length > 50 && (
-                                <div className="text-xs text-muted mt-3 text-center">
+                                <div className="text-xs text-ui/80 mt-3 text-center">
                                   +{items.length - 50} más (usa "Copiar JSON" para ver todo)
                                 </div>
                               )}
@@ -873,7 +873,7 @@ function DesignPageContent() {
                   </Button>
                 </div>
               ) : (
-                <p className="text-sm text-muted">
+                <p className="text-sm text-ui/80">
                   Selecciona un perfil y pulsa "Ejecutar Auditoría" para analizar estilos y clases en todo el proyecto.
                 </p>
               )}
@@ -886,8 +886,8 @@ function DesignPageContent() {
             <CardHeader className="border-b border-ui">
               <CardTitle>QA Rápido (Dev)</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 pt-6">
-              <p className="text-sm text-muted">
+            <CardContent className="space-y-4 pt-6 text-ui">
+              <p className="text-sm text-ui/80">
                 Pruebas integradas para detectar problemas comunes de diseño y accesibilidad.
               </p>
 
@@ -928,7 +928,7 @@ function DesignPageContent() {
             <CardHeader className="border-b border-ui">
               <CardTitle>Preview de Componentes</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 pt-6">
+            <CardContent className="space-y-4 pt-6 text-ui">
               <div className="space-y-3">
                 <div>
                   <p className="text-sm font-medium text-ui mb-2">Botones:</p>
@@ -943,7 +943,7 @@ function DesignPageContent() {
                   <p className="text-sm font-medium text-ui mb-2">Cards anidadas:</p>
                   <Card className="app-panel">
                     <CardContent className="pt-4">
-                      <p className="text-sm text-muted">Panel interno con radius variable</p>
+                      <p className="text-sm text-ui/80">Panel interno con radius variable</p>
                     </CardContent>
                   </Card>
                 </div>

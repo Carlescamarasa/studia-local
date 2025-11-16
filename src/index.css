@@ -173,6 +173,15 @@ button:focus-visible {
     border-radius: var(--radius-card);
   }
 
+  /* Tipografía semántica */
+  .text-ui {
+    color: var(--color-text-primary);
+  }
+  .text-muted {
+    /* Mezclar con la superficie (no transparente) para evitar bajar opacidad y perder contraste */
+    color: var(--color-text-secondary);
+  }
+
   /* Controles unificados */
   .ctrl-field {
     background-color: var(--color-surface);
@@ -183,7 +192,7 @@ button:focus-visible {
     line-height: 1.5;
   }
   .ctrl-field::placeholder {
-    color: color-mix(in oklab, var(--color-text-primary) 60%, transparent);
+    color: var(--color-text-secondary);
   }
   .ctrl-field:focus-visible {
     outline: none;

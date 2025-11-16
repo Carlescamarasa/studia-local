@@ -464,7 +464,7 @@ export default function ImportExportPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
         <Card className="max-w-md rounded-2xl border-red-200 shadow-sm">
-          <CardContent className="pt-6 text-center">
+          <CardContent className="pt-6 text-center text-ui">
             <Shield className="w-16 h-16 mx-auto mb-4 text-red-500" />
             <h2 className="text-2xl font-bold text-ui mb-2">Acceso Restringido</h2>
             <p className="text-muted">Solo los administradores pueden acceder a esta página.</p>
@@ -484,7 +484,7 @@ export default function ImportExportPage() {
 
       <div className="max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8">
         <Card className="app-card">
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 text-ui">
             <div className="space-y-6">
               {/* Tabs con SegmentedTabs */}
               <div className="flex justify-center">
@@ -509,17 +509,17 @@ export default function ImportExportPage() {
                     </h2>
                     <div className="grid md:grid-cols-3 gap-4">
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50">
+                        <CardHeader className="border-b border-ui bg-slate-50 text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Music className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Piezas</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3">
-                          <p className="text-sm text-muted">
+                        <CardContent className="pt-4 space-y-3 text-ui">
+                          <p className="text-sm text-ui/80">
                             Exporta piezas musicales con elementos multimedia.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-muted">
+                          <div className="flex items-center justify-between text-xs text-ui/80">
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{piezas.length}</Badge>
                           </div>
@@ -535,17 +535,17 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50">
+                        <CardHeader className="border-b border-ui bg-slate-50 text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Layers className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Ejercicios</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3">
-                          <p className="text-sm text-muted">
+                        <CardContent className="pt-4 space-y-3 text-ui">
+                          <p className="text-sm text-ui/80">
                             Exporta bloques y ejercicios del catálogo.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-muted">
+                          <div className="flex items-center justify-between text-xs text-ui/80">
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{bloques.length}</Badge>
                           </div>
@@ -561,17 +561,17 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50">
+                        <CardHeader className="border-b border-ui bg-slate-50 text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <BookOpen className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Planes</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3">
-                          <p className="text-sm text-muted">
+                        <CardContent className="pt-4 space-y-3 text-ui">
+                          <p className="text-sm text-ui/80">
                             Exporta planes con semanas, sesiones y ejercicios.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-muted">
+                          <div className="flex items-center justify-between text-xs text-ui/80">
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{planes.length}</Badge>
                           </div>
@@ -595,18 +595,18 @@ export default function ImportExportPage() {
                     </h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50">
+                        <CardHeader className="border-b border-ui bg-slate-50 text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Users className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Usuarios</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3">
-                          <p className="text-sm text-muted">
+                        <CardContent className="pt-4 space-y-3 text-ui">
+                          <p className="text-sm text-ui/80">
                             Lista completa con roles y perfiles.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-muted">
-                            <span>Registros:</span>
+                          <div className="flex items-center justify-between text-xs text-ui/80">
+                            <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{usuarios.length}</Badge>
                           </div>
                           <Button 
@@ -621,18 +621,18 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50">
+                        <CardHeader className="border-b border-ui bg-slate-50 text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Target className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Asignaciones</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3">
-                          <p className="text-sm text-muted">
+                        <CardContent className="pt-4 space-y-3 text-ui">
+                          <p className="text-sm text-ui/80">
                             Asignaciones con piezas y planes.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-muted">
-                            <span>Registros:</span>
+                          <div className="flex items-center justify-between text-xs text-ui/80">
+                            <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{asignaciones.length}</Badge>
                           </div>
                           <Button 
@@ -647,19 +647,21 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50">
+                        <CardHeader className="border-b border-ui bg-slate-50 text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Calendar className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Agenda</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3">
-                          <p className="text-sm text-muted">
+                        <CardContent className="pt-4 space-y-3 text-ui">
+                          <p className="text-sm text-ui/80">
                             Agenda de la semana actual por estudiante.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-muted">
-                            <span>Semana:</span>
-                            <Badge variant="outline" className="rounded-full">Actual</Badge>
+                          <div className="flex items-center justify-between text-xs text-ui/80">
+                            <span>Total:</span>
+                            <Badge variant="outline" className="rounded-full">
+                              {usuarios.filter(u => u.rolPersonalizado === 'ESTU').length}
+                            </Badge>
                           </div>
                           <Button 
                             onClick={exportarAgenda} 
@@ -673,18 +675,18 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50">
+                        <CardHeader className="border-b border-ui bg-slate-50 text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Activity className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Sesiones</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3">
-                          <p className="text-sm text-muted">
-                            Historial de sesiones completadas.
+                        <CardContent className="pt-4 space-y-3 text-ui">
+                          <p className="text-sm text-ui/80">
+                            Detalle de ejercicios ejecutados.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-muted">
-                            <span>Registros:</span>
+                          <div className="flex items-center justify-between text-xs text-ui/80">
+                            <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{registrosSesion.length}</Badge>
                           </div>
                           <Button 
@@ -699,18 +701,18 @@ export default function ImportExportPage() {
                       </Card>
 
                       <Card className="app-card hover:shadow-md transition-shadow">
-                        <CardHeader className="border-b border-ui bg-slate-50">
+                        <CardHeader className="border-b border-ui bg-slate-50 text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
                             <Layers className="w-5 h-5 text-brand-500" />
                             <CardTitle className="text-base">Bloques</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3">
-                          <p className="text-sm text-muted">
+                        <CardContent className="pt-4 space-y-3 text-ui">
+                          <p className="text-sm text-ui/80">
                             Detalle de ejercicios ejecutados.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-muted">
-                            <span>Registros:</span>
+                          <div className="flex items-center justify-between text-xs text-ui/80">
+                            <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{registrosBloques.length}</Badge>
                           </div>
                           <Button 
@@ -731,12 +733,12 @@ export default function ImportExportPage() {
                             <CardTitle className="text-base">Ejercicios (CSV)</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3">
-                          <p className="text-sm text-muted">
+                        <CardContent className="pt-4 space-y-3 text-ui">
+                          <p className="text-sm text-ui/80">
                             Catálogo de ejercicios en formato tabular.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-muted">
-                            <span>Registros:</span>
+                          <div className="flex items-center justify-between text-xs text-ui/80">
+                            <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{bloques.length}</Badge>
                           </div>
                           <Button 
@@ -782,8 +784,8 @@ export default function ImportExportPage() {
                             <CardTitle className="text-base">Piezas</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3">
-                          <p className="text-sm text-muted">
+                        <CardContent className="pt-4 space-y-3 text-ui">
+                          <p className="text-sm text-ui/80">
                             Importa piezas desde archivo JSON.
                           </p>
                           <Button 
@@ -805,8 +807,8 @@ export default function ImportExportPage() {
                             <CardTitle className="text-base">Ejercicios</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3">
-                          <p className="text-sm text-muted">
+                        <CardContent className="pt-4 space-y-3 text-ui">
+                          <p className="text-sm text-ui/80">
                             Importa ejercicios desde archivo JSON.
                           </p>
                           <Button 
@@ -828,8 +830,8 @@ export default function ImportExportPage() {
                             <CardTitle className="text-base">Planes</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3">
-                          <p className="text-sm text-muted">
+                        <CardContent className="pt-4 space-y-3 text-ui">
+                          <p className="text-sm text-ui/80">
                             Importa planes con resolución automática de IDs.
                           </p>
                           <Button 
@@ -870,20 +872,20 @@ export default function ImportExportPage() {
           <div className="fixed inset-0 bg-black/40 z-[100]" onClick={() => setShowImportModal(false)} />
           <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4">
             <Card className="w-full max-w-2xl pointer-events-auto rounded-2xl shadow-card">
-              <CardHeader className="border-b border-ui bg-brand-500 text-white">
+              <CardHeader className="border-b border-ui bg-card">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Upload className="w-6 h-6" />
-                    <CardTitle className="text-white">
+                    <Upload className="w-6 h-6 text-[var(--color-primary)]" />
+                    <CardTitle className="text-[var(--color-primary)]">
                       Importar {importType === 'piezas' ? 'Piezas' : importType === 'bloques' ? 'Ejercicios' : 'Planes'}
                     </CardTitle>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => setShowImportModal(false)} className="text-white hover:bg-white/20 h-9 w-9 rounded-xl" aria-label="Cerrar modal">
-                    <X className="w-5 h-5" />
+                  <Button variant="ghost" size="icon" onClick={() => setShowImportModal(false)} className="text-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] h-9 w-9 rounded-xl" aria-label="Cerrar modal">
+                    <X className="w-5 h-5 " />
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="p-6 space-y-4">
+              <CardContent className="p-6 space-y-4 text-ui">
                 {!importResults ? (
                   <>
                     <Alert className="rounded-xl border-blue-200 bg-blue-50">

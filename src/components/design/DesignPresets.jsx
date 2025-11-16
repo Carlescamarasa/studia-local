@@ -6,12 +6,11 @@
 import { DEFAULT_DESIGN } from './designConfig';
 
 export const BUILT_IN_PRESETS = {
-  default: {
-    name: 'Studia Default',
-    description: 'Configuración predeterminada del sistema',
+  light: {
+    name: 'Light',
+    description: 'Tema claro por defecto',
     config: {
       ...DEFAULT_DESIGN,
-      brandHue: 26,
       typography: {
         ...DEFAULT_DESIGN.typography,
         serifHeadings: true,
@@ -23,68 +22,49 @@ export const BUILT_IN_PRESETS = {
       },
     }
   },
-  minimal: {
-    name: 'Minimal',
-    description: 'Diseño limpio y minimalista',
+  dark: {
+    name: 'Dark',
+    description: 'Tema oscuro refinado',
     config: {
       ...DEFAULT_DESIGN,
-      brandHue: 26,
-      typography: {
-        ...DEFAULT_DESIGN.typography,
-        serifHeadings: false,
-      },
-      layout: {
-        ...DEFAULT_DESIGN.layout,
-        density: 'compact',
-        shadow: 'none',
-      },
-    }
-  },
-  comfortable: {
-    name: 'Comfortable',
-    description: 'Espaciado amplio y radios generosos',
-    config: {
-      ...DEFAULT_DESIGN,
-      brandHue: 26,
-      typography: {
-        ...DEFAULT_DESIGN.typography,
-        serifHeadings: true,
-      },
-      layout: {
-        ...DEFAULT_DESIGN.layout,
-        radius: {
-          ...DEFAULT_DESIGN.layout.radius,
-          card: '2xl',
-          controls: 'xl',
+      theme: 'dark',
+      colors: {
+        ...DEFAULT_DESIGN.colors,
+        primary: '#60a5fa',
+        primarySoft: '#0b1220',
+        secondary: '#93c5fd',
+        accent: '#f59e0b',
+        background: '#0b0f19',
+        surface: '#0f172a',
+        surfaceElevated: '#111827',
+        surfaceMuted: '#1f2937',
+        text: {
+          primary: '#e5e7eb',
+          secondary: '#cbd5e1',
+          muted: '#94a3b8',
+          inverse: '#0b0f19',
         },
-        density: 'spacious',
-        shadow: 'card',
-      },
-    }
-  },
-  sharp: {
-    name: 'Sharp',
-    description: 'Esquinas marcadas, alto contraste',
-    config: {
-      ...DEFAULT_DESIGN,
-      brandHue: 26,
-      typography: {
-        ...DEFAULT_DESIGN.typography,
-        serifHeadings: false,
+        border: {
+          default: '#1f2937',
+          muted: '#0b1220',
+          strong: '#334155',
+        },
       },
       layout: {
         ...DEFAULT_DESIGN.layout,
-        radius: {
-          ...DEFAULT_DESIGN.layout.radius,
-          global: 'md',
-          card: 'md',
-          controls: 'md',
-        },
-        density: 'compact',
+        density: 'normal',
         shadow: 'md',
       },
-    }
-  }
+      focus: {
+        ring: {
+          width: '2px',
+          style: 'solid',
+          color: 'rgba(96, 165, 250, 0.6)',
+          offset: '2px',
+        },
+      },
+    },
+  },
 };
 
 const CUSTOM_PRESETS_KEY = 'studia.design.customPresets.v1';

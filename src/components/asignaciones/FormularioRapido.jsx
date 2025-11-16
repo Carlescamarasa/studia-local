@@ -14,11 +14,13 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
+import MultiSelect from "@/components/ui/MultiSelect";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { displayName, formatLocalDate, parseLocalDate, startOfMonday } from "@/components/utils/helpers";
 import { createPortal } from "react-dom";
+import { useLocalData } from "@/local-data/LocalDataProvider";
 
 export default function FormularioRapido({ onClose }) {
   const queryClient = useQueryClient();
@@ -34,25 +36,15 @@ export default function FormularioRapido({ onClose }) {
     publicarAhora: false,
     adaptarPlanAhora: true,
   });
-  const [searchAlumno, setSearchAlumno] = useState('');
-
-  const normalizar = (s = '') => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
   const currentUser = getCurrentUser();
+  const { usuarios: usuariosLocal } = useLocalData();
 
-  const { data: estudiantes = [] } = useQuery({
-    queryKey: ['estudiantes'],
-    queryFn: async () => {
-      const users = await base44.entities.User.list();
-      return users.filter(u => u.rolPersonalizado === 'ESTU');
-    },
-  });
-
-  const estudiantesFiltrados = estudiantes.filter(u => {
-    if (!searchAlumno.trim()) return true;
-    const term = normalizar(searchAlumno);
-    return normalizar(displayName(u)).includes(term) || normalizar(u.email || '').includes(term);
-  });
+  // Fuente robusta: leer directamente de LocalDataProvider para evitar problemas de sincronización
+  const estudiantes = React.useMemo(
+    () => (usuariosLocal || []).filter(u => u.rolPersonalizado === 'ESTU'),
+    [usuariosLocal]
+  );
 
   const { data: piezas = [] } = useQuery({
     queryKey: ['piezas'],
@@ -238,42 +230,18 @@ export default function FormularioRapido({ onClose }) {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <Input
-                    value={searchAlumno}
-                    onChange={(e) => setSearchAlumno(e.target.value)}
-                    placeholder="Buscar estudiante por nombre o email..."
-                    className="mb-3 focus-brand"
+                  <MultiSelect
+                    label="Estudiantes"
+                    items={estudiantes.map(e => ({
+                      value: e.id,
+                      label: `${displayName(e)} ${e.email ? `(${e.email})` : ''}`.trim()
+                    }))}
+                    value={formData.estudiantesIds}
+                    onChange={(vals) => setFormData({ ...formData, estudiantesIds: vals })}
                   />
-                  <div className="max-h-48 overflow-y-auto space-y-2 border border-ui app-panel p-2">
-                    {estudiantesFiltrados.length === 0 ? (
-                      <p className="text-sm text-muted text-center py-4">
-                        {searchAlumno ? 'No se encontraron estudiantes' : 'No hay estudiantes'}
-                      </p>
-                    ) : (
-                      estudiantesFiltrados.map((estudiante) => (
-                        <div
-                          key={estudiante.id}
-                          className={`flex items-center gap-2 p-2 cursor-pointer transition-all app-panel ${
-                            formData.estudiantesIds.includes(estudiante.id)
-                              ? 'bg-brand-50 border-brand-400'
-                              : 'hover:bg-muted hover:shadow-sm'
-                          }`}
-                          onClick={() => toggleEstudiante(estudiante.id)}
-                        >
-                          <Checkbox checked={formData.estudiantesIds.includes(estudiante.id)} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate text-ui">{displayName(estudiante)}</p>
-                            <p className="text-xs text-muted truncate">{estudiante.email}</p>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                  {formData.estudiantesIds.length > 0 && (
-                    <p className="text-xs text-muted">
-                      {formData.estudiantesIds.length} seleccionado(s)
-                    </p>
-                  )}
+                  <p className="text-xs text-muted">
+                    {formData.estudiantesIds.length > 0 ? `${formData.estudiantesIds.length} seleccionado(s)` : 'Ninguno seleccionado'}
+                  </p>
                 </CardContent>
               </Card>
 

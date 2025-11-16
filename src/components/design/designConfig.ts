@@ -434,19 +434,41 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
   // Normalizar design para asegurar estructura completa
   const normalized = normalizeDesign(design);
   const vars: Record<string, string> = {};
+  const toKebab = (s: string) =>
+    s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/_/g, "-").toLowerCase();
   
   // Colores
   if (normalized.colors) {
     Object.entries(normalized.colors).forEach(([key, value]) => {
       if (typeof value === 'string') {
-        vars[`--color-${key}`] = value;
+        vars[`--color-${toKebab(key)}`] = value;
       } else if (typeof value === 'object' && value !== null) {
         Object.entries(value).forEach(([subKey, subValue]) => {
-          vars[`--color-${key}-${subKey}`] = subValue as string;
+          vars[`--color-${toKebab(key)}-${toKebab(subKey)}`] = subValue as string;
         });
       }
     });
   }
+
+  // Escala de marca HSL para utilidades [hsl(var(--brand-500))] usadas en estilos
+  // Tomamos el tono desde brandHue y aplicamos una escala de luminosidad estándar
+  const brandHue = typeof (normalized as any).brandHue === 'number' ? (normalized as any).brandHue : 26;
+  const brandSaturation = 100; // saturación fija para consistencia visual
+  const brandScale: Record<string, number> = {
+    '50': 97,
+    '100': 92,
+    '200': 84,
+    '300': 74,
+    '400': 62,
+    '500': 52,
+    '600': 45,
+    '700': 37,
+    '800': 30,
+    '900': 24,
+  };
+  Object.entries(brandScale).forEach(([k, l]) => {
+    vars[`--brand-${k}`] = `${brandHue} ${brandSaturation}% ${l}%`;
+  });
   
   // Radius
   if (normalized.layout?.radius) {

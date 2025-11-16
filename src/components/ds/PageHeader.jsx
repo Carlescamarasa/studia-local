@@ -19,12 +19,12 @@ export default function PageHeader({
   className = "" 
 }) {
   return (
-    <div className={`page-header px-4 md:px-6 py-4 ${className}`}>
-      <div className="page-header-container max-w-7xl mx-auto">
+    <div className={`px-4 md:px-6 py-4 ${className}`}>
+      <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between gap-4 mb-3 md:mb-4">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             {Icon && (
-              <div className="icon-tile">
+              <div className="w-9 h-9 rounded-xl bg-[var(--color-primary-soft)] border border-[var(--color-primary)] text-ui flex items-center justify-center">
                 <Icon className="w-6 h-6" />
               </div>
             )}

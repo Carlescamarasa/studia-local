@@ -112,10 +112,10 @@ export default function EjerciciosTab() {
             placeholder="Buscar ejercicios..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 min-w-[200px] h-10 rounded-xl"
+            className="flex-1 min-w-[200px]"
           />
           <Select value={tipoFilter} onValueChange={setTipoFilter}>
-            <SelectTrigger className="w-full md:w-48 h-10 rounded-xl">
+            <SelectTrigger className="w-full md:w-48">
               <SelectValue placeholder="Todos los tipos" />
             </SelectTrigger>
             <SelectContent>
@@ -126,7 +126,7 @@ export default function EjerciciosTab() {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={handleCrear} className="w-full md:w-auto btn-primary h-10 rounded-xl shadow-sm">
+        <Button onClick={handleCrear} className="w-full md:w-auto">
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Ejercicio
         </Button>
@@ -168,7 +168,7 @@ export default function EjerciciosTab() {
                   label: 'Duración',
                   sortable: true,
                   render: (e) => (
-                    <span className="text-sm text-muted"> {/* Changed text-gray-600 to text-muted */}
+                    <span className="text-sm text-ui/80"> {/* Mejor contraste en fondo claro */}
                       {Math.floor(e.duracionSeg / 60)}:{String(e.duracionSeg % 60).padStart(2, '0')} min
                     </span>
                   ),
@@ -196,7 +196,7 @@ export default function EjerciciosTab() {
                           {tipoLabels[ejercicio.tipo]}
                         </Badge>
                         <h3 className="font-semibold text-base mb-1">{ejercicio.nombre}</h3>
-                        <p className="text-xs text-muted font-mono">{ejercicio.code}</p> {/* Changed text-gray-500 to text-muted */}
+                        <p className="text-xs text-ui/80 font-mono">{ejercicio.code}</p> {/* Mejor contraste en fondo claro */}
                       </div>
                     </div>
 

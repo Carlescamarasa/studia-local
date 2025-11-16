@@ -1128,7 +1128,7 @@ export default function TestSeedPage() {
                   <span className="text-ui">
                     <strong>Coincidencias:</strong> {auditResults.matchesTotal}
                   </span>
-                  <span className="text-muted">
+                  <span className="text-ui/80">
                     <Clock className="w-3 h-3 inline mr-1" />
                     {auditResults.durationMs}ms
                   </span>
@@ -1250,7 +1250,7 @@ export default function TestSeedPage() {
                     log.type === 'warning' ? 'bg-amber-50 text-amber-800' :
                     'bg-muted text-ui'
                   }`}>
-                    <span className="text-muted mr-2">[{log.timestamp}]</span>
+                    <span className="text-ui/80 mr-2">[{log.timestamp}]</span>
                     {log.message}
                   </div>
                 ))}

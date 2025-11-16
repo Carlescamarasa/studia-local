@@ -324,7 +324,14 @@ export function printValidationReport(autoFix = false) {
 
 // Auto-ejecutar si se importa directamente (útil para desarrollo)
 if (import.meta.hot) {
-  // Solo en desarrollo
-  printValidationReport();
+  // Solo en desarrollo, opt-in mediante localStorage
+  try {
+    const shouldAuto = typeof localStorage !== 'undefined' && localStorage.getItem('debug.validation.auto') === 'true';
+    if (shouldAuto) {
+      printValidationReport();
+    }
+  } catch (e) {
+    // Ignorar si localStorage no está disponible
+  }
 }
 

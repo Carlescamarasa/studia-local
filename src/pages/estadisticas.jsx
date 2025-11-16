@@ -18,7 +18,7 @@ import MultiSelect from "../components/ui/MultiSelect";
 import MediaLinksBadges from "../components/common/MediaLinksBadges";
 import MediaViewer from "../components/common/MediaViewer";
 import RequireRole from "@/components/auth/RequireRole";
-import SegmentedTabs from "@/components/ui/SegmentedTabs";
+import Tabs from "@/components/ds/Tabs";
 import { componentStyles } from "@/design/componentStyles";
 import { designSystem } from "@/design/designSystem";
 import PageHeader from "@/components/ds/PageHeader";
@@ -696,7 +696,7 @@ function EstadisticasPageContent() {
                   className="h-10 rounded-xl border-ui focus-brand text-sm w-full md:w-auto"
                   aria-label="Fecha de inicio"
                 />
-                <span className="text-muted">—</span>
+                <span className="text-ui/80">—</span>
                 <Input
                   type="date"
                   value={periodoFin}
@@ -750,16 +750,17 @@ function EstadisticasPageContent() {
 
       <div className="max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         <div className="flex justify-center">
-          <SegmentedTabs
+          <Tabs
+            variant="segmented"
             value={tabActiva}
             onChange={setTabActiva}
-            options={[
-              { value: 'resumen', label: <><BarChart3 className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Resumen</span></> },
-              { value: 'evolucion', label: <><TrendingUp className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Evolución</span></> },
-              { value: 'tipos', label: <><PieChart className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Tipos</span></> },
-              { value: 'top', label: <><Star className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Top</span></> },
-              { value: 'historial', label: <><List className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Historial</span></> },
-              { value: 'feedback', label: <><MessageSquare className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Feedback</span></> },
+            items={[
+              { value: 'resumen', label: 'Resumen', icon: BarChart3 },
+              { value: 'evolucion', label: 'Evolución', icon: TrendingUp },
+              { value: 'tipos', label: 'Tipos', icon: PieChart },
+              { value: 'top', label: 'Top', icon: Star },
+              { value: 'historial', label: 'Historial', icon: List },
+              { value: 'feedback', label: 'Feedback', icon: MessageSquare },
             ]}
           />
         </div>
@@ -782,7 +783,7 @@ function EstadisticasPageContent() {
                   <Star className="w-6 h-6 mx-auto mb-2 text-emerald-600" />
                   <p className="text-2xl font-bold text-ui">{kpis.racha.actual}</p>
                   <p className="text-xs text-ui">Racha</p>
-                  <p className="text-xs text-muted">Máx: {kpis.racha.maxima}</p>
+                  <p className="text-xs text-ui/80">Máx: {kpis.racha.maxima}</p>
                 </CardContent>
               </Card>
 
@@ -806,10 +807,11 @@ function EstadisticasPageContent() {
             </div>
 
             <div className="flex justify-center">
-              <SegmentedTabs
+              <Tabs
+                variant="segmented"
                 value={granularidad}
                 onChange={setGranularidad}
-                options={[
+                items={[
                   { value: 'dia', label: 'Diario' },
                   { value: 'semana', label: 'Semanal' },
                   { value: 'mes', label: 'Mensual' },
@@ -851,7 +853,18 @@ function EstadisticasPageContent() {
                           }
                         }}
                       />
-                      <YAxis tick={{ fontSize: 11 }} label={{ value: 'Minutos', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} />
+                      <YAxis 
+                        tick={{ fontSize: 11 }} 
+                        tickFormatter={(v) => {
+                          const minutos = safeNumber(v);
+                          if (minutos >= 60) {
+                            const horas = Math.floor(minutos / 60);
+                            return `${horas} h`;
+                          }
+                          return `${minutos} min`;
+                        }}
+                        label={{ value: 'Tiempo', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} 
+                      />
                       <RechartsTooltip 
                         content={({ active, payload }) => {
                           if (!active || !payload || payload.length === 0) return null;
@@ -863,7 +876,7 @@ function EstadisticasPageContent() {
                                   : payload[0]?.payload.fecha}
                               </p>
                               <p className="text-xs text-[hsl(var(--brand-600))]">
-                                <strong>Tiempo:</strong> {payload[0]?.payload.tiempo} min
+                                <strong>Tiempo:</strong> {formatDuracionHM(safeNumber(payload[0]?.payload.tiempo) * 60)}
                               </p>
                             </div>
                           );
@@ -874,7 +887,7 @@ function EstadisticasPageContent() {
                         dataKey="tiempo"
                         stroke={designSystem.colors.primary}
                         strokeWidth={2}
-                        name="Tiempo (min)"
+                        name="Tiempo"
                         dot={{ r: 3, stroke: designSystem.colors.primary, fill: designSystem.colors.primary }}
                         activeDot={{ r: 4 }}
                       />
@@ -1041,7 +1054,7 @@ function EstadisticasPageContent() {
               {datosLinea.length === 0 ? (
                 <div className="text-center py-12">
                   <TrendingUp className="w-16 h-16 mx-auto mb-4 icon-empty" />
-                  <p className="text-muted">No hay datos</p>
+                  <p className="text-ui/80">No hay datos</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -1109,7 +1122,7 @@ function EstadisticasPageContent() {
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-sm font-medium">{formatDuracionHM(tipo.tiempoReal)}</span>
-                              <span className="text-xs text-muted">{porcentaje}%</span>
+                              <span className="text-xs text-ui/80">{porcentaje}%</span>
                             </div>
                             <div className="bg-muted rounded-full h-2 overflow-hidden">
                               <div 
@@ -1119,7 +1132,7 @@ function EstadisticasPageContent() {
                             </div>
                           </div>
                         </div>
-                        <div className="ml-[152px] flex gap-3 text-xs text-muted">
+                        <div className="ml-[152px] flex gap-3 text-xs text-ui/80">
                           <span>Bloques: {tipo.count}</span>
                           <span>
                             Promedio: {formatDuracionHM(safeNumber(tipo.tiempoMedio))}
@@ -1170,7 +1183,7 @@ function EstadisticasPageContent() {
                           </Badge>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">{ejercicio.nombre}</p>
-                            <p className="text-xs text-muted">{ejercicio.code}</p>
+                            <p className="text-xs text-ui/80">{ejercicio.code}</p>
                           </div>
                           <div className="flex gap-2 flex-wrap shrink-0">
                             <Badge variant="outline" className="rounded-full text-xs bg-blue-50">
@@ -1223,7 +1236,7 @@ function EstadisticasPageContent() {
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-xs md:text-sm text-muted truncate">
+                              <p className="text-xs md:text-sm text-ui/80 truncate">
                                 {registro.piezaNombre} • {registro.planNombre}
                               </p>
                               <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -1238,7 +1251,7 @@ function EstadisticasPageContent() {
                                     {registro.calificacion}/4
                                   </Badge>
                                 )}
-                                <span className="text-xs text-muted">
+                                <span className="text-xs text-ui/80">
                                   {registro.inicioISO ? new Date(registro.inicioISO).toLocaleDateString('es-ES') : '-'}
                                 </span>
                               </div>
@@ -1310,7 +1323,7 @@ function EstadisticasPageContent() {
                                 <Badge className="rounded-full bg-blue-600 text-white">
                                   Semana {parseLocalDate(f.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                                 </Badge>
-                                <span className="text-xs text-muted">
+                                <span className="text-xs text-ui/80">
                                   {displayName(profesor)}
                                 </span>
                               </div>
@@ -1336,8 +1349,8 @@ function EstadisticasPageContent() {
                     {[1, 2, 3, 4].map(nivel => (
                       <div key={nivel} className="text-center p-2 md:p-3 app-panel hover:shadow-sm transition-shadow">
                         <p className="text-xl md:text-2xl font-bold text-ui">{feedbackAlumno.distribucion[nivel]}</p>
-                        <p className="text-xs text-muted">Nivel {nivel}</p>
-                        <p className="text-xs text-muted">
+                        <p className="text-xs text-ui/80">Nivel {nivel}</p>
+                        <p className="text-xs text-ui/80">
                           {registrosFiltradosUnicos.length > 0 
                             ? ((feedbackAlumno.distribucion[nivel] / registrosFiltradosUnicos.length) * 100).toFixed(1)
                             : 0}%
@@ -1349,7 +1362,7 @@ function EstadisticasPageContent() {
                   <div className="space-y-3 pt-4 border-t border-ui">
                     <h3 className="font-semibold text-sm">Comentarios del estudiante ({comentariosFiltrados.length})</h3>
                     {comentariosFiltrados.length === 0 ? (
-                      <p className="text-sm text-muted text-center py-6">No hay comentarios</p>
+                      <p className="text-sm text-ui/80 text-center py-6">No hay comentarios</p>
                     ) : (
                       comentariosFiltrados.slice(0, 20).map(r => {
                         const alumno = usuarios.find(u => u.id === r.alumnoId);
@@ -1358,9 +1371,9 @@ function EstadisticasPageContent() {
                             <CardContent className="pt-3 pb-3">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs text-muted truncate">{displayName(alumno)}</p>
+                                  <p className="text-xs text-ui/80 truncate">{displayName(alumno)}</p>
                                   <p className="text-sm font-medium truncate">{r.sesionNombre}</p>
-                                  <p className="text-xs text-muted truncate">
+                                  <p className="text-xs text-ui/80 truncate">
                                     {r.piezaNombre} • {new Date(r.inicioISO).toLocaleDateString('es-ES')}
                                   </p>
                                   {r.calificacion && (

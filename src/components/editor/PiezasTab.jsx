@@ -105,10 +105,10 @@ export default function PiezasTab() {
             placeholder="Buscar piezas..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 min-w-[200px] h-10 rounded-xl"
+            className="flex-1 min-w-[200px]"
           />
           <Select value={nivelFilter} onValueChange={setNivelFilter}>
-            <SelectTrigger className="w-full md:w-48 h-10 rounded-xl">
+            <SelectTrigger className="w-full md:w-48">
               <SelectValue placeholder="Todos los niveles" />
             </SelectTrigger>
             <SelectContent>
@@ -149,8 +149,8 @@ export default function PiezasTab() {
                 { key: 'nivel', label: 'Nivel', sortable: true, render: (p) => (
                   <Badge variant={nivelVariants[p.nivel]}>{nivelLabels[p.nivel]}</Badge> // Changed Badge variant
                 ) },
-                { key: 'elementos', label: 'Elementos', sortable: true, render: (p) => <span className="text-sm text-muted">{p.elementos?.length || 0}</span>, sortValue: (p) => p.elementos?.length || 0 }, // Changed text class
-                { key: 'tiempo', label: 'Tiempo', sortable: true, render: (p) => <span className="text-sm text-muted">{Math.floor((p.tiempoObjetivoSeg || 0) / 60)} min</span>, sortValue: (p) => p.tiempoObjetivoSeg || 0 } // Changed text class
+                { key: 'elementos', label: 'Elementos', sortable: true, render: (p) => <span className="text-sm text-ui/80">{p.elementos?.length || 0}</span>, sortValue: (p) => p.elementos?.length || 0 }, // Contraste en fondo claro
+                { key: 'tiempo', label: 'Tiempo', sortable: true, render: (p) => <span className="text-sm text-ui/80">{Math.floor((p.tiempoObjetivoSeg || 0) / 60)} min</span>, sortValue: (p) => p.tiempoObjetivoSeg || 0 } // Contraste en fondo claro
               ]}
               data={filteredPiezas}
               getRowActions={(p) => [ // Changed from 'actions' to 'getRowActions'
