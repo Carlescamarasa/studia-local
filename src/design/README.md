@@ -21,27 +21,31 @@ Los valores se conectan a variables CSS que genera `DesignProvider` (desde `src/
 Archivo: `src/index.css`
 
 - Vars HSL base: `--background`, `--foreground`, `--primary`, … y tema oscuro mediante `.dark`.
-- `@layer components` centraliza clases semánticas:
-  - `.app-card`, `.app-panel`
-  - `.ctrl-field`
+- `@layer components` centraliza clases semánticas (núcleo mínimo):
+  - `.ctrl-field` (y variante `.ctrl-field--underline`)
   - `.btn-*` (`btn-primary`, `btn-secondary`, `btn-outline`, `btn-ghost`, `btn-danger`, tamaños `btn-sm/md/lg/icon`)
+  - `.text-ui`, `.text-muted` (tipografía semántica)
+  - `.app-card`, `.app-panel` (legacy, mantener solo por compatibilidad con usos directos)
 
-Usar estas clases cuando el elemento sea semánticamente un botón, tarjeta o panel.
+**IMPORTANTE**: Las únicas clases globales "fuente de verdad" son `.btn-*` y `.ctrl-field`. TODO lo demás (cards, paneles, filas, items, badges, etc.) se define en `componentStyles.ts` usando utilidades + vars.
 
 ## 3) Mapa de estilos por componente
 
 Archivo: `src/design/componentStyles.ts`
 
-- layout: fondos de app/página/panel.
-- typography: `pageTitle`, `pageSubtitle`, `sectionTitle`, `cardTitle`, `bodyText`, `smallMetaText`.
-- components:
-  - Botones: `buttonPrimary`, `buttonSecondary`, `buttonOutline`, `buttonGhost`.
-  - Inputs/Selects: `inputDefault`, `inputSm`, `inputLg`, `selectDefault` (todos basados en `ctrl-field`).
-  - Cards base: `cardBase`, `cardElevated`, `cardKpi`, `panelBase`.
-  - Cards Agenda (unificadas): `cardStudent` = `cardBase`; `cardAsignacion|cardPlan|cardSemana` = variantes tonales (primary/accent/secondary); `panelSesion` = panel con fondo muted.
-  - Tabs: `tabsSegmented*` y `tabsUnderline*`.
-  - Vacíos: `emptyStateIcon`, `emptyStateText`.
-  - Menú: `menuSectionTitle`, `menuItem`, `menuItemActive`.
+Estructura genérica (sin dependencias de dominio):
+
+- **layout**: fondos de app/página/panel.
+- **typography**: `pageTitle`, `pageSubtitle`, `sectionTitle`, `cardTitle`, `bodyText`, `smallMetaText`.
+- **containers**: `cardBase`, `cardElevated`, `cardMetric`, `panelBase`.
+- **items**: `itemCard`, `itemCardHighlight`, `itemRow`, `itemRowTone`.
+- **controls**: `inputDefault`, `inputSm`, `inputUnderline`, `selectDefault`.
+- **buttons**: `primary`, `secondary`, `ghost`, `outline`, `danger`.
+- **tabs**: `tabsSegmentedContainer/Item/ItemActive`, `tabsUnderlineContainer/Item/ItemActive`.
+- **nav**: `menuSectionTitle`, `menuItem`, `menuItemActive`.
+- **empty**: `emptyIcon`, `emptyText`.
+- **status**: `badgeDefault`, `badgeInfo`, `badgeSuccess`, `badgeWarning`, `badgeDanger`.
+- **components**: alias hacia los grupos genéricos (compatibilidad hacia atrás).
 
 Objetivo: que un re-temeado se resuelva aquí y/o en tokens, no en componentes aislados. Las cards están unificadas sobre bases reutilizables para evitar duplicación.
 
@@ -57,7 +61,7 @@ Objetivo: que un re-temeado se resuelva aquí y/o en tokens, no en componentes a
 1. Headers: usar `PageHeader` con `componentStyles.typography.pageTitle/pageSubtitle`.
 2. Tabs: `Tabs` unificado; estado activo = `primarySoft` + borde `primary`.
 3. Botones: `btn-*` y tamaños (`btn-sm/md/lg`) o `Button` con `variant/size`.
-4. Cards/Paneles: usar `cardBase/cardElevated`, `cardKpi`, `panelBase` desde `componentStyles`. Las variantes de Agenda están unificadas sobre estas bases.
+4. Cards/Paneles: usar `componentStyles.containers.*` (cardBase, cardElevated, cardMetric, panelBase) o `componentStyles.items.*` (itemCard, itemCardHighlight, itemRow). Las variantes de dominio están unificadas sobre estas bases genéricas.
 5. Contraste: usar `text-ui` para contenido primario, `text-ui/80` para secundario. Reservar `text-muted` solo para meta/desactivado.
 6. Colores: siempre usar tokens `var(--color-*)` o clases semánticas. No usar colores literales Tailwind (`bg-gray-50`, `text-slate-600`, etc.).
 7. Inline styles: evitarlos salvo layout dinámico (anchos/transformaciones basadas en datos). Preferir utilidades o estilos centralizados.
@@ -126,16 +130,17 @@ Esta sección recoge todos los elementos/atributos ya mapeados a tokens y CSS gl
 - Vía componente `Button` (ui): `variant/size` mapean a `.btn-*`.
 
 6) Cards y Paneles
-- Clases globales: `.app-card`, `.app-panel`.
+- **Definición**: `componentStyles.containers.*` y `componentStyles.items.*` (usando utilidades + vars).
 - Atributos gobernados por tokens:
   - `background-color: var(--color-surface|surface-elevated|surface-muted)`
   - `color: var(--color-text-primary)`
   - `border: var(--color-border-strong|muted|default)`
   - `border-radius: var(--radius-card)`
   - Sombra (cards): `var(--shadow-card)`
-- Variantes (componentStyles.components):
-  - Bases: `cardBase`, `cardElevated`, `cardKpi`, `panelBase`.
-  - Agenda (unificadas): `cardStudent` = `cardBase`; `cardAsignacion|cardPlan|cardSemana` = variantes tonales (primary/accent/secondary); `panelSesion` = panel con fondo muted.
+- Variantes:
+  - **containers**: `cardBase`, `cardElevated`, `cardMetric`, `panelBase`.
+  - **items**: `itemCard`, `itemCardHighlight`, `itemRow`, `itemRowTone`.
+  - **Legacy**: `.app-card`, `.app-panel` (mantener solo por compatibilidad con usos directos).
 
 7) Tabs
 - `Tabs` (DS) → `segmented`/`underline` usando `componentStyles.components.tabs*`. La variante segmentada expone `data-testid="tabs-segmented"` para QA.
@@ -167,3 +172,25 @@ Esta sección recoge todos los elementos/atributos ya mapeados a tokens y CSS gl
 3) Verificación estática
 - Buscar restos de colores literales: `rg -n "text-(gray|slate|stone)-[3-9]00" src/` y `rg -n "bg-(gray|slate|stone)-[1-9]0" src/`
 - Verificar uso correcto de tokens: `rg -n "var\(--color-" src/`
+
+4) Auditoría de Accesibilidad (A11Y)
+- Ejecutar quick-check desde `/design` → pestaña "QA" → "A11Y Quick-Check"
+- Verificaciones automáticas:
+  - **H1 único**: Solo debe haber 1 `<h1>` por página (usar `PageHeader` con `componentStyles.typography.pageTitle`)
+  - **Botones etiquetados**: Todos los botones deben tener:
+    - Texto visible, O
+    - `aria-label`, O
+    - `aria-labelledby`, O
+    - `title` (como fallback)
+  - **Inputs etiquetados**: Todos los inputs deben tener:
+    - `<label>` asociado con `htmlFor`/`id`, O
+    - `aria-label`, O
+    - `aria-labelledby`
+  - **Focus visible**: Todos los elementos enfocables deben tener ring focus visible (usar `focus-brand` o clases del DS)
+  - **Contraste**: El sistema usa tokens con contraste WCAG AA+; verificar con herramientas externas si es necesario
+
+**Buenas prácticas al usar el sistema de diseño:**
+- Botones solo con iconos: siempre añadir `aria-label="Descripción de la acción"`
+- Inputs: usar `FormField` + `FormLabel` + `FormControl` del sistema de formularios, o asociar manualmente `<label htmlFor={id}>`
+- Múltiples H1: usar `PageHeader` que genera un único H1; títulos secundarios usar `h2` con `componentStyles.typography.sectionTitle`
+- Focus: el sistema proporciona `--focus-ring` y clases `.btn-*`/`.ctrl-field` con focus visible; no desactivar `outline` sin proporcionar alternativa visual

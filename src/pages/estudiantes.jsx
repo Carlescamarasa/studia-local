@@ -21,6 +21,7 @@ import MediaLinksInput from "../components/common/MediaLinksInput";
 import MediaPreviewModal from "../components/common/MediaPreviewModal";
 import RequireRole from "@/components/auth/RequireRole";
 import PageHeader from "@/components/ds/PageHeader";
+import { componentStyles } from "@/design/componentStyles";
 
 function EstudiantesPageContent() {
   const queryClient = useQueryClient();
@@ -283,7 +284,7 @@ function EstudiantesPageContent() {
       />
 
       <div className="max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8">
-        <Card className="app-card">
+        <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
             <CardTitle className="text-lg">
               Estudiantes ({estadisticasAlumnos.length})
@@ -292,26 +293,26 @@ function EstudiantesPageContent() {
           <CardContent>
             {loadingAsignaciones ? (
               <div className="text-center py-12">
-                <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-ui/80">Cargando estudiantes...</p>
+                <div className="w-12 h-12 border-4 border-[hsl(var(--brand-500))] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className={componentStyles.typography.bodyText}>Cargando estudiantes...</p>
               </div>
             ) : estadisticasAlumnos.length === 0 ? (
               <div className="text-center py-12">
-                <Users className="w-16 h-16 mx-auto mb-4 icon-empty" />
-                <p className="text-ui/80 mb-2">
+                <Users className={`w-16 h-16 mx-auto mb-4 ${componentStyles.empty.emptyIcon}`} />
+                <p className={`${componentStyles.empty.emptyText} mb-2`}>
                   {searchTerm ? 'No se encontraron estudiantes' : 'No tienes estudiantes asignados'}
                 </p>
                 {!searchTerm && isProf && (
-                  <Alert className="mt-4 rounded-xl border-amber-200 bg-amber-50 text-left max-w-lg mx-auto">
-                    <AlertCircle className="h-4 w-4 text-amber-700" />
-                    <AlertDescription className="text-sm">
-                      <strong className="text-amber-900">¿Dónde están mis estudiantes?</strong>
-                      <ul className="list-disc list-inside mt-2 space-y-1 text-xs text-amber-800">
+                  <Alert className={`mt-4 ${componentStyles.containers.panelBase} border-[var(--color-warning)] bg-[var(--color-warning)]/10 text-left max-w-lg mx-auto`}>
+                    <AlertCircle className="h-4 w-4 text-[var(--color-warning)]" />
+                    <AlertDescription>
+                      <strong className={`${componentStyles.typography.sectionTitle} text-[var(--color-warning)]`}>¿Dónde están mis estudiantes?</strong>
+                      <ul className={`list-disc list-inside mt-2 space-y-1 ${componentStyles.typography.smallMetaText} text-[var(--color-warning)]`}>
                         <li>Necesitas tener <strong>asignaciones activas</strong> creadas para tus alumnos</li>
                         <li>Las asignaciones deben estar en estado: <strong>publicada, en curso o borrador</strong></li>
                         <li>Revisa la consola del navegador para logs de diagnóstico (F12 → Console)</li>
                       </ul>
-                      <div className="mt-3 p-2 bg-amber-100 rounded-lg text-xs font-mono text-amber-900">
+                      <div className={`mt-3 p-2 bg-[var(--color-warning)]/20 rounded-lg ${componentStyles.typography.smallMetaText} font-mono text-[var(--color-warning)]`}>
                         📊 Asignaciones encontradas: {asignaciones.filter(a => a.profesorId === currentUser?.id).length}
                       </div>
                     </AlertDescription>
@@ -339,7 +340,7 @@ function EstudiantesPageContent() {
                     sortable: true,
                     render: (e) => (
                       <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-blue-600 shrink-0" />
+                        <Clock className="w-4 h-4 text-[var(--color-info)] shrink-0" />
                         <span className="font-medium">{formatDurationMinutes(e.minutosReales)}</span>
                       </div>
                     ),
@@ -351,7 +352,7 @@ function EstudiantesPageContent() {
                     sortable: true,
                     render: (e) => (
                       <div className="flex items-center gap-2">
-                        <Star className="w-4 h-4 text-amber-500 shrink-0" />
+                        <Star className="w-4 h-4 text-[var(--color-warning)] shrink-0" />
                         <span className="font-medium">{e.calidadMedia}/4</span>
                       </div>
                     ),
@@ -388,19 +389,19 @@ function EstudiantesPageContent() {
               className="bg-card w-full max-w-2xl h-full shadow-card flex flex-col animate-in slide-in-from-right pointer-events-auto overflow-hidden rounded-l-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="border-b border-[var(--color-border-default)] px-6 py-4 flex items-center justify-between bg-blue-600 sticky top-0 z-10">
-                <div className="flex items-center gap-3 text-white">
+              <div className={`border-b border-[var(--color-border-default)] px-6 py-4 flex items-center justify-between bg-[var(--color-info)] sticky top-0 z-10`}>
+                <div className="flex items-center gap-3 text-[var(--color-text-inverse)]">
                   <MessageSquare className="w-6 h-6" />
                   <div>
-                    <h2 className="text-xl font-bold">Feedback Semanal</h2>
-                    <p className="text-sm text-white/90">{displayName(selectedAlumno)}</p>
+                    <h2 className={componentStyles.typography.pageTitle}>Feedback Semanal</h2>
+                    <p className={`${componentStyles.typography.bodyText} text-[var(--color-text-inverse)]/90`}>{displayName(selectedAlumno)}</p>
                   </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setShowFeedbackDrawer(false)}
-                  className="text-white hover:bg-white/20 h-9 w-9 rounded-xl focus-brand"
+                  className={`text-[var(--color-text-inverse)] hover:bg-[var(--color-text-inverse)]/20 h-9 w-9 rounded-xl focus-brand`}
                   aria-label="Cerrar drawer"
                 >
                   <X className="w-5 h-5" />
@@ -418,36 +419,36 @@ function EstudiantesPageContent() {
                       const nuevaSemana = calcularLunesSemanaISO(e.target.value);
                       setFeedbackData({ ...feedbackData, semanaInicioISO: nuevaSemana });
                     }}
-                    className="h-10 rounded-xl border-[var(--color-border-default)] focus-brand"
+                    className={`${componentStyles.controls.inputDefault} focus-brand`}
                   />
-                  <p className="text-xs text-ui/80 mt-1">
+                  <p className={`${componentStyles.typography.smallMetaText} mt-1`}>
                     Semana ISO: {parseLocalDate(feedbackData.semanaInicioISO).toLocaleDateString('es-ES', {
                       weekday: 'long', day: 'numeric', month: 'long'
                     })}
                   </p>
                 </div>
 
-                <Card className="app-card border-blue-200 bg-blue-50">
+                <Card className={`${componentStyles.items.itemCardHighlight} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
                   <CardContent className="pt-4">
-                    <h3 className="font-semibold mb-3 text-blue-900">Resumen de la Semana</h3>
+                    <h3 className={`${componentStyles.typography.sectionTitle} mb-3 text-[var(--color-info)]`}>Resumen de la Semana</h3>
                     {(() => {
                       const stats = calcularEstadisticasSemana(selectedAlumno.id, feedbackData.semanaInicioISO);
                       return (
                         <div className="grid grid-cols-3 gap-3">
                           <div className="text-center">
-                            <Clock className="w-5 h-5 mx-auto mb-1 text-blue-600" />
-                            <p className="text-lg font-bold text-blue-900">{stats.minutosReales}</p>
-                            <p className="text-xs text-blue-700">Minutos</p>
+                            <Clock className="w-5 h-5 mx-auto mb-1 text-[var(--color-info)]" />
+                            <p className={`${componentStyles.typography.cardTitle} text-[var(--color-info)]`}>{stats.minutosReales}</p>
+                            <p className={`${componentStyles.typography.smallMetaText} text-[var(--color-info)]`}>Minutos</p>
                           </div>
                           <div className="text-center">
-                            <TrendingUp className="w-5 h-5 mx-auto mb-1 text-blue-600" />
-                            <p className="text-lg font-bold text-blue-900">{stats.sesionesRealizadas}</p>
-                            <p className="text-xs text-blue-700">Sesiones</p>
+                            <TrendingUp className="w-5 h-5 mx-auto mb-1 text-[var(--color-info)]" />
+                            <p className={`${componentStyles.typography.cardTitle} text-[var(--color-info)]`}>{stats.sesionesRealizadas}</p>
+                            <p className={`${componentStyles.typography.smallMetaText} text-[var(--color-info)]`}>Sesiones</p>
                           </div>
                           <div className="text-center">
-                            <Star className="w-5 h-5 mx-auto mb-1 text-blue-600" />
-                            <p className="text-lg font-bold text-blue-900">{stats.calidadMedia}/4</p>
-                            <p className="text-xs text-blue-700">Calidad</p>
+                            <Star className="w-5 h-5 mx-auto mb-1 text-[var(--color-info)]" />
+                            <p className={`${componentStyles.typography.cardTitle} text-[var(--color-info)]`}>{stats.calidadMedia}/4</p>
+                            <p className={`${componentStyles.typography.smallMetaText} text-[var(--color-info)]`}>Calidad</p>
                           </div>
                         </div>
                       );
@@ -463,9 +464,9 @@ function EstudiantesPageContent() {
                     onChange={(e) => setFeedbackData({ ...feedbackData, notaProfesor: e.target.value })}
                     placeholder="Comentarios sobre el progreso, áreas de mejora, logros destacados..."
                     rows={8}
-                    className="resize-none rounded-xl border-[var(--color-border-default)] focus-brand"
+                    className={`${componentStyles.controls.inputDefault} resize-none focus-brand`}
                   />
-                  <p className="text-xs text-ui/80 mt-1">
+                  <p className={`${componentStyles.typography.smallMetaText} mt-1`}>
                     Escribe observaciones sobre el progreso del estudiante esta semana
                   </p>
                 </div>
@@ -477,25 +478,25 @@ function EstudiantesPageContent() {
                 />
               </div>
 
-              <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-muted sticky bottom-0">
+              <div className={`border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] sticky bottom-0`}>
                 <div className="flex gap-3">
                   <Button
                     variant="outline"
                     onClick={() => setShowFeedbackDrawer(false)}
-                    className="flex-1 h-10 rounded-xl"
+                    className={`flex-1 ${componentStyles.buttons.outline}`}
                   >
                     Cancelar
                   </Button>
                   <Button
                     onClick={handleGuardarFeedback}
                     disabled={guardarFeedbackMutation.isPending}
-                    className="flex-1 h-10 rounded-xl btn-primary shadow-sm focus-brand"
+                    className={`flex-1 ${componentStyles.buttons.primary} shadow-sm focus-brand`}
                   >
                     <Save className="w-4 h-4 mr-2" />
                     {guardarFeedbackMutation.isPending ? 'Guardando...' : 'Guardar'}
                   </Button>
                 </div>
-                <p className="text-xs text-center text-ui/80 mt-2">
+                <p className={`${componentStyles.typography.smallMetaText} text-center mt-2`}>
                   Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar
                 </p>
               </div>

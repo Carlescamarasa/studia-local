@@ -26,6 +26,7 @@ import { getNombreVisible, formatLocalDate, parseLocalDate, startOfMonday } from
 import { calcularTiempoSesion } from "../components/study/sessionSequence";
 import SessionContentView from "../components/study/SessionContentView";
 import PageHeader from "@/components/ds/PageHeader";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function AsignacionDetallePage() {
   const queryClient = useQueryClient();
@@ -170,18 +171,18 @@ export default function AsignacionDetallePage() {
   };
 
   const focoColors = {
-    GEN: 'bg-[var(--color-surface-muted)] text-ui border-[var(--color-border-default)]',
-    LIG: 'bg-blue-100 text-blue-800 border-blue-200',
-    RIT: 'bg-purple-100 text-purple-800 border-purple-200',
-    ART: 'bg-green-100 text-green-800 border-green-200',
-    'S&A': 'bg-brand-100 text-brand-800 border-brand-200',
+    GEN: componentStyles.status.badgeDefault,
+    LIG: componentStyles.status.badgeInfo,
+    RIT: componentStyles.status.badgeDefault, // Usar default para púrpura
+    ART: componentStyles.status.badgeSuccess,
+    'S&A': componentStyles.status.badgeDefault, // Usar default para brand
   };
 
   const estadoColors = {
-    borrador: 'bg-[var(--color-surface-muted)] text-ui',
-    publicada: 'bg-green-100 text-green-800',
-    en_curso: 'bg-blue-100 text-blue-800',
-    cerrada: 'bg-amber-100 text-amber-800',
+    borrador: componentStyles.status.badgeDefault,
+    publicada: componentStyles.status.badgeSuccess,
+    en_curso: componentStyles.status.badgeInfo,
+    cerrada: componentStyles.status.badgeWarning,
   };
 
   const estadoLabels = {
@@ -205,13 +206,13 @@ export default function AsignacionDetallePage() {
   if (!asignacion) {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
-        <Card className="max-w-md app-card">
+        <Card className={`max-w-md ${componentStyles.containers.cardBase}`}>
           <CardContent className="pt-6 text-center space-y-4">
-            <Shield className="w-16 h-16 mx-auto text-red-500" />
+            <Shield className={`w-16 h-16 mx-auto ${componentStyles.empty.emptyIcon} text-[var(--color-danger)]`} />
             <div>
-              <h2 className="font-semibold text-lg text-ui mb-2">Asignación No Encontrada</h2>
-              <p className="text-ui/80">No tienes acceso a esta asignación o no existe.</p>
-              <Button onClick={() => navigate(createPageUrl('asignaciones'))} className="mt-4 btn-primary h-10 rounded-xl shadow-sm">
+              <h2 className={`${componentStyles.typography.sectionTitle} mb-2`}>Asignación No Encontrada</h2>
+              <p className={componentStyles.typography.bodyText}>No tienes acceso a esta asignación o no existe.</p>
+              <Button onClick={() => navigate(createPageUrl('asignaciones'))} className={`mt-4 ${componentStyles.buttons.primary}`}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Volver a Asignaciones
               </Button>
@@ -235,7 +236,7 @@ export default function AsignacionDetallePage() {
         subtitle={`Estudiante: ${getNombreVisible(alumno)}`}
         actions={
           <div className="flex gap-2 flex-wrap">
-            <Button variant="ghost" onClick={() => navigate(createPageUrl('asignaciones'))} className="h-10 rounded-xl">
+            <Button variant="ghost" onClick={() => navigate(createPageUrl('asignaciones'))} className={componentStyles.buttons.ghost}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver
             </Button>
@@ -243,7 +244,7 @@ export default function AsignacionDetallePage() {
               <Button
                 variant="outline"
                 onClick={() => navigate(createPageUrl(`adaptar-asignacion?id=${asignacionId}`))}
-                className="h-10 rounded-xl"
+                className={componentStyles.buttons.outline}
               >
                 <Edit className="w-4 h-4 mr-2" />
                 Adaptar plan
@@ -253,7 +254,7 @@ export default function AsignacionDetallePage() {
               <Button 
                 onClick={() => publicarMutation.mutate()}
                 disabled={publicarMutation.isPending}
-                className="btn-primary h-10 rounded-xl shadow-sm"
+                className={componentStyles.buttons.primary}
               >
                 Publicar
               </Button>
@@ -267,7 +268,7 @@ export default function AsignacionDetallePage() {
                   }
                 }}
                 disabled={cerrarMutation.isPending}
-                className="h-10 rounded-xl"
+                className={componentStyles.buttons.outline}
               >
                 <XCircle className="w-4 h-4 mr-2" />
                 Cerrar
@@ -284,11 +285,11 @@ export default function AsignacionDetallePage() {
       </div>
 
       <div className="max-w-[1600px] mx-auto p-6 md:p-8 space-y-6">
-        <Card className="app-card">
+        <Card className={componentStyles.containers.cardBase}>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Información General</CardTitle>
             {isAdminOrProf && (
-              <Button variant="outline" size="sm" onClick={handleEditarInformacion} className="h-9 rounded-xl">
+              <Button variant="outline" size="sm" onClick={handleEditarInformacion} className={componentStyles.buttons.outline}>
                 <Edit className="w-4 h-4 mr-2" />
                 Editar información
               </Button>
@@ -297,49 +298,49 @@ export default function AsignacionDetallePage() {
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="flex items-start gap-3">
-                <div className="icon-tile">
+                <div className={componentStyles.empty.emptyIcon}>
                   <User className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-ui/80">Estudiante</p>
-                  <p className="font-medium text-ui">{getNombreVisible(alumno)}</p>
-                  <p className="text-sm text-ui/80">{alumno?.email}</p>
+                  <p className={componentStyles.typography.smallMetaText}>Estudiante</p>
+                  <p className={componentStyles.typography.cardTitle}>{getNombreVisible(alumno)}</p>
+                  <p className={componentStyles.typography.smallMetaText}>{alumno?.email}</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-3">
-                <div className="icon-tile">
+                <div className={componentStyles.empty.emptyIcon}>
                   <Music className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-ui/80">Pieza</p>
-                  <p className="font-medium text-ui">{asignacion.piezaSnapshot?.nombre}</p>
-                  <p className="text-sm text-ui/80">
+                  <p className={componentStyles.typography.smallMetaText}>Pieza</p>
+                  <p className={componentStyles.typography.cardTitle}>{asignacion.piezaSnapshot?.nombre}</p>
+                  <p className={componentStyles.typography.smallMetaText}>
                     {asignacion.piezaSnapshot?.nivel} • {asignacion.piezaSnapshot?.elementos?.length || 0} elementos
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="icon-tile">
+                <div className={componentStyles.empty.emptyIcon}>
                   <BookOpen className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-ui/80">Plan</p>
-                  <p className="font-medium text-ui">{asignacion.plan?.nombre}</p>
-                  <p className="text-sm text-ui/80">
+                  <p className={componentStyles.typography.smallMetaText}>Plan</p>
+                  <p className={componentStyles.typography.cardTitle}>{asignacion.plan?.nombre}</p>
+                  <p className={componentStyles.typography.smallMetaText}>
                     {asignacion.plan?.semanas?.length || 0} semanas
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="icon-tile">
+                <div className={componentStyles.empty.emptyIcon}>
                   <Calendar className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-ui/80">Semana de Inicio</p>
-                  <p className="font-medium text-ui">
+                  <p className={componentStyles.typography.smallMetaText}>Semana de Inicio</p>
+                  <p className={componentStyles.typography.cardTitle}>
                     {parseLocalDate(asignacion.semanaInicioISO).toLocaleDateString('es-ES', { 
                       weekday: 'long', 
                       year: 'numeric', 
@@ -352,12 +353,12 @@ export default function AsignacionDetallePage() {
 
               {asignacion.foco && (
                 <div className="flex items-start gap-3">
-                  <div className="icon-tile">
+                  <div className={componentStyles.empty.emptyIcon}>
                     <Settings className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-ui/80">Foco</p>
-                    <Badge className={`rounded-full ${focoColors[asignacion.foco]}`}>
+                    <p className={componentStyles.typography.smallMetaText}>Foco</p>
+                    <Badge className={focoColors[asignacion.foco]}>
                       {focoLabels[asignacion.foco]}
                     </Badge>
                   </div>
@@ -367,14 +368,14 @@ export default function AsignacionDetallePage() {
 
             {asignacion.notas && (
               <div className="pt-4 border-t border-[var(--color-border-default)]">
-                <p className="text-sm text-ui/80 mb-2">Notas del Profesor</p>
-                <p className="text-ui whitespace-pre-wrap">{asignacion.notas}</p>
+                <p className={`${componentStyles.typography.smallMetaText} mb-2`}>Notas del Profesor</p>
+                <p className={componentStyles.typography.bodyText}>{asignacion.notas}</p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="app-card">
+        <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
             <CardTitle>Plan de Estudio ({asignacion.plan?.semanas?.length || 0} semanas)</CardTitle>
           </CardHeader>
@@ -382,7 +383,7 @@ export default function AsignacionDetallePage() {
             {asignacion.plan?.semanas?.map((semana, semanaIndex) => (
               <Card 
                 key={semanaIndex}
-                className="app-panel cursor-pointer hover:shadow-md transition-all"
+                className={`${componentStyles.containers.panelBase} cursor-pointer hover:shadow-md transition-all`}
                 onClick={() => toggleSemana(semanaIndex)}
               >
                 <CardContent className="pt-4">
@@ -424,7 +425,7 @@ export default function AsignacionDetallePage() {
                                 return (
                                   <Card 
                                     key={sesionIndex}
-                                    className="app-panel cursor-pointer hover:shadow-md transition-all"
+                                    className={`${componentStyles.containers.panelBase} cursor-pointer hover:shadow-md transition-all`}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       toggleSesion(semanaIndex, sesionIndex);
@@ -442,16 +443,14 @@ export default function AsignacionDetallePage() {
                                         
                                         <div className="flex-1">
                                           <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="font-medium text-sm text-ui">{sesion.nombre}</span>
+                                            <span className={componentStyles.typography.cardTitle}>{sesion.nombre}</span>
                                             <Badge 
                                               variant="outline" 
-                                              className={`rounded-full text-xs ${
-                                                tiempoTotal > 0 ? 'bg-green-50 border-green-300 text-green-800' : 'bg-[var(--color-surface-muted)]'
-                                              }`}
+                                              className={tiempoTotal > 0 ? componentStyles.status.badgeSuccess : componentStyles.status.badgeDefault}
                                             >
                                               ⏱ {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
                                             </Badge>
-                                            <Badge className={`rounded-full ${focoColors[sesion.foco]}`} variant="outline">
+                                            <Badge className={focoColors[sesion.foco]} variant="outline">
                                               {focoLabels[sesion.foco]}
                                             </Badge>
                                           </div>
@@ -523,11 +522,11 @@ export default function AsignacionDetallePage() {
                     type="date"
                     value={editData.fechaSeleccionada}
                     onChange={(e) => setEditData({ ...editData, fechaSeleccionada: e.target.value })}
-                    className="h-10 rounded-xl border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                    className={`${componentStyles.controls.inputDefault} focus-brand`}
                   />
                   {editData.fechaSeleccionada && (
-                    <Alert className="mt-2 rounded-xl border-blue-200 bg-blue-50">
-                      <AlertDescription className="text-xs text-blue-800">
+                    <Alert className={`mt-2 ${componentStyles.containers.panelBase} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
+                      <AlertDescription className={`${componentStyles.typography.smallMetaText} text-[var(--color-info)]`}>
                         Se guardará la semana ISO del Lunes{' '}
                         {parseLocalDate(calcularLunesSemanaISO(editData.fechaSeleccionada)).toLocaleDateString('es-ES')}
                       </AlertDescription>
@@ -557,22 +556,22 @@ export default function AsignacionDetallePage() {
                     onChange={(e) => setEditData({ ...editData, notas: e.target.value })}
                     placeholder="Comentarios, instrucciones..."
                     rows={4}
-                    className="rounded-xl border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))] resize-none"
+                    className={`${componentStyles.controls.inputDefault} resize-none`}
                   />
                 </div>
               </div>
 
-              <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-muted">
+              <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)]">
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setShowEditDrawer(false)} className="flex-1 h-10 rounded-xl">
+                  <Button variant="outline" onClick={() => setShowEditDrawer(false)} className={`flex-1 ${componentStyles.buttons.outline}`}>
                     Cancelar
                   </Button>
-                  <Button onClick={handleGuardarEdicion} disabled={editarMutation.isPending} className="flex-1 btn-primary h-10 rounded-xl shadow-sm">
+                  <Button onClick={handleGuardarEdicion} disabled={editarMutation.isPending} className={`flex-1 ${componentStyles.buttons.primary}`}>
                     <Save className="w-4 h-4 mr-2" />
                     {editarMutation.isPending ? 'Guardando...' : 'Guardar'}
                   </Button>
                 </div>
-                <p className="text-xs text-center text-ui/80 mt-2">
+                <p className={`${componentStyles.typography.smallMetaText} text-center mt-2`}>
                   Ctrl/⌘+. : cerrar • Ctrl/⌘+Intro : guardar
                 </p>
               </div>

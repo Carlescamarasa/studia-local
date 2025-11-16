@@ -29,6 +29,7 @@ import ResumenFinal from "../components/estudio/ResumenFinal";
 import { toast } from "sonner";
 import { useSidebar } from "@/components/ui/SidebarState";
 import PageHeader from "@/components/ds/PageHeader";
+import { componentStyles } from "@/design/componentStyles";
 
 import RequireRole from "@/components/auth/RequireRole";
 
@@ -580,13 +581,13 @@ function HoyPageContent() {
   };
 
   const tipoColors = {
-    CA: 'bg-brand-100 text-brand-800 border-brand-300',
-    CB: 'bg-blue-100 text-blue-800 border-blue-300',
-    TC: 'bg-purple-100 text-purple-800 border-purple-300',
-    TM: 'bg-green-100 text-green-800 border-green-300',
-    FM: 'bg-pink-100 text-pink-800 border-pink-300',
-    VC: 'bg-cyan-100 text-cyan-800 border-cyan-300',
-    AD: 'bg-[var(--color-surface-muted)] text-ui border-[var(--color-border-default)]',
+    CA: componentStyles.status.badgeDefault, // brand -> default
+    CB: componentStyles.status.badgeInfo,
+    TC: componentStyles.status.badgeDefault, // purple -> default
+    TM: componentStyles.status.badgeSuccess,
+    FM: componentStyles.status.badgeDefault, // pink -> default
+    VC: componentStyles.status.badgeInfo, // cyan -> info
+    AD: componentStyles.status.badgeDefault,
   };
 
   const focoLabels = {
@@ -598,11 +599,11 @@ function HoyPageContent() {
   };
 
   const focoColors = {
-    GEN: 'bg-[var(--color-surface-muted)] text-ui',
-    LIG: 'bg-blue-100 text-blue-800',
-    RIT: 'bg-purple-100 text-purple-800',
-    ART: 'bg-green-100 text-green-800',
-    'S&A': 'bg-brand-100 text-brand-800',
+    GEN: componentStyles.status.badgeDefault,
+    LIG: componentStyles.status.badgeInfo,
+    RIT: componentStyles.status.badgeDefault, // purple -> default
+    ART: componentStyles.status.badgeSuccess,
+    'S&A': componentStyles.status.badgeDefault, // brand -> default
   };
 
   // Resumen final
@@ -712,19 +713,19 @@ function HoyPageContent() {
         {/* Contenido del ejercicio */}
         <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
           {isAD && (
-            <Alert className="border-brand-200 bg-brand-50">
-              <AlertTriangle className="h-4 w-4 text-brand-600" />
-              <AlertDescription className="text-brand-800 text-sm">
+            <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-primary)] bg-[var(--color-primary-soft)]`}>
+              <AlertTriangle className="h-4 w-4 text-[var(--color-primary)]" />
+              <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-text-primary)]`}>
                 Este ejercicio no suma tiempo real
               </AlertDescription>
             </Alert>
           )}
 
           {ejercicioActual.indicadorLogro && (
-            <Card className="border-blue-200 bg-blue-50">
+            <Card className={`${componentStyles.items.itemCardHighlight} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
               <CardContent className="pt-4">
-                <p className="text-sm font-semibold text-blue-900 mb-1">💡 Objetivo de logro</p>
-                <p className="text-sm text-blue-800">{ejercicioActual.indicadorLogro}</p>
+                <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-info)] mb-1`}>💡 Objetivo de logro</p>
+                <p className={`${componentStyles.typography.bodyText} text-[var(--color-info)]`}>{ejercicioActual.indicadorLogro}</p>
               </CardContent>
             </Card>
           )}
@@ -743,10 +744,10 @@ function HoyPageContent() {
           )}
 
           {!isAD && (isFM ? elementosFM.length > 0 : (ejercicioActual.media && Object.keys(ejercicioActual.media).length > 0)) && (
-            <Card className={isFM ? "border-pink-200" : ""}>
+            <Card className={isFM ? `border-[var(--color-accent)]` : ""}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className={`text-base ${isFM ? "text-pink-800" : ""}`}>
+                  <CardTitle className={`${componentStyles.typography.cardTitle} ${isFM ? "text-[var(--color-accent)]" : ""}`}>
                     {isFM ? '🎼 Material de la Pieza' : '📎 Material'}
                   </CardTitle>
                 </div>
@@ -754,8 +755,8 @@ function HoyPageContent() {
               <CardContent className="space-y-3">
                 {isFM ? (
                   elementosFM.map((elemento, idx) => (
-                    <div key={idx} className="border rounded-lg p-3 bg-pink-50/30 space-y-2">
-                      <h3 className="font-semibold text-sm text-pink-900">{elemento.nombre}</h3>
+                    <div key={idx} className={`border rounded-lg p-3 bg-[var(--color-accent)]/10 space-y-2`}>
+                      <h3 className={`${componentStyles.typography.cardTitle} text-[var(--color-accent)]`}>{elemento.nombre}</h3>
 
                       {elemento.media?.pdf && (
                         <div>
@@ -978,7 +979,7 @@ function HoyPageContent() {
               <div className="bg-muted rounded-full h-1.5 overflow-hidden">
                 <div
                   className={`h-full transition-all duration-300 ${
-                    progreso <= 85 ? 'bg-[hsl(var(--success))]' : progreso <= 100 ? 'bg-amber-500' : 'bg-red-500'
+                    progreso <= 85 ? 'bg-[var(--color-success)]' : progreso <= 100 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-danger)]'
                   }`}
                   style={{ width: `${Math.min(progreso, 100)}%` }}
                 />
@@ -1056,9 +1057,9 @@ function HoyPageContent() {
                           idx === indiceActual
                             ? 'bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border-[var(--color-primary)] shadow-sm'
                             : completados.has(idx)
-                            ? 'bg-green-50 border-green-200'
+                            ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]'
                             : omitidos.has(idx)
-                            ? 'bg-amber-50 border-amber-200'
+                            ? 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]'
                             : 'bg-[var(--color-surface)] border-[var(--color-border-strong)] hover:bg-[var(--color-surface-muted)]'
                         }`}
                     aria-label={`Ir a ejercicio ${idx + 1}: ${ej.nombre}`}
@@ -1069,7 +1070,7 @@ function HoyPageContent() {
                         {ej.tipo}
                       </Badge>
                           <span className="flex-1 text-sm font-medium truncate text-ui">{ej.nombre}</span>
-                      {completados.has(idx) && <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />}
+                      {completados.has(idx) && <CheckCircle className="w-4 h-4 text-[var(--color-success)] shrink-0" />}
                       {omitidos.has(idx) && <XCircle className="w-4 h-4 text-ui/80 shrink-0" />}
                     </div>
                   </button>
@@ -1149,11 +1150,11 @@ function HoyPageContent() {
         title="Estudiar Ahora"
         subtitle={`Plan de estudio para ${formatearSemana(semanaActualISO)}`}
         filters={asignacionActiva ? (
-            <div className="flex items-center gap-2 flex-wrap text-sm text-ui bg-brand-50 rounded-xl p-3 border border-brand-200">
-              <Music className="w-4 h-4 text-brand-700" />
+            <div className={`flex items-center gap-2 flex-wrap ${componentStyles.typography.bodyText} bg-[var(--color-primary-soft)] rounded-xl p-3 border border-[var(--color-primary)]`}>
+              <Music className="w-4 h-4 text-[var(--color-primary)]" />
               <span className="font-semibold">{asignacionActiva.piezaSnapshot?.nombre}</span>
               <span className="text-ui/80">•</span>
-              <Target className="w-4 h-4 text-blue-600" />
+              <Target className="w-4 h-4 text-[var(--color-info)]" />
               <span>{asignacionActiva.plan?.nombre}</span>
               <span className="text-ui/80">•</span>
               <span className="font-medium">{getNombreVisible(alumnoActual)}</span>

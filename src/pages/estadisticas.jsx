@@ -627,13 +627,13 @@ function EstadisticasPageContent() {
   };
 
   const tipoColors = {
-    CA: 'bg-brand-100 text-brand-800',
-    CB: 'bg-blue-100 text-blue-800',
-    TC: 'bg-purple-100 text-purple-800',
-    TM: 'bg-green-100 text-green-800',
-    FM: 'bg-pink-100 text-pink-800',
-    VC: 'bg-cyan-100 text-cyan-800',
-    AD: 'bg-[var(--color-surface-muted)] text-ui',
+    CA: componentStyles.status.badgeDefault, // brand -> default
+    CB: componentStyles.status.badgeInfo,
+    TC: componentStyles.status.badgeDefault, // purple -> default
+    TM: componentStyles.status.badgeSuccess,
+    FM: componentStyles.status.badgeDefault, // pink -> default
+    VC: componentStyles.status.badgeInfo, // cyan -> info
+    AD: componentStyles.status.badgeDefault,
   };
 
   const focoLabels = {
@@ -645,11 +645,11 @@ function EstadisticasPageContent() {
   };
 
   const focoColors = {
-    GEN: 'bg-[var(--color-surface-muted)] text-ui',
-    LIG: 'bg-blue-100 text-blue-800',
-    RIT: 'bg-purple-100 text-purple-800',
-    ART: 'bg-green-100 text-green-800',
-    'S&A': 'bg-brand-100 text-brand-800',
+    GEN: componentStyles.status.badgeDefault,
+    LIG: componentStyles.status.badgeInfo,
+    RIT: componentStyles.status.badgeDefault, // purple -> default
+    ART: componentStyles.status.badgeSuccess,
+    'S&A': componentStyles.status.badgeDefault, // brand -> default
   };
 
   const comentariosFiltrados = feedbackAlumno.comentarios.filter(r => {
@@ -869,7 +869,7 @@ function EstadisticasPageContent() {
                         content={({ active, payload }) => {
                           if (!active || !payload || payload.length === 0) return null;
                           return (
-                            <div className="bg-card border border-[var(--color-border-default)] app-panel shadow-card p-3">
+                            <div className={`bg-card border border-[var(--color-border-default)] ${componentStyles.containers.panelBase} shadow-card p-3`}>
                               <p className="text-xs font-semibold mb-2 text-ui">
                                 {granularidad === 'dia' 
                                   ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
@@ -936,7 +936,7 @@ function EstadisticasPageContent() {
                         content={({ active, payload }) => {
                           if (!active || !payload || payload.length === 0) return null;
                           return (
-                            <div className="bg-card border border-[var(--color-border-default)] app-panel shadow-card p-3">
+                            <div className={`bg-card border border-[var(--color-border-default)] ${componentStyles.containers.panelBase} shadow-card p-3`}>
                               <p className="text-xs font-semibold mb-2 text-ui">
                                 {granularidad === 'dia' 
                                   ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
@@ -1005,7 +1005,7 @@ function EstadisticasPageContent() {
                         content={({ active, payload }) => {
                           if (!active || !payload || payload.length === 0) return null;
                           return (
-                            <div className="bg-card border border-[var(--color-border-default)] app-panel shadow-card p-3">
+                            <div className={`bg-card border border-[var(--color-border-default)] ${componentStyles.containers.panelBase} shadow-card p-3`}>
                               <p className="text-xs font-semibold mb-2 text-ui">
                                 {granularidad === 'dia' 
                                   ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
@@ -1059,7 +1059,7 @@ function EstadisticasPageContent() {
               ) : (
                 <div className="space-y-2">
                   {datosLinea.map((item, idx) => (
-                    <Card key={idx} className="app-panel hover:shadow-md transition-shadow">
+                    <Card key={idx} className={`${componentStyles.containers.panelBase} hover:shadow-md transition-shadow`}>
                       <CardContent className="pt-3 pb-3">
                         <div className="flex items-center justify-between flex-wrap gap-2">
                           <span className="text-sm font-medium">{item.fecha}</span>
@@ -1070,17 +1070,17 @@ function EstadisticasPageContent() {
                               </Badge>
                             )}
                             {item.satisfaccion && (
-                              <Badge className="rounded-full bg-blue-100 text-blue-800 text-xs">
+                              <Badge className={componentStyles.status.badgeInfo}>
                                 ⭐ {item.satisfaccion}/4
                               </Badge>
                             )}
                             {item.completados > 0 && (
-                              <Badge className="rounded-full bg-green-100 text-green-800 text-xs">
+                              <Badge className={componentStyles.status.badgeSuccess}>
                                 ✓ {item.completados}
                               </Badge>
                             )}
                             {item.omitidos > 0 && (
-                              <Badge className="rounded-full bg-red-100 text-red-800 text-xs">
+                              <Badge className={componentStyles.status.badgeDanger}>
                                 ⏭ {item.omitidos}
                               </Badge>
                             )}
@@ -1172,7 +1172,7 @@ function EstadisticasPageContent() {
               ) : (
                 <div className="space-y-2">
                   {topEjerciciosFiltrados.slice(0, 20).map((ejercicio, idx) => (
-                    <Card key={idx} className="app-panel hover:shadow-md transition-shadow">
+                    <Card key={idx} className={`${componentStyles.containers.panelBase} hover:shadow-md transition-shadow`}>
                       <CardContent className="pt-3 pb-3">
                         <div className="flex items-center gap-2 flex-wrap">
                           <Badge className="rounded-full bg-muted text-ui font-bold w-8 h-8 flex items-center justify-center shrink-0">
@@ -1186,10 +1186,10 @@ function EstadisticasPageContent() {
                             <p className="text-xs text-ui/80">{ejercicio.code}</p>
                           </div>
                           <div className="flex gap-2 flex-wrap shrink-0">
-                            <Badge variant="outline" className="rounded-full text-xs bg-blue-50">
+                            <Badge variant="outline" className={componentStyles.status.badgeInfo}>
                               {ejercicio.sesionesCount} sesiones
                             </Badge>
-                            <Badge variant="outline" className="rounded-full text-xs bg-brand-50">
+                            <Badge variant="outline" className={componentStyles.status.badgeDefault}>
                               {formatDuracionHM(ejercicio.tiempoTotal)}
                             </Badge>
                             {ejercicio.ultimaPractica && (
@@ -1224,7 +1224,7 @@ function EstadisticasPageContent() {
                   {registrosFiltradosUnicos.slice(0, 50).map((registro) => {
                     const alumno = usuarios.find(u => u.id === registro.alumnoId);
                     return (
-                      <Card key={registro.id} className="app-panel hover:shadow-md transition-shadow">
+                      <Card key={registro.id} className={`${componentStyles.containers.panelBase} hover:shadow-md transition-shadow`}>
                         <CardContent className="pt-4">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
@@ -1240,14 +1240,14 @@ function EstadisticasPageContent() {
                                 {registro.piezaNombre} • {registro.planNombre}
                               </p>
                               <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                <Badge variant="outline" className="rounded-full text-xs bg-green-50 border-green-300 text-green-800">
+                                <Badge variant="outline" className={componentStyles.status.badgeSuccess}>
                                   {formatDuracionHM(registro.duracionRealSeg)}
                                 </Badge>
                                 <Badge variant="outline" className="rounded-full text-xs">
                                   Obj: {formatDuracionHM(registro.duracionObjetivoSeg)}
                                 </Badge>
                                 {registro.calificacion !== undefined && registro.calificacion !== null && (
-                                  <Badge className="rounded-full bg-purple-100 text-purple-800 text-xs">
+                                  <Badge className={componentStyles.status.badgeDefault}>
                                     {registro.calificacion}/4
                                   </Badge>
                                 )}
@@ -1316,11 +1316,11 @@ function EstadisticasPageContent() {
                     feedbackProfesor.map(f => {
                       const profesor = usuarios.find(u => u.id === f.profesorId);
                       return (
-                        <Card key={f.id} className="app-card border-blue-200 bg-blue-50/30 hover:shadow-md transition-shadow">
+                        <Card key={f.id} className={`${componentStyles.containers.cardBase} border-[var(--color-info)] bg-[var(--color-info)]/10 hover:shadow-md transition-shadow`}>
                           <CardContent className="pt-4">
                             <div className="space-y-2">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <Badge className="rounded-full bg-blue-600 text-white">
+                                <Badge className={componentStyles.status.badgeInfo}>
                                   Semana {parseLocalDate(f.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                                 </Badge>
                                 <span className="text-xs text-ui/80">
@@ -1347,7 +1347,7 @@ function EstadisticasPageContent() {
                 <>
                   <div className="grid grid-cols-4 gap-2 md:gap-3">
                     {[1, 2, 3, 4].map(nivel => (
-                      <div key={nivel} className="text-center p-2 md:p-3 app-panel hover:shadow-sm transition-shadow">
+                      <div key={nivel} className={`text-center p-2 md:p-3 ${componentStyles.containers.panelBase} hover:shadow-sm transition-shadow`}>
                         <p className="text-xl md:text-2xl font-bold text-ui">{feedbackAlumno.distribucion[nivel]}</p>
                         <p className="text-xs text-ui/80">Nivel {nivel}</p>
                         <p className="text-xs text-ui/80">
@@ -1367,7 +1367,7 @@ function EstadisticasPageContent() {
                       comentariosFiltrados.slice(0, 20).map(r => {
                         const alumno = usuarios.find(u => u.id === r.alumnoId);
                         return (
-                          <Card key={r.id} className="app-panel hover:shadow-md transition-shadow">
+                          <Card key={r.id} className={`${componentStyles.containers.panelBase} hover:shadow-md transition-shadow`}>
                             <CardContent className="pt-3 pb-3">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1 min-w-0">

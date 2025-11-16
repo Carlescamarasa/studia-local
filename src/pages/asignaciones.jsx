@@ -19,6 +19,7 @@ import FormularioRapido from "@/components/asignaciones/FormularioRapido";
 import { getNombreVisible, formatLocalDate, parseLocalDate } from "../components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from "@/components/ds/PageHeader";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function AsignacionesPage() {
   return (
@@ -164,10 +165,10 @@ function AsignacionesPageContent() {
   };
 
   const estadoColors = {
-    borrador: 'bg-[var(--color-surface-muted)] text-ui',
-    publicada: 'bg-green-100 text-green-800',
-    en_curso: 'bg-blue-100 text-blue-800',
-    cerrada: 'bg-amber-100 text-amber-800',
+    borrador: componentStyles.status.badgeDefault,
+    publicada: componentStyles.status.badgeSuccess,
+    en_curso: componentStyles.status.badgeInfo,
+    cerrada: componentStyles.status.badgeWarning,
   };
 
   const columns = [
@@ -231,7 +232,7 @@ function AsignacionesPageContent() {
         title="Asignaciones"
         subtitle="Gestiona las asignaciones de tus estudiantes"
         actions={
-          <Button onClick={() => setShowForm(!showForm)} className="h-10 rounded-xl btn-primary shadow-sm">
+          <Button onClick={() => setShowForm(!showForm)} className={componentStyles.buttons.primary}>
             <Plus className="w-4 h-4 mr-2" />
             Nueva
           </Button>
@@ -244,7 +245,7 @@ function AsignacionesPageContent() {
                 placeholder="Buscar estudiante o pieza..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-9 h-10 rounded-xl border-[var(--color-border-default)] focus-brand"
+                className={`pl-9 pr-9 ${componentStyles.controls.inputDefault} focus-brand`}
               />
               {searchTerm && (
                 <button
@@ -258,7 +259,7 @@ function AsignacionesPageContent() {
             </div>
             
             <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-              <SelectTrigger className="w-40 h-10 rounded-xl border-[var(--color-border-default)]">
+              <SelectTrigger className={`w-40 ${componentStyles.controls.selectDefault}`}>
                 <SelectValue placeholder="Estado" />
               </SelectTrigger>
               <SelectContent>
@@ -273,7 +274,7 @@ function AsignacionesPageContent() {
             <Button
               variant="outline"
               onClick={exportarCSV}
-              className="h-10 rounded-xl"
+              className={componentStyles.buttons.outline}
             >
               <FileDown className="w-4 h-4 mr-2" />
               Exportar CSV
@@ -284,14 +285,14 @@ function AsignacionesPageContent() {
 
       <div className="max-w-7xl mx-auto p-4 md:p-6 lg:px-8 space-y-4">
         {showForm && (
-          <Card className="app-card">
+          <Card className={componentStyles.containers.cardBase}>
             <CardContent className="pt-6">
               <FormularioRapido onClose={() => setShowForm(false)} />
             </CardContent>
           </Card>
         )}
 
-        <Card className="app-card">
+        <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
             <CardTitle className="text-lg">
               {asignacionesFiltradas.length} asignaciones

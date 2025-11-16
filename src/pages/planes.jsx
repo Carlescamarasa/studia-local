@@ -1,28 +1,22 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
-import { BookOpen } from "lucide-react";
+import PageHeader from "@/components/ds/PageHeader";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function PlanesPage() {
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="icon-tile">
-            <BookOpen className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-ui">Planes de Estudio</h1>
-            <p className="text-ui/80">Diseña planes pedagógicos estructurados</p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Planes de Estudio"
+        subtitle="Diseña planes pedagógicos estructurados"
+      />
 
-      <Card className="app-card">
+      <Card className={componentStyles.containers.cardBase}>
         <CardHeader>
           <CardTitle>Próximamente</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-ui/80">
+          <p className={componentStyles.typography.bodyText}>
             Crea planes con semanas y sesiones organizadas.
           </p>
         </CardContent>

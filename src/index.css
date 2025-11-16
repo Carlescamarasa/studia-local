@@ -158,32 +158,12 @@ button:focus-visible {
 }
 
 @layer components {
-  /* Cards y paneles globales */
-  .app-card {
-    background-color: var(--color-surface);
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border-strong);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
-    /* TODO(FASE1-DS4): Confirmar que `--radius-card` proviene de designConfig.
-       Alias pendiente: `--card-radius` vs `--radius-card` (unificar en FASE 3). */
-  }
-  .app-panel {
-    background-color: var(--color-surface);
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border-muted);
-    border-radius: var(--radius-card);
-    /* TODO(FASE1-DS4): Mantener paneles sin sombra por defecto según guía. */
-  }
-
   /* Tipografía semántica */
   .text-ui {
     color: var(--color-text-primary);
   }
   .text-muted {
-    /* Mezclar con la superficie (no transparente) para evitar bajar opacidad y perder contraste */
     color: var(--color-text-secondary);
-    /* TODO(FASE1-DS4): Usar sólo para meta/desactivado. No en contenido primario (ver README §5.6). */
   }
 
   /* Controles unificados */
@@ -194,8 +174,6 @@ button:focus-visible {
     border-radius: var(--radius-ctrl);
     padding: var(--input-padding);
     line-height: 1.5;
-    /* TODO(FASE1-DS4): `--radius-ctrl` no lo genera designConfig (emite `--radius-controls`).
-       Añadir alias en generateCSSVariables en FASE 3 para evitar incoherencias. */
   }
   .ctrl-field::placeholder {
     color: var(--color-text-secondary);
@@ -205,51 +183,107 @@ button:focus-visible {
     box-shadow: var(--focus-ring);
   }
 
+  /* Variante underline para controles */
+  .ctrl-field--underline {
+    border: none;
+    border-bottom: 2px solid var(--color-border-strong);
+    border-radius: 0;
+    background-color: transparent;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .ctrl-field--underline:focus-visible {
+    border-bottom-color: var(--color-primary);
+    box-shadow: none;
+  }
+
   /* Botones semánticos */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    transition: all 150ms ease-out;
+    cursor: pointer;
+    border-radius: var(--button-radius);
+  }
   .btn-primary {
     background-color: var(--color-primary);
     color: var(--color-text-inverse);
     border: 1px solid var(--color-primary);
-    border-radius: var(--button-radius);
-    padding: var(--button-padding-md);
-    /* TODO(FASE1-DS4): Confirmar hover/active a través de componentStyles o variantes en designConfig.components.button.variants. */
+  }
+  .btn-primary:hover {
+    background-color: var(--color-secondary);
+    border-color: var(--color-secondary);
   }
   .btn-secondary {
     background-color: var(--color-surface);
     color: var(--color-text-primary);
     border: 1px solid var(--color-border-default);
-    border-radius: var(--button-radius);
-    padding: var(--button-padding-md);
+  }
+  .btn-secondary:hover {
+    background-color: var(--color-surface-muted);
   }
   .btn-outline {
     background-color: transparent;
     color: var(--color-text-primary);
     border: 1px solid var(--color-border-strong);
-    border-radius: var(--button-radius);
-    padding: var(--button-padding-md);
+  }
+  .btn-outline:hover {
+    background-color: var(--color-surface-muted);
   }
   .btn-ghost {
     background-color: transparent;
     color: var(--color-text-primary);
     border: 1px solid transparent;
-    border-radius: var(--button-radius);
-    padding: var(--button-padding-md);
+  }
+  .btn-ghost:hover {
+    background-color: var(--color-surface-muted);
   }
   .btn-danger {
     background-color: var(--color-danger);
     color: var(--color-text-inverse);
     border: 1px solid var(--color-danger);
-    border-radius: var(--button-radius);
-    padding: var(--button-padding-md);
+  }
+  .btn-danger:hover {
+    background-color: var(--color-danger);
+    opacity: 0.9;
   }
   .btn-disabled {
     opacity: 0.5;
     pointer-events: none;
+    cursor: not-allowed;
   }
-  .btn-sm { padding: var(--button-padding-sm); }
-  .btn-md { padding: var(--button-padding-md); }
-  .btn-lg { padding: var(--button-padding-lg); }
-  .btn-icon { padding: 0.375rem; border-radius: var(--button-radius); }
-  /* TODO(FASE1-DS4): Núcleo global OK (.btn-*, .ctrl-field, .app-card, .app-panel, tipografía).
-     Verificar si existen clases globales adicionales fuera de este núcleo para eliminarlas en FASE 3. */
+  .btn-sm {
+    padding: var(--button-padding-sm);
+    font-size: 0.875rem;
+  }
+  .btn-md {
+    padding: var(--button-padding-md);
+    font-size: 1rem;
+  }
+  .btn-lg {
+    padding: var(--button-padding-lg);
+    font-size: 1.125rem;
+  }
+  .btn-icon {
+    padding: 0.375rem;
+    border-radius: var(--button-radius);
+  }
+
+  /* Legacy: Cards y paneles (mantener solo por compatibilidad con usos directos) */
+  /* NOTA: Preferir usar componentStyles.containers.* o componentStyles.items.* en lugar de estas clases */
+  .app-card {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+  .app-panel {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-muted);
+    border-radius: var(--radius-card);
+  }
 }

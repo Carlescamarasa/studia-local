@@ -283,10 +283,10 @@ function AgendaPageContent() {
 
         {/* Lista de estudiantes */}
         {estudiantesFiltrados.length === 0 ? (
-          <Card className="app-card">
+          <Card className={componentStyles.containers.cardBase}>
             <CardContent className="text-center py-12">
-              <User className="w-16 h-16 mx-auto mb-4 icon-empty" />
-              <p className="text-ui/80">
+              <User className={`w-16 h-16 mx-auto mb-4 ${componentStyles.empty.emptyIcon}`} />
+              <p className={componentStyles.empty.emptyText}>
                 {searchTerm ? 'No se encontraron estudiantes' : 'No hay estudiantes asignados'}
               </p>
             </CardContent>
@@ -349,14 +349,14 @@ function AgendaPageContent() {
                   <CardContent className="space-y-4 p-4">
                     {!asignacionActiva || !semana ? (
                       <div className="text-center py-6 border-2 border-dashed rounded-2xl bg-muted">
-                        <Target className="w-10 h-10 mx-auto mb-2 icon-empty" />
+                        <Target className={`w-10 h-10 mx-auto mb-2 ${componentStyles.empty.emptyIcon}`} />
                         <p className="text-sm text-ui/80">Sin asignación esta semana</p>
                       </div>
                     ) : (
                       <>
                         <div className="space-y-3">
                           <div className={"flex items-start gap-2 " + componentStyles.components.toneRowPlan}>
-                            <Music className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                            <Music className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
                             <div className="min-w-0 flex-1">
                               <p className="text-xs text-ui/80">Pieza</p>
                               <p className="text-sm font-medium break-words">{asignacionActiva.piezaSnapshot?.nombre}</p>
@@ -364,7 +364,7 @@ function AgendaPageContent() {
                           </div>
                           
                           <div className={"flex items-start gap-2 " + componentStyles.components.toneRowSemana}>
-                            <Target className="w-4 h-4 text-purple-600 mt-0.5 shrink-0" />
+                            <Target className="w-4 h-4 text-[var(--color-accent)] mt-0.5 shrink-0" />
                             <div className="min-w-0 flex-1">
                               <p className="text-xs text-ui/80">Semana del Plan</p>
                               <p className="text-sm font-medium break-words">{semana.nombre}</p>
@@ -396,7 +396,7 @@ function AgendaPageContent() {
                                     <CardContent className="pt-3 pb-3 px-3">
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-sm font-medium">{sesion.nombre}</span>
-                                        <Badge variant="outline" className="rounded-full text-xs bg-green-50 border-green-300 text-green-800">
+                                        <Badge variant="outline" className={componentStyles.status.badgeSuccess}>
                                           ⏱ {mins}:{String(secs).padStart(2, '0')} min
                                         </Badge>
                                       </div>
@@ -416,11 +416,11 @@ function AgendaPageContent() {
                         {isProfesorOrAdmin && (
                           <div className="pt-3 border-t border-[var(--color-border-default)]">
                             {feedback ? (
-                              <div className="bg-blue-50 rounded-2xl p-3 space-y-2">
+                              <div className={`bg-[var(--color-info)]/10 rounded-2xl p-3 space-y-2`}>
                                 <div className="flex items-center justify-between gap-2 flex-wrap">
                                   <div className="flex items-center gap-2">
-                                    <MessageSquare className="w-4 h-4 text-blue-600" />
-                                    <span className="text-sm font-semibold text-blue-900">Feedback del profesor</span>
+                                    <MessageSquare className="w-4 h-4 text-[var(--color-info)]" />
+                                    <span className={`${componentStyles.typography.sectionTitle} text-[var(--color-info)]`}>Feedback del profesor</span>
                                   </div>
                                   <div className="flex gap-1">
                                     <Button
@@ -448,7 +448,7 @@ function AgendaPageContent() {
                                   </div>
                                 </div>
                                 {feedback.notaProfesor && (
-                                  <p className="text-sm text-ui italic border-l-2 border-blue-300 pl-2 break-words">
+                                  <p className={`${componentStyles.typography.bodyText} italic border-l-2 border-[var(--color-info)] pl-2 break-words`}>
                                     "{feedback.notaProfesor}"
                                   </p>
                                 )}
@@ -466,7 +466,7 @@ function AgendaPageContent() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => abrirFeedbackDrawer(alumno)}
-                                className="w-full h-9 rounded-xl"
+                                className={`w-full ${componentStyles.buttons.outline}`}
                               >
                                 <MessageSquare className="w-4 h-4 mr-2" />
                                 Dar feedback de esta semana

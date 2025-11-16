@@ -18,6 +18,7 @@ import { displayName } from "@/components/utils/helpers";
 import WeekNavigator from "../components/common/WeekNavigator";
 import RequireRole from "@/components/auth/RequireRole";
 import PageHeader from "@/components/ds/PageHeader";
+import { componentStyles } from "@/design/componentStyles";
 
 // --- Helpers de fechas locales ---
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -97,11 +98,11 @@ function SemanaPageContent() {
   };
 
   const focoColors = {
-    GEN: 'bg-[var(--color-surface-muted)] text-ui',
-    LIG: 'bg-blue-100 text-blue-800',
-    RIT: 'bg-purple-100 text-purple-800',
-    ART: 'bg-green-100 text-green-800',
-    'S&A': 'bg-brand-100 text-brand-800',
+    GEN: componentStyles.status.badgeDefault,
+    LIG: componentStyles.status.badgeInfo,
+    RIT: componentStyles.status.badgeDefault, // Usar default para púrpura (no hay badge púrpura en el sistema)
+    ART: componentStyles.status.badgeSuccess,
+    'S&A': componentStyles.status.badgeDefault, // Usar default para brand (no hay badge brand específico)
   };
 
   return (
@@ -177,12 +178,12 @@ function SemanaPageContent() {
                 )}
 
                 {feedbackSemana && feedbackSemana.notaProfesor && (
-                  <div className="pt-3 border-t bg-blue-50 -mx-6 px-6 py-4 -mb-6">
+                  <div className={`pt-3 border-t border-[var(--color-border-default)] bg-[var(--color-info)]/10 -mx-6 px-6 py-4 -mb-6`}>
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <MessageSquare className="w-4 h-4 text-blue-600 shrink-0" />
-                      <p className="text-sm font-semibold text-blue-900">Feedback del profesor</p>
+                      <MessageSquare className="w-4 h-4 text-[var(--color-info)] shrink-0" />
+                      <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-info)]`}>Feedback del profesor</p>
                     </div>
-                    <p className="text-sm text-ui italic border-l-2 border-blue-300 pl-3 break-words">
+                    <p className={`${componentStyles.typography.bodyText} italic border-l-2 border-[var(--color-info)] pl-3 break-words`}>
                       "{feedbackSemana.notaProfesor}"
                     </p>
                     <p className="text-xs text-ui/80 mt-2">
@@ -208,16 +209,16 @@ function SemanaPageContent() {
                     const segundos = tiempoTotal % 60;
                     
                     return (
-                      <Card key={idx} className="border-blue-200 bg-blue-50/30">
+                      <Card key={idx} className={`${componentStyles.items.itemCard} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
                         <CardContent className="pt-4">
                           <div className="space-y-2">
                             <div className="flex items-start gap-2 flex-wrap">
-                              <PlayCircle className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
-                              <span className="font-semibold text-sm md:text-base flex-1 break-words">{sesion.nombre}</span>
+                              <PlayCircle className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
+                              <span className={`${componentStyles.typography.cardTitle} flex-1 break-words`}>{sesion.nombre}</span>
                             </div>
                             
                             <div className="flex items-center gap-2 flex-wrap">
-                              <Badge variant="outline" className="text-xs bg-green-50 border-green-300 text-green-800">
+                              <Badge variant="outline" className={componentStyles.status.badgeSuccess}>
                                 ⏱ {minutos}:{String(segundos).padStart(2, '0')} min
                               </Badge>
                               <Badge className={focoColors[sesion.foco]} variant="outline">
@@ -248,7 +249,7 @@ function SemanaPageContent() {
                 variant="primary"
                 onClick={() => navigate(createPageUrl('hoy'))}
                 size="lg"
-                className="w-full md:w-auto h-12 rounded-xl shadow-sm focus-brand"
+                className={`${componentStyles.buttons.primary} w-full md:w-auto h-12 shadow-sm focus-brand`}
               >
                 <PlayCircle className="w-5 h-5 mr-2" />
                 Ir a Estudiar Ahora

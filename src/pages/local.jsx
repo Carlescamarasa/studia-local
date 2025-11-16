@@ -11,6 +11,8 @@ import { rebuildAllLocalData, rebuildLocalData } from '@/local-data/rebuildLocal
 import { printValidationReport } from '@/local-data/verifyLocalData';
 import { toast } from 'sonner';
 import { displayName } from '@/components/utils/helpers';
+import PageHeader from '@/components/ds/PageHeader';
+import { componentStyles } from '@/design/componentStyles';
 
 export default function LocalPage() {
   const navigate = useNavigate();
@@ -118,19 +120,24 @@ export default function LocalPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto p-6 space-y-6">
-        <Card>
+        <PageHeader
+          title="Modo Local - Sin Autenticación"
+          subtitle="Selecciona un usuario para trabajar en modo local"
+        />
+
+        <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
-            <CardTitle>Modo Local - Sin Autenticación</CardTitle>
+            <CardTitle>Seleccionar Usuario</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-ui mb-2 block">
+              <label className={`${componentStyles.typography.sectionTitle} mb-2 block`}>
                 Seleccionar Usuario:
               </label>
               <select
                 value={selectedUserId}
                 onChange={(e) => handleUserChange(e.target.value)}
-                className="w-full p-2 border rounded-lg bg-card text-ui"
+                className={`w-full ${componentStyles.controls.selectDefault}`}
               >
                 {usuarios.map((user) => (
                   <option key={user.id} value={user.id}>
@@ -140,21 +147,21 @@ export default function LocalPage() {
               </select>
             </div>
 
-            <div className="pt-4 border-t">
-              <p className="text-sm text-muted mb-4">
+            <div className="pt-4 border-t border-[var(--color-border-default)]">
+              <p className={`${componentStyles.typography.smallMetaText} mb-4`}>
                 Usuario actual: <strong>{displayName(currentUser)}</strong> ({roleLabel[role]})
               </p>
             </div>
 
             {isDev && (
-              <div className="pt-4 border-t space-y-3">
-                <p className="text-sm font-medium text-ui">🔧 Herramientas de Desarrollo</p>
+              <div className="pt-4 border-t border-[var(--color-border-default)] space-y-3">
+                <p className={componentStyles.typography.sectionTitle}>🔧 Herramientas de Desarrollo</p>
                 <div className="flex gap-2 flex-wrap">
                   <Button
                     onClick={handleRepairData}
                     disabled={isRepairing}
                     variant="outline"
-                    className="h-9 rounded-xl"
+                    className={componentStyles.buttons.outline}
                   >
                     <RefreshCw className={`w-4 h-4 mr-2 ${isRepairing ? 'animate-spin' : ''}`} />
                     {isRepairing ? 'Reparando...' : 'Reparar Datos'}
@@ -163,7 +170,7 @@ export default function LocalPage() {
                     onClick={handleRegenerateData}
                     disabled={isRegenerating}
                     variant="outline"
-                    className="h-9 rounded-xl"
+                    className={componentStyles.buttons.outline}
                   >
                     <Database className="w-4 h-4 mr-2" />
                     {isRegenerating ? 'Regenerando...' : 'Regenerar Datos Locales'}
@@ -172,13 +179,13 @@ export default function LocalPage() {
                     onClick={handleValidateData}
                     disabled={isValidating}
                     variant="outline"
-                    className="h-9 rounded-xl"
+                    className={componentStyles.buttons.outline}
                   >
                     <RefreshCw className={`w-4 h-4 mr-2 ${isValidating ? 'animate-spin' : ''}`} />
                     {isValidating ? 'Validando...' : 'Validar Datos'}
                   </Button>
                 </div>
-                <p className="text-xs text-muted">
+                <p className={componentStyles.typography.smallMetaText}>
                   Estas herramientas solo están disponibles en modo desarrollo.
                 </p>
               </div>
@@ -190,16 +197,16 @@ export default function LocalPage() {
           {navigationItems[role]?.map((item) => (
             <Card
               key={item.url}
-              className="cursor-pointer hover:shadow-lg transition-shadow"
+              className={`${componentStyles.items.itemCard} cursor-pointer hover:shadow-lg transition-shadow`}
               onClick={() => navigate(createPageUrl(item.url.split('/').pop()))}
             >
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center">
-                    <item.icon className="w-6 h-6 text-brand-600" />
+                  <div className="w-12 h-12 bg-[hsl(var(--brand-100))] rounded-xl flex items-center justify-center">
+                    <item.icon className="w-6 h-6 text-[hsl(var(--brand-600))]" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg text-ui">{item.title}</h3>
+                    <h3 className={componentStyles.typography.cardTitle}>{item.title}</h3>
                   </div>
                 </div>
               </CardContent>

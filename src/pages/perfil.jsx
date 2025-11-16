@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import { displayName } from "../components/utils/helpers";
 import { useSearchParams } from "react-router-dom";
 import MediaLinksInput from "@/components/common/MediaLinksInput";
+import PageHeader from "@/components/ds/PageHeader";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function PerfilPage() {
   const navigate = useNavigate();
@@ -182,32 +184,21 @@ export default function PerfilPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto">
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="icon-tile">
-            <User className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-title">
-              {isEditingOwnProfile ? 'Mi Perfil' : `Perfil de ${getNombreCompleto(targetUser)}`}
-            </h1>
-            <p className="text-subtitle">
-              {isEditingOwnProfile ? 'Edita tu información personal' : 'Edita la información del usuario'}
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title={isEditingOwnProfile ? 'Mi Perfil' : `Perfil de ${getNombreCompleto(targetUser)}`}
+        subtitle={isEditingOwnProfile ? 'Edita tu información personal' : 'Edita la información del usuario'}
+      />
 
       {saveResult && (
-        <Alert className={`mb-6 app-panel ${saveResult.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
-          <AlertDescription className={saveResult.success ? 'text-green-800' : 'text-red-800'}>
+        <Alert className={`mb-6 ${componentStyles.containers.panelBase} ${saveResult.success ? 'border-[var(--color-success)] bg-[var(--color-success)]/10' : 'border-[var(--color-danger)] bg-[var(--color-danger)]/10'}`}>
+          <AlertDescription className={saveResult.success ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}>
             {saveResult.success ? <CheckCircle className="w-4 h-4 inline mr-2" /> : <AlertCircle className="w-4 h-4 inline mr-2" />}
             {saveResult.message}
           </AlertDescription>
         </Alert>
       )}
 
-      <Card className="app-card">
+      <Card className={componentStyles.containers.cardBase}>
         <CardContent className="pt-6 space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -217,9 +208,9 @@ export default function PerfilPage() {
                 value={editedData.nombreCompleto}
                 onChange={(e) => setEditedData({ ...editedData, nombreCompleto: e.target.value })}
                 placeholder="Nombre y apellidos"
-                className="app-panel focus-brand"
+                className={`${componentStyles.controls.inputDefault} focus-brand`}
               />
-              <p className="text-xs text-muted">Este es el nombre visible en toda la aplicación</p>
+              <p className={componentStyles.typography.smallMetaText}>Este es el nombre visible en toda la aplicación</p>
             </div>
 
             <div className="space-y-2">
@@ -229,9 +220,9 @@ export default function PerfilPage() {
                 type="email"
                 value={editedData.email}
                 disabled
-                className="bg-muted cursor-not-allowed app-panel"
+                className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
               />
-              <p className="text-xs text-muted">El email no se puede modificar</p>
+              <p className={componentStyles.typography.smallMetaText}>El email no se puede modificar</p>
             </div>
 
             <div className="space-y-2">
@@ -242,32 +233,32 @@ export default function PerfilPage() {
                     value={editedData.rolPersonalizado}
                     onValueChange={(value) => setEditedData({ ...editedData, rolPersonalizado: value })}
                   >
-                    <SelectTrigger id="role" className="app-panel focus-brand">
+                    <SelectTrigger id="role" className={`${componentStyles.controls.selectDefault} focus-brand`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ADMIN">
                         <div className="flex items-center gap-2">
-                          <Shield className="w-4 h-4 text-purple-600" />
+                          <Shield className="w-4 h-4 text-[var(--color-accent)]" />
                           Administrador
                         </div>
                       </SelectItem>
                       <SelectItem value="PROF">
                         <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-blue-600" />
+                          <User className="w-4 h-4 text-[var(--color-info)]" />
                           Profesor
                         </div>
                       </SelectItem>
                       <SelectItem value="ESTU">
                         <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-green-600" />
+                          <User className="w-4 h-4 text-[var(--color-success)]" />
                           Estudiante
                         </div>
                       </SelectItem>
                     </SelectContent>
                   </Select>
                   {editedData.rolPersonalizado === 'ADMIN' && targetUser?.rolPersonalizado === 'ADMIN' && (
-                    <p className="text-xs text-amber-700 flex items-center gap-1">
+                    <p className={`${componentStyles.typography.smallMetaText} text-[var(--color-warning)] flex items-center gap-1`}>
                       <AlertCircle className="w-3 h-3" />
                       Verifica que no sea el último administrador antes de cambiar
                     </p>
@@ -279,9 +270,9 @@ export default function PerfilPage() {
                     id="role"
                     value={roleLabels[editedData.rolPersonalizado]}
                     disabled
-                    className="bg-muted cursor-not-allowed app-panel"
+                    className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
                   />
-                  <p className="text-xs text-muted mt-1">Solo administradores pueden cambiar roles</p>
+                  <p className={`${componentStyles.typography.smallMetaText} mt-1`}>Solo administradores pueden cambiar roles</p>
                 </div>
               )}
             </div>
@@ -294,7 +285,7 @@ export default function PerfilPage() {
                     value={editedData.profesorAsignadoId}
                     onValueChange={(value) => setEditedData({ ...editedData, profesorAsignadoId: value })}
                   >
-                    <SelectTrigger id="profesorAsignado" className="app-panel focus-brand">
+                    <SelectTrigger id="profesorAsignado" className={`${componentStyles.controls.selectDefault} focus-brand`}>
                       <SelectValue placeholder="Sin asignar" />
                     </SelectTrigger>
                     <SelectContent>
@@ -311,10 +302,10 @@ export default function PerfilPage() {
                     id="profesorAsignado"
                     value={editedData.profesorAsignadoId ? getNombreCompleto(allUsers?.find(u => u.id === editedData.profesorAsignadoId)) : 'Sin asignar'}
                     disabled
-                    className="bg-muted cursor-not-allowed app-panel"
+                    className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
                   />
                 )}
-                <p className="text-xs text-muted">
+                <p className={componentStyles.typography.smallMetaText}>
                   {canEditProfesor ? 'Asigna un profesor a este estudiante' : 'Solo administradores y profesores pueden editar'}
                 </p>
               </div>
@@ -328,7 +319,7 @@ export default function PerfilPage() {
                 value={editedData.telefono}
                 onChange={(e) => setEditedData({ ...editedData, telefono: e.target.value })}
                 placeholder="Ej: +34 600 000 000"
-                className="app-panel focus-brand"
+                className={`${componentStyles.controls.inputDefault} focus-brand`}
               />
             </div>
 
@@ -338,7 +329,7 @@ export default function PerfilPage() {
                 value={editedData.nivel}
                 onValueChange={(value) => setEditedData({ ...editedData, nivel: value })}
               >
-                <SelectTrigger id="nivel" className="app-panel focus-brand">
+                <SelectTrigger id="nivel" className={`${componentStyles.controls.selectDefault} focus-brand`}>
                   <SelectValue placeholder="Seleccionar nivel" />
                 </SelectTrigger>
                 <SelectContent>
@@ -358,7 +349,7 @@ export default function PerfilPage() {
                 value={editedData.mediaLinks}
                 onChange={(links) => setEditedData({ ...editedData, mediaLinks: links })}
               />
-              <p className="text-xs text-muted mt-2">
+              <p className={`${componentStyles.typography.smallMetaText} mt-2`}>
                 Enlaces multimedia personales (videos demostrativos, recursos, etc.)
               </p>
             </div>
@@ -373,7 +364,7 @@ export default function PerfilPage() {
               <Button
                 onClick={handleSave}
                 disabled={updateUserMutation.isPending}
-                className="btn-primary"
+                className={componentStyles.buttons.primary}
               >
                 {updateUserMutation.isPending ? (
                   <>
@@ -393,9 +384,9 @@ export default function PerfilPage() {
       </Card>
 
       {canEditRole && isEditingOwnProfile && (
-        <Alert className="mt-6 app-panel border-brand-200 bg-brand-50">
-          <AlertCircle className="h-4 w-4 text-brand-600" />
-          <AlertDescription className="text-brand-800">
+        <Alert className={`mt-6 ${componentStyles.containers.panelBase} border-[hsl(var(--brand-500))] bg-[hsl(var(--brand-50))]`}>
+          <AlertCircle className="h-4 w-4 text-[hsl(var(--brand-600))]" />
+          <AlertDescription className="text-[hsl(var(--brand-800))]">
             <strong>Advertencia:</strong> Si cambias tu propio rol, tu acceso y navegación en la aplicación se actualizarán automáticamente.
           </AlertDescription>
         </Alert>

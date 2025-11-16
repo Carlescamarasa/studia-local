@@ -13,6 +13,7 @@ import UnifiedTable from "@/components/tables/UnifiedTable";
 import { getNombreVisible } from "../components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from "@/components/ds/PageHeader";
+import { componentStyles } from "@/design/componentStyles";
 
 function UsuariosPageContent() {
   const navigate = useNavigate();
@@ -148,7 +149,7 @@ function UsuariosPageContent() {
                 placeholder="Buscar usuario..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-9 h-10 bg-transparent rounded-none border-0 border-b-2 border-[var(--color-border-strong)] text-ui placeholder:text-ui/60 focus:outline-none focus:ring-0 focus:border-[hsl(var(--ring))]"
+                className={`w-full pl-9 pr-9 ${componentStyles.controls.inputUnderline}`}
               />
               {searchTerm && (
                 <button
@@ -162,7 +163,7 @@ function UsuariosPageContent() {
             </div>
             
             <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-40 h-10">
+              <SelectTrigger className={`w-40 ${componentStyles.controls.selectDefault}`}>
                 <SelectValue placeholder="Rol" />
               </SelectTrigger>
               <SelectContent>
@@ -175,7 +176,7 @@ function UsuariosPageContent() {
 
             {roleFilter === 'ESTU' && profesores.length > 0 && (
               <Select value={profesorFilter} onValueChange={setProfesorFilter}>
-                <SelectTrigger className="w-48 h-10">
+                <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
                   <SelectValue placeholder="Profesor" />
                 </SelectTrigger>
                 <SelectContent>
@@ -190,7 +191,7 @@ function UsuariosPageContent() {
             <Button
               variant="outline"
               onClick={exportarCSV}
-              className="btn-secondary h-10"
+              className={componentStyles.buttons.secondary}
             >
               <FileDown className="w-4 h-4 mr-2" />
               Exportar CSV
@@ -200,7 +201,7 @@ function UsuariosPageContent() {
       />
 
       <div className="max-w-7xl mx-auto p-4 md:p-6 lg:px-8">
-        <Card className="app-card">
+        <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
             <CardTitle className="text-lg">{usuariosFiltrados.length} usuarios</CardTitle>
           </CardHeader>
