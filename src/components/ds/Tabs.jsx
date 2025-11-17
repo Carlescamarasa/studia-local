@@ -53,6 +53,13 @@ export default function Tabs({
       return;
     }
 
+    // En desktop con showIconsOnlyMobile, también mostrar texto + icono
+    // No ejecutar la detección automática de espacio
+    if (showIconsOnlyMobile && !isMobile) {
+      setShowIconsOnly(false);
+      return;
+    }
+
     // Solo ejecutar detección de espacio si estamos en mobile o si showIconsOnlyMobile no está definido
     let timeoutId;
     let rafId;
