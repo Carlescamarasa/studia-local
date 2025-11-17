@@ -28,8 +28,8 @@ export default function LoginPage() {
     try {
       await signIn(email, password);
       toast.success('Sesión iniciada correctamente');
-      // Redirigir a la página principal (agenda es la home por defecto)
-      navigate('/agenda', { replace: true });
+      // Redirigir a la página principal - index.jsx se encargará de redirigir según el rol
+      navigate('/', { replace: true });
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
       toast.error(error.message || 'Error al iniciar sesión. Verifica tus credenciales.');
