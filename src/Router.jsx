@@ -1,5 +1,6 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
+import RequireAuth from "@/components/auth/RequireAuth";
 
 // Páginas
 import IndexPage from "@/pages/index.jsx";
@@ -24,32 +25,43 @@ import Design from "@/pages/design.jsx";
 import Testseed from "@/pages/testseed.jsx";
 import Layout from "@/pages/Layout.jsx";
 import QAVisualPage from "@/pages/qa-visual.jsx";
+import LoginPage from "@/pages/auth/LoginPage.jsx";
 
 export default function AppRouter() {
   return (
     <Routes>
-      <Route element={<Layout />}>
-        <Route path="/" element={<IndexPage />} />
-        <Route path="/usuarios" element={<Usuarios />} />
-        <Route path="/planes" element={<Planes />} />
-        <Route path="/piezas" element={<Piezas />} />
-        <Route path="/sesiones" element={<Sesiones />} />
-        <Route path="/semana" element={<Semana />} />
-        <Route path="/semanas" element={<Semanas />} />
-        <Route path="/asignaciones" element={<Asignaciones />} />
-        <Route path="/asignacion-detalle" element={<AsignacionDetalle />} />
-        <Route path="/adaptar-asignacion" element={<AdaptarAsignacion />} />
-        <Route path="/hoy" element={<Hoy />} />
-        <Route path="/agenda" element={<Agenda />} />
-        <Route path="/perfil" element={<Perfil />} />
-        <Route path="/import-export" element={<ImportExport />} />
-        <Route path="/estadisticas" element={<Estadisticas />} />
-        <Route path="/estudiantes" element={<Estudiantes />} />
-        <Route path="/plantillas" element={<Plantillas />} />
-        <Route path="/design" element={<Design />} />
-        <Route path="/testseed" element={<Testseed />} />
-        <Route path="/local" element={<LocalPage />} />
-        <Route path="/qa-visual" element={<QAVisualPage />} />
+      {/* Ruta pública: login */}
+      <Route path="/login" element={<LoginPage />} />
+      
+      {/* Rutas protegidas: todas requieren autenticación */}
+      <Route
+        element={
+          <RequireAuth>
+            <Layout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<IndexPage />} />
+        <Route path="usuarios" element={<Usuarios />} />
+        <Route path="planes" element={<Planes />} />
+        <Route path="piezas" element={<Piezas />} />
+        <Route path="sesiones" element={<Sesiones />} />
+        <Route path="semana" element={<Semana />} />
+        <Route path="semanas" element={<Semanas />} />
+        <Route path="asignaciones" element={<Asignaciones />} />
+        <Route path="asignacion-detalle" element={<AsignacionDetalle />} />
+        <Route path="adaptar-asignacion" element={<AdaptarAsignacion />} />
+        <Route path="hoy" element={<Hoy />} />
+        <Route path="agenda" element={<Agenda />} />
+        <Route path="perfil" element={<Perfil />} />
+        <Route path="import-export" element={<ImportExport />} />
+        <Route path="estadisticas" element={<Estadisticas />} />
+        <Route path="estudiantes" element={<Estudiantes />} />
+        <Route path="plantillas" element={<Plantillas />} />
+        <Route path="design" element={<Design />} />
+        <Route path="testseed" element={<Testseed />} />
+        <Route path="local" element={<LocalPage />} />
+        <Route path="qa-visual" element={<QAVisualPage />} />
       </Route>
     </Routes>
   );

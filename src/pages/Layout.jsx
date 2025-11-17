@@ -29,6 +29,7 @@ import { getCurrentUser, setCurrentUser } from "@/api/localDataClient";
 import { useLocalData } from "@/local-data/LocalDataProvider";
 import logoLTS from "@/assets/Logo_LTS.png";
 import RoleBootstrap from "@/components/auth/RoleBootstrap";
+import { useAuth } from "@/auth/AuthProvider";
 import { SidebarProvider, useSidebar } from "@/components/ui/SidebarState";
 import {
   Tooltip,
@@ -99,6 +100,7 @@ function LayoutContent() {
   const navigate = useNavigate();
   const { abierto, toggleSidebar, closeSidebar } = useSidebar();
   const { usuarios } = useLocalData();
+  const { signOut } = useAuth();
 
   const [simulatingUser, setSimulatingUser] = useState(null);
   const [pointerStart, setPointerStart] = useState({ x: 0, y: 0, id: null });
@@ -280,11 +282,22 @@ function LayoutContent() {
   }, {});
 
   const logout = async () => {
-    sessionStorage.removeItem("simulatingUser");
-    sessionStorage.removeItem("originalUser");
-    sessionStorage.removeItem("originalPath");
-    // Eliminado: llamada al cliente de Base44, ya no es necesaria
-    // Reemplazado por lógica local con almacenamiento en localStorage
+    try {
+      // Limpiar simulación local si existe
+      sessionStorage.removeItem("simulatingUser");
+      sessionStorage.removeItem("originalUser");
+      sessionStorage.removeItem("originalPath");
+      
+      // Cerrar sesión en Supabase
+      await signOut();
+      
+      // Redirigir a login
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+      // Aun así redirigir a login
+      navigate("/login", { replace: true });
+    }
   };
 
   const stopSimulation = () => {
