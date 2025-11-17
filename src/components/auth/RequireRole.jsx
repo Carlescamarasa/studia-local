@@ -23,22 +23,12 @@ export default function RequireRole({ children, anyOf = [] }) {
     ? JSON.parse(simulatingUser).rolPersonalizado 
     : appRole;
 
-  // Debug: verificar valores
-  console.log('RequireRole Debug:', {
-    appRole,
-    effectiveRole,
-    anyOf,
-    hasAccess: anyOf.includes(effectiveRole),
-    simulatingUser: !!simulatingUser
-  });
-
   // Si tiene acceso, renderizar children
   if (anyOf.includes(effectiveRole)) {
     return <>{children}</>;
   }
 
   // Si no tiene acceso, mostrar mensaje de error
-  console.log('RequireRole: Mostrando mensaje de acceso denegado');
   return (
     <div className="flex items-center justify-center min-h-screen w-full" style={{ zIndex: 1 }}>
       <Card className={`max-w-md ${componentStyles.containers.cardBase} border-[var(--color-danger)]`}>

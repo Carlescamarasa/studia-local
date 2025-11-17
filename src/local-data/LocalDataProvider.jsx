@@ -3,6 +3,7 @@ import { localUsers } from './localUsers';
 import { setLocalDataRef } from '@/api/localDataClient';
 import { loadFromStorage, bootstrapFromSnapshot } from '@/data/localStorageClient';
 import { rebuildAllLocalData } from './rebuildLocalData';
+import { supabase } from '@/lib/supabaseClient';
 
 const LocalDataContext = createContext(null);
 
@@ -22,11 +23,16 @@ export function LocalDataProvider({ children }) {
   useEffect(() => {
     const loadData = async () => {
       try {
+        // Verificar si hay sesión de Supabase - si hay, no ejecutar rebuildAllLocalData
+        const { data: { session } } = await supabase.auth.getSession();
+        const hasSupabaseSession = !!session;
+
         // 1. Intentar cargar desde la nueva estructura unificada en localStorage
         let stored = loadFromStorage();
 
-        // 2. Si no existe STORAGE_KEY, inicializar usando rebuildLocalData como seed
-        if (!stored) {
+        // 2. Si no existe STORAGE_KEY y NO hay sesión de Supabase, inicializar usando rebuildLocalData como seed
+        // (Solo en modo local, no cuando hay autenticación de Supabase)
+        if (!stored && !hasSupabaseSession) {
           await rebuildAllLocalData({ limpiarExistente: false });
 
           const legacySnapshot = {
@@ -41,6 +47,18 @@ export function LocalDataProvider({ children }) {
           };
 
           stored = bootstrapFromSnapshot(legacySnapshot);
+        } else if (!stored && hasSupabaseSession) {
+          // Si hay sesión de Supabase pero no hay datos locales, usar estructura vacía
+          stored = {
+            asignaciones: [],
+            bloques: [],
+            feedbacksSemanal: [],
+            piezas: [],
+            planes: [],
+            registrosBloque: [],
+            registrosSesion: [],
+            usuarios: localUsers,
+          };
         }
 
         const loadedData = {
