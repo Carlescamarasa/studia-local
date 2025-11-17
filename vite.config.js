@@ -25,57 +25,16 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // React y React DOM - DEBE cargarse primero, en su propio chunk
+          // SOLO separar React - lo más crítico
           if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
             return 'react-core';
           }
-          
-          // React Router - depende de React, pero separado
-          if (id.includes('node_modules/react-router')) {
-            return 'react-router';
-          }
-          
-          // Recharts - librería grande e independiente
+          // Recharts es muy grande, separarlo
           if (id.includes('node_modules/recharts')) {
             return 'recharts';
           }
-          
-          // Supabase y React Query - chunk de datos
-          if (id.includes('node_modules/@supabase') || id.includes('node_modules/@tanstack/react-query')) {
-            return 'data-vendor';
-          }
-          
-          // Utilidades grandes pero independientes
-          if (id.includes('node_modules/date-fns') || id.includes('node_modules/zod')) {
-            return 'utils-vendor';
-          }
-          
-          // Lucide React - iconos (puede ser grande)
-          if (id.includes('node_modules/lucide-react')) {
-            return 'icons-vendor';
-          }
-          
-          // React Hook Form y validadores
-          if (id.includes('node_modules/react-hook-form') || id.includes('node_modules/@hookform')) {
-            return 'forms-vendor';
-          }
-          
-          // Framer Motion - animaciones (puede ser grande)
-          if (id.includes('node_modules/framer-motion')) {
-            return 'framer-motion';
-          }
-          
-          // Radix UI - mantener todos juntos para evitar problemas de inicialización
-          // PERO asegurar que se carga después de React
-          if (id.includes('node_modules/@radix-ui')) {
-            return 'radix-ui';
-          }
-          
-          // Otras dependencias de node_modules - vendor general
-          // Esto incluye cosas como sonner, cmdk, @hello-pangea/dnd, etc.
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
+          // Dejar que Vite maneje el resto automáticamente
+          // Esto evita problemas de dependencias circulares
         },
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
@@ -86,9 +45,9 @@ export default defineConfig({
       include: [/node_modules/],
       transformMixedEsModules: true,
     },
-    // Asegurar que los módulos se resuelvan correctamente
-    modulePreload: {
-      polyfill: true,
-    },
+    // Desactivar modulePreload
+    modulePreload: false,
+    minify: 'esbuild',
+    target: 'esnext',
   },
 }) 
