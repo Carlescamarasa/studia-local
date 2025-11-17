@@ -175,8 +175,8 @@ export default function PerfilPage() {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-ui/80">Cargando perfil...</p>
+          <div className="w-12 h-12 border-4 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+          <p className="text-[var(--color-text-secondary)]">Cargando perfil...</p>
         </div>
       </div>
     );
@@ -202,19 +202,19 @@ export default function PerfilPage() {
         <CardContent className="pt-6 space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="nombreCompleto">Nombre Completo *</Label>
+              <Label htmlFor="nombreCompleto" className="text-[var(--color-text-primary)]">Nombre Completo *</Label>
               <Input
                 id="nombreCompleto"
                 value={editedData.nombreCompleto}
                 onChange={(e) => setEditedData({ ...editedData, nombreCompleto: e.target.value })}
                 placeholder="Nombre y apellidos"
-                className={`${componentStyles.controls.inputDefault} focus-brand`}
+                className={componentStyles.controls.inputDefault}
               />
-              <p className={componentStyles.typography.smallMetaText}>Este es el nombre visible en toda la aplicación</p>
+              <p className="text-xs text-[var(--color-text-primary)]">Este es el nombre visible en toda la aplicación</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-[var(--color-text-primary)]">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -222,18 +222,18 @@ export default function PerfilPage() {
                 disabled
                 className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
               />
-              <p className={componentStyles.typography.smallMetaText}>El email no se puede modificar</p>
+              <p className="text-xs text-[var(--color-text-primary)]">El email no se puede modificar</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">Rol en el Sistema</Label>
+              <Label htmlFor="role" className="text-[var(--color-text-primary)]">Rol en el Sistema</Label>
               {canEditRole ? (
                 <div className="space-y-2">
                   <Select
                     value={editedData.rolPersonalizado}
                     onValueChange={(value) => setEditedData({ ...editedData, rolPersonalizado: value })}
                   >
-                    <SelectTrigger id="role" className={`${componentStyles.controls.selectDefault} focus-brand`}>
+                    <SelectTrigger id="role" className={componentStyles.controls.selectDefault}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -272,20 +272,20 @@ export default function PerfilPage() {
                     disabled
                     className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
                   />
-                  <p className={`${componentStyles.typography.smallMetaText} mt-1`}>Solo administradores pueden cambiar roles</p>
+                  <p className="text-xs mt-1 text-[var(--color-text-primary)]">Solo administradores pueden cambiar roles</p>
                 </div>
               )}
             </div>
 
             {isEstudiante && (
               <div className="space-y-2">
-                <Label htmlFor="profesorAsignado">Profesor Asignado</Label>
+                <Label htmlFor="profesorAsignado" className="text-[var(--color-text-primary)]">Profesor Asignado</Label>
                 {canEditProfesor ? (
                   <Select
                     value={editedData.profesorAsignadoId}
                     onValueChange={(value) => setEditedData({ ...editedData, profesorAsignadoId: value })}
                   >
-                    <SelectTrigger id="profesorAsignado" className={`${componentStyles.controls.selectDefault} focus-brand`}>
+                    <SelectTrigger id="profesorAsignado" className={componentStyles.controls.selectDefault}>
                       <SelectValue placeholder="Sin asignar" />
                     </SelectTrigger>
                     <SelectContent>
@@ -305,31 +305,31 @@ export default function PerfilPage() {
                     className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
                   />
                 )}
-                <p className={componentStyles.typography.smallMetaText}>
+                <p className="text-xs text-[var(--color-text-primary)]">
                   {canEditProfesor ? 'Asigna un profesor a este estudiante' : 'Solo administradores y profesores pueden editar'}
                 </p>
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="telefono">Teléfono</Label>
+              <Label htmlFor="telefono" className="text-[var(--color-text-primary)]">Teléfono</Label>
               <Input
                 id="telefono"
                 type="tel"
                 value={editedData.telefono}
                 onChange={(e) => setEditedData({ ...editedData, telefono: e.target.value })}
                 placeholder="Ej: +34 600 000 000"
-                className={`${componentStyles.controls.inputDefault} focus-brand`}
+                className={componentStyles.controls.inputDefault}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="nivel">Nivel Técnico</Label>
+              <Label htmlFor="nivel" className="text-[var(--color-text-primary)]">Nivel Técnico</Label>
               <Select
                 value={editedData.nivel}
                 onValueChange={(value) => setEditedData({ ...editedData, nivel: value })}
               >
-                <SelectTrigger id="nivel" className={`${componentStyles.controls.selectDefault} focus-brand`}>
+                <SelectTrigger id="nivel" className={componentStyles.controls.selectDefault}>
                   <SelectValue placeholder="Seleccionar nivel" />
                 </SelectTrigger>
                 <SelectContent>
@@ -349,7 +349,7 @@ export default function PerfilPage() {
                 value={editedData.mediaLinks}
                 onChange={(links) => setEditedData({ ...editedData, mediaLinks: links })}
               />
-              <p className={`${componentStyles.typography.smallMetaText} mt-2`}>
+              <p className="text-xs mt-2 text-[var(--color-text-primary)]">
                 Enlaces multimedia personales (videos demostrativos, recursos, etc.)
               </p>
             </div>
@@ -357,9 +357,9 @@ export default function PerfilPage() {
 
           <div className="pt-4 border-t border-[var(--color-border-default)]">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-ui/80">
-                <p>ID de usuario: <span className="font-mono">{targetUser?.id}</span></p>
-                <p>Registrado: {targetUser?.created_date ? new Date(targetUser.created_date).toLocaleDateString('es-ES') : '-'}</p>
+              <div className={`text-sm ${componentStyles.typography.smallMetaText}`}>
+                <p className="text-[var(--color-text-primary)]">ID de usuario: <span className="font-mono text-[var(--color-text-secondary)]">{targetUser?.id}</span></p>
+                <p className="text-[var(--color-text-primary)]">Registrado: <span className="text-[var(--color-text-secondary)]">{targetUser?.created_date ? new Date(targetUser.created_date).toLocaleDateString('es-ES') : '-'}</span></p>
               </div>
               <Button
                 onClick={handleSave}
@@ -384,9 +384,9 @@ export default function PerfilPage() {
       </Card>
 
       {canEditRole && isEditingOwnProfile && (
-        <Alert className={`mt-6 ${componentStyles.containers.panelBase} border-[hsl(var(--brand-500))] bg-[hsl(var(--brand-50))]`}>
-          <AlertCircle className="h-4 w-4 text-[hsl(var(--brand-600))]" />
-          <AlertDescription className="text-[hsl(var(--brand-800))]">
+        <Alert className={`mt-6 ${componentStyles.containers.panelBase} border-[var(--color-warning)]/20 bg-[var(--color-warning)]/10`}>
+          <AlertCircle className="h-4 w-4 text-[var(--color-warning)]" />
+          <AlertDescription className="text-[var(--color-warning)]">
             <strong>Advertencia:</strong> Si cambias tu propio rol, tu acceso y navegación en la aplicación se actualizarán automáticamente.
           </AlertDescription>
         </Alert>

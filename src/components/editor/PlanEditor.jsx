@@ -16,6 +16,7 @@ import WeekEditor from "./WeekEditor";
 import SessionEditor from "./SessionEditor";
 import ExerciseEditor from "./ExerciseEditor";
 import { createPortal } from "react-dom";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function PlanEditor({ plan, onClose }) {
   const queryClient = useQueryClient();
@@ -380,28 +381,30 @@ export default function PlanEditor({ plan, onClose }) {
       
       <div className="fixed inset-0 z-[90] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
         <div 
-          className="bg-white w-full max-w-5xl max-h-[92vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-8 app-card"
+          className="bg-[var(--color-surface-elevated)] w-full max-w-5xl max-h-[92vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-8 border border-[var(--color-border-default)]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="border-b px-6 py-4 flex items-center justify-between bg-card rounded-t-2xl">
-            <div className="flex items-center gap-3 text-[var(--color-primary)]">
-              <Calendar className="w-6 h-6 text-[var(--color-primary)]" />
-              <div>
-                <h2 className="text-xl font-bold text-[var(--color-primary)]">
-                  {plan ? 'Editar Plan' : 'Nuevo Plan'}
-                </h2>
-                <p className="text-sm text-[var(--color-primary)]/90">Plantilla de plan de estudio</p>
+          <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-2xl px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Calendar className="w-6 h-6 text-[var(--color-text-primary)]" />
+                <div>
+                  <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
+                    {plan ? 'Editar Plan' : 'Nuevo Plan'}
+                  </h2>
+                  <p className="text-sm text-[var(--color-text-secondary)]">Plantilla de plan de estudio</p>
+                </div>
               </div>
+              <Button variant="ghost" size="icon" onClick={onClose} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-9 w-9 rounded-xl" aria-label="Cerrar editor">
+                <X className="w-5 h-5" />
+              </Button>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose} className="text-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] h-9 w-9 rounded-xl" aria-label="Cerrar editor">
-              <X className="w-5 h-5 " />
-            </Button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {saveResult && (
-              <Alert className={saveResult.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
-                <AlertDescription className={saveResult.success ? 'text-green-800' : 'text-red-800'}>
+              <Alert className={saveResult.success ? 'border-[var(--color-success)]/20 bg-[var(--color-success)]/10' : 'border-[var(--color-danger)]/20 bg-[var(--color-danger)]/10'}>
+                <AlertDescription className="text-[var(--color-text-primary)]">
                   {saveResult.message}
                 </AlertDescription>
               </Alert>
@@ -409,27 +412,28 @@ export default function PlanEditor({ plan, onClose }) {
 
             <Card>
               <CardHeader>
-                <CardTitle>Información del Plan</CardTitle>
+                <CardTitle className="text-[var(--color-text-primary)]">Información del Plan</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="nombre">Nombre del Plan *</Label>
+                  <Label htmlFor="nombre" className="text-[var(--color-text-primary)]">Nombre del Plan *</Label>
                   <Input
                     id="nombre"
                     value={formData.nombre}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                     placeholder="Ej: Plan Inicial - Sonata Op. 1"
+                    className={componentStyles.controls.inputDefault}
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="pieza">Pieza Asociada *</Label>
+                  <Label htmlFor="pieza" className="text-[var(--color-text-primary)]">Pieza Asociada *</Label>
                   <Select 
                     value={formData.piezaId} 
                     onValueChange={(v) => setFormData({ ...formData, piezaId: v })}
                     modal={false}
                   >
-                    <SelectTrigger id="pieza" className="w-full">
+                    <SelectTrigger id="pieza" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue placeholder="Selecciona una pieza..." />
                     </SelectTrigger>
                     <SelectContent 
@@ -440,7 +444,7 @@ export default function PlanEditor({ plan, onClose }) {
                       className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                     >
                       {piezas.length === 0 ? (
-                        <div className="p-2 text-sm text-ui/80">No hay piezas</div>
+                        <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay piezas</div>
                       ) : (
                         piezas.map((pieza) => (
                           <SelectItem key={pieza.id} value={pieza.id}>
@@ -453,13 +457,13 @@ export default function PlanEditor({ plan, onClose }) {
                 </div>
 
                 <div>
-                  <Label htmlFor="foco">Foco General</Label>
+                  <Label htmlFor="foco" className="text-[var(--color-text-primary)]">Foco General</Label>
                   <Select 
                     value={formData.focoGeneral} 
                     onValueChange={(v) => setFormData({ ...formData, focoGeneral: v })}
                     modal={false}
                   >
-                    <SelectTrigger id="foco" className="w-full">
+                    <SelectTrigger id="foco" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue placeholder="Selecciona foco..." />
                     </SelectTrigger>
                     <SelectContent 
@@ -478,13 +482,14 @@ export default function PlanEditor({ plan, onClose }) {
                 </div>
 
                 <div>
-                  <Label htmlFor="objetivo">Objetivo Semanal por Defecto</Label>
+                  <Label htmlFor="objetivo" className="text-[var(--color-text-primary)]">Objetivo Semanal por Defecto</Label>
                   <Textarea
                     id="objetivo"
                     value={formData.objetivoSemanalPorDefecto}
                     onChange={(e) => setFormData({ ...formData, objetivoSemanalPorDefecto: e.target.value })}
                     placeholder="Objetivo que se aplicará a las semanas si no tienen uno específico..."
                     rows={2}
+                    className={componentStyles.controls.inputDefault}
                   />
                 </div>
               </CardContent>
@@ -493,8 +498,8 @@ export default function PlanEditor({ plan, onClose }) {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Árbol del Plan ({formData.semanas.length} semanas)</CardTitle>
-                  <Button onClick={addSemana} size="sm" className="bg-brand-500 hover:bg-brand-600">
+                  <CardTitle className="text-[var(--color-text-primary)]">Árbol del Plan ({formData.semanas.length} semanas)</CardTitle>
+                  <Button onClick={addSemana} size="sm" className={componentStyles.buttons.primary}>
                     <Plus className="w-4 h-4 mr-2" />
                     Añadir Semana
                   </Button>
@@ -502,10 +507,10 @@ export default function PlanEditor({ plan, onClose }) {
               </CardHeader>
               <CardContent className="space-y-2">
                 {formData.semanas.length === 0 ? (
-                  <div className="text-center py-12 text-ui/80">
-                    <Calendar className="w-16 h-16 mx-auto mb-4 text-ui/60" />
-                    <p className="text-sm mb-4">Aún no hay semanas. Crea la primera semana.</p>
-                    <Button onClick={addSemana} variant="outline">
+                  <div className="text-center py-12">
+                    <Calendar className="w-16 h-16 mx-auto mb-4 text-[var(--color-text-secondary)]" />
+                    <p className="text-sm mb-4 text-[var(--color-text-primary)]">Aún no hay semanas. Crea la primera semana.</p>
+                    <Button onClick={addSemana} variant="outline" className={componentStyles.buttons.outline}>
                       <Plus className="w-4 h-4 mr-2" />
                       Crear Primera Semana
                     </Button>
@@ -521,30 +526,30 @@ export default function PlanEditor({ plan, onClose }) {
                                 <Card 
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
-                                  className={`border-2 border-brand-200 cursor-pointer hover:bg-brand-50/30 transition-colors ${snapshot.isDragging ? 'shadow-card border-brand-400' : ''}`}
+                                  className={`border-2 border-[var(--color-primary)]/30 cursor-pointer hover:bg-[var(--color-primary-soft)] transition-colors ${snapshot.isDragging ? 'shadow-card border-[var(--color-primary)]' : ''}`}
                                   onClick={(e) => toggleSemana(semanaIndex, e)}
                                 >
                                   <CardContent className="pt-4">
                                     <div className="flex items-start gap-2">
                                       <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing pt-1" onClick={(e) => e.stopPropagation()}>
-                                        <GripVertical className="w-5 h-5 text-ui/60" />
+                                        <GripVertical className="w-5 h-5 text-[var(--color-text-secondary)]" />
                                       </div>
                                       
                                       <div className="pt-1">
                                         {expandedSemanas.has(semanaIndex) ? (
-                                          <ChevronDown className="w-5 h-5" />
+                                          <ChevronDown className="w-5 h-5 text-[var(--color-text-secondary)]" />
                                         ) : (
-                                          <ChevronRight className="w-5 h-5" />
+                                          <ChevronRight className="w-5 h-5 text-[var(--color-text-secondary)]" />
                                         )}
                                       </div>
                                       
                                       <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-2">
-                                          <h4 className="font-semibold">{semana.nombre}</h4>
+                                          <h4 className="font-semibold text-[var(--color-text-primary)]">{semana.nombre}</h4>
                                           <Badge className={focoColors[semana.foco]}>
                                             {focoLabels[semana.foco]}
                                           </Badge>
-                                          <span className="text-sm text-ui/80">
+                                          <span className="text-sm text-[var(--color-text-secondary)]">
                                             ({semana.sesiones?.length || 0} sesiones)
                                           </span>
                                         </div>
@@ -552,7 +557,7 @@ export default function PlanEditor({ plan, onClose }) {
                                         {expandedSemanas.has(semanaIndex) && (
                                           <div className="ml-4 mt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
                                             {semana.objetivo && (
-                                              <p className="text-sm text-ui/80 italic">"{semana.objetivo}"</p>
+                                              <p className="text-sm text-[var(--color-text-secondary)] italic">"{semana.objetivo}"</p>
                                             )}
 
                                             {semana.sesiones && semana.sesiones.length > 0 && (
@@ -572,31 +577,31 @@ export default function PlanEditor({ plan, onClose }) {
                                                             <Card 
                                                               ref={provided.innerRef}
                                                               {...provided.draggableProps}
-                                                              className={`border border-blue-200 bg-blue-50/30 cursor-pointer hover:bg-blue-100/30 transition-colors ${snapshot.isDragging ? 'shadow-card border-blue-500' : ''}`}
+                                                              className={`border border-[var(--color-info)]/30 bg-[var(--color-info)]/10 cursor-pointer hover:bg-[var(--color-info)]/20 transition-colors ${snapshot.isDragging ? 'shadow-card border-[var(--color-info)]' : ''}`}
                                                               onClick={(e) => toggleSesion(semanaIndex, sesionIndex, e)}
                                                             >
                                                               <CardContent className="pt-3 pb-3">
                                                                 <div className="flex items-start gap-2">
                                                                   <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing pt-1" onClick={(e) => e.stopPropagation()}>
-                                                                <GripVertical className="w-4 h-4 text-ui/60" />
+                                                                <GripVertical className="w-4 h-4 text-[var(--color-text-secondary)]" />
                                                                   </div>
                                                                   
                                                                   <div className="pt-1">
                                                                     {isExpanded ? (
-                                                                      <ChevronDown className="w-4 h-4" />
+                                                                      <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
                                                                     ) : (
-                                                                      <ChevronRight className="w-4 h-4" />
+                                                                      <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
                                                                     )}
                                                                   </div>
                                                                   
                                                                   <div className="flex-1">
                                                                     <div className="flex items-center gap-2 flex-wrap">
-                                                                      <PlayCircle className="w-4 h-4 text-blue-600" />
-                                                                      <span className="font-medium text-sm">{sesion.nombre}</span>
+                                                                      <PlayCircle className="w-4 h-4 text-[var(--color-info)]" />
+                                                                      <span className="font-medium text-sm text-[var(--color-text-primary)]">{sesion.nombre}</span>
                                                                       <Badge 
                                                                         variant="outline" 
                                                                         className={`text-xs ${
-                                                                          tiempoTotal > 0 ? 'bg-green-50 border-green-300 text-green-800' : 'bg-[var(--color-surface-muted)]'
+                                                                          tiempoTotal > 0 ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]/30 text-[var(--color-success)]' : 'bg-[var(--color-surface-muted)]'
                                                                         }`}
                                                                       >
                                                                         ⏱ {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
@@ -608,7 +613,7 @@ export default function PlanEditor({ plan, onClose }) {
 
                                                                     {isExpanded && (
                                                                       <div className="ml-6 mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
-                                                                        <div className="flex items-center gap-2 text-xs text-ui/80">
+                                                                        <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
                                                                           <Layers className="w-3 h-3" />
                                                                           <span>
                                                                             {sesion.bloques?.length || 0} ejercicios
@@ -621,24 +626,24 @@ export default function PlanEditor({ plan, onClose }) {
                                                                               e.stopPropagation();
                                                                               toggleEjercicios(semanaIndex, sesionIndex);
                                                                             }}
-                                                                            className="text-xs h-6 px-2"
+                                                                            className={`text-xs h-6 px-2 ${componentStyles.buttons.ghost}`}
                                                                           >
                                                                             {expandedEjercicios.has(`${sesionKey}-ej`) ? 'Ocultar' : 'Ver'} contenido
                                                                           </Button>
                                                                         </div>
 
                                                                         {expandedEjercicios.has(`${sesionKey}-ej`) && (
-                                                                          <div className="border-l-2 border-blue-300 pl-3 space-y-2">
+                                                                          <div className="border-l-2 border-[var(--color-info)]/30 pl-3 space-y-2">
                                                                             {sesion.bloques && sesion.bloques.length > 0 && (
                                                                               <div className="space-y-1">
-                                                                                <p className="text-xs font-semibold text-blue-900 mb-1">Ejercicios:</p>
+                                                                                <p className="text-xs font-semibold text-[var(--color-text-primary)] mb-1">Ejercicios:</p>
                                                                                 {sesion.bloques.map((ejercicio, ejercicioIndex) => (
-                                                                                  <div key={ejercicioIndex} className="flex items-center gap-2 p-2 bg-white border rounded text-xs">
+                                                                                  <div key={ejercicioIndex} className="flex items-center gap-2 p-2 bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded text-xs">
                                                                                     <Badge className={tipoColors[ejercicio.tipo]} variant="outline">
                                                                                       {ejercicio.tipo}
                                                                                     </Badge>
-                                                                                    <span className="flex-1">{ejercicio.nombre}</span>
-                                                                                    <span className="text-ui/80">{ejercicio.code}</span>
+                                                                                    <span className="flex-1 text-[var(--color-text-primary)]">{ejercicio.nombre}</span>
+                                                                                    <span className="text-[var(--color-text-secondary)]">{ejercicio.code}</span>
                                                                                     <Button
                                                                                       size="sm"
                                                                                       variant="ghost"
@@ -646,7 +651,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                                                         e.stopPropagation();
                                                                                         setEditingEjercicio({ semanaIndex, sesionIndex, ejercicioIndex, ejercicio, source: 'session' });
                                                                                       }}
-                                                                                      className="h-6 px-2"
+                                                                                      className={`h-6 px-2 ${componentStyles.buttons.ghost}`}
                                                                                     >
                                                                                       <Edit className="w-3 h-3" />
                                                                                     </Button>
@@ -657,7 +662,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                                                         e.stopPropagation();
                                                                                         removeEjercicio(semanaIndex, sesionIndex, ejercicioIndex);
                                                                                       }}
-                                                                                      className="h-6 px-2 text-red-600"
+                                                                                      className={`h-6 px-2 ${componentStyles.buttons.danger}`}
                                                                                     >
                                                                                       <Trash2 className="w-3 h-3" />
                                                                                     </Button>
@@ -668,28 +673,28 @@ export default function PlanEditor({ plan, onClose }) {
 
                                                                             {sesion.rondas && sesion.rondas.length > 0 && (
                                                                               <div className="space-y-1">
-                                                                                <p className="text-xs font-semibold text-purple-900 mb-1">Rondas:</p>
+                                                                                <p className="text-xs font-semibold text-[var(--color-text-primary)] mb-1">Rondas:</p>
                                                                                 {sesion.rondas.map((ronda, rondaIndex) => {
                                                                                   const rondaKey = `${semanaIndex}-${sesionIndex}-ronda-${rondaIndex}`;
                                                                                   const isRondaExpanded = expandedEjercicios.has(rondaKey);
                                                                                   return (
                                                                                     <Card 
                                                                                       key={rondaIndex}
-                                                                                      className="border border-purple-300 bg-purple-50/50 cursor-pointer hover:bg-purple-100/50 transition-colors"
+                                                                                      className="border border-[var(--color-primary)]/30 bg-[var(--color-primary-soft)] cursor-pointer hover:bg-[var(--color-primary-soft)] transition-colors"
                                                                                       onClick={(e) => toggleRonda(semanaIndex, sesionIndex, rondaIndex, e)}
                                                                                     >
                                                                                       <CardContent className="pt-2 pb-2">
                                                                                         <div className="flex items-center gap-2">
                                                                                           <div className="pt-0.5">
                                                                                             {isRondaExpanded ? (
-                                                                                              <ChevronDown className="w-3 h-3 text-purple-600" />
+                                                                                              <ChevronDown className="w-3 h-3 text-[var(--color-primary)]" />
                                                                                             ) : (
-                                                                                              <ChevronRight className="w-3 h-3 text-purple-600" />
+                                                                                              <ChevronRight className="w-3 h-3 text-[var(--color-primary)]" />
                                                                                             )}
                                                                                           </div>
-                                                                                          <Badge className="bg-purple-600 text-white text-xs">Ronda</Badge>
-                                                                                          <span className="text-xs text-ui/80">× {ronda.repeticiones} repeticiones</span>
-                                                                                          <span className="text-xs text-ui/80">({ronda.bloques.length} ejercicios)</span>
+                                                                                          <Badge className="bg-[var(--color-primary)] text-[var(--color-text-inverse)] text-xs">Ronda</Badge>
+                                                                                          <span className="text-xs text-[var(--color-text-secondary)]">× {ronda.repeticiones} repeticiones</span>
+                                                                                          <span className="text-xs text-[var(--color-text-secondary)]">({ronda.bloques.length} ejercicios)</span>
                                                                                           <Button
                                                                                             size="sm"
                                                                                             variant="ghost"
@@ -697,7 +702,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                                                               e.stopPropagation();
                                                                                               removeRonda(semanaIndex, sesionIndex, rondaIndex);
                                                                                             }}
-                                                                                            className="ml-auto text-red-600 hover:text-red-700 h-5 px-1"
+                                                                                            className={`ml-auto h-5 px-1 ${componentStyles.buttons.danger}`}
                                                                                           >
                                                                                             <Trash2 className="w-3 h-3" />
                                                                                           </Button>
@@ -709,17 +714,17 @@ export default function PlanEditor({ plan, onClose }) {
                                                                                               const ejercicio = sesion.bloques.find(b => b.code === code);
                                                                                               if (!ejercicio) {
                                                                                                 return (
-                                                                                                  <div key={eIndex} className="text-xs text-red-600 p-1">
+                                                                                                  <div key={eIndex} className="text-xs text-[var(--color-danger)] p-1">
                                                                                                     ⚠️ Referencia huérfana: {code}
                                                                                                   </div>
                                                                                                 );
                                                                                               }
                                                                                               return (
-                                                                                                <div key={eIndex} className="flex items-center gap-2 p-1.5 bg-white border rounded text-xs">
+                                                                                                <div key={eIndex} className="flex items-center gap-2 p-1.5 bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded text-xs">
                                                                                                   <Badge variant="outline" className={`text-xs ${tipoColors[ejercicio.tipo]}`}>
                                                                                                     {ejercicio.tipo}
                                                                                                   </Badge>
-                                                                                                  <span className="flex-1">{ejercicio.nombre}</span>
+                                                                                                  <span className="flex-1 text-[var(--color-text-primary)]">{ejercicio.nombre}</span>
                                                                                                   <Button
                                                                                                     size="sm"
                                                                                                     variant="ghost"
@@ -727,7 +732,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                                                                       e.stopPropagation();
                                                                                                       setEditingEjercicio({ semanaIndex, sesionIndex, rondaIndex, ejercicio, ejercicioCode: code, source: 'ronda' });
                                                                                                     }}
-                                                                                                    className="h-5 px-1"
+                                                                                                    className={`h-5 px-1 ${componentStyles.buttons.ghost}`}
                                                                                                   >
                                                                                                     <Edit className="w-3 h-3" />
                                                                                                   </Button>
@@ -753,6 +758,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                                               e.stopPropagation();
                                                                               addSesion(semanaIndex);
                                                                             }}
+                                                                            className={componentStyles.buttons.outline}
                                                                           >
                                                                             <Plus className="w-3 h-3 mr-1" />
                                                                             Añadir Sesión
@@ -764,6 +770,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                                               e.stopPropagation();
                                                                               setEditingSesion({ semanaIndex, sesionIndex, sesion });
                                                                             }}
+                                                                            className={componentStyles.buttons.outline}
                                                                           >
                                                                             <Edit className="w-3 h-3 mr-1" />
                                                                             Editar Sesión
@@ -775,7 +782,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                                               e.stopPropagation();
                                                                               removeSesion(semanaIndex, sesionIndex);
                                                                             }}
-                                                                            className="text-red-600 hover:text-red-700"
+                                                                            className={componentStyles.buttons.danger}
                                                                           >
                                                                             <Trash2 className="w-3 h-3 mr-1" />
                                                                             Eliminar
@@ -805,6 +812,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                   e.stopPropagation();
                                                   addSesion(semanaIndex);
                                                 }}
+                                                className={componentStyles.buttons.outline}
                                               >
                                                 <Plus className="w-3 h-3 mr-1" />
                                                 Añadir Sesión
@@ -816,6 +824,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                   e.stopPropagation();
                                                   setEditingSemana({ index: semanaIndex, semana });
                                                 }}
+                                                className={componentStyles.buttons.outline}
                                               >
                                                 <Edit className="w-3 h-3 mr-1" />
                                                 Editar Semana
@@ -834,6 +843,7 @@ export default function PlanEditor({ plan, onClose }) {
                                             duplicateSemana(semanaIndex);
                                           }}
                                           title="Duplicar semana"
+                                          className={componentStyles.buttons.ghost}
                                         >
                                           <Copy className="w-4 h-4" />
                                         </Button>
@@ -844,7 +854,7 @@ export default function PlanEditor({ plan, onClose }) {
                                             e.stopPropagation();
                                             removeSemana(semanaIndex);
                                           }}
-                                          className="text-red-600 hover:text-red-700"
+                                          className={componentStyles.buttons.danger}
                                         >
                                           <Trash2 className="w-4 h-4" />
                                         </Button>
@@ -865,15 +875,15 @@ export default function PlanEditor({ plan, onClose }) {
             </Card>
           </div>
 
-          <div className="border-t px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
+          <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
             <div className="flex gap-3 mb-2">
-              <Button variant="outline" onClick={onClose} className="flex-1 h-10 rounded-xl">
+              <Button variant="outline" onClick={onClose} className={`flex-1 ${componentStyles.buttons.outline}`}>
                 Cancelar
               </Button>
               <Button
                 onClick={handleSave}
                 disabled={saveMutation.isPending}
-                className="flex-1 btn-primary h-10 rounded-xl shadow-sm"
+                className={`flex-1 ${componentStyles.buttons.primary}`}
               >
                 {saveMutation.isPending ? (
                   'Guardando...'
@@ -885,7 +895,7 @@ export default function PlanEditor({ plan, onClose }) {
                 )}
               </Button>
             </div>
-            <p className="text-xs text-center text-ui/80">
+            <p className="text-xs text-center text-[var(--color-text-secondary)]">
               Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar • Ctrl/⌘+Alt+N : añadir semana
             </p>
           </div>

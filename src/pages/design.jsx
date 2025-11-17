@@ -22,7 +22,7 @@ import { componentStyles } from "@/design/componentStyles";
 function LabeledRow({ label, children }) {
   return (
     <div className="flex items-center justify-between gap-4 py-3 border-b border-[var(--color-border-default)] last:border-0">
-      <Label className="text-sm text-ui font-medium">{label}</Label>
+      <Label className="text-sm text-[var(--color-text-primary)] font-medium">{label}</Label>
       <div>{children}</div>
     </div>
   );
@@ -322,11 +322,11 @@ function DesignPageContent({ embedded = false }) {
       <div className="max-w-5xl mx-auto p-6 space-y-6">
         {/* Selector de tema movido al sidebar (Layout) */}
         <Card className="app-card border-[var(--color-border-default)] bg-[var(--color-primary-soft)]">
-          <CardContent className="pt-4 text-ui">
+                    <CardContent className="pt-4 text-[var(--color-text-primary)]">
             <div className="flex items-start gap-3">
               <Settings className="w-5 h-5 text-[var(--color-primary)] mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm text-ui">
+                <p className="text-sm text-[var(--color-text-primary)]">
                   <strong>Modo runtime:</strong> Los cambios se guardan en <code className="bg-[var(--color-primary-soft)] px-1 rounded">localStorage</code> y se aplican mediante variables CSS generadas por el <code className="bg-[var(--color-primary-soft)] px-1 rounded">DesignProvider</code> (desde <code className="bg-[var(--color-primary-soft)] px-1 rounded">src/components/design/designConfig.ts</code>). 
                   Los <strong>tokens</strong> de diseño viven en <code className="bg-[var(--color-primary-soft)] px-1 rounded">src/design/designSystem.ts</code> y las <strong>clases semánticas</strong> en <code className="bg-[var(--color-primary-soft)] px-1 rounded">src/design/componentStyles.ts</code>, tal y como se describe en el README. Útil para probar variantes sin deployar código.
                 </p>
@@ -374,7 +374,7 @@ function DesignPageContent({ embedded = false }) {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-4 text-ui">
+                    <CardContent className="pt-4 text-[var(--color-text-primary)]">
                 <div className="grid md:grid-cols-2 gap-3">
                   {Object.entries(allPresets).map(([id, preset]) => {
                     const isActive = JSON.stringify(config) === JSON.stringify(preset.config);
@@ -384,19 +384,19 @@ function DesignPageContent({ embedded = false }) {
                       <Card 
                         key={id}
                         className={`app-panel cursor-pointer transition-all ${
-                          isActive ? 'border-[hsl(var(--brand-500))] bg-[hsl(var(--brand-50))]' : 'hover:bg-muted'
+                          isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'hover:bg-[var(--color-surface-muted)]'
                         }`}
                         onClick={() => handleLoadPreset(id)}
                       >
                         <CardContent className="pt-4">
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex-1">
-                              <h4 className="font-semibold text-ui flex items-center gap-2">
+                              <h4 className="font-semibold text-[var(--color-text-primary)] flex items-center gap-2">
                                 {preset.name}
                                 {isActive && <Badge className="badge-primary">Activo</Badge>}
                                 {isBuiltIn && <Badge className="badge-outline text-[10px]">Built-in</Badge>}
                               </h4>
-                              <p className="text-xs text-ui/80 mt-1">{preset.description}</p>
+                              <p className="text-xs text-[var(--color-text-secondary)] mt-1">{preset.description}</p>
                             </div>
                             {!isBuiltIn && (
                               <Button
@@ -428,14 +428,14 @@ function DesignPageContent({ embedded = false }) {
                     <CardHeader className="border-b border-[var(--color-border-default)]">
                       <CardTitle>Guardar Preset</CardTitle>
                     </CardHeader>
-                    <CardContent className="pt-4 space-y-4 text-ui">
+                    <CardContent className="pt-4 space-y-4 text-[var(--color-text-primary)]">
                       <div>
                         <Label htmlFor="preset-name">Nombre del Preset</Label>
                         <Input
                           id="preset-name"
                           value={presetName}
                           onChange={(e) => setPresetName(e.target.value)}
-                          className="focus-brand"
+                          className={componentStyles.controls.inputDefault}
                         />
                       </div>
                       <div>
@@ -445,7 +445,7 @@ function DesignPageContent({ embedded = false }) {
                           value={presetDescription}
                           onChange={(e) => setPresetDescription(e.target.value)}
                           rows={3}
-                          className="focus-brand"
+                          className={componentStyles.controls.inputDefault}
                         />
                       </div>
                       <div className="flex gap-2">
@@ -490,7 +490,7 @@ function DesignPageContent({ embedded = false }) {
                         <X className="w-4 h-4" />
                       </Button>
                     </CardHeader>
-                    <CardContent className="pt-4 space-y-4 text-ui">
+                    <CardContent className="pt-4 space-y-4 text-[var(--color-text-primary)]">
                       <div className="space-y-2">
                         <Label htmlFor="export-json">Exportar presets personalizados:</Label>
                         <Textarea
@@ -498,7 +498,7 @@ function DesignPageContent({ embedded = false }) {
                           value={exportCustomPresets()}
                           readOnly
                           rows={6}
-                          className="font-mono text-xs focus-brand"
+                          className={`font-mono text-xs ${componentStyles.controls.inputDefault}`}
                         />
                         <Button onClick={handleExportPresets} className="w-full btn-secondary">
                           <Copy className="w-4 h-4 mr-2" />
@@ -516,7 +516,7 @@ function DesignPageContent({ embedded = false }) {
                           }}
                           placeholder="Pega el JSON de presets aquí..."
                           rows={6}
-                          className="font-mono text-xs focus-brand"
+                          className={`font-mono text-xs ${componentStyles.controls.inputDefault}`}
                         />
                         {importError && (
                           <Alert variant="danger">
@@ -539,8 +539,8 @@ function DesignPageContent({ embedded = false }) {
               <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>Configuración Actual</CardTitle>
               </CardHeader>
-              <CardContent className="pt-4 text-ui">
-                <pre className="text-xs font-mono bg-muted p-4 rounded-xl border border-[var(--color-border-default)] overflow-x-auto">
+                    <CardContent className="pt-4 text-[var(--color-text-primary)]">
+                <pre className="text-xs font-mono bg-[var(--color-surface-muted)] p-4 rounded-xl border border-[var(--color-border-default)] overflow-x-auto">
                   {JSON.stringify(config, null, 2)}
                 </pre>
               </CardContent>
@@ -554,10 +554,10 @@ function DesignPageContent({ embedded = false }) {
               <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>Controles de Diseño</CardTitle>
               </CardHeader>
-              <CardContent className="divide-y divide-ui text-ui">
+              <CardContent className="divide-y divide-[var(--color-border-default)] text-[var(--color-text-primary)]">
                 {/* Tipografía */}
                 <div className="py-2">
-                  <h3 className="text-sm font-semibold text-ui mb-3">Tipografía</h3>
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Tipografía</h3>
                   <LabeledRow label="Títulos con Serif">
                     <Switch 
                       checked={design?.typography?.serifHeadings || false} 
@@ -569,7 +569,7 @@ function DesignPageContent({ embedded = false }) {
                       type="number"
                       value={design?.typography?.fontSizeBase || 16}
                       onChange={(e) => setDesignPartial('typography.fontSizeBase', parseInt(e.target.value) || 16)}
-                      className="w-32 h-9 rounded-xl"
+                      className={`w-32 ${componentStyles.controls.inputDefault}`}
                     />
                   </LabeledRow>
                   <LabeledRow label="Escala de Tamaño">
@@ -578,7 +578,7 @@ function DesignPageContent({ embedded = false }) {
                       step="0.1"
                       value={design?.typography?.fontSizeScale || 1.25}
                       onChange={(e) => setDesignPartial('typography.fontSizeScale', parseFloat(e.target.value) || 1.25)}
-                      className="w-32 h-9 rounded-xl"
+                      className={`w-32 ${componentStyles.controls.inputDefault}`}
                     />
                   </LabeledRow>
                   <LabeledRow label="Fuente Base">
@@ -586,7 +586,7 @@ function DesignPageContent({ embedded = false }) {
                       type="text"
                       value={design?.typography?.fontFamilyBase || 'Inter, system-ui, -apple-system, sans-serif'}
                       onChange={(e) => setDesignPartial('typography.fontFamilyBase', e.target.value)}
-                      className="w-64 h-9 rounded-xl font-mono text-xs"
+                      className={`w-64 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                     />
                   </LabeledRow>
                   <LabeledRow label="Fuente Títulos">
@@ -594,7 +594,7 @@ function DesignPageContent({ embedded = false }) {
                       type="text"
                       value={design?.typography?.fontFamilyHeadings || 'Inter, system-ui, -apple-system, sans-serif'}
                       onChange={(e) => setDesignPartial('typography.fontFamilyHeadings', e.target.value)}
-                      className="w-64 h-9 rounded-xl font-mono text-xs"
+                      className={`w-64 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                     />
                   </LabeledRow>
                   <LabeledRow label="Interlineado Tight">
@@ -603,7 +603,7 @@ function DesignPageContent({ embedded = false }) {
                       step="0.1"
                       value={design?.typography?.lineHeight?.tight || 1.25}
                       onChange={(e) => setDesignPartial('typography.lineHeight.tight', parseFloat(e.target.value) || 1.25)}
-                      className="w-32 h-9 rounded-xl"
+                      className={`w-32 ${componentStyles.controls.inputDefault}`}
                     />
                   </LabeledRow>
                   <LabeledRow label="Interlineado Normal">
@@ -612,7 +612,7 @@ function DesignPageContent({ embedded = false }) {
                       step="0.1"
                       value={design?.typography?.lineHeight?.normal || 1.5}
                       onChange={(e) => setDesignPartial('typography.lineHeight.normal', parseFloat(e.target.value) || 1.5)}
-                      className="w-32 h-9 rounded-xl"
+                      className={`w-32 ${componentStyles.controls.inputDefault}`}
                     />
                   </LabeledRow>
                   <LabeledRow label="Interlineado Relaxed">
@@ -621,20 +621,20 @@ function DesignPageContent({ embedded = false }) {
                       step="0.1"
                       value={design?.typography?.lineHeight?.relaxed || 1.75}
                       onChange={(e) => setDesignPartial('typography.lineHeight.relaxed', parseFloat(e.target.value) || 1.75)}
-                      className="w-32 h-9 rounded-xl"
+                      className={`w-32 ${componentStyles.controls.inputDefault}`}
                     />
                   </LabeledRow>
                 </div>
 
                 {/* Layout */}
                 <div className="py-2">
-                  <h3 className="text-sm font-semibold text-ui mb-3">Layout</h3>
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Layout</h3>
                   <LabeledRow label="Radio Global">
                     <Select 
                       value={design?.layout?.radius?.global || 'lg'} 
                       onValueChange={(v) => setDesignPartial('layout.radius.global', v)}
                     >
-                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -654,7 +654,7 @@ function DesignPageContent({ embedded = false }) {
                       value={design?.layout?.radius?.card || 'lg'} 
                       onValueChange={(v) => setDesignPartial('layout.radius.card', v)}
                     >
-                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -674,7 +674,7 @@ function DesignPageContent({ embedded = false }) {
                       value={design?.layout?.radius?.controls || 'lg'} 
                       onValueChange={(v) => setDesignPartial('layout.radius.controls', v)}
                     >
-                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -694,7 +694,7 @@ function DesignPageContent({ embedded = false }) {
                       value={design?.layout?.radius?.pill || 'lg'} 
                       onValueChange={(v) => setDesignPartial('layout.radius.pill', v)}
                     >
-                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -714,7 +714,7 @@ function DesignPageContent({ embedded = false }) {
                       value={design?.layout?.radius?.modal || 'xl'} 
                       onValueChange={(v) => setDesignPartial('layout.radius.modal', v)}
                     >
-                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -734,7 +734,7 @@ function DesignPageContent({ embedded = false }) {
                       value={design?.layout?.shadow || 'md'} 
                       onValueChange={(v) => setDesignPartial('layout.shadow', v)}
                     >
-                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -752,7 +752,7 @@ function DesignPageContent({ embedded = false }) {
                       value={design?.layout?.density || 'normal'} 
                       onValueChange={(v) => setDesignPartial('layout.density', v)}
                     >
-                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -766,20 +766,20 @@ function DesignPageContent({ embedded = false }) {
 
                 {/* Colores Principales */}
                 <div className="py-2">
-                  <h3 className="text-sm font-semibold text-ui mb-3">Colores Principales</h3>
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Colores Principales</h3>
                   <LabeledRow label="Color Primario">
                     <div className="flex items-center gap-2">
                       <Input
                         type="color"
                         value={design?.colors?.primary || '#4F46E5'}
                         onChange={(e) => setDesignPartial('colors.primary', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.primary || '#4F46E5'}
                         onChange={(e) => setDesignPartial('colors.primary', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -789,13 +789,13 @@ function DesignPageContent({ embedded = false }) {
                         type="color"
                         value={design?.colors?.primarySoft || '#EEF2FF'}
                         onChange={(e) => setDesignPartial('colors.primarySoft', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.primarySoft || '#EEF2FF'}
                         onChange={(e) => setDesignPartial('colors.primarySoft', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -805,13 +805,13 @@ function DesignPageContent({ embedded = false }) {
                         type="color"
                         value={design?.colors?.secondary || '#6366F1'}
                         onChange={(e) => setDesignPartial('colors.secondary', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.secondary || '#6366F1'}
                         onChange={(e) => setDesignPartial('colors.secondary', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -821,13 +821,13 @@ function DesignPageContent({ embedded = false }) {
                         type="color"
                         value={design?.colors?.accent || '#F97316'}
                         onChange={(e) => setDesignPartial('colors.accent', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.accent || '#F97316'}
                         onChange={(e) => setDesignPartial('colors.accent', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -835,20 +835,20 @@ function DesignPageContent({ embedded = false }) {
 
                 {/* Colores de Estado */}
                 <div className="py-2">
-                  <h3 className="text-sm font-semibold text-ui mb-3">Colores de Estado</h3>
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Colores de Estado</h3>
                   <LabeledRow label="Success">
                     <div className="flex items-center gap-2">
                       <Input
                         type="color"
                         value={design?.colors?.success || '#10B981'}
                         onChange={(e) => setDesignPartial('colors.success', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.success || '#10B981'}
                         onChange={(e) => setDesignPartial('colors.success', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -858,13 +858,13 @@ function DesignPageContent({ embedded = false }) {
                         type="color"
                         value={design?.colors?.warning || '#F59E0B'}
                         onChange={(e) => setDesignPartial('colors.warning', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.warning || '#F59E0B'}
                         onChange={(e) => setDesignPartial('colors.warning', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -874,13 +874,13 @@ function DesignPageContent({ embedded = false }) {
                         type="color"
                         value={design?.colors?.danger || '#EF4444'}
                         onChange={(e) => setDesignPartial('colors.danger', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.danger || '#EF4444'}
                         onChange={(e) => setDesignPartial('colors.danger', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -890,13 +890,13 @@ function DesignPageContent({ embedded = false }) {
                         type="color"
                         value={design?.colors?.info || '#3B82F6'}
                         onChange={(e) => setDesignPartial('colors.info', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.info || '#3B82F6'}
                         onChange={(e) => setDesignPartial('colors.info', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -904,20 +904,20 @@ function DesignPageContent({ embedded = false }) {
 
                 {/* Colores de Superficie */}
                 <div className="py-2">
-                  <h3 className="text-sm font-semibold text-ui mb-3">Colores de Superficie</h3>
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Colores de Superficie</h3>
                   <LabeledRow label="Background">
                     <div className="flex items-center gap-2">
                       <Input
                         type="color"
                         value={design?.colors?.background || '#FFFFFF'}
                         onChange={(e) => setDesignPartial('colors.background', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.background || '#FFFFFF'}
                         onChange={(e) => setDesignPartial('colors.background', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -927,13 +927,13 @@ function DesignPageContent({ embedded = false }) {
                         type="color"
                         value={design?.colors?.surface || '#F9FAFB'}
                         onChange={(e) => setDesignPartial('colors.surface', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.surface || '#F9FAFB'}
                         onChange={(e) => setDesignPartial('colors.surface', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -943,13 +943,13 @@ function DesignPageContent({ embedded = false }) {
                         type="color"
                         value={design?.colors?.surfaceElevated || '#FFFFFF'}
                         onChange={(e) => setDesignPartial('colors.surfaceElevated', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.surfaceElevated || '#FFFFFF'}
                         onChange={(e) => setDesignPartial('colors.surfaceElevated', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -959,13 +959,13 @@ function DesignPageContent({ embedded = false }) {
                         type="color"
                         value={design?.colors?.surfaceMuted || '#F3F4F6'}
                         onChange={(e) => setDesignPartial('colors.surfaceMuted', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.surfaceMuted || '#F3F4F6'}
                         onChange={(e) => setDesignPartial('colors.surfaceMuted', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -973,20 +973,20 @@ function DesignPageContent({ embedded = false }) {
 
                 {/* Colores de Texto */}
                 <div className="py-2">
-                  <h3 className="text-sm font-semibold text-ui mb-3">Colores de Texto</h3>
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Colores de Texto</h3>
                   <LabeledRow label="Texto Primario">
                     <div className="flex items-center gap-2">
                       <Input
                         type="color"
                         value={design?.colors?.text?.primary || '#111827'}
                         onChange={(e) => setDesignPartial('colors.text.primary', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.text?.primary || '#111827'}
                         onChange={(e) => setDesignPartial('colors.text.primary', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -996,13 +996,13 @@ function DesignPageContent({ embedded = false }) {
                         type="color"
                         value={design?.colors?.text?.secondary || '#6B7280'}
                         onChange={(e) => setDesignPartial('colors.text.secondary', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.text?.secondary || '#6B7280'}
                         onChange={(e) => setDesignPartial('colors.text.secondary', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -1012,13 +1012,13 @@ function DesignPageContent({ embedded = false }) {
                         type="color"
                         value={design?.colors?.text?.muted || '#9CA3AF'}
                         onChange={(e) => setDesignPartial('colors.text.muted', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.text?.muted || '#9CA3AF'}
                         onChange={(e) => setDesignPartial('colors.text.muted', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -1028,13 +1028,13 @@ function DesignPageContent({ embedded = false }) {
                         type="color"
                         value={design?.colors?.text?.inverse || '#FFFFFF'}
                         onChange={(e) => setDesignPartial('colors.text.inverse', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.text?.inverse || '#FFFFFF'}
                         onChange={(e) => setDesignPartial('colors.text.inverse', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -1042,20 +1042,20 @@ function DesignPageContent({ embedded = false }) {
 
                 {/* Colores de Borde */}
                 <div className="py-2">
-                  <h3 className="text-sm font-semibold text-ui mb-3">Colores de Borde</h3>
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Colores de Borde</h3>
                   <LabeledRow label="Borde Default">
                     <div className="flex items-center gap-2">
                       <Input
                         type="color"
                         value={design?.colors?.border?.default || '#E5E7EB'}
                         onChange={(e) => setDesignPartial('colors.border.default', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.border?.default || '#E5E7EB'}
                         onChange={(e) => setDesignPartial('colors.border.default', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -1065,13 +1065,13 @@ function DesignPageContent({ embedded = false }) {
                         type="color"
                         value={design?.colors?.border?.muted || '#F3F4F6'}
                         onChange={(e) => setDesignPartial('colors.border.muted', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.border?.muted || '#F3F4F6'}
                         onChange={(e) => setDesignPartial('colors.border.muted', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -1081,13 +1081,13 @@ function DesignPageContent({ embedded = false }) {
                         type="color"
                         value={design?.colors?.border?.strong || '#D1D5DB'}
                         onChange={(e) => setDesignPartial('colors.border.strong', e.target.value)}
-                        className="w-16 h-9 rounded-xl"
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
                       />
                       <Input
                         type="text"
                         value={design?.colors?.border?.strong || '#D1D5DB'}
                         onChange={(e) => setDesignPartial('colors.border.strong', e.target.value)}
-                        className="w-32 h-9 rounded-xl font-mono text-xs"
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
                   </LabeledRow>
@@ -1095,13 +1095,13 @@ function DesignPageContent({ embedded = false }) {
 
                 {/* Componentes */}
                 <div className="py-2">
-                  <h3 className="text-sm font-semibold text-ui mb-3">Componentes</h3>
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Componentes</h3>
                   <LabeledRow label="Radio de Botones">
                     <Select 
                       value={design?.components?.button?.radius || 'lg'} 
                       onValueChange={(v) => setDesignPartial('components.button.radius', v)}
                     >
-                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1145,7 +1145,7 @@ function DesignPageContent({ embedded = false }) {
                       value={design?.components?.input?.radius || 'lg'} 
                       onValueChange={(v) => setDesignPartial('components.input.radius', v)}
                     >
-                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1173,7 +1173,7 @@ function DesignPageContent({ embedded = false }) {
                       value={design?.components?.card?.radius || 'lg'} 
                       onValueChange={(v) => setDesignPartial('components.card.radius', v)}
                     >
-                      <SelectTrigger className="w-48 h-9 rounded-xl">
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1216,7 +1216,7 @@ function DesignPageContent({ embedded = false }) {
 
                 {/* Focus */}
                 <div className="py-2">
-                  <h3 className="text-sm font-semibold text-ui mb-3">Focus y Accesibilidad</h3>
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Focus y Accesibilidad</h3>
                   <LabeledRow label="Ancho Ring Focus">
                     <Input
                       type="text"
@@ -1247,7 +1247,7 @@ function DesignPageContent({ embedded = false }) {
 
                 {/* Brand Hue (compatibilidad) */}
                 <div className="py-2">
-                  <h3 className="text-sm font-semibold text-ui mb-3">Brand (Compatibilidad)</h3>
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Brand (Compatibilidad)</h3>
                   <LabeledRow label="Brand Hue">
                     <Input
                       type="number"
@@ -1255,7 +1255,7 @@ function DesignPageContent({ embedded = false }) {
                       max="360"
                       value={design?.brandHue || 26}
                       onChange={(e) => setDesignPartial('brandHue', parseInt(e.target.value) || 26)}
-                      className="w-32 h-9 rounded-xl"
+                      className={`w-32 ${componentStyles.controls.inputDefault}`}
                     />
                   </LabeledRow>
                 </div>
@@ -1367,17 +1367,17 @@ function DesignPageContent({ embedded = false }) {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-4 text-ui">
+                    <CardContent className="pt-4 text-[var(--color-text-primary)]">
               {auditReport ? (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
-                      <div className="text-xs text-ui/80 uppercase tracking-wide">Archivos escaneados</div>
-                      <div className="text-2xl font-bold text-ui">{auditReport?.summary?.filesScanned || 0}</div>
+                      <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Archivos escaneados</div>
+                      <div className="text-2xl font-bold text-[var(--color-text-primary)]">{auditReport?.summary?.filesScanned || 0}</div>
                     </Card>
                     <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
-                      <div className="text-xs text-ui/80 uppercase tracking-wide">Problemas encontrados</div>
-                      <div className="text-2xl font-bold text-ui">{auditReport?.summary?.totalIssues || 0}</div>
+                      <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Problemas encontrados</div>
+                      <div className="text-2xl font-bold text-[var(--color-text-primary)]">{auditReport?.summary?.totalIssues || 0}</div>
                     </Card>
                   </div>
 
@@ -1391,9 +1391,9 @@ function DesignPageContent({ embedded = false }) {
                   {(auditReport?.summary?.totalIssues || 0) > 0 && auditReport?.summary?.issues && (
                     <div className="grid md:grid-cols-2 gap-3">
                       {Object.entries(auditReport.summary.issues).map(([k, v]) => (
-                        <Card key={k} className="bg-white rounded-lg p-3 border border-[var(--color-border-default)]">
-                          <div className="text-xs uppercase tracking-wide text-ui/80 mb-1">{k}</div>
-                          <div className="text-xl font-semibold text-ui">{v}</div>
+                        <Card key={k} className="bg-[var(--color-surface-elevated)] rounded-lg p-3 border border-[var(--color-border-default)]">
+                          <div className="text-xs uppercase tracking-wide text-[var(--color-text-secondary)] mb-1">{k}</div>
+                          <div className="text-xl font-semibold text-[var(--color-text-primary)]">{v}</div>
                         </Card>
                       ))}
                     </div>
@@ -1401,27 +1401,27 @@ function DesignPageContent({ embedded = false }) {
 
                   {auditReport?.issues && (
                   <details className="rounded-xl border border-[var(--color-border-default)] p-4 bg-[var(--color-surface-muted)]">
-                      <summary className="cursor-pointer font-medium text-ui">Detalles por categoría</summary>
+                      <summary className="cursor-pointer font-medium text-[var(--color-text-primary)]">Detalles por categoría</summary>
                       <div className="mt-4 space-y-4 max-h-[420px] overflow-auto">
                         {Object.entries(auditReport.issues).map(([bucket, items]) => (
                           items.length > 0 && (
-                            <Card key={bucket} className="bg-white rounded-lg p-3 border border-[var(--color-border-default)]">
-                              <div className="mb-3 font-semibold text-ui flex items-center justify-between">
+                            <Card key={bucket} className="bg-[var(--color-surface-elevated)] rounded-lg p-3 border border-[var(--color-border-default)]">
+                              <div className="mb-3 font-semibold text-[var(--color-text-primary)] flex items-center justify-between">
                                 <span>{bucket}</span>
-                                <Badge className="bg-red-50 text-red-800 border-red-200 rounded-full">
+                                <Badge className={`rounded-full ${componentStyles.status.badgeDanger}`}>
                                   {items.length}
                                 </Badge>
                               </div>
                               <ul className="space-y-2 text-sm">
                                 {items.slice(0, 50).map((it, idx) => (
-                                  <li key={idx} className="border-l-2 border-brand-200 pl-3 py-1">
-                                    <div className="text-[11px] text-ui/80">{it.file}:{it.line}</div>
-                                    <div className="font-mono text-xs text-ui bg-[var(--color-surface-muted)] p-1 rounded mt-1">{it.snippet}</div>
+                                  <li key={idx} className="border-l-2 border-[var(--color-primary)]/30 pl-3 py-1">
+                                    <div className="text-[11px] text-[var(--color-text-secondary)]">{it.file}:{it.line}</div>
+                                    <div className="font-mono text-xs text-[var(--color-text-primary)] bg-[var(--color-surface-muted)] p-1 rounded mt-1">{it.snippet}</div>
                                   </li>
                                 ))}
                               </ul>
                               {items.length > 50 && (
-                                <div className="text-xs text-ui/80 mt-3 text-center">
+                                <div className="text-xs text-[var(--color-text-secondary)] mt-3 text-center">
                                   +{items.length - 50} más (usa "Copiar JSON" para ver todo)
                                 </div>
                               )}
@@ -1438,7 +1438,7 @@ function DesignPageContent({ embedded = false }) {
                   </Button>
                 </div>
               ) : (
-                <p className="text-sm text-ui/80">
+                <p className="text-sm text-[var(--color-text-secondary)]">
                   Selecciona un perfil y pulsa "Ejecutar Auditoría" para analizar estilos y clases en todo el proyecto.
                 </p>
               )}
@@ -1452,14 +1452,14 @@ function DesignPageContent({ embedded = false }) {
               <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>QA Rápido (Dev)</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6 pt-6 text-ui">
-                <p className="text-sm text-ui/80">
+              <CardContent className="space-y-6 pt-6 text-[var(--color-text-primary)]">
+                <p className="text-sm text-[var(--color-text-secondary)]">
                   Pruebas integradas para detectar problemas comunes de diseño y accesibilidad.
                 </p>
                 {/* Fixtures visibles para QA: aseguran detección por selectores del test */}
                 <div className="space-y-6">
                   <div>
-                    <h4 className="text-sm font-medium text-ui mb-2">Acciones rápidas</h4>
+                    <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Acciones rápidas</h4>
                     <div className="flex items-center gap-3">
                     <Button
                       className="btn-primary h-8 rounded-xl shadow-sm px-3"
@@ -1472,12 +1472,12 @@ function DesignPageContent({ embedded = false }) {
                   </div>
                   </div>
                   <div className="app-panel p-3 rounded-xl border border-[var(--color-border-muted)]">
-                    <h4 className="text-sm font-medium text-ui mb-2">Componentes de prueba</h4>
-                    <div className="text-sm text-ui/80">Panel QA</div>
+                    <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Componentes de prueba</h4>
+                    <div className="text-sm text-[var(--color-text-secondary)]">Panel QA</div>
                   </div>
                   <div className="icon-tile" aria-hidden />
                   <div>
-                    <h4 className="text-sm font-medium text-ui mb-2">Pestañas de ejemplo</h4>
+                    <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Pestañas de ejemplo</h4>
                   <Tabs
                     value={qaTabsValue}
                     onChange={setQaTabsValue}
@@ -1487,7 +1487,7 @@ function DesignPageContent({ embedded = false }) {
                     ]}
                     variant="segmented"
                   />
-                    <div className="mt-3 text-sm text-ui/80">
+                    <div className="mt-3 text-sm text-[var(--color-text-secondary)]">
                       {qaTabsValue === 'one' ? (
                         <span>Contenido de la pestaña “Uno”: texto de ejemplo.</span>
                       ) : (
@@ -1519,8 +1519,8 @@ function DesignPageContent({ embedded = false }) {
                 </div>
 
                 {qaOutput && (
-                  <div className="bg-muted rounded-xl p-4 border border-[var(--color-border-default)]">
-                    <pre className="text-xs text-ui whitespace-pre-wrap font-mono overflow-x-auto max-h-96">
+                  <div className="bg-[var(--color-surface-muted)] rounded-xl p-4 border border-[var(--color-border-default)]">
+                    <pre className="text-xs text-[var(--color-text-primary)] whitespace-pre-wrap font-mono overflow-x-auto max-h-96">
                       {qaOutput}
                     </pre>
                   </div>
@@ -1546,10 +1546,10 @@ function DesignPageContent({ embedded = false }) {
               <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>Selector de Estilo Base</CardTitle>
               </CardHeader>
-              <CardContent className="pt-4 text-ui">
+                    <CardContent className="pt-4 text-[var(--color-text-primary)]">
                 <div className="space-y-4">
                   <div>
-                    <Label className="text-sm font-medium text-ui mb-2 block">
+                    <Label className="text-sm font-medium text-[var(--color-text-primary)] mb-2 block">
                       Preset de Estilo:
                     </Label>
                     <Select
@@ -1564,7 +1564,7 @@ function DesignPageContent({ embedded = false }) {
                           <SelectItem key={preset.id} value={preset.id}>
                             <div>
                               <div className="font-medium">{preset.label}</div>
-                              <div className="text-xs text-ui/70">{preset.description}</div>
+                              <div className="text-xs text-[var(--color-text-secondary)]">{preset.description}</div>
                             </div>
                           </SelectItem>
                         ))}
@@ -1573,13 +1573,13 @@ function DesignPageContent({ embedded = false }) {
                   </div>
                   {currentPresetId && basePresets && (
                     <div className="p-3 rounded-xl bg-[var(--color-surface-muted)] border border-[var(--color-border-default)]">
-                      <p className="text-xs text-ui/80">
+                      <p className="text-xs text-[var(--color-text-secondary)]">
                         <strong>Preset activo:</strong> {basePresets.find(p => p.id === currentPresetId)?.label || currentPresetId}
                       </p>
-                      <p className="text-xs text-ui/80 mt-1">
+                      <p className="text-xs text-[var(--color-text-secondary)] mt-1">
                         {basePresets.find(p => p.id === currentPresetId)?.description}
                       </p>
-                      <p className="text-xs text-ui/60 mt-2">
+                      <p className="text-xs text-[var(--color-text-muted)] mt-2">
                         💡 El color de marca (primary) es siempre <code className="bg-[var(--color-primary-soft)] px-1 rounded">#fd9840</code> en todos los presets.
                       </p>
                     </div>
@@ -1593,10 +1593,10 @@ function DesignPageContent({ embedded = false }) {
               <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>Preview de Componentes</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6 pt-6 text-ui">
+              <CardContent className="space-y-6 pt-6 text-[var(--color-text-primary)]">
                 {/* PageHeader */}
                 <div>
-                  <p className="text-sm font-medium text-ui mb-3">PageHeader:</p>
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">PageHeader:</p>
                   <div className={componentStyles.containers.cardBase + " p-4"}>
                     <h1 className={componentStyles.typography.pageTitle}>Título de Página</h1>
                     <p className={componentStyles.typography.pageSubtitle}>Subtítulo descriptivo del contenido</p>
@@ -1605,7 +1605,7 @@ function DesignPageContent({ embedded = false }) {
 
                 {/* Botones */}
                 <div>
-                  <p className="text-sm font-medium text-ui mb-3">Botones (todas las variantes):</p>
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Botones (todas las variantes):</p>
                   <div className="flex flex-wrap gap-3">
                     <Button className={componentStyles.buttons.primary}>Primary</Button>
                     <Button className={componentStyles.buttons.secondary}>Secondary</Button>
@@ -1617,7 +1617,7 @@ function DesignPageContent({ embedded = false }) {
 
                 {/* Cards y Paneles */}
                 <div>
-                  <p className="text-sm font-medium text-ui mb-3">Cards y Paneles:</p>
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Cards y Paneles:</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Card className={componentStyles.containers.cardBase}>
                       <CardHeader>
@@ -1637,7 +1637,7 @@ function DesignPageContent({ embedded = false }) {
                     </Card>
                     <Card className={componentStyles.containers.cardMetric}>
                       <CardContent className="pt-4 text-center">
-                        <p className="text-3xl font-bold text-ui">198</p>
+                        <p className="text-3xl font-bold text-[var(--color-text-primary)]">198</p>
                         <p className={componentStyles.typography.smallMetaText}>Métrica destacada</p>
                       </CardContent>
                     </Card>
@@ -1651,7 +1651,7 @@ function DesignPageContent({ embedded = false }) {
 
                 {/* Inputs y Controles */}
                 <div>
-                  <p className="text-sm font-medium text-ui mb-3">Inputs y Controles:</p>
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Inputs y Controles:</p>
                   <div className="space-y-3 max-w-md">
                     <Input
                       placeholder="Input por defecto"
@@ -1679,7 +1679,7 @@ function DesignPageContent({ embedded = false }) {
 
                 {/* Tabs */}
                 <div>
-                  <p className="text-sm font-medium text-ui mb-3">Tabs:</p>
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Tabs:</p>
                   <Tabs
                     value="tab1"
                     onChange={() => {}}
@@ -1693,7 +1693,7 @@ function DesignPageContent({ embedded = false }) {
 
                 {/* Badges y Estados */}
                 <div>
-                  <p className="text-sm font-medium text-ui mb-3">Badges y Estados:</p>
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Badges y Estados:</p>
                   <div className="flex flex-wrap gap-2">
                     <Badge className={componentStyles.status.badgeDefault}>Default</Badge>
                     <Badge className={componentStyles.status.badgeInfo}>Info</Badge>
@@ -1705,14 +1705,14 @@ function DesignPageContent({ embedded = false }) {
 
                 {/* Verificación de Color de Marca */}
                 <div className="p-4 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary-soft)]">
-                  <p className="text-sm font-semibold text-ui mb-2">✅ Verificación de Color de Marca</p>
-                  <p className="text-xs text-ui/80">
-                    El color primary debe ser siempre <code className="bg-white/50 px-1 rounded">#fd9840</code> en todos los presets.
+                  <p className="text-sm font-semibold text-[var(--color-text-primary)] mb-2">✅ Verificación de Color de Marca</p>
+                  <p className="text-xs text-[var(--color-text-secondary)]">
+                    El color primary debe ser siempre <code className="bg-[var(--color-surface-elevated)]/50 px-1 rounded">#fd9840</code> en todos los presets.
                     Este badge usa <code>var(--color-primary)</code> y <code>var(--color-primary-soft)</code>.
                   </p>
                   <div className="mt-3 flex items-center gap-2">
                     <div className="w-12 h-12 rounded-lg" style={{ backgroundColor: '#fd9840' }} />
-                    <div className="text-xs text-ui/80">
+                    <div className="text-xs text-[var(--color-text-secondary)]">
                       <div>Primary: <code>#fd9840</code></div>
                       <div>Primary Soft: <code>var(--color-primary-soft)</code></div>
                     </div>

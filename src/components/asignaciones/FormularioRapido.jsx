@@ -21,6 +21,7 @@ import { createPageUrl } from "@/utils";
 import { displayName, formatLocalDate, parseLocalDate, startOfMonday } from "@/components/utils/helpers";
 import { createPortal } from "react-dom";
 import { useLocalData } from "@/local-data/LocalDataProvider";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function FormularioRapido({ onClose }) {
   const queryClient = useQueryClient();
@@ -210,20 +211,22 @@ export default function FormularioRapido({ onClose }) {
       {/* Contenedor modal: alineado con PieceEditor */}
       <div className="fixed inset-0 z-[90] flex items-center justify-center pointer-events-none p-4 overflow-y-auto" role="dialog" aria-modal="true">
         <div 
-          className="bg-white w-full max-w-3xl max-h-[92vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-8"
+          className="bg-[var(--color-surface-elevated)] w-full max-w-3xl max-h-[92vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-8"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="border-b px-6 py-4 flex items-center justify-between bg-card rounded-t-2xl">
-            <div className="flex items-center gap-3 text-[var(--color-primary)]">
-              <Target className="w-6 h-6 text-[var(--color-primary)]" />
-              <div>
-                <h2 className="text-xl font-bold text-[var(--color-primary)]">Nueva Asignación</h2>
-                <p className="text-sm text-[var(--color-primary)]/90">Creación rápida de asignación</p>
+          <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-2xl px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Target className="w-6 h-6 text-[var(--color-text-primary)]" />
+                <div>
+                  <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Nueva Asignación</h2>
+                  <p className="text-sm text-[var(--color-text-secondary)]">Creación rápida de asignación</p>
+                </div>
               </div>
+              <Button variant="ghost" size="icon" onClick={onClose} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-9 w-9 rounded-xl">
+                <X className="w-5 h-5" />
+              </Button>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose} className="text-[var(--color-primary)] hover:bg-[var(--color-primary-soft)]">
-              <X className="w-5 h-5" />
-            </Button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -231,8 +234,8 @@ export default function FormularioRapido({ onClose }) {
               <Card className="app-panel">
                 <CardHeader>
                   <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-brand-700" />
-                    <CardTitle className="text-base">Estudiante(s)</CardTitle>
+                    <Users className="w-5 h-5 text-[var(--color-primary)]" />
+                    <CardTitle className="text-base text-[var(--color-text-primary)]">Estudiante(s)</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -244,7 +247,7 @@ export default function FormularioRapido({ onClose }) {
                     value={formData.estudiantesIds}
                     onChange={(vals) => setFormData({ ...formData, estudiantesIds: vals })}
                   />
-                  <p className="text-xs text-ui/80">
+                  <p className="text-xs text-[var(--color-text-secondary)]">
                     {formData.estudiantesIds.length > 0 ? `${formData.estudiantesIds.length} seleccionado(s)` : 'Ninguno seleccionado'}
                   </p>
                 </CardContent>
@@ -253,8 +256,8 @@ export default function FormularioRapido({ onClose }) {
               <Card className="app-panel">
                 <CardHeader>
                   <div className="flex items-center gap-2">
-                    <Music className="w-5 h-5 text-brand-700" />
-                    <CardTitle className="text-base">Pieza</CardTitle>
+                    <Music className="w-5 h-5 text-[var(--color-primary)]" />
+                    <CardTitle className="text-base text-[var(--color-text-primary)]">Pieza</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -263,7 +266,7 @@ export default function FormularioRapido({ onClose }) {
                     onValueChange={(v) => setFormData({ ...formData, piezaId: v })}
                     modal={false}
                   >
-                    <SelectTrigger id="pieza" className="w-full focus-brand">
+                    <SelectTrigger id="pieza" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue placeholder="Selecciona una pieza..." />
                     </SelectTrigger>
                     <SelectContent 
@@ -274,7 +277,7 @@ export default function FormularioRapido({ onClose }) {
                       className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                     >
                       {piezas.length === 0 ? (
-                        <div className="p-2 text-sm text-ui/80">No hay piezas</div>
+                        <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay piezas</div>
                       ) : (
                         piezas.map((pieza) => (
                           <SelectItem key={pieza.id} value={pieza.id}>
@@ -285,9 +288,9 @@ export default function FormularioRapido({ onClose }) {
                     </SelectContent>
                   </Select>
                   {piezaSeleccionada && (
-                    <div className="mt-2 text-xs text-ui/80">
-                      <p><strong>Nivel:</strong> {piezaSeleccionada.nivel}</p>
-                      <p><strong>Elementos:</strong> {piezaSeleccionada.elementos?.length || 0}</p>
+                    <div className="mt-2 text-xs text-[var(--color-text-secondary)]">
+                      <p><strong className="text-[var(--color-text-primary)]">Nivel:</strong> {piezaSeleccionada.nivel}</p>
+                      <p><strong className="text-[var(--color-text-primary)]">Elementos:</strong> {piezaSeleccionada.elementos?.length || 0}</p>
                     </div>
                   )}
                 </CardContent>
@@ -296,8 +299,8 @@ export default function FormularioRapido({ onClose }) {
               <Card className="app-panel">
                 <CardHeader>
                   <div className="flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-brand-700" />
-                    <CardTitle className="text-base">Plan</CardTitle>
+                    <BookOpen className="w-5 h-5 text-[var(--color-primary)]" />
+                    <CardTitle className="text-base text-[var(--color-text-primary)]">Plan</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -306,7 +309,7 @@ export default function FormularioRapido({ onClose }) {
                     onValueChange={(v) => setFormData({ ...formData, planId: v })}
                     modal={false}
                   >
-                    <SelectTrigger id="plan" className="w-full focus-brand">
+                    <SelectTrigger id="plan" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue placeholder="Selecciona un plan..." />
                     </SelectTrigger>
                     <SelectContent 
@@ -317,7 +320,7 @@ export default function FormularioRapido({ onClose }) {
                       className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                     >
                       {planes.length === 0 ? (
-                        <div className="p-2 text-sm text-ui/80">No hay planes</div>
+                        <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay planes</div>
                       ) : (
                         planes.map((plan) => (
                           <SelectItem key={plan.id} value={plan.id}>
@@ -328,10 +331,10 @@ export default function FormularioRapido({ onClose }) {
                     </SelectContent>
                   </Select>
                   {planSeleccionado && (
-                    <div className="mt-2 text-xs text-ui/80">
-                      <p><strong>Semanas:</strong> {planSeleccionado.semanas?.length || 0}</p>
+                    <div className="mt-2 text-xs text-[var(--color-text-secondary)]">
+                      <p><strong className="text-[var(--color-text-primary)]">Semanas:</strong> {planSeleccionado.semanas?.length || 0}</p>
                       {planSeleccionado.focoGeneral && (
-                        <p><strong>Foco:</strong> {focoLabels[planSeleccionado.focoGeneral]}</p>
+                        <p><strong className="text-[var(--color-text-primary)]">Foco:</strong> {focoLabels[planSeleccionado.focoGeneral]}</p>
                       )}
                     </div>
                   )}
@@ -341,8 +344,8 @@ export default function FormularioRapido({ onClose }) {
               <Card className="app-panel">
                 <CardHeader>
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-brand-700" />
-                    <CardTitle className="text-base">Fecha de inicio</CardTitle>
+                    <Calendar className="w-5 h-5 text-[var(--color-primary)]" />
+                    <CardTitle className="text-base text-[var(--color-text-primary)]">Fecha de inicio</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -350,14 +353,14 @@ export default function FormularioRapido({ onClose }) {
                     type="date"
                     value={formData.fechaSeleccionada}
                     onChange={(e) => setFormData({ ...formData, fechaSeleccionada: e.target.value })}
-                    className="focus-brand"
+                    className={componentStyles.controls.inputDefault}
                   />
                   {formData.fechaSeleccionada && formData.semanaInicioISO && (
-                    <Alert className="border-blue-200 bg-blue-50 app-panel">
-                      <AlertDescription className="text-xs text-blue-800">
-                        <strong>Elegido:</strong> {parseLocalDate(formData.fechaSeleccionada).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    <Alert className="border-[var(--color-info)]/20 bg-[var(--color-info)]/10 app-panel">
+                      <AlertDescription className="text-xs text-[var(--color-text-primary)]">
+                        <strong className="text-[var(--color-info)]">Elegido:</strong> {parseLocalDate(formData.fechaSeleccionada).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
                         <br />
-                        <strong>Semana ISO:</strong> Lunes {parseLocalDate(formData.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })} - Domingo {parseLocalDate(getDomingoSemana(formData.semanaInicioISO)).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
+                        <strong className="text-[var(--color-info)]">Semana ISO:</strong> Lunes {parseLocalDate(formData.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })} - Domingo {parseLocalDate(getDomingoSemana(formData.semanaInicioISO)).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
                       </AlertDescription>
                     </Alert>
                   )}
@@ -366,21 +369,21 @@ export default function FormularioRapido({ onClose }) {
             </div>
 
             <Card className="app-panel">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-brand-700" />
-                  <CardTitle className="text-base">Opciones</CardTitle>
-                </div>
-              </CardHeader>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Settings className="w-5 h-5 text-[var(--color-primary)]" />
+                    <CardTitle className="text-base text-[var(--color-text-primary)]">Opciones</CardTitle>
+                  </div>
+                </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="foco">Foco</Label>
+                  <Label htmlFor="foco" className="text-[var(--color-text-primary)]">Foco</Label>
                   <Select 
                     value={formData.foco} 
                     onValueChange={(v) => setFormData({ ...formData, foco: v })}
                     modal={false}
                   >
-                    <SelectTrigger id="foco" className="w-full focus-brand">
+                    <SelectTrigger id="foco" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue placeholder="Selecciona foco..." />
                     </SelectTrigger>
                     <SelectContent 
@@ -395,25 +398,25 @@ export default function FormularioRapido({ onClose }) {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-ui/80 mt-1">Por defecto: General</p>
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-1">Por defecto: General</p>
                 </div>
 
                 <div>
-                  <Label htmlFor="notas">Notas del estudiante (opcional)</Label>
+                  <Label htmlFor="notas" className="text-[var(--color-text-primary)]">Notas del estudiante (opcional)</Label>
                   <Textarea
                     id="notas"
                     value={formData.notas}
                     onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
                     placeholder="Instrucciones o comentarios..."
                     rows={3}
-                    className="focus-brand"
+                    className={componentStyles.controls.inputDefault}
                   />
                 </div>
 
                 <div className="flex items-center justify-between p-3 border border-[var(--color-border-default)] app-panel hover:bg-muted hover:shadow-sm transition-all">
                   <div className="flex-1">
-                    <Label htmlFor="publicar" className="font-medium">Publicar ahora</Label>
-                    <p className="text-xs text-ui/80">Si está desactivado, se guardará como borrador</p>
+                    <Label htmlFor="publicar" className="font-medium text-[var(--color-text-primary)]">Publicar ahora</Label>
+                    <p className="text-xs text-[var(--color-text-secondary)]">Si está desactivado, se guardará como borrador</p>
                   </div>
                   <Switch
                     id="publicar"
@@ -422,10 +425,10 @@ export default function FormularioRapido({ onClose }) {
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 border border-[var(--color-border-default)] app-panel bg-blue-50">
+                <div className="flex items-center justify-between p-3 border border-[var(--color-border-default)] app-panel bg-[var(--color-info)]/10">
                   <div className="flex-1">
-                    <Label htmlFor="adaptar" className="font-medium">Adaptar plan ahora (recomendado)</Label>
-                    <p className="text-xs text-ui/80">Crear en borrador y abrir editor para adaptar el plan</p>
+                    <Label htmlFor="adaptar" className="font-medium text-[var(--color-text-primary)]">Adaptar plan ahora (recomendado)</Label>
+                    <p className="text-xs text-[var(--color-text-secondary)]">Crear en borrador y abrir editor para adaptar el plan</p>
                   </div>
                   <Switch
                     id="adaptar"
@@ -435,7 +438,7 @@ export default function FormularioRapido({ onClose }) {
                   />
                 </div>
                 {formData.estudiantesIds.length > 1 && (
-                  <p className="text-xs text-amber-700">
+                  <p className="text-xs text-[var(--color-warning)]">
                     Solo puedes adaptar el plan si seleccionas un único estudiante
                   </p>
                 )}
@@ -443,10 +446,10 @@ export default function FormularioRapido({ onClose }) {
             </Card>
 
             {formData.estudiantesIds.length > 0 && formData.piezaId && formData.planId && formData.fechaSeleccionada && (
-              <Alert className="border-brand-200 bg-brand-50 app-panel">
-                <AlertDescription className="text-brand-800">
-                  <strong>Resumen:</strong>
-                  <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+              <Alert className="border-[var(--color-primary)]/20 bg-[var(--color-primary-soft)] app-panel">
+                <AlertDescription className="text-sm text-[var(--color-text-primary)]">
+                  <strong className="text-[var(--color-primary)]">Resumen:</strong>
+                  <ul className="list-disc list-inside mt-2 space-y-1">
                     <li>{formData.estudiantesIds.length} estudiante(s)</li>
                     <li>Pieza: {piezaSeleccionada?.nombre}</li>
                     <li>Plan: {planSeleccionado?.nombre} ({planSeleccionado?.semanas?.length || 0} semanas)</li>
@@ -459,16 +462,16 @@ export default function FormularioRapido({ onClose }) {
             )}
             </div>
 
-          <div className="border-t px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
+          <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
             <div className="flex gap-3 mb-2">
-              <Button variant="outline" onClick={onClose} className="flex-1">
+              <Button variant="outline" onClick={onClose} className={`flex-1 ${componentStyles.buttons.outline}`}>
                 Cancelar
               </Button>
               {formData.adaptarPlanAhora ? (
                 <Button
                   onClick={handleCrear}
                   disabled={crearAsignacionesMutation.isPending}
-                  className="flex-1 bg-brand-500 hover:bg-brand-600"
+                  className={`flex-1 ${componentStyles.buttons.primary}`}
                 >
                   {crearAsignacionesMutation.isPending ? 'Creando...' : 'Crear y adaptar'}
                 </Button>
@@ -476,7 +479,7 @@ export default function FormularioRapido({ onClose }) {
                 <Button
                   onClick={handleCrear}
                   disabled={crearAsignacionesMutation.isPending}
-                  className="flex-1 bg-brand-500 hover:bg-brand-600"
+                  className={`flex-1 ${componentStyles.buttons.primary}`}
                 >
                   {crearAsignacionesMutation.isPending ? 'Creando...' : 'Crear y publicar'}
                 </Button>
@@ -484,14 +487,14 @@ export default function FormularioRapido({ onClose }) {
                 <Button
                   onClick={handleCrear}
                   disabled={crearAsignacionesMutation.isPending}
-                  className="flex-1 bg-brand-500 hover:bg-brand-600"
+                  className={`flex-1 ${componentStyles.buttons.primary}`}
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {crearAsignacionesMutation.isPending ? 'Guardando...' : 'Guardar borrador'}
                 </Button>
               )}
             </div>
-            <p className="text-xs text-center text-ui/80">
+            <p className="text-xs text-center text-[var(--color-text-secondary)]">
               Ctrl/⌘+Intro : acción principal • Ctrl/⌘+. : cancelar
             </p>
           </div>

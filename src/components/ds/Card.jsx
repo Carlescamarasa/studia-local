@@ -4,14 +4,15 @@ import { cn } from "@/lib/utils";
 /**
  * Card - Componente de tarjeta del Design System
  * Capa semántica que aplica clases definidas en globals.css
+ * Usa forwardRef para soportar refs de librerías como @hello-pangea/dnd
  */
-export function Card({ className = "", children, ...props }) {
+export const Card = React.forwardRef(function Card({ className = "", children, ...props }, ref) {
   return (
-    <div className={cn("app-card", className)} {...props}>
+    <div ref={ref} className={cn("app-card", className)} {...props}>
       {children}
     </div>
   );
-}
+});
 
 export function CardHeader({ className = "", children, ...props }) {
   return (

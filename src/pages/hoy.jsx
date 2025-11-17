@@ -12,7 +12,7 @@ import {
   ChevronRight, ChevronLeft, AlertTriangle, ChevronDown,
   Play, Pause, X, List, HelpCircle,
   Maximize2, Minimize2, CheckCircle, XCircle,
-  SkipForward
+  SkipForward, Shuffle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -23,9 +23,11 @@ import {
   aplanarSesion,
   getNombreVisible
 } from "../components/utils/helpers";
+import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "../components/study/sessionSequence";
 import TimelineProgreso from "../components/estudio/TimelineProgreso";
 import ModalCancelar from "../components/estudio/ModalCancelar";
 import ResumenFinal from "../components/estudio/ResumenFinal";
+import SessionContentView from "../components/study/SessionContentView";
 import { toast } from "sonner";
 import { useSidebar } from "@/components/ui/SidebarState";
 import PageHeader from "@/components/ds/PageHeader";
@@ -54,7 +56,8 @@ function HoyPageContent() {
     return calcularLunesSemanaISO(new Date());
   });
   const [sesionSeleccionada, setSesionSeleccionada] = useState(0);
-  const [planDesplegado, setPlanDesplegado] = useState(false);
+  const [planDesplegado, setPlanDesplegado] = useState(true); // Por defecto desplegado
+  const [sesionesConResumenExpandido, setSesionesConResumenExpandido] = useState(new Set());
   const [sesionActiva, setSesionActiva] = useState(null);
   const [indiceActual, setIndiceActual] = useState(0);
   const [tiempoActual, setTiempoActual] = useState(0);
@@ -65,6 +68,8 @@ function HoyPageContent() {
   const [mostrarItinerario, setMostrarItinerario] = useState(false);
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
   const [mostrarModalCancelar, setMostrarModalCancelar] = useState(false);
+  const [rondasExpandidasItinerario, setRondasExpandidasItinerario] = useState(new Set());
+  const [cronometroPausadoPorModal, setCronometroPausadoPorModal] = useState(false);
   const [sesionFinalizada, setSesionFinalizada] = useState(false);
   const [datosFinal, setDatosFinal] = useState(null);
   const [mediaFullscreen, setMediaFullscreen] = useState(null);
@@ -325,54 +330,43 @@ function HoyPageContent() {
     }
   }, [indiceActual, sesionActiva, sesionFinalizada]);
 
+
+  // Expandir todas las rondas por defecto cuando se abre el panel de itinerario
   useEffect(() => {
-    if (!sesionActiva || sesionFinalizada) return;
+    if (mostrarItinerario && sesionActiva) {
+      const S = ensureRondaIds(sesionActiva);
+      const secuencia = getSecuencia(S);
+      const todasLasRondas = new Set(
+        secuencia
+          .filter(item => item.kind === 'RONDA' && item.id)
+          .map(item => item.id)
+      );
+      setRondasExpandidasItinerario(todasLasRondas);
+    }
+  }, [mostrarItinerario, sesionActiva]);
 
-    const handleKeyDown = (e) => {
-      if (e.target.matches('input, textarea')) return;
-      if ((e.metaKey || e.ctrlKey) && e.key === 'm') return;
-
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        if (mediaFullscreen) {
-          setMediaFullscreen(null);
-        } else {
-          setMostrarModalCancelar(true);
-        }
-      }
-      if (e.code === 'Space') {
-        e.preventDefault();
-        const listaEjecucion = aplanarSesion(sesionActiva);
-        const ejercicioActual = listaEjecucion[indiceActual];
-        if (ejercicioActual?.tipo !== 'AD') {
-          togglePlayPausa();
-        }
-      }
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        completarYAvanzar();
-      }
-      if (e.key === 'n') {
-        e.preventDefault();
-        omitirYAvanzar();
-      }
-      if (e.key === 'p') {
-        e.preventDefault();
-        handleAnterior();
-      }
-      if (e.key === 'i') {
-        e.preventDefault();
-        setMostrarItinerario(prev => !prev);
-      }
-      if (e.key === '?') {
-        e.preventDefault();
-        setMostrarAyuda(prev => !prev);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [sesionActiva, indiceActual, sesionFinalizada, mostrarItinerario, mostrarAyuda, mediaFullscreen]);
+  // Pausar/reanudar cronómetro cuando se abren/cierran modales
+  useEffect(() => {
+    const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || mostrarAyuda || mediaFullscreen;
+    
+    if (hayModalAbierto && cronometroActivo && !cronometroPausadoPorModal) {
+      // Pausar el cronómetro
+      const ahora = Date.now();
+      const tiempoDesdeInicio = timestampInicio ? Math.floor((ahora - timestampInicio) / 1000) : 0;
+      setTiempoAcumuladoAntesPausa(prev => prev + tiempoDesdeInicio);
+      setTimestampUltimoPausa(ahora);
+      setTimestampInicio(null);
+      setCronometroActiva(false);
+      setCronometroPausadoPorModal(true);
+    } else if (!hayModalAbierto && cronometroPausadoPorModal && sesionActiva && !sesionFinalizada) {
+      // Reanudar el cronómetro
+      const ahora = Date.now();
+      setTimestampInicio(ahora);
+      setTimestampUltimoPausa(null);
+      setCronometroActiva(true);
+      setCronometroPausadoPorModal(false);
+    }
+  }, [mostrarModalCancelar, mostrarItinerario, mostrarAyuda, mediaFullscreen, cronometroActivo, cronometroPausadoPorModal, sesionActiva, sesionFinalizada, timestampInicio]);
 
   const empezarSesion = async (sesion, sesionIdxProp) => {
     setSesionActiva(sesion);
@@ -541,6 +535,73 @@ function HoyPageContent() {
       setTimestampUltimoPausa(null);
     }
   };
+
+  // Manejo de atajos de teclado - debe estar después de las definiciones de funciones
+  useEffect(() => {
+    if (!sesionActiva || sesionFinalizada) return;
+
+    const handleKeyDown = (e) => {
+      // No procesar si hay un modal abierto (excepto para cerrar modales)
+      const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || mostrarAyuda || mediaFullscreen;
+      
+      // Permitir Escape siempre para cerrar modales
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (mediaFullscreen) {
+          setMediaFullscreen(null);
+        } else if (mostrarItinerario) {
+          setMostrarItinerario(false);
+        } else if (mostrarAyuda) {
+          setMostrarAyuda(false);
+        } else if (mostrarModalCancelar) {
+          setMostrarModalCancelar(false);
+        }
+        return;
+      }
+
+      // Si hay un modal abierto, no procesar otros atajos
+      if (hayModalAbierto) return;
+
+      // No procesar si está en un input o textarea
+      if (e.target.matches('input, textarea, select')) return;
+      if ((e.metaKey || e.ctrlKey) && e.key === 'm') return;
+
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        const listaEjecucion = aplanarSesion(sesionActiva);
+        const ejercicioActual = listaEjecucion[indiceActual];
+        if (ejercicioActual?.tipo !== 'AD') {
+          togglePlayPausa();
+        }
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        completarYAvanzar();
+      }
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        omitirYAvanzar();
+      }
+      if (e.key === 'p' || e.key === 'P') {
+        e.preventDefault();
+        handleAnterior();
+      }
+      if (e.key === 'i' || e.key === 'I') {
+        e.preventDefault();
+        setMostrarItinerario(prev => !prev);
+      }
+      if (e.key === '?') {
+        e.preventDefault();
+        setMostrarAyuda(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [sesionActiva, sesionFinalizada, indiceActual, mediaFullscreen, mostrarItinerario, mostrarAyuda, mostrarModalCancelar, togglePlayPausa, completarYAvanzar, omitirYAvanzar, handleAnterior]);
 
   const handleCancelar = () => {
     setMostrarModalCancelar(true);
@@ -1038,47 +1099,200 @@ function HoyPageContent() {
         )}
 
         {/* Panel de itinerario */}
-        {mostrarItinerario && (
-          <>
-            <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setMostrarItinerario(false)} />
-            <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-card shadow-card z-50 overflow-y-auto">
-              <div className="sticky top-0 bg-card border-b px-4 py-3 flex items-center justify-between">
-                <h3 className="text-base font-bold">Índice de Ejercicios</h3>
-                <Button variant="ghost" size="sm" onClick={() => setMostrarItinerario(false)} className="h-8 w-8 p-0 rounded-xl focus-brand" aria-label="Cerrar índice">
-                  <X className="w-4 h-4" />
-                </Button>
+        {mostrarItinerario && (() => {
+          const S = ensureRondaIds(sesionActiva);
+          const secuencia = getSecuencia(S);
+          const bloquesMap = mapBloquesByCode(S);
+          
+          // Crear mapeo de posiciones en listaEjecucion para cada elemento de la secuencia
+          let contadorLista = 0;
+          const mapeoPosiciones = new Map();
+          
+          secuencia.forEach((item) => {
+            if (item.kind === 'BLOQUE') {
+              mapeoPosiciones.set(`bloque-${item.code}`, contadorLista);
+              contadorLista++;
+            } else if (item.kind === 'RONDA') {
+              const ronda = S.rondas.find(r => r.id === item.id);
+              if (ronda) {
+                const posicionesRonda = [];
+                for (let rep = 0; rep < ronda.repeticiones; rep++) {
+                  ronda.bloques.forEach(() => {
+                    posicionesRonda.push(contadorLista);
+                    contadorLista++;
+                  });
+                }
+                mapeoPosiciones.set(`ronda-${item.id}`, posicionesRonda);
+              }
+            }
+          });
+
+          return (
+            <>
+              <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setMostrarItinerario(false)} />
+              <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-card shadow-card z-50 overflow-y-auto">
+                <div className="sticky top-0 bg-card border-b px-4 py-3 flex items-center justify-between">
+                  <h3 className="text-base font-bold text-[var(--color-text-primary)]">Índice de Ejercicios</h3>
+                  <Button variant="ghost" size="sm" onClick={() => setMostrarItinerario(false)} className="h-8 w-8 p-0 rounded-xl hover:bg-[var(--color-surface-muted)]" aria-label="Cerrar índice">
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="p-3 space-y-2">
+                  {secuencia.map((item, seqIdx) => {
+                    if (item.kind === 'BLOQUE') {
+                      const posicion = mapeoPosiciones.get(`bloque-${item.code}`);
+                      const ej = bloquesMap.get(item.code);
+                      if (!ej) return null;
+                      
+                      const estaActivo = posicion === indiceActual;
+                      const estaCompletado = completados.has(posicion);
+                      const estaOmitido = omitidos.has(posicion);
+                      
+                      return (
+                        <button
+                          key={`bloque-${item.code}-${seqIdx}`}
+                          onClick={() => navegarA(posicion)}
+                          className={`w-full text-left p-3 rounded-lg border transition-all min-h-[52px] ${
+                            estaActivo
+                              ? 'bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border-[var(--color-primary)] shadow-sm'
+                              : estaCompletado
+                              ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]'
+                              : estaOmitido
+                              ? 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]'
+                              : 'bg-[var(--color-surface)] border-[var(--color-border-strong)] hover:bg-[var(--color-surface-muted)]'
+                          }`}
+                          aria-label={`Ir a ejercicio ${posicion + 1}: ${ej.nombre}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold min-w-[24px] text-[var(--color-text-primary)]">#{posicion + 1}</span>
+                            <Badge variant="outline" className={`${tipoColors[ej.tipo]} text-xs border`}>
+                              {ej.tipo}
+                            </Badge>
+                            <span className="flex-1 text-sm font-medium truncate text-[var(--color-text-primary)]">{ej.nombre}</span>
+                            {estaCompletado && <CheckCircle className="w-4 h-4 text-[var(--color-success)] shrink-0" />}
+                            {estaOmitido && <XCircle className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />}
+                          </div>
+                        </button>
+                      );
+                    } else if (item.kind === 'RONDA') {
+                      const ronda = S.rondas.find(r => r.id === item.id);
+                      if (!ronda) return null;
+                      
+                      const posicionesRonda = mapeoPosiciones.get(`ronda-${item.id}`) || [];
+                      const estaExpandida = rondasExpandidasItinerario.has(item.id);
+                      
+                      // Verificar si alguna posición de la ronda está activa
+                      const tieneActivo = posicionesRonda.includes(indiceActual);
+                      const tieneCompletado = posicionesRonda.some(p => completados.has(p));
+                      const tieneOmitido = posicionesRonda.some(p => omitidos.has(p));
+                      
+                      return (
+                        <div key={`ronda-${item.id}-${seqIdx}`} className="space-y-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRondasExpandidasItinerario(prev => {
+                                const next = new Set(prev);
+                                if (next.has(item.id)) {
+                                  next.delete(item.id);
+                                } else {
+                                  next.add(item.id);
+                                }
+                                return next;
+                              });
+                            }}
+                            className={`w-full text-left p-3 rounded-lg border transition-all ${
+                              tieneActivo
+                                ? 'bg-[var(--color-primary-soft)] border-[var(--color-primary)] shadow-sm'
+                                : tieneCompletado
+                                ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]'
+                                : tieneOmitido
+                                ? 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]'
+                                : 'bg-[var(--color-primary-soft)] border-[var(--color-primary)]/30'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              {estaExpandida ? (
+                                <ChevronDown className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
+                              )}
+                              <Badge className="bg-[var(--color-primary)] text-[var(--color-text-inverse)] text-xs">Ronda</Badge>
+                              <span className="text-xs text-[var(--color-text-secondary)]">× {ronda.repeticiones} repeticiones</span>
+                              <span className="text-xs text-[var(--color-text-secondary)]">({ronda.bloques.length} ejercicios)</span>
+                              {ronda.aleatoria && (
+                                <Badge variant="outline" className="text-[10px] border-[var(--color-primary)]/40 text-[var(--color-primary)] bg-[var(--color-primary-soft)] flex items-center gap-1">
+                                  <Shuffle className="w-3 h-3" />
+                                  aleatorio
+                                </Badge>
+                              )}
+                            </div>
+                          </button>
+                          
+                          {estaExpandida && (
+                            <div className="ml-4 space-y-1 border-l-2 border-[var(--color-primary)]/30 pl-3">
+                              {posicionesRonda.map((posicion, idx) => {
+                                // Determinar qué bloque y repetición corresponde a esta posición
+                                const bloqueIdx = idx % ronda.bloques.length;
+                                const repeticionIdx = Math.floor(idx / ronda.bloques.length);
+                                const code = ronda.bloques[bloqueIdx];
+                                
+                                const ej = bloquesMap.get(code);
+                                if (!ej) return null;
+                                
+                                const estaActivo = posicion === indiceActual;
+                                const estaCompletado = completados.has(posicion);
+                                const estaOmitido = omitidos.has(posicion);
+                                
+                                return (
+                                  <button
+                                    key={`ronda-${item.id}-pos-${posicion}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navegarA(posicion);
+                                    }}
+                                    className={`w-full text-left p-2 rounded-lg border transition-all ${
+                                      estaActivo
+                                        ? 'bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border-[var(--color-primary)] shadow-sm'
+                                        : estaCompletado
+                                        ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]'
+                                        : estaOmitido
+                                        ? 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]'
+                                        : 'bg-[var(--color-surface)] border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
+                                    }`}
+                                    aria-label={`Ir a ejercicio ${posicion + 1}: ${ej.nombre}`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs font-bold min-w-[24px] text-[var(--color-text-primary)]">#{posicion + 1}</span>
+                                      <Badge variant="outline" className={`${tipoColors[ej.tipo]} text-xs border`}>
+                                        {ej.tipo}
+                                      </Badge>
+                                      <span className="flex-1 text-sm font-medium truncate text-[var(--color-text-primary)]">
+                                        {ej.nombre}
+                                        {ronda.repeticiones > 1 && (
+                                          <span className="text-xs text-[var(--color-text-secondary)] ml-1">
+                                            (Rep {repeticionIdx + 1})
+                                          </span>
+                                        )}
+                                      </span>
+                                      {estaCompletado && <CheckCircle className="w-4 h-4 text-[var(--color-success)] shrink-0" />}
+                                      {estaOmitido && <XCircle className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />}
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
               </div>
-              <div className="p-3 space-y-2">
-                {listaEjecucion.map((ej, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => navegarA(idx)}
-                        className={`w-full text-left p-3 rounded-lg border transition-all min-h-[52px] focus-brand ${
-                          idx === indiceActual
-                            ? 'bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border-[var(--color-primary)] shadow-sm'
-                            : completados.has(idx)
-                            ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]'
-                            : omitidos.has(idx)
-                            ? 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]'
-                            : 'bg-[var(--color-surface)] border-[var(--color-border-strong)] hover:bg-[var(--color-surface-muted)]'
-                        }`}
-                    aria-label={`Ir a ejercicio ${idx + 1}: ${ej.nombre}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold min-w-[24px]">#{idx + 1}</span>
-                      <Badge variant="outline" className={`${tipoColors[ej.tipo]} text-xs border`}>
-                        {ej.tipo}
-                      </Badge>
-                          <span className="flex-1 text-sm font-medium truncate text-ui">{ej.nombre}</span>
-                      {completados.has(idx) && <CheckCircle className="w-4 h-4 text-[var(--color-success)] shrink-0" />}
-                      {omitidos.has(idx) && <XCircle className="w-4 h-4 text-ui/80 shrink-0" />}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
+            </>
+          );
+        })()}
 
         {/* Panel de ayuda */}
         {mostrarAyuda && (
@@ -1186,36 +1400,62 @@ function HoyPageContent() {
           <>
             <Card className={`border-2 ${componentStyles.containers.cardBase} border-[var(--color-primary)]`}>
               <CardContent className="pt-4">
-                <div className="flex items-start gap-3">
-                  <div className="pt-1 cursor-pointer" onClick={() => setPlanDesplegado(!planDesplegado)}>
-                    {planDesplegado ? (
-                      <ChevronDown className="w-5 h-5 text-ui/80" />
-                    ) : (
-                      <ChevronRight className="w-5 h-5 text-ui/80" />
-                    )}
+                {/* Información de la semana - siempre visible */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h2 className={`${componentStyles.typography.sectionTitle} font-bold`}>{semanaDelPlan.nombre}</h2>
+                    <Badge className={focoColors[semanaDelPlan.foco]}>
+                      {focoLabels[semanaDelPlan.foco]}
+                    </Badge>
+                    <span className="text-sm text-[var(--color-text-secondary)]">
+                      ({semanaDelPlan.sesiones?.length || 0} sesiones)
+                    </span>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h2 className="font-bold text-xl">{semanaDelPlan.nombre}</h2>
-                      <Badge className={focoColors[semanaDelPlan.foco]}>
-                        {focoLabels[semanaDelPlan.foco]}
-                      </Badge>
-                      <span className="text-sm text-ui/80">
-                        ({semanaDelPlan.sesiones?.length || 0} sesiones)
-                      </span>
-                    </div>
-                    {semanaDelPlan.objetivo && (
-                      <p className="text-sm text-ui/80 italic mt-1">"{semanaDelPlan.objetivo}"</p>
-                    )}
-                  </div>
+                  {semanaDelPlan.objetivo && (
+                    <p className="text-sm text-[var(--color-text-secondary)] italic mt-1">"{semanaDelPlan.objetivo}"</p>
+                  )}
                 </div>
 
+                {/* Card clickeable para desplegar/colapsar sesiones */}
+                <Card 
+                  className={`cursor-pointer hover:shadow-md transition-all ${componentStyles.containers.panelBase}`}
+                  onClick={() => setPlanDesplegado(!planDesplegado)}
+                >
+                  <CardContent className="pt-3 pb-3">
+                    <div className="flex items-center gap-2">
+                      {planDesplegado ? (
+                        <ChevronDown className="w-5 h-5 text-[var(--color-text-secondary)]" />
+                      ) : (
+                        <ChevronRight className="w-5 h-5 text-[var(--color-text-secondary)]" />
+                      )}
+                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                        {planDesplegado ? 'Ocultar sesiones' : 'Mostrar sesiones'}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Sesiones - desplegables */}
                 {planDesplegado && semanaDelPlan.sesiones && (
-                  <div className="ml-8 mt-4 space-y-2">
+                  <div className="mt-4 space-y-2">
                     {semanaDelPlan.sesiones.map((sesion, sesionIdx) => {
                       const tiempoTotal = calcularTiempoSesion(sesion);
                       const minutos = Math.floor(tiempoTotal / 60);
                       const segundos = tiempoTotal % 60;
+                      const resumenExpandido = sesionesConResumenExpandido.has(sesionIdx);
+
+                      const toggleResumen = (e) => {
+                        e.stopPropagation();
+                        setSesionesConResumenExpandido(prev => {
+                          const next = new Set(prev);
+                          if (next.has(sesionIdx)) {
+                            next.delete(sesionIdx);
+                          } else {
+                            next.add(sesionIdx);
+                          }
+                          return next;
+                        });
+                      };
 
                       return (
                         <Card
@@ -1231,39 +1471,69 @@ function HoyPageContent() {
                           }}
                         >
                           <CardContent className="pt-4 pb-4">
-                            <div className="flex items-start gap-3">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 flex-wrap mb-2">
-                                  <PlayCircle className="w-4 h-4 text-[var(--color-info)]" />
-                                  <span className={`${componentStyles.typography.cardTitle} font-semibold`}>{sesion.nombre}</span>
-                                  <Badge
-                                    variant="outline"
-                                    className={componentStyles.status.badgeSuccess}
-                                  >
-                                    ⏱ {minutos}:{String(segundos).padStart(2, '0')} min
-                                  </Badge>
-                                  <Badge className={focoColors[sesion.foco]} variant="outline">
-                                    {focoLabels[sesion.foco]}
-                                  </Badge>
-                                </div>
-
-                                {sesionSeleccionada === sesionIdx && (
-                                  <div className="mt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
-                                    <Button
-                                      variant="primary"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        empezarSesion(sesion, sesionIdx);
-                                      }}
-                                      size="lg"
-                                      className={`w-full h-14 text-lg font-bold shadow-card ${componentStyles.buttons.primary} focus-brand`}
+                            <div className="space-y-3">
+                              {/* Header de la sesión */}
+                              <div className="flex items-start gap-3">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap mb-2">
+                                    <PlayCircle className="w-4 h-4 text-[var(--color-info)]" />
+                                    <span className={`${componentStyles.typography.cardTitle} font-semibold`}>{sesion.nombre}</span>
+                                    <Badge
+                                      variant="outline"
+                                      className={componentStyles.status.badgeSuccess}
                                     >
-                                      <PlayCircle className="w-6 h-6 mr-2" />
-                                      Iniciar Práctica
-                                    </Button>
+                                      ⏱ {minutos}:{String(segundos).padStart(2, '0')} min
+                                    </Badge>
+                                    <Badge className={focoColors[sesion.foco]} variant="outline">
+                                      {focoLabels[sesion.foco]}
+                                    </Badge>
                                   </div>
-                                )}
+                                </div>
                               </div>
+
+                              {/* Botón de resumen de sesión */}
+                              <Card 
+                                className={`cursor-pointer hover:shadow-sm transition-all ${componentStyles.containers.panelBase}`}
+                                onClick={toggleResumen}
+                              >
+                                <CardContent className="pt-2 pb-2">
+                                  <div className="flex items-center gap-2">
+                                    {resumenExpandido ? (
+                                      <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                                    ) : (
+                                      <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                                    )}
+                                    <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+                                      {resumenExpandido ? 'Ocultar resumen' : 'Ver resumen de la sesión'}
+                                    </span>
+                                  </div>
+                                </CardContent>
+                              </Card>
+
+                              {/* Resumen expandido */}
+                              {resumenExpandido && (
+                                <div className="pt-2 border-t border-[var(--color-border-default)]" onClick={(e) => e.stopPropagation()}>
+                                  <SessionContentView sesion={sesion} compact />
+                                </div>
+                              )}
+
+                              {/* Botón de iniciar práctica (solo si está seleccionada) */}
+                              {sesionSeleccionada === sesionIdx && (
+                                <div className="pt-2 border-t border-[var(--color-border-default)]" onClick={(e) => e.stopPropagation()}>
+                                  <Button
+                                    variant="primary"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      empezarSesion(sesion, sesionIdx);
+                                    }}
+                                    size="lg"
+                                    className={`w-full h-14 text-lg font-bold shadow-card ${componentStyles.buttons.primary} focus-brand`}
+                                  >
+                                    <PlayCircle className="w-6 h-6 mr-2" />
+                                    Iniciar Práctica
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </CardContent>
                         </Card>

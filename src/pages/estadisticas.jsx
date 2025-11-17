@@ -627,12 +627,12 @@ function EstadisticasPageContent() {
   };
 
   const tipoColors = {
-    CA: componentStyles.status.badgeDefault, // brand -> default
-    CB: componentStyles.status.badgeInfo,
-    TC: componentStyles.status.badgeDefault, // purple -> default
-    TM: componentStyles.status.badgeSuccess,
-    FM: componentStyles.status.badgeDefault, // pink -> default
-    VC: componentStyles.status.badgeInfo, // cyan -> info
+    CA: componentStyles.status.badgeDefault,
+    CB: componentStyles.status.badgeDefault,
+    TC: componentStyles.status.badgeDefault,
+    TM: componentStyles.status.badgeDefault,
+    FM: componentStyles.status.badgeDefault,
+    VC: componentStyles.status.badgeDefault,
     AD: componentStyles.status.badgeDefault,
   };
 
@@ -696,7 +696,7 @@ function EstadisticasPageContent() {
                   className="h-10 rounded-xl border-[var(--color-border-default)] focus-brand text-sm w-full md:w-auto"
                   aria-label="Fecha de inicio"
                 />
-                <span className="text-ui/80">—</span>
+                <span className="text-[var(--color-text-secondary)]">—</span>
                 <Input
                   type="date"
                   value={periodoFin}
@@ -770,38 +770,38 @@ function EstadisticasPageContent() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               <Card className={componentStyles.components.cardKpi}>
                 <CardContent className="pt-4 text-center">
-                  <Clock className="w-6 h-6 mx-auto mb-2 text-[hsl(var(--brand-500))]" />
-                  <p className="text-2xl font-bold text-ui">
+                  <Clock className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />
+                  <p className="text-2xl font-bold text-[var(--color-text-primary)]">
                     {formatDuracionHM(kpis.tiempoTotal)}
                   </p>
-                  <p className="text-xs text-ui">Tiempo total</p>
+                  <p className="text-xs text-[var(--color-text-secondary)]">Tiempo total</p>
                 </CardContent>
               </Card>
 
               <Card className={componentStyles.components.cardKpi}>
                 <CardContent className="pt-4 text-center">
-                  <Star className="w-6 h-6 mx-auto mb-2 text-emerald-600" />
-                  <p className="text-2xl font-bold text-ui">{kpis.racha.actual}</p>
-                  <p className="text-xs text-ui">Racha</p>
-                  <p className="text-xs text-ui/80">Máx: {kpis.racha.maxima}</p>
+                  <Star className="w-6 h-6 mx-auto mb-2 text-[var(--color-success)]" />
+                  <p className="text-2xl font-bold text-[var(--color-text-primary)]">{kpis.racha.actual}</p>
+                  <p className="text-xs text-[var(--color-text-secondary)]">Racha</p>
+                  <p className="text-xs text-[var(--color-text-secondary)]">Máx: {kpis.racha.maxima}</p>
                 </CardContent>
               </Card>
 
               <Card className={componentStyles.components.cardKpi}>
                 <CardContent className="pt-4 text-center">
-                  <Smile className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-                  <p className="text-2xl font-bold text-ui">
+                  <Smile className="w-6 h-6 mx-auto mb-2 text-[var(--color-info)]" />
+                  <p className="text-2xl font-bold text-[var(--color-text-primary)]">
                     {kpis.calidadPromedio}/4
                   </p>
-                  <p className="text-xs text-ui">Calidad</p>
+                  <p className="text-xs text-[var(--color-text-secondary)]">Calidad</p>
                 </CardContent>
               </Card>
 
               <Card className={componentStyles.components.cardKpi}>
                 <CardContent className="pt-4 text-center">
-                  <Calendar className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-                  <p className="text-2xl font-bold text-ui">{kpis.semanasDistintas}</p>
-                  <p className="text-xs text-ui">Semanas</p>
+                  <Calendar className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />
+                  <p className="text-2xl font-bold text-[var(--color-text-primary)]">{kpis.semanasDistintas}</p>
+                  <p className="text-xs text-[var(--color-text-secondary)]">Semanas</p>
                 </CardContent>
               </Card>
             </div>
@@ -822,7 +822,7 @@ function EstadisticasPageContent() {
             <Card className={componentStyles.components.cardBase}>
               <CardHeader>
                 <CardTitle className="text-base md:text-lg flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-[hsl(var(--brand-600))]" />
+                  <Clock className="w-5 h-5 text-[var(--color-primary)]" />
                   Tiempo de Estudio
                 </CardTitle>
               </CardHeader>
@@ -870,12 +870,12 @@ function EstadisticasPageContent() {
                           if (!active || !payload || payload.length === 0) return null;
                           return (
                             <div className={`bg-card border border-[var(--color-border-default)] ${componentStyles.containers.panelBase} shadow-card p-3`}>
-                              <p className="text-xs font-semibold mb-2 text-ui">
+                              <p className="text-xs font-semibold mb-2 text-[var(--color-text-primary)]">
                                 {granularidad === 'dia' 
                                   ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
                                   : payload[0]?.payload.fecha}
                               </p>
-                              <p className="text-xs text-[hsl(var(--brand-600))]">
+                              <p className="text-xs text-[var(--color-primary)]">
                                 <strong>Tiempo:</strong> {formatDuracionHM(safeNumber(payload[0]?.payload.tiempo) * 60)}
                               </p>
                             </div>
@@ -937,7 +937,7 @@ function EstadisticasPageContent() {
                           if (!active || !payload || payload.length === 0) return null;
                           return (
                             <div className={`bg-card border border-[var(--color-border-default)] ${componentStyles.containers.panelBase} shadow-card p-3`}>
-                              <p className="text-xs font-semibold mb-2 text-ui">
+                              <p className="text-xs font-semibold mb-2 text-[var(--color-text-primary)]">
                                 {granularidad === 'dia' 
                                   ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
                                   : payload[0]?.payload.fecha}
@@ -969,7 +969,7 @@ function EstadisticasPageContent() {
             <Card className={componentStyles.components.cardBase}>
               <CardHeader>
                 <CardTitle className="text-base md:text-lg flex items-center gap-2">
-                  <Dumbbell className="w-5 h-5 text-purple-600" />
+                  <Dumbbell className="w-5 h-5 text-[var(--color-primary)]" />
                   Ejercicios: Completados vs Omitidos
                 </CardTitle>
               </CardHeader>
@@ -1006,7 +1006,7 @@ function EstadisticasPageContent() {
                           if (!active || !payload || payload.length === 0) return null;
                           return (
                             <div className={`bg-card border border-[var(--color-border-default)] ${componentStyles.containers.panelBase} shadow-card p-3`}>
-                              <p className="text-xs font-semibold mb-2 text-ui">
+                              <p className="text-xs font-semibold mb-2 text-[var(--color-text-primary)]">
                                 {granularidad === 'dia' 
                                   ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
                                   : payload[0]?.payload.fecha}
@@ -1054,7 +1054,7 @@ function EstadisticasPageContent() {
               {datosLinea.length === 0 ? (
                 <div className="text-center py-12">
                   <TrendingUp className="w-16 h-16 mx-auto mb-4 icon-empty" />
-                  <p className="text-ui/80">No hay datos</p>
+                  <p className="text-[var(--color-text-secondary)]">No hay datos</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -1065,7 +1065,7 @@ function EstadisticasPageContent() {
                           <span className="text-sm font-medium">{item.fecha}</span>
                           <div className="flex gap-2 flex-wrap">
                             {item.tiempo > 0 && (
-                              <Badge className="rounded-full bg-brand-100 text-brand-800 text-xs">
+                              <Badge className={`rounded-full ${componentStyles.status.badgeDefault} text-xs`}>
                                 {item.tiempo} min
                               </Badge>
                             )}
@@ -1116,23 +1116,23 @@ function EstadisticasPageContent() {
                     return (
                       <div key={tipo.tipo} className="space-y-1">
                         <div className="flex items-center gap-3">
-                          <Badge className={`rounded-full ${tipoColors[tipo.tipo]} min-w-[140px] justify-center text-xs`}>
+                          <Badge className={`rounded-full ${tipoColors[tipo.tipo]} min-w-[140px] flex items-center justify-center text-xs shrink-0`}>
                             {tipoLabels[tipo.tipo]}
                           </Badge>
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium">{formatDuracionHM(tipo.tiempoReal)}</span>
-                              <span className="text-xs text-ui/80">{porcentaje}%</span>
+                              <span className="text-sm font-medium text-[var(--color-text-primary)]">{formatDuracionHM(tipo.tiempoReal)}</span>
+                              <span className="text-xs text-[var(--color-text-secondary)]">{porcentaje}%</span>
                             </div>
-                            <div className="bg-muted rounded-full h-2 overflow-hidden">
+                            <div className="bg-[var(--color-surface-muted)] rounded-full h-2 overflow-hidden">
                               <div 
-                                className="bg-[hsl(var(--brand-500))] h-full transition-all"
+                                className="bg-[var(--color-primary)] h-full transition-all"
                                 style={{ width: `${porcentaje}%` }}
                               />
                             </div>
                           </div>
                         </div>
-                        <div className="ml-[152px] flex gap-3 text-xs text-ui/80">
+                        <div className="flex gap-3 text-xs text-[var(--color-text-secondary)]">
                           <span>Bloques: {tipo.count}</span>
                           <span>
                             Promedio: {formatDuracionHM(safeNumber(tipo.tiempoMedio))}
@@ -1175,7 +1175,7 @@ function EstadisticasPageContent() {
                     <Card key={idx} className={`${componentStyles.containers.panelBase} hover:shadow-md transition-shadow`}>
                       <CardContent className="pt-3 pb-3">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Badge className="rounded-full bg-muted text-ui font-bold w-8 h-8 flex items-center justify-center shrink-0">
+                          <Badge className="rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] font-bold w-8 h-8 flex items-center justify-center shrink-0">
                             {idx + 1}
                           </Badge>
                           <Badge className={`rounded-full ${tipoColors[ejercicio.tipo]} shrink-0`}>
@@ -1183,7 +1183,7 @@ function EstadisticasPageContent() {
                           </Badge>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">{ejercicio.nombre}</p>
-                            <p className="text-xs text-ui/80">{ejercicio.code}</p>
+                            <p className="text-xs text-[var(--color-text-secondary)]">{ejercicio.code}</p>
                           </div>
                           <div className="flex gap-2 flex-wrap shrink-0">
                             <Badge variant="outline" className={componentStyles.status.badgeInfo}>
@@ -1193,7 +1193,7 @@ function EstadisticasPageContent() {
                               {formatDuracionHM(ejercicio.tiempoTotal)}
                             </Badge>
                             {ejercicio.ultimaPractica && (
-                              <Badge variant="outline" className="rounded-full text-xs bg-muted">
+                              <Badge variant="outline" className="rounded-full text-xs bg-[var(--color-surface-muted)]">
                                 {new Date(ejercicio.ultimaPractica).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                               </Badge>
                             )}
@@ -1236,7 +1236,7 @@ function EstadisticasPageContent() {
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-xs md:text-sm text-ui/80 truncate">
+                              <p className="text-xs md:text-sm text-[var(--color-text-secondary)] truncate">
                                 {registro.piezaNombre} • {registro.planNombre}
                               </p>
                               <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -1251,12 +1251,12 @@ function EstadisticasPageContent() {
                                     {registro.calificacion}/4
                                   </Badge>
                                 )}
-                                <span className="text-xs text-ui/80">
+                                <span className="text-xs text-[var(--color-text-secondary)]">
                                   {registro.inicioISO ? new Date(registro.inicioISO).toLocaleDateString('es-ES') : '-'}
                                 </span>
                               </div>
                               {registro.notas && (
-                                <p className="text-sm text-ui mt-2 italic line-clamp-2">"{registro.notas}"</p>
+                                <p className="text-sm text-[var(--color-text-primary)] mt-2 italic line-clamp-2">"{registro.notas}"</p>
                               )}
                             </div>
                           </div>
@@ -1323,12 +1323,12 @@ function EstadisticasPageContent() {
                                 <Badge className={componentStyles.status.badgeInfo}>
                                   Semana {parseLocalDate(f.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                                 </Badge>
-                                <span className="text-xs text-ui/80">
+                                <span className="text-xs text-[var(--color-text-secondary)]">
                                   {displayName(profesor)}
                                 </span>
                               </div>
                               {f.notaProfesor && (
-                                <p className="text-sm text-ui italic border-l-2 border-blue-400 pl-3 break-words">
+                                <p className="text-sm text-[var(--color-text-primary)] italic border-l-2 border-[var(--color-info)] pl-3 break-words">
                                   "{f.notaProfesor}"
                                 </p>
                               )}
@@ -1348,9 +1348,9 @@ function EstadisticasPageContent() {
                   <div className="grid grid-cols-4 gap-2 md:gap-3">
                     {[1, 2, 3, 4].map(nivel => (
                       <div key={nivel} className={`text-center p-2 md:p-3 ${componentStyles.containers.panelBase} hover:shadow-sm transition-shadow`}>
-                        <p className="text-xl md:text-2xl font-bold text-ui">{feedbackAlumno.distribucion[nivel]}</p>
-                        <p className="text-xs text-ui/80">Nivel {nivel}</p>
-                        <p className="text-xs text-ui/80">
+                        <p className="text-xl md:text-2xl font-bold text-[var(--color-text-primary)]">{feedbackAlumno.distribucion[nivel]}</p>
+                        <p className="text-xs text-[var(--color-text-secondary)]">Nivel {nivel}</p>
+                        <p className="text-xs text-[var(--color-text-secondary)]">
                           {registrosFiltradosUnicos.length > 0 
                             ? ((feedbackAlumno.distribucion[nivel] / registrosFiltradosUnicos.length) * 100).toFixed(1)
                             : 0}%
@@ -1362,7 +1362,7 @@ function EstadisticasPageContent() {
                   <div className="space-y-3 pt-4 border-t border-[var(--color-border-default)]">
                     <h3 className="font-semibold text-sm">Comentarios del estudiante ({comentariosFiltrados.length})</h3>
                     {comentariosFiltrados.length === 0 ? (
-                      <p className="text-sm text-ui/80 text-center py-6">No hay comentarios</p>
+                      <p className="text-sm text-[var(--color-text-secondary)] text-center py-6">No hay comentarios</p>
                     ) : (
                       comentariosFiltrados.slice(0, 20).map(r => {
                         const alumno = usuarios.find(u => u.id === r.alumnoId);
@@ -1371,18 +1371,18 @@ function EstadisticasPageContent() {
                             <CardContent className="pt-3 pb-3">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs text-ui/80 truncate">{displayName(alumno)}</p>
-                                  <p className="text-sm font-medium truncate">{r.sesionNombre}</p>
-                                  <p className="text-xs text-ui/80 truncate">
+                                  <p className="text-xs text-[var(--color-text-secondary)] truncate">{displayName(alumno)}</p>
+                                  <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{r.sesionNombre}</p>
+                                  <p className="text-xs text-[var(--color-text-secondary)] truncate">
                                     {r.piezaNombre} • {new Date(r.inicioISO).toLocaleDateString('es-ES')}
                                   </p>
                                   {r.calificacion && (
-                                    <Badge className="rounded-full bg-purple-100 text-purple-800 text-xs mt-1">
+                                    <Badge className={`rounded-full ${componentStyles.status.badgeDefault} text-xs mt-1`}>
                                       {r.calificacion}/4
                                     </Badge>
                                   )}
                                   {r.notas && (
-                                    <p className="text-sm text-ui mt-2 italic line-clamp-2">"{r.notas}"</p>
+                                    <p className="text-sm text-[var(--color-text-primary)] mt-2 italic line-clamp-2">"{r.notas}"</p>
                                   )}
                                 </div>
                                 <Button
@@ -1394,7 +1394,7 @@ function EstadisticasPageContent() {
                                       navigate(createPageUrl(`asignacion-detalle?id=${asign.id}`));
                                     }
                                   }}
-                                  className="shrink-0 h-9 rounded-xl hover:bg-muted focus-brand"
+                                  className="shrink-0 h-9 rounded-xl hover:bg-[var(--color-surface-muted)] focus-brand"
                                   aria-label="Ver detalle de asignación"
                                 >
                                   <Eye className="w-4 h-4" />

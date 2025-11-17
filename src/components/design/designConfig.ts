@@ -605,6 +605,89 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
     }
   }
   
+  // ============================================================================
+  // MAPEO DE VARS SHADCN/TAILWIND PARA COMPATIBILIDAD
+  // ============================================================================
+  // Los componentes UI (table, select, etc.) usan clases Tailwind que dependen
+  // de vars shadcn (--background, --muted, --card, etc.). Mapeamos desde el
+  // sistema propio para mantener consistencia y soporte Dark mode.
+  
+  // Helper para convertir hex a HSL (formato esperado por shadcn)
+  const hexToHsl = (hex: string): string => {
+    if (!hex || typeof hex !== 'string') {
+      // Fallback a gris neutro si no hay color válido
+      return '0 0% 50%';
+    }
+    // Remover # si existe
+    hex = hex.replace('#', '').trim();
+    // Validar que tenga 6 caracteres
+    if (hex.length !== 6) {
+      return '0 0% 50%';
+    }
+    const r = parseInt(hex.substring(0, 2), 16) / 255;
+    const g = parseInt(hex.substring(2, 4), 16) / 255;
+    const b = parseInt(hex.substring(4, 6), 16) / 255;
+    
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0, s = 0, l = (max + min) / 2;
+    
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+        case g: h = ((b - r) / d + 2) / 6; break;
+        case b: h = ((r - g) / d + 4) / 6; break;
+      }
+    }
+    
+    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+  };
+  
+  // Mapeo de colores del sistema propio a vars shadcn
+  // IMPORTANTE: Estas vars se aplican directamente al root, por lo que funcionan
+  // tanto en light como en dark mode. No necesitamos duplicarlas en .dark
+  const colors = normalized.colors;
+  if (colors) {
+    // Background y foreground
+    vars['--background'] = hexToHsl(colors.background || DEFAULT_DESIGN.colors.background);
+    vars['--foreground'] = hexToHsl(colors.text?.primary || DEFAULT_DESIGN.colors.text.primary);
+    
+    // Card (surface elevated)
+    vars['--card'] = hexToHsl(colors.surfaceElevated || DEFAULT_DESIGN.colors.surfaceElevated);
+    vars['--card-foreground'] = hexToHsl(colors.text?.primary || DEFAULT_DESIGN.colors.text.primary);
+    
+    // Popover (igual que card)
+    vars['--popover'] = hexToHsl(colors.surfaceElevated || DEFAULT_DESIGN.colors.surfaceElevated);
+    vars['--popover-foreground'] = hexToHsl(colors.text?.primary || DEFAULT_DESIGN.colors.text.primary);
+    
+    // Primary (color de marca) - SIEMPRE #fd9840
+    vars['--primary'] = hexToHsl(colors.primary || DEFAULT_DESIGN.colors.primary);
+    vars['--primary-foreground'] = hexToHsl(colors.text?.inverse || DEFAULT_DESIGN.colors.text.inverse);
+    
+    // Secondary (surface)
+    vars['--secondary'] = hexToHsl(colors.surface || DEFAULT_DESIGN.colors.surface);
+    vars['--secondary-foreground'] = hexToHsl(colors.text?.primary || DEFAULT_DESIGN.colors.text.primary);
+    
+    // Muted (surface muted)
+    vars['--muted'] = hexToHsl(colors.surfaceMuted || DEFAULT_DESIGN.colors.surfaceMuted || colors.surface || DEFAULT_DESIGN.colors.surface);
+    vars['--muted-foreground'] = hexToHsl(colors.text?.secondary || DEFAULT_DESIGN.colors.text.secondary);
+    
+    // Accent (surface muted)
+    vars['--accent'] = hexToHsl(colors.surfaceMuted || DEFAULT_DESIGN.colors.surfaceMuted || colors.surface || DEFAULT_DESIGN.colors.surface);
+    vars['--accent-foreground'] = hexToHsl(colors.text?.primary || DEFAULT_DESIGN.colors.text.primary);
+    
+    // Destructive (danger)
+    vars['--destructive'] = hexToHsl(colors.danger || DEFAULT_DESIGN.colors.danger);
+    vars['--destructive-foreground'] = hexToHsl(colors.text?.inverse || DEFAULT_DESIGN.colors.text.inverse);
+    
+    // Border (border default)
+    vars['--border'] = hexToHsl(colors.border?.default || DEFAULT_DESIGN.colors.border.default);
+    vars['--input'] = hexToHsl(colors.border?.default || DEFAULT_DESIGN.colors.border.default);
+    vars['--ring'] = hexToHsl(colors.text?.primary || DEFAULT_DESIGN.colors.text.primary);
+  }
+  
   return vars;
 }
 

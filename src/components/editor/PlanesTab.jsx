@@ -11,6 +11,7 @@ import { Plus, BookOpen, Edit, Copy, Trash2 } from "lucide-react";
 import PlanEditor from "./PlanEditor";
 import { toast } from "sonner";
 import UnifiedTable from "@/components/tables/UnifiedTable";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function PlanesTab() {
   const queryClient = useQueryClient();
@@ -100,10 +101,10 @@ export default function PlanesTab() {
             placeholder="Buscar planes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 min-w-[200px]"
+            className={`flex-1 min-w-[200px] ${componentStyles.controls.inputDefault}`}
           />
           <Select value={focoFilter} onValueChange={setFocoFilter}>
-            <SelectTrigger className="w-full md:w-48">
+            <SelectTrigger className={`w-full md:w-48 ${componentStyles.controls.selectDefault}`}>
               <SelectValue placeholder="Todos los focos" />
             </SelectTrigger>
             <SelectContent>
@@ -114,7 +115,7 @@ export default function PlanesTab() {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={handleCreate} className="w-full md:w-auto">
+        <Button onClick={handleCreate} className={`w-full md:w-auto ${componentStyles.buttons.primary}`}>
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Plan
         </Button>
@@ -125,12 +126,12 @@ export default function PlanesTab() {
           <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
         </div>
       ) : filteredPlanes.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed rounded-lg">
-          <BookOpen className="w-16 h-16 mx-auto mb-4 text-ui/60" />
-          <p className="text-ui/80 mb-2">
+        <div className="text-center py-12 border-2 border-dashed border-[var(--color-border-default)] rounded-lg">
+          <BookOpen className="w-16 h-16 mx-auto mb-4 text-[var(--color-text-secondary)]" />
+          <p className="text-[var(--color-text-secondary)] mb-2">
             {searchTerm || focoFilter !== 'all' ? 'No se encontraron planes' : 'Aún no hay planes'}
           </p>
-          <Button onClick={handleCreate} variant="outline" className="mt-2 rounded-xl">
+          <Button onClick={handleCreate} variant="outline" className={`mt-2 ${componentStyles.buttons.outline}`}>
             <Plus className="w-4 h-4 mr-2" />
             Crear el primero
           </Button>
@@ -143,8 +144,8 @@ export default function PlanesTab() {
                 { key: 'nombre', label: 'Nombre', sortable: true, render: (p) => <span className="font-medium">{p.nombre}</span> },
                 { key: 'foco', label: 'Foco', sortable: true, render: (p) => p.focoGeneral ? (
                   <Badge variant={focoVariants[p.focoGeneral]}>{focoLabels[p.focoGeneral]}</Badge>
-                ) : <span className="text-ui/80">—</span>, sortValue: (p) => p.focoGeneral },
-                { key: 'semanas', label: 'Semanas', sortable: true, render: (p) => <span className="text-sm text-ui/80">{p.semanas?.length || 0}</span>, sortValue: (p) => p.semanas?.length || 0 }
+                ) : <span className="text-[var(--color-text-secondary)]">—</span>, sortValue: (p) => p.focoGeneral },
+                { key: 'semanas', label: 'Semanas', sortable: true, render: (p) => <span className="text-sm text-[var(--color-text-secondary)]">{p.semanas?.length || 0}</span>, sortValue: (p) => p.semanas?.length || 0 }
               ]}
               data={filteredPlanes}
               getRowActions={(p) => [ // Changed from 'actions' to 'getRowActions' and updated structure
@@ -169,7 +170,7 @@ export default function PlanesTab() {
                           </Badge>
                         )}
                         <h3 className="font-semibold text-base mb-1">{plan.nombre}</h3>
-                        <p className="text-xs text-ui/80"> {/* Mejor contraste en fondo claro */}
+                        <p className="text-xs text-[var(--color-text-secondary)]">
                           {plan.semanas?.length || 0} semanas
                         </p>
                       </div>
@@ -180,7 +181,7 @@ export default function PlanesTab() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleEdit(plan)}
-                        className="flex-1 btn-secondary h-10" // Changed className
+                        className={`flex-1 ${componentStyles.buttons.secondary}`}
                       >
                         <Edit className="w-4 h-4 mr-1" />
                         Editar
@@ -189,7 +190,7 @@ export default function PlanesTab() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleDuplicate(plan)}
-                        className="flex-1 btn-secondary h-10" // Changed className
+                        className={`flex-1 ${componentStyles.buttons.secondary}`}
                       >
                         <Copy className="w-4 h-4 mr-1" />
                         Duplicar
@@ -198,7 +199,7 @@ export default function PlanesTab() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleDelete(plan)}
-                        className="btn-danger h-10 px-3" // Changed className
+                        className={`${componentStyles.buttons.danger} px-3`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

@@ -27,6 +27,7 @@ import PageHeader from "@/components/ds/PageHeader";
 import Tabs from "@/components/ds/Tabs";
 import { roleHome } from "../components/auth/roleMap";
 import { createPageUrl } from "@/utils";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function TestSeedPage() {
   const queryClient = useQueryClient();
@@ -44,21 +45,21 @@ export default function TestSeedPage() {
   const [activeTab, setActiveTab] = useState('seeds');
 
   const tipoColors = {
-    CA: 'bg-brand-100 text-brand-800 border-brand-200',
-    CB: 'bg-blue-100 text-blue-800 border-blue-200',
-    TC: 'bg-purple-100 text-purple-800 border-purple-200',
-    TM: 'bg-green-100 text-green-800 border-green-200',
-    FM: 'bg-pink-100 text-pink-800 border-pink-200',
-    VC: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-    AD: 'bg-[var(--color-surface-muted)] text-ui border-[var(--color-border-default)]',
+    CA: `${componentStyles.status.badgeDefault} border-[var(--color-primary)]/30`,
+    CB: `${componentStyles.status.badgeInfo}`,
+    TC: `${componentStyles.status.badgeDefault} border-[var(--color-primary)]/30`,
+    TM: `${componentStyles.status.badgeSuccess}`,
+    FM: `${componentStyles.status.badgeWarning}`,
+    VC: `${componentStyles.status.badgeInfo}`,
+    AD: `bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] border-[var(--color-border-default)]`,
   };
 
   const focoColors = {
-    GEN: 'bg-[var(--color-surface-muted)] text-ui',
-    LIG: 'bg-blue-100 text-blue-800',
-    RIT: 'bg-purple-100 text-purple-800',
-    ART: 'bg-green-100 text-green-800',
-    'S&A': 'bg-brand-100 text-brand-800',
+    GEN: 'bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]',
+    LIG: componentStyles.status.badgeInfo,
+    RIT: `${componentStyles.status.badgeDefault} border-[var(--color-primary)]/30`,
+    ART: componentStyles.status.badgeSuccess,
+    'S&A': `${componentStyles.status.badgeDefault} border-[var(--color-primary)]/30`,
   };
 
   const currentUser = getCurrentUser();
@@ -819,10 +820,10 @@ export default function TestSeedPage() {
       <div className="flex items-center justify-center min-h-[80vh]">
         <Card className="max-w-md app-card">
           <CardContent className="pt-6 text-center space-y-4">
-            <Shield className="w-16 h-16 mx-auto text-red-500" />
+            <Shield className="w-16 h-16 mx-auto text-[var(--color-danger)]" />
             <div>
-              <h2 className="font-semibold text-lg text-ui mb-2">Acceso Denegado</h2>
-              <p className="text-muted">Esta vista requiere permisos de Administrador.</p>
+            <h2 className="font-semibold text-lg text-[var(--color-text-primary)] mb-2">Acceso Denegado</h2>
+            <p className="text-[var(--color-text-secondary)]">Esta vista requiere permisos de Administrador.</p>
             </div>
           </CardContent>
         </Card>
@@ -840,17 +841,17 @@ export default function TestSeedPage() {
           <Card className="app-card">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Sprout className="w-5 h-5 text-green-600" />
+                <Sprout className="w-5 h-5 text-[var(--color-success)]" />
                 Semillas Realistas
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm text-ui/80">
+              <p className="text-sm text-[var(--color-text-secondary)]">
                 Genera datos de prueba realistas para todos los estudiantes existentes.
               </p>
-              <Alert className="rounded-xl border-blue-200 bg-blue-50">
-                <AlertTriangle className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-xs text-blue-900">
+              <Alert className="rounded-xl border-[var(--color-info)]/20 bg-[var(--color-info)]/10">
+                <AlertTriangle className="h-4 w-4 text-[var(--color-info)]" />
+                <AlertDescription className="text-xs text-[var(--color-text-primary)]">
                   <strong>Importante:</strong> Usa estudiantes existentes. Crea usuarios con rol ESTU antes de semillar.
                 </AlertDescription>
               </Alert>
@@ -859,7 +860,7 @@ export default function TestSeedPage() {
                   variant="primary"
                   onClick={() => generarSemillasRealistas(1)}
                   disabled={isSeeding}
-                  className="w-full btn-primary"
+                  className={`w-full ${componentStyles.buttons.primary}`}
                   aria-label="Generar 1 semana de semillas realistas"
                 >
                   {isSeeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Zap className="w-4 h-4 mr-2" />}
@@ -869,7 +870,7 @@ export default function TestSeedPage() {
                   variant="primary"
                   onClick={() => generarSemillasRealistas(3)}
                   disabled={isSeeding}
-                  className="w-full btn-primary"
+                  className={`w-full ${componentStyles.buttons.primary}`}
                   aria-label="Generar 3 semanas de semillas realistas"
                 >
                   {isSeeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sprout className="w-4 h-4 mr-2" />}
@@ -879,7 +880,7 @@ export default function TestSeedPage() {
                   variant="outline"
                   onClick={refrescarTodo}
                   disabled={isRefreshing || isSeeding}
-                  className="w-full btn-outline"
+                  className={`w-full ${componentStyles.buttons.outline}`}
                   aria-label="Actualizar datos y ejecutar pruebas"
                 >
                   {isRefreshing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
@@ -891,7 +892,7 @@ export default function TestSeedPage() {
 
           <Card className="app-card">
             <CardHeader>
-              <CardTitle className="text-red-700 flex items-center gap-2">
+              <CardTitle className="text-[var(--color-danger)] flex items-center gap-2">
                 <Trash2 className="w-5 h-5" />
                 Limpiar Datos
               </CardTitle>
@@ -904,7 +905,7 @@ export default function TestSeedPage() {
                 variant="danger"
                 onClick={borrarSemillas}
                 disabled={isSeeding}
-                className="w-full btn-danger"
+                className={`w-full ${componentStyles.buttons.danger}`}
                 aria-label="Borrar todas las semillas de prueba"
               >
                 {isSeeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
@@ -924,7 +925,7 @@ export default function TestSeedPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-brand-600" />
+                <CheckCircle2 className="w-5 h-5 text-[var(--color-primary)]" />
                 Pruebas Automáticas
               </CardTitle>
               <Button
@@ -932,7 +933,7 @@ export default function TestSeedPage() {
                 onClick={ejecutarPruebas}
                 disabled={isSeeding}
                 size="sm"
-                className="btn-primary"
+                className={componentStyles.buttons.primary}
                 aria-label="Ejecutar pruebas"
               >
                 {isSeeding ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ejecutar'}
@@ -941,26 +942,26 @@ export default function TestSeedPage() {
           </CardHeader>
           <CardContent>
             {testResults.length === 0 ? (
-              <div className="text-center py-8 text-ui/80">
+              <div className="text-center py-8 text-[var(--color-text-secondary)]">
                 <AlertCircle className="w-12 h-12 mx-auto mb-3 icon-empty" />
                 <p>Ejecuta las pruebas</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {testResults.map((test, idx) => (
-                  <div key={idx} className={`flex items-start gap-3 p-3 rounded-xl border ${test.passed ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                  <div key={idx} className={`flex items-start gap-3 p-3 rounded-xl border ${test.passed ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]/20' : 'bg-[var(--color-danger)]/10 border-[var(--color-danger)]/20'}`}>
                     {test.passed ?
-                      <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" /> :
-                      <XCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-5 h-5 text-[var(--color-success)] shrink-0 mt-0.5" /> :
+                      <XCircle className="w-5 h-5 text-[var(--color-danger)] shrink-0 mt-0.5" />
                     }
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-ui">{test.name}</p>
-                      <p className="text-xs text-muted">{test.detail}</p>
+                      <p className="font-semibold text-sm text-[var(--color-text-primary)]">{test.name}</p>
+                      <p className="text-xs text-[var(--color-text-secondary)]">{test.detail}</p>
                     </div>
                   </div>
                 ))}
                 <div className="pt-3 border-t border-[var(--color-border-default)]">
-                  <Badge className={`rounded-full ${testResults.every(t => t.passed) ? 'bg-green-600 text-white' : 'bg-amber-600 text-white'}`}>
+                  <Badge className={`rounded-full ${testResults.every(t => t.passed) ? componentStyles.status.badgeSuccess + ' text-[var(--color-text-inverse)]' : componentStyles.status.badgeWarning + ' text-[var(--color-text-inverse)]'}`}>
                     {testResults.filter(t => t.passed).length}/{testResults.length} exitosas
                   </Badge>
                 </div>
@@ -979,14 +980,14 @@ export default function TestSeedPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <LinkIcon className="w-5 h-5 text-brand-600" />
+                <LinkIcon className="w-5 h-5 text-[var(--color-primary)]" />
                 Auditoría de Enlaces
               </CardTitle>
               <Button
                 variant="primary"
                 onClick={auditarEnlaces}
                 disabled={isSeeding}
-                className="btn-primary"
+                className={componentStyles.buttons.primary}
                 aria-label="Auditar enlaces"
               >
                 {isSeeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
@@ -996,7 +997,7 @@ export default function TestSeedPage() {
           </CardHeader>
           <CardContent>
             {!linkAudit ? (
-              <div className="text-center py-8 text-ui/80">
+              <div className="text-center py-8 text-[var(--color-text-secondary)]">
                 <LinkIcon className="w-12 h-12 mx-auto mb-3 icon-empty" />
                 <p>Ejecuta la auditoría</p>
               </div>
@@ -1004,10 +1005,10 @@ export default function TestSeedPage() {
               <div className="space-y-4">
                 {Object.entries(linkAudit).map(([rol, data]) => (
                   <div key={rol} className="app-panel p-4">
-                    <h3 className="font-bold text-lg text-ui mb-3">{rol}</h3>
+                    <h3 className="font-bold text-lg text-[var(--color-text-primary)] mb-3">{rol}</h3>
                     <div className="space-y-2">
                       <div>
-                        <p className="text-sm font-semibold text-ui">Páginas en menú:</p>
+                        <p className="text-sm font-semibold text-[var(--color-text-primary)]">Páginas en menú:</p>
                         <div className="flex flex-wrap gap-2 mt-1">
                           {data.pages.map(p => (
                             <Badge key={p.url} variant="outline" className="text-xs rounded-full">
@@ -1018,13 +1019,13 @@ export default function TestSeedPage() {
                       </div>
                       {data.orphans.length > 0 && (
                         <div className="pt-2 border-t border-[var(--color-border-default)]">
-                          <p className="text-sm font-semibold text-amber-700 flex items-center gap-2">
+                          <p className="text-sm font-semibold text-[var(--color-warning)] flex items-center gap-2">
                             <AlertTriangle className="w-4 h-4" />
                             Páginas huérfanas:
                           </p>
                           <div className="flex flex-wrap gap-2 mt-1">
                             {data.orphans.map(url => (
-                              <Badge key={url} className="bg-amber-100 text-amber-800 text-xs rounded-full">
+                              <Badge key={url} className={`${componentStyles.status.badgeWarning} text-xs rounded-full`}>
                                 {url}
                               </Badge>
                             ))}
@@ -1048,13 +1049,13 @@ export default function TestSeedPage() {
         <Card className="app-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <FileSearch className="w-5 h-5 text-brand-600" />
+              <FileSearch className="w-5 h-5 text-[var(--color-primary)]" />
               Auditoría Personalizada
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-2 block text-ui">
+              <label className="text-sm font-medium mb-2 block text-[var(--color-text-primary)]">
                 Especificación de auditoría (DSL)
               </label>
               <Textarea
@@ -1062,13 +1063,13 @@ export default function TestSeedPage() {
                 onChange={(e) => setAuditSpec(e.target.value)}
                 placeholder="pattern: toISOString\s*\(&#10;include: /src/**/*.{js,jsx}&#10;exclude: **/node_modules/**"
                 rows={6}
-                className="font-mono text-xs ctrl-field"
+                className={`font-mono text-xs ${componentStyles.controls.inputDefault}`}
                 aria-label="Especificación de auditoría"
               />
             </div>
 
             <div>
-              <p className="text-sm font-medium mb-2 text-ui">Perfiles rápidos:</p>
+              <p className="text-sm font-medium mb-2 text-[var(--color-text-primary)]">Perfiles rápidos:</p>
               <div className="flex flex-wrap gap-2">
                 {Object.entries(QUICK_PROFILES).map(([key, profile]) => (
                   <Button
@@ -1076,7 +1077,7 @@ export default function TestSeedPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => cargarPerfil(key)}
-                    className="text-xs btn-outline"
+                    className={`text-xs ${componentStyles.buttons.outline}`}
                     aria-label={`Cargar perfil ${profile.name}`}
                   >
                     {profile.name}
@@ -1090,7 +1091,7 @@ export default function TestSeedPage() {
                 variant="primary"
                 onClick={ejecutarAuditoria}
                 disabled={isAuditing}
-                className="btn-primary"
+                className={componentStyles.buttons.primary}
                 aria-label="Ejecutar auditoría"
               >
                 {isAuditing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Search className="w-4 h-4 mr-2" />}
@@ -1100,7 +1101,7 @@ export default function TestSeedPage() {
                 onClick={refrescarAuditoria}
                 disabled={!lastAuditSpec || isAuditing}
                 variant="outline"
-                className="btn-outline"
+                className={componentStyles.buttons.outline}
                 aria-label="Refrescar auditoría"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -1110,7 +1111,7 @@ export default function TestSeedPage() {
                 <Button
                   onClick={exportarAuditoriaCSV}
                   variant="outline"
-                  className="btn-outline"
+                  className={componentStyles.buttons.outline}
                   aria-label="Exportar resultados a CSV"
                 >
                   <FileDown className="w-4 h-4 mr-2" />
@@ -1122,22 +1123,22 @@ export default function TestSeedPage() {
             {auditResults && (
               <div className="pt-4 border-t border-[var(--color-border-default)]">
                 <div className="flex items-center gap-4 text-sm flex-wrap">
-                  <span className="text-ui">
+                  <span className="text-[var(--color-text-primary)]">
                     <strong>Archivos:</strong> {auditResults.filesScanned}
                   </span>
-                  <span className="text-ui">
+                  <span className="text-[var(--color-text-primary)]">
                     <strong>Coincidencias:</strong> {auditResults.matchesTotal}
                   </span>
-                  <span className="text-ui/80">
+                  <span className="text-[var(--color-text-secondary)]">
                     <Clock className="w-3 h-3 inline mr-1" />
                     {auditResults.durationMs}ms
                   </span>
                 </div>
 
                 {auditResults.reason && (
-                  <Alert className="mt-3 rounded-xl border-amber-200 bg-amber-50">
-                    <AlertTriangle className="h-4 w-4 text-amber-700" />
-                    <AlertDescription className="text-amber-800 text-sm">
+                  <Alert className="mt-3 rounded-xl border-[var(--color-warning)]/20 bg-[var(--color-warning)]/10">
+                    <AlertTriangle className="h-4 w-4 text-[var(--color-warning)]" />
+                    <AlertDescription className="text-[var(--color-text-primary)] text-sm">
                       <strong>{auditResults.reason}</strong>
                       <details className="mt-2 text-xs">
                         <summary className="cursor-pointer">Ver configuración aplicada</summary>
@@ -1153,23 +1154,23 @@ export default function TestSeedPage() {
 
                 {auditResults.perFile && auditResults.perFile.length > 0 && (
                   <div className="mt-4 space-y-2">
-                    <p className="text-sm font-semibold text-ui">Resultados por archivo:</p>
+                    <p className="text-sm font-semibold text-[var(--color-text-primary)]">Resultados por archivo:</p>
                     {auditResults.perFile.map((file, idx) => (
                       <Card key={idx} className="app-panel">
                         <CardHeader
-                          className="cursor-pointer hover:bg-muted py-3 rounded-t-xl"
+                          className="cursor-pointer hover:bg-[var(--color-surface-muted)] py-3 rounded-t-xl"
                           onClick={() => toggleFileExpanded(file.path)}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               {expandedFiles.has(file.path) ? (
-                                <ChevronDown className="w-4 h-4 text-ui" />
+                                <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
                               ) : (
-                                <ChevronRight className="w-4 h-4 text-ui" />
+                                <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
                               )}
-                              <span className="font-mono text-sm text-brand-600 break-all">{file.path}</span>
+                              <span className="font-mono text-sm text-[var(--color-primary)] break-all">{file.path}</span>
                             </div>
-                            <Badge variant="outline" className="bg-amber-50 text-amber-800 shrink-0 ml-2 rounded-full">
+                            <Badge variant="outline" className={`${componentStyles.status.badgeWarning} shrink-0 ml-2 rounded-full`}>
                               {file.matches.length}
                             </Badge>
                           </div>
@@ -1177,25 +1178,25 @@ export default function TestSeedPage() {
                         {expandedFiles.has(file.path) && (
                           <CardContent className="pt-0 space-y-3">
                             {file.matches.map((match, mIdx) => (
-                              <div key={mIdx} className="border-l-2 border-muted pl-3 pb-2">
+                              <div key={mIdx} className="border-l-2 border-[var(--color-border-default)] pl-3 pb-2">
                                 <div className="flex items-baseline gap-2 mb-1">
-                                  <span className="text-xs text-muted">Línea {match.line}</span>
-                                  <span className="text-xs text-muted">• Patrón: <code className="bg-muted px-1 rounded">{match.pattern}</code></span>
+                                  <span className="text-xs text-[var(--color-text-secondary)]">Línea {match.line}</span>
+                                  <span className="text-xs text-[var(--color-text-secondary)]">• Patrón: <code className="bg-[var(--color-surface-muted)] px-1 rounded">{match.pattern}</code></span>
                                 </div>
-                                <pre className="bg-muted rounded-xl p-2 text-xs overflow-x-auto">
+                                <pre className="bg-[var(--color-surface-muted)] rounded-xl p-2 text-xs overflow-x-auto">
                                   <code>
                                     {match.context.before && (
-                                      <div className="text-muted">{match.context.before}</div>
+                                      <div className="text-[var(--color-text-secondary)]">{match.context.before}</div>
                                     )}
                                     <div>
                                       {match.context.current.substring(0, match.start)}
-                                      <mark className="bg-yellow-200 font-semibold">
+                                      <mark className="bg-[var(--color-warning)]/30 font-semibold">
                                         {match.context.current.substring(match.start, match.end)}
                                       </mark>
                                       {match.context.current.substring(match.end)}
                                     </div>
                                     {match.context.after && (
-                                      <div className="text-muted">{match.context.after}</div>
+                                      <div className="text-[var(--color-text-secondary)]">{match.context.after}</div>
                                     )}
                                   </code>
                                 </pre>
@@ -1222,14 +1223,14 @@ export default function TestSeedPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <ClipboardList className="w-5 h-5 text-brand-600" />
+                <ClipboardList className="w-5 h-5 text-[var(--color-primary)]" />
                 Logs
               </CardTitle>
               <Button
                 onClick={clearLogs}
                 variant="outline"
                 size="sm"
-                className="h-9 rounded-xl"
+                className={`h-9 ${componentStyles.buttons.outline}`}
                 aria-label="Limpiar logs"
               >
                 Limpiar
@@ -1238,19 +1239,19 @@ export default function TestSeedPage() {
           </CardHeader>
           <CardContent>
             {seedLogs.length === 0 ? (
-              <div className="text-center py-8 text-ui/80">
+              <div className="text-center py-8 text-[var(--color-text-secondary)]">
                 <p>No hay logs aún</p>
               </div>
             ) : (
               <div className="space-y-1 max-h-96 overflow-y-auto">
                 {seedLogs.map((log, idx) => (
                   <div key={idx} className={`text-sm font-mono p-2 rounded-xl ${
-                    log.type === 'success' ? 'bg-green-50 text-green-800' :
-                    log.type === 'error' ? 'bg-red-50 text-red-800' :
-                    log.type === 'warning' ? 'bg-amber-50 text-amber-800' :
-                    'bg-muted text-ui'
+                    log.type === 'success' ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]' :
+                    log.type === 'error' ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]' :
+                    log.type === 'warning' ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]' :
+                    'bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
                   }`}>
-                    <span className="text-ui/80 mr-2">[{log.timestamp}]</span>
+                    <span className="text-[var(--color-text-secondary)] mr-2">[{log.timestamp}]</span>
                     {log.message}
                   </div>
                 ))}
@@ -1274,33 +1275,33 @@ export default function TestSeedPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           <Card className="app-card hover:shadow-md transition-shadow">
             <CardContent className="pt-4 text-center">
-              <Music className="w-6 h-6 mx-auto mb-2 text-pink-600" />
-              <p className="text-2xl font-bold text-ui">{countPiezas}</p>
-              <p className="text-xs text-ui/80">Piezas</p>
+              <Music className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />
+              <p className="text-2xl font-bold text-[var(--color-text-primary)]">{countPiezas}</p>
+              <p className="text-xs text-[var(--color-text-secondary)]">Piezas</p>
             </CardContent>
           </Card>
 
           <Card className="app-card hover:shadow-md transition-shadow">
             <CardContent className="pt-4 text-center">
-              <Calendar className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-              <p className="text-2xl font-bold text-ui">{countPlanes}</p>
-              <p className="text-xs text-ui/80">Planes</p>
+              <Calendar className="w-6 h-6 mx-auto mb-2 text-[var(--color-info)]" />
+              <p className="text-2xl font-bold text-[var(--color-text-primary)]">{countPlanes}</p>
+              <p className="text-xs text-[var(--color-text-secondary)]">Planes</p>
             </CardContent>
           </Card>
 
           <Card className="app-card hover:shadow-md transition-shadow">
             <CardContent className="pt-4 text-center">
-              <Layers className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-              <p className="text-2xl font-bold text-ui">{countBloques}</p>
-              <p className="text-xs text-ui/80">Ejercicios</p>
+              <Layers className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />
+              <p className="text-2xl font-bold text-[var(--color-text-primary)]">{countBloques}</p>
+              <p className="text-xs text-[var(--color-text-secondary)]">Ejercicios</p>
             </CardContent>
           </Card>
 
           <Card className="app-card hover:shadow-md transition-shadow">
             <CardContent className="pt-4 text-center">
-              <Target className="w-6 h-6 mx-auto mb-2 text-brand-600" />
-              <p className="text-2xl font-bold text-ui">{countAsignaciones}</p>
-              <p className="text-xs text-ui/80">Asignaciones</p>
+              <Target className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />
+              <p className="text-2xl font-bold text-[var(--color-text-primary)]">{countAsignaciones}</p>
+              <p className="text-xs text-[var(--color-text-secondary)]">Asignaciones</p>
             </CardContent>
           </Card>
         </div>

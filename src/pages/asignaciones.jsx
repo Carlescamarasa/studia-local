@@ -245,7 +245,7 @@ function AsignacionesPageContent() {
                 placeholder="Buscar estudiante o pieza..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`pl-9 pr-9 ${componentStyles.controls.inputDefault} focus-brand`}
+                className={`w-full pl-9 pr-9 ${componentStyles.controls.inputDefault}`}
               />
               {searchTerm && (
                 <button

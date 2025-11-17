@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Save, Plus, Trash2, PlayCircle, Edit, Copy, GripVertical, Search, RotateCcw, AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
+import { X, Save, Plus, Trash2, PlayCircle, Edit, Copy, GripVertical, Search, RotateCcw, AlertTriangle, ChevronDown, ChevronRight, Shuffle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import ExerciseEditor from "./ExerciseEditor";
 import { createPortal } from "react-dom";
 import { uid, ensureRondaIds, buildDefaultSecuencia } from "../study/sessionSequence";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, onClose }) {
   const [formData, setFormData] = useState({
@@ -44,17 +45,23 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
 
       // Si no hay secuencia guardada, la creamos
       const secuenciaDefault = buildDefaultSecuencia(sesionConIds);
+      const secuenciaFinal = sesion.secuencia || secuenciaDefault;
 
       setFormData({
         nombre: sesion.nombre || '',
         foco: sesion.foco || 'GEN',
         bloques: sesion.bloques || [],
         rondas: rondasConId,
-        secuencia: sesion.secuencia || secuenciaDefault,
+        secuencia: secuenciaFinal,
       });
 
-      if (sesion.rondas && sesion.rondas.length > 0) {
-        const allRondasExpanded = new Set(sesion.rondas.map((_, idx) => idx));
+      // Expandir todas las rondas por defecto (basándose en su posición en la secuencia)
+      if (rondasConId.length > 0) {
+        const allRondasExpanded = new Set(
+          secuenciaFinal
+            .map((item, seqIndex) => item.kind === 'RONDA' ? seqIndex : null)
+            .filter(idx => idx !== null)
+        );
         setExpandedRondas(allRondasExpanded);
       }
     }
@@ -200,14 +207,21 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
       aleatoria: false
     };
 
-    setFormData(prev => ({
-      ...prev,
-      bloques: [...prev.bloques, ...newBloquesToAdd],
-      rondas: [...prev.rondas, nuevaRonda],
-      secuencia: [...prev.secuencia, { kind: 'RONDA', id: nuevaRonda.id }],
-    }));
+    let nuevoSeqIndex;
+    setFormData(prev => {
+      const nuevaSecuencia = [...prev.secuencia, { kind: 'RONDA', id: nuevaRonda.id }];
+      nuevoSeqIndex = nuevaSecuencia.length - 1; // Índice de la nueva ronda en la secuencia
+      
+      return {
+        ...prev,
+        bloques: [...prev.bloques, ...newBloquesToAdd],
+        rondas: [...prev.rondas, nuevaRonda],
+        secuencia: nuevaSecuencia,
+      };
+    });
     setSelectedEjercicios(new Set());
-    setExpandedRondas(prev => new Set([...prev, (formData.rondas?.length || 0)]));
+    // Expandir la nueva ronda automáticamente (usando el índice en la secuencia)
+    setExpandedRondas(prev => new Set([...prev, nuevoSeqIndex]));
   };
 
   const updateEjercicioInline = (index, updatedEjercicio) => {
@@ -266,13 +280,17 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
     const rondaIdx = formData.secuencia.findIndex(s => s.kind === 'RONDA' && s.id === rondaId);
     
     const newSecuencia = [...formData.secuencia];
-    newSecuencia.splice(rondaIdx + 1, 0, { kind: 'RONDA', id: newRonda.id });
+    const nuevoSeqIndex = rondaIdx + 1; // Índice de la nueva ronda en la secuencia
+    newSecuencia.splice(nuevoSeqIndex, 0, { kind: 'RONDA', id: newRonda.id });
     
     setFormData({ 
       ...formData, 
       rondas: [...formData.rondas, newRonda],
       secuencia: newSecuencia
     });
+    
+    // Expandir la ronda duplicada automáticamente
+    setExpandedRondas(prev => new Set([...prev, nuevoSeqIndex]));
     toast.success('✅ Ronda duplicada');
   };
 
@@ -398,13 +416,13 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
   };
 
   const tipoColors = {
-    CA: 'bg-brand-100 text-brand-800 border-brand-200',
-    CB: 'bg-blue-100 text-blue-800 border-blue-200',
-    TC: 'bg-purple-100 text-purple-800 border-purple-200',
-    TM: 'bg-green-100 text-green-800 border-green-200',
-    FM: 'bg-pink-100 text-pink-800 border-pink-200',
-    VC: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-    AD: 'bg-[var(--color-surface-muted)] text-ui border-[var(--color-border-default)]',
+    CA: componentStyles.status.badgeDefault,
+    CB: componentStyles.status.badgeInfo,
+    TC: componentStyles.status.badgeDefault,
+    TM: componentStyles.status.badgeSuccess,
+    FM: componentStyles.status.badgeDefault,
+    VC: componentStyles.status.badgeInfo,
+    AD: componentStyles.status.badgeDefault,
   };
 
   const tiempoTotal = calcularTiempoTotal();
@@ -417,43 +435,43 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
       />
       
       <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
-        <Card 
-          className="w-full max-w-6xl my-8 overflow-hidden flex flex-col max-h-[92vh] pointer-events-auto shadow-card rounded-2xl app-card"
+        <div 
+          className="w-full max-w-6xl my-8 overflow-hidden flex flex-col max-h-[92vh] pointer-events-auto shadow-card rounded-2xl bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)]"
           onClick={(e) => e.stopPropagation()}
         >
-          <CardHeader className="border-b border-[var(--color-border-default)] bg-brand-500 text-white rounded-t-2xl">
+          <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-2xl px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <PlayCircle className="w-6 h-6" />
-                <CardTitle>Editar Sesión</CardTitle>
+                <PlayCircle className="w-6 h-6 text-[var(--color-text-primary)]" />
+                <CardTitle className="text-[var(--color-text-primary)]">Editar Sesión</CardTitle>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20 h-9 w-9 rounded-xl">
+              <Button variant="ghost" size="icon" onClick={onClose} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-9 w-9 rounded-xl">
                 <X className="w-5 h-5" />
               </Button>
             </div>
-          </CardHeader>
+          </div>
 
           <CardContent className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="nombre">Nombre de la Sesión *</Label>
+                <Label htmlFor="nombre" className="text-[var(--color-text-primary)]">Nombre de la Sesión *</Label>
                 <Input
                   id="nombre"
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                   placeholder="Ej: Sesión A"
-                  className="h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
+                  className={componentStyles.controls.inputDefault}
                 />
               </div>
 
               <div>
-                <Label htmlFor="foco">Foco de la Sesión *</Label>
+                <Label htmlFor="foco" className="text-[var(--color-text-primary)]">Foco de la Sesión *</Label>
                 <Select 
                   value={formData.foco} 
                   onValueChange={(v) => setFormData({ ...formData, foco: v })}
                   modal={false}
                 >
-                  <SelectTrigger id="foco" className="w-full h-10 rounded-xl border-[var(--color-border-default)] focus-orange">
+                  <SelectTrigger id="foco" className={`w-full ${componentStyles.controls.selectDefault}`}>
                     <SelectValue placeholder="Selecciona foco..." />
                   </SelectTrigger>
                   <SelectContent 
@@ -471,32 +489,32 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
               </div>
             </div>
 
-            <div className="app-panel bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 p-4">
+            <div className="app-panel border-[var(--color-info)]/20 bg-[var(--color-info)]/10 p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-blue-900 font-medium">Tiempo previsto (excluyendo AD)</p>
-                  <p className="text-xs text-blue-700 mt-1">
+                  <p className="text-sm text-[var(--color-text-primary)] font-medium">Tiempo previsto (excluyendo AD)</p>
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-1">
                     {formData.bloques.filter(b => b.tipo !== 'AD').length} ejercicios + {formData.rondas.length} rondas
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-3xl font-bold text-blue-900">
+                  <p className="text-3xl font-bold text-[var(--color-text-primary)]">
                     {Math.floor(tiempoTotal / 60)}:{String(tiempoTotal % 60).padStart(2, '0')}
                   </p>
-                  <p className="text-xs text-blue-700">minutos</p>
+                  <p className="text-xs text-[var(--color-text-secondary)]">minutos</p>
                 </div>
               </div>
             </div>
 
             <Card className="app-panel">
               <CardHeader>
-                <CardTitle className="text-lg">Estructura de la sesión</CardTitle>
+                <CardTitle className="text-lg text-[var(--color-text-primary)]">Estructura de la sesión</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {formData.secuencia.length === 0 ? (
-                  <div className="text-center py-12 text-muted">
-                    <PlayCircle className="w-16 h-16 mx-auto mb-4 text-ui/60" />
-                    <p className="text-sm mb-4">Aún no hay ejercicios ni rondas en esta sesión.</p>
+                  <div className="text-center py-12">
+                    <PlayCircle className="w-16 h-16 mx-auto mb-4 text-[var(--color-text-secondary)]" />
+                    <p className="text-sm mb-4 text-[var(--color-text-primary)]">Aún no hay ejercicios ni rondas en esta sesión.</p>
                   </div>
                 ) : (
                   <DragDropContext onDragEnd={onDragEnd}>
@@ -514,19 +532,19 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                     <div
                                       ref={provided.innerRef}
                                       {...provided.draggableProps}
-                                      className={`flex items-center gap-2 p-3 border border-[var(--color-border-default)] rounded-xl bg-card hover:shadow-sm transition-all ${
-                                        snapshot.isDragging ? 'shadow-card border-brand-300' : ''
+                                      className={`flex items-center gap-2 p-3 border border-[var(--color-border-default)] rounded-xl bg-[var(--color-surface-elevated)] hover:shadow-sm transition-all ${
+                                        snapshot.isDragging ? 'shadow-card border-[var(--color-primary)]' : ''
                                       }`}
                                     >
                                       <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing">
-                                        <GripVertical className="w-4 h-4 text-muted" />
+                                        <GripVertical className="w-4 h-4 text-[var(--color-text-secondary)]" />
                                       </div>
                                       <Badge className={`rounded-full ${tipoColors[bloque.tipo]}`}>
                                         {bloque.tipo}
                                       </Badge>
                                       <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-sm truncate text-ui">{bloque.nombre}</p>
-                                        <p className="text-xs text-muted">
+                                        <p className="font-medium text-sm truncate text-[var(--color-text-primary)]">{bloque.nombre}</p>
+                                        <p className="text-xs text-[var(--color-text-secondary)]">
                                           {bloque.code} • {Math.floor(bloque.duracionSeg / 60)}:{String(bloque.duracionSeg % 60).padStart(2, '0')} min
                                         </p>
                                       </div>
@@ -546,7 +564,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => removeEjercicio(formData.bloques.findIndex(b => b.code === bloque.code))}
-                                        className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 rounded-xl"
+                                        className="h-8 w-8 p-0 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-xl"
                                       >
                                         <Trash2 className="w-4 h-4" />
                                       </Button>
@@ -567,13 +585,13 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                   <Card 
                                     ref={provided.innerRef} 
                                     {...provided.draggableProps}
-                                    className={`app-panel border-purple-300 bg-purple-50/30 ${
-                                      snapshot.isDragging ? 'shadow-card border-purple-500' : ''
+                                    className={`app-panel border-[var(--color-primary)]/30 bg-[var(--color-primary-soft)] ${
+                                      snapshot.isDragging ? 'shadow-card border-[var(--color-primary)]' : ''
                                     }`}
                                   >
                                     <CardContent className="pt-4">
                                       <div 
-                                        className="flex items-center gap-2 mb-2 cursor-pointer hover:bg-purple-100/50 rounded-xl p-1 -m-1 transition-colors"
+                                        className="flex items-center gap-2 mb-2 cursor-pointer hover:bg-[var(--color-primary-soft)] rounded-xl p-1 -m-1 transition-colors"
                                         onClick={() => setExpandedRondas(prev => {
                                           const n = new Set(prev);
                                           n.has(seqIndex) ? n.delete(seqIndex) : n.add(seqIndex);
@@ -581,16 +599,16 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                         })}
                                       >
                                         <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing" onClick={(e) => e.stopPropagation()}>
-                                          <GripVertical className="w-4 h-4 text-purple-600" />
+                                          <GripVertical className="w-4 h-4 text-[var(--color-primary)]" />
                                         </div>
                                         <div className="pt-0.5">
                                           {isExpanded ? (
-                                            <ChevronDown className="w-4 h-4 text-purple-600" />
+                                            <ChevronDown className="w-4 h-4 text-[var(--color-primary)]" />
                                           ) : (
-                                            <ChevronRight className="w-4 h-4 text-purple-600" />
+                                            <ChevronRight className="w-4 h-4 text-[var(--color-primary)]" />
                                           )}
                                         </div>
-                                        <Badge className="bg-purple-600 text-white rounded-full">Ronda</Badge>
+                                        <Badge className="bg-[var(--color-primary)] text-[var(--color-text-inverse)] rounded-full">Ronda</Badge>
                                         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                                           <span className="text-sm font-medium">×</span>
                                           <Input
@@ -598,18 +616,19 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                             min="1"
                                             value={ronda.repeticiones}
                                             onChange={(e) => updateRondaRepeticiones(ronda.id, e.target.value)}
-                                            className="w-16 h-8 text-center rounded-xl border-[var(--color-border-default)]"
+                                            className={`w-16 h-8 text-center ${componentStyles.controls.inputDefault}`}
                                           />
-                                          <span className="text-sm text-muted">repeticiones</span>
+                                          <span className="text-sm text-[var(--color-text-secondary)]">repeticiones</span>
                                         </div>
-                                        <span className="text-sm text-muted ml-auto">({ronda.bloques.length} ejercicios)</span>
+                                        <span className="text-sm text-[var(--color-text-secondary)] ml-auto">({ronda.bloques.length} ejercicios)</span>
                                         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                          <Label className="text-xs text-muted cursor-pointer flex items-center gap-1">
+                                          <Label className="text-xs text-[var(--color-text-secondary)] cursor-pointer flex items-center gap-1">
                                             <Checkbox 
                                               checked={!!ronda.aleatoria}
                                               onCheckedChange={(v) => updateRondaAleatoria(ronda.id, v)}
                                             />
-                                            🎲 Random
+                                            <Shuffle className="w-3 h-3" />
+                                            aleatorio
                                           </Label>
                                         </div>
                                         <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
@@ -618,7 +637,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                             size="sm"
                                             onClick={() => duplicateRonda(ronda.id)}
                                             title="Duplicar ronda"
-                                            className="h-8 w-8 p-0 hover:bg-purple-100 rounded-xl"
+                                            className="h-8 w-8 p-0 hover:bg-[var(--color-primary-soft)] rounded-xl"
                                           >
                                             <Copy className="w-4 h-4" />
                                           </Button>
@@ -634,7 +653,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                                 });
                                               }
                                             }}
-                                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl"
+                                            className="h-8 w-8 p-0 text-[var(--color-danger)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-xl"
                                           >
                                             <Trash2 className="w-4 h-4" />
                                           </Button>
@@ -647,13 +666,13 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                             <div 
                                               ref={prov.innerRef} 
                                               {...prov.droppableProps}
-                                              className="ml-6 mt-3 space-y-2 border-l-2 border-purple-300 pl-4"
+                                              className="ml-6 mt-3 space-y-2 border-l-2 border-[var(--color-primary)]/30 pl-4"
                                             >
                                               {ronda.bloques.map((code, eIndex) => {
                                                 const ejercicio = formData.bloques.find(b => b.code === code);
                                                 if (!ejercicio) {
                                                   return (
-                                                    <div key={`${ronda.id}-${eIndex}`} className="p-2 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-center gap-2">
+                                                    <div key={`${ronda.id}-${eIndex}`} className="p-2 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/20 rounded-xl text-sm text-[var(--color-danger)] flex items-center gap-2">
                                                       <AlertTriangle className="w-4 h-4" />
                                                       ⚠️ Referencia huérfana: {code}
                                                     </div>
@@ -670,18 +689,18 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                                       <div 
                                                         ref={p.innerRef}
                                                         {...p.draggableProps}
-                                                        className={`flex items-center gap-2 p-2 bg-card border border-[var(--color-border-default)] rounded-xl ${
-                                                          s.isDragging ? 'shadow-card border-purple-500' : ''
+                                                        className={`flex items-center gap-2 p-2 bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded-xl ${
+                                                          s.isDragging ? 'shadow-card border-[var(--color-primary)]' : ''
                                                         }`}
                                                       >
                                                         <div {...p.dragHandleProps} className="cursor-grab active:cursor-grabbing">
-                                                          <GripVertical className="w-3 h-3 text-muted" />
+                                                          <GripVertical className="w-3 h-3 text-[var(--color-text-secondary)]" />
                                                         </div>
                                                         <Badge variant="outline" className={`shrink-0 rounded-full ${tipoColors[ejercicio.tipo]}`}>
                                                           {ejercicio.tipo}
                                                         </Badge>
-                                                        <span className="text-sm flex-1 text-ui">
-                                                          {ejercicio.nombre} <span className="text-muted">({ejercicio.code})</span>
+                                                        <span className="text-sm flex-1 text-[var(--color-text-primary)]">
+                                                          {ejercicio.nombre} <span className="text-[var(--color-text-secondary)]">({ejercicio.code})</span>
                                                         </span>
                                                         <Button
                                                           variant="ghost"
@@ -708,7 +727,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                                             formData.rondas.findIndex(r => r.id === ronda.id), 
                                                             code
                                                           )}
-                                                          className="h-6 px-2 text-red-600 hover:bg-red-50 rounded-xl"
+                                                          className="h-6 px-2 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-xl"
                                                           title="Quitar de la ronda"
                                                         >
                                                           <X className="w-3 h-3" />
@@ -740,17 +759,17 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
 
             <Card className="app-panel">
               <CardHeader>
-                <CardTitle className="text-lg">Biblioteca de Ejercicios</CardTitle>
+                <CardTitle className="text-lg text-[var(--color-text-primary)]">Biblioteca de Ejercicios</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex gap-2 flex-wrap">
                   <div className="flex-1 min-w-[200px] relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
                     <Input
                       placeholder="Buscar ejercicios..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
+                      className={`pl-10 ${componentStyles.controls.inputDefault}`}
                     />
                   </div>
                   <div className="flex gap-1 flex-wrap">
@@ -781,10 +800,10 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                 </div>
 
                 {selectedEjercicios.size > 0 && (
-                  <Alert className="rounded-xl border-blue-200 bg-blue-50">
-                    <AlertDescription className="text-blue-800 flex items-center justify-between flex-wrap gap-2">
+                  <Alert className="rounded-xl border-[var(--color-info)]/20 bg-[var(--color-info)]/10">
+                    <AlertDescription className="text-[var(--color-text-primary)] flex items-center justify-between flex-wrap gap-2">
                       <span>
-                        <strong>{selectedEjercicios.size} ejercicio(s) seleccionado(s).</strong> 
+                        <strong className="text-[var(--color-info)]">{selectedEjercicios.size} ejercicio(s) seleccionado(s).</strong> 
                         {' '}Puedes agregarlos directamente o crear una ronda con ellos.
                       </span>
                       <div className="flex gap-2 flex-wrap">
@@ -792,7 +811,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                           size="sm"
                           variant="outline"
                           onClick={() => setSelectedEjercicios(new Set())}
-                          className="bg-card hover:shadow-sm h-8 rounded-xl"
+                          className={`${componentStyles.buttons.outline} h-8`}
                         >
                           <RotateCcw className="w-3 h-3 mr-1" />
                           Limpiar
@@ -801,14 +820,14 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                           size="sm"
                           variant="outline"
                           onClick={crearRondaDesdeSeleccion}
-                          className="bg-purple-100 border-purple-300 text-purple-900 hover:bg-purple-200 h-8 rounded-xl"
+                          className={`bg-[var(--color-primary-soft)] border-[var(--color-primary)]/30 text-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] h-8 ${componentStyles.buttons.outline}`}
                         >
                           Crear Ronda ({selectedEjercicios.size})
                         </Button>
                         <Button
                           size="sm"
                           onClick={addEjerciciosSeleccionados}
-                          className="btn-primary h-8 rounded-xl shadow-sm"
+                          className={`${componentStyles.buttons.primary} h-8`}
                         >
                           Agregar Ejercicios ({selectedEjercicios.size})
                         </Button>
@@ -817,10 +836,10 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                   </Alert>
                 )}
 
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto border border-[var(--color-border-default)] rounded-xl p-3 bg-muted">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto border border-[var(--color-border-default)] rounded-xl p-3 bg-[var(--color-surface-muted)]">
                   {filteredEjercicios.length === 0 ? (
-                    <div className="col-span-full text-center py-8 text-muted">
-                      <p className="text-sm">No se encontraron ejercicios</p>
+                    <div className="col-span-full text-center py-8">
+                      <p className="text-sm text-[var(--color-text-secondary)]">No se encontraron ejercicios</p>
                     </div>
                   ) : (
                     filteredEjercicios.map((ejercicio) => (
@@ -828,8 +847,8 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                         key={ejercicio.id}
                         className={`flex items-center gap-2 p-2 border border-[var(--color-border-default)] rounded-xl cursor-pointer transition-all ${
                           selectedEjercicios.has(ejercicio.id) 
-                            ? 'border-brand-300 bg-brand-50 shadow-sm' 
-                            : 'bg-card hover:bg-muted hover:shadow-sm'
+                            ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm' 
+                            : 'bg-[var(--color-surface-elevated)] hover:bg-[var(--color-surface-muted)] hover:shadow-sm'
                         }`}
                         onClick={() => {
                           const newSelected = new Set(selectedEjercicios);
@@ -849,8 +868,8 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                           {ejercicio.tipo}
                         </Badge>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate text-ui">{ejercicio.nombre}</p>
-                          <p className="text-xs text-muted truncate">{ejercicio.code}</p>
+                          <p className="text-xs font-medium truncate text-[var(--color-text-primary)]">{ejercicio.nombre}</p>
+                          <p className="text-xs text-[var(--color-text-secondary)] truncate">{ejercicio.code}</p>
                         </div>
                       </div>
                     ))
@@ -860,21 +879,21 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
             </Card>
           </CardContent>
 
-          <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-muted rounded-b-2xl">
+          <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
             <div className="flex gap-3 mb-2">
-              <Button variant="outline" onClick={onClose} className="flex-1 h-10 rounded-xl">
+              <Button variant="outline" onClick={onClose} className={`flex-1 ${componentStyles.buttons.outline}`}>
                 Cancelar
               </Button>
-              <Button onClick={handleSave} className="flex-1 btn-primary h-10 rounded-xl shadow-sm">
+              <Button onClick={handleSave} className={`flex-1 ${componentStyles.buttons.primary}`}>
                 <Save className="w-4 h-4 mr-2" />
                 Guardar
               </Button>
             </div>
-            <p className="text-xs text-center text-muted">
+            <p className="text-xs text-center text-[var(--color-text-secondary)]">
               Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar • Ctrl/⌘+B : limpiar selección
             </p>
           </div>
-        </Card>
+        </div>
       </div>
 
       {editingEjercicio && (

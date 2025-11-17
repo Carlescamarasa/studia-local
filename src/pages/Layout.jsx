@@ -252,8 +252,8 @@ function LayoutContent() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[hsl(var(--brand-500))] border-t-transparent rounded-full animate-spin" />
-          <p className="text-ui/80">Cargando {appName}...</p>
+          <div className="w-12 h-12 border-4 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+          <p className="text-[var(--color-text-secondary)]">Cargando {appName}...</p>
         </div>
       </div>
     );
@@ -343,8 +343,8 @@ function LayoutContent() {
                 />
               </div>
               <div>
-                <h2 className="font-bold text-ui text-lg">{appName}</h2>
-                <p className="text-xs text-ui/80 uppercase tracking-wide font-medium">
+                <h2 className="font-bold text-[var(--color-text-primary)] text-lg">{appName}</h2>
+                <p className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide font-medium">
                   {ROLE_LABEL[userRole] || "Estudiante"}
                 </p>
               </div>
@@ -372,7 +372,7 @@ function LayoutContent() {
                         }
                         onClick={onMenuItemClick}
                       >
-                        <item.icon className="w-5 h-5 text-ui/80" />
+                        <item.icon className="w-5 h-5 text-[var(--color-text-secondary)]" />
                         <span className="font-medium">{item.title}</span>
                         {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
                       </Link>
@@ -384,21 +384,30 @@ function LayoutContent() {
           </div>
 
           {/* Pie del sidebar */}
-          <div className="border-t border-[var(--color-border-default)] p-4 pt-3 space-y-3 text-ui/90">
+          <div className="border-t border-[var(--color-border-default)] p-4 pt-3 space-y-3 text-[var(--color-text-secondary)]">
             {/* Selector de Estilo y Tema */}
             <div className="px-2 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border-strong)]">
-              <label className="text-[11px] font-medium text-ui mb-1 block">
+              <label className="text-[11px] font-medium text-[var(--color-text-primary)] mb-1 block">
                 Estilo y Tema:
               </label>
               <Select
                 value={`${currentPresetId || 'default'}-${design?.theme || 'light'}`}
                 onValueChange={(value) => {
                   const [presetId, theme] = value.split('-');
-                  setPresetId(presetId);
-                  setDesignPartial('theme', theme);
+                  const currentTheme = design?.theme || 'light';
+                  
+                  // Si solo cambia el tema (mismo presetId), solo actualizar el tema
+                  if (presetId === (currentPresetId || 'default') && theme !== currentTheme) {
+                    setDesignPartial('theme', theme);
+                  } 
+                  // Si cambia el preset base, cambiar preset y tema
+                  else if (presetId !== (currentPresetId || 'default')) {
+                    setPresetId(presetId);
+                    setDesignPartial('theme', theme);
+                  }
                 }}
               >
-                <SelectTrigger className="h-8 rounded-xl text-xs">
+                <SelectTrigger className={`h-8 text-xs ${componentStyles.controls.selectDefault}`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -417,7 +426,7 @@ function LayoutContent() {
             </div>
             {/* Selector de usuario local */}
             <div className="px-2 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border-strong)]">
-              <label className="text-[11px] font-medium text-ui mb-1 block">
+              <label className="text-[11px] font-medium text-[var(--color-text-primary)] mb-1 block">
                 Usuario Local:
               </label>
               <Select
@@ -427,7 +436,7 @@ function LayoutContent() {
                   window.location.reload();
                 }}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className={`w-full ${componentStyles.controls.selectDefault}`}>
                   <SelectValue placeholder="Seleccionar usuario" />
                 </SelectTrigger>
                 <SelectContent>
@@ -441,20 +450,20 @@ function LayoutContent() {
             </div>
 
             {simulatingUser && (
-              <div className="px-2 py-2 rounded-xl bg-amber-50 border border-amber-200">
+              <div className="px-2 py-2 rounded-xl bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20">
                 <div className="flex items-start gap-2">
-                  <UserCog className="w-4 h-4 text-amber-700 mt-0.5" />
-                  <div className="text-[11px] text-amber-900 leading-snug">
+                  <UserCog className="w-4 h-4 text-[var(--color-warning)] mt-0.5" />
+                  <div className="text-[11px] text-[var(--color-text-primary)] leading-snug">
                     Simulando:{" "}
                     <span className="font-semibold">{displayName(simulatingUser)}</span>
-                    <span className="text-amber-700">
+                    <span className="text-[var(--color-text-secondary)]">
                       {" "}
                       ({ROLE_LABEL[simulatingUser.rolPersonalizado]})
                     </span>
                     <div className="mt-1">
                       <button
                         onClick={stopSimulation}
-                        className="text-[11px] text-amber-700 hover:text-amber-900 underline underline-offset-2"
+                        className="text-[11px] text-[var(--color-warning)] hover:text-[var(--color-warning)]/80 underline underline-offset-2"
                       >
                         Terminar simulación
                       </button>
@@ -469,7 +478,7 @@ function LayoutContent() {
                 variant="ghost"
                 size="sm"
                 onClick={safeToggle}
-                className="w-full justify-start gap-2 text-ui/80 hover:text-ui hover:bg-muted min-h-[44px] h-10 rounded-xl"
+                className={`w-full justify-start gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
                 aria-label="Ocultar menú lateral"
               >
                 <PanelLeftClose className="w-4 h-4" />
@@ -479,21 +488,21 @@ function LayoutContent() {
 
             <button
               onClick={goProfile}
-              className="flex items-center gap-3 px-2 w-full hover:bg-muted rounded-xl py-2 transition-all cursor-pointer min-h-[44px]"
+              className="flex items-center gap-3 px-2 w-full hover:bg-[var(--color-surface-muted)] rounded-xl py-2 transition-all cursor-pointer min-h-[44px]"
               aria-label="Ver perfil de usuario"
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-[hsl(var(--muted))] to-[hsl(var(--muted-foreground)/0.2)] rounded-full flex items-center justify-center">
-                <span className="text-ui font-semibold text-sm">
+              <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center">
+                <span className="text-[var(--color-text-primary)] font-semibold text-sm">
                   {(displayName(simulatingUser || currentUser || { name: "U" }))
                     .slice(0, 1)
                     .toUpperCase()}
                 </span>
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <p className="font-medium text-ui text-sm truncate">
+                <p className="font-medium text-[var(--color-text-primary)] text-sm truncate">
                   {displayName(simulatingUser || currentUser) || "Usuario"}
                 </p>
-                <p className="text-xs text-ui/80 truncate">{currentUser?.email}</p>
+                <p className="text-xs text-[var(--color-text-secondary)] truncate">{currentUser?.email}</p>
               </div>
             </button>
 
@@ -501,7 +510,7 @@ function LayoutContent() {
               variant="ghost"
               size="sm"
               onClick={logout}
-              className="w-full justify-start gap-2 text-ui/80 hover:text-ui hover:bg-muted min-h-[44px] h-10 rounded-xl"
+                className={`w-full justify-start gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
               aria-label="Cerrar sesión"
             >
               <LogOut className="w-4 h-4" />
@@ -521,7 +530,7 @@ function LayoutContent() {
         >
           {/* Header mobile */}
           <header
-            className="bg-card border-b border-[var(--color-border-default)] px-4 py-3 lg:hidden sticky top-0 z-[70] cursor-pointer active:bg-muted transition-colors"
+            className="bg-card border-b border-[var(--color-border-default)] px-4 py-3 lg:hidden sticky top-0 z-[70] cursor-pointer active:bg-[var(--color-surface-muted)] transition-colors"
             onClick={handleHeaderClick}
             role="button"
             aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
@@ -538,7 +547,7 @@ function LayoutContent() {
             <div className="flex items-center justify-between min-h-[44px]">
               <button
                 ref={headerToggleButtonRef}
-                className="hover:bg-muted p-2 rounded-xl transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="hover:bg-[var(--color-surface-muted)] p-2 rounded-xl transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
                 onClick={(e) => {
                   e.stopPropagation();
                   safeToggle();
@@ -549,7 +558,7 @@ function LayoutContent() {
               >
                 {abierto ? <X className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
               </button>
-              <h1 className="text-base font-bold text-ui">{appName}</h1>
+              <h1 className="text-base font-bold text-[var(--color-text-primary)]">{appName}</h1>
               <div className="w-11" />
             </div>
           </header>
@@ -570,12 +579,12 @@ function LayoutContent() {
                       variant="outline"
                       size="sm"
                       onClick={safeToggle}
-                      className="rounded-xl rounded-l-none border-l-0 shadow-card bg-card hover:bg-muted h-12 w-8 px-0"
+                      className="rounded-xl rounded-l-none border-l-0 shadow-card bg-card hover:bg-[var(--color-surface-muted)] h-12 w-8 px-0"
                       aria-label="Mostrar menú (Ctrl/⌘+M)"
                       aria-controls="sidebar"
                       aria-expanded={false}
                     >
-                      <PanelLeft className="w-4 h-4 text-ui" />
+                      <PanelLeft className="w-4 h-4 text-[var(--color-text-primary)]" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="right">
@@ -592,7 +601,7 @@ function LayoutContent() {
           </div>
 
           {/* Footer global - centrado con nombre de app */}
-          <footer className="border-t border-[var(--color-border-default)] bg-card text-xs text-ui/80 mt-auto">
+          <footer className="border-t border-[var(--color-border-default)] bg-card text-xs text-[var(--color-text-secondary)] mt-auto">
             <div className="max-w-7xl mx-auto px-4 py-4 md:py-5 flex flex-wrap items-center justify-center gap-2 text-center">
               <span>{appName} © {new Date().getFullYear()}</span>
               <span className="opacity-40">-</span>
@@ -600,7 +609,7 @@ function LayoutContent() {
                 href="https://latrompetasonara.com"
                 target="_blank"
                 rel="noreferrer"
-                className="text-ui hover:underline transition-colors"
+                className="text-[var(--color-text-primary)] hover:underline transition-colors"
               >
                 La Trompeta Sonará
               </a>
@@ -609,7 +618,7 @@ function LayoutContent() {
                 href="https://instagram.com/latrompetasonara"
                 target="_blank"
                 rel="noreferrer"
-                className="text-ui hover:underline transition-colors"
+                className="text-[var(--color-text-primary)] hover:underline transition-colors"
               >
                 Instagram
               </a>
@@ -631,10 +640,10 @@ function LayoutContent() {
             >
               <div className="px-4 py-3 border-b border-[var(--color-border-default)] bg-card rounded-t-2xl flex items-center justify-between">
                 <div>
-                  <div className="text-ui font-semibold">Panel de Diseño (modal)</div>
+                  <div className="text-[var(--color-text-primary)] font-semibold">Panel de Diseño (modal)</div>
                   <div className="sr-only">Ajusta tokens visuales en tiempo real sin tocar código</div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setShowDesignModal(false)} className="text-ui hover:bg-muted rounded-xl">
+                <Button variant="ghost" size="icon" onClick={() => setShowDesignModal(false)} className={`text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}>
                   <X className="w-5 h-5" />
                 </Button>
               </div>

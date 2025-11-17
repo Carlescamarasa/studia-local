@@ -76,6 +76,35 @@ export function DesignProvider({ children }) {
     return 'default';
   });
 
+  // Helper para derivar colores dark desde colores light
+  const deriveDarkColors = (lightColors) => {
+    return {
+      ...lightColors,
+      // Mantener primary siempre #fd9840
+      primary: lightColors.primary || '#fd9840',
+      primarySoft: '#1a1a1a', // Versión oscura del primary soft
+      secondary: lightColors.secondary || '#FB8C3A',
+      // Colores de superficie oscuros
+      background: '#0b0f19',
+      surface: '#0f172a',
+      surfaceElevated: '#111827',
+      surfaceMuted: '#1f2937',
+      // Colores de texto oscuros
+      text: {
+        primary: '#e5e7eb',
+        secondary: '#cbd5e1',
+        muted: '#94a3b8',
+        inverse: '#0b0f19', // Fondo oscuro para texto inverso
+      },
+      // Colores de borde oscuros
+      border: {
+        default: '#1f2937',
+        muted: '#0b1220',
+        strong: '#334155',
+      },
+    };
+  };
+
   // Estado para el diseño actual
   const [design, setDesign] = useState(() => {
     try {
@@ -83,7 +112,15 @@ export function DesignProvider({ children }) {
       if (custom) {
         const parsed = JSON.parse(custom);
         // Normalizar para asegurar estructura completa con merge profundo
-        return normalizeDesign(parsed);
+        const normalized = normalizeDesign(parsed);
+        // Si el tema es dark, aplicar colores dark
+        if (normalized.theme === 'dark') {
+          return {
+            ...normalized,
+            colors: deriveDarkColors(normalized.colors),
+          };
+        }
+        return normalized;
       }
     } catch (_) {}
     // Si no hay custom, usar el preset base por defecto
@@ -98,7 +135,16 @@ export function DesignProvider({ children }) {
       setPresetId(id);
       // Limpiar preset personalizado al cambiar de preset base
       localStorage.removeItem("custom_design_preset");
-      setDesign(normalizeDesign(preset.design));
+      const normalized = normalizeDesign(preset.design);
+      // Si el tema actual es dark, aplicar colores dark
+      if (normalized.theme === 'dark') {
+        setDesign({
+          ...normalized,
+          colors: deriveDarkColors(normalized.colors),
+        });
+      } else {
+        setDesign(normalized);
+      }
     }
   };
 
@@ -159,7 +205,30 @@ export function DesignProvider({ children }) {
 
   // Actualizar parcialmente el diseño usando un path
   const setDesignPartial = (path, value) => {
-    setDesign(prev => setNestedValue(prev, path, value));
+    setDesign(prev => {
+      const updated = setNestedValue(prev, path, value);
+      
+      // Si se cambia el tema a dark, derivar colores dark
+      if (path === 'theme' && value === 'dark') {
+        const normalized = normalizeDesign(updated);
+        return {
+          ...updated,
+          colors: deriveDarkColors(normalized.colors),
+        };
+      }
+      
+      // Si se cambia el tema a light, restaurar colores light del preset base
+      if (path === 'theme' && value === 'light') {
+        const preset = findPresetById(presetId) || getDefaultPreset();
+        const presetColors = normalizeDesign(preset.design).colors;
+        return {
+          ...updated,
+          colors: presetColors,
+        };
+      }
+      
+      return updated;
+    });
   };
 
   // Resetear a valores por defecto

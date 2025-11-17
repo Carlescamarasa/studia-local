@@ -149,7 +149,7 @@ function UsuariosPageContent() {
                 placeholder="Buscar usuario..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pl-9 pr-9 ${componentStyles.controls.inputUnderline}`}
+                className={`w-full pl-9 pr-9 ${componentStyles.controls.inputDefault}`}
               />
               {searchTerm && (
                 <button
@@ -191,7 +191,7 @@ function UsuariosPageContent() {
             <Button
               variant="outline"
               onClick={exportarCSV}
-              className={componentStyles.buttons.secondary}
+              className={componentStyles.buttons.outline}
             >
               <FileDown className="w-4 h-4 mr-2" />
               Exportar CSV

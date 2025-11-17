@@ -84,10 +84,10 @@ export const componentStyles = {
 
   status: {
     badgeDefault: "inline-flex items-center rounded-full bg-[var(--color-surface-muted)] text-ui text-xs px-2 py-0.5",
-    badgeInfo: "rounded-full bg-[var(--color-info)]/10 text-[var(--color-info)] border border-[var(--color-info)]/20 text-xs",
-    badgeSuccess: "rounded-full bg-[var(--color-success)]/10 text-[var(--color-success)] border border-[var(--color-success)]/20 text-xs",
-    badgeWarning: "rounded-full bg-[var(--color-warning)]/10 text-[var(--color-warning)] border border-[var(--color-warning)]/20 text-xs",
-    badgeDanger: "rounded-full bg-[var(--color-danger)]/10 text-[var(--color-danger)] border border-[var(--color-danger)]/20 text-xs",
+    badgeInfo: "inline-flex items-center rounded-full bg-[var(--color-info)]/10 text-[var(--color-info)] border border-[var(--color-info)]/20 text-xs px-2 py-0.5",
+    badgeSuccess: "inline-flex items-center rounded-full bg-[var(--color-success)]/10 text-[var(--color-success)] border border-[var(--color-success)]/20 text-xs px-2 py-0.5",
+    badgeWarning: "inline-flex items-center rounded-full bg-[var(--color-warning)]/10 text-[var(--color-warning)] border border-[var(--color-warning)]/20 text-xs px-2 py-0.5",
+    badgeDanger: "inline-flex items-center rounded-full bg-[var(--color-danger)]/10 text-[var(--color-danger)] border border-[var(--color-danger)]/20 text-xs px-2 py-0.5",
   },
 
   // Componentes (mantener como alias para compatibilidad hacia atrás)
@@ -118,8 +118,9 @@ export const componentStyles = {
     panelSesion: PANEL_SESSION,
 
     // Tonos de fila (alias hacia items.itemRowTone con variantes)
-    toneRowPlan: "pl-3 border-l-4 border-l-[var(--color-accent)]",
-    toneRowSemana: "pl-3 border-l-4 border-l-[var(--color-secondary)]",
+    toneRowPlan: "pl-3 border-l-4 border-l-[var(--color-primary)]",
+    toneRowSemana: "pl-3 border-l-4 border-l-[var(--color-primary)]",
+    toneRowFeedback: "pl-3 border-l-4 border-l-[var(--color-info)]",
 
     // Menú lateral (alias hacia nav.*)
     menuSectionTitle: "text-xs uppercase tracking-wide text-ui/70 font-semibold px-2.5 py-2",

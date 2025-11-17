@@ -26,6 +26,7 @@ import SessionContentView from "../components/study/SessionContentView";
 import { calcularTiempoSesion } from "../components/study/sessionSequence";
 import { componentStyles } from "@/design/componentStyles";
 import PageHeader from "@/components/ds/PageHeader";
+import UnifiedTable from "@/components/tables/UnifiedTable";
 
 const pad2 = (n) => String(n).padStart(2, "0");
 const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
@@ -242,6 +243,241 @@ function AgendaPageContent() {
     });
   };
 
+  // Preparar datos para la tabla
+  const tableData = estudiantesFiltrados.map(alumno => {
+    const asignacionActiva = asignaciones.find(a => {
+      if (a.alumnoId !== alumno.id) return false;
+      if (a.estado !== 'publicada' && a.estado !== 'en_curso') return false;
+      const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
+      return offset >= 0 && offset < (a.plan?.semanas?.length || 0);
+    });
+
+    const feedback = feedbacksSemanal.find(f => 
+      f.alumnoId === alumno.id && f.semanaInicioISO === semanaActualISO
+    );
+
+    const semanaIdx = asignacionActiva ? 
+      calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO) : 0;
+    
+    const semana = asignacionActiva?.plan?.semanas?.[semanaIdx];
+
+    return {
+      id: alumno.id,
+      alumno,
+      asignacionActiva,
+      semana,
+      semanaIdx,
+      feedback,
+    };
+  });
+
+  // Definir columnas de la tabla
+  const columns = [
+    {
+      key: 'estudiante',
+      label: 'Estudiante',
+      sortable: true,
+      sortValue: (row) => displayName(row.alumno),
+      render: (row) => (
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center shrink-0">
+            <span className="text-[var(--color-text-primary)] font-semibold text-sm">
+              {displayName(row.alumno).slice(0, 1).toUpperCase()}
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-[var(--color-text-primary)] break-words">
+              {displayName(row.alumno)}
+            </p>
+            <p className="text-xs text-[var(--color-text-secondary)] break-all">
+              {row.alumno.email}
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'pieza',
+      label: 'Pieza',
+      sortable: true,
+      sortValue: (row) => row.asignacionActiva?.piezaSnapshot?.nombre || '',
+      render: (row) => {
+        if (!row.asignacionActiva || !row.semana) {
+          return (
+            <div className="text-center py-6 border-2 border-dashed border-[var(--color-border-default)] rounded-2xl bg-[var(--color-surface-muted)]">
+              <Target className={`w-10 h-10 mx-auto mb-2 ${componentStyles.empty.emptyIcon}`} />
+              <p className="text-sm text-[var(--color-text-secondary)]">Sin asignación esta semana</p>
+            </div>
+          );
+        }
+        return (
+          <div className={"flex items-start gap-2 py-1 " + componentStyles.components.toneRowPlan}>
+            <Music className="w-4 h-4 text-[var(--color-primary)] mt-0.5 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-[var(--color-text-secondary)] font-medium">Pieza</p>
+              <p className="text-sm break-words text-[var(--color-text-primary)] mt-0.5">
+                {row.asignacionActiva.piezaSnapshot?.nombre || '—'}
+              </p>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'semana',
+      label: 'Semana del Plan',
+      sortable: true,
+      sortValue: (row) => row.semana?.nombre || '',
+      render: (row) => {
+        if (!row.asignacionActiva || !row.semana) {
+          return null; // No mostrar nada si no hay asignación
+        }
+        return (
+          <div className={"flex items-start gap-2 py-1 " + componentStyles.components.toneRowSemana}>
+            <Target className="w-4 h-4 text-[var(--color-primary)] mt-0.5 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-[var(--color-text-secondary)] font-medium">Semana del Plan</p>
+              <p className="text-sm break-words text-[var(--color-text-primary)] mt-0.5">
+                {row.semana.nombre}
+              </p>
+              {row.semana.objetivo && (
+                <p className="text-xs text-[var(--color-text-secondary)] italic mt-1 break-words">
+                  "{row.semana.objetivo}"
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'sesiones',
+      label: 'Sesiones',
+      sortable: true,
+      sortValue: (row) => row.semana?.sesiones?.length || 0,
+      render: (row) => {
+        if (!row.semana?.sesiones || row.semana.sesiones.length === 0) {
+          return null; // No mostrar nada si no hay sesiones
+        }
+        return (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-[var(--color-text-primary)] mb-2">
+              {row.semana.sesiones.length} sesiones programadas:
+            </p>
+            {row.semana.sesiones.map((sesion, sesionIdx) => {
+              const sesionKey = `${row.alumno.id}-${row.semanaIdx}-${sesionIdx}`;
+              const isExpanded = expandedSessions.has(sesionKey);
+              const tiempo = calcularTiempoSesion(sesion);
+              const mins = Math.floor(tiempo / 60);
+              const secs = tiempo % 60;
+
+              return (
+                <Card 
+                  key={sesionIdx}
+                  className={componentStyles.components.panelSesion + " cursor-pointer"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSession(sesionKey);
+                  }}
+                >
+                  <CardContent className="pt-3 pb-3 px-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                        {sesion.nombre}
+                      </span>
+                      <Badge variant="outline" className={componentStyles.status.badgeSuccess}>
+                        ⏱ {mins}:{String(secs).padStart(2, '0')} min
+                      </Badge>
+                    </div>
+                    {isExpanded && (
+                      <div className="mt-3 pt-3 border-t border-[var(--color-border-default)]" onClick={(e) => e.stopPropagation()}>
+                        <SessionContentView sesion={sesion} compact />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        );
+      },
+    },
+    ...(isProfesorOrAdmin ? [{
+      key: 'feedback',
+      label: 'Feedback',
+      sortable: false,
+      render: (row) => {
+        if (!row.feedback) {
+          return (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                abrirFeedbackDrawer(row.alumno);
+              }}
+              className={`${componentStyles.buttons.outline}`}
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Dar feedback
+            </Button>
+          );
+        }
+        return (
+          <div className={"flex items-start gap-2 py-1 " + componentStyles.components.toneRowFeedback}>
+            <MessageSquare className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
+              {row.feedback.notaProfesor && (
+                <p className="text-sm text-[var(--color-text-primary)] italic mt-0.5 break-words">
+                  "{row.feedback.notaProfesor}"
+                </p>
+              )}
+              {row.feedback.mediaLinks && row.feedback.mediaLinks.length > 0 && (
+                <div className="mt-2">
+                  <MediaLinksBadges
+                    mediaLinks={row.feedback.mediaLinks}
+                    onMediaClick={(idx) => handlePreviewMedia(idx, row.feedback.mediaLinks)}
+                    compact={true}
+                    maxDisplay={3}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="flex gap-1 shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  abrirFeedbackDrawer(row.alumno, row.feedback);
+                }}
+                className={`h-8 ${componentStyles.buttons.ghost}`}
+                aria-label="Editar feedback"
+              >
+                <Edit className="w-3 h-3" />
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm('¿Eliminar feedback?')) {
+                    eliminarFeedbackMutation.mutate(row.feedback.id);
+                  }
+                }}
+                className={`h-8 ${componentStyles.buttons.danger}`}
+                aria-label="Eliminar feedback"
+              >
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            </div>
+          </div>
+        );
+      },
+    }] : []),
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header de página unificado */}
@@ -262,18 +498,18 @@ function AgendaPageContent() {
       <div className="max-w-7xl mx-auto p-4 md:p-6 lg:px-8 space-y-4">
         {/* Búsqueda */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ui/80" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
           <Input
             id="search-input"
             placeholder="Buscar estudiante... (Ctrl/⌘+K)"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-9 h-10 bg-transparent rounded-none border-0 border-b-2 border-[var(--color-border-strong)] text-ui placeholder:text-ui/60 focus:outline-none focus:ring-0 focus:border-[hsl(var(--ring))]"
+            className={`w-full pl-9 pr-9 h-10 bg-transparent rounded-none border-0 border-b-2 border-[var(--color-border-strong)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${componentStyles.controls.inputDefault}`}
           />
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-ui/80 hover:text-ui"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               aria-label="Limpiar búsqueda"
             >
               <X className="w-4 h-4" />
@@ -281,242 +517,69 @@ function AgendaPageContent() {
           )}
         </div>
 
-        {/* Lista de estudiantes */}
-        {estudiantesFiltrados.length === 0 ? (
-          <Card className={componentStyles.containers.cardBase}>
-            <CardContent className="text-center py-12">
-              <User className={`w-16 h-16 mx-auto mb-4 ${componentStyles.empty.emptyIcon}`} />
-              <p className={componentStyles.empty.emptyText}>
-                {searchTerm ? 'No se encontraron estudiantes' : 'No hay estudiantes asignados'}
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4">
-            {estudiantesFiltrados.map(alumno => {
-              const asignacionActiva = asignaciones.find(a => {
-                if (a.alumnoId !== alumno.id) return false;
-                if (a.estado !== 'publicada' && a.estado !== 'en_curso') return false;
-                const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
-                return offset >= 0 && offset < (a.plan?.semanas?.length || 0);
-              });
-
-              const feedback = feedbacksSemanal.find(f => 
-                f.alumnoId === alumno.id && f.semanaInicioISO === semanaActualISO
-              );
-
-              const semanaIdx = asignacionActiva ? 
-                calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO) : 0;
-              
-              const semana = asignacionActiva?.plan?.semanas?.[semanaIdx];
-
-              return (
-                <Card
-                  key={alumno.id}
-                  className={
-                    (asignacionActiva
-                      ? componentStyles.components.cardAsignacion
-                      : componentStyles.components.cardStudent)
-                    + " transition-shadow"
-                  }
-                >
-                  <CardHeader className="p-4 pb-2">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3 min-w-0 flex-1">
-                        <div className="w-10 h-10 bg-gradient-to-br from-muted to-muted-foreground/20 rounded-full flex items-center justify-center shrink-0">
-                          <span className="text-ui font-semibold text-sm">
-                            {displayName(alumno).slice(0, 1).toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <CardTitle className="text-lg break-words">{displayName(alumno)}</CardTitle>
-                          <p className="text-sm text-ui/90 break-all">{alumno.email}</p>
-                        </div>
-                      </div>
-                      {asignacionActiva && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(createPageUrl(`asignacion-detalle?id=${asignacionActiva.id}`))}
-                          className="shrink-0 h-9 rounded-xl focus-brand"
-                          aria-label="Ver detalle de asignación"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4 p-4">
-                    {!asignacionActiva || !semana ? (
-                      <div className="text-center py-6 border-2 border-dashed rounded-2xl bg-muted">
-                        <Target className={`w-10 h-10 mx-auto mb-2 ${componentStyles.empty.emptyIcon}`} />
-                        <p className="text-sm text-ui/80">Sin asignación esta semana</p>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="space-y-3">
-                          <div className={"flex items-start gap-2 " + componentStyles.components.toneRowPlan}>
-                            <Music className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs text-ui/80">Pieza</p>
-                              <p className="text-sm font-medium break-words">{asignacionActiva.piezaSnapshot?.nombre}</p>
-                            </div>
-                          </div>
-                          
-                          <div className={"flex items-start gap-2 " + componentStyles.components.toneRowSemana}>
-                            <Target className="w-4 h-4 text-[var(--color-accent)] mt-0.5 shrink-0" />
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs text-ui/80">Semana del Plan</p>
-                              <p className="text-sm font-medium break-words">{semana.nombre}</p>
-                              {semana.objetivo && (
-                                <p className="text-xs text-ui/80 italic mt-1 break-words">"{semana.objetivo}"</p>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Sesiones expandibles */}
-                          {semana.sesiones && semana.sesiones.length > 0 && (
-                            <div className="space-y-2 mt-3">
-                              <p className="text-xs font-semibold text-ui">
-                                {semana.sesiones.length} sesiones programadas:
-                              </p>
-                              {semana.sesiones.map((sesion, sesionIdx) => {
-                                const sesionKey = `${alumno.id}-${semanaIdx}-${sesionIdx}`;
-                                const isExpanded = expandedSessions.has(sesionKey);
-                                const tiempo = calcularTiempoSesion(sesion);
-                                const mins = Math.floor(tiempo / 60);
-                                const secs = tiempo % 60;
-
-                                return (
-                                  <Card 
-                                    key={sesionIdx}
-                                    className={componentStyles.components.panelSesion + " cursor-pointer"}
-                                    onClick={() => toggleSession(sesionKey)}
-                                  >
-                                    <CardContent className="pt-3 pb-3 px-3">
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-sm font-medium">{sesion.nombre}</span>
-                                        <Badge variant="outline" className={componentStyles.status.badgeSuccess}>
-                                          ⏱ {mins}:{String(secs).padStart(2, '0')} min
-                                        </Badge>
-                                      </div>
-                                      {isExpanded && (
-              <div className="mt-3 pt-3 border-t border-[var(--color-border-default)]" onClick={(e) => e.stopPropagation()}>
-                                          <SessionContentView sesion={sesion} compact />
-                                        </div>
-                                      )}
-                                    </CardContent>
-                                  </Card>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-
-                        {isProfesorOrAdmin && (
-                          <div className="pt-3 border-t border-[var(--color-border-default)]">
-                            {feedback ? (
-                              <div className={`bg-[var(--color-info)]/10 rounded-2xl p-3 space-y-2`}>
-                                <div className="flex items-center justify-between gap-2 flex-wrap">
-                                  <div className="flex items-center gap-2">
-                                    <MessageSquare className="w-4 h-4 text-[var(--color-info)]" />
-                                    <span className={`${componentStyles.typography.sectionTitle} text-[var(--color-info)]`}>Feedback del profesor</span>
-                                  </div>
-                                  <div className="flex gap-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => abrirFeedbackDrawer(alumno, feedback)}
-                                      className="h-8 rounded-xl focus-brand"
-                                      aria-label="Editar feedback"
-                                    >
-                                      <Edit className="w-3 h-3" />
-                                    </Button>
-                                    <Button
-                                      variant="danger"
-                                      size="sm"
-                                      onClick={() => {
-                                        if (window.confirm('¿Eliminar feedback?')) {
-                                          eliminarFeedbackMutation.mutate(feedback.id);
-                                        }
-                                      }}
-                                      className="h-8 rounded-xl focus-brand"
-                                      aria-label="Eliminar feedback"
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-                                {feedback.notaProfesor && (
-                                  <p className={`${componentStyles.typography.bodyText} italic border-l-2 border-[var(--color-info)] pl-2 break-words`}>
-                                    "{feedback.notaProfesor}"
-                                  </p>
-                                )}
-                                {feedback.mediaLinks && feedback.mediaLinks.length > 0 && (
-                                  <MediaLinksBadges
-                                    mediaLinks={feedback.mediaLinks}
-                                    onMediaClick={(idx) => handlePreviewMedia(idx, feedback.mediaLinks)}
-                                    compact={true}
-                                    maxDisplay={3}
-                                  />
-                                )}
-                              </div>
-                            ) : (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => abrirFeedbackDrawer(alumno)}
-                                className={`w-full ${componentStyles.buttons.outline}`}
-                              >
-                                <MessageSquare className="w-4 h-4 mr-2" />
-                                Dar feedback de esta semana
-                              </Button>
-                            )}
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+        {/* Tabla de estudiantes */}
+        <Card className={componentStyles.containers.cardBase}>
+          <CardContent className="p-0">
+            <UnifiedTable
+              columns={columns}
+              data={tableData}
+              getRowActions={(row) => {
+                const actions = [];
+                if (row.asignacionActiva) {
+                  actions.push({
+                    id: 'view',
+                    label: 'Ver detalle de asignación',
+                    onClick: () => navigate(createPageUrl(`asignacion-detalle?id=${row.asignacionActiva.id}`)),
+                    icon: <Eye className="w-4 h-4" />,
+                  });
+                }
+                return actions;
+              }}
+              onRowClick={(row) => {
+                if (row.asignacionActiva) {
+                  navigate(createPageUrl(`asignacion-detalle?id=${row.asignacionActiva.id}`));
+                }
+              }}
+              emptyMessage={searchTerm ? 'No se encontraron estudiantes' : 'No hay estudiantes asignados'}
+              keyField="id"
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Drawer de feedback */}
       {feedbackDrawer && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setFeedbackDrawer(null)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-end pointer-events-none overflow-hidden">
+          <div className="fixed inset-0 bg-black/40 z-[100]" onClick={() => setFeedbackDrawer(null)} />
+          <div className="fixed inset-0 z-[100] flex items-center justify-end pointer-events-none overflow-hidden">
             <div 
               className="bg-card w-full max-w-lg h-full shadow-card flex flex-col animate-in slide-in-from-right pointer-events-auto overflow-y-auto rounded-l-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="border-b border-[var(--color-border-default)] px-6 py-4 flex items-center justify-between bg-[hsl(var(--brand-500))] sticky top-0 z-10">
-                <div className="flex items-center gap-3 text-white">
+              <div className="border-b border-[var(--color-border-default)] px-6 py-4 flex items-center justify-between bg-[var(--color-primary)] sticky top-0 z-10">
+                <div className="flex items-center gap-3 text-[var(--color-text-inverse)]">
                   <MessageSquare className="w-6 h-6" />
                   <h2 className="text-xl font-bold">
                     {feedbackDrawer.existingId ? 'Editar Feedback' : 'Dar Feedback'}
                   </h2>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setFeedbackDrawer(null)} className="text-white hover:bg-white/20 h-9 w-9 rounded-xl focus-brand" aria-label="Cerrar drawer">
+                <Button variant="ghost" size="icon" onClick={() => setFeedbackDrawer(null)} className="text-[var(--color-text-inverse)] hover:bg-[var(--color-text-inverse)]/20 h-9 w-9 rounded-xl" aria-label="Cerrar drawer">
                   <X className="w-5 h-5" />
                 </Button>
               </div>
 
               <div className="flex-1 p-6 space-y-6">
                 <div>
-                  <Label htmlFor="nota" className="text-sm font-medium text-ui">Observaciones del profesor *</Label>
+                  <Label htmlFor="nota" className="text-sm font-medium text-[var(--color-text-primary)]">Observaciones del profesor *</Label>
                   <Textarea
                     id="nota"
                     value={feedbackDrawer.notaProfesor}
                     onChange={(e) => setFeedbackDrawer({...feedbackDrawer, notaProfesor: e.target.value})}
                     placeholder="Comentarios, áreas de mejora, felicitaciones..."
                     rows={8}
-                    className="resize-none rounded-xl border-[var(--color-border-default)] focus-brand mt-1"
+                    className={`resize-none mt-1 ${componentStyles.controls.inputDefault}`}
                   />
-                  <p className="text-xs text-ui/80 mt-1">
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-1">
                     Escribe observaciones sobre el progreso del estudiante esta semana
                   </p>
                 </div>
@@ -528,22 +591,22 @@ function AgendaPageContent() {
                 />
               </div>
 
-              <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-muted sticky bottom-0">
+              <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] sticky bottom-0">
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setFeedbackDrawer(null)} className="flex-1 h-10 rounded-xl">
+                  <Button variant="outline" onClick={() => setFeedbackDrawer(null)} className={`flex-1 ${componentStyles.buttons.outline}`}>
                     Cancelar
                   </Button>
                   <Button 
                     variant="primary"
                     onClick={guardarFeedback} 
                     disabled={crearFeedbackMutation.isPending || actualizarFeedbackMutation.isPending} 
-                    className="flex-1 h-10 rounded-xl shadow-sm focus-brand"
+                    className={`flex-1 ${componentStyles.buttons.primary}`}
                   >
                     <Save className="w-4 h-4 mr-2" />
                     Guardar
                   </Button>
                 </div>
-                <p className="text-xs text-center text-ui/80 mt-2">
+                <p className="text-xs text-center text-[var(--color-text-secondary)] mt-2">
                   Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar
                 </p>
               </div>

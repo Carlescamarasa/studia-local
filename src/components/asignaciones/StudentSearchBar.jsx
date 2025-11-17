@@ -3,6 +3,7 @@ import { X, Search, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { componentStyles } from "@/design/componentStyles";
 
 /**
  * StudentSearchBar
@@ -53,7 +54,7 @@ export default function StudentSearchBar({
     <div className={cn("space-y-2", className)}>
       <div className="flex items-center gap-2 flex-wrap">
         {value.length === 0 ? (
-          <span className="text-xs text-muted">Ningún estudiante seleccionado</span>
+          <span className="text-xs text-[var(--color-text-secondary)]">Ningún estudiante seleccionado</span>
         ) : (
           <>
             {value.map((id) => {
@@ -76,7 +77,7 @@ export default function StudentSearchBar({
             <button
               type="button"
               onClick={clearAll}
-              className="text-xs text-muted underline hover:text-ui"
+              className="text-xs text-[var(--color-text-secondary)] underline hover:text-[var(--color-text-primary)]"
             >
               Limpiar
             </button>
@@ -85,12 +86,12 @@ export default function StudentSearchBar({
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
-          className="pl-10 h-10 rounded-xl border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+          className={`pl-10 ${componentStyles.controls.inputDefault}`}
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
@@ -104,7 +105,7 @@ export default function StudentSearchBar({
       <div className="border border-[var(--color-border-default)] rounded-xl overflow-hidden">
         <div className="max-h-64 overflow-auto">
           {filtered.length === 0 ? (
-            <div className="p-3 text-sm text-muted">Sin resultados</div>
+            <div className="p-3 text-sm text-[var(--color-text-secondary)]">Sin resultados</div>
           ) : (
             <ul className="divide-y divide-[var(--color-border-default)]">
               {filtered.map((it) => {
@@ -114,7 +115,7 @@ export default function StudentSearchBar({
                     key={it.value}
                     className={cn(
                       "flex items-center gap-2 p-2 cursor-pointer hover:bg-muted",
-                      selected && "bg-brand-50"
+                      selected && "bg-[var(--color-primary-soft)]"
                     )}
                     onClick={() => toggle(it.value)}
                   >
@@ -126,7 +127,7 @@ export default function StudentSearchBar({
                     >
                       {selected && <Check className="w-3 h-3 text-white" />}
                     </div>
-                    <span className="text-sm truncate">{it.label}</span>
+                    <span className="text-sm text-[var(--color-text-primary)] truncate">{it.label}</span>
                   </li>
                 );
               })}

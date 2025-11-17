@@ -10,7 +10,8 @@ import { Plus, Edit, Trash2, Music, Copy } from "lucide-react";
 import PieceEditor from "./PieceEditor";
 import { toast } from "sonner";
 import UnifiedTable from "@/components/tables/UnifiedTable";
-import { Badge } from "@/components/ds"; // Changed import path
+import { Badge } from "@/components/ds";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function PiezasTab() {
   const queryClient = useQueryClient();
@@ -105,10 +106,10 @@ export default function PiezasTab() {
             placeholder="Buscar piezas..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 min-w-[200px]"
+            className={`flex-1 min-w-[200px] ${componentStyles.controls.inputDefault}`}
           />
           <Select value={nivelFilter} onValueChange={setNivelFilter}>
-            <SelectTrigger className="w-full md:w-48">
+            <SelectTrigger className={`w-full md:w-48 ${componentStyles.controls.selectDefault}`}>
               <SelectValue placeholder="Todos los niveles" />
             </SelectTrigger>
             <SelectContent>
@@ -119,7 +120,7 @@ export default function PiezasTab() {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={handleCreate} className="w-full md:w-auto btn-primary h-10 rounded-xl shadow-sm">
+        <Button onClick={handleCreate} className={`w-full md:w-auto ${componentStyles.buttons.primary}`}>
           <Plus className="w-4 h-4 mr-2" />
           Nueva Pieza
         </Button>
@@ -130,12 +131,12 @@ export default function PiezasTab() {
           <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
         </div>
       ) : filteredPiezas.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed rounded-lg">
-          <Music className="w-16 h-16 mx-auto mb-4 text-ui/60" />
-          <p className="text-ui/80 mb-2">
+        <div className="text-center py-12 border-2 border-dashed border-[var(--color-border-default)] rounded-lg">
+          <Music className="w-16 h-16 mx-auto mb-4 text-[var(--color-text-secondary)]" />
+          <p className="text-[var(--color-text-secondary)] mb-2">
             {searchTerm || nivelFilter !== 'all' ? 'No se encontraron piezas' : 'Aún no hay piezas'}
           </p>
-          <Button onClick={handleCreate} variant="outline" className="mt-2 rounded-xl">
+          <Button onClick={handleCreate} variant="outline" className={`mt-2 ${componentStyles.buttons.outline}`}>
             <Plus className="w-4 h-4 mr-2" />
             Crear la primera
           </Button>
@@ -149,8 +150,8 @@ export default function PiezasTab() {
                 { key: 'nivel', label: 'Nivel', sortable: true, render: (p) => (
                   <Badge variant={nivelVariants[p.nivel]}>{nivelLabels[p.nivel]}</Badge> // Changed Badge variant
                 ) },
-                { key: 'elementos', label: 'Elementos', sortable: true, render: (p) => <span className="text-sm text-ui/80">{p.elementos?.length || 0}</span>, sortValue: (p) => p.elementos?.length || 0 }, // Contraste en fondo claro
-                { key: 'tiempo', label: 'Tiempo', sortable: true, render: (p) => <span className="text-sm text-ui/80">{Math.floor((p.tiempoObjetivoSeg || 0) / 60)} min</span>, sortValue: (p) => p.tiempoObjetivoSeg || 0 } // Contraste en fondo claro
+                { key: 'elementos', label: 'Elementos', sortable: true, render: (p) => <span className="text-sm text-[var(--color-text-secondary)]">{p.elementos?.length || 0}</span>, sortValue: (p) => p.elementos?.length || 0 },
+                { key: 'tiempo', label: 'Tiempo', sortable: true, render: (p) => <span className="text-sm text-[var(--color-text-secondary)]">{Math.floor((p.tiempoObjetivoSeg || 0) / 60)} min</span>, sortValue: (p) => p.tiempoObjetivoSeg || 0 }
               ]}
               data={filteredPiezas}
               getRowActions={(p) => [ // Changed from 'actions' to 'getRowActions'
@@ -173,7 +174,7 @@ export default function PiezasTab() {
                           {nivelLabels[pieza.nivel]}
                         </Badge>
                         <h3 className="font-semibold text-base mb-1">{pieza.nombre}</h3>
-                        <p className="text-xs text-muted"> {/* Changed text class */}
+                        <p className="text-xs text-[var(--color-text-secondary)]">
                           {pieza.elementos?.length || 0} elementos • {Math.floor((pieza.tiempoObjetivoSeg || 0) / 60)} min
                         </p>
                       </div>
@@ -184,7 +185,7 @@ export default function PiezasTab() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleEdit(pieza)}
-                        className="flex-1 btn-secondary h-10" // Changed className
+                        className={`flex-1 ${componentStyles.buttons.secondary}`}
                       >
                         <Edit className="w-4 h-4 mr-1" />
                         Editar
@@ -193,7 +194,7 @@ export default function PiezasTab() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleDuplicate(pieza)}
-                        className="flex-1 btn-secondary h-10" // Changed className
+                        className={`flex-1 ${componentStyles.buttons.secondary}`}
                       >
                         <Copy className="w-4 h-4 mr-1" />
                         Duplicar
@@ -202,7 +203,7 @@ export default function PiezasTab() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleDelete(pieza)}
-                        className="btn-danger h-10 px-3" // Changed className
+                        className={`${componentStyles.buttons.danger} px-3`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

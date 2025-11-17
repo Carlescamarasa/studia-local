@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createPortal } from "react-dom";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
   const queryClient = useQueryClient();
@@ -283,29 +284,31 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
       
       <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
         <div 
-          className="bg-card w-full max-w-3xl max-h-[92vh] shadow-card rounded-2xl app-card flex flex-col pointer-events-auto my-8"
+          className="bg-[var(--color-surface-elevated)] w-full max-w-3xl max-h-[92vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-8 border border-[var(--color-border-default)]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="border-b border-[var(--color-border-default)] px-6 py-4 flex items-center justify-between bg-card rounded-t-2xl">
-            <div className="flex items-center gap-3 text-[var(--color-primary)]">
-              <div>
-                <h2 className="text-xl font-bold text-[var(--color-primary)]">
-                  {isInlineMode ? 'Editar Ejercicio (inline)' : ejercicio ? 'Editar Ejercicio' : 'Nuevo Ejercicio'}
-                </h2>
-                <p className="text-sm text-[var(--color-primary)]/90">
-                  {isInlineMode ? 'Cambios aplicados a la sesión actual' : 'Plantilla de ejercicio'}
-                </p>
+          <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-2xl px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div>
+                  <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
+                    {isInlineMode ? 'Editar Ejercicio (inline)' : ejercicio ? 'Editar Ejercicio' : 'Nuevo Ejercicio'}
+                  </h2>
+                  <p className="text-sm text-[var(--color-text-secondary)]">
+                    {isInlineMode ? 'Cambios aplicados a la sesión actual' : 'Plantilla de ejercicio'}
+                  </p>
+                </div>
               </div>
+              <Button variant="ghost" size="icon" onClick={() => onClose(null)} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-9 w-9 rounded-xl">
+                <X className="w-5 h-5" />
+              </Button>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => onClose(null)} className="text-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] h-9 w-9 rounded-xl">
-              <X className="w-5 h-5 " />
-            </Button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {saveResult && (
-              <Alert className={`rounded-xl ${saveResult.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
-                <AlertDescription className={saveResult.success ? 'text-green-800' : 'text-red-800'}>
+              <Alert className={`rounded-xl ${saveResult.success ? 'border-[var(--color-success)]/20 bg-[var(--color-success)]/10' : 'border-[var(--color-danger)]/20 bg-[var(--color-danger)]/10'}`}>
+                <AlertDescription className="text-[var(--color-text-primary)]">
                   {saveResult.message}
                 </AlertDescription>
               </Alert>
@@ -321,9 +324,9 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
             )}
 
             {isAD && (
-              <Alert className="rounded-xl border-amber-200 bg-amber-50">
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
-                <AlertDescription className="text-amber-700">
+              <Alert className="rounded-xl border-[var(--color-warning)]/20 bg-[var(--color-warning)]/10">
+                <AlertTriangle className="h-4 w-4 text-[var(--color-warning)]" />
+                <AlertDescription className="text-[var(--color-text-primary)]">
                   Este ejercicio no activa cronómetro ni suma tiempo real. La duración es solo referencia visual.
                 </AlertDescription>
               </Alert>
@@ -412,7 +415,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                     onChange={(e) => setFormData({ ...formData, duracionSeg: parseInt(e.target.value || 0) })}
                     className="h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
                   />
-                  <p className="text-xs text-muted mt-1">
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-1">
                     {Math.floor(formData.duracionSeg / 60)}:{String(formData.duracionSeg % 60).padStart(2, '0')} minutos
                   </p>
                 </div>
@@ -470,7 +473,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                         >
                           <SelectItem value={null}>Sin pieza de referencia</SelectItem>
                           {piezas.length === 0 ? (
-                            <div className="p-2 text-sm text-muted">No hay piezas disponibles</div>
+                            <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay piezas disponibles</div>
                           ) : (
                             piezas.map(p => (
                               <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
@@ -629,7 +632,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                                     </div>
                                   )}
                                   {!elemento.media?.video && !elemento.media?.audio && !elemento.media?.imagen && !elemento.media?.pdf && (
-                                    <p className="text-xs text-muted text-center py-4">Sin material multimedia</p>
+                                    <p className="text-xs text-[var(--color-text-secondary)] text-center py-4">Sin material multimedia</p>
                                   )}
                                 </TabsContent>
                               ))}
@@ -750,15 +753,15 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
             )}
           </div>
 
-          <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-muted rounded-b-2xl">
+          <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
             <div className="flex gap-3 mb-2">
-              <Button variant="outline" onClick={() => onClose(null)} className="flex-1 h-10 rounded-xl">
+              <Button variant="outline" onClick={() => onClose(null)} className={`flex-1 ${componentStyles.buttons.outline}`}>
                 Cancelar
               </Button>
               <Button
                 onClick={handleSave}
                 disabled={saveMutation.isPending}
-                className="flex-1 btn-primary h-10 rounded-xl shadow-sm"
+                className={`flex-1 ${componentStyles.buttons.primary}`}
               >
                 {saveMutation.isPending ? (
                   'Guardando...'
@@ -770,7 +773,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                 )}
               </Button>
             </div>
-            <p className="text-xs text-center text-muted">
+            <p className="text-xs text-center text-[var(--color-text-secondary)]">
               Ctrl/⌘+. : cerrar • Ctrl/⌘+Intro : guardar
             </p>
           </div>

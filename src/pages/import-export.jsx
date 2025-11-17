@@ -455,7 +455,7 @@ export default function ImportExportPage() {
       <div className="flex items-center justify-center min-h-[80vh]">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-12 h-12 text-[var(--color-primary)] animate-spin" />
-          <p className="text-muted">Cargando...</p>
+          <p className="text-[var(--color-text-secondary)]">Cargando...</p>
         </div>
       </div>
     );
@@ -464,11 +464,11 @@ export default function ImportExportPage() {
   if (currentUser?.rolPersonalizado !== 'ADMIN') {
     return (
       <div className="min-h-screen bg-[var(--color-surface-muted)] flex items-center justify-center p-6">
-        <Card className="max-w-md rounded-2xl border-red-200 shadow-sm">
-          <CardContent className="pt-6 text-center text-ui">
-            <Shield className="w-16 h-16 mx-auto mb-4 text-red-500" />
-            <h2 className="text-2xl font-bold text-ui mb-2">Acceso Restringido</h2>
-            <p className="text-muted">Solo los administradores pueden acceder a esta página.</p>
+        <Card className="max-w-md rounded-2xl border-[var(--color-border-default)] shadow-sm">
+          <CardContent className="pt-6 text-center text-[var(--color-text-primary)]">
+            <Shield className="w-16 h-16 mx-auto mb-4 text-[var(--color-danger)]" />
+            <h2 className="text-2xl font-bold text-[var(--color-text-primary)] mb-2">Acceso Restringido</h2>
+            <p className="text-[var(--color-text-secondary)]">Solo los administradores pueden acceder a esta página.</p>
           </CardContent>
         </Card>
       </div>
@@ -485,7 +485,7 @@ export default function ImportExportPage() {
 
       <div className="max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8">
         <Card className="app-card">
-          <CardContent className="pt-6 text-ui">
+          <CardContent className="pt-6 text-[var(--color-text-primary)]">
             <div className="space-y-6">
               {/* Tabs con SegmentedTabs */}
               <div className="flex justify-center">
@@ -504,7 +504,7 @@ export default function ImportExportPage() {
               {activeTab === 'exportar' && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-lg font-bold text-ui mb-4 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
                       <Music className="w-5 h-5 text-[var(--color-primary)]" />
                       Plantillas (JSON)
                     </h2>
@@ -516,17 +516,17 @@ export default function ImportExportPage() {
                             <CardTitle className="text-base">Piezas</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3 text-ui">
-                          <p className="text-sm text-ui/80">
+                        <CardContent className="pt-4 space-y-3 text-[var(--color-text-primary)]">
+                          <p className="text-sm text-[var(--color-text-secondary)]">
                             Exporta piezas musicales con elementos multimedia.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-ui/80">
+                          <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{piezas.length}</Badge>
                           </div>
                           <Button 
                             onClick={() => exportarJSON('piezas')} 
-                            className="w-full h-9 rounded-xl btn-primary"
+                            className={`w-full h-9 ${componentStyles.buttons.primary}`}
                             size="sm"
                           >
                             <FileDown className="w-4 h-4 mr-2" />
@@ -542,17 +542,17 @@ export default function ImportExportPage() {
                             <CardTitle className="text-base">Ejercicios</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3 text-ui">
-                          <p className="text-sm text-ui/80">
+                        <CardContent className="pt-4 space-y-3 text-[var(--color-text-primary)]">
+                          <p className="text-sm text-[var(--color-text-secondary)]">
                             Exporta bloques y ejercicios del catálogo.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-ui/80">
+                          <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{bloques.length}</Badge>
                           </div>
                           <Button 
                             onClick={() => exportarJSON('bloques')} 
-                            className="w-full h-9 rounded-xl btn-primary"
+                            className={`w-full h-9 ${componentStyles.buttons.primary}`}
                             size="sm"
                           >
                             <FileDown className="w-4 h-4 mr-2" />
@@ -568,17 +568,17 @@ export default function ImportExportPage() {
                             <CardTitle className="text-base">Planes</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3 text-ui">
-                          <p className="text-sm text-ui/80">
+                        <CardContent className="pt-4 space-y-3 text-[var(--color-text-primary)]">
+                          <p className="text-sm text-[var(--color-text-secondary)]">
                             Exporta planes con semanas, sesiones y ejercicios.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-ui/80">
+                          <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{planes.length}</Badge>
                           </div>
                           <Button 
                             onClick={() => exportarJSON('planes')} 
-                            className="w-full h-9 rounded-xl btn-primary"
+                            className={`w-full h-9 ${componentStyles.buttons.primary}`}
                             size="sm"
                           >
                             <FileDown className="w-4 h-4 mr-2" />
@@ -590,7 +590,7 @@ export default function ImportExportPage() {
                   </div>
 
                   <div>
-                    <h2 className="text-lg font-bold text-ui mb-4 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
                       <FileDown className="w-5 h-5 text-[var(--color-primary)]" />
                       Datos y Estadísticas (CSV)
                     </h2>
@@ -602,17 +602,17 @@ export default function ImportExportPage() {
                             <CardTitle className="text-base">Usuarios</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3 text-ui">
-                          <p className="text-sm text-ui/80">
+                        <CardContent className="pt-4 space-y-3 text-[var(--color-text-primary)]">
+                          <p className="text-sm text-[var(--color-text-secondary)]">
                             Lista completa con roles y perfiles.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-ui/80">
+                          <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{usuarios.length}</Badge>
                           </div>
                           <Button 
                             onClick={exportarUsuarios} 
-                            className="w-full h-9 rounded-xl btn-primary"
+                            className={`w-full h-9 ${componentStyles.buttons.primary}`}
                             size="sm"
                           >
                             <FileDown className="w-4 h-4 mr-2" />
@@ -628,17 +628,17 @@ export default function ImportExportPage() {
                             <CardTitle className="text-base">Asignaciones</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3 text-ui">
-                          <p className="text-sm text-ui/80">
+                        <CardContent className="pt-4 space-y-3 text-[var(--color-text-primary)]">
+                          <p className="text-sm text-[var(--color-text-secondary)]">
                             Asignaciones con piezas y planes.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-ui/80">
+                          <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{asignaciones.length}</Badge>
                           </div>
                           <Button 
                             onClick={exportarAsignaciones} 
-                            className="w-full h-9 rounded-xl btn-primary"
+                            className={`w-full h-9 ${componentStyles.buttons.primary}`}
                             size="sm"
                           >
                             <FileDown className="w-4 h-4 mr-2" />
@@ -654,11 +654,11 @@ export default function ImportExportPage() {
                             <CardTitle className="text-base">Agenda</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3 text-ui">
-                          <p className="text-sm text-ui/80">
+                        <CardContent className="pt-4 space-y-3 text-[var(--color-text-primary)]">
+                          <p className="text-sm text-[var(--color-text-secondary)]">
                             Agenda de la semana actual por estudiante.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-ui/80">
+                          <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">
                               {usuarios.filter(u => u.rolPersonalizado === 'ESTU').length}
@@ -666,7 +666,7 @@ export default function ImportExportPage() {
                           </div>
                           <Button 
                             onClick={exportarAgenda} 
-                            className="w-full h-9 rounded-xl btn-primary"
+                            className={`w-full h-9 ${componentStyles.buttons.primary}`}
                             size="sm"
                           >
                             <FileDown className="w-4 h-4 mr-2" />
@@ -682,17 +682,17 @@ export default function ImportExportPage() {
                             <CardTitle className="text-base">Sesiones</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3 text-ui">
-                          <p className="text-sm text-ui/80">
+                        <CardContent className="pt-4 space-y-3 text-[var(--color-text-primary)]">
+                          <p className="text-sm text-[var(--color-text-secondary)]">
                             Detalle de ejercicios ejecutados.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-ui/80">
+                          <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{registrosSesion.length}</Badge>
                           </div>
                           <Button 
                             onClick={exportarEstadisticas} 
-                            className="w-full h-9 rounded-xl btn-primary"
+                            className={`w-full h-9 ${componentStyles.buttons.primary}`}
                             size="sm"
                           >
                             <FileDown className="w-4 h-4 mr-2" />
@@ -708,17 +708,17 @@ export default function ImportExportPage() {
                             <CardTitle className="text-base">Bloques</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3 text-ui">
-                          <p className="text-sm text-ui/80">
+                        <CardContent className="pt-4 space-y-3 text-[var(--color-text-primary)]">
+                          <p className="text-sm text-[var(--color-text-secondary)]">
                             Detalle de ejercicios ejecutados.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-ui/80">
+                          <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{registrosBloques.length}</Badge>
                           </div>
                           <Button 
                             onClick={exportarBloquesDetallado} 
-                            className="w-full h-9 rounded-xl btn-primary"
+                            className={`w-full h-9 ${componentStyles.buttons.primary}`}
                             size="sm"
                           >
                             <FileDown className="w-4 h-4 mr-2" />
@@ -734,17 +734,17 @@ export default function ImportExportPage() {
                             <CardTitle className="text-base">Ejercicios (CSV)</CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-3 text-ui">
-                          <p className="text-sm text-ui/80">
+                        <CardContent className="pt-4 space-y-3 text-[var(--color-text-primary)]">
+                          <p className="text-sm text-[var(--color-text-secondary)]">
                             Catálogo de ejercicios en formato tabular.
                           </p>
-                          <div className="flex items-center justify-between text-xs text-ui/80">
+                          <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{bloques.length}</Badge>
                           </div>
                           <Button 
                             onClick={exportarEjercicios} 
-                            className="w-full h-9 rounded-xl btn-primary"
+                            className={`w-full h-9 ${componentStyles.buttons.primary}`}
                             size="sm"
                           >
                             <FileDown className="w-4 h-4 mr-2" />
@@ -773,7 +773,7 @@ export default function ImportExportPage() {
               {activeTab === 'importar' && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-lg font-bold text-ui mb-4 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
                       <Upload className="w-5 h-5 text-[var(--color-primary)]" />
                       Plantillas (JSON)
                     </h2>
@@ -886,7 +886,7 @@ export default function ImportExportPage() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="p-6 space-y-4 text-ui">
+              <CardContent className="p-6 space-y-4 text-[var(--color-text-primary)]">
                 {!importResults ? (
                   <>
                     <Alert className={`rounded-xl ${componentStyles.containers.panelBase} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
@@ -905,7 +905,7 @@ export default function ImportExportPage() {
                         type="file"
                         accept=".json"
                         onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                        className={`mt-2 ${componentStyles.controls.inputDefault} focus-brand`}
+                        className={`mt-2 ${componentStyles.controls.inputDefault}`}
                       />
                     </div>
 
@@ -960,7 +960,7 @@ export default function ImportExportPage() {
                         </div>
                         
                         {importResults.errors.length > 0 && (
-                          <div className="mt-3 max-h-48 overflow-y-auto border border-[var(--color-border-default)] rounded-xl p-2 bg-white text-xs space-y-1">
+                          <div className="mt-3 max-h-48 overflow-y-auto border border-[var(--color-border-default)] rounded-xl p-2 bg-[var(--color-surface-elevated)] text-xs space-y-1">
                             {importResults.errors.map((err, idx) => (
                               <div key={idx} className={`${componentStyles.typography.smallMetaText} text-[var(--color-danger)]`}>• {err}</div>
                             ))}

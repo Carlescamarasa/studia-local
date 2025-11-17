@@ -8,7 +8,7 @@ import { Badge } from "@/components/ds";
 import {
   ArrowLeft, Save, Target, User, Music, BookOpen, Calendar,
   ChevronDown, ChevronRight, Clock, Layers, Plus, Edit, Trash2,
-  GripVertical, Copy, PlayCircle, AlertCircle
+  GripVertical, Copy, PlayCircle, AlertCircle, Shuffle
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -21,8 +21,18 @@ import { Alert, AlertDescription } from "@/components/ds";
 import PageHeader from "@/components/ds/PageHeader";
 import { getNombreVisible } from "@/components/utils/helpers";
 import { componentStyles } from "@/design/componentStyles";
+import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "@/components/study/sessionSequence";
+import RequireRole from "@/components/auth/RequireRole";
 
 export default function AdaptarAsignacionPage() {
+  return (
+    <RequireRole anyOf={['ADMIN', 'PROF']}>
+      <AdaptarAsignacionPageContent />
+    </RequireRole>
+  );
+}
+
+function AdaptarAsignacionPageContent() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -263,6 +273,33 @@ export default function AdaptarAsignacionPage() {
     setExpandedEjercicios(newExpanded);
   };
 
+  // Expandir todas las rondas por defecto cuando se expande el contenido de una sesión
+  useEffect(() => {
+    if (!planData) return;
+    
+    const nuevasRondasExpandidas = new Set(expandedEjercicios);
+    let hayCambios = false;
+    
+    planData.semanas.forEach((semana, semanaIndex) => {
+      semana.sesiones?.forEach((sesion, sesionIndex) => {
+        const sesionKey = `${semanaIndex}-${sesionIndex}-ej`;
+        if (expandedEjercicios.has(sesionKey) && sesion.rondas) {
+          sesion.rondas.forEach((_, rondaIndex) => {
+            const rondaKey = `${semanaIndex}-${sesionIndex}-ronda-${rondaIndex}`;
+            if (!nuevasRondasExpandidas.has(rondaKey)) {
+              nuevasRondasExpandidas.add(rondaKey);
+              hayCambios = true;
+            }
+          });
+        }
+      });
+    });
+    
+    if (hayCambios) {
+      setExpandedEjercicios(nuevasRondasExpandidas);
+    }
+  }, [expandedEjercicios, planData]);
+
   const onDragEnd = (result) => {
     if (!result.destination) return;
     const { source, destination, type } = result;
@@ -336,8 +373,9 @@ export default function AdaptarAsignacionPage() {
             <AlertCircle className={`w-12 h-12 ${componentStyles.empty.emptyIcon} text-[var(--color-warning)] mx-auto`} />
             <p className={componentStyles.typography.pageTitle}>ID de asignación no proporcionado</p>
             <p className={componentStyles.empty.emptyText}>Por favor, proporciona un ID válido en la URL.</p>
-            <Button onClick={() => navigate(createPageUrl('asignaciones'))} className={`mt-4 ${componentStyles.buttons.primary}`}>
-              Volver a Asignaciones
+            <Button onClick={() => navigate(-1)} className={`mt-4 ${componentStyles.buttons.primary}`}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver
             </Button>
           </CardContent>
         </Card>
@@ -367,8 +405,9 @@ export default function AdaptarAsignacionPage() {
               {error?.message || `No se encontró la asignación con ID: ${asignacionId}`}
             </p>
             <div className="flex gap-2 justify-center">
-              <Button onClick={() => navigate(createPageUrl('asignaciones'))} className={componentStyles.buttons.primary}>
-                Volver a Asignaciones
+              <Button onClick={() => navigate(-1)} className={componentStyles.buttons.primary}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Volver
               </Button>
               <Button onClick={() => window.location.reload()} variant="outline" className={componentStyles.buttons.outline}>
                 Reintentar
@@ -402,7 +441,7 @@ export default function AdaptarAsignacionPage() {
         subtitle={`Estudiante: ${getNombreVisible(alumno)} • Pieza: ${asignacion.piezaSnapshot?.nombre}`}
         actions={
           <div className="flex gap-2 flex-wrap">
-            <Button variant="ghost" onClick={() => navigate(createPageUrl('asignaciones'))} className={componentStyles.buttons.ghost}>
+            <Button variant="ghost" onClick={() => navigate(-1)} className={componentStyles.buttons.ghost}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver
             </Button>
@@ -559,77 +598,49 @@ export default function AdaptarAsignacionPage() {
 
                                                                 {isExpanded && (
                                                                   <div className="ml-6 mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
-                                                                    <div className="flex items-center gap-2 text-xs text-ui/80">
-                                                                      <Layers className="w-3 h-3" />
+                                                                    <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)] mb-2">
+                                                                      <Layers className="w-3 h-3 text-[var(--color-text-secondary)]" />
                                                                       <span>
                                                                         {sesion.bloques?.length || 0} ejercicios
-                                                                        {sesion.rondas && sesion.rondas.length > 0 && `, ${sesion.rondas.length} rondas`}
+                                                                        {sesion.rondas && sesion.rondas.length > 0 && `, ${sesion.rondas.length} ${sesion.rondas.length === 1 ? 'ronda' : 'rondas'}`}
                                                                       </span>
-                                                                      <Button
-                                                                        size="sm"
-                                                                        variant="ghost"
-                                                                        onClick={(e) => {
-                                                                          e.stopPropagation();
-                                                                          toggleEjercicios(semanaIndex, sesionIndex);
-                                                                        }}
-                                                                        className="text-xs h-6 px-2 rounded-xl"
-                                                                        aria-label={expandedEjercicios.has(`${sesionKey}-ej`) ? 'Ocultar contenido' : 'Ver contenido'}
-                                                                      >
-                                                                        {expandedEjercicios.has(`${sesionKey}-ej`) ? 'Ocultar' : 'Ver contenido'}
-                                                                      </Button>
                                                                     </div>
 
-                                                                    {expandedEjercicios.has(`${sesionKey}-ej`) && (
-                                                                      <div className={`border-l-2 border-[var(--color-primary)] pl-3 space-y-2`}>
-                                                                        {sesion.bloques && sesion.bloques.length > 0 && (
-                                                                          <div className="space-y-1">
-                                                                            <p className={`${componentStyles.typography.smallMetaText} font-semibold text-[var(--color-primary)] mb-1`}>Ejercicios:</p>
-                                                                            {sesion.bloques.map((ejercicio, ejercicioIndex) => (
-                                                                              <div key={ejercicioIndex} className="flex items-center gap-2 p-2 bg-card border border-[var(--color-border-default)] rounded-xl text-xs">
-                                                                                <Badge variant="outline" className={`${tipoColors[ejercicio.tipo]} rounded-full`}>
-                                                                                  {ejercicio.tipo}
-                                                                                </Badge>
-                                                                                <span className="flex-1 text-ui">{ejercicio.nombre}</span>
-                                                                                <span className="text-ui/80">{ejercicio.code}</span>
-                                                                                <Button
-                                                                                  size="sm"
-                                                                                  variant="ghost"
-                                                                                  onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    setEditingEjercicio({ semanaIndex, sesionIndex, ejercicioIndex, ejercicio, source: 'session' });
-                                                                                  }}
-                                                                                  className="h-6 px-2 rounded-xl"
-                                                                                  aria-label={`Editar ${ejercicio.nombre}`}
-                                                                                >
-                                                                                  <Edit className="w-3 h-3" />
-                                                                                </Button>
-                                                                                <Button
-                                                                                  size="sm"
-                                                                                  variant="ghost"
-                                                                                  onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    removeEjercicio(semanaIndex, sesionIndex, ejercicioIndex);
-                                                                                  }}
-                                                                                  className={`h-6 px-2 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-xl`}
-                                                                                  aria-label={`Eliminar ${ejercicio.nombre}`}
-                                                                                >
-                                                                                  <Trash2 className="w-3 h-3" />
-                                                                                </Button>
-                                                                              </div>
-                                                                            ))}
-                                                                          </div>
-                                                                        )}
-
-                                                                        {sesion.rondas && sesion.rondas.length > 0 && (
-                                                                          <div className="space-y-1">
-                                                                            <p className={`${componentStyles.typography.smallMetaText} font-semibold text-[var(--color-accent)] mb-1`}>Rondas:</p>
-                                                                            {sesion.rondas.map((ronda, rondaIndex) => {
+                                                                    {(() => {
+                                                                      const S = ensureRondaIds(sesion);
+                                                                      const secuencia = getSecuencia(S);
+                                                                      const bloquesMap = mapBloquesByCode(S);
+                                                                      
+                                                                      return (
+                                                                        <div className={`border-l-2 border-[var(--color-primary)] pl-3 space-y-2`}>
+                                                                          {secuencia.map((item, seqIdx) => {
+                                                                            if (item.kind === 'BLOQUE') {
+                                                                              const ejercicio = bloquesMap.get(item.code);
+                                                                              if (!ejercicio) return null;
+                                                                              
+                                                                              const ejercicioIndex = sesion.bloques.findIndex(b => b.code === item.code);
+                                                                              
+                                                                              return (
+                                                                                <div key={`bloque-${item.code}-${seqIdx}`} className="flex items-center gap-2 p-2 bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded-xl text-xs">
+                                                                                  <Badge variant="outline" className={`${tipoColors[ejercicio.tipo]} rounded-full`}>
+                                                                                    {ejercicio.tipo}
+                                                                                  </Badge>
+                                                                                  <span className="flex-1 text-[var(--color-text-primary)] font-medium">{ejercicio.nombre}</span>
+                                                                                  <span className="text-[var(--color-text-secondary)] text-[10px]">{ejercicio.code}</span>
+                                                                                </div>
+                                                                              );
+                                                                            } else if (item.kind === 'RONDA') {
+                                                                              const ronda = S.rondas.find(r => r.id === item.id);
+                                                                              if (!ronda) return null;
+                                                                              
+                                                                              const rondaIndex = sesion.rondas.findIndex(r => r.id === item.id);
                                                                               const rondaKey = `${semanaIndex}-${sesionIndex}-ronda-${rondaIndex}`;
                                                                               const isRondaExpanded = expandedEjercicios.has(rondaKey);
+                                                                              
                                                                               return (
                                                                                 <Card
-                                                                                  key={rondaIndex}
-                                                                                  className={`${componentStyles.containers.panelBase} cursor-pointer hover:shadow-md transition-all`}
+                                                                                  key={`ronda-${item.id}-${seqIdx}`}
+                                                                                  className={`${componentStyles.containers.panelBase} cursor-pointer hover:shadow-md transition-all border-[var(--color-primary)]/30 bg-[var(--color-primary-soft)]`}
                                                                                   onClick={(e) => {
                                                                                     e.stopPropagation();
                                                                                     toggleRonda(semanaIndex, sesionIndex, rondaIndex);
@@ -639,60 +650,40 @@ export default function AdaptarAsignacionPage() {
                                                                                     <div className="flex items-center gap-2">
                                                                                       <div className="pt-0.5">
                                                                                         {isRondaExpanded ? (
-                                                                                          <ChevronDown className="w-3 h-3 text-[var(--color-accent)]" />
+                                                                                          <ChevronDown className="w-3 h-3 text-[var(--color-primary)]" />
                                                                                         ) : (
-                                                                                          <ChevronRight className="w-3 h-3 text-[var(--color-accent)]" />
+                                                                                          <ChevronRight className="w-3 h-3 text-[var(--color-primary)]" />
                                                                                         )}
                                                                                       </div>
-                                                                                      <Badge className={componentStyles.status.badgeDefault}>Ronda</Badge>
+                                                                                      <Badge className="bg-[var(--color-primary)] text-[var(--color-text-inverse)] text-xs">Ronda</Badge>
                                                                                       {ronda.aleatoria && (
-                                                                                        <Badge variant="outline" className={componentStyles.status.badgeDefault}>🎲 Random</Badge>
+                                                                                        <Badge variant="outline" className="text-[10px] border-[var(--color-primary)]/40 text-[var(--color-primary)] bg-[var(--color-primary-soft)] flex items-center gap-1">
+                                                                                          <Shuffle className="w-3 h-3" />
+                                                                                          aleatorio
+                                                                                        </Badge>
                                                                                       )}
-                                                                                      <span className={componentStyles.typography.smallMetaText}>× {ronda.repeticiones} repeticiones</span>
-                                                                                      <span className={componentStyles.typography.smallMetaText}>({ronda.bloques.length} ejercicios)</span>
-                                                                                      <Button
-                                                                                        size="sm"
-                                                                                        variant="ghost"
-                                                                                        onClick={(e) => {
-                                                                                          e.stopPropagation();
-                                                                                          removeRonda(semanaIndex, sesionIndex, rondaIndex);
-                                                                                        }}
-                                                                                        className={`ml-auto text-[var(--color-danger)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 h-5 px-1 rounded-xl`}
-                                                                                        aria-label="Eliminar ronda"
-                                                                                      >
-                                                                                        <Trash2 className="w-3 h-3" />
-                                                                                      </Button>
+                                                                                      <span className="text-xs text-[var(--color-text-secondary)] font-medium">× {ronda.repeticiones} repeticiones</span>
+                                                                                      <span className="text-xs text-[var(--color-text-secondary)]">({ronda.bloques.length} ejercicios)</span>
                                                                                     </div>
 
                                                                                     {isRondaExpanded && (
-                                                                                      <div className="ml-4 mt-2 space-y-1">
+                                                                                      <div className="ml-4 mt-2 space-y-1 border-l-2 border-[var(--color-primary)]/30 pl-3">
                                                                                         {ronda.bloques.map((code, eIndex) => {
-                                                                                          const ejercicio = sesion.bloques.find(b => b.code === code);
+                                                                                          const ejercicio = bloquesMap.get(code);
                                                                                           if (!ejercicio) {
                                                                                             return (
-                                                                                              <div key={eIndex} className={`${componentStyles.typography.smallMetaText} text-[var(--color-danger)] p-1`}>
+                                                                                              <div key={eIndex} className={`text-xs text-[var(--color-danger)] p-1`}>
                                                                                                 ⚠️ Referencia huérfana: {code}
                                                                                               </div>
                                                                                             );
                                                                                           }
                                                                                           return (
-                                                                                            <div key={eIndex} className="flex items-center gap-2 p-1.5 bg-card border border-[var(--color-border-default)] rounded-xl text-xs">
+                                                                                            <div key={eIndex} className="flex items-center gap-2 p-1.5 bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded-xl text-xs">
                                                                                               <Badge variant="outline" className={`text-xs rounded-full ${tipoColors[ejercicio.tipo]}`}>
                                                                                                 {ejercicio.tipo}
                                                                                               </Badge>
-                                                                                              <span className="flex-1 text-ui">{ejercicio.nombre}</span>
-                                                                                              <Button
-                                                                                                size="sm"
-                                                                                                variant="ghost"
-                                                                                                onClick={(e) => {
-                                                                                                  e.stopPropagation();
-                                                                                                  setEditingEjercicio({ semanaIndex, sesionIndex, rondaIndex, ejercicio, ejercicioCode: code, source: 'ronda' });
-                                                                                                }}
-                                                                                                className="h-5 px-1 rounded-xl"
-                                                                                                aria-label={`Editar ${ejercicio.nombre}`}
-                                                                                              >
-                                                                                                <Edit className="w-3 h-3" />
-                                                                                              </Button>
+                                                                                              <span className="flex-1 text-[var(--color-text-primary)]">{ejercicio.nombre}</span>
+                                                                                              <span className="text-[var(--color-text-secondary)] text-[10px]">{ejercicio.code}</span>
                                                                                             </div>
                                                                                           );
                                                                                         })}
@@ -701,11 +692,12 @@ export default function AdaptarAsignacionPage() {
                                                                                   </CardContent>
                                                                                 </Card>
                                                                               );
-                                                                            })}
-                                                                          </div>
-                                                                        )}
-                                                                      </div>
-                                                                    )}
+                                                                            }
+                                                                            return null;
+                                                                          })}
+                                                                        </div>
+                                                                      );
+                                                                    })()}
 
                                                                     <div className="flex gap-2 flex-wrap">
                                                                       <Button

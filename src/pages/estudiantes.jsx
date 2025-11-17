@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Users, Search, MessageSquare, TrendingUp,
-  Clock, Star, X, Save, AlertCircle, Edit, UserCog
+  Clock, Star, X, Save, AlertCircle, Edit, UserCog,
+  Eye, Activity, Target, Calendar
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -263,17 +264,17 @@ function EstudiantesPageContent() {
         subtitle="Gestiona el progreso y feedback de tus estudiantes"
         filters={
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ui/80" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
             <Input
               placeholder="Buscar estudiantes... (Ctrl/⌘+K)"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-10 rounded-xl border-[var(--color-border-default)] focus-brand"
+              className={`pl-10 h-10 ${componentStyles.controls.inputDefault}`}
             />
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-ui/80 hover:text-ui"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                 aria-label="Limpiar búsqueda"
               >
                 <X className="w-4 h-4" />
@@ -293,7 +294,7 @@ function EstudiantesPageContent() {
           <CardContent>
             {loadingAsignaciones ? (
               <div className="text-center py-12">
-                <div className="w-12 h-12 border-4 border-[hsl(var(--brand-500))] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <div className="w-12 h-12 border-4 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
                 <p className={componentStyles.typography.bodyText}>Cargando estudiantes...</p>
               </div>
             ) : estadisticasAlumnos.length === 0 ? (
@@ -329,7 +330,7 @@ function EstudiantesPageContent() {
                     render: (e) => (
                       <div className="min-w-0">
                         <p className="font-semibold truncate">{e?.nombreCompleto?.trim() || displayName(e)}</p>
-                        <p className="text-xs text-ui/80 truncate">{e.email}</p>
+                        <p className="text-xs text-[var(--color-text-secondary)] truncate">{e.email}</p>
                       </div>
                     ),
                     sortValue: (e) => displayName(e)
@@ -360,19 +361,48 @@ function EstudiantesPageContent() {
                   }
                 ]}
                 data={estadisticasAlumnos}
-                getRowActions={(alumno) => [
-                  {
-                    id: 'view',
-                    label: 'Dar feedback',
-                    icon: <MessageSquare className="w-4 h-4" />,
-                    onClick: () => handleAbrirFeedback(alumno),
-                  },
-                  ...(isAdminOrProf && alumno.id !== currentUser?.id ? [{
-                    id: 'impersonate',
-                    label: 'Ver como estudiante',
-                    onClick: () => simularAlumno(alumno),
-                  }] : []),
-                ]}
+                getRowActions={(alumno) => {
+                  const asignacionesAlumno = asignaciones.filter(a => 
+                    a.alumnoId === alumno.id && 
+                    (a.estado === 'publicada' || a.estado === 'en_curso' || a.estado === 'borrador')
+                  );
+                  const asignacionActiva = asignacionesAlumno.find(a => 
+                    a.estado === 'publicada' || a.estado === 'en_curso'
+                  );
+
+                  return [
+                    {
+                      id: 'feedback',
+                      label: 'Dar feedback',
+                      icon: <MessageSquare className="w-4 h-4" />,
+                      onClick: () => handleAbrirFeedback(alumno),
+                    },
+                    {
+                      id: 'estadisticas',
+                      label: 'Ver estadísticas',
+                      icon: <Activity className="w-4 h-4" />,
+                      onClick: () => navigate(createPageUrl(`estadisticas?alumnos=${alumno.id}`)),
+                    },
+                    ...(asignacionActiva ? [{
+                      id: 'asignacion',
+                      label: 'Ver asignación',
+                      icon: <Target className="w-4 h-4" />,
+                      onClick: () => navigate(createPageUrl(`asignacion-detalle?id=${asignacionActiva.id}`)),
+                    }] : []),
+                    {
+                      id: 'asignaciones',
+                      label: 'Ver todas las asignaciones',
+                      icon: <Calendar className="w-4 h-4" />,
+                      onClick: () => navigate(createPageUrl(`asignaciones?alumno=${alumno.id}`)),
+                    },
+                    ...(isAdminOrProf && alumno.id !== currentUser?.id ? [{
+                      id: 'impersonate',
+                      label: 'Ver como estudiante',
+                      icon: <Eye className="w-4 h-4" />,
+                      onClick: () => simularAlumno(alumno),
+                    }] : []),
+                  ];
+                }}
                 keyField="id"
                 emptyMessage="No hay estudiantes"
               />
@@ -401,7 +431,7 @@ function EstudiantesPageContent() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setShowFeedbackDrawer(false)}
-                  className={`text-[var(--color-text-inverse)] hover:bg-[var(--color-text-inverse)]/20 h-9 w-9 rounded-xl focus-brand`}
+                  className={`text-[var(--color-text-inverse)] hover:bg-[var(--color-text-inverse)]/20 h-9 w-9 rounded-xl`}
                   aria-label="Cerrar drawer"
                 >
                   <X className="w-5 h-5" />
@@ -419,7 +449,7 @@ function EstudiantesPageContent() {
                       const nuevaSemana = calcularLunesSemanaISO(e.target.value);
                       setFeedbackData({ ...feedbackData, semanaInicioISO: nuevaSemana });
                     }}
-                    className={`${componentStyles.controls.inputDefault} focus-brand`}
+                    className={componentStyles.controls.inputDefault}
                   />
                   <p className={`${componentStyles.typography.smallMetaText} mt-1`}>
                     Semana ISO: {parseLocalDate(feedbackData.semanaInicioISO).toLocaleDateString('es-ES', {
@@ -464,7 +494,7 @@ function EstudiantesPageContent() {
                     onChange={(e) => setFeedbackData({ ...feedbackData, notaProfesor: e.target.value })}
                     placeholder="Comentarios sobre el progreso, áreas de mejora, logros destacados..."
                     rows={8}
-                    className={`${componentStyles.controls.inputDefault} resize-none focus-brand`}
+                    className={`${componentStyles.controls.inputDefault} resize-none`}
                   />
                   <p className={`${componentStyles.typography.smallMetaText} mt-1`}>
                     Escribe observaciones sobre el progreso del estudiante esta semana
@@ -490,7 +520,7 @@ function EstudiantesPageContent() {
                   <Button
                     onClick={handleGuardarFeedback}
                     disabled={guardarFeedbackMutation.isPending}
-                    className={`flex-1 ${componentStyles.buttons.primary} shadow-sm focus-brand`}
+                    className={`flex-1 ${componentStyles.buttons.primary} shadow-sm`}
                   >
                     <Save className="w-4 h-4 mr-2" />
                     {guardarFeedbackMutation.isPending ? 'Guardando...' : 'Guardar'}
