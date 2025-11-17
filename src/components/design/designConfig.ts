@@ -358,7 +358,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
   
   // Tipografía
   typography: {
-    fontFamilyBase: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    fontFamilyBase: '"Raleway", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     fontFamilyHeadings: '"Tenor Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     fontFamilySerif: 'Georgia, "Times New Roman", serif',
     fontSizeBase: 16,          // px

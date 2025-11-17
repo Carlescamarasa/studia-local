@@ -114,9 +114,9 @@ const PRESET_STUDIA: DesignPreset = {
     },
     typography: {
       ...DEFAULT_DESIGN.typography,
-      // Tipografía: Tenor Sans en títulos, sistema en body para legibilidad
+      // Tipografía: Tenor Sans en títulos, Raleway en body para legibilidad
       fontFamilyHeadings: '"Tenor Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      fontFamilyBase: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif',
+      fontFamilyBase: '"Raleway", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif',
       fontSizeBase: 16,           // Tamaño base estándar
       fontSizeScale: 1.25,         // Escala moderada
       serifHeadings: false,

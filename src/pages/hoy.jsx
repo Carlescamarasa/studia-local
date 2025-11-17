@@ -6,16 +6,23 @@ import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ds/Button"; // Updated import path
 import { Badge } from "@/components/ds";
-import { Alert, AlertDescription } from "@/components/ds";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ds";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   PlayCircle, Calendar, Target, Music, Clock, Layers,
-  ChevronRight, ChevronLeft, AlertTriangle, ChevronDown,
+  ChevronRight, ChevronLeft, ChevronsRight, AlertTriangle, ChevronDown,
   Play, Pause, X, List, HelpCircle,
   Maximize2, Minimize2, CheckCircle, XCircle,
-  SkipForward, Shuffle
+  SkipForward, Shuffle, MoreVertical
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { cn } from "@/lib/utils";
 import {
   calcularLunesSemanaISO,
   calcularOffsetSemanas,
@@ -73,6 +80,25 @@ function HoyPageContent() {
   const [sesionFinalizada, setSesionFinalizada] = useState(false);
   const [datosFinal, setDatosFinal] = useState(null);
   const [mediaFullscreen, setMediaFullscreen] = useState(null);
+  const [menuOpcionesAbierto, setMenuOpcionesAbierto] = useState(false);
+
+  // Estado para la posición del timer arrastrable
+  const [timerPosition, setTimerPosition] = useState(() => {
+    const saved = localStorage.getItem('timer-position');
+    if (saved) {
+      try {
+        const { top, left } = JSON.parse(saved);
+        return { top, left };
+      } catch (e) {
+        // Si hay error, usar valores por defecto
+      }
+    }
+    // Valores por defecto: esquina superior derecha
+    return { top: 16, left: null, right: 16 };
+  });
+  const [isDraggingTimer, setIsDraggingTimer] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const timerRef = useRef(null);
 
   const [registroSesionId, setRegistroSesionId] = useState(null);
   const [timestampInicio, setTimestampInicio] = useState(null);
@@ -146,6 +172,96 @@ function HoyPageContent() {
       sidebarCerradoRef.current = false;
     }
   }, [sesionActiva, sesionFinalizada, closeSidebar]);
+
+  // useEffect para manejar el arrastre del timer
+  useEffect(() => {
+    if (!isDraggingTimer) return;
+
+    const handleMouseMove = (e) => {
+      const newLeft = e.clientX - dragOffset.x;
+      const newTop = e.clientY - dragOffset.y;
+
+      // Limitar a los bordes de la ventana
+      const maxLeft = window.innerWidth - (timerRef.current?.offsetWidth || 200);
+      const maxTop = window.innerHeight - (timerRef.current?.offsetHeight || 100);
+      const minLeft = 0;
+      const minTop = 0;
+
+      const clampedLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
+      const clampedTop = Math.max(minTop, Math.min(maxTop, newTop));
+
+      const newPosition = { top: clampedTop, left: clampedLeft, right: null };
+      setTimerPosition(newPosition);
+      
+      // Guardar en localStorage
+      localStorage.setItem('timer-position', JSON.stringify({ top: clampedTop, left: clampedLeft }));
+    };
+
+    const handleTouchMove = (e) => {
+      const touch = e.touches[0];
+      const newLeft = touch.clientX - dragOffset.x;
+      const newTop = touch.clientY - dragOffset.y;
+
+      // Limitar a los bordes de la ventana
+      const maxLeft = window.innerWidth - (timerRef.current?.offsetWidth || 200);
+      const maxTop = window.innerHeight - (timerRef.current?.offsetHeight || 100);
+      const minLeft = 0;
+      const minTop = 0;
+
+      const clampedLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
+      const clampedTop = Math.max(minTop, Math.min(maxTop, newTop));
+
+      const newPosition = { top: clampedTop, left: clampedLeft, right: null };
+      setTimerPosition(newPosition);
+      
+      // Guardar en localStorage
+      localStorage.setItem('timer-position', JSON.stringify({ top: clampedTop, left: clampedLeft }));
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingTimer(false);
+    };
+
+    const handleTouchEnd = () => {
+      setIsDraggingTimer(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isDraggingTimer, dragOffset]);
+
+  // Handlers para arrastrar el timer (usando useCallback para mantener referencias estables)
+  const handleTimerMouseDown = React.useCallback((e) => {
+    if (!timerRef.current) return;
+    const rect = timerRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+    setIsDraggingTimer(true);
+    e.preventDefault();
+  }, []);
+
+  const handleTimerTouchStart = React.useCallback((e) => {
+    if (!timerRef.current) return;
+    const touch = e.touches[0];
+    const rect = timerRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top,
+    });
+    setIsDraggingTimer(true);
+    e.preventDefault();
+  }, []);
 
   useEffect(() => {
     if (!cronometroActivo || !sesionActiva || sesionFinalizada) {
@@ -559,12 +675,32 @@ function HoyPageContent() {
         return;
       }
 
+      // Permitir 'I' para toggle del índice siempre (incluso cuando está abierto)
+      if (e.key === 'i' || e.key === 'I') {
+        e.preventDefault();
+        setMostrarItinerario(prev => !prev);
+        return;
+      }
+
+      // Permitir '?' para toggle de ayuda siempre (incluso cuando está abierto)
+      if (e.key === '?') {
+        e.preventDefault();
+        setMostrarAyuda(prev => !prev);
+        return;
+      }
+
       // Si hay un modal abierto, no procesar otros atajos
       if (hayModalAbierto) return;
 
       // No procesar si está en un input o textarea
       if (e.target.matches('input, textarea, select')) return;
-      if ((e.metaKey || e.ctrlKey) && e.key === 'm') return;
+      
+      // Atajo para abrir menú de opciones (Ctrl/Cmd+M)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'm') {
+        e.preventDefault();
+        setMenuOpcionesAbierto(prev => !prev);
+        return;
+      }
 
       if (e.code === 'Space' || e.key === ' ') {
         e.preventDefault();
@@ -586,14 +722,6 @@ function HoyPageContent() {
         e.preventDefault();
         handleAnterior();
       }
-      if (e.key === 'i' || e.key === 'I') {
-        e.preventDefault();
-        setMostrarItinerario(prev => !prev);
-      }
-      if (e.key === '?') {
-        e.preventDefault();
-        setMostrarAyuda(prev => !prev);
-      }
     };
 
     window.addEventListener('keydown', handleKeyDown, true);
@@ -601,7 +729,7 @@ function HoyPageContent() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown, true);
     };
-  }, [sesionActiva, sesionFinalizada, indiceActual, mediaFullscreen, mostrarItinerario, mostrarAyuda, mostrarModalCancelar, togglePlayPausa, completarYAvanzar, omitirYAvanzar, handleAnterior]);
+  }, [sesionActiva, sesionFinalizada, indiceActual, mediaFullscreen, mostrarItinerario, mostrarAyuda, mostrarModalCancelar, menuOpcionesAbierto, togglePlayPausa, completarYAvanzar, omitirYAvanzar, handleAnterior]);
 
   const handleCancelar = () => {
     setMostrarModalCancelar(true);
@@ -707,7 +835,68 @@ function HoyPageContent() {
   // Player activo
   if (sesionActiva) {
     const listaEjecucion = aplanarSesion(sesionActiva);
+    
+    // Validar si la sesión está vacía
+    if (!listaEjecucion || listaEjecucion.length === 0) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Alert className={`max-w-2xl ${componentStyles.containers.panelBase} border-[var(--color-warning)] bg-[var(--color-warning)]/10`}>
+            <AlertTriangle className="h-5 w-5 text-[var(--color-warning)]" />
+            <AlertTitle className={`${componentStyles.typography.sectionTitle} text-[var(--color-warning)]`}>
+              Sesión vacía
+            </AlertTitle>
+            <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-text-primary)] mt-2`}>
+              Esta sesión no tiene ejercicios. Elige otra sesión, descansa o contacta con tu profesor.
+            </AlertDescription>
+            <div className="mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setSesionActiva(null)}
+                className="rounded-xl focus-brand"
+              >
+                Volver a la lista
+              </Button>
+            </div>
+          </Alert>
+        </div>
+      );
+    }
+
+    // Validar que el índice esté dentro del rango
+    const indiceValido = Math.max(0, Math.min(indiceActual, listaEjecucion.length - 1));
+    if (indiceActual !== indiceValido) {
+      setIndiceActual(indiceValido);
+      return null; // Renderizará de nuevo con el índice corregido
+    }
+
     const ejercicioActual = listaEjecucion[indiceActual];
+    
+    // Validar que ejercicioActual existe (doble validación)
+    if (!ejercicioActual) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Alert className={`max-w-2xl ${componentStyles.containers.panelBase} border-[var(--color-danger)] bg-[var(--color-danger)]/10`}>
+            <AlertTriangle className="h-5 w-5 text-[var(--color-danger)]" />
+            <AlertTitle className={`${componentStyles.typography.sectionTitle} text-[var(--color-danger)]`}>
+              Error al cargar el ejercicio
+            </AlertTitle>
+            <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-text-primary)] mt-2`}>
+              No se pudo cargar el ejercicio actual. Por favor, vuelve a la lista de sesiones.
+            </AlertDescription>
+            <div className="mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setSesionActiva(null)}
+                className="rounded-xl focus-brand"
+              >
+                Volver a la lista
+              </Button>
+            </div>
+          </Alert>
+        </div>
+      );
+    }
+
     const progreso = ((indiceActual + 1) / listaEjecucion.length) * 100;
     const isAD = ejercicioActual?.tipo === 'AD';
     const isFM = ejercicioActual?.tipo === 'FM';
@@ -725,8 +914,206 @@ function HoyPageContent() {
       .filter(e => e.tipo !== 'AD')
       .reduce((sum, e) => sum + (e.duracionSeg || 0), 0);
 
+    // Calcular porcentaje del tiempo del ejercicio actual
+    const porcentajeEjercicio = ejercicioActual?.duracionSeg > 0 
+      ? Math.min((tiempoActual / ejercicioActual.duracionSeg) * 100, 100)
+      : 0;
+    const tiempoRestante = ejercicioActual?.duracionSeg > 0
+      ? Math.max(0, ejercicioActual.duracionSeg - tiempoActual)
+      : 0;
+    const excedido = tiempoActual > (ejercicioActual?.duracionSeg || 0);
+
     return (
-      <div className="min-h-screen bg-background pb-[160px]">
+      <div className="min-h-screen bg-background pb-4">
+        {/* Timer flotante con controles integrados */}
+        {sesionActiva && (
+          <div
+            ref={timerRef}
+            className="fixed z-[100] select-none"
+            style={{
+              top: timerPosition.top !== null ? `${timerPosition.top}px` : undefined,
+              left: timerPosition.left !== null ? `${timerPosition.left}px` : undefined,
+              right: timerPosition.right !== null ? `${timerPosition.right}px` : undefined,
+              cursor: isDraggingTimer ? 'grabbing' : 'grab',
+              userSelect: 'none',
+            }}
+            onMouseDown={handleTimerMouseDown}
+            onTouchStart={handleTimerTouchStart}
+          >
+            <div className={cn(
+              "bg-[var(--color-surface-elevated)] border-2 rounded-2xl shadow-lg backdrop-blur-sm overflow-hidden",
+              !isAD && ejercicioActual?.duracionSeg > 0 && (
+                excedido ? "border-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "border-[var(--color-warning)]" : "border-[var(--color-primary)]/50"
+              ),
+              !isAD && ejercicioActual?.duracionSeg > 0 && !isDraggingTimer && "hover:shadow-xl transition-shadow"
+            )}>
+              {/* Header con Timer y Contador */}
+              {(!isAD && ejercicioActual?.duracionSeg > 0) || (sesionActiva && listaEjecucion.length > 0) ? (
+                <div className="px-3 py-2 border-b border-[var(--color-border-default)]/50">
+                  <div className="flex items-center justify-between gap-2">
+                    {/* Timer - Solo visible si no es AD y tiene duración */}
+                    {!isAD && ejercicioActual?.duracionSeg > 0 && (
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Clock className={cn(
+                          "w-4 h-4 shrink-0",
+                          excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
+                        )} />
+                        <div className="flex flex-col">
+                          <div className={cn(
+                            "text-lg font-mono font-bold tabular-nums leading-tight",
+                            excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
+                          )}>
+                            {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
+                          </div>
+                          <div className="text-[10px] text-[var(--color-text-secondary)] font-mono tabular-nums leading-tight">
+                            / {Math.floor(ejercicioActual.duracionSeg / 60)}:{String((ejercicioActual.duracionSeg % 60)).padStart(2, '0')}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Contador visual de ejercicios - Siempre visible */}
+                    {sesionActiva && listaEjecucion.length > 0 && (
+                      <div className="flex flex-col items-end shrink-0">
+                        <div className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-xs transition-all",
+                          "bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30",
+                          "text-[var(--color-primary)]"
+                        )}>
+                          <Target className="w-3.5 h-3.5" />
+                          <span className="font-mono tabular-nums">
+                            {indiceActual + 1}<span className="text-[var(--color-text-secondary)] font-normal">/{listaEjecucion.length}</span>
+                          </span>
+                        </div>
+                        {/* Mini barra de progreso del contador */}
+                        <div className="mt-1 w-full max-w-[60px] bg-[var(--color-border-default)]/30 rounded-full h-1 overflow-hidden">
+                          <div
+                            className={cn(
+                              "h-full transition-all duration-300 rounded-full",
+                              progreso <= 85 ? 'bg-[var(--color-success)]' : progreso <= 100 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-danger)]'
+                            )}
+                            style={{ width: `${Math.min(progreso, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Barra de progreso del ejercicio - Solo si hay timer */}
+                  {!isAD && ejercicioActual?.duracionSeg > 0 && (
+                    <div className="mt-1.5 bg-[var(--color-border-default)]/30 rounded-full h-0.5 overflow-hidden">
+                      <div
+                        className={cn(
+                          "h-full transition-all duration-300",
+                          excedido ? 'bg-[var(--color-danger)]' : porcentajeEjercicio >= 75 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-primary)]'
+                        )}
+                        style={{ width: `${Math.min(porcentajeEjercicio, 100)}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : null}
+              
+              {/* Controles principales - Compactos pero táctiles */}
+              <div className="p-2 flex items-center justify-center gap-1.5">
+                {/* Navegación: Atrás */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAnterior}
+                  disabled={indiceActual === 0}
+                  className="h-10 w-10 p-0 rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors shrink-0"
+                  title="Anterior (P)"
+                  aria-label="Ejercicio anterior"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+
+                {/* Control principal: Play/Pause (solo si no es AD) */}
+                {!isAD && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={togglePlayPausa}
+                    className="h-10 w-10 p-0 rounded-lg focus-brand shadow-sm hover:shadow-md transition-all shrink-0"
+                    title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
+                    aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
+                  >
+                    {cronometroActivo ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                  </Button>
+                )}
+
+                {/* Acciones de ejercicio: Completar */}
+                <Button
+                  variant="primary"
+                  onClick={completarYAvanzar}
+                  className={cn(
+                    "h-10 px-3 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm rounded-lg focus-brand shadow-sm hover:shadow-md transition-all text-white shrink-0",
+                    isAD && "flex-1"
+                  )}
+                  title="Completar (Enter)"
+                  aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
+                >
+                  <CheckCircle className="w-4 h-4 mr-1.5" />
+                  {isUltimo ? 'Finalizar' : 'OK'}
+                </Button>
+
+                {/* Acciones de ejercicio: Saltar */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={omitirYAvanzar}
+                  disabled={isUltimo}
+                  className="h-10 w-10 p-0 rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors shrink-0"
+                  title="Omitir y pasar (N)"
+                  aria-label="Omitir ejercicio"
+                >
+                  <ChevronsRight className="w-4 h-4" />
+                </Button>
+
+                {/* Menú de opciones: Índice + Salir */}
+                <DropdownMenu open={menuOpcionesAbierto} onOpenChange={setMenuOpcionesAbierto}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-10 w-10 p-0 rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors shrink-0"
+                      title="Más opciones (Ctrl/Cmd+M)"
+                      aria-label="Menú de opciones"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 z-[110]">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setMostrarItinerario(true);
+                        setMenuOpcionesAbierto(false);
+                      }}
+                      className="cursor-pointer focus-brand"
+                    >
+                      <List className="w-4 h-4 mr-2" />
+                      <span>Índice de sesión</span>
+                      <span className="ml-auto text-xs text-[var(--color-text-muted)]">I</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        handleCancelar();
+                        setMenuOpcionesAbierto(false);
+                      }}
+                      className="cursor-pointer focus-brand text-[var(--color-danger)] focus:text-[var(--color-danger)]"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      <span>Salir de sesión</span>
+                      <span className="ml-auto text-xs text-[var(--color-text-muted)]">Esc</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header del Player */}
         <div className="bg-card border-b border-[var(--color-border-default)] px-4 py-4 lg:sticky lg:top-0 z-10 shadow-card">
           <div className="max-w-5xl mx-auto">
@@ -737,9 +1124,9 @@ function HoyPageContent() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-xl md:text-2xl font-bold text-ui truncate">
-                    {ejercicioActual.nombre}
+                    {ejercicioActual?.nombre || 'Ejercicio sin nombre'}
                   </h2>
-                  {ejercicioActual.esRonda && (
+                  {ejercicioActual?.esRonda && (
                     <p className="text-xs text-ui/80">
                       Ronda {ejercicioActual.rondaIdx + 1} • Rep {ejercicioActual.repeticion}/{ejercicioActual.totalRepeticiones}
                     </p>
@@ -949,109 +1336,161 @@ function HoyPageContent() {
           )}
         </div>
 
-        {/* Footer de controles */}
+        {/* Footer de controles - Oculto (controles ahora en timer flotante) */}
+        {false && (
         <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-card z-30 pb-[env(safe-area-inset-bottom,0px)]">
-          <div className="max-w-5xl mx-auto px-3 py-3">
-            {/* Barra de progreso de tiempo */}
-            <div className="mb-3">
-              <TimelineProgreso
-                tiempoActual={tiempoActual}
-                tiempoObjetivo={tiempoTotalPrevisto}
-              />
+          <div className="max-w-5xl mx-auto px-3 py-2">
+            {/* Breadcrumb compacto */}
+            <div className="flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide -mx-3 px-3">
+              {listaEjecucion.slice(Math.max(0, indiceActual - 2), Math.min(listaEjecucion.length, indiceActual + 3)).map((ej, idx) => {
+                const realIdx = Math.max(0, indiceActual - 2) + idx;
+                const isActive = realIdx === indiceActual;
+                const isCompleted = completados.has(realIdx);
+                const isOmitted = omitidos.has(realIdx);
+                
+                // Formatear label para el breadcrumb
+                let label = ej.tipo;
+                if (ej.esRonda && ej.rondaIdx !== undefined && ej.repeticion !== undefined) {
+                  // Mostrar: "TC R1-2" donde R1 es la ronda y 2 es la repetición actual
+                  label = `${ej.tipo} R${ej.rondaIdx + 1}-${ej.repeticion}`;
+                }
+                
+                return (
+                  <React.Fragment key={realIdx}>
+                    {idx > 0 && <ChevronRight className="w-3 h-3 text-[var(--color-text-muted)] shrink-0" />}
+                    <div
+                      className={cn(
+                        "px-2 py-0.5 rounded text-xs font-medium shrink-0 transition-all whitespace-nowrap",
+                        isActive 
+                          ? "bg-[var(--color-primary)] text-white shadow-sm" 
+                          : isCompleted
+                          ? "bg-[var(--color-success)]/20 text-[var(--color-success)] border border-[var(--color-success)]/30"
+                          : isOmitted
+                          ? "bg-[var(--color-warning)]/20 text-[var(--color-warning)] border border-[var(--color-warning)]/30"
+                          : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] border border-[var(--color-border-default)]"
+                      )}
+                      title={ej.nombre || `${ej.tipo}${ej.esRonda ? ` - Ronda ${ej.rondaIdx + 1}, Repetición ${ej.repeticion}/${ej.totalRepeticiones}` : ''}`}
+                    >
+                      {label}
+                    </div>
+                  </React.Fragment>
+                );
+              })}
             </div>
 
-            {/* Controles principales */}
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={handleCancelar}
-                className="h-11 px-3 min-w-[44px] rounded-xl focus-brand"
-                title="Cancelar sesión (Esc)"
-                aria-label="Cancelar sesión"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-
+            {/* Controles principales - Optimizado para desktop/tablet */}
+            <div className="flex items-center justify-center gap-3 md:gap-4 mb-2">
+              {/* Navegación: Atrás */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleAnterior}
                 disabled={indiceActual === 0}
-                className="h-11 px-3 min-w-[44px] rounded-xl focus-brand"
+                className="h-12 md:h-14 px-4 md:px-5 min-w-[52px] md:min-w-[60px] rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
                 title="Anterior (P)"
                 aria-label="Ejercicio anterior"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
               </Button>
 
+              {/* Control principal: Play/Pause (solo si no es AD) */}
               {!isAD && (
-                <>
-                  <div className="flex items-center gap-1.5 bg-muted rounded-lg px-3 py-2">
-                    <Clock className="w-4 h-4 text-ui/80" />
-                    <span className="text-sm font-mono font-semibold text-ui">
-                      {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
-                    </span>
-                  </div>
-
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={togglePlayPausa}
-                    className="h-11 px-4 min-w-[44px] rounded-xl focus-brand shadow-sm"
-                    title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
-                    aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
-                  >
-                    {cronometroActivo ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-                  </Button>
-                </>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={togglePlayPausa}
+                  className="h-12 md:h-14 px-5 md:px-6 min-w-[60px] md:min-w-[68px] rounded-xl focus-brand shadow-sm hover:shadow-md transition-all"
+                  title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
+                  aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
+                >
+                  {cronometroActivo ? <Pause className="w-5 h-5 md:w-6 md:h-6" /> : <Play className="w-5 h-5 md:w-6 md:h-6" />}
+                </Button>
               )}
 
+              {/* Acciones de ejercicio: Completar */}
               <Button
                 variant="primary"
                 onClick={completarYAvanzar}
-                className="h-11 px-5 bg-[hsl(var(--success))] hover:bg-[hsl(var(--success)/0.9)] min-w-[90px] font-semibold rounded-xl focus-brand shadow-sm text-white"
+                className="h-12 md:h-14 px-6 md:px-7 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 min-w-[100px] md:min-w-[120px] font-semibold text-base md:text-lg rounded-xl focus-brand shadow-sm hover:shadow-md transition-all text-white"
                 title="Completar (Enter)"
                 aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
               >
-                <CheckCircle className="w-4 h-4 mr-2" />
+                <CheckCircle className="w-5 h-5 md:w-6 md:h-6 mr-2" />
                 {isUltimo ? 'Finalizar' : 'OK'}
               </Button>
 
+              {/* Acciones de ejercicio: Saltar */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={omitirYAvanzar}
                 disabled={isUltimo}
-                className="h-11 px-3 min-w-[44px] rounded-xl focus-brand"
+                className="h-12 md:h-14 px-4 md:px-5 min-w-[52px] md:min-w-[60px] rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
                 title="Omitir y pasar (N)"
                 aria-label="Omitir ejercicio"
               >
-                <SkipForward className="w-4 h-4" />
+                <ChevronsRight className="w-5 h-5 md:w-6 md:h-6" />
               </Button>
+
+              {/* Menú de opciones: Índice + Salir */}
+              <DropdownMenu open={menuOpcionesAbierto} onOpenChange={setMenuOpcionesAbierto}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-12 md:h-14 px-4 md:px-5 min-w-[52px] md:min-w-[60px] rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
+                    title="Más opciones (Ctrl/Cmd+M)"
+                    aria-label="Menú de opciones"
+                  >
+                    <MoreVertical className="w-5 h-5 md:w-6 md:h-6" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 z-[110]">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setMostrarItinerario(true);
+                      setMenuOpcionesAbierto(false);
+                    }}
+                    className="cursor-pointer focus-brand"
+                  >
+                    <List className="w-4 h-4 mr-2" />
+                    <span>Índice de sesión</span>
+                    <span className="ml-auto text-xs text-[var(--color-text-muted)]">I</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      handleCancelar();
+                      setMenuOpcionesAbierto(false);
+                    }}
+                    className="cursor-pointer focus-brand text-[var(--color-danger)] focus:text-[var(--color-danger)]"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    <span>Salir de sesión</span>
+                    <span className="ml-auto text-xs text-[var(--color-text-muted)]">Esc</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
-            {/* Info de progreso */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs text-ui/80">
-                <span>Bloque {indiceActual + 1}/{listaEjecucion.length}</span>
-                <span>{completados.size} ✓ • {omitidos.size} omitidos</span>
+            {/* Progreso de sesión - Compacto */}
+            <div className="mt-2 space-y-0.5">
+              <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
+                <span>{indiceActual + 1}/{listaEjecucion.length}</span>
+                <span>{completados.size}✓ {omitidos.size}⏭</span>
               </div>
-              <div className="bg-muted rounded-full h-1.5 overflow-hidden">
+              <div className="bg-[var(--color-border-default)]/30 rounded-full h-1 overflow-hidden">
                 <div
-                  className={`h-full transition-all duration-300 ${
+                  className={cn(
+                    "h-full transition-all duration-300",
                     progreso <= 85 ? 'bg-[var(--color-success)]' : progreso <= 100 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-danger)]'
-                  }`}
+                  )}
                   style={{ width: `${Math.min(progreso, 100)}%` }}
                 />
               </div>
-
-              <p className="text-center text-xs text-ui/80">
-                Espacio: ⏯ • Enter: ✓ • N: omitir • P: ← • Esc: cancelar • Ctrl/Cmd+M: menú
-              </p>
             </div>
           </div>
         </div>
+        )}
 
         {/* Media fullscreen */}
         {mediaFullscreen && (
@@ -1129,8 +1568,8 @@ function HoyPageContent() {
 
           return (
             <>
-              <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setMostrarItinerario(false)} />
-              <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-card shadow-card z-50 overflow-y-auto">
+              <div className="fixed inset-0 bg-black/50 z-[80]" onClick={() => setMostrarItinerario(false)} />
+              <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-card shadow-card z-[90] overflow-y-auto">
                 <div className="sticky top-0 bg-card border-b px-4 py-3 flex items-center justify-between">
                   <h3 className="text-base font-bold text-[var(--color-text-primary)]">Índice de Ejercicios</h3>
                   <Button variant="ghost" size="sm" onClick={() => setMostrarItinerario(false)} className="h-8 w-8 p-0 rounded-xl hover:bg-[var(--color-surface-muted)]" aria-label="Cerrar índice">
@@ -1398,46 +1837,45 @@ function HoyPageContent() {
           </Card>
         ) : (
           <>
-            <Card className={`border-2 ${componentStyles.containers.cardBase} border-[var(--color-primary)]`}>
-              <CardContent className="pt-4">
-                {/* Información de la semana - siempre visible */}
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h2 className={`${componentStyles.typography.sectionTitle} font-bold`}>{semanaDelPlan.nombre}</h2>
-                    <Badge className={focoColors[semanaDelPlan.foco]}>
-                      {focoLabels[semanaDelPlan.foco]}
-                    </Badge>
-                    <span className="text-sm text-[var(--color-text-secondary)]">
-                      ({semanaDelPlan.sesiones?.length || 0} sesiones)
+            <div className={`border-2 ${componentStyles.containers.cardBase} border-[var(--color-primary)] pt-4`}>
+              {/* Información de la semana - siempre visible */}
+              <div className="mb-4 px-4">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <h2 className={`${componentStyles.typography.sectionTitle} font-bold`}>{semanaDelPlan.nombre}</h2>
+                  <Badge className={focoColors[semanaDelPlan.foco]}>
+                    {focoLabels[semanaDelPlan.foco]}
+                  </Badge>
+                  <span className="text-sm text-[var(--color-text-secondary)]">
+                    ({semanaDelPlan.sesiones?.length || 0} sesiones)
+                  </span>
+                </div>
+                {semanaDelPlan.objetivo && (
+                  <p className="text-sm text-[var(--color-text-secondary)] italic mt-1">"{semanaDelPlan.objetivo}"</p>
+                )}
+              </div>
+
+              {/* Card clickeable para desplegar/colapsar sesiones */}
+              <Card 
+                className={`cursor-pointer hover:shadow-md transition-all ${componentStyles.containers.panelBase} mx-4`}
+                onClick={() => setPlanDesplegado(!planDesplegado)}
+              >
+                <CardContent className="py-2">
+                  <div className="flex items-center gap-2">
+                    {planDesplegado ? (
+                      <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                    )}
+                    <span className="text-base font-medium text-[var(--color-text-primary)]">
+                      {planDesplegado ? 'Ocultar sesiones' : 'Mostrar sesiones'}
                     </span>
                   </div>
-                  {semanaDelPlan.objetivo && (
-                    <p className="text-sm text-[var(--color-text-secondary)] italic mt-1">"{semanaDelPlan.objetivo}"</p>
-                  )}
-                </div>
+                </CardContent>
+              </Card>
 
-                {/* Card clickeable para desplegar/colapsar sesiones */}
-                <Card 
-                  className={`cursor-pointer hover:shadow-md transition-all ${componentStyles.containers.panelBase}`}
-                  onClick={() => setPlanDesplegado(!planDesplegado)}
-                >
-                  <CardContent className="pt-3 pb-3">
-                    <div className="flex items-center gap-2">
-                      {planDesplegado ? (
-                        <ChevronDown className="w-5 h-5 text-[var(--color-text-secondary)]" />
-                      ) : (
-                        <ChevronRight className="w-5 h-5 text-[var(--color-text-secondary)]" />
-                      )}
-                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                        {planDesplegado ? 'Ocultar sesiones' : 'Mostrar sesiones'}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Sesiones - desplegables */}
-                {planDesplegado && semanaDelPlan.sesiones && (
-                  <div className="mt-4 space-y-2">
+              {/* Sesiones - desplegables */}
+              {planDesplegado && semanaDelPlan.sesiones && (
+                <div className="mt-4 space-y-2 px-4 pb-4">
                     {semanaDelPlan.sesiones.map((sesion, sesionIdx) => {
                       const tiempoTotal = calcularTiempoSesion(sesion);
                       const minutos = Math.floor(tiempoTotal / 60);
@@ -1497,14 +1935,14 @@ function HoyPageContent() {
                                 className={`cursor-pointer hover:shadow-sm transition-all ${componentStyles.containers.panelBase}`}
                                 onClick={toggleResumen}
                               >
-                                <CardContent className="pt-2 pb-2">
+                                <CardContent className="py-1.5 px-3">
                                   <div className="flex items-center gap-2">
                                     {resumenExpandido ? (
                                       <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
                                     ) : (
                                       <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
                                     )}
-                                    <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+                                    <span className="text-sm font-medium text-[var(--color-text-primary)]">
                                       {resumenExpandido ? 'Ocultar resumen' : 'Ver resumen de la sesión'}
                                     </span>
                                   </div>
@@ -1540,10 +1978,9 @@ function HoyPageContent() {
                         </Card>
                       );
                     })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </div>
+              )}
+            </div>
 
             <div className="flex items-center justify-center pt-4 border-t">
               <Button

@@ -618,7 +618,7 @@ function DesignPageContent({ embedded = false }) {
                   <LabeledRow label="Fuente Base">
                     <Input
                       type="text"
-                      value={design?.typography?.fontFamilyBase || 'Inter, system-ui, -apple-system, sans-serif'}
+                      value={design?.typography?.fontFamilyBase || 'Raleway, system-ui, -apple-system, sans-serif'}
                       onChange={(e) => setDesignPartial('typography.fontFamilyBase', e.target.value)}
                       className={`w-64 font-mono text-xs ${componentStyles.controls.inputDefault}`}
                     />

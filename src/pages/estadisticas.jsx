@@ -10,7 +10,7 @@ import { Badge } from "@/components/ds";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import {
   Activity, Clock, Calendar, Star, Smile, BarChart3, TrendingUp,
-  MessageSquare, Eye, RefreshCw, Dumbbell, List, PieChart
+  MessageSquare, Eye, RefreshCw, Dumbbell, List, PieChart, CalendarDays, Calendar as CalendarIcon
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -707,54 +707,57 @@ function EstadisticasPageContent() {
           </Button>
         }
         filters={
-          <div className={componentStyles.components.panelBase + " p-3 md:p-4 space-y-3"}>
-            <div className="flex gap-2 flex-wrap items-center">
-              <DateRangePicker
-                startDate={periodoInicio}
-                endDate={periodoFin}
-                onDateChange={(start, end) => {
-                  setPeriodoInicio(start);
-                  setPeriodoFin(end);
-                }}
-              />
-              <div className="flex gap-1 flex-wrap">
-                {presets.map(p => (
-                  <Button
-                    key={p.key}
-                    variant={rangoPreset === p.key ? "primary" : "outline"}
-                    size="sm"
-                    onClick={() => aplicarPreset(p.key)}
-                    className="text-xs h-9 rounded-xl focus-brand"
-                    aria-label={`Preset ${p.label}`}
-                  >
-                    {p.label}
-                  </Button>
-                ))}
+          <div className={componentStyles.components.panelBase + " p-3 md:p-4"}>
+            <div className="max-w-4xl mx-auto space-y-3">
+              <div className="flex gap-2 flex-wrap items-center justify-center">
+                <DateRangePicker
+                  startDate={periodoInicio}
+                  endDate={periodoFin}
+                  onDateChange={(start, end) => {
+                    setPeriodoInicio(start);
+                    setPeriodoFin(end);
+                  }}
+                  className="w-auto"
+                />
+                <div className="flex gap-1 flex-wrap justify-center">
+                  {presets.map(p => (
+                    <Button
+                      key={p.key}
+                      variant={rangoPreset === p.key ? "primary" : "outline"}
+                      size="sm"
+                      onClick={() => aplicarPreset(p.key)}
+                      className="text-xs h-9 rounded-xl focus-brand"
+                      aria-label={`Preset ${p.label}`}
+                    >
+                      {p.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div className="flex gap-2 flex-wrap items-center">
-              {!isEstu && (
-                <>
-                  <MultiSelect
-                    label="Profesores"
-                    items={profesores.map(p => ({ value: p.id, label: displayName(p) }))}
-                    value={profesoresSeleccionados}
-                    onChange={setProfesoresSeleccionados}
-                  />
-                  <MultiSelect
-                    label="Alumnos"
-                    items={estudiantes.map(a => ({ value: a.id, label: displayName(a) }))}
-                    value={alumnosSeleccionados}
-                    onChange={setAlumnosSeleccionados}
-                  />
-                </>
-              )}
-              <MultiSelect
-                label="Foco"
-                items={Object.entries(focoLabels).map(([key, label]) => ({ value: key, label }))}
-                value={focosSeleccionados}
-                onChange={setFocosSeleccionados}
-              />
+              <div className="flex gap-2 flex-wrap items-center justify-center">
+                {!isEstu && (
+                  <>
+                    <MultiSelect
+                      label="Profesores"
+                      items={profesores.map(p => ({ value: p.id, label: displayName(p) }))}
+                      value={profesoresSeleccionados}
+                      onChange={setProfesoresSeleccionados}
+                    />
+                    <MultiSelect
+                      label="Alumnos"
+                      items={estudiantes.map(a => ({ value: a.id, label: displayName(a) }))}
+                      value={alumnosSeleccionados}
+                      onChange={setAlumnosSeleccionados}
+                    />
+                  </>
+                )}
+                <MultiSelect
+                  label="Foco"
+                  items={Object.entries(focoLabels).map(([key, label]) => ({ value: key, label }))}
+                  value={focosSeleccionados}
+                  onChange={setFocosSeleccionados}
+                />
+              </div>
             </div>
           </div>
         }
@@ -823,10 +826,11 @@ function EstadisticasPageContent() {
                 variant="segmented"
                 value={granularidad}
                 onChange={setGranularidad}
+                showIconsOnlyMobile={true}
                 items={[
-                  { value: 'dia', label: 'Diario' },
-                  { value: 'semana', label: 'Semanal' },
-                  { value: 'mes', label: 'Mensual' },
+                  { value: 'dia', label: 'Diario', icon: CalendarDays },
+                  { value: 'semana', label: 'Semanal', icon: Calendar },
+                  { value: 'mes', label: 'Mensual', icon: CalendarIcon },
                 ]}
               />
             </div>

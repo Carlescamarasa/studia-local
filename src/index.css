@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Tenor+Sans&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -200,12 +201,12 @@ button:focus-visible {
     color: var(--color-text-secondary);
   }
 
-  /* Tipografía de marca: Títulos usan Tenor Sans, body usa fuente del sistema */
+  /* Tipografía de marca: Títulos usan Tenor Sans, body usa Raleway */
   .font-headings {
     font-family: var(--font-family-headings, "Tenor Sans", system-ui, sans-serif);
   }
   .font-base {
-    font-family: var(--font-family-base, system-ui, -apple-system, sans-serif);
+    font-family: var(--font-family-base, "Raleway", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
   }
   .font-buttons {
     font-family: "Open Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -224,6 +225,22 @@ button:focus-visible {
     min-height: var(--ctrl-field-height, auto);
     line-height: 1.5;
     position: relative; /* Para posicionar iconos absolutos dentro */
+    font-family: inherit;
+    font-size: inherit;
+    transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
+  }
+  
+  /* Textarea específico - mejorado para múltiples líneas */
+  .ctrl-field:is(textarea) {
+    min-height: calc(1.5em * 3 + 2 * 0.5rem); /* Mínimo 3 líneas */
+    padding: 0.5rem 0.75rem;
+    resize: vertical;
+    height: auto;
+    width: 100%;
+    font-family: inherit;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    overflow-y: auto;
   }
   
   /* Select específico: ajustar padding para que el icono quede dentro */
@@ -232,10 +249,19 @@ button:focus-visible {
   }
   .ctrl-field::placeholder {
     color: var(--color-text-secondary);
+    opacity: 0.6;
   }
   .ctrl-field:focus-visible {
     outline: none;
     box-shadow: var(--focus-ring);
+    border-color: var(--color-primary);
+  }
+  .ctrl-field:hover:not(:disabled) {
+    border-color: var(--color-border-strong);
+  }
+  .ctrl-field:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   /* Variante underline para controles */

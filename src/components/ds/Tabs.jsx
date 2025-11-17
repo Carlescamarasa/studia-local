@@ -12,15 +12,39 @@ export default function Tabs({
   onChange, 
   items, 
   variant = "segmented",
-  className = ""
+  className = "",
+  showIconsOnlyMobile = false
 }) {
   const activeItem = items.find(item => item.value === value);
   const containerRef = useRef(null);
+  const sliderRef = useRef(null);
+  const buttonsRef = useRef({});
   const [showIconsOnly, setShowIconsOnly] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [sliderStyle, setSliderStyle] = useState({});
+
+  // Detectar si estamos en mobile usando media query
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    setIsMobile(mediaQuery.matches);
+
+    const handleChange = (e) => {
+      setIsMobile(e.matches);
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   // Detectar si hay espacio suficiente para mostrar texto
   useEffect(() => {
     if (variant !== "segmented") return;
+
+    // Si showIconsOnlyMobile está activo y estamos en mobile, solo mostrar iconos
+    if (showIconsOnlyMobile && isMobile) {
+      setShowIconsOnly(true);
+      return;
+    }
 
     let timeoutId;
     let rafId;
@@ -107,7 +131,49 @@ export default function Tabs({
       resizeObserver.disconnect();
       isChecking = false;
     };
-  }, [variant, items.length]);
+  }, [variant, items.length, showIconsOnlyMobile, isMobile]);
+
+  // Actualizar posición del slider cuando cambia la tab activa o se redimensiona
+  useEffect(() => {
+    if (variant !== "segmented" || !containerRef.current) return;
+
+    const updateSliderPosition = () => {
+      const activeButton = buttonsRef.current[value];
+      if (!activeButton || !sliderRef.current) return;
+
+      const container = containerRef.current;
+      const containerRect = container.getBoundingClientRect();
+      const buttonRect = activeButton.getBoundingClientRect();
+
+      const left = buttonRect.left - containerRect.left;
+      const width = buttonRect.width;
+
+      setSliderStyle({
+        left: `${left}px`,
+        width: `${width}px`,
+        opacity: 1,
+      });
+    };
+
+    // Usar requestAnimationFrame para asegurar que el DOM esté actualizado
+    const rafId = requestAnimationFrame(() => {
+      setTimeout(updateSliderPosition, 0);
+    });
+
+    // Observar cambios en el tamaño del contenedor
+    const resizeObserver = new ResizeObserver(() => {
+      updateSliderPosition();
+    });
+
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      resizeObserver.disconnect();
+    };
+  }, [value, variant, showIconsOnly, items]);
 
   if (variant === "segmented") {
     return (
@@ -117,7 +183,7 @@ export default function Tabs({
             ref={containerRef}
             className={cn(
               componentStyles.components.tabsSegmentedContainer, 
-              "flex w-full flex-shrink-0",
+              "flex w-full flex-shrink-0 relative",
               showIconsOnly ? "min-w-[75vw] md:min-w-0" : "min-w-fit md:min-w-0",
               className
             )}
@@ -125,19 +191,41 @@ export default function Tabs({
             aria-label="Pestañas de navegación"
             data-testid="tabs-segmented"
           >
+            {/* Slider deslizante - debe estar detrás de los botones pero visible */}
+            <div
+              ref={sliderRef}
+              className="absolute top-1 bottom-1 bg-[var(--color-primary-soft)] border border-[var(--color-primary)] rounded-[var(--btn-radius)] shadow-sm transition-all duration-300 ease-out pointer-events-none"
+              style={{
+                ...sliderStyle,
+                opacity: sliderStyle.opacity ?? 0,
+                zIndex: 1,
+              }}
+            />
+            
             {items.map((item) => {
               const Icon = item.icon;
               const isActive = value === item.value;
               return (
                 <button
                   key={item.value}
+                  ref={(el) => {
+                    if (el) buttonsRef.current[item.value] = el;
+                  }}
                   onClick={() => onChange(item.value)}
                   className={cn(
-                    componentStyles.components.tabsSegmentedButton,
-                    isActive && componentStyles.components.tabsSegmentedButtonActive,
-                    "flex-1 min-w-0 flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95",
+                    // No usar tabsSegmentedButtonActive porque el slider maneja el background
+                    "px-3 py-1.5 text-xs sm:text-sm rounded-[var(--btn-radius)] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] font-buttons font-medium",
+                    "relative flex-1 min-w-0 flex items-center justify-center",
+                    // Asegurar que los botones no tengan background sólido que tape el slider
+                    // El background activo se maneja con el slider, no con el botón
+                    isActive ? "text-[var(--color-text-primary)]" : "text-ui/80",
+                    !isActive && "hover:bg-[var(--color-surface-muted)]/50",
                     showIconsOnly ? "flex-row px-2" : "flex-col"
                   )}
+                  style={{ 
+                    zIndex: 2,
+                    backgroundColor: 'transparent',
+                  }}
                   role="tab"
                   aria-selected={isActive}
                   aria-current={isActive ? "true" : undefined}

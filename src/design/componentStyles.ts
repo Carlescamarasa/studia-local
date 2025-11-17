@@ -79,6 +79,19 @@ export const componentStyles = {
     inputSm: "ctrl-field ctrl-field-sm",
     inputUnderline: "border-b-2 border-[var(--color-border-strong)] bg-transparent rounded-none px-0 py-2 text-ui placeholder:text-ui/60 focus-visible:border-[var(--color-primary)] focus-visible:ring-0",
     selectDefault: "ctrl-field",
+    textareaDefault: "ctrl-field",
+  },
+
+  // Patrón estándar para campos de formulario (Label + Input/Select/Textarea)
+  form: {
+    // Contenedor de campo completo (incluye Label + Input + mensajes)
+    field: "space-y-1.5",
+    // Solo el espaciado entre Label y control
+    fieldLabel: "block mb-1.5",
+    // Mensaje de ayuda/error debajo del campo
+    fieldMessage: "text-xs mt-1",
+    // Descripción opcional
+    fieldDescription: "text-xs text-[var(--color-text-secondary)] mt-1",
   },
 
   buttons: {
@@ -91,11 +104,11 @@ export const componentStyles = {
 
   tabs: {
     tabsSegmentedContainer: "inline-flex items-center gap-1 rounded-lg bg-[var(--color-surface-muted)] p-1 shadow-sm",
-    tabsSegmentedItem: "px-3 py-1.5 text-xs sm:text-sm rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] text-ui/80 hover:bg-[var(--color-surface-muted)]",
-    tabsSegmentedItemActive: "bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border border-[var(--color-primary)] shadow-sm",
+    tabsSegmentedItem: "px-3 py-1.5 text-xs sm:text-sm rounded-[var(--btn-radius)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] text-ui/80 hover:bg-[var(--color-surface-muted)] font-buttons font-medium",
+    tabsSegmentedItemActive: "bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border border-[var(--color-primary)] shadow-sm font-buttons font-medium",
     tabsUnderlineContainer: "flex items-center gap-1 border-b border-[var(--color-border-default)]",
-    tabsUnderlineItem: "px-2.5 py-2 text-sm text-ui/80 hover:text-ui border-b-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-    tabsUnderlineItemActive: "text-ui border-[hsl(var(--ring))]",
+    tabsUnderlineItem: "px-2.5 py-2 text-sm text-ui/80 hover:text-ui border-b-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background font-buttons font-medium",
+    tabsUnderlineItemActive: "text-ui border-[hsl(var(--ring))] font-buttons font-medium",
   },
 
   nav: {
@@ -171,11 +184,11 @@ export const componentStyles = {
 
     // Tabs (alias hacia tabs.*)
     tabsSegmentedContainer: "inline-flex items-center gap-1 rounded-lg bg-[var(--color-surface-muted)] p-1 shadow-sm",
-    tabsSegmentedButton: "px-3 py-1.5 text-xs sm:text-sm rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] text-ui/80 hover:bg-[var(--color-surface-muted)]",
-    tabsSegmentedButtonActive: "bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border border-[var(--color-primary)] shadow-sm",
+    tabsSegmentedButton: "px-3 py-1.5 text-xs sm:text-sm rounded-[var(--btn-radius)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] text-ui/80 hover:bg-[var(--color-surface-muted)] font-buttons font-medium",
+    tabsSegmentedButtonActive: "bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border border-[var(--color-primary)] shadow-sm font-buttons font-medium",
     tabsUnderlineContainer: "flex items-center gap-1 border-b border-[var(--color-border-default)]",
-    tabsUnderlineButton: "px-2.5 py-2 text-sm text-ui/80 hover:text-ui border-b-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-    tabsUnderlineButtonActive: "text-ui border-[hsl(var(--ring))]",
+    tabsUnderlineButton: "px-2.5 py-2 text-sm text-ui/80 hover:text-ui border-b-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background font-buttons font-medium",
+    tabsUnderlineButtonActive: "text-ui border-[hsl(var(--ring))] font-buttons font-medium",
   },
 } as const;
 

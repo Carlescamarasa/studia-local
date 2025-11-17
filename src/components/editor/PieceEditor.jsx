@@ -8,11 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Save, Plus, Trash2, GripVertical, Music, Video, Headphones, Image as ImageIcon, FileText } from "lucide-react";
+import { X, Save, Plus, Trash2, GripVertical, Music } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
+import MediaLinksInput from "@/components/common/MediaLinksInput";
+import { normalizeMediaLinks } from "@/components/utils/media";
 
 export default function PieceEditor({ pieza, onClose }) {
   const queryClient = useQueryClient();
@@ -25,6 +27,26 @@ export default function PieceEditor({ pieza, onClose }) {
   });
   const [saveResult, setSaveResult] = useState(null);
 
+  // Convertir elementos antiguos con media object a mediaLinks array
+  const normalizeElementos = (elementos) => {
+    return elementos.map(el => {
+      // Si tiene el formato antiguo (media object), convertir a array
+      if (el.media && typeof el.media === 'object' && !Array.isArray(el.media)) {
+        const urls = [];
+        if (el.media.video) urls.push(el.media.video);
+        if (el.media.audio) urls.push(el.media.audio);
+        if (el.media.imagen) urls.push(el.media.imagen);
+        if (el.media.pdf) urls.push(el.media.pdf);
+        return { ...el, mediaLinks: normalizeMediaLinks(urls), media: undefined };
+      }
+      // Si ya tiene mediaLinks o está vacío, normalizar
+      return {
+        ...el,
+        mediaLinks: el.mediaLinks ? normalizeMediaLinks(el.mediaLinks) : []
+      };
+    });
+  };
+
   useEffect(() => {
     if (pieza) {
       setFormData({
@@ -32,7 +54,7 @@ export default function PieceEditor({ pieza, onClose }) {
         descripcion: pieza.descripcion || '',
         nivel: pieza.nivel || 'principiante',
         tiempoObjetivoSeg: pieza.tiempoObjetivoSeg || 0,
-        elementos: pieza.elementos || [],
+        elementos: normalizeElementos(pieza.elementos || []),
       });
     }
   }, [pieza]);
@@ -86,7 +108,7 @@ export default function PieceEditor({ pieza, onClose }) {
         ...formData.elementos,
         {
           nombre: '',
-          media: {}
+          mediaLinks: []
         }
       ]
     });
@@ -96,11 +118,9 @@ export default function PieceEditor({ pieza, onClose }) {
     const newElementos = [...formData.elementos];
     if (field === 'nombre') {
       newElementos[index].nombre = value;
-    } else {
-      newElementos[index].media = {
-        ...newElementos[index].media,
-        [field]: value
-      };
+    } else if (field === 'mediaLinks') {
+      // Normalizar y convertir a array de URLs
+      newElementos[index].mediaLinks = normalizeMediaLinks(value);
     }
     setFormData({ ...formData, elementos: newElementos });
   };
@@ -160,32 +180,34 @@ export default function PieceEditor({ pieza, onClose }) {
             )}
 
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="nombre" className="text-[var(--color-text-primary)]">Nombre de la Pieza *</Label>
+              <div className={componentStyles.form.field}>
+                <Label htmlFor="nombre" className={componentStyles.typography.cardTitle}>
+                  Nombre de la Pieza *
+                </Label>
                 <Input
                   id="nombre"
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                   placeholder="Ej: Sonata en Do Mayor"
-                  className={componentStyles.controls.inputDefault}
                 />
               </div>
 
-              <div>
-                <Label htmlFor="descripcion" className="text-[var(--color-text-primary)]">Descripción</Label>
+              <div className={componentStyles.form.field}>
+                <Label htmlFor="descripcion" className={componentStyles.typography.cardTitle}>
+                  Descripción
+                </Label>
                 <Textarea
                   id="descripcion"
                   value={formData.descripcion}
                   onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                   placeholder="Descripción detallada de la pieza..."
                   rows={3}
-                  className={componentStyles.controls.inputDefault}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="nivel" className="text-[var(--color-text-primary)]">Nivel</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={componentStyles.form.field}>
+                  <Label htmlFor="nivel" className={componentStyles.typography.cardTitle}>Nivel</Label>
                   <Select 
                     value={formData.nivel} 
                     onValueChange={(v) => setFormData({ ...formData, nivel: v })}
@@ -209,15 +231,16 @@ export default function PieceEditor({ pieza, onClose }) {
                   </Select>
                 </div>
 
-                <div>
-                  <Label htmlFor="tiempo" className="text-[var(--color-text-primary)]">Tiempo Objetivo (minutos)</Label>
+                <div className={componentStyles.form.field}>
+                  <Label htmlFor="tiempo" className={componentStyles.typography.cardTitle}>
+                    Tiempo Objetivo (minutos)
+                  </Label>
                   <Input
                     id="tiempo"
                     type="number"
                     min="0"
                     value={Math.floor(formData.tiempoObjetivoSeg / 60)}
                     onChange={(e) => setFormData({ ...formData, tiempoObjetivoSeg: parseInt(e.target.value || 0) * 60 })}
-                    className={componentStyles.controls.inputDefault}
                   />
                 </div>
               </div>
@@ -258,59 +281,21 @@ export default function PieceEditor({ pieza, onClose }) {
                                         <GripVertical className="w-5 h-5 text-[var(--color-text-secondary)]" />
                                       </div>
                                       <div className="flex-1 space-y-3">
-                                        <Input
-                                          placeholder="Nombre del elemento"
-                                          value={elemento.nombre}
-                                          onChange={(e) => updateElemento(index, 'nombre', e.target.value)}
-                                          className={componentStyles.controls.inputDefault}
-                                        />
-                                        
-                                        <div className="grid grid-cols-2 gap-2">
-                                          <div>
-                                            <Label className="text-xs flex items-center gap-1 mb-1 text-[var(--color-text-primary)]">
-                                              <Video className="w-3 h-3" /> Video
-                                            </Label>
-                                            <Input
-                                              placeholder="URL del video"
-                                              value={elemento.media?.video || ''}
-                                              onChange={(e) => updateElemento(index, 'video', e.target.value)}
-                                              className={`text-sm ${componentStyles.controls.inputDefault}`}
-                                            />
-                                          </div>
-                                          <div>
-                                            <Label className="text-xs flex items-center gap-1 mb-1 text-[var(--color-text-primary)]">
-                                              <Headphones className="w-3 h-3" /> Audio
-                                            </Label>
-                                            <Input
-                                              placeholder="URL del audio"
-                                              value={elemento.media?.audio || ''}
-                                              onChange={(e) => updateElemento(index, 'audio', e.target.value)}
-                                              className={`text-sm ${componentStyles.controls.inputDefault}`}
-                                            />
-                                          </div>
-                                          <div>
-                                            <Label className="text-xs flex items-center gap-1 mb-1 text-[var(--color-text-primary)]">
-                                              <ImageIcon className="w-3 h-3" /> Imagen
-                                            </Label>
-                                            <Input
-                                              placeholder="URL de la imagen"
-                                              value={elemento.media?.imagen || ''}
-                                              onChange={(e) => updateElemento(index, 'imagen', e.target.value)}
-                                              className={`text-sm ${componentStyles.controls.inputDefault}`}
-                                            />
-                                          </div>
-                                          <div>
-                                            <Label className="text-xs flex items-center gap-1 mb-1 text-[var(--color-text-primary)]">
-                                              <FileText className="w-3 h-3" /> PDF
-                                            </Label>
-                                            <Input
-                                              placeholder="URL del PDF"
-                                              value={elemento.media?.pdf || ''}
-                                              onChange={(e) => updateElemento(index, 'pdf', e.target.value)}
-                                              className={`text-sm ${componentStyles.controls.inputDefault}`}
-                                            />
-                                          </div>
+                                        <div>
+                                          <Label htmlFor={`elemento-nombre-${index}`} className={componentStyles.typography.cardTitle}>Nombre del elemento</Label>
+                                          <Input
+                                            id={`elemento-nombre-${index}`}
+                                            placeholder="Ej: Partitura, Audio guía, Video tutorial..."
+                                            value={elemento.nombre}
+                                            onChange={(e) => updateElemento(index, 'nombre', e.target.value)}
+                                            className={`mt-1 ${componentStyles.controls.inputDefault}`}
+                                          />
                                         </div>
+                                        
+                                        <MediaLinksInput
+                                          value={elemento.mediaLinks || []}
+                                          onChange={(links) => updateElemento(index, 'mediaLinks', links)}
+                                        />
                                       </div>
                                       <Button
                                         variant="ghost"

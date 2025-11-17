@@ -57,6 +57,18 @@ export default function Alert({
 }
 
 /**
+ * AlertTitle - Componente de título para Alert
+ * Wrapper simple para mantener compatibilidad con shadcn
+ */
+export function AlertTitle({ children, className = "", ...props }) {
+  return (
+    <h5 className={cn("font-semibold text-sm mb-1", className)} {...props}>
+      {children}
+    </h5>
+  );
+}
+
+/**
  * AlertDescription - Componente de descripción para Alert
  * Wrapper simple para mantener compatibilidad con shadcn
  */

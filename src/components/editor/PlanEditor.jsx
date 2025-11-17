@@ -415,19 +415,22 @@ export default function PlanEditor({ plan, onClose }) {
                 <CardTitle className="text-[var(--color-text-primary)]">Información del Plan</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="nombre" className="text-[var(--color-text-primary)]">Nombre del Plan *</Label>
+                <div className={componentStyles.form.field}>
+                  <Label htmlFor="nombre" className={componentStyles.typography.cardTitle}>
+                    Nombre del Plan *
+                  </Label>
                   <Input
                     id="nombre"
                     value={formData.nombre}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                     placeholder="Ej: Plan Inicial - Sonata Op. 1"
-                    className={componentStyles.controls.inputDefault}
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="pieza" className="text-[var(--color-text-primary)]">Pieza Asociada *</Label>
+                <div className={componentStyles.form.field}>
+                  <Label htmlFor="pieza" className={componentStyles.typography.cardTitle}>
+                    Pieza Asociada *
+                  </Label>
                   <Select 
                     value={formData.piezaId} 
                     onValueChange={(v) => setFormData({ ...formData, piezaId: v })}

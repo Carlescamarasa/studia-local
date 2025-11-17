@@ -14,14 +14,36 @@ export default function MultiSelect({ label, items, value = [], onChange }) {
     onChange(newValue);
   };
 
+  // Obtener los labels de los items seleccionados
+  const selectedLabels = React.useMemo(() => {
+    if (value.length === 0) return [];
+    return value
+      .map(v => items.find(item => item.value === v)?.label)
+      .filter(Boolean);
+  }, [value, items]);
+
+  // Formatear el texto del botón
+  const buttonText = React.useMemo(() => {
+    if (value.length === 0) {
+      return label;
+    }
+    
+    // En mobile, mostrar hasta 2 labels, luego "+X más" si hay más
+    if (selectedLabels.length <= 2) {
+      return `${label} (${selectedLabels.join(', ')})`;
+    } else {
+      const remaining = selectedLabels.length - 2;
+      return `${label} (${selectedLabels.slice(0, 2).join(', ')} +${remaining} más)`;
+    }
+  }, [label, selectedLabels, value.length]);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="hover:shadow-sm h-10">
-          <Filter className="w-4 h-4 mr-2" />
-          <span className="hidden md:inline">{label}:</span>
-          <span className="ml-1">
-            {value.length === 0 ? 'Todos' : `${value.length}`}
+        <Button variant="outline" size="sm" className="text-xs h-9 rounded-xl focus-brand justify-start text-left min-w-0">
+          <Filter className="w-4 h-4 mr-2 shrink-0" />
+          <span className="truncate min-w-0 flex-1">
+            {buttonText}
           </span>
         </Button>
       </PopoverTrigger>

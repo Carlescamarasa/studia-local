@@ -87,7 +87,7 @@ export default function DateRangePicker({
         <Button
           variant="outline"
           className={cn(
-            "h-10 justify-start text-left font-normal rounded-xl border-[var(--color-border-default)] focus-brand text-sm w-full md:w-auto",
+            "h-10 justify-start text-left font-normal rounded-xl border-[var(--color-border-default)] focus-brand text-sm w-auto min-w-[180px]",
             !dateRange && "text-muted-foreground",
             className
           )}

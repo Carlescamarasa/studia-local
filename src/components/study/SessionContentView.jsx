@@ -58,8 +58,8 @@ export default function SessionContentView({ sesion, compact = false }) {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
-        <Layers className="w-3 h-3 text-[var(--color-text-secondary)]" />
+      <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+        <Layers className="w-4 h-4 text-[var(--color-text-secondary)]" />
         <span>
           {(S.bloques?.length || 0)} ejercicios totales • {(S.rondas?.length || 0)} rondas
         </span>
@@ -78,7 +78,7 @@ export default function SessionContentView({ sesion, compact = false }) {
             }
             
             return (
-              <div key={`b-${item.code}-${idx}`} className="flex items-center gap-2 p-2 app-card border-[var(--color-border-default)] text-xs">
+              <div key={`b-${item.code}-${idx}`} className="flex items-center gap-2 py-2 px-3 app-card border-[var(--color-border-default)] text-sm">
                 <Badge variant="outline" className={tipoColors[ej.tipo]}>
                   {ej.tipo}
                 </Badge>
@@ -120,9 +120,9 @@ export default function SessionContentView({ sesion, compact = false }) {
                       <ChevronRight className="w-3 h-3 text-[var(--color-primary)]" />
                     )}
                   </div>
-                  <Badge className="bg-[var(--color-primary)] text-[var(--color-text-inverse)] text-xs badge">Ronda</Badge>
-                  <span className="text-xs text-[var(--color-text-secondary)]">× {r.repeticiones} repeticiones</span>
-                  <span className="text-xs text-[var(--color-text-secondary)]">({r.bloques.length} ejercicios)</span>
+                  <Badge className="bg-[var(--color-primary)] text-[var(--color-text-inverse)] text-sm badge">Ronda</Badge>
+                  <span className="text-sm text-[var(--color-text-secondary)]">× {r.repeticiones} repeticiones</span>
+                  <span className="text-sm text-[var(--color-text-secondary)]">({r.bloques.length} ejercicios)</span>
                   {r.aleatoria && (
                     <Badge variant="outline" className="text-[10px] border-[var(--color-primary)]/40 text-[var(--color-primary)] bg-[var(--color-primary-soft)] badge flex items-center gap-1">
                       <Shuffle className="w-3 h-3" />
@@ -144,7 +144,7 @@ export default function SessionContentView({ sesion, compact = false }) {
                       }
                       
                       return (
-                        <div key={`r-${key}-${code}-${j}`} className="flex items-center gap-2 p-1.5 app-card border-[var(--color-border-default)] text-xs">
+                        <div key={`r-${key}-${code}-${j}`} className="flex items-center gap-2 py-2 px-3 app-card border-[var(--color-border-default)] text-sm">
                           <Badge variant="outline" className={tipoColors[ej.tipo]}>
                             {ej.tipo}
                           </Badge>
