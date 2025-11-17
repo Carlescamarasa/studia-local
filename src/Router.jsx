@@ -1,68 +1,82 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Routes, Route } from "react-router-dom";
 import RequireAuth from "@/components/auth/RequireAuth";
 
-// Páginas
-import IndexPage from "@/pages/index.jsx";
-import Usuarios from "@/pages/usuarios.jsx";
-import Planes from "@/pages/planes.jsx";
-import Piezas from "@/pages/piezas.jsx";
-import Sesiones from "@/pages/sesiones.jsx";
-import Semana from "@/pages/semana.jsx";
-import Semanas from "@/pages/semanas.jsx";
-import Asignaciones from "@/pages/asignaciones.jsx";
-import AsignacionDetalle from "@/pages/asignacion-detalle.jsx";
-import AdaptarAsignacion from "@/pages/adaptar-asignacion.jsx";
-import Hoy from "@/pages/hoy.jsx";
-import Agenda from "@/pages/agenda.jsx";
-import Perfil from "@/pages/perfil.jsx";
-import ImportExport from "@/pages/import-export.jsx";
-import Estadisticas from "@/pages/estadisticas.jsx";
-import Estudiantes from "@/pages/estudiantes.jsx";
-import LocalPage from "@/pages/local.jsx";
-import Plantillas from "@/pages/plantillas.jsx";
-import Design from "@/pages/design.jsx";
-import Testseed from "@/pages/testseed.jsx";
-import Layout from "@/pages/Layout.jsx";
-import QAVisualPage from "@/pages/qa-visual.jsx";
-import LoginPage from "@/pages/auth/LoginPage.jsx";
+// Lazy load de páginas para code-splitting
+const IndexPage = lazy(() => import("@/pages/index.jsx"));
+const Usuarios = lazy(() => import("@/pages/usuarios.jsx"));
+const Planes = lazy(() => import("@/pages/planes.jsx"));
+const Piezas = lazy(() => import("@/pages/piezas.jsx"));
+const Sesiones = lazy(() => import("@/pages/sesiones.jsx"));
+const Semana = lazy(() => import("@/pages/semana.jsx"));
+const Semanas = lazy(() => import("@/pages/semanas.jsx"));
+const Asignaciones = lazy(() => import("@/pages/asignaciones.jsx"));
+const AsignacionDetalle = lazy(() => import("@/pages/asignacion-detalle.jsx"));
+const AdaptarAsignacion = lazy(() => import("@/pages/adaptar-asignacion.jsx"));
+const Hoy = lazy(() => import("@/pages/hoy.jsx"));
+const Agenda = lazy(() => import("@/pages/agenda.jsx"));
+const Perfil = lazy(() => import("@/pages/perfil.jsx"));
+const ImportExport = lazy(() => import("@/pages/import-export.jsx"));
+const Estadisticas = lazy(() => import("@/pages/estadisticas.jsx"));
+const Estudiantes = lazy(() => import("@/pages/estudiantes.jsx"));
+const LocalPage = lazy(() => import("@/pages/local.jsx"));
+const Plantillas = lazy(() => import("@/pages/plantillas.jsx"));
+const Design = lazy(() => import("@/pages/design.jsx"));
+const Testseed = lazy(() => import("@/pages/testseed.jsx"));
+const Layout = lazy(() => import("@/pages/Layout.jsx"));
+const QAVisualPage = lazy(() => import("@/pages/qa-visual.jsx"));
+const LoginPage = lazy(() => import("@/pages/auth/LoginPage.jsx"));
+
+// Componente de carga
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+      <p className="mt-2 text-sm text-gray-600">Cargando...</p>
+    </div>
+  </div>
+);
 
 export default function AppRouter() {
   return (
-    <Routes>
-      {/* Ruta pública: login */}
-      <Route path="/login" element={<LoginPage />} />
-      
-      {/* Rutas protegidas: todas requieren autenticación */}
-      <Route
-        element={
-          <RequireAuth>
-            <Layout />
-          </RequireAuth>
-        }
-      >
-        <Route index element={<IndexPage />} />
-        <Route path="usuarios" element={<Usuarios />} />
-        <Route path="planes" element={<Planes />} />
-        <Route path="piezas" element={<Piezas />} />
-        <Route path="sesiones" element={<Sesiones />} />
-        <Route path="semana" element={<Semana />} />
-        <Route path="semanas" element={<Semanas />} />
-        <Route path="asignaciones" element={<Asignaciones />} />
-        <Route path="asignacion-detalle" element={<AsignacionDetalle />} />
-        <Route path="adaptar-asignacion" element={<AdaptarAsignacion />} />
-        <Route path="hoy" element={<Hoy />} />
-        <Route path="agenda" element={<Agenda />} />
-        <Route path="perfil" element={<Perfil />} />
-        <Route path="import-export" element={<ImportExport />} />
-        <Route path="estadisticas" element={<Estadisticas />} />
-        <Route path="estudiantes" element={<Estudiantes />} />
-        <Route path="plantillas" element={<Plantillas />} />
-        <Route path="design" element={<Design />} />
-        <Route path="testseed" element={<Testseed />} />
-        <Route path="local" element={<LocalPage />} />
-        <Route path="qa-visual" element={<QAVisualPage />} />
-      </Route>
-    </Routes>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        {/* Ruta pública: login */}
+        <Route path="/login" element={<LoginPage />} />
+        
+        {/* Rutas protegidas: todas requieren autenticación */}
+        <Route
+          element={
+            <RequireAuth>
+              <Suspense fallback={<PageLoader />}>
+                <Layout />
+              </Suspense>
+            </RequireAuth>
+          }
+        >
+          <Route index element={<IndexPage />} />
+          <Route path="usuarios" element={<Usuarios />} />
+          <Route path="planes" element={<Planes />} />
+          <Route path="piezas" element={<Piezas />} />
+          <Route path="sesiones" element={<Sesiones />} />
+          <Route path="semana" element={<Semana />} />
+          <Route path="semanas" element={<Semanas />} />
+          <Route path="asignaciones" element={<Asignaciones />} />
+          <Route path="asignacion-detalle" element={<AsignacionDetalle />} />
+          <Route path="adaptar-asignacion" element={<AdaptarAsignacion />} />
+          <Route path="hoy" element={<Hoy />} />
+          <Route path="agenda" element={<Agenda />} />
+          <Route path="perfil" element={<Perfil />} />
+          <Route path="import-export" element={<ImportExport />} />
+          <Route path="estadisticas" element={<Estadisticas />} />
+          <Route path="estudiantes" element={<Estudiantes />} />
+          <Route path="plantillas" element={<Plantillas />} />
+          <Route path="design" element={<Design />} />
+          <Route path="testseed" element={<Testseed />} />
+          <Route path="local" element={<LocalPage />} />
+          <Route path="qa-visual" element={<QAVisualPage />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }

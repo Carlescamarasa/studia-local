@@ -55,7 +55,7 @@ export const componentStyles = {
     cardTitle: "text-sm sm:text-base md:text-lg font-semibold text-ui font-headings",
     // Textos base usan fuente del sistema (fontFamilyBase) desde variables CSS
     bodyText: "text-base sm:text-base md:text-base text-ui font-base",
-    smallMetaText: "text-xs text-muted font-base",
+    smallMetaText: "text-xs text-[var(--color-text-secondary)] font-base",
     pageSubtitle: "text-base sm:text-base md:text-base text-ui/80 leading-relaxed font-base",
   },
 

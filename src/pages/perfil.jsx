@@ -190,6 +190,17 @@ export default function PerfilPage() {
         subtitle={isEditingOwnProfile ? 'Edita tu información personal' : 'Edita la información del usuario'}
       />
 
+      <div className="mb-6">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(-1)}
+          className={componentStyles.buttons.ghost}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Atrás
+        </Button>
+      </div>
+
       {saveResult && (
         <Alert className={`mb-6 ${componentStyles.containers.panelBase} ${saveResult.success ? 'border-[var(--color-success)] bg-[var(--color-success)]/10' : 'border-[var(--color-danger)] bg-[var(--color-danger)]/10'}`}>
           <AlertDescription className={saveResult.success ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}>
@@ -259,7 +270,7 @@ export default function PerfilPage() {
                     </SelectContent>
                   </Select>
                   {editedData.rolPersonalizado === 'ADMIN' && targetUser?.rolPersonalizado === 'ADMIN' && (
-                    <p className={`${componentStyles.typography.smallMetaText} text-[var(--color-text-secondary)] flex items-center gap-1`}>
+                    <p className={`${componentStyles.typography.smallMetaText} flex items-center gap-1`}>
                       <AlertCircle className="w-3 h-3 text-[var(--color-warning)]" />
                       Verifica que no sea el último administrador antes de cambiar
                     </p>

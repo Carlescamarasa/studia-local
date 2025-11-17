@@ -551,7 +551,7 @@ export default function TestSeedPage() {
 
 
   // ======================== AUDITORÍA PERSONALIZADA ========================
-  const ejecutarAuditoria = () => {
+  const ejecutarAuditoria = async () => {
     if (!auditSpec.trim()) {
       toast.error('Escribe una especificación de auditoría');
       return;
@@ -562,7 +562,7 @@ export default function TestSeedPage() {
 
     try {
       const config = parseAuditSpec(auditSpec);
-      const results = runAudit(config);
+      const results = await runAudit(config);
 
       setAuditResults(results);
       setLastAuditSpec(auditSpec);

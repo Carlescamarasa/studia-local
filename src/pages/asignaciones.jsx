@@ -257,15 +257,6 @@ function AsignacionesPageContent() {
                 <SelectItem value="cerrada">Cerradas</SelectItem>
               </SelectContent>
             </Select>
-
-            <Button
-              variant="outline"
-              onClick={exportarCSV}
-              className={componentStyles.buttons.outline}
-            >
-              <FileDown className="w-4 h-4 mr-2" />
-              Exportar CSV
-            </Button>
           </div>
         }
       />

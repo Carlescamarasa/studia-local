@@ -28,14 +28,23 @@ const isAllowedBrandToken = (n) => {
 
 export async function runDesignAudit() {
   // Incluye JSX/TSX/JS/TS/CSS, excluyendo ui/
-  const files = import.meta.glob(
+  // Usamos eager: false para code-splitting - se carga solo cuando se necesita
+  const filesModule = await import.meta.glob(
     [
       "/src/**/*.{jsx,tsx,js,ts,css}",
       "/app/**/*.{jsx,tsx,js,ts,css}",
       "!/src/components/ui/**",
       "!/app/components/ui/**"
     ],
-    { query: "?raw", import: "default", eager: true }
+    { query: "?raw", import: "default", eager: false }
+  );
+  
+  // Cargar todos los archivos de forma asíncrona
+  const files = {};
+  await Promise.all(
+    Object.entries(filesModule).map(async ([path, loader]) => {
+      files[path] = await loader();
+    })
   );
 
   const report = {
@@ -205,7 +214,7 @@ export function parseAuditSpec(spec) {
   return config;
 }
 
-export function runAudit(config) {
+export async function runAudit(config) {
   const startTime = Date.now();
   const results = {
     filesScanned: 0,
@@ -222,9 +231,18 @@ export function runAudit(config) {
   }
 
   try {
-    const files = import.meta.glob(
+    // Usamos eager: false para code-splitting - se carga solo cuando se necesita
+    const filesModule = await import.meta.glob(
       ['/src/**/*.{jsx,tsx,js,ts,css}'],
-      { query: "?raw", import: "default", eager: true }
+      { query: "?raw", import: "default", eager: false }
+    );
+    
+    // Cargar todos los archivos de forma asíncrona
+    const files = {};
+    await Promise.all(
+      Object.entries(filesModule).map(async ([path, loader]) => {
+        files[path] = await loader();
+      })
     );
 
     for (const [path, content] of Object.entries(files)) {
