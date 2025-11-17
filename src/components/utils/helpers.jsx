@@ -276,28 +276,61 @@ export function getEffectiveRole(options = {}) {
  * Hook que obtiene el usuario efectivo que funciona en ambos modos (local y Supabase).
  * 
  * En modo Supabase: Busca el usuario en datos locales por email del usuario de Supabase.
+ * Si no se encuentra, crea un usuario sintético basado en la información de Supabase.
  * En modo local: Usa getCurrentUser() directamente.
  * 
  * @returns {Object|null} - Usuario efectivo con todas sus propiedades (id, rolPersonalizado, email, etc.) o null si no se encuentra
  */
 export function useEffectiveUser() {
-  const { user: supabaseUser } = useAuth();
+  const { user: supabaseUser, appRole } = useAuth();
   const currentUser = getCurrentUser();
-  const { usuarios } = useLocalData();
+  const { usuarios, loading: dataLoading } = useLocalData();
   
   // Si hay usuario de Supabase, buscar en datos locales por email
   if (supabaseUser?.email) {
     const normalizedEmail = supabaseUser.email.toLowerCase().trim();
-    const foundUser = usuarios.find(u => {
-      if (!u.email) return false;
-      return u.email.toLowerCase().trim() === normalizedEmail;
-    });
     
-    if (foundUser) {
-      return foundUser;
+    // Buscar en usuarios locales (solo si ya están cargados)
+    if (!dataLoading) {
+      const foundUser = usuarios.find(u => {
+        if (!u.email) return false;
+        return u.email.toLowerCase().trim() === normalizedEmail;
+      });
+      
+      if (foundUser) {
+        return foundUser;
+      }
     }
     
-    // Si no se encuentra, retornar null (usuario de Supabase no existe en datos locales)
+    // Si no se encuentra en datos locales pero hay appRole,
+    // crear un usuario sintético inmediatamente (no esperar a que carguen los datos)
+    // Esto es seguro porque el usuario sintético no depende de los datos locales
+    if (appRole) {
+      // Extraer nombre del email o usar metadata de Supabase
+      const emailParts = supabaseUser.email.split('@')[0];
+      const metadata = supabaseUser.user_metadata || {};
+      const fullName = metadata.full_name || metadata.name || emailParts;
+      const nameParts = fullName.split(' ');
+      const firstName = nameParts[0] || emailParts;
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      return {
+        id: supabaseUser.id,
+        email: supabaseUser.email,
+        rolPersonalizado: appRole,
+        nombreCompleto: fullName,
+        full_name: fullName,
+        first_name: firstName,
+        last_name: lastName,
+        name: fullName,
+        estado: 'activo',
+        fechaRegistro: supabaseUser.created_at || new Date().toISOString(),
+        // Añadir metadata adicional si existe
+        ...(metadata.avatar_url && { avatar_url: metadata.avatar_url }),
+      };
+    }
+    
+    // Si no hay appRole aún, retornar null temporalmente
     return null;
   }
   
