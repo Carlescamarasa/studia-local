@@ -30,9 +30,19 @@ export function setLocalDataRef(data) {
 
 // API legada: helpers de usuario actual usados directamente desde varias vistas
 export function getCurrentUser() {
-  const fallbackId = localUsers[0]?.id;
-  const userId = getStoredUserId(fallbackId);
-  return localDataRef.usuarios.find(u => u.id === userId) || localUsers[0];
+  // Solo devolver usuario si hay un userId explícitamente almacenado en localStorage
+  // En modo Supabase, no hay localCurrentUserId, así que devolver null
+  const storedUserId = getStoredUserId(null);
+  if (!storedUserId) {
+    return null;
+  }
+  
+  // Buscar el usuario en los datos locales
+  const user = localDataRef.usuarios.find(u => u.id === storedUserId);
+  if (user) return user;
+  
+  // Si no se encuentra, devolver null (no usar fallback en modo Supabase)
+  return null;
 }
 
 export function setCurrentUser(userId) {

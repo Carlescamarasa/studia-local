@@ -40,7 +40,7 @@ import {
 import { getAppName } from "@/components/utils/appMeta";
 import { componentStyles } from "@/design/componentStyles";
 import { Outlet } from "react-router-dom";
-import { displayName } from "@/components/utils/helpers";
+import { displayName, getEffectiveRole } from "@/components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import RequireRole from "@/components/auth/RequireRole";
@@ -132,11 +132,65 @@ function LayoutContent() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  /* Simulación */
+  /* Simulación - Actualizar cuando cambia la ubicación o al montar */
   useEffect(() => {
     const sim = sessionStorage.getItem("simulatingUser");
-    if (sim) setSimulatingUser(JSON.parse(sim));
+    if (sim) {
+      try {
+        const parsed = JSON.parse(sim);
+        setSimulatingUser(parsed);
+        console.log('[Layout] Simulación detectada:', parsed.rolPersonalizado);
+      } catch (e) {
+        console.error('Error parseando simulatingUser:', e);
+        setSimulatingUser(null);
+      }
+    } else {
+      setSimulatingUser(null);
+      console.log('[Layout] No hay simulación activa');
+    }
   }, [location]);
+  
+  // Forzar actualización cuando cambia sessionStorage (para detectar cambios de simulación)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const sim = sessionStorage.getItem("simulatingUser");
+      if (sim) {
+        try {
+          const parsed = JSON.parse(sim);
+          setSimulatingUser(parsed);
+        } catch (e) {
+          setSimulatingUser(null);
+        }
+      } else {
+        setSimulatingUser(null);
+      }
+    };
+    
+    // Escuchar cambios en sessionStorage (desde otras pestañas o recargas)
+    window.addEventListener('storage', handleStorageChange);
+    
+    // También verificar periódicamente (por si acaso)
+    const interval = setInterval(() => {
+      const sim = sessionStorage.getItem("simulatingUser");
+      if (sim) {
+        try {
+          const parsed = JSON.parse(sim);
+          if (!simulatingUser || simulatingUser.id !== parsed.id) {
+            setSimulatingUser(parsed);
+          }
+        } catch (e) {
+          // Ignorar errores
+        }
+      } else if (simulatingUser) {
+        setSimulatingUser(null);
+      }
+    }, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [simulatingUser]);
 
   /* Cerrar sidebar al navegar en mobile */
   useEffect(() => {
@@ -259,9 +313,34 @@ function LayoutContent() {
     );
   }
 
-  const userRole =
-    simulatingUser?.rolPersonalizado || currentUser?.rolPersonalizado || "ESTU";
-  const items = navigationByRole[userRole] || navigationByRole.ESTU;
+  // Obtener el rol efectivo usando la función unificada
+  const { appRole } = useAuth();
+  const userRole = getEffectiveRole({ appRole, currentUser });
+  
+  // Debug: verificar el rol calculado
+  console.log('[Layout] Rol efectivo:', userRole, 'Simulando:', !!sessionStorage.getItem("simulatingUser"), 'CurrentUser:', currentUser?.rolPersonalizado, 'AppRole:', appRole);
+  
+  // Mapeo de URLs a los roles que tienen acceso
+  const pagePermissions = {
+    '/usuarios': ['ADMIN'],
+    '/estudiantes': ['PROF', 'ADMIN'],
+    '/asignaciones': ['PROF', 'ADMIN'],
+    '/plantillas': ['PROF', 'ADMIN'],
+    '/agenda': ['PROF', 'ADMIN'],
+    '/hoy': ['ESTU'],
+    '/semana': ['ESTU'],
+    '/estadisticas': ['ESTU', 'PROF', 'ADMIN'],
+    '/design': ['ADMIN'],
+    '/testseed': ['ADMIN'],
+    '/import-export': ['ADMIN'],
+  };
+
+  // Filtrar items del sidebar según los permisos reales de acceso
+  const allItems = navigationByRole[userRole] || navigationByRole.ESTU;
+  const items = allItems.filter(item => {
+    const allowedRoles = pagePermissions[item.url];
+    return allowedRoles && allowedRoles.includes(userRole);
+  });
 
   const grouped = items.reduce((acc, it) => {
     (acc[it.group] ||= []).push(it);

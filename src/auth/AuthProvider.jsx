@@ -3,19 +3,47 @@ import { supabase } from '@/lib/supabaseClient';
 
 const AuthContext = createContext(undefined);
 
+/**
+ * Calcula el rol de la aplicación basándose en el email del usuario
+ * @param {string} email - Email del usuario
+ * @returns {string} - Rol: 'ADMIN', 'PROF' o 'ESTU'
+ */
+function calculateAppRoleFromEmail(email) {
+  if (!email) return 'ESTU';
+  
+  const normalizedEmail = email.toLowerCase().trim();
+  
+  // Admin
+  if (normalizedEmail === 'carlescamarasa@gmail.com') {
+    return 'ADMIN';
+  }
+  
+  // Profesores
+  if (normalizedEmail === 'carlescamarasa+profe@gmail.com' || 
+      normalizedEmail === 'atorrestrompeta@gmail.com') {
+    return 'PROF';
+  }
+  
+  // Por defecto: Estudiante
+  return 'ESTU';
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [appRole, setAppRole] = useState('ESTU');
   const [loading, setLoading] = useState(true);
   const fetchingProfileRef = useRef(false);
   const currentUserIdRef = useRef(null);
+  
+  // Calcular appRole basándose en el email del usuario
+  const appRole = useMemo(() => {
+    return calculateAppRoleFromEmail(user?.email);
+  }, [user?.email]);
 
   // Función para obtener el perfil desde Supabase
   const fetchProfile = async (userId) => {
     if (!userId) {
       setProfile(null);
-      setAppRole('ESTU');
       currentUserIdRef.current = null;
       fetchingProfileRef.current = false;
       return;
@@ -38,27 +66,24 @@ export function AuthProvider({ children }) {
 
       if (error) {
         // Si no hay perfil o hay error de RLS, usar valores por defecto
-        // No lanzar error - simplemente usar ESTU como fallback
+        // No lanzar error - simplemente no establecer perfil
         if (error.message.includes('infinite recursion')) {
           console.error('Error de políticas RLS en Supabase. Revisa las políticas de la tabla profiles.');
         } else {
           console.warn('No se encontró perfil para el usuario:', error.message);
         }
         setProfile(null);
-        setAppRole('ESTU');
         fetchingProfileRef.current = false;
         return;
       }
 
       setProfile(data);
-      // appRole = profile.role si existe, sino 'ESTU' por defecto
-      setAppRole(data?.role || 'ESTU');
+      // Nota: appRole ahora se calcula desde el email, no desde profile.role
       fetchingProfileRef.current = false;
     } catch (err) {
       // Error no crítico - usar valores por defecto
       console.error('Error obteniendo perfil:', err);
       setProfile(null);
-      setAppRole('ESTU');
       fetchingProfileRef.current = false;
     }
   };
@@ -74,7 +99,6 @@ export function AuthProvider({ children }) {
         await fetchProfile(session.user.id);
       } else {
         setProfile(null);
-        setAppRole('ESTU');
       }
       setLoading(false);
     });
@@ -96,7 +120,6 @@ export function AuthProvider({ children }) {
         });
       } else {
         setProfile(null);
-        setAppRole('ESTU');
         currentUserIdRef.current = null;
         fetchingProfileRef.current = false;
       }
@@ -142,7 +165,6 @@ export function AuthProvider({ children }) {
     }
     // Limpiar perfil al cerrar sesión
     setProfile(null);
-    setAppRole('ESTU');
     fetchingProfileRef.current = false;
     currentUserIdRef.current = null;
   }, []);

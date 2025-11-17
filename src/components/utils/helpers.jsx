@@ -1,4 +1,5 @@
 import { localUsers } from "@/local-data/localUsers";
+import { getCurrentUser } from "@/api/localDataClient";
 
 /**
  * Obtiene el nombre visible de un usuario según la jerarquía:
@@ -224,4 +225,62 @@ export function aplanarSesion(sesion) {
   });
   
   return listaEjecucion;
+}
+
+/**
+ * Función unificada para obtener el rol efectivo del usuario.
+ * Prioriza la simulación (sessionStorage) sobre el usuario actual.
+ * Funciona tanto en modo local como con Supabase.
+ * 
+ * @param {Object} options - Opciones para obtener el rol
+ * @param {string} options.appRole - Rol desde useAuth() (Supabase)
+ * @param {Object} options.currentUser - Usuario desde getCurrentUser() (local)
+ * @returns {string} - Rol efectivo: 'ADMIN', 'PROF' o 'ESTU'
+ */
+export function getEffectiveRole(options = {}) {
+  const { appRole, currentUser } = options;
+  
+  // 1. Prioridad: simulación en sessionStorage
+  const sim = sessionStorage.getItem("simulatingUser");
+  if (sim) {
+    try {
+      const simUser = JSON.parse(sim);
+      if (simUser?.rolPersonalizado) {
+        console.log('[getEffectiveRole] Usando rol simulado:', simUser.rolPersonalizado);
+        return simUser.rolPersonalizado;
+      }
+    } catch (e) {
+      console.error('Error parseando simulatingUser:', e);
+    }
+  }
+  
+  // 2. Si no hay simulación, priorizar appRole (modo Supabase) sobre currentUser (modo local)
+  // En modo Supabase: usar appRole
+  if (appRole) {
+    console.log('[getEffectiveRole] Usando appRole:', appRole, 'currentUser:', currentUser?.rolPersonalizado);
+    return appRole;
+  }
+  
+  // En modo local puro (sin Supabase): usar currentUser
+  if (currentUser?.rolPersonalizado) {
+    console.log('[getEffectiveRole] Usando currentUser (modo local):', currentUser.rolPersonalizado);
+    return currentUser.rolPersonalizado;
+  }
+  
+  // 3. Fallback: intentar obtener desde getCurrentUser() si no se pasó
+  if (!currentUser && !appRole) {
+    try {
+      const localUser = getCurrentUser();
+      if (localUser?.rolPersonalizado) {
+        console.log('[getEffectiveRole] Usando getCurrentUser() fallback:', localUser.rolPersonalizado);
+        return localUser.rolPersonalizado;
+      }
+    } catch (e) {
+      // Ignorar errores
+    }
+  }
+  
+  // 4. Fallback final
+  console.log('[getEffectiveRole] Usando fallback ESTU');
+  return "ESTU";
 }
