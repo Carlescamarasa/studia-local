@@ -38,13 +38,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getAppName } from "@/components/utils/appMeta";
-import { useDesign } from "@/components/design/DesignProvider";
 import { componentStyles } from "@/design/componentStyles";
 import { Outlet } from "react-router-dom";
 import { displayName } from "@/components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import RequireRole from "@/components/auth/RequireRole";
 import { DesignPageContent } from "@/pages/design.jsx";
@@ -86,16 +83,6 @@ const SIDEBAR_WIDTH = 280;
 
 /* ------------------------------- Layout --------------------------------- */
 function LayoutContent() {
-  const { loadPreset, design, currentPresetId, setPresetId, basePresets, setDesignPartial } = useDesign();
-  
-  // Debug: verificar que basePresets está disponible
-  useEffect(() => {
-    if (basePresets) {
-      console.log('[Layout] basePresets disponibles:', basePresets.length, basePresets.map(p => p.id));
-    } else {
-      console.warn('[Layout] basePresets es undefined');
-    }
-  }, [basePresets]);
   const location = useLocation();
   const navigate = useNavigate();
   const { abierto, toggleSidebar, closeSidebar } = useSidebar();
@@ -412,64 +399,59 @@ function LayoutContent() {
 
           {/* Pie del sidebar */}
           <div className="border-t border-[var(--color-border-default)] p-4 pt-3 space-y-3 text-[var(--color-text-secondary)]">
-            {/* Selector de Estilo */}
-            <div className="px-2 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border-strong)]">
-              <Select
-                value={currentPresetId || 'studia'}
-                onValueChange={(presetId) => {
-                  setPresetId(presetId);
-                }}
-              >
-                <SelectTrigger className={`h-8 text-xs ${componentStyles.controls.selectDefault}`}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {basePresets && basePresets.length > 0 ? (
-                    basePresets.map((preset) => (
-                      <SelectItem key={preset.id} value={preset.id}>
-                        {preset.label}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="default" disabled>
-                      No hay presets disponibles
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Switch de Tema Light/Dark */}
-            <div className="px-2 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border-strong)]">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <Label htmlFor="theme-switch" className="text-[11px] font-medium text-[var(--color-text-primary)] block">
-                    Tema:
-                  </Label>
-                  <p className="text-[10px] text-[var(--color-text-secondary)] mt-0.5">
-                    {design?.theme === 'dark' ? 'Dark' : 'Light'}
-                  </p>
-                </div>
-                <Switch
-                  id="theme-switch"
-                  checked={design?.theme === 'dark'}
-                  onCheckedChange={(checked) => {
-                    setDesignPartial('theme', checked ? 'dark' : 'light');
-                  }}
-                  className="shrink-0"
-                />
-              </div>
-            </div>
-            {/* Selector de usuario local */}
+            {/* Selector de usuario local - Funciona como simulador */}
             <div className="px-2 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border-strong)]">
               <label className="text-[11px] font-medium text-[var(--color-text-primary)] mb-1 block">
                 Usuario Local:
               </label>
               <Select
-                value={currentUser?.id || ''}
+                value={simulatingUser?.id || currentUser?.id || ''}
                 onValueChange={(val) => {
-                  setCurrentUser(val);
-                  window.location.reload();
+                  const usuarioSeleccionado = usuarios.find(u => String(u.id) === val);
+                  if (!usuarioSeleccionado) return;
+
+                  // Si está simulando
+                  if (simulatingUser) {
+                    // Obtener el usuario original desde sessionStorage
+                    const originalUserStr = sessionStorage.getItem('originalUser');
+                    const originalUser = originalUserStr ? JSON.parse(originalUserStr) : currentUser;
+
+                    // Si selecciona el usuario original, terminar simulación
+                    if (usuarioSeleccionado.id === originalUser?.id) {
+                      stopSimulation();
+                      return;
+                    }
+
+                    // Si selecciona otro usuario, cambiar la simulación
+                    sessionStorage.setItem('originalUser', JSON.stringify(originalUser));
+                    sessionStorage.setItem('simulatingUser', JSON.stringify(usuarioSeleccionado));
+                    sessionStorage.setItem('originalPath', window.location.pathname);
+                    
+                    const rolePages = {
+                      ADMIN: 'usuarios',
+                      PROF: 'agenda',
+                      ESTU: 'hoy',
+                    };
+                    const targetPage = rolePages[usuarioSeleccionado.rolPersonalizado] || 'hoy';
+                    navigate(createPageUrl(targetPage), { replace: true });
+                    window.location.reload();
+                  } else {
+                    // Si NO está simulando, iniciar simulación
+                    if (usuarioSeleccionado.id !== currentUser?.id) {
+                      sessionStorage.setItem('originalUser', JSON.stringify(currentUser));
+                      sessionStorage.setItem('simulatingUser', JSON.stringify(usuarioSeleccionado));
+                      sessionStorage.setItem('originalPath', window.location.pathname);
+                      
+                      const rolePages = {
+                        ADMIN: 'usuarios',
+                        PROF: 'agenda',
+                        ESTU: 'hoy',
+                      };
+                      const targetPage = rolePages[usuarioSeleccionado.rolPersonalizado] || 'hoy';
+                      navigate(createPageUrl(targetPage), { replace: true });
+                      window.location.reload();
+                    }
+                  }
                 }}
               >
                 <SelectTrigger className={`w-full ${componentStyles.controls.selectDefault}`}>
