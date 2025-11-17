@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ds';
 import { componentStyles } from '@/design/componentStyles';
 import { useDesign } from '@/components/design/DesignProvider';
 import { toast } from 'sonner';
-import { LogIn, Mail, Lock, Music } from 'lucide-react';
+import { LogIn, Music } from 'lucide-react';
 import logoLTS from '@/assets/Logo_LTS.png';
 import { getAppName } from '@/components/utils/appMeta';
 
@@ -43,29 +43,29 @@ export default function LoginPage() {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      className={componentStyles.auth.loginPageContainer}
       style={{
         background: `linear-gradient(135deg, var(--color-background) 0%, var(--color-surface) 50%, var(--color-surface-elevated) 100%)`,
       }}
     >
       {/* Elementos decorativos de fondo */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className={componentStyles.auth.loginPageBackground}>
         {/* Círculos decorativos con gradiente primario */}
         <div 
-          className="absolute -top-40 -right-40 w-80 h-80 rounded-full opacity-20 blur-3xl"
+          className={componentStyles.auth.loginDecorativeCircle}
           style={{
             background: `radial-gradient(circle, ${primaryColor} 0%, transparent 70%)`,
           }}
         />
         <div 
-          className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full opacity-20 blur-3xl"
+          className={componentStyles.auth.loginDecorativeCircleBottom}
           style={{
             background: `radial-gradient(circle, ${primaryColor} 0%, transparent 70%)`,
           }}
         />
         {/* Patrón de puntos sutiles */}
         <div 
-          className="absolute inset-0 opacity-[0.03]"
+          className={componentStyles.auth.loginPatternOverlay}
           style={{
             backgroundImage: `radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)`,
             backgroundSize: '32px 32px',
@@ -74,19 +74,19 @@ export default function LoginPage() {
       </div>
 
       {/* Contenedor principal */}
-      <div className="relative z-10 w-full max-w-md">
+      <div className={componentStyles.auth.loginCardContainer}>
         <Card 
-          className={`${componentStyles.containers.cardElevated} border-2 shadow-2xl backdrop-blur-sm`}
+          className={`${componentStyles.containers.cardElevated} ${componentStyles.auth.loginCard}`}
           style={{
             borderColor: 'var(--color-border-strong)',
             background: 'var(--color-surface-elevated)',
           }}
         >
-          <CardHeader className="text-center space-y-6 pb-8 pt-8">
+          <CardHeader className={componentStyles.auth.loginHeader}>
             {/* Logo con efecto visual mejorado */}
-            <div className="flex justify-center">
+            <div className={componentStyles.auth.loginLogoContainer}>
               <div 
-                className="relative w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden transition-transform hover:scale-105"
+                className={componentStyles.auth.loginLogoWrapper}
                 style={{
                   background: `linear-gradient(135deg, ${primaryColor} 0%, var(--color-secondary) 100%)`,
                   boxShadow: `0 8px 24px ${primaryColor}40`,
@@ -99,7 +99,7 @@ export default function LoginPage() {
                 />
                 {/* Brillo decorativo */}
                 <div 
-                  className="absolute inset-0 opacity-30"
+                  className={componentStyles.auth.loginLogoShine}
                   style={{
                     background: `linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)`,
                   }}
@@ -108,7 +108,7 @@ export default function LoginPage() {
             </div>
 
             {/* Título y subtítulo */}
-            <div className="space-y-2">
+            <div className={componentStyles.auth.loginTitleContainer}>
               <CardTitle 
                 className={`${componentStyles.typography.pageTitle} text-center`}
                 style={{ color: 'var(--color-text-primary)' }}
@@ -124,32 +124,30 @@ export default function LoginPage() {
             </div>
 
             {/* Indicador decorativo */}
-            <div className="flex items-center justify-center gap-2 pt-2">
+            <div className={componentStyles.auth.loginDivider}>
               <div 
-                className="h-1 w-12 rounded-full"
+                className={componentStyles.auth.loginDividerLine}
                 style={{ background: primaryColor }}
               />
               <Music 
-                className="w-5 h-5"
+                className={componentStyles.auth.loginDividerIcon}
                 style={{ color: primaryColor, opacity: 0.8 }}
               />
               <div 
-                className="h-1 w-12 rounded-full"
+                className={componentStyles.auth.loginDividerLine}
                 style={{ background: primaryColor }}
               />
             </div>
           </CardHeader>
 
           <CardContent className="px-8 pb-8">
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className={componentStyles.auth.loginForm}>
               {/* Campo Email */}
               <div className={componentStyles.form.field}>
                 <Label 
                   htmlFor="email" 
-                  className={`${componentStyles.form.fieldLabel} flex items-center gap-2`}
-                  style={{ color: 'var(--color-text-primary)' }}
+                  className={componentStyles.form.fieldLabel}
                 >
-                  <Mail className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
                   Email
                 </Label>
                 <Input
@@ -161,7 +159,7 @@ export default function LoginPage() {
                   required
                   disabled={isLoading}
                   autoComplete="email"
-                  className="w-full"
+                  className={`${componentStyles.controls.inputDefault} w-full`}
                 />
               </div>
 
@@ -169,10 +167,8 @@ export default function LoginPage() {
               <div className={componentStyles.form.field}>
                 <Label 
                   htmlFor="password" 
-                  className={`${componentStyles.form.fieldLabel} flex items-center gap-2`}
-                  style={{ color: 'var(--color-text-primary)' }}
+                  className={componentStyles.form.fieldLabel}
                 >
-                  <Lock className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
                   Contraseña
                 </Label>
                 <Input
@@ -184,7 +180,7 @@ export default function LoginPage() {
                   required
                   disabled={isLoading}
                   autoComplete="current-password"
-                  className="w-full"
+                  className={`${componentStyles.controls.inputDefault} w-full`}
                 />
               </div>
 
@@ -211,15 +207,15 @@ export default function LoginPage() {
             </form>
 
             {/* Footer decorativo */}
-            <div className="mt-8 pt-6 border-t border-[var(--color-border-default)] text-center">
-              <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-[var(--color-text-secondary)]">
+            <div className={componentStyles.auth.loginFooter}>
+              <div className={componentStyles.auth.loginFooterLinks}>
                 <span>{appName} © {new Date().getFullYear()}</span>
                 <span className="opacity-40">-</span>
                 <a
                   href="https://latrompetasonara.com"
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[var(--color-text-primary)] hover:underline transition-colors"
+                  className={componentStyles.auth.loginFooterLink}
                 >
                   La Trompeta Sonará
                 </a>
@@ -228,7 +224,7 @@ export default function LoginPage() {
                   href="https://www.instagram.com/latrompetasonara"
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[var(--color-text-primary)] hover:underline transition-colors"
+                  className={componentStyles.auth.loginFooterLink}
                 >
                   Instagram
                 </a>

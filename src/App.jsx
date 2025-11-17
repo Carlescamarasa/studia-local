@@ -4,6 +4,7 @@ import AppRouter from "./Router";   // 👈 Usa el router central
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/auth/AuthProvider";
+import { DesignProvider } from "@/components/design/DesignProvider";
 
 // Crear una instancia de QueryClient
 const queryClient = new QueryClient({
@@ -18,12 +19,14 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <LocalDataProvider>
-          <AppRouter />
-          <Toaster />
-        </LocalDataProvider>
-      </AuthProvider>
+      <DesignProvider>
+        <AuthProvider>
+          <LocalDataProvider>
+            <AppRouter />
+            <Toaster />
+          </LocalDataProvider>
+        </AuthProvider>
+      </DesignProvider>
     </QueryClientProvider>
   );
 }

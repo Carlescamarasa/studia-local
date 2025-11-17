@@ -122,6 +122,30 @@ export const componentStyles = {
     emptyText: "text-ui/80 text-sm",
   },
 
+  auth: {
+    // Contenedor principal de la página de login
+    loginPageContainer: "min-h-screen flex items-center justify-center p-4 relative overflow-hidden",
+    loginPageBackground: "absolute inset-0 overflow-hidden pointer-events-none",
+    loginCardContainer: "relative z-10 w-full max-w-md",
+    loginCard: "border-2 shadow-2xl backdrop-blur-sm",
+    loginHeader: "text-center space-y-6 pb-8 pt-8",
+    loginLogoContainer: "flex justify-center",
+    loginLogoWrapper: "relative w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden transition-transform hover:scale-105",
+    loginLogoShine: "absolute inset-0 opacity-30",
+    loginTitleContainer: "space-y-2",
+    loginSubtitleContainer: "space-y-2",
+    loginDivider: "flex items-center justify-center gap-2 pt-2",
+    loginDividerLine: "h-1 w-12 rounded-full",
+    loginDividerIcon: "w-5 h-5",
+    loginForm: "space-y-5",
+    loginFooter: "mt-8 pt-6 border-t border-[var(--color-border-default)] text-center",
+    loginFooterLinks: "flex flex-wrap items-center justify-center gap-2 text-xs text-[var(--color-text-secondary)]",
+    loginFooterLink: "text-[var(--color-text-primary)] hover:underline transition-colors",
+    loginDecorativeCircle: "absolute -top-40 -right-40 w-80 h-80 rounded-full opacity-20 blur-3xl",
+    loginDecorativeCircleBottom: "absolute -bottom-40 -left-40 w-80 h-80 rounded-full opacity-20 blur-3xl",
+    loginPatternOverlay: "absolute inset-0 opacity-[0.03]",
+  },
+
   status: {
     badgeDefault: "inline-flex items-center rounded-full bg-[var(--color-surface-muted)] text-ui text-xs px-2 py-0.5",
     badgeInfo: "inline-flex items-center rounded-full bg-[var(--color-info)]/10 text-[var(--color-info)] border border-[var(--color-info)]/20 text-xs px-2 py-0.5",

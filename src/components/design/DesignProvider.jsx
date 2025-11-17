@@ -2,6 +2,7 @@ import React, {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
 } from "react";
@@ -153,6 +154,7 @@ export function DesignProvider({ children }) {
 
   // Estado para el diseño actual
   const [design, setDesign] = useState(() => {
+    let initialDesign;
     try {
       const custom = localStorage.getItem("custom_design_preset");
       if (custom) {
@@ -161,29 +163,91 @@ export function DesignProvider({ children }) {
         const normalized = normalizeDesign(parsed);
         // Si el tema es dark, aplicar colores dark, chrome y controls
         if (normalized.theme === 'dark') {
-          return {
+          initialDesign = {
+            ...normalized,
+            colors: deriveDarkColors(normalized.colors),
+            chrome: deriveDarkChrome(),
+            controls: deriveDarkControls(),
+          };
+        } else {
+          initialDesign = normalized;
+        }
+      } else {
+        // Si no hay custom, usar el preset base por defecto
+        const defaultPreset = findPresetById(presetId) || getDefaultPreset();
+        const normalized = normalizeDesign(defaultPreset.design);
+        // Si el preset tiene theme dark, aplicar colores dark, chrome y controls
+        if (normalized.theme === 'dark') {
+          initialDesign = {
+            ...normalized,
+            colors: deriveDarkColors(normalized.colors),
+            chrome: deriveDarkChrome(),
+            controls: deriveDarkControls(),
+          };
+        } else {
+          initialDesign = normalized;
+        }
+      }
+    } catch (_) {
+      // En caso de error, usar diseño por defecto
+      const defaultPreset = findPresetById(presetId) || getDefaultPreset();
+      initialDesign = normalizeDesign(defaultPreset.design);
+    }
+    
+    // Inicializar variables CSS de forma síncrona antes del primer render
+    // Esto evita el flash de contenido sin estilos
+    try {
+      const normalized = normalizeDesign(initialDesign);
+      const root = document.documentElement;
+      
+      // Determinar tema efectivo
+      let effectiveTheme = normalized.theme;
+      let designToUse = normalized;
+      
+      if (normalized.theme === 'system') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        effectiveTheme = prefersDark ? 'dark' : 'light';
+        
+        if (prefersDark) {
+          designToUse = {
             ...normalized,
             colors: deriveDarkColors(normalized.colors),
             chrome: deriveDarkChrome(),
             controls: deriveDarkControls(),
           };
         }
-        return normalized;
+      } else if (normalized.theme === 'dark') {
+        designToUse = {
+          ...normalized,
+          colors: deriveDarkColors(normalized.colors),
+          chrome: deriveDarkChrome(),
+          controls: deriveDarkControls(),
+        };
       }
-    } catch (_) {}
-    // Si no hay custom, usar el preset base por defecto
-    const defaultPreset = findPresetById(presetId) || getDefaultPreset();
-    const normalized = normalizeDesign(defaultPreset.design);
-    // Si el preset tiene theme dark, aplicar colores dark, chrome y controls
-    if (normalized.theme === 'dark') {
-      return {
-        ...normalized,
-        colors: deriveDarkColors(normalized.colors),
-        chrome: deriveDarkChrome(),
-        controls: deriveDarkControls(),
-      };
+      
+      // Aplicar variables CSS inmediatamente
+      const finalVars = generateCSSVariables(designToUse);
+      Object.entries(finalVars).forEach(([key, value]) => {
+        root.style.setProperty(key, value);
+      });
+      
+      // Aplicar clase dark según el tema efectivo
+      if (effectiveTheme === 'dark') {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    } catch (error) {
+      console.error('Error inicializando CSS variables:', error);
+      // En caso de error, usar diseño por defecto
+      const vars = generateCSSVariables(DEFAULT_DESIGN);
+      const root = document.documentElement;
+      Object.entries(vars).forEach(([key, value]) => {
+        root.style.setProperty(key, value);
+      });
     }
-    return normalized;
+    
+    return initialDesign;
   });
 
   // Función para cambiar de preset base
@@ -214,7 +278,9 @@ export function DesignProvider({ children }) {
   }, [presetId]);
 
   // Generar e inyectar CSS variables en el DOM
-  useEffect(() => {
+  // useLayoutEffect se ejecuta de forma síncrona antes de que el navegador pinte
+  // Esto evita el flash de contenido sin estilos (FOUC)
+  useLayoutEffect(() => {
     try {
       // Normalizar design antes de generar variables
       const normalized = normalizeDesign(design);

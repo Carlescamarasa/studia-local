@@ -38,7 +38,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getAppName } from "@/components/utils/appMeta";
-import { DesignProvider, useDesign } from "@/components/design/DesignProvider";
+import { useDesign } from "@/components/design/DesignProvider";
 import { componentStyles } from "@/design/componentStyles";
 import { Outlet } from "react-router-dom";
 import { displayName } from "@/components/utils/helpers";
@@ -698,13 +698,11 @@ function LayoutContent() {
   );
 }
 
-/* Wrapper con providers del estado del sidebar y diseño */
+/* Wrapper con providers del estado del sidebar */
 export default function Layout() {
   return (
-    <DesignProvider>
-      <SidebarProvider>
-        <LayoutContent />
-      </SidebarProvider>
-    </DesignProvider>
+    <SidebarProvider>
+      <LayoutContent />
+    </SidebarProvider>
   );
 }
