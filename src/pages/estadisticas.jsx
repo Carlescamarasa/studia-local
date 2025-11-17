@@ -916,7 +916,7 @@ function EstadisticasPageContent() {
             <Card className={componentStyles.components.cardBase}>
               <CardHeader>
                 <CardTitle className="text-base md:text-lg flex items-center gap-2">
-                  <Smile className="w-5 h-5 text-blue-600" />
+                  <Smile className="w-5 h-5 text-[var(--color-info)]" />
                   Autoevaluación (1-4)
                 </CardTitle>
               </CardHeader>
@@ -959,7 +959,7 @@ function EstadisticasPageContent() {
                                   : payload[0]?.payload.fecha}
                               </p>
                               {payload[0]?.payload.satisfaccion !== null && (
-                                <p className="text-xs text-blue-600">
+                                <p className="text-xs text-[var(--color-info)]">
                                   <strong>Autoevaluación:</strong> {payload[0]?.payload.satisfaccion}/4
                                 </p>
                               )}
@@ -1027,10 +1027,10 @@ function EstadisticasPageContent() {
                                   ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
                                   : payload[0]?.payload.fecha}
                               </p>
-                              <p className="text-xs text-green-600">
+                              <p className="text-xs text-[var(--color-success)]">
                                 <strong>Completados:</strong> {payload[0]?.payload.completados}
                               </p>
-                              <p className="text-xs text-red-600">
+                              <p className="text-xs text-[var(--color-danger)]">
                                 <strong>Omitidos:</strong> {payload[1]?.payload.omitidos}
                               </p>
                             </div>
@@ -1361,7 +1361,7 @@ function EstadisticasPageContent() {
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-4 gap-2 md:gap-3">
+                  <div className={componentStyles.layout.grid4}>
                     {[1, 2, 3, 4].map(nivel => (
                       <div key={nivel} className={`text-center p-2 md:p-3 ${componentStyles.containers.panelBase} hover:shadow-sm transition-shadow`}>
                         <p className="text-xl md:text-2xl font-bold text-[var(--color-text-primary)]">{feedbackAlumno.distribucion[nivel]}</p>

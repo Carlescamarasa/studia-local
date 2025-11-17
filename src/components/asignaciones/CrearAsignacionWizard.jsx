@@ -258,14 +258,14 @@ export default function CrearAsignacionWizard({ onClose }) {
                 </div>
 
                 {formData.estudiantesIds.length > 0 && (
-                  <Alert className="rounded-[var(--radius-card)] border-blue-200 bg-blue-50">
-                    <AlertDescription className="text-blue-800">
+                  <Alert className="rounded-[var(--radius-card)] border-[var(--color-info)]/20 bg-[var(--color-info)]/10">
+                    <AlertDescription className="text-[var(--color-info)]">
                       <strong>{formData.estudiantesIds.length} estudiante(s) seleccionado(s)</strong>
                     </AlertDescription>
                   </Alert>
                 )}
 
-                <div className="grid md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                <div className={`${componentStyles.layout.grid2} gap-3 max-h-96 overflow-y-auto`}>
                   {filteredEstudiantes.length === 0 ? (
                     <p className="col-span-2 text-center text-muted py-8">
                       No se encontraron estudiantes
@@ -318,7 +318,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                   />
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                <div className={`${componentStyles.layout.grid2} gap-3 max-h-96 overflow-y-auto`}>
                   {filteredPiezas.length === 0 ? (
                     <p className="col-span-2 text-center text-muted py-8">
                       No se encontraron piezas
@@ -354,8 +354,8 @@ export default function CrearAsignacionWizard({ onClose }) {
                 </div>
 
                 {piezaSeleccionada && (
-                  <Alert className="rounded-[var(--radius-card)] border-green-200 bg-green-50">
-                    <AlertDescription className="text-green-800">
+                  <Alert className="rounded-[var(--radius-card)] border-[var(--color-success)]/20 bg-[var(--color-success)]/10">
+                    <AlertDescription className="text-[var(--color-success)]">
                       ✅ Pieza seleccionada: <strong>{piezaSeleccionada.nombre}</strong>
                     </AlertDescription>
                   </Alert>
@@ -428,8 +428,8 @@ export default function CrearAsignacionWizard({ onClose }) {
                 </div>
 
                 {planSeleccionado && (
-                  <Alert className="rounded-[var(--radius-card)] border-green-200 bg-green-50">
-                    <AlertDescription className="text-green-800">
+                  <Alert className="rounded-[var(--radius-card)] border-[var(--color-success)]/20 bg-[var(--color-success)]/10">
+                    <AlertDescription className="text-[var(--color-success)]">
                       ✅ Plan seleccionado: <strong>{planSeleccionado.nombre}</strong> ({planSeleccionado.semanas?.length || 0} semanas)
                     </AlertDescription>
                   </Alert>
@@ -461,8 +461,8 @@ export default function CrearAsignacionWizard({ onClose }) {
                 </div>
 
                 {formData.fechaSeleccionada && formData.semanaInicioISO && (
-                  <Alert className="rounded-[var(--radius-card)] border-blue-200 bg-blue-50 max-w-md">
-                    <AlertDescription className="text-blue-800">
+                  <Alert className="rounded-[var(--radius-card)] border-[var(--color-info)]/20 bg-[var(--color-info)]/10 max-w-md">
+                    <AlertDescription className="text-[var(--color-info)]">
                       <strong>Fecha elegida:</strong> {parseLocalDate(formData.fechaSeleccionada).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                       <br />
                       <strong>Semana ISO guardada:</strong> Del lunes {parseLocalDate(formData.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })} al domingo {parseLocalDate(getDomingoSemana(formData.semanaInicioISO)).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}

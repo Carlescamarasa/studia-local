@@ -205,7 +205,7 @@ export default function PieceEditor({ pieza, onClose }) {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={componentStyles.layout.grid2}>
                 <div className={componentStyles.form.field}>
                   <Label htmlFor="nivel" className={componentStyles.typography.cardTitle}>Nivel</Label>
                   <Select 

@@ -38,6 +38,11 @@ export const componentStyles = {
     grid12Main: "col-span-12 lg:col-span-8",
     grid12Aside: "col-span-12 lg:col-span-4",
     
+    // Grids responsive reutilizables
+    grid2: "grid grid-cols-1 md:grid-cols-2 gap-x-[var(--grid-gap-x)] gap-y-[var(--grid-gap-y)]",
+    grid3: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-[var(--grid-gap-x)] gap-y-[var(--grid-gap-y)]",
+    grid4: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-[var(--grid-gap-x)] gap-y-[var(--grid-gap-y)]",
+    
     // Fila de KPIs (responsive)
     kpiRow: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-[var(--grid-gap-x)] gap-y-[var(--grid-gap-y)]",
     

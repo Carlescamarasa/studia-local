@@ -1741,7 +1741,7 @@ function HoyPageContent() {
                 </div>
               </CardHeader>
               <CardContent className="pt-4 space-y-2">
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className={`${componentStyles.layout.grid2} gap-2 text-sm`}>
                   <div className="flex items-center gap-2 min-h-[40px]">
                     <kbd className="kbd">Espacio</kbd>
                     <span className="text-xs">Play/Pausa</span>

@@ -212,7 +212,7 @@ export default function PerfilPage() {
 
       <Card className={componentStyles.containers.cardBase}>
         <CardContent className="pt-6 space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className={componentStyles.layout.grid2}>
             <div className="space-y-2">
               <Label htmlFor="nombreCompleto" className="text-[var(--color-text-primary)]">Nombre Completo *</Label>
               <Input

@@ -229,7 +229,7 @@ export default function FormularioRapido({ onClose }) {
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className={componentStyles.layout.grid2}>
               <Card className="app-panel">
                 <CardHeader>
                   <div className="flex items-center gap-2">

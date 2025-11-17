@@ -409,7 +409,7 @@ function DesignPageContent({ embedded = false }) {
                 </div>
               </CardHeader>
                     <CardContent className="pt-4 text-[var(--color-text-primary)]">
-                <div className="grid md:grid-cols-2 gap-3">
+                <div className={componentStyles.layout.grid2}>
                   {Object.entries(allPresets).map(([id, preset]) => {
                     const isActive = JSON.stringify(config) === JSON.stringify(preset.config);
                     const isBuiltIn = isBuiltInPreset(id);
@@ -1404,7 +1404,7 @@ function DesignPageContent({ embedded = false }) {
                     <CardContent className="pt-4 text-[var(--color-text-primary)]">
               {auditReport ? (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className={componentStyles.layout.grid2}>
                     <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
                       <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Archivos escaneados</div>
                       <div className="text-2xl font-bold text-[var(--color-text-primary)]">{auditReport?.summary?.filesScanned || 0}</div>
@@ -1423,7 +1423,7 @@ function DesignPageContent({ embedded = false }) {
                   )}
 
                   {(auditReport?.summary?.totalIssues || 0) > 0 && auditReport?.summary?.issues && (
-                    <div className="grid md:grid-cols-2 gap-3">
+                    <div className={componentStyles.layout.grid2}>
                       {Object.entries(auditReport.summary.issues).map(([k, v]) => (
                         <Card key={k} className="bg-[var(--color-surface-elevated)] rounded-lg p-3 border border-[var(--color-border-default)]">
                           <div className="text-xs uppercase tracking-wide text-[var(--color-text-secondary)] mb-1">{k}</div>
@@ -1671,7 +1671,7 @@ function DesignPageContent({ embedded = false }) {
                 {/* Cards y Paneles */}
                 <div>
                   <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Cards y Paneles:</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className={componentStyles.layout.grid2}>
                     <Card className={componentStyles.containers.cardBase}>
                       <CardHeader>
                         <CardTitle className={componentStyles.typography.cardTitle}>Card Base</CardTitle>

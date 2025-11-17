@@ -193,7 +193,7 @@ export default function LocalPage() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={componentStyles.layout.grid2}>
           {navigationItems[role]?.map((item) => (
             <Card
               key={item.url}

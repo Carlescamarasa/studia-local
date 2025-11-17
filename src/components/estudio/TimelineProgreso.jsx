@@ -6,11 +6,11 @@ export default function TimelineProgreso({ tiempoActual, tiempoObjetivo, label, 
   const porcentaje = Math.min((tiempoActual / tiempoObjetivo) * 100, 100);
   const excedido = tiempoActual > tiempoObjetivo;
   
-  let colorBarra = "bg-green-500";
+  let colorBarra = "bg-[var(--color-success)]";
   if (excedido) {
-    colorBarra = "bg-red-500";
+    colorBarra = "bg-[var(--color-danger)]";
   } else if (porcentaje > 85) {
-    colorBarra = "bg-amber-500";
+    colorBarra = "bg-[var(--color-warning)]";
   }
   
   return (

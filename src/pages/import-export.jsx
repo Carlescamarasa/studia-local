@@ -507,7 +507,7 @@ export default function ImportExportPage() {
                       <Music className="w-5 h-5 text-[var(--color-primary)]" />
                       Plantillas (JSON)
                     </h2>
-                    <div className="grid md:grid-cols-3 gap-4">
+                    <div className={componentStyles.layout.grid3}>
                       <Card className="app-card hover:shadow-md transition-shadow">
                         <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
@@ -593,7 +593,7 @@ export default function ImportExportPage() {
                       <FileDown className="w-5 h-5 text-[var(--color-primary)]" />
                       Datos y Estadísticas (CSV)
                     </h2>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className={componentStyles.layout.grid3}>
                       <Card className="app-card hover:shadow-md transition-shadow">
                         <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
                           <div className="flex items-center gap-3">
@@ -776,7 +776,7 @@ export default function ImportExportPage() {
                       <Upload className="w-5 h-5 text-[var(--color-primary)]" />
                       Plantillas (JSON)
                     </h2>
-                    <div className="grid md:grid-cols-3 gap-4">
+                    <div className={componentStyles.layout.grid3}>
                       <Card className={`${componentStyles.containers.cardBase} hover:shadow-md transition-shadow`}>
                         <CardHeader className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)]">
                           <div className="flex items-center gap-3">

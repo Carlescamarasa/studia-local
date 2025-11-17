@@ -340,9 +340,9 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
             )}
 
             {isFM && usandoPiezaSnapshot && (
-              <Alert className="rounded-[var(--radius-card)] border-blue-200 bg-blue-50">
-                <Info className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-800">
+              <Alert className="rounded-[var(--radius-card)] border-[var(--color-info)]/20 bg-[var(--color-info)]/10">
+                <Info className="h-4 w-4 text-[var(--color-info)]" />
+                <AlertDescription className="text-[var(--color-info)]">
                   <strong>Este FM usa el material de la Pieza de la Asignación.</strong>
                 </AlertDescription>
               </Alert>
@@ -362,7 +362,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                 <CardTitle>Información Básica</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className={componentStyles.layout.grid2}>
                   <div>
                     <Label htmlFor="tipo">Tipo de Ejercicio *</Label>
                     <Select 
@@ -507,7 +507,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                         </SelectContent>
                       </Select>
                       {!piezaRefId && (
-                        <p className="text-xs text-blue-600 mt-1">
+                        <p className="text-xs text-[var(--color-info)] mt-1">
                           Puedes guardar sin pieza. La configuración se aplicará al crear la Asignación.
                         </p>
                       )}
@@ -529,7 +529,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                                 checked={!!selectedElementos.find(e => e.nombre === elemento.nombre)}
                                 onCheckedChange={() => toggleElementoSeleccion(elemento)}
                               />
-                              <Music className="w-4 h-4 text-pink-600" />
+                              <Music className="w-4 h-4 text-[var(--color-primary)]" />
                               <span className="text-sm flex-1 text-ui">{elemento.nombre}</span>
                             </div>
                           ))}
@@ -615,10 +615,10 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                                   {elemento.media?.video && (
                                     <div className="border border-[var(--color-border-default)] rounded-[var(--radius-ctrl)] p-2 bg-card">
                                       <div className="flex items-center gap-2 text-sm mb-1">
-                                        <Play className="w-4 h-4 text-blue-600" />
+                                        <Play className="w-4 h-4 text-[var(--color-info)]" />
                                         <span className="font-medium text-ui">Video</span>
                                       </div>
-                                      <a href={elemento.media.video} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate block">
+                                      <a href={elemento.media.video} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--color-info)] hover:underline truncate block">
                                         {elemento.media.video}
                                       </a>
                                     </div>
@@ -626,10 +626,10 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                                   {elemento.media?.audio && (
                                     <div className="border border-[var(--color-border-default)] rounded-[var(--radius-ctrl)] p-2 bg-card">
                                       <div className="flex items-center gap-2 text-sm mb-1">
-                                        <Volume2 className="w-4 h-4 text-purple-600" />
+                                        <Volume2 className="w-4 h-4 text-[var(--color-primary)]" />
                                         <span className="font-medium text-ui">Audio</span>
                                       </div>
-                                      <a href={elemento.media.audio} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-600 hover:underline truncate block">
+                                      <a href={elemento.media.audio} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--color-primary)] hover:underline truncate block">
                                         {elemento.media.audio}
                                       </a>
                                     </div>
@@ -637,10 +637,10 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                                   {elemento.media?.imagen && (
                                     <div className="border border-[var(--color-border-default)] rounded-[var(--radius-ctrl)] p-2 bg-card">
                                       <div className="flex items-center gap-2 text-sm mb-1">
-                                        <ImageIcon className="w-4 h-4 text-green-600" />
+                                        <ImageIcon className="w-4 h-4 text-[var(--color-success)]" />
                                         <span className="font-medium text-ui">Imagen</span>
                                       </div>
-                                      <a href={elemento.media.imagen} target="_blank" rel="noopener noreferrer" className="text-xs text-green-600 hover:underline truncate block">
+                                      <a href={elemento.media.imagen} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--color-success)] hover:underline truncate block">
                                         {elemento.media.imagen}
                                       </a>
                                     </div>
@@ -648,10 +648,10 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                                   {elemento.media?.pdf && (
                                     <div className="border border-[var(--color-border-default)] rounded-[var(--radius-ctrl)] p-2 bg-card">
                                       <div className="flex items-center gap-2 text-sm mb-1">
-                                        <FileText className="w-4 h-4 text-red-600" />
+                                        <FileText className="w-4 h-4 text-[var(--color-danger)]" />
                                         <span className="font-medium text-ui">PDF</span>
                                       </div>
-                                      <a href={elemento.media.pdf} target="_blank" rel="noopener noreferrer" className="text-xs text-red-600 hover:underline truncate block">
+                                      <a href={elemento.media.pdf} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--color-danger)] hover:underline truncate block">
                                         {elemento.media.pdf}
                                       </a>
                                     </div>
@@ -705,7 +705,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                       {material}
                       <button
                         onClick={() => removeMaterial(index)}
-                        className="ml-1 hover:text-red-600"
+                        className="ml-1 hover:text-[var(--color-danger)]"
                       >
                         <X className="w-3 h-3" />
                       </button>

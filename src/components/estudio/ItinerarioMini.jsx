@@ -17,7 +17,7 @@ export default function ItinerarioMini({ listaEjecucion, indiceActual, completad
               isActual 
                 ? 'w-7 h-7 bg-[hsl(var(--brand-500))] ring-2 ring-[hsl(var(--brand-500))] ring-offset-2' 
                 : isCompletado
-                ? 'w-5 h-5 bg-green-500 hover:bg-green-600'
+                ? 'w-5 h-5 bg-[var(--color-success)] hover:bg-[var(--color-success)]/80'
                 : isOmitido
                 ? 'w-5 h-5 bg-[var(--color-border-default)] hover:bg-[var(--color-border-strong)]'
                 : 'w-5 h-5 bg-[var(--color-surface-muted)] hover:bg-[var(--color-border-default)]'

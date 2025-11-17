@@ -76,7 +76,7 @@ export default function ResumenFinal({
           </CardHeader>
           
           <CardContent className="pt-4 space-y-4">
-            <div className="grid grid-cols-3 gap-2">
+            <div className={`${componentStyles.layout.grid3} gap-2`}>
               <div className="text-center p-2 app-panel bg-[var(--color-success)]/5 border-[var(--color-success)]/20">
                 <CheckCircle className="w-4 h-4 mx-auto mb-1 text-[var(--color-success)]" />
                 <p className="text-base font-bold text-[var(--color-text-primary)]">{completados.size}</p>
@@ -101,7 +101,7 @@ export default function ResumenFinal({
             <div className="border-t border-[var(--color-border-default)] pt-4 space-y-3">
               <h2 className={`font-semibold text-base text-center ${componentStyles.typography.sectionTitle}`}>¿Cómo fue la práctica?</h2>
               
-              <div className="grid grid-cols-4 gap-2">
+              <div className={`${componentStyles.layout.grid4} gap-2`}>
                 {[1, 2, 3, 4].map((nivel) => (
                   <button
                     key={nivel}

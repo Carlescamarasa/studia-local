@@ -452,7 +452,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
           </div>
 
           <CardContent className="flex-1 overflow-y-auto p-6 space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+            <div className={componentStyles.layout.grid2}>
               <div>
                 <Label htmlFor="nombre" className="text-[var(--color-text-primary)]">Nombre de la Sesión *</Label>
                 <Input
@@ -836,7 +836,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                   </Alert>
                 )}
 
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-card)] p-3 bg-[var(--color-surface-muted)]">
+                <div className={`${componentStyles.layout.grid3} gap-2 max-h-80 overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-card)] p-3 bg-[var(--color-surface-muted)]`}>
                   {filteredEjercicios.length === 0 ? (
                     <div className="col-span-full text-center py-8">
                       <p className="text-sm text-[var(--color-text-secondary)]">No se encontraron ejercicios</p>

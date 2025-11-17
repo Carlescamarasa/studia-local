@@ -854,7 +854,7 @@ export default function TestSeedPage() {
                   <strong>Importante:</strong> Usa estudiantes existentes. Crea usuarios con rol ESTU antes de semillar.
                 </AlertDescription>
               </Alert>
-              <div className="grid md:grid-cols-3 gap-2">
+              <div className={componentStyles.layout.grid3}>
                 <Button
                   variant="primary"
                   onClick={() => generarSemillasRealistas(1)}
@@ -1271,7 +1271,7 @@ export default function TestSeedPage() {
       />
 
       <div className={`${componentStyles.layout.page} space-y-6`}>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <div className={componentStyles.layout.grid4}>
           <Card className="app-card hover:shadow-md transition-shadow">
             <CardContent className="pt-4 text-center">
               <Music className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />

@@ -155,7 +155,7 @@ function QAVisualContent({ embedded = false }) {
 
       <div className={`${componentStyles.layout.page} space-y-6`}>
         {/* Resumen */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className={componentStyles.layout.grid3}>
           <Card className="app-card">
             <CardContent className="pt-6 text-center">
               <CheckCircle className="w-8 h-8 mx-auto mb-2 text-[hsl(var(--success))]" />
@@ -262,7 +262,7 @@ function QAVisualContent({ embedded = false }) {
                 {/* Cards */}
                 <div>
                   <p className="text-sm font-medium text-ui mb-3">Cards:</p>
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className={componentStyles.layout.grid2}>
                     <Card className="app-card">
                       <CardHeader className="border-b border-[var(--color-border-default)]">
                         <CardTitle>Card con header</CardTitle>
@@ -284,7 +284,7 @@ function QAVisualContent({ embedded = false }) {
                 {/* Inputs */}
                 <div>
                   <p className="text-sm font-medium text-ui mb-3">Inputs:</p>
-                  <div className="grid md:grid-cols-2 gap-4 max-w-2xl">
+                  <div className={`${componentStyles.layout.grid2} max-w-2xl`}>
                     <div>
                       <label htmlFor="qa-input" className="text-xs text-ui/80 block mb-1">Input estándar</label>
                       <Input id="qa-input" placeholder="Input estándar" className="focus-brand" />

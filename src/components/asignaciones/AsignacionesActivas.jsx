@@ -78,8 +78,8 @@ export default function AsignacionesActivas() {
   });
 
   const estadoColors = {
-    publicada: 'bg-green-100 text-green-800',
-    en_curso: 'bg-blue-100 text-blue-800',
+    publicada: 'bg-[var(--color-success)]/10 text-[var(--color-success)] border-[var(--color-success)]/20',
+    en_curso: 'bg-[var(--color-info)]/10 text-[var(--color-info)] border-[var(--color-info)]/20',
   };
 
   const estadoLabels = {

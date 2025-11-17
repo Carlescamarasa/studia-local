@@ -84,7 +84,7 @@ export default function BloquesTab() {
               )}
             </div>
           ) : (
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            <div className={`${componentStyles.layout.grid3} gap-3`}>
               {filteredBloques.map((bloque) => (
                 <Card
                   key={bloque.id}

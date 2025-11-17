@@ -13,13 +13,13 @@ export default function CronometroCompacto({ tiempoActual, tiempoObjetivo, isAD 
   const porcentaje = tiempoObjetivo > 0 ? (tiempoActual / tiempoObjetivo) * 100 : 0;
   const exceso = tiempoActual > tiempoObjetivo ? tiempoActual - tiempoObjetivo : 0;
   
-  let colorClase = "text-gray-900";
+  let colorClase = "text-[var(--color-text-primary)]";
   if (porcentaje > 100) {
-    colorClase = "text-red-600";
+    colorClase = "text-[var(--color-danger)]";
   } else if (porcentaje > 85) {
-    colorClase = "text-amber-600";
+    colorClase = "text-[var(--color-warning)]";
   } else if (porcentaje > 0) {
-    colorClase = "text-green-600";
+    colorClase = "text-[var(--color-success)]";
   }
   
   if (isAD) {
@@ -48,7 +48,7 @@ export default function CronometroCompacto({ tiempoActual, tiempoObjetivo, isAD 
           </>
         )}
         {exceso > 0 && (
-          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 text-xs ml-1 rounded-full">
+          <Badge variant="outline" className="bg-[var(--color-danger)]/10 text-[var(--color-danger)] border-[var(--color-danger)]/30 text-xs ml-1 rounded-full">
             +{Math.floor(exceso / 60)}:{String(exceso % 60).padStart(2, '0')}
           </Badge>
         )}

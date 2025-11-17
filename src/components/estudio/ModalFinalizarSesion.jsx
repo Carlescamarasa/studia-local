@@ -25,10 +25,10 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
   ];
 
   const calificaciones = [
-    { value: 1, label: "Difícil", emoji: "😰", color: "bg-red-100 border-red-300 text-red-800" },
-    { value: 2, label: "Complicado", emoji: "😕", color: "bg-amber-100 border-amber-300 text-amber-800" },
-    { value: 3, label: "Bien", emoji: "🙂", color: "bg-green-100 border-green-300 text-green-800" },
-    { value: 4, label: "Excelente", emoji: "😄", color: "bg-blue-100 border-blue-300 text-blue-800" },
+    { value: 1, label: "Difícil", emoji: "😰", color: "bg-[var(--color-danger)]/10 border-[var(--color-danger)]/30 text-[var(--color-danger)]" },
+    { value: 2, label: "Complicado", emoji: "😕", color: "bg-[var(--color-warning)]/10 border-[var(--color-warning)]/30 text-[var(--color-warning)]" },
+    { value: 3, label: "Bien", emoji: "🙂", color: "bg-[var(--color-success)]/10 border-[var(--color-success)]/30 text-[var(--color-success)]" },
+    { value: 4, label: "Excelente", emoji: "😄", color: "bg-[var(--color-info)]/10 border-[var(--color-info)]/30 text-[var(--color-info)]" },
   ];
 
   const handlePreview = (index) => {
@@ -77,7 +77,7 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
 
           <div>
             <Label className="text-base mb-3 block">¿Cómo te fue la sesión?</Label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className={`${componentStyles.layout.grid4} gap-2`}>
               {calificaciones.map((cal) => (
                 <button
                   key={cal.value}
@@ -113,8 +113,8 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
             onPreview={handlePreview}
           />
           
-          <Alert className="border-blue-200 bg-blue-50">
-            <AlertDescription className="text-blue-800 text-sm">
+          <Alert className="border-[var(--color-info)]/20 bg-[var(--color-info)]/10">
+            <AlertDescription className="text-[var(--color-info)] text-sm">
               Tu progreso y materiales adjuntos se guardarán en el sistema
             </AlertDescription>
           </Alert>
