@@ -22,24 +22,39 @@ export default function PageHeader({
     <div className={`page-header ${className}`} data-testid="page-header">
       <div className="px-4 md:px-6 py-4">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between gap-4 mb-3 md:mb-4">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              {Icon && (
-                <div className="w-9 h-9 rounded-xl bg-[var(--color-primary-soft)] border border-[var(--color-primary)] text-ui flex items-center justify-center">
-                  <Icon className="w-6 h-6" />
-                </div>
-              )}
+          {/* Primera fila: Icono + Título */}
+          <div className="flex items-center gap-3 mb-2">
+            {Icon && (
+              <div className="w-9 h-9 rounded-xl bg-[var(--color-primary-soft)] border border-[var(--color-primary)] text-ui flex items-center justify-center shrink-0">
+                <Icon className="w-6 h-6" />
+              </div>
+            )}
+            {title && (
+              <h1 className={`${componentStyles.typography.pageTitle}`}>{title}</h1>
+            )}
+          </div>
+          {/* Segunda fila: Subtítulo */}
+          {subtitle && (
+            <div className="flex items-center mb-3">
+              {/* Espaciador para alinear con el título (mismo ancho que icono + gap-3) */}
+              {Icon && <div className="w-12 shrink-0" />}
               <div className="flex-1 min-w-0">
-                <h1 className={`${componentStyles.typography.pageTitle} mb-1`}>{title}</h1>
-                {subtitle && (
-                  <p className={componentStyles.typography.pageSubtitle}>
-                    {subtitle}
-                  </p>
-                )}
+                <p className={componentStyles.typography.pageSubtitle}>
+                  {subtitle}
+                </p>
               </div>
             </div>
-            {actions && <div className="flex gap-2 shrink-0">{actions}</div>}
-          </div>
+          )}
+          {/* Tercera fila: Acciones */}
+          {actions && (
+            <div className="flex gap-2 flex-wrap items-center">
+              {/* Espaciador para alinear con el título (mismo ancho que icono + gap-3) */}
+              {Icon && <div className="w-12 shrink-0" />}
+              <div className="flex-1 min-w-0">
+                {actions}
+              </div>
+            </div>
+          )}
         </div>
       </div>
       {filters && (

@@ -253,109 +253,118 @@ export default function AsignacionDetallePage() {
         icon={Target}
         title="Detalle de Asignación"
         subtitle={`Estudiante: ${getNombreVisible(alumno)}`}
-        actions={
-          <div className="flex gap-2 flex-wrap items-center">
-            <Badge className={`rounded-full ${estadoColors[asignacion.estado]}`}>
-              {estadoLabels[asignacion.estado]}
-            </Badge>
-            <Button variant="ghost" onClick={() => navigate(-1)} className={componentStyles.buttons.ghost}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Volver
-            </Button>
-            {isAdminOrProf && (
-              <Button
-                variant="outline"
-                onClick={() => navigate(createPageUrl(`adaptar-asignacion?id=${asignacionId}`))}
-                className={componentStyles.buttons.outline}
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Adaptar plan
-              </Button>
-            )}
-            {isBorrador && (
-              <Button 
-                onClick={() => publicarMutation.mutate()}
-                disabled={publicarMutation.isPending}
-                className={componentStyles.buttons.primary}
-              >
-                Publicar
-              </Button>
-            )}
-            {!isCerrada && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (window.confirm('¿Cerrar esta asignación?')) {
-                    cerrarMutation.mutate();
-                  }
-                }}
-                disabled={cerrarMutation.isPending}
-                className={componentStyles.buttons.outline}
-              >
-                <XCircle className="w-4 h-4 mr-2" />
-                Cerrar
-              </Button>
-            )}
-          </div>
-        }
       />
 
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-4">
         <Card className={componentStyles.containers.cardBase}>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-[var(--color-text-primary)]">Información General</CardTitle>
-            {isAdminOrProf && (
-              <Button variant="outline" size="sm" onClick={handleEditarInformacion} className={componentStyles.buttons.outline}>
-                <Edit className="w-4 h-4 mr-2" />
-                Editar Asignación
+          <CardHeader className="space-y-4">
+            {/* Primera fila: Acciones */}
+            <div className="flex items-center justify-between gap-4">
+              {/* Volver: alineado a la izquierda */}
+              <Button variant="ghost" onClick={() => navigate(-1)} className={componentStyles.buttons.ghost}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Volver
               </Button>
-            )}
+              {/* Resto: alineado a la derecha */}
+              <div className="flex gap-2 flex-wrap items-center">
+                {/* 2. Adaptar Plan */}
+                {isAdminOrProf && (
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(createPageUrl(`adaptar-asignacion?id=${asignacionId}`))}
+                    className={componentStyles.buttons.outline}
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Adaptar plan
+                  </Button>
+                )}
+                {/* 3. Editar Asignación */}
+                {isAdminOrProf && (
+                  <Button variant="outline" size="sm" onClick={handleEditarInformacion} className={componentStyles.buttons.outline}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Editar Asignación
+                  </Button>
+                )}
+                {/* 4. Cerrar */}
+                {!isCerrada && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (window.confirm('¿Cerrar esta asignación?')) {
+                        cerrarMutation.mutate();
+                      }
+                    }}
+                    disabled={cerrarMutation.isPending}
+                    className={componentStyles.buttons.outline}
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Cerrar
+                  </Button>
+                )}
+                {/* 5. Publicada (Badge) */}
+                <Badge className={`rounded-full ${estadoColors[asignacion.estado]}`}>
+                  {estadoLabels[asignacion.estado]}
+                </Badge>
+                {/* Publicar (solo si es borrador) */}
+                {isBorrador && (
+                  <Button 
+                    onClick={() => publicarMutation.mutate()}
+                    disabled={publicarMutation.isPending}
+                    className={componentStyles.buttons.primary}
+                  >
+                    Publicar
+                  </Button>
+                )}
+              </div>
+            </div>
+            {/* Segunda fila: Título */}
+            <CardTitle className="text-[var(--color-text-primary)]">Información General</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="flex items-start gap-2">
-                <div className={componentStyles.empty.emptyIcon}>
-                  <User className="w-5 h-5 text-[var(--color-text-secondary)]" />
+          <CardContent className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[var(--color-primary-soft)] border border-[var(--color-primary)]/20 flex items-center justify-center shrink-0">
+                  <User className="w-5 h-5 text-[var(--color-primary)]" />
                 </div>
-                <div>
-                  <p className="text-xs text-[var(--color-text-secondary)]">Estudiante</p>
-                  <p className="text-base md:text-lg font-semibold text-[var(--color-text-primary)]">{getNombreVisible(alumno)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wide">Estudiante</p>
+                  <p className="text-base md:text-lg font-semibold text-[var(--color-text-primary)] mb-0.5">{getNombreVisible(alumno)}</p>
                   <p className="text-xs text-[var(--color-text-secondary)]">{alumno?.email}</p>
                 </div>
               </div>
               
-              <div className="flex items-start gap-2">
-                <div className={componentStyles.empty.emptyIcon}>
-                  <Music className="w-5 h-5 text-[var(--color-text-secondary)]" />
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[var(--color-primary-soft)] border border-[var(--color-primary)]/20 flex items-center justify-center shrink-0">
+                  <Music className="w-5 h-5 text-[var(--color-primary)]" />
                 </div>
-                <div>
-                  <p className="text-xs text-[var(--color-text-secondary)]">Pieza</p>
-                  <p className="text-base md:text-lg font-semibold text-[var(--color-text-primary)]">{asignacion.piezaSnapshot?.nombre}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wide">Pieza</p>
+                  <p className="text-base md:text-lg font-semibold text-[var(--color-text-primary)] mb-0.5">{asignacion.piezaSnapshot?.nombre}</p>
                   <p className="text-xs text-[var(--color-text-secondary)]">
                     {asignacion.piezaSnapshot?.nivel} • {asignacion.piezaSnapshot?.elementos?.length || 0} elementos
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-2">
-                <div className={componentStyles.empty.emptyIcon}>
-                  <BookOpen className="w-5 h-5 text-[var(--color-text-secondary)]" />
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[var(--color-primary-soft)] border border-[var(--color-primary)]/20 flex items-center justify-center shrink-0">
+                  <BookOpen className="w-5 h-5 text-[var(--color-primary)]" />
                 </div>
-                <div>
-                  <p className="text-xs text-[var(--color-text-secondary)]">Plan</p>
-                  <p className="text-base md:text-lg font-semibold text-[var(--color-text-primary)]">{asignacion.plan?.nombre}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wide">Plan</p>
+                  <p className="text-base md:text-lg font-semibold text-[var(--color-text-primary)] mb-0.5">{asignacion.plan?.nombre}</p>
                   <p className="text-xs text-[var(--color-text-secondary)]">
                     {asignacion.plan?.semanas?.length || 0} semanas
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-2">
-                <div className={componentStyles.empty.emptyIcon}>
-                  <Calendar className="w-5 h-5 text-[var(--color-text-secondary)]" />
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[var(--color-primary-soft)] border border-[var(--color-primary)]/20 flex items-center justify-center shrink-0">
+                  <Calendar className="w-5 h-5 text-[var(--color-primary)]" />
                 </div>
-                <div>
-                  <p className="text-xs text-[var(--color-text-secondary)]">Semana de Inicio</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wide">Semana de Inicio</p>
                   <p className="text-base md:text-lg font-semibold text-[var(--color-text-primary)]">
                     {parseLocalDate(asignacion.semanaInicioISO).toLocaleDateString('es-ES', { 
                       weekday: 'long', 
@@ -368,24 +377,26 @@ export default function AsignacionDetallePage() {
               </div>
 
               {asignacion.foco && (
-                <div className="flex items-start gap-2">
-                  <div className={componentStyles.empty.emptyIcon}>
-                    <Settings className="w-5 h-5 text-[var(--color-text-secondary)]" />
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-[var(--color-primary-soft)] border border-[var(--color-primary)]/20 flex items-center justify-center shrink-0">
+                    <Settings className="w-5 h-5 text-[var(--color-primary)]" />
                   </div>
-                  <div>
-                    <p className="text-xs text-[var(--color-text-secondary)]">Foco</p>
-                    <Badge className={focoColors[asignacion.foco]}>
-                      {focoLabels[asignacion.foco]}
-                    </Badge>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wide">Foco</p>
+                    <div className="mt-0.5">
+                      <Badge className={focoColors[asignacion.foco]}>
+                        {focoLabels[asignacion.foco]}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
             {asignacion.notas && (
-              <div className="pt-3 border-t border-[var(--color-border-default)]">
-                <p className="text-xs text-[var(--color-text-secondary)] mb-1.5">Notas del Profesor</p>
-                <p className="text-sm md:text-base text-[var(--color-text-primary)]">{asignacion.notas}</p>
+              <div className="pt-4 border-t border-[var(--color-border-default)]">
+                <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-2 uppercase tracking-wide">Notas del Profesor</p>
+                <p className="text-sm md:text-base text-[var(--color-text-primary)] leading-relaxed">{asignacion.notas}</p>
               </div>
             )}
           </CardContent>
