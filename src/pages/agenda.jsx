@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { displayName, calcularLunesSemanaISO, calcularOffsetSemanas } from "../components/utils/helpers";
+import { displayName, calcularLunesSemanaISO, calcularOffsetSemanas, useEffectiveUser } from "../components/utils/helpers";
 import WeekNavigator from "../components/common/WeekNavigator";
 import MediaLinksInput from "../components/common/MediaLinksInput";
 import MediaLinksBadges from "../components/common/MediaLinksBadges";
@@ -61,7 +60,7 @@ function AgendaPageContent() {
   const [previewIndex, setPreviewIndex] = useState(0);
   const [expandedSessions, setExpandedSessions] = useState(new Set());
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
@@ -163,17 +162,17 @@ function AgendaPageContent() {
     setSemanaActualISO(formatLocalDate(lunes));
   };
 
-  const isProfesorOrAdmin = currentUser?.rolPersonalizado === 'PROF' || currentUser?.rolPersonalizado === 'ADMIN';
+  const isProfesorOrAdmin = effectiveUser?.rolPersonalizado === 'PROF' || effectiveUser?.rolPersonalizado === 'ADMIN';
 
   let estudiantesFiltrados = usuarios.filter(u => u.rolPersonalizado === 'ESTU');
   
-  if (currentUser?.rolPersonalizado === 'PROF') {
-    const directos = estudiantesFiltrados.filter(e => e.profesorAsignadoId === currentUser.id);
+  if (effectiveUser?.rolPersonalizado === 'PROF') {
+    const directos = estudiantesFiltrados.filter(e => e.profesorAsignadoId === effectiveUser.id);
     if (directos.length > 0) {
       estudiantesFiltrados = directos;
     } else {
       const asignacionesProf = asignaciones.filter(a => 
-        a.profesorId === currentUser.id && 
+        a.profesorId === effectiveUser.id && 
         (a.estado === 'publicada' || a.estado === 'en_curso' || a.estado === 'borrador')
       );
       const alumnoIds = [...new Set(asignacionesProf.map(a => a.alumnoId))];
@@ -216,7 +215,7 @@ function AgendaPageContent() {
 
     const data = {
       alumnoId: feedbackDrawer.alumnoId,
-      profesorId: currentUser.id,
+      profesorId: effectiveUser.id,
       semanaInicioISO: semanaActualISO,
       notaProfesor: feedbackDrawer.notaProfesor.trim(),
       mediaLinks: feedbackDrawer.mediaLinks || [],

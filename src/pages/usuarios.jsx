@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import RequireRole from "@/components/auth/RequireRole";
 import UnifiedTable from "@/components/tables/UnifiedTable";
-import { getNombreVisible } from "../components/utils/helpers";
+import { getNombreVisible, useEffectiveUser } from "../components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
@@ -21,7 +20,7 @@ function UsuariosPageContent() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [profesorFilter, setProfesorFilter] = useState('all');
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
@@ -48,22 +47,6 @@ function UsuariosPageContent() {
     link.download = `usuarios_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-  };
-
-  const simularUsuario = (usuario) => {
-    const actualUser = currentUser;
-    sessionStorage.setItem('originalUser', JSON.stringify(actualUser));
-    sessionStorage.setItem('simulatingUser', JSON.stringify(usuario));
-    sessionStorage.setItem('originalPath', window.location.pathname);
-
-    const rolePages = {
-      ADMIN: 'usuarios',
-      PROF: 'agenda',
-      ESTU: 'hoy',
-    };
-    const targetPage = rolePages[usuario.rolPersonalizado] || 'hoy';
-    navigate(createPageUrl(targetPage), { replace: true });
-    window.location.reload();
   };
 
   let usuariosFiltrados = usuarios;
@@ -133,7 +116,7 @@ function UsuariosPageContent() {
     },
   ];
 
-  const isAdminOrProf = currentUser?.rolPersonalizado === 'ADMIN' || currentUser?.rolPersonalizado === 'PROF';
+  const isAdminOrProf = effectiveUser?.rolPersonalizado === 'ADMIN' || effectiveUser?.rolPersonalizado === 'PROF';
 
   return (
     <div className="min-h-screen bg-background">
@@ -220,11 +203,6 @@ function UsuariosPageContent() {
                   label: 'Editar perfil',
                   onClick: () => navigate(createPageUrl(`perfil?userId=${u.id}`)),
                 },
-                ...(isAdminOrProf && u.id !== currentUser?.id ? [{
-                  id: 'impersonate',
-                  label: 'Ver como usuario',
-                  onClick: () => simularUsuario(u),
-                }] : []),
               ]}
               onRowClick={(u) => navigate(createPageUrl(`perfil?userId=${u.id}`))}
               emptyMessage="No hay usuarios"

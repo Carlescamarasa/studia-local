@@ -1,5 +1,7 @@
 import { localUsers } from "@/local-data/localUsers";
 import { getCurrentUser } from "@/api/localDataClient";
+import { useAuth } from "@/auth/AuthProvider";
+import { useLocalData } from "@/local-data/LocalDataProvider";
 
 /**
  * Obtiene el nombre visible de un usuario según la jerarquía:
@@ -229,7 +231,6 @@ export function aplanarSesion(sesion) {
 
 /**
  * Función unificada para obtener el rol efectivo del usuario.
- * Prioriza la simulación (sessionStorage) sobre el usuario actual.
  * Funciona tanto en modo local como con Supabase.
  * 
  * @param {Object} options - Opciones para obtener el rol
@@ -240,34 +241,20 @@ export function aplanarSesion(sesion) {
 export function getEffectiveRole(options = {}) {
   const { appRole, currentUser } = options;
   
-  // 1. Prioridad: simulación en sessionStorage
-  const sim = sessionStorage.getItem("simulatingUser");
-  if (sim) {
-    try {
-      const simUser = JSON.parse(sim);
-      if (simUser?.rolPersonalizado) {
-        console.log('[getEffectiveRole] Usando rol simulado:', simUser.rolPersonalizado);
-        return simUser.rolPersonalizado;
-      }
-    } catch (e) {
-      console.error('Error parseando simulatingUser:', e);
-    }
-  }
-  
-  // 2. Si no hay simulación, priorizar appRole (modo Supabase) sobre currentUser (modo local)
+  // Priorizar appRole (modo Supabase) sobre currentUser (modo local)
   // En modo Supabase: usar appRole
   if (appRole) {
-    console.log('[getEffectiveRole] Usando appRole:', appRole, 'currentUser:', currentUser?.rolPersonalizado);
+    console.log('[getEffectiveRole] Usando appRole:', appRole, 'effectiveUser:', currentUser?.rolPersonalizado);
     return appRole;
   }
   
   // En modo local puro (sin Supabase): usar currentUser
   if (currentUser?.rolPersonalizado) {
-    console.log('[getEffectiveRole] Usando currentUser (modo local):', currentUser.rolPersonalizado);
+    console.log('[getEffectiveRole] Usando effectiveUser (modo local):', currentUser.rolPersonalizado);
     return currentUser.rolPersonalizado;
   }
   
-  // 3. Fallback: intentar obtener desde getCurrentUser() si no se pasó
+  // Fallback: intentar obtener desde getCurrentUser() si no se pasó
   if (!currentUser && !appRole) {
     try {
       const localUser = getCurrentUser();
@@ -280,7 +267,40 @@ export function getEffectiveRole(options = {}) {
     }
   }
   
-  // 4. Fallback final
+  // Fallback final
   console.log('[getEffectiveRole] Usando fallback ESTU');
   return "ESTU";
+}
+
+/**
+ * Hook que obtiene el usuario efectivo que funciona en ambos modos (local y Supabase).
+ * 
+ * En modo Supabase: Busca el usuario en datos locales por email del usuario de Supabase.
+ * En modo local: Usa getCurrentUser() directamente.
+ * 
+ * @returns {Object|null} - Usuario efectivo con todas sus propiedades (id, rolPersonalizado, email, etc.) o null si no se encuentra
+ */
+export function useEffectiveUser() {
+  const { user: supabaseUser } = useAuth();
+  const currentUser = getCurrentUser();
+  const { usuarios } = useLocalData();
+  
+  // Si hay usuario de Supabase, buscar en datos locales por email
+  if (supabaseUser?.email) {
+    const normalizedEmail = supabaseUser.email.toLowerCase().trim();
+    const foundUser = usuarios.find(u => {
+      if (!u.email) return false;
+      return u.email.toLowerCase().trim() === normalizedEmail;
+    });
+    
+    if (foundUser) {
+      return foundUser;
+    }
+    
+    // Si no se encuentra, retornar null (usuario de Supabase no existe en datos locales)
+    return null;
+  }
+  
+  // En modo local, usar currentUser directamente
+  return currentUser;
 }

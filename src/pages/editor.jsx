@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 // Eliminado: importación de base44Client, ya no es necesaria
 // Reemplazado por lógica local con almacenamiento en localStorage
-import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent } from "@/components/ds";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ds";
@@ -11,13 +10,14 @@ import PlanesTab from "@/components/editor/PlanesTab";
 import BloquesTab from "@/components/editor/BloquesTab";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
+import { useEffectiveUser } from "@/components/utils/helpers";
 
 export default function EditorPage() {
   const [activeTab, setActiveTab] = useState("planes");
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
-  if (currentUser?.rolPersonalizado === 'ESTU') {
+  if (effectiveUser?.rolPersonalizado === 'ESTU') {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
         <Card className={`max-w-md ${componentStyles.containers.cardBase} border-[var(--color-danger)]`}>

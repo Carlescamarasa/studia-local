@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ds";
@@ -16,7 +15,7 @@ import { toast } from "sonner";
 import RequireRole from "@/components/auth/RequireRole";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import FormularioRapido from "@/components/asignaciones/FormularioRapido";
-import { getNombreVisible, formatLocalDate, parseLocalDate } from "../components/utils/helpers";
+import { getNombreVisible, formatLocalDate, parseLocalDate, useEffectiveUser } from "../components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
@@ -36,7 +35,7 @@ function AsignacionesPageContent() {
   const [estadoFilter, setEstadoFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
   const { data: asignaciones = [] } = useQuery({
     queryKey: ['asignaciones'],
@@ -83,7 +82,7 @@ function AsignacionesPageContent() {
         notas: asignacion.notas,
         plan: JSON.parse(JSON.stringify(asignacion.plan)),
         piezaSnapshot: JSON.parse(JSON.stringify(asignacion.piezaSnapshot)),
-        profesorId: currentUser.id,
+        profesorId: effectiveUser.id,
       };
       return localDataClient.entities.Asignacion.create(newData);
     },
@@ -100,18 +99,6 @@ function AsignacionesPageContent() {
       toast.success('✅ Asignación eliminada');
     },
   });
-
-  const simularAlumno = (alumnoId) => {
-    const alumno = usuarios.find(u => u.id === alumnoId);
-    if (!alumno) return;
-
-    sessionStorage.setItem('originalUser', JSON.stringify(currentUser));
-    sessionStorage.setItem('simulatingUser', JSON.stringify(alumno));
-    sessionStorage.setItem('originalPath', window.location.pathname);
-
-    navigate(createPageUrl('hoy'), { replace: true });
-    window.location.reload();
-  };
 
   const exportarCSV = () => {
     const headers = ['Estudiante', 'Pieza', 'Plan', 'Inicio', 'Estado', 'Semanas'];
@@ -139,8 +126,8 @@ function AsignacionesPageContent() {
 
   let asignacionesFiltradas = asignaciones;
 
-  if (currentUser?.rolPersonalizado === 'PROF') {
-    asignacionesFiltradas = asignacionesFiltradas.filter(a => a.profesorId === currentUser.id);
+  if (effectiveUser?.rolPersonalizado === 'PROF') {
+    asignacionesFiltradas = asignacionesFiltradas.filter(a => a.profesorId === effectiveUser.id);
   }
 
   if (estadoFilter !== 'all') {
@@ -223,7 +210,7 @@ function AsignacionesPageContent() {
     },
   ];
 
-  const isAdminOrProf = currentUser?.rolPersonalizado === 'ADMIN' || currentUser?.rolPersonalizado === 'PROF';
+  const isAdminOrProf = effectiveUser?.rolPersonalizado === 'ADMIN' || effectiveUser?.rolPersonalizado === 'PROF';
 
   return (
     <div className="min-h-screen bg-background">
@@ -359,23 +346,6 @@ function AsignacionesPageContent() {
                       }
                     },
                   });
-                }
-
-                if (isAdminOrProf && a.alumnoId) {
-                  const alumno = usuarios.find(u => u.id === a.alumnoId);
-                  if (alumno) {
-                    actions.push({
-                      id: 'impersonate',
-                      label: 'Ver como alumno',
-                      onClick: () => {
-                        sessionStorage.setItem('originalUser', JSON.stringify(currentUser));
-                        sessionStorage.setItem('simulatingUser', JSON.stringify(alumno));
-                        sessionStorage.setItem('originalPath', window.location.pathname);
-                        navigate(createPageUrl('hoy'), { replace: true });
-                        window.location.reload();
-                      },
-                    });
-                  }
                 }
 
                 actions.push({

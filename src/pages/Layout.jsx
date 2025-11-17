@@ -15,7 +15,6 @@ import {
   X,
   ChevronRight,
   LogOut,
-  UserCog,
   Edit3,
   PanelLeft,
   PanelLeftClose,
@@ -25,7 +24,7 @@ import {
   Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getCurrentUser, setCurrentUser } from "@/api/localDataClient";
+import { setCurrentUser } from "@/api/localDataClient";
 import { useLocalData } from "@/local-data/LocalDataProvider";
 import logoLTS from "@/assets/Logo_LTS.png";
 import RoleBootstrap from "@/components/auth/RoleBootstrap";
@@ -40,7 +39,7 @@ import {
 import { getAppName } from "@/components/utils/appMeta";
 import { componentStyles } from "@/design/componentStyles";
 import { Outlet } from "react-router-dom";
-import { displayName, getEffectiveRole } from "@/components/utils/helpers";
+import { displayName, getEffectiveRole, useEffectiveUser } from "@/components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import RequireRole from "@/components/auth/RequireRole";
@@ -89,7 +88,6 @@ function LayoutContent() {
   const { usuarios } = useLocalData();
   const { signOut } = useAuth();
 
-  const [simulatingUser, setSimulatingUser] = useState(null);
   const [pointerStart, setPointerStart] = useState({ x: 0, y: 0, id: null });
   const [isMobile, setIsMobile] = useState(false);
   const toggleLockRef = useRef(0);
@@ -115,9 +113,9 @@ function LayoutContent() {
     safeToggle();
   };
 
-  /* Usuario actual - usar getCurrentUser() local */
-  const currentUser = getCurrentUser();
-  const isAdmin = currentUser?.rolPersonalizado === 'ADMIN';
+  /* Usuario actual - usar useEffectiveUser() unificado */
+  const effectiveUser = useEffectiveUser();
+  const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
   const isLoading = false; // No hay loading en local
 
   /* Detector mobile */
@@ -131,66 +129,6 @@ function LayoutContent() {
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
-
-  /* Simulación - Actualizar cuando cambia la ubicación o al montar */
-  useEffect(() => {
-    const sim = sessionStorage.getItem("simulatingUser");
-    if (sim) {
-      try {
-        const parsed = JSON.parse(sim);
-        setSimulatingUser(parsed);
-        console.log('[Layout] Simulación detectada:', parsed.rolPersonalizado);
-      } catch (e) {
-        console.error('Error parseando simulatingUser:', e);
-        setSimulatingUser(null);
-      }
-    } else {
-      setSimulatingUser(null);
-      console.log('[Layout] No hay simulación activa');
-    }
-  }, [location]);
-  
-  // Forzar actualización cuando cambia sessionStorage (para detectar cambios de simulación)
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const sim = sessionStorage.getItem("simulatingUser");
-      if (sim) {
-        try {
-          const parsed = JSON.parse(sim);
-          setSimulatingUser(parsed);
-        } catch (e) {
-          setSimulatingUser(null);
-        }
-      } else {
-        setSimulatingUser(null);
-      }
-    };
-    
-    // Escuchar cambios en sessionStorage (desde otras pestañas o recargas)
-    window.addEventListener('storage', handleStorageChange);
-    
-    // También verificar periódicamente (por si acaso)
-    const interval = setInterval(() => {
-      const sim = sessionStorage.getItem("simulatingUser");
-      if (sim) {
-        try {
-          const parsed = JSON.parse(sim);
-          if (!simulatingUser || simulatingUser.id !== parsed.id) {
-            setSimulatingUser(parsed);
-          }
-        } catch (e) {
-          // Ignorar errores
-        }
-      } else if (simulatingUser) {
-        setSimulatingUser(null);
-      }
-    }, 1000);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, [simulatingUser]);
 
   /* Cerrar sidebar al navegar en mobile */
   useEffect(() => {
@@ -315,10 +253,10 @@ function LayoutContent() {
 
   // Obtener el rol efectivo usando la función unificada
   const { appRole } = useAuth();
-  const userRole = getEffectiveRole({ appRole, currentUser });
+  const userRole = getEffectiveRole({ appRole, currentUser: effectiveUser });
   
   // Debug: verificar el rol calculado
-  console.log('[Layout] Rol efectivo:', userRole, 'Simulando:', !!sessionStorage.getItem("simulatingUser"), 'CurrentUser:', currentUser?.rolPersonalizado, 'AppRole:', appRole);
+  console.log('[Layout] Rol efectivo:', userRole, 'EffectiveUser:', effectiveUser?.rolPersonalizado, 'AppRole:', appRole);
   
   // Mapeo de URLs a los roles que tienen acceso
   const pagePermissions = {
@@ -349,11 +287,6 @@ function LayoutContent() {
 
   const logout = async () => {
     try {
-      // Limpiar simulación local si existe
-      sessionStorage.removeItem("simulatingUser");
-      sessionStorage.removeItem("originalUser");
-      sessionStorage.removeItem("originalPath");
-      
       // Cerrar sesión en Supabase
       await signOut();
       
@@ -363,22 +296,6 @@ function LayoutContent() {
       console.error("Error al cerrar sesión:", error);
       // Aun así redirigir a login
       navigate("/login", { replace: true });
-    }
-  };
-
-  const stopSimulation = () => {
-    const originalPath = sessionStorage.getItem("originalPath");
-    sessionStorage.removeItem("simulatingUser");
-    sessionStorage.removeItem("originalUser");
-    sessionStorage.removeItem("originalPath");
-    setSimulatingUser(null);
-
-    if (originalPath) {
-      navigate(originalPath, { replace: true });
-    } else {
-      const r = currentUser?.rolPersonalizado;
-      const target = mainPageByRole[r] || "/hoy";
-      navigate(createPageUrl(target.split("/").pop()), { replace: true });
     }
   };
 
@@ -478,98 +395,6 @@ function LayoutContent() {
 
           {/* Pie del sidebar */}
           <div className="border-t border-[var(--color-border-default)] p-4 pt-3 space-y-3 text-[var(--color-text-secondary)]">
-            {/* Selector de usuario local - Funciona como simulador */}
-            <div className="px-2 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border-strong)]">
-              <label className="text-[11px] font-medium text-[var(--color-text-primary)] mb-1 block">
-                Usuario Local:
-              </label>
-              <Select
-                value={simulatingUser?.id || currentUser?.id || ''}
-                onValueChange={(val) => {
-                  const usuarioSeleccionado = usuarios.find(u => String(u.id) === val);
-                  if (!usuarioSeleccionado) return;
-
-                  // Si está simulando
-                  if (simulatingUser) {
-                    // Obtener el usuario original desde sessionStorage
-                    const originalUserStr = sessionStorage.getItem('originalUser');
-                    const originalUser = originalUserStr ? JSON.parse(originalUserStr) : currentUser;
-
-                    // Si selecciona el usuario original, terminar simulación
-                    if (usuarioSeleccionado.id === originalUser?.id) {
-                      stopSimulation();
-                      return;
-                    }
-
-                    // Si selecciona otro usuario, cambiar la simulación
-                    sessionStorage.setItem('originalUser', JSON.stringify(originalUser));
-                    sessionStorage.setItem('simulatingUser', JSON.stringify(usuarioSeleccionado));
-                    sessionStorage.setItem('originalPath', window.location.pathname);
-                    
-                    const rolePages = {
-                      ADMIN: 'usuarios',
-                      PROF: 'agenda',
-                      ESTU: 'hoy',
-                    };
-                    const targetPage = rolePages[usuarioSeleccionado.rolPersonalizado] || 'hoy';
-                    navigate(createPageUrl(targetPage), { replace: true });
-                    window.location.reload();
-                  } else {
-                    // Si NO está simulando, iniciar simulación
-                    if (usuarioSeleccionado.id !== currentUser?.id) {
-                      sessionStorage.setItem('originalUser', JSON.stringify(currentUser));
-                      sessionStorage.setItem('simulatingUser', JSON.stringify(usuarioSeleccionado));
-                      sessionStorage.setItem('originalPath', window.location.pathname);
-                      
-                      const rolePages = {
-                        ADMIN: 'usuarios',
-                        PROF: 'agenda',
-                        ESTU: 'hoy',
-                      };
-                      const targetPage = rolePages[usuarioSeleccionado.rolPersonalizado] || 'hoy';
-                      navigate(createPageUrl(targetPage), { replace: true });
-                      window.location.reload();
-                    }
-                  }
-                }}
-              >
-                <SelectTrigger className={`w-full ${componentStyles.controls.selectDefault}`}>
-                  <SelectValue placeholder="Seleccionar usuario" />
-                </SelectTrigger>
-                <SelectContent>
-                  {usuarios.map((user) => (
-                    <SelectItem key={user.id} value={String(user.id)}>
-                      {displayName(user)} ({ROLE_LABEL[user.rolPersonalizado]})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {simulatingUser && (
-              <div className="px-2 py-2 rounded-xl bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20">
-                <div className="flex items-start gap-2">
-                  <UserCog className="w-4 h-4 text-[var(--color-warning)] mt-0.5" />
-                  <div className="text-[11px] text-[var(--color-text-primary)] leading-snug">
-                    Simulando:{" "}
-                    <span className="font-semibold">{displayName(simulatingUser)}</span>
-                    <span className="text-[var(--color-text-secondary)]">
-                      {" "}
-                      ({ROLE_LABEL[simulatingUser.rolPersonalizado]})
-                    </span>
-                    <div className="mt-1">
-                      <button
-                        onClick={stopSimulation}
-                        className="text-[11px] text-[var(--color-warning)] hover:text-[var(--color-warning)]/80 underline underline-offset-2"
-                      >
-                        Terminar simulación
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {!isMobile && (
               <Button
                 variant="ghost"
@@ -590,16 +415,16 @@ function LayoutContent() {
             >
               <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center">
                 <span className="text-[var(--color-text-primary)] font-semibold text-sm">
-                  {(displayName(simulatingUser || currentUser || { name: "U" }))
+                  {(displayName(effectiveUser || { name: "U" }))
                     .slice(0, 1)
                     .toUpperCase()}
                 </span>
               </div>
               <div className="flex-1 min-w-0 text-left">
                 <p className="font-medium text-[var(--color-text-primary)] text-sm truncate">
-                  {displayName(simulatingUser || currentUser) || "Usuario"}
+                  {displayName(effectiveUser) || "Usuario"}
                 </p>
-                <p className="text-xs text-[var(--color-text-secondary)] truncate">{currentUser?.email}</p>
+                <p className="text-xs text-[var(--color-text-secondary)] truncate">{effectiveUser?.email}</p>
               </div>
             </button>
 

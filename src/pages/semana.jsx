@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 import { Button } from "@/components/ds/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ds";
 import { Badge } from "@/components/ds";
@@ -14,7 +13,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { calcularLunesSemanaISO, calcularOffsetSemanas, calcularTiempoSesion } from "../components/utils/helpers";
+import { calcularLunesSemanaISO, calcularOffsetSemanas, calcularTiempoSesion, useEffectiveUser } from "../components/utils/helpers";
 import { displayName } from "@/components/utils/helpers";
 import WeekNavigator from "../components/common/WeekNavigator";
 import RequireRole from "@/components/auth/RequireRole";
@@ -45,7 +44,7 @@ function SemanaPageContent() {
   const [expandedSessions, setExpandedSessions] = useState(new Set());
   const [viewingMedia, setViewingMedia] = useState(null);
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
   const { data: asignaciones = [] } = useQuery({
     queryKey: ['asignaciones'],
@@ -67,10 +66,7 @@ function SemanaPageContent() {
     queryFn: () => localDataClient.entities.RegistroSesion.list('-inicioISO'),
   });
 
-  const simulatingUser = sessionStorage.getItem('simulatingUser') ? 
-    JSON.parse(sessionStorage.getItem('simulatingUser')) : null;
-  
-  const userIdActual = simulatingUser?.id || currentUser?.id;
+  const userIdActual = effectiveUser?.id;
 
   const asignacionActiva = asignaciones.find(a => {
     if (a.alumnoId !== userIdActual) return false;

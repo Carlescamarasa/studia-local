@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +13,7 @@ import {
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { displayName } from "../components/utils/helpers";
+import { displayName, useEffectiveUser } from "../components/utils/helpers";
 import MultiSelect from "../components/ui/MultiSelect";
 import MediaLinksBadges from "../components/common/MediaLinksBadges";
 import MediaViewer from "../components/common/MediaViewer";
@@ -143,29 +142,29 @@ function EstadisticasPageContent() {
   const [searchEjercicio, setSearchEjercicio] = useState('');
   const [viewingMedia, setViewingMedia] = useState(null);
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
-  const isAdmin = currentUser?.rolPersonalizado === 'ADMIN';
-  const isProf = currentUser?.rolPersonalizado === 'PROF';
-  const isEstu = currentUser?.rolPersonalizado === 'ESTU';
+  const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
+  const isProf = effectiveUser?.rolPersonalizado === 'PROF';
+  const isEstu = effectiveUser?.rolPersonalizado === 'ESTU';
 
   const { data: asignacionesProf = [] } = useQuery({
-    queryKey: ['asignacionesProf', currentUser?.id],
+    queryKey: ['asignacionesProf', effectiveUser?.id],
     queryFn: () => localDataClient.entities.Asignacion.list(),
-    enabled: isProf && !!currentUser?.id,
+    enabled: isProf && !!effectiveUser?.id,
   });
 
   const estudiantesDelProfesor = useMemo(() => {
-    if (!isProf || !currentUser) return [];
+    if (!isProf || !effectiveUser) return [];
     
     const misAsignaciones = asignacionesProf.filter(a => 
-      a.profesorId === currentUser.id && 
+      a.profesorId === effectiveUser.id && 
       (a.estado === 'publicada' || a.estado === 'en_curso' || a.estado === 'borrador')
     );
     
     const alumnosIds = [...new Set(misAsignaciones.map(a => a.alumnoId))];
     return alumnosIds;
-  }, [asignacionesProf, currentUser, isProf]);
+  }, [asignacionesProf, effectiveUser, isProf]);
 
   const { data: registros = [] } = useQuery({
     queryKey: ['registrosSesion'],
@@ -381,7 +380,7 @@ function EstadisticasPageContent() {
       }));
 
     if (isEstu) {
-      filtered = filtered.filter(r => r.alumnoId === currentUser.id);
+      filtered = filtered.filter(r => r.alumnoId === effectiveUser.id);
     } else {
       let targetAlumnoIds = new Set();
 
@@ -429,7 +428,7 @@ function EstadisticasPageContent() {
     }
 
     return filtered;
-  }, [registros, currentUser, periodoInicio, periodoFin, isEstu, profesoresSeleccionados, alumnosSeleccionados, focosSeleccionados, usuarios, isProf, estudiantesDelProfesor]);
+  }, [registros, effectiveUser, periodoInicio, periodoFin, isEstu, profesoresSeleccionados, alumnosSeleccionados, focosSeleccionados, usuarios, isProf, estudiantesDelProfesor]);
 
   // Evitar duplicados de sesiones (por id) antes de agregar estadísticas
   const registrosFiltradosUnicos = useMemo(() => {
@@ -460,7 +459,7 @@ function EstadisticasPageContent() {
       const duracion = validarDuracion(r.duracionRealSeg);
       return sum + duracion;
     }, 0);
-    const racha = calcularRacha(registrosFiltradosUnicos, isEstu ? currentUser?.id : null);
+    const racha = calcularRacha(registrosFiltradosUnicos, isEstu ? effectiveUser?.id : null);
     const calidadPromedio = calcularCalidadPromedio(registrosFiltradosUnicos);
     const semanasDistintas = calcularSemanasDistintas(registrosFiltradosUnicos);
 
@@ -470,7 +469,7 @@ function EstadisticasPageContent() {
       calidadPromedio,
       semanasDistintas,
     };
-  }, [registrosFiltradosUnicos, isEstu, currentUser]);
+  }, [registrosFiltradosUnicos, isEstu, effectiveUser]);
 
   const tiposBloques = useMemo(() => {
     const agrupado = {};
@@ -618,7 +617,7 @@ function EstadisticasPageContent() {
     if (!isEstu) return [];
     
     return feedbacksSemanal.filter(f => {
-      if (f.alumnoId !== currentUser?.id) return false;
+      if (f.alumnoId !== effectiveUser?.id) return false;
       if (!f.semanaInicioISO) return false;
       
       const feedbackDate = parseLocalDate(f.semanaInicioISO);
@@ -635,7 +634,7 @@ function EstadisticasPageContent() {
       
       return true;
     }).sort((a, b) => b.semanaInicioISO.localeCompare(a.semanaInicioISO));
-  }, [feedbacksSemanal, currentUser, periodoInicio, periodoFin, isEstu]);
+  }, [feedbacksSemanal, effectiveUser, periodoInicio, periodoFin, isEstu]);
 
   const tipoLabels = {
     CA: 'Calentamiento A',

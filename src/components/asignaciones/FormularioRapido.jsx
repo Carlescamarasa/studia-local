@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +17,7 @@ import StudentSearchBar from "@/components/asignaciones/StudentSearchBar";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { displayName, formatLocalDate, parseLocalDate, startOfMonday } from "@/components/utils/helpers";
+import { displayName, formatLocalDate, parseLocalDate, startOfMonday, useEffectiveUser } from "@/components/utils/helpers";
 import { createPortal } from "react-dom";
 import { useLocalData } from "@/local-data/LocalDataProvider";
 import { componentStyles } from "@/design/componentStyles";
@@ -38,7 +37,7 @@ export default function FormularioRapido({ onClose }) {
     adaptarPlanAhora: true,
   });
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
   const { usuarios: usuariosLocal } = useLocalData();
 
   // Fuente robusta: leer directamente de LocalDataProvider para evitar problemas de sincronización
@@ -84,7 +83,7 @@ export default function FormularioRapido({ onClose }) {
         notas: data.notas || null,
         plan: planCopy,
         piezaSnapshot,
-        profesorId: currentUser?.id,
+        profesorId: effectiveUser?.id,
       }));
 
       const results = [];

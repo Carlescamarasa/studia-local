@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +15,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { displayName, calcularLunesSemanaISO, formatLocalDate, parseLocalDate, formatDurationMinutes } from "../components/utils/helpers";
+import { displayName, calcularLunesSemanaISO, formatLocalDate, parseLocalDate, formatDurationMinutes, useEffectiveUser } from "../components/utils/helpers";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import MediaLinksInput from "../components/common/MediaLinksInput";
 import MediaPreviewModal from "../components/common/MediaPreviewModal";
@@ -39,19 +38,19 @@ function EstudiantesPageContent() {
   const [previewUrls, setPreviewUrls] = useState([]);
   const [previewIndex, setPreviewIndex] = useState(0);
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
-  const isProf = currentUser?.rolPersonalizado === 'PROF';
-  const isAdmin = currentUser?.rolPersonalizado === 'ADMIN';
+  const isProf = effectiveUser?.rolPersonalizado === 'PROF';
+  const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
   const isAdminOrProf = isAdmin || isProf;
 
   const { data: asignaciones = [], isLoading: loadingAsignaciones } = useQuery({
-    queryKey: ['asignacionesProfesor', currentUser?.id],
+    queryKey: ['asignacionesProfesor', effectiveUser?.id],
     queryFn: async () => {
       const allAsignaciones = await localDataClient.entities.Asignacion.list();
       return allAsignaciones;
     },
-    enabled: !!currentUser,
+    enabled: !!effectiveUser,
   });
 
   const { data: usuariosAdmin = [] } = useQuery({
@@ -94,7 +93,7 @@ function EstudiantesPageContent() {
   });
 
   const estudiantes = useMemo(() => {
-    if (!currentUser) return [];
+    if (!effectiveUser) return [];
 
     if (isAdmin && usuariosAdmin.length > 0) {
       const estudiantesAdmin = usuariosAdmin.filter(u => u.rolPersonalizado === 'ESTU');
@@ -103,7 +102,7 @@ function EstudiantesPageContent() {
 
     if (isProf || isAdmin) {
       const misAsignaciones = asignaciones.filter(a =>
-        a.profesorId === currentUser.id &&
+        a.profesorId === effectiveUser.id &&
         (a.estado === 'publicada' || a.estado === 'en_curso' || a.estado === 'borrador')
       );
 
@@ -117,7 +116,7 @@ function EstudiantesPageContent() {
             nombreCompleto: null,
             full_name: null,
             rolPersonalizado: 'ESTU',
-            profesorAsignadoId: currentUser.id,
+            profesorAsignadoId: effectiveUser.id,
           };
 
           if (asig.alumno) {
@@ -134,7 +133,7 @@ function EstudiantesPageContent() {
     }
 
     return [];
-  }, [currentUser, usuariosAdmin, asignaciones, isProf, isAdmin]);
+  }, [effectiveUser, usuariosAdmin, asignaciones, isProf, isAdmin]);
 
   const filteredEstudiantes = useMemo(() => {
     if (!searchTerm.trim()) return estudiantes;
@@ -170,14 +169,6 @@ function EstudiantesPageContent() {
     return { minutosReales, calidadMedia, sesionesRealizadas: registrosAlumno.length };
   };
 
-  const simularAlumno = (alumno) => {
-    sessionStorage.setItem('originalUser', JSON.stringify(currentUser));
-    sessionStorage.setItem('simulatingUser', JSON.stringify(alumno));
-    sessionStorage.setItem('originalPath', window.location.pathname);
-    navigate(createPageUrl('hoy'), { replace: true });
-    window.location.reload();
-  };
-
   const handleAbrirFeedback = (alumno) => {
     setSelectedAlumno(alumno);
     const hoy = formatLocalDate(new Date());
@@ -210,7 +201,7 @@ function EstudiantesPageContent() {
 
     guardarFeedbackMutation.mutate({
       alumnoId: selectedAlumno.id,
-      profesorId: currentUser.id,
+      profesorId: effectiveUser.id,
       asignacionId: asignacionAlumno?.id || null,
       semanaInicioISO: feedbackData.semanaInicioISO,
       notaProfesor: feedbackData.notaProfesor.trim(),
@@ -314,7 +305,7 @@ function EstudiantesPageContent() {
                         <li>Revisa la consola del navegador para logs de diagnóstico (F12 → Console)</li>
                       </ul>
                       <div className={`mt-3 p-2 bg-[var(--color-warning)]/20 rounded-lg ${componentStyles.typography.smallMetaText} font-mono text-[var(--color-warning)]`}>
-                        📊 Asignaciones encontradas: {asignaciones.filter(a => a.profesorId === currentUser?.id).length}
+                        📊 Asignaciones encontradas: {asignaciones.filter(a => a.profesorId === effectiveUser?.id).length}
                       </div>
                     </AlertDescription>
                   </Alert>
@@ -395,12 +386,6 @@ function EstudiantesPageContent() {
                       icon: <Calendar className="w-4 h-4" />,
                       onClick: () => navigate(createPageUrl(`asignaciones?alumno=${alumno.id}`)),
                     },
-                  ...(isAdminOrProf && alumno.id !== currentUser?.id ? [{
-                    id: 'impersonate',
-                    label: 'Ver como estudiante',
-                      icon: <Eye className="w-4 h-4" />,
-                    onClick: () => simularAlumno(alumno),
-                  }] : []),
                   ];
                 }}
                 keyField="id"

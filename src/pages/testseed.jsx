@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 import { Button } from "@/components/ds/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ds";
 import { Badge } from "@/components/ds";
@@ -21,7 +20,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ds";
 import { toast } from "sonner";
-import { formatLocalDate, parseLocalDate, displayName, calcularOffsetSemanas } from "../components/utils/helpers";
+import { formatLocalDate, parseLocalDate, displayName, calcularOffsetSemanas, useEffectiveUser } from "../components/utils/helpers";
 import { parseAuditSpec, runAudit, runDesignAudit, QUICK_PROFILES } from "../components/utils/auditor";
 import PageHeader from "@/components/ds/PageHeader";
 import Tabs from "@/components/ds/Tabs";
@@ -62,7 +61,7 @@ export default function TestSeedPage() {
     'S&A': `${componentStyles.status.badgeDefault} border-[var(--color-primary)]/30`,
   };
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
   const { data: stats, isLoading, refetch: refetchStats } = useQuery({
     queryKey: ['seedStats'],
@@ -106,7 +105,7 @@ export default function TestSeedPage() {
         return;
       }
 
-      let profesor = profesores[0] || currentUser;
+      let profesor = profesores[0] || effectiveUser;
       if (!profesor || (profesor.rolPersonalizado !== 'PROF' && profesor.rolPersonalizado !== 'ADMIN')) {
         addLog('⚠️ No hay profesor disponible, usando administrador', 'warning');
       }
@@ -490,7 +489,7 @@ export default function TestSeedPage() {
 
       const feedbacks = await localDataClient.entities.FeedbackSemanal.list();
       for (const f of feedbacks) {
-        if (f.profesorId === currentUser?.id || currentUser?.rolPersonalizado === 'ADMIN') { // Only delete current user's or all if admin
+        if (f.profesorId === effectiveUser?.id || effectiveUser?.rolPersonalizado === 'ADMIN') { // Only delete current user's or all if admin
           await localDataClient.entities.FeedbackSemanal.delete(f.id);
         }
       }
@@ -513,28 +512,28 @@ export default function TestSeedPage() {
 
       const asignaciones = await localDataClient.entities.Asignacion.list();
       for (const a of asignaciones) {
-        if (a.profesorId === currentUser?.id || currentUser?.rolPersonalizado === 'ADMIN') { // Only delete current user's or all if admin
+        if (a.profesorId === effectiveUser?.id || effectiveUser?.rolPersonalizado === 'ADMIN') { // Only delete current user's or all if admin
           await localDataClient.entities.Asignacion.delete(a.id);
         }
       }
       addLog(`✅ ${asignaciones.length} asignaciones eliminadas`, 'info');
 
       const planes = await localDataClient.entities.Plan.list();
-      const planesSeed = planes.filter(p => p.nombre.startsWith('Seed') && (p.profesorId === currentUser?.id || currentUser?.rolPersonalizado === 'ADMIN'));
+      const planesSeed = planes.filter(p => p.nombre.startsWith('Seed') && (p.profesorId === effectiveUser?.id || effectiveUser?.rolPersonalizado === 'ADMIN'));
       for (const p of planesSeed) {
         await localDataClient.entities.Plan.delete(p.id);
       }
       addLog(`✅ ${planesSeed.length} planes seed eliminados`, 'info');
 
       const bloques = await localDataClient.entities.Bloque.list();
-      const bloquesSeed = bloques.filter(b => b.code?.includes('SEED') && (b.profesorId === currentUser?.id || currentUser?.rolPersonalizado === 'ADMIN'));
+      const bloquesSeed = bloques.filter(b => b.code?.includes('SEED') && (b.profesorId === effectiveUser?.id || effectiveUser?.rolPersonalizado === 'ADMIN'));
       for (const b of bloquesSeed) {
         await localDataClient.entities.Bloque.delete(b.id);
       }
       addLog(`✅ ${bloquesSeed.length} ejercicios seed eliminados`, 'info');
 
       const piezas = await localDataClient.entities.Pieza.list();
-      const piezasSeed = piezas.filter(p => p.nombre.startsWith('Seed') && (p.profesorId === currentUser?.id || currentUser?.rolPersonalizado === 'ADMIN'));
+      const piezasSeed = piezas.filter(p => p.nombre.startsWith('Seed') && (p.profesorId === effectiveUser?.id || effectiveUser?.rolPersonalizado === 'ADMIN'));
       for (const p of piezasSeed) {
         await localDataClient.entities.Pieza.delete(p.id);
       }
@@ -815,7 +814,7 @@ export default function TestSeedPage() {
   const countAsignaciones = stats?.asignaciones.length || 0;
 
   // ======================== RENDER ========================
-  if (currentUser?.rolPersonalizado !== 'ADMIN') {
+  if (effectiveUser?.rolPersonalizado !== 'ADMIN') {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
         <Card className="max-w-md app-card">

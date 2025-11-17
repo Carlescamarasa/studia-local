@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 // Updated Card, Badge, Alert paths from @/components/ui to @/components/ds
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 // Preserving all helper functions and components used in the original file
-import { getNombreVisible, formatLocalDate, parseLocalDate, startOfMonday } from "../components/utils/helpers";
+import { getNombreVisible, formatLocalDate, parseLocalDate, startOfMonday, useEffectiveUser } from "../components/utils/helpers";
 import { calcularTiempoSesion } from "../components/study/sessionSequence";
 import SessionContentView from "../components/study/SessionContentView";
 import PageHeader from "@/components/ds/PageHeader";
@@ -39,7 +38,7 @@ export default function AsignacionDetallePage() {
   const urlParams = new URLSearchParams(window.location.search);
   const asignacionId = urlParams.get('id');
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
   const { data: asignacion, isLoading } = useQuery({
     queryKey: ['asignacion', asignacionId],
@@ -245,7 +244,7 @@ export default function AsignacionDetallePage() {
   const alumno = usuarios.find(u => u.id === asignacion.alumnoId);
   const isCerrada = asignacion.estado === 'cerrada';
   const isBorrador = asignacion.estado === 'borrador';
-  const isAdminOrProf = currentUser?.rolPersonalizado === 'ADMIN' || currentUser?.rolPersonalizado === 'PROF';
+  const isAdminOrProf = effectiveUser?.rolPersonalizado === 'ADMIN' || effectiveUser?.rolPersonalizado === 'PROF';
 
   return (
     <div className="min-h-screen bg-background">

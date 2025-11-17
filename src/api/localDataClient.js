@@ -30,8 +30,26 @@ export function setLocalDataRef(data) {
 
 // API legada: helpers de usuario actual usados directamente desde varias vistas
 export function getCurrentUser() {
+  // Si hay una sesión de Supabase activa, devolver null
+  // Verificar de forma síncrona si hay una sesión (Supabase guarda en localStorage)
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      // Verificar si hay claves de Supabase en localStorage
+      const hasSupabaseSession = Object.keys(window.localStorage).some(key => 
+        key.startsWith('sb-') && (key.includes('auth-token') || key.includes('auth.refresh'))
+      );
+      
+      if (hasSupabaseSession) {
+        // En modo Supabase, no usar localCurrentUserId
+        return null;
+      }
+    } catch (e) {
+      // Si hay error, continuar con la lógica normal
+    }
+  }
+  
   // Solo devolver usuario si hay un userId explícitamente almacenado en localStorage
-  // En modo Supabase, no hay localCurrentUserId, así que devolver null
+  // En modo local puro, usar localCurrentUserId
   const storedUserId = getStoredUserId(null);
   if (!storedUserId) {
     return null;
@@ -41,7 +59,7 @@ export function getCurrentUser() {
   const user = localDataRef.usuarios.find(u => u.id === storedUserId);
   if (user) return user;
   
-  // Si no se encuentra, devolver null (no usar fallback en modo Supabase)
+  // Si no se encuentra, devolver null
   return null;
 }
 

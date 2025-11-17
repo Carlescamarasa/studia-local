@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { formatLocalDate, parseLocalDate, startOfMonday, displayName } from "@/components/utils/helpers";
+import { formatLocalDate, parseLocalDate, startOfMonday, displayName, useEffectiveUser } from "@/components/utils/helpers";
 
 export default function CrearAsignacionWizard({ onClose }) {
   const queryClient = useQueryClient();
@@ -36,7 +35,7 @@ export default function CrearAsignacionWizard({ onClose }) {
   const [searchPieza, setSearchPieza] = useState('');
   const [searchPlan, setSearchPlan] = useState('');
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
   const { data: estudiantes = [] } = useQuery({
     queryKey: ['estudiantes'],
@@ -83,7 +82,7 @@ export default function CrearAsignacionWizard({ onClose }) {
         notas: data.notas || null,
         plan: planCopy,
         piezaSnapshot,
-        profesorId: currentUser?.id,
+        profesorId: effectiveUser?.id,
       }));
 
       const results = [];

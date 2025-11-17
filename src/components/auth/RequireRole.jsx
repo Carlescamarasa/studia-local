@@ -3,17 +3,15 @@ import { useAuth } from "@/auth/AuthProvider";
 import { Card, CardContent } from "@/components/ds";
 import { Shield } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
-import { getEffectiveRole } from "@/components/utils/helpers";
-import { getCurrentUser } from "@/api/localDataClient";
+import { getEffectiveRole, useEffectiveUser } from "@/components/utils/helpers";
 
 /**
  * Componente guard que valida acceso por rol.
  * Si el usuario no tiene uno de los roles permitidos, muestra mensaje de "Acceso denegado".
- * Respeta simulación de usuario desde sessionStorage.
  */
 export default function RequireRole({ children, anyOf = [] }) {
   const { appRole, loading } = useAuth();
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
   // Esperar a que termine de cargar
   if (loading) {
@@ -21,20 +19,10 @@ export default function RequireRole({ children, anyOf = [] }) {
   }
 
   // Usar la función unificada para obtener el rol efectivo
-  const effectiveRole = getEffectiveRole({ appRole, currentUser });
+  const effectiveRole = getEffectiveRole({ appRole, currentUser: effectiveUser });
   
   // Debug: verificar qué valores se están pasando
-  console.log('[RequireRole] appRole:', appRole, 'currentUser:', currentUser?.rolPersonalizado, 'effectiveRole:', effectiveRole);
-
-  // En RequireRole.jsx, línea 29, añade:
-console.log('[RequireRole] Verificando acceso:', {
-  effectiveRole,
-  anyOf,
-  tieneAcceso: anyOf.includes(effectiveRole),
-  simulatingUser: sessionStorage.getItem('simulatingUser'),
-  currentUserRol: currentUser?.rolPersonalizado,
-  appRole
-});
+  console.log('[RequireRole] appRole:', appRole, 'effectiveUser:', effectiveUser?.rolPersonalizado, 'effectiveRole:', effectiveRole);
 
   // Si tiene acceso, renderizar children
   if (anyOf.includes(effectiveRole)) {

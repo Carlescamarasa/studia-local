@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ds";
 import { FileDown, Users, Target, Layers, Calendar, Activity, Shield, Upload, Music, BookOpen, AlertTriangle, CheckCircle2, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { displayName, calcularOffsetSemanas, calcularTiempoSesion } from "../components/utils/helpers";
+import { displayName, calcularOffsetSemanas, calcularTiempoSesion, useEffectiveUser } from "../components/utils/helpers";
 import { Alert, AlertDescription } from "@/components/ds";
 import { createPortal } from "react-dom";
 import PageHeader from "@/components/ds/PageHeader";
@@ -36,7 +35,7 @@ export default function ImportExportPage() {
   const [importFile, setImportFile] = useState(null);
   const [importResults, setImportResults] = useState(null);
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
   const isLoading = false;
 
   const { data: usuarios = [] } = useQuery({
@@ -86,7 +85,7 @@ export default function ImportExportPage() {
               nivel: item.nivel || 'principiante',
               tiempoObjetivoSeg: item.tiempoObjetivoSeg || 0,
               elementos: item.elementos || [],
-              profesorId: currentUser.id,
+              profesorId: effectiveUser.id,
             });
             results.created++;
           } catch (error) {
@@ -113,7 +112,7 @@ export default function ImportExportPage() {
               materialesRequeridos: item.materialesRequeridos || [],
               media: item.media || {},
               elementosOrdenados: item.elementosOrdenados || [],
-              profesorId: currentUser.id,
+              profesorId: effectiveUser.id,
             });
             results.created++;
           } catch (error) {
@@ -170,7 +169,7 @@ export default function ImportExportPage() {
               objetivoSemanalPorDefecto: item.objetivoSemanalPorDefecto || '',
               piezaId: piezaId,
               semanas: semanasResueltas,
-              profesorId: currentUser.id,
+              profesorId: effectiveUser.id,
             });
             results.created++;
           } catch (error) {
@@ -461,7 +460,7 @@ export default function ImportExportPage() {
     );
   }
 
-  if (currentUser?.rolPersonalizado !== 'ADMIN') {
+  if (effectiveUser?.rolPersonalizado !== 'ADMIN') {
     return (
       <div className="min-h-screen bg-[var(--color-surface-muted)] flex items-center justify-center p-6">
         <Card className="max-w-md rounded-2xl border-[var(--color-border-default)] shadow-sm">

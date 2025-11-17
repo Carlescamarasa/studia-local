@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ds/Button"; // Updated import path
 import { Badge } from "@/components/ds";
@@ -28,7 +27,8 @@ import {
   calcularOffsetSemanas,
   calcularTiempoSesion,
   aplanarSesion,
-  getNombreVisible
+  getNombreVisible,
+  useEffectiveUser
 } from "../components/utils/helpers";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "../components/study/sessionSequence";
 import TimelineProgreso from "../components/estudio/TimelineProgreso";
@@ -109,19 +109,15 @@ function HoyPageContent() {
 
   const sidebarCerradoRef = useRef(false);
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => localDataClient.entities.User.list(),
   });
 
-  const simulatingUser = sessionStorage.getItem('simulatingUser') ?
-    JSON.parse(sessionStorage.getItem('simulatingUser')) : null;
-
-  const userIdActual = simulatingUser?.id || currentUser?.id;
-  const isSimulacion = !!simulatingUser;
-  const alumnoActual = usuarios.find(u => u.id === userIdActual) || currentUser;
+  const userIdActual = effectiveUser?.id;
+  const alumnoActual = usuarios.find(u => u.id === userIdActual) || effectiveUser;
 
   const { data: asignacionesRaw = [] } = useQuery({
     queryKey: ['asignaciones'],
@@ -304,7 +300,7 @@ function HoyPageContent() {
   }, [cronometroActivo, sesionActiva, indiceActual, sesionFinalizada, timestampInicio, tiempoAcumuladoAntesPausa]);
 
   const guardarRegistroSesion = async (esFinal = false) => {
-    if (isSimulacion || !asignacionActiva || !sesionActiva) return;
+    if (!asignacionActiva || !sesionActiva) return;
 
     const listaEjecucion = aplanarSesion(sesionActiva);
     const tiempoPrevisto = listaEjecucion
@@ -357,7 +353,7 @@ function HoyPageContent() {
   };
 
   const guardarRegistroBloque = async (indice, estado, duracionReal = 0) => {
-    if (isSimulacion || !registroSesionId || !sesionActiva) return;
+    if (!registroSesionId || !sesionActiva) return;
 
     const listaEjecucion = aplanarSesion(sesionActiva);
     const bloque = listaEjecucion[indice];
@@ -393,7 +389,7 @@ function HoyPageContent() {
   };
 
   useEffect(() => {
-    if (!sesionActiva || sesionFinalizada || isSimulacion) return;
+    if (!sesionActiva || sesionFinalizada) return;
 
     if (!heartbeatIntervalRef.current) {
       heartbeatIntervalRef.current = setInterval(() => {
@@ -407,11 +403,11 @@ function HoyPageContent() {
         heartbeatIntervalRef.current = null;
       }
     };
-  }, [sesionActiva, sesionFinalizada, tiempoActual, completados, omitidos, registroSesionId, isSimulacion]);
+  }, [sesionActiva, sesionFinalizada, tiempoActual, completados, omitidos, registroSesionId]);
 
   useEffect(() => {
     const handlePageHide = () => {
-      if (sesionActiva && !sesionFinalizada && !isSimulacion && registroSesionId) {
+      if (sesionActiva && !sesionFinalizada && registroSesionId) {
         guardarRegistroSesion(false);
       }
     };
@@ -423,7 +419,7 @@ function HoyPageContent() {
       window.removeEventListener('pagehide', handlePageHide);
       window.removeEventListener('beforeunload', handlePageHide);
     };
-  }, [sesionActiva, sesionFinalizada, registroSesionId, tiempoActual, completados, omitidos, isSimulacion]);
+  }, [sesionActiva, sesionFinalizada, registroSesionId, tiempoActual, completados, omitidos]);
 
   useEffect(() => {
     if (!sesionActiva || sesionFinalizada) return;
@@ -494,44 +490,42 @@ function HoyPageContent() {
     setSesionFinalizada(false);
     setDatosFinal(null);
 
-    if (!isSimulacion) {
-      const ahora = new Date().toISOString();
-      const listaEjecucion = aplanarSesion(sesion);
-      const tiempoPrevisto = listaEjecucion
-        .filter(e => e.tipo !== 'AD')
-        .reduce((sum, e) => sum + (e.duracionSeg || 0), 0);
+    const ahora = new Date().toISOString();
+    const listaEjecucion = aplanarSesion(sesion);
+    const tiempoPrevisto = listaEjecucion
+      .filter(e => e.tipo !== 'AD')
+      .reduce((sum, e) => sum + (e.duracionSeg || 0), 0);
 
-      try {
-        const nuevoRegistro = await localDataClient.entities.RegistroSesion.create({
-          asignacionId: asignacionActiva.id,
-          alumnoId: userIdActual,
-          profesorAsignadoId: alumnoActual?.profesorAsignadoId || null,
-          semanaIdx: semanaIdx,
-          sesionIdx: sesionIdxProp,
-          inicioISO: ahora,
-          duracionRealSeg: 0,
-          duracionObjetivoSeg: tiempoPrevisto,
-          bloquesTotales: listaEjecucion.length,
-          bloquesCompletados: 0,
-          bloquesOmitidos: 0,
-          finalizada: false,
-          finAnticipado: false,
-          dispositivo: navigator.userAgent,
-          versionSchema: "1.0",
-          piezaNombre: asignacionActiva.piezaSnapshot?.nombre || '',
-          planNombre: asignacionActiva.plan?.nombre || '',
-          semanaNombre: semanaDelPlan?.nombre || '',
-          sesionNombre: sesion.nombre || '',
-          foco: sesion.foco || 'GEN',
-        });
-        setRegistroSesionId(nuevoRegistro.id);
-      } catch (error) {
-        console.error("Error creando registro:", error);
-      }
+    try {
+      const nuevoRegistro = await localDataClient.entities.RegistroSesion.create({
+        asignacionId: asignacionActiva.id,
+        alumnoId: userIdActual,
+        profesorAsignadoId: alumnoActual?.profesorAsignadoId || null,
+        semanaIdx: semanaIdx,
+        sesionIdx: sesionIdxProp,
+        inicioISO: ahora,
+        duracionRealSeg: 0,
+        duracionObjetivoSeg: tiempoPrevisto,
+        bloquesTotales: listaEjecucion.length,
+        bloquesCompletados: 0,
+        bloquesOmitidos: 0,
+        finalizada: false,
+        finAnticipado: false,
+        dispositivo: navigator.userAgent,
+        versionSchema: "1.0",
+        piezaNombre: asignacionActiva.piezaSnapshot?.nombre || '',
+        planNombre: asignacionActiva.plan?.nombre || '',
+        semanaNombre: semanaDelPlan?.nombre || '',
+        sesionNombre: sesion.nombre || '',
+        foco: sesion.foco || 'GEN',
+      });
+      setRegistroSesionId(nuevoRegistro.id);
+    } catch (error) {
+      console.error("Error creando registro:", error);
     }
 
-    const ahora = Date.now();
-    setTimestampInicio(ahora);
+    const timestampInicio = Date.now();
+    setTimestampInicio(timestampInicio);
     setTimestampUltimoPausa(null);
     setTiempoAcumuladoAntesPausa(0);
   };
@@ -815,7 +809,7 @@ function HoyPageContent() {
         onCalidadNotas={async (calidad, notas, mediaLinks) => {
           setDatosFinal(prev => ({ ...prev, calidad, notas, mediaLinks }));
 
-          if (!isSimulacion && registroSesionId) {
+          if (registroSesionId) {
             try {
               await localDataClient.entities.RegistroSesion.update(registroSesionId, {
                 calificacion: calidad,

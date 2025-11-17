@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ds";
 import { Badge } from "@/components/ds";
@@ -17,7 +16,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { displayName } from "../components/utils/helpers";
+import { displayName, useEffectiveUser } from "../components/utils/helpers";
 import { useSearchParams } from "react-router-dom";
 import MediaLinksInput from "@/components/common/MediaLinksInput";
 import PageHeader from "@/components/ds/PageHeader";
@@ -34,7 +33,7 @@ export default function PerfilPage() {
   const [editedData, setEditedData] = useState(null);
   const [saveResult, setSaveResult] = useState(null);
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
   const { data: allUsers } = useQuery({
     queryKey: ['allUsers'],
@@ -45,11 +44,11 @@ export default function PerfilPage() {
   const { data: targetUser, isLoading } = useQuery({
     queryKey: ['targetUser', userIdParam],
     queryFn: async () => {
-      if (userIdParam && currentUser?.rolPersonalizado === 'ADMIN') {
+      if (userIdParam && effectiveUser?.rolPersonalizado === 'ADMIN') {
         const users = await localDataClient.entities.User.list();
         return users.find(u => u.id === userIdParam);
       }
-      return currentUser;
+      return effectiveUser;
     },
     enabled: true,
   });
@@ -77,7 +76,7 @@ export default function PerfilPage() {
 
   const updateUserMutation = useMutation({
     mutationFn: async (data) => {
-      if (targetUser?.id === currentUser?.id) {
+      if (targetUser?.id === effectiveUser?.id) {
         await localDataClient.auth.updateMe(data);
       } else {
         await localDataClient.entities.User.update(targetUser.id, data);
@@ -92,7 +91,7 @@ export default function PerfilPage() {
       setSaveResult({ success: true, message: '✅ Usuario actualizado correctamente.' });
       toast.success('Perfil actualizado correctamente.');
 
-      if (targetUser?.id === currentUser?.id && editedData.rolPersonalizado !== currentUser.rolPersonalizado) {
+      if (targetUser?.id === effectiveUser?.id && editedData.rolPersonalizado !== effectiveUser.rolPersonalizado) {
         setTimeout(() => {
           const mainPages = {
             ADMIN: '/usuarios',
@@ -128,7 +127,7 @@ export default function PerfilPage() {
       }
     }
 
-    const isChangingOwnRole = targetUser?.id === currentUser?.id && editedData.rolPersonalizado !== currentUser?.rolPersonalizado;
+    const isChangingOwnRole = targetUser?.id === effectiveUser?.id && editedData.rolPersonalizado !== effectiveUser?.rolPersonalizado;
     
     if (isChangingOwnRole) {
       if (!window.confirm('¿Estás seguro de cambiar tu propio rol? Esto modificará tu acceso y navegación en la aplicación.')) {
@@ -166,9 +165,9 @@ export default function PerfilPage() {
     ESTU: 'Estudiante',
   };
 
-  const isEditingOwnProfile = targetUser?.id === currentUser?.id;
-  const canEditRole = currentUser?.rolPersonalizado === 'ADMIN';
-  const canEditProfesor = (currentUser?.rolPersonalizado === 'ADMIN' || currentUser?.rolPersonalizado === 'PROF') 
+  const isEditingOwnProfile = targetUser?.id === effectiveUser?.id;
+  const canEditRole = effectiveUser?.rolPersonalizado === 'ADMIN';
+  const canEditProfesor = (effectiveUser?.rolPersonalizado === 'ADMIN' || effectiveUser?.rolPersonalizado === 'PROF') 
                           && targetUser?.rolPersonalizado === 'ESTU';
   const isEstudiante = targetUser?.rolPersonalizado === 'ESTU';
   const isProfesor = targetUser?.rolPersonalizado === 'PROF';

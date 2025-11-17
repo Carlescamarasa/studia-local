@@ -14,21 +14,7 @@ export default function IndexPage() {
     if (loading) return;
     
     if (user) {
-      // Detectar simulación (mantener compatibilidad)
-      const simulatingUser = sessionStorage.getItem('simulatingUser');
-      const role = simulatingUser 
-        ? JSON.parse(simulatingUser).rolPersonalizado 
-        : appRole;
-      
-      const originalPath = sessionStorage.getItem('originalPath');
-      
-      if (originalPath && !simulatingUser) {
-        sessionStorage.removeItem('originalPath');
-        navigate(originalPath, { replace: true });
-        return;
-      }
-      
-      const targetPage = roleHome[role] || roleHome.ESTU;
+      const targetPage = roleHome[appRole] || roleHome.ESTU;
       const normalizedTarget = targetPage.split('?')[0].replace(/\/$/, '') || '/';
       const normalizedCurrent = window.location.pathname.split('?')[0].replace(/\/$/, '') || '/';
       
