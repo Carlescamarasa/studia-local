@@ -15,7 +15,7 @@ const getISOWeekNumber = (date) => {
   return weekNum;
 };
 
-export default function WeekNavigator({ mondayISO, onPrev, onNext, onToday }) {
+export default function WeekNavigator({ mondayISO, onPrev, onNext, onToday, children }) {
   const [debounceTimer, setDebounceTimer] = useState(null);
 
   const handleDebounced = useCallback((action) => {
@@ -99,6 +99,12 @@ export default function WeekNavigator({ mondayISO, onPrev, onNext, onToday }) {
           <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
+      
+      {children && (
+        <div className="mt-4 pt-4 border-t border-[var(--color-border-default)]">
+          {children}
+        </div>
+      )}
     </Card>
   );
 }

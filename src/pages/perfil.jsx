@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ds";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   User, ArrowLeft, Mail, Shield, Target, Music,
-  Save, Edit, AlertCircle, CheckCircle
+  Save, Edit, AlertCircle, CheckCircle, Sun, Moon, Monitor
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -22,12 +22,14 @@ import { useSearchParams } from "react-router-dom";
 import MediaLinksInput from "@/components/common/MediaLinksInput";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
+import { useDesign } from "@/components/design/DesignProvider";
 
 export default function PerfilPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const userIdParam = searchParams.get('userId');
+  const { design, setDesignPartial } = useDesign();
   
   const [editedData, setEditedData] = useState(null);
   const [saveResult, setSaveResult] = useState(null);
@@ -258,8 +260,8 @@ export default function PerfilPage() {
                     </SelectContent>
                   </Select>
                   {editedData.rolPersonalizado === 'ADMIN' && targetUser?.rolPersonalizado === 'ADMIN' && (
-                    <p className={`${componentStyles.typography.smallMetaText} text-[var(--color-warning)] flex items-center gap-1`}>
-                      <AlertCircle className="w-3 h-3" />
+                    <p className={`${componentStyles.typography.smallMetaText} text-[var(--color-text-secondary)] flex items-center gap-1`}>
+                      <AlertCircle className="w-3 h-3 text-[var(--color-warning)]" />
                       Verifica que no sea el último administrador antes de cambiar
                     </p>
                   )}
@@ -341,6 +343,50 @@ export default function PerfilPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {isEditingOwnProfile && (
+              <div className="space-y-2">
+                <Label htmlFor="theme" className="text-[var(--color-text-primary)]">Tema de la Aplicación</Label>
+                <Select
+                  value={design?.theme || 'system'}
+                  onValueChange={(value) => {
+                    setDesignPartial('theme', value);
+                    toast.success(`Tema cambiado a ${value === 'system' ? 'Predeterminado' : value === 'dark' ? 'Oscuro' : 'Claro'}`);
+                  }}
+                >
+                  <SelectTrigger id="theme" className={componentStyles.controls.selectDefault}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">
+                      <div className="flex items-center gap-2">
+                        <Sun className="w-4 h-4" />
+                        Claro
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="dark">
+                      <div className="flex items-center gap-2">
+                        <Moon className="w-4 h-4" />
+                        Oscuro
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="system">
+                      <div className="flex items-center gap-2">
+                        <Monitor className="w-4 h-4" />
+                        Predeterminado (Sistema)
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  {design?.theme === 'system' 
+                    ? 'Sigue la preferencia de tu sistema operativo'
+                    : design?.theme === 'dark'
+                    ? 'Tema oscuro activado'
+                    : 'Tema claro activado'}
+                </p>
+              </div>
+            )}
           </div>
 
           {isProfesor && (

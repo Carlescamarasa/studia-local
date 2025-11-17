@@ -13,23 +13,50 @@ const CARD_TONE_PRIMARY = "app-card border-2 border-[var(--color-primary)] bg-[v
 const CARD_TONE_ACCENT = "app-card border-2 border-[var(--color-accent)] bg-[var(--color-surface)]";
 const CARD_TONE_SECONDARY = "app-card border-2 border-[var(--color-secondary)] bg-[var(--color-surface)]";
 const PANEL_SESSION = "app-panel bg-[var(--color-surface-muted)] hover:shadow-md transition-all";
-const CARD_METRIC = "app-card border border-[var(--color-primary)] bg-[var(--color-primary-soft)] hover:shadow-md transition-shadow";
+const CARD_METRIC = "app-card border border-[var(--color-border-default)] bg-[var(--color-surface)] hover:shadow-sm transition-shadow";
 
 export const componentStyles = {
   layout: {
+    // Fondos y backgrounds (compatibilidad hacia atrás)
     appBackground: "bg-background text-foreground",
     pageBackground: "bg-background",
     sidebarBackground: "bg-card text-ui",
     panelBackground: "app-panel",
+    
+    // Nuevos patrones de layout de página
+    page: "max-w-[var(--page-max-width)] mx-auto px-[var(--page-padding-x)] py-[var(--page-padding-y)] space-y-[var(--page-section-gap-y)]",
+    
+    pageHeaderRow: "flex items-center justify-between gap-4 flex-wrap",
+    
+    pageContent: "space-y-[var(--page-section-gap-y)]",
+    
+    // Grid de 12 columnas
+    grid12: "grid grid-cols-12 gap-x-[var(--grid-gap-x)] gap-y-[var(--grid-gap-y)]",
+    
+    // Grid main + aside (12 columnas)
+    grid12MainAside: "", // Se usa junto con grid12, las clases específicas se aplican en los hijos
+    grid12Main: "col-span-12 lg:col-span-8",
+    grid12Aside: "col-span-12 lg:col-span-4",
+    
+    // Fila de KPIs (responsive)
+    kpiRow: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-[var(--grid-gap-x)] gap-y-[var(--grid-gap-y)]",
+    
+    // Sección de tabla
+    tableSection: "overflow-x-auto",
+    
+    // Barra de filtros
+    filterBar: "flex flex-wrap items-center gap-2 md:gap-3",
   },
 
   typography: {
-    pageTitle: "text-3xl font-bold text-ui",
-    sectionTitle: "text-lg md:text-xl font-semibold text-ui",
-    cardTitle: "text-base md:text-lg font-semibold text-ui",
-    bodyText: "text-sm md:text-base text-ui",
-    smallMetaText: "text-xs text-muted",
-    pageSubtitle: "text-sm md:text-base text-ui/80 leading-relaxed",
+    // Títulos usan Tenor Sans (fontFamilyHeadings) desde variables CSS
+    pageTitle: "text-3xl font-bold text-ui font-headings",
+    sectionTitle: "text-lg md:text-xl font-semibold text-ui font-headings",
+    cardTitle: "text-base md:text-lg font-semibold text-ui font-headings",
+    // Textos base usan fuente del sistema (fontFamilyBase) desde variables CSS
+    bodyText: "text-sm md:text-base text-ui font-base",
+    smallMetaText: "text-xs text-muted font-base",
+    pageSubtitle: "text-sm md:text-base text-ui/80 leading-relaxed font-base",
   },
 
   // Nuevos grupos genéricos
@@ -63,8 +90,8 @@ export const componentStyles = {
   },
 
   tabs: {
-    tabsSegmentedContainer: "inline-flex items-center gap-1 rounded-full bg-[var(--color-surface-muted)] p-1 shadow-sm",
-    tabsSegmentedItem: "px-3 py-1.5 text-xs sm:text-sm rounded-full transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] text-ui/80 hover:bg-[var(--color-surface-muted)]",
+    tabsSegmentedContainer: "inline-flex items-center gap-1 rounded-lg bg-[var(--color-surface-muted)] p-1 shadow-sm",
+    tabsSegmentedItem: "px-3 py-1.5 text-xs sm:text-sm rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] text-ui/80 hover:bg-[var(--color-surface-muted)]",
     tabsSegmentedItemActive: "bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border border-[var(--color-primary)] shadow-sm",
     tabsUnderlineContainer: "flex items-center gap-1 border-b border-[var(--color-border-default)]",
     tabsUnderlineItem: "px-2.5 py-2 text-sm text-ui/80 hover:text-ui border-b-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
@@ -74,7 +101,7 @@ export const componentStyles = {
   nav: {
     menuSectionTitle: "text-xs uppercase tracking-wide text-ui/70 font-semibold px-2.5 py-2",
     menuItem: "flex items-center gap-2 px-2.5 py-2 rounded-lg text-ui/90 hover:bg-[var(--color-surface-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-    menuItemActive: "bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border border-[var(--color-primary)] shadow-sm",
+    menuItemActive: "bg-[var(--sidebar-item-active-bg,var(--color-primary-soft))] text-[var(--sidebar-item-active-text,var(--color-text-primary))] border border-[var(--color-primary)] shadow-sm",
   },
 
   empty: {
@@ -143,8 +170,8 @@ export const componentStyles = {
     emptyStateText: "text-ui/80 text-sm",
 
     // Tabs (alias hacia tabs.*)
-    tabsSegmentedContainer: "inline-flex items-center gap-1 rounded-full bg-[var(--color-surface-muted)] p-1 shadow-sm",
-    tabsSegmentedButton: "px-3 py-1.5 text-xs sm:text-sm rounded-full transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] text-ui/80 hover:bg-[var(--color-surface-muted)]",
+    tabsSegmentedContainer: "inline-flex items-center gap-1 rounded-lg bg-[var(--color-surface-muted)] p-1 shadow-sm",
+    tabsSegmentedButton: "px-3 py-1.5 text-xs sm:text-sm rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] text-ui/80 hover:bg-[var(--color-surface-muted)]",
     tabsSegmentedButtonActive: "bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border border-[var(--color-primary)] shadow-sm",
     tabsUnderlineContainer: "flex items-center gap-1 border-b border-[var(--color-border-default)]",
     tabsUnderlineButton: "px-2.5 py-2 text-sm text-ui/80 hover:text-ui border-b-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background",

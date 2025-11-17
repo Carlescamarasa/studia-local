@@ -42,6 +42,8 @@ import { componentStyles } from "@/design/componentStyles";
 import { Outlet } from "react-router-dom";
 import { displayName } from "@/components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import RequireRole from "@/components/auth/RequireRole";
 import { DesignPageContent } from "@/pages/design.jsx";
@@ -84,6 +86,15 @@ const SIDEBAR_WIDTH = 280;
 /* ------------------------------- Layout --------------------------------- */
 function LayoutContent() {
   const { loadPreset, design, currentPresetId, setPresetId, basePresets, setDesignPartial } = useDesign();
+  
+  // Debug: verificar que basePresets está disponible
+  useEffect(() => {
+    if (basePresets) {
+      console.log('[Layout] basePresets disponibles:', basePresets.length, basePresets.map(p => p.id));
+    } else {
+      console.warn('[Layout] basePresets es undefined');
+    }
+  }, [basePresets]);
   const location = useLocation();
   const navigate = useNavigate();
   const { abierto, toggleSidebar, closeSidebar } = useSidebar();
@@ -323,12 +334,14 @@ function LayoutContent() {
           inert={!abierto && isMobile ? "" : undefined}
           tabIndex={-1}
           className={`
-            bg-card border-r border-[var(--color-border-default)] z-[90] flex flex-col
+            z-[90] flex flex-col
             transition-transform duration-200 will-change-transform transform-gpu
             fixed inset-y-0 left-0 w-[280px]
             ${abierto ? "translate-x-0" : "-translate-x-full lg:-translate-x-full"}
           `}
           style={{
+            backgroundColor: 'var(--sidebar-bg, var(--color-surface-elevated))',
+            borderRight: '1px solid var(--sidebar-border, var(--color-border-default))',
             transform: abierto ? 'translateX(0)' : 'translateX(-100%)',
           }}
         >
@@ -385,44 +398,53 @@ function LayoutContent() {
 
           {/* Pie del sidebar */}
           <div className="border-t border-[var(--color-border-default)] p-4 pt-3 space-y-3 text-[var(--color-text-secondary)]">
-            {/* Selector de Estilo y Tema */}
+            {/* Selector de Estilo */}
             <div className="px-2 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border-strong)]">
-              <label className="text-[11px] font-medium text-[var(--color-text-primary)] mb-1 block">
-                Estilo y Tema:
-              </label>
               <Select
-                value={`${currentPresetId || 'default'}-${design?.theme || 'light'}`}
-                onValueChange={(value) => {
-                  const [presetId, theme] = value.split('-');
-                  const currentTheme = design?.theme || 'light';
-                  
-                  // Si solo cambia el tema (mismo presetId), solo actualizar el tema
-                  if (presetId === (currentPresetId || 'default') && theme !== currentTheme) {
-                    setDesignPartial('theme', theme);
-                  } 
-                  // Si cambia el preset base, cambiar preset y tema
-                  else if (presetId !== (currentPresetId || 'default')) {
+                value={currentPresetId || 'studia'}
+                onValueChange={(presetId) => {
                   setPresetId(presetId);
-                  setDesignPartial('theme', theme);
-                  }
                 }}
               >
                 <SelectTrigger className={`h-8 text-xs ${componentStyles.controls.selectDefault}`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {basePresets?.map((preset) => (
-                    <React.Fragment key={preset.id}>
-                      <SelectItem value={`${preset.id}-light`}>
-                        {preset.label} – Light
+                  {basePresets && basePresets.length > 0 ? (
+                    basePresets.map((preset) => (
+                      <SelectItem key={preset.id} value={preset.id}>
+                        {preset.label}
                       </SelectItem>
-                      <SelectItem value={`${preset.id}-dark`}>
-                        {preset.label} – Dark
-                      </SelectItem>
-                    </React.Fragment>
-                  ))}
+                    ))
+                  ) : (
+                    <SelectItem value="default" disabled>
+                      No hay presets disponibles
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
+            </div>
+            
+            {/* Switch de Tema Light/Dark */}
+            <div className="px-2 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border-strong)]">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <Label htmlFor="theme-switch" className="text-[11px] font-medium text-[var(--color-text-primary)] block">
+                    Tema:
+                  </Label>
+                  <p className="text-[10px] text-[var(--color-text-secondary)] mt-0.5">
+                    {design?.theme === 'dark' ? 'Dark' : 'Light'}
+                  </p>
+                </div>
+                <Switch
+                  id="theme-switch"
+                  checked={design?.theme === 'dark'}
+                  onCheckedChange={(checked) => {
+                    setDesignPartial('theme', checked ? 'dark' : 'light');
+                  }}
+                  className="shrink-0"
+                />
+              </div>
             </div>
             {/* Selector de usuario local */}
             <div className="px-2 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border-strong)]">

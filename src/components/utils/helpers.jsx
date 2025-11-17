@@ -69,11 +69,32 @@ export function displayNameById(userId) {
 
 /**
  * Formatea minutos a cadena humana: "9 h 42 min" u "42 min" si < 1h
+ * Si las horas son >= 24, muestra formato "D d H h M min"
  */
 export function formatDurationMinutes(totalMinutes) {
   const minutes = Math.max(0, Math.floor(totalMinutes || 0));
   const hours = Math.floor(minutes / 60);
   const rem = minutes % 60;
+  
+  // Si las horas son >= 24, mostrar formato con días
+  if (hours >= 24) {
+    const dias = Math.floor(hours / 24);
+    const horasRestantes = hours % 24;
+    if (dias > 0 && horasRestantes > 0 && rem > 0) {
+      return `${dias} d ${horasRestantes} h ${rem} min`;
+    }
+    if (dias > 0 && horasRestantes > 0) {
+      return `${dias} d ${horasRestantes} h`;
+    }
+    if (dias > 0 && rem > 0) {
+      return `${dias} d ${rem} min`;
+    }
+    if (dias > 0) {
+      return `${dias} d`;
+    }
+  }
+  
+  // Formato normal para < 24h
   if (hours <= 0) {
     return `${rem} min`;
   }

@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
 import { Input } from "@/components/ui/input";
+import DateRangePicker from "@/components/ui/DateRangePicker";
 import { Badge } from "@/components/ds";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import {
@@ -76,11 +77,31 @@ const normalizeAggregate = (n) => {
   return Math.round(n);
 };
 
-// Formatea una duración en segundos a "H h M min" (ocultando horas si son 0)
+// Formatea una duración en segundos a "H h M min" o "D d H h M min" si >= 24h
 const formatDuracionHM = (duracionSeg) => {
   const totalSeg = normalizeAggregate(duracionSeg);
   const horas = Math.floor(totalSeg / 3600);
   const minutos = Math.floor((totalSeg % 3600) / 60);
+  
+  // Si las horas son >= 24, mostrar formato con días
+  if (horas >= 24) {
+    const dias = Math.floor(horas / 24);
+    const horasRestantes = horas % 24;
+    if (dias > 0 && horasRestantes > 0 && minutos > 0) {
+      return `${dias} d ${horasRestantes} h ${minutos} min`;
+    }
+    if (dias > 0 && horasRestantes > 0) {
+      return `${dias} d ${horasRestantes} h`;
+    }
+    if (dias > 0 && minutos > 0) {
+      return `${dias} d ${minutos} min`;
+    }
+    if (dias > 0) {
+      return `${dias} d`;
+    }
+  }
+  
+  // Formato normal para < 24h
   if (horas > 0 && minutos > 0) return `${horas} h ${minutos} min`;
   if (horas > 0) return `${horas} h`;
   return `${minutos} min`;
@@ -688,23 +709,14 @@ function EstadisticasPageContent() {
         filters={
           <div className={componentStyles.components.panelBase + " p-3 md:p-4 space-y-3"}>
             <div className="flex gap-2 flex-wrap items-center">
-              <div className="flex gap-2 items-center flex-wrap">
-                <Input
-                  type="date"
-                  value={periodoInicio}
-                  onChange={(e) => setPeriodoInicio(e.target.value)}
-                  className="h-10 rounded-xl border-[var(--color-border-default)] focus-brand text-sm w-full md:w-auto"
-                  aria-label="Fecha de inicio"
-                />
-                <span className="text-[var(--color-text-secondary)]">—</span>
-                <Input
-                  type="date"
-                  value={periodoFin}
-                  onChange={(e) => setPeriodoFin(e.target.value)}
-                  className="h-10 rounded-xl border-[var(--color-border-default)] focus-brand text-sm w-full md:w-auto"
-                  aria-label="Fecha de fin"
-                />
-              </div>
+              <DateRangePicker
+                startDate={periodoInicio}
+                endDate={periodoFin}
+                onDateChange={(start, end) => {
+                  setPeriodoInicio(start);
+                  setPeriodoFin(end);
+                }}
+              />
               <div className="flex gap-1 flex-wrap">
                 {presets.map(p => (
                   <Button
@@ -748,7 +760,7 @@ function EstadisticasPageContent() {
         }
       />
 
-      <div className="max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+      <div className={componentStyles.layout.page}>
         <div className="flex justify-center">
           <Tabs
             variant="segmented"
@@ -767,41 +779,41 @@ function EstadisticasPageContent() {
 
         {tabActiva === 'resumen' && (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <div className={componentStyles.layout.kpiRow}>
               <Card className={componentStyles.components.cardKpi}>
-                <CardContent className="pt-4 text-center">
-                  <Clock className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />
-                  <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+                <CardContent className="p-3 text-center">
+                  <Clock className="w-5 h-5 mx-auto mb-2 text-[var(--color-text-secondary)]" />
+                  <p className="text-3xl font-bold text-[var(--color-text-primary)] mb-1">
                     {formatDuracionHM(kpis.tiempoTotal)}
                   </p>
-                  <p className="text-xs text-[var(--color-text-secondary)]">Tiempo total</p>
+                  <p className="text-sm text-[var(--color-text-secondary)]">Tiempo total</p>
                 </CardContent>
               </Card>
 
               <Card className={componentStyles.components.cardKpi}>
-                <CardContent className="pt-4 text-center">
-                  <Star className="w-6 h-6 mx-auto mb-2 text-[var(--color-success)]" />
-                  <p className="text-2xl font-bold text-[var(--color-text-primary)]">{kpis.racha.actual}</p>
-                  <p className="text-xs text-[var(--color-text-secondary)]">Racha</p>
-                  <p className="text-xs text-[var(--color-text-secondary)]">Máx: {kpis.racha.maxima}</p>
+                <CardContent className="p-3 text-center">
+                  <Star className="w-5 h-5 mx-auto mb-2 text-[var(--color-text-secondary)]" />
+                  <p className="text-3xl font-bold text-[var(--color-text-primary)] mb-1">{kpis.racha.actual}</p>
+                  <p className="text-sm text-[var(--color-text-secondary)]">Racha</p>
+                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">Máx: {kpis.racha.maxima}</p>
                 </CardContent>
               </Card>
 
               <Card className={componentStyles.components.cardKpi}>
-                <CardContent className="pt-4 text-center">
-                  <Smile className="w-6 h-6 mx-auto mb-2 text-[var(--color-info)]" />
-                  <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+                <CardContent className="p-3 text-center">
+                  <Smile className="w-5 h-5 mx-auto mb-2 text-[var(--color-text-secondary)]" />
+                  <p className="text-3xl font-bold text-[var(--color-text-primary)] mb-1">
                     {kpis.calidadPromedio}/4
                   </p>
-                  <p className="text-xs text-[var(--color-text-secondary)]">Calidad</p>
+                  <p className="text-sm text-[var(--color-text-secondary)]">Calidad</p>
                 </CardContent>
               </Card>
 
               <Card className={componentStyles.components.cardKpi}>
-                <CardContent className="pt-4 text-center">
-                  <Calendar className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />
-                  <p className="text-2xl font-bold text-[var(--color-text-primary)]">{kpis.semanasDistintas}</p>
-                  <p className="text-xs text-[var(--color-text-secondary)]">Semanas</p>
+                <CardContent className="p-3 text-center">
+                  <Calendar className="w-5 h-5 mx-auto mb-2 text-[var(--color-text-secondary)]" />
+                  <p className="text-3xl font-bold text-[var(--color-text-primary)] mb-1">{kpis.semanasDistintas}</p>
+                  <p className="text-sm text-[var(--color-text-secondary)]">Semanas</p>
                 </CardContent>
               </Card>
             </div>

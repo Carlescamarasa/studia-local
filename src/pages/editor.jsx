@@ -35,7 +35,7 @@ export default function EditorPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-[1600px] mx-auto">
+    <div className={componentStyles.layout.page}>
       <div className="mb-6">
         <Alert className={`mb-6 ${componentStyles.containers.panelBase} border-l-4 border-l-[var(--color-info)] bg-[var(--color-info)]/10`}>
           <Layers className="w-6 h-6 text-[var(--color-info)]" />

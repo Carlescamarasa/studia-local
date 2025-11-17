@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useDesign } from "@/components/design/DesignProvider";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Alert, AlertDescription } from "@/components/ds";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,40 @@ import Tabs from "@/components/ds/Tabs";
 import { getAllPresets, saveCustomPreset, deleteCustomPreset, isBuiltInPreset, exportCustomPresets, importCustomPresets } from "@/components/design/DesignPresets";
 import { QAVisualContent } from "@/pages/qa-visual.jsx";
 import { componentStyles } from "@/design/componentStyles";
+
+function LayoutValuesDebug() {
+  const [values, setValues] = useState({});
+  
+  useEffect(() => {
+    const updateValues = () => {
+      const root = getComputedStyle(document.documentElement);
+      setValues({
+        maxWidth: root.getPropertyValue('--page-max-width').trim() || 'no definido',
+        paddingX: root.getPropertyValue('--page-padding-x').trim() || 'no definido',
+        paddingY: root.getPropertyValue('--page-padding-y').trim() || 'no definido',
+        gapX: root.getPropertyValue('--grid-gap-x').trim() || 'no definido',
+        gapY: root.getPropertyValue('--grid-gap-y').trim() || 'no definido',
+      });
+    };
+    updateValues();
+    // Actualizar cuando cambie el diseño
+    const interval = setInterval(updateValues, 500);
+    return () => clearInterval(interval);
+  }, []);
+  
+  return (
+    <div className="mt-4 p-3 bg-[var(--color-surface-muted)] rounded-lg text-xs">
+      <p className="font-semibold mb-2">Valores de Layout Actuales (CSS vars):</p>
+      <div className="space-y-1 font-mono">
+        <div>--page-max-width: <span className="text-[var(--color-primary)]">{values.maxWidth}</span></div>
+        <div>--page-padding-x: <span className="text-[var(--color-primary)]">{values.paddingX}</span></div>
+        <div>--page-padding-y: <span className="text-[var(--color-primary)]">{values.paddingY}</span></div>
+        <div>--grid-gap-x: <span className="text-[var(--color-primary)]">{values.gapX}</span></div>
+        <div>--grid-gap-y: <span className="text-[var(--color-primary)]">{values.gapY}</span></div>
+      </div>
+    </div>
+  );
+}
 
 function LabeledRow({ label, children }) {
   return (
@@ -319,7 +353,7 @@ function DesignPageContent({ embedded = false }) {
         subtitle="Ajusta tokens visuales en tiempo real sin tocar código"
       />
 
-      <div className="max-w-5xl mx-auto p-6 space-y-6">
+      <div className={componentStyles.layout.page}>
         {/* Selector de tema movido al sidebar (Layout) */}
         <Card className="app-card border-[var(--color-border-default)] bg-[var(--color-primary-soft)]">
                     <CardContent className="pt-4 text-[var(--color-text-primary)]">
@@ -1553,24 +1587,43 @@ function DesignPageContent({ embedded = false }) {
                       Preset de Estilo:
                     </Label>
                     <Select
-                      value={currentPresetId || 'default'}
+                      value={currentPresetId || 'studia'}
                       onValueChange={setPresetId}
                     >
                       <SelectTrigger className="w-full h-10 rounded-xl">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {basePresets?.map((preset) => (
-                          <SelectItem key={preset.id} value={preset.id}>
-                            <div>
-                              <div className="font-medium">{preset.label}</div>
-                              <div className="text-xs text-[var(--color-text-secondary)]">{preset.description}</div>
-                            </div>
+                        {basePresets && basePresets.length > 0 ? (
+                          basePresets.map((preset) => (
+                            <SelectItem key={preset.id} value={preset.id}>
+                              <div>
+                                <div className="font-medium">{preset.label}</div>
+                                <div className="text-xs text-[var(--color-text-secondary)]">{preset.description}</div>
+                              </div>
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="default" disabled>
+                            No hay presets disponibles
                           </SelectItem>
-                        ))}
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
+                  {/* Debug: mostrar información de presets */}
+                  <div className="mt-4 p-3 bg-[var(--color-surface-muted)] rounded-lg text-xs">
+                    <p className="font-semibold mb-2">Presets disponibles ({basePresets?.length || 0}):</p>
+                    <div className="space-y-1 font-mono text-[10px]">
+                      {basePresets?.map(p => (
+                        <div key={p.id} className={currentPresetId === p.id ? 'text-[var(--color-primary)] font-bold' : ''}>
+                          {p.id} - {p.label}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Debug: mostrar valores de layout actuales */}
+                  <LayoutValuesDebug />
                   {currentPresetId && basePresets && (
                     <div className="p-3 rounded-xl bg-[var(--color-surface-muted)] border border-[var(--color-border-default)]">
                       <p className="text-xs text-[var(--color-text-secondary)]">

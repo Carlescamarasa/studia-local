@@ -78,6 +78,27 @@ export const designSystem = {
     transitionFast: "100ms ease-out",
     transitionSlow: "250ms ease-out",
   },
+
+  layout: {
+    page: {
+      maxWidth: "1280px", // max-w-7xl equivalente
+      paddingX: "1rem", // 16px base, responsive se maneja en CSS
+      paddingY: "1.5rem", // 24px base
+      sectionGapY: "1.5rem", // 24px separación entre secciones
+    },
+    grid: {
+      columns: 12,
+      gapX: "1rem", // 16px gap horizontal
+      gapY: "1rem", // 16px gap vertical
+    },
+    sidebar: {
+      width: "16rem", // 256px - ya existe en components.sidebar, pero lo exponemos aquí también
+    },
+    section: {
+      paddingY: "1rem", // 16px padding vertical de secciones
+    },
+    density: 1.0, // Multiplicador de densidad (1.0 = normal, >1 más aire, <1 más denso)
+  },
 } as const;
 
 

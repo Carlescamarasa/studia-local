@@ -41,210 +41,182 @@ export interface DesignPreset {
 }
 
 /**
- * PRESET: default
- * Diseño base de Studia con primary = #fd9840
- * Neutrales estándar, radius medianos, sombras moderadas
+ * PRESET: studia (único estilo oficial)
+ * Inspirado en: bulletproofmusician.com
+ * Diseño limpio, legible y profesional para La Trompeta Sonará
+ * 
+ * Características:
+ * - Fondo blanco puro para máxima legibilidad
+ * - Neutros fríos/claros (grises azulados) para contraste suave
+ * - Radius moderados (lg/xl) para modernidad sin exceso
+ * - Sombras suaves para profundidad sutil
+ * - Tipografía: Tenor Sans en títulos, sistema (Inter/system-ui) en body
+ * - Espaciado generoso pero funcional
+ * - Color de marca: #fd9840 (obligatorio)
  */
-const PRESET_DEFAULT: DesignPreset = {
-  id: 'default',
-  label: 'Studia – Default',
-  description: 'Diseño base con neutrales estándar y radius medianos',
+const PRESET_STUDIA: DesignPreset = {
+  id: 'studia',
+  label: 'Studia',
+  description: 'Estilo oficial limpio y profesional inspirado en bulletproofmusician.com',
   design: {
     ...DEFAULT_DESIGN,
+    layout: {
+      ...DEFAULT_DESIGN.layout,
+      radius: {
+        global: 'lg',            // 12px - radius moderado
+        card: 'xl',              // 16px - cards elegantemente redondeadas
+        controls: 'lg',           // 12px - inputs/botones moderados
+        pill: 'full',             // Pills completamente redondeadas
+        modal: 'xl',              // 16px - modales elegantes
+      },
+      shadow: 'card',             // Sombras suaves elegantes
+      density: 'normal',          // Densidad media (equilibrio)
+      page: {
+        maxWidth: '1200px',       // Ancho moderado para lectura óptima
+        paddingX: '1.5rem',       // 24px - padding horizontal funcional
+        paddingY: '1.5rem',       // 24px - padding vertical funcional
+        sectionGapY: '2rem',       // 32px - espacio entre secciones claro
+      },
+      grid: {
+        columns: 12,
+        gapX: '1rem',              // 16px - gaps funcionales
+        gapY: '1rem',             // 16px
+      },
+    },
     colors: {
       ...DEFAULT_DESIGN.colors,
-      // REGLA: primary SIEMPRE #fd9840
+      // REGLA: primary SIEMPRE #fd9840 (obligatorio)
       primary: '#fd9840',
-      primarySoft: derivePrimarySoft('#fd9840'),
+      primarySoft: '#FFF5ED',     // Versión muy clara del naranja
       secondary: deriveSecondary('#fd9840'),
-      // Accent puede ser diferente (no es marca)
-      accent: '#F97316', // Naranja complementario
-      // Estados y neutrales se mantienen estándar
+      accent: '#F97316',           // Naranja complementario
+      // Estados estándar
       success: '#10B981',
       warning: '#F59E0B',
       danger: '#EF4444',
       info: '#3B82F6',
-      background: '#FFFFFF',
-      surface: '#F9FAFB',
-      surfaceElevated: '#FFFFFF',
-      surfaceMuted: '#F3F4F6',
+      // Neutrales: fondo blanco puro, neutros fríos/claros para máxima legibilidad
+      background: '#FFFFFF',      // Blanco puro
+      surface: '#F9FAFB',         // Gris frío muy claro
+      surfaceElevated: '#FFFFFF', // Blanco puro
+      surfaceMuted: '#F3F4F6',    // Gris frío claro
       text: {
-        primary: '#111827',
-        secondary: '#6B7280',
-        muted: '#9CA3AF',
+        primary: '#1A1F2E',       // Texto oscuro pero legible (azul-gris oscuro)
+        secondary: '#4A5568',    // Gris medio frío
+        muted: '#718096',        // Gris claro frío
         inverse: '#FFFFFF',
       },
       border: {
-        default: '#E5E7EB',
-        muted: '#F3F4F6',
-        strong: '#D1D5DB',
+        default: '#E2E8F0',       // Bordes fríos sutiles
+        muted: '#EDF2F7',
+        strong: '#CBD5E0',        // Bordes fríos más marcados
+      },
+    },
+    typography: {
+      ...DEFAULT_DESIGN.typography,
+      // Tipografía: Tenor Sans en títulos, sistema en body para legibilidad
+      fontFamilyHeadings: '"Tenor Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      fontFamilyBase: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif',
+      fontSizeBase: 16,           // Tamaño base estándar
+      fontSizeScale: 1.25,         // Escala moderada
+      serifHeadings: false,
+      lineHeight: {
+        tight: 1.3,               // Espaciado funcional
+        normal: 1.6,               // Espaciado cómodo para lectura
+        relaxed: 1.75,             // Relajado
       },
     },
     focus: {
       ring: {
         width: '2px',
         style: 'solid',
-        color: 'rgba(253, 152, 64, 0.5)', // primary con opacidad
+        color: 'rgba(253, 152, 64, 0.5)', // Primary con opacidad moderada
         offset: '2px',
+      },
+    },
+    chrome: {
+      sidebar: {
+        background: '#F9FAFB',     // Sidebar gris frío claro
+        border: '#E2E8F0',        // Borde frío suave
+        activeItemBg: '#FFF5ED',  // Item activo con primary soft
+        activeItemText: '#1A1F2E', // Texto oscuro legible
+        mutedItemText: '#718096', // Texto muted frío
+      },
+      header: {
+        background: '#FFFFFF',     // Header blanco puro
+        border: '#E2E8F0',        // Borde frío suave
+      },
+    },
+    controls: {
+      field: {
+        height: '2.5rem',         // 40px - altura funcional
+        background: '#FFFFFF',    // Fondo blanco
+        border: '#E2E8F0',        // Borde frío
+        radius: 'lg',             // Radius moderado
+      },
+      button: {
+        height: '2.5rem',         // 40px - altura funcional
+        radius: 'lg',             // Radius moderado
+        shadow: 'sm',             // Sombra suave
+      },
+      search: {
+        background: '#FFFFFF',    // Fondo blanco
+        border: '#E2E8F0',        // Borde frío
+        radius: 'lg',             // Radius moderado (no pill completo)
+        height: '2.5rem',          // 40px
+      },
+    },
+    components: {
+      ...DEFAULT_DESIGN.components,
+      card: {
+        ...DEFAULT_DESIGN.components.card,
+        padding: {
+          ...DEFAULT_DESIGN.components.card.padding,
+          x: '1.25rem',           // 20px - padding funcional
+          y: '1.25rem',           // 20px
+        },
+        radius: 'xl',             // Cards elegantemente redondeadas
+        shadow: 'card',           // Sombra suave elegante
+      },
+      input: {
+        padding: '0.5rem 0.875rem', // Funcional
+        radius: 'lg',
+        border: '1px solid',
+        borderColor: 'var(--color-border-default)',
+        focusRing: '2px solid var(--color-primary)',
+        focusRingOffset: '2px',
+      },
+      button: {
+        padding: {
+          sm: '0.375rem 0.75rem',
+          md: '0.5rem 1rem',      // Funcional
+          lg: '0.75rem 1.5rem',
+        },
+        radius: 'lg',
+        variants: {
+          ...DEFAULT_DESIGN.components.button.variants,
+        },
+      },
+      select: {
+        padding: '0.5rem 0.875rem',
+        radius: 'lg',
+        border: '1px solid',
+        borderColor: 'var(--color-border-default)',
       },
     },
     brandHue: getBrandHue('#fd9840'),
-  },
-};
-
-/**
- * PRESET: soft
- * Inspirado en apps de fitness/wellness (imagen referencia 1)
- * Características:
- * - Neutrales pastel y suaves
- * - Radius grandes (xl, 2xl)
- * - Sombras muy suaves (sm, card)
- * - Densidad normal/aireada
- * - Tipografía más redonda/amigable
- */
-const PRESET_SOFT: DesignPreset = {
-  id: 'soft',
-  label: 'Studia – Soft',
-  description: 'Estilo suave con neutrales pastel, radius grandes y sombras sutiles',
-  design: {
-    ...PRESET_DEFAULT.design,
-    colors: {
-      ...PRESET_DEFAULT.design.colors,
-      // REGLA: primary SIEMPRE #fd9840 (no cambia)
-      primary: '#fd9840',
-      primarySoft: '#FFF8F0', // Versión aún más suave
-      secondary: deriveSecondary('#fd9840'),
-      // Neutrales más suaves/pastel
-      background: '#FEFEFE', // Blanco ligeramente cálido
-      surface: '#FAFAFA', // Gris muy claro
-      surfaceElevated: '#FFFFFF',
-      surfaceMuted: '#F5F5F5', // Gris muy suave
-      text: {
-        primary: '#1A1A1A', // Negro ligeramente más suave
-        secondary: '#6B7280',
-        muted: '#9CA3AF',
-        inverse: '#FFFFFF',
-      },
-      border: {
-        default: '#E8E8E8', // Bordes más suaves
-        muted: '#F0F0F0',
-        strong: '#D8D8D8',
-      },
-    },
-    layout: {
-      ...PRESET_DEFAULT.design.layout,
-      radius: {
-        global: 'xl', // Radius más grandes
-        card: '2xl', // Cards muy redondeadas
-        controls: 'xl', // Inputs/botones más redondeados
-        pill: 'full', // Pills completamente redondeadas
-        modal: '2xl', // Modales muy redondeadas
-      },
-      shadow: 'card', // Sombras muy sutiles
-      density: 'normal',
-    },
-    typography: {
-      ...PRESET_DEFAULT.design.typography,
-      // Tipografía ligeramente más grande y espaciada
-      fontSizeBase: 16,
-      fontSizeScale: 1.2, // Escala ligeramente más suave
-      lineHeight: {
-        tight: 1.3,
-        normal: 1.6, // Más espaciado
-        relaxed: 1.8,
-      },
-    },
-    focus: {
-      ring: {
-        width: '2px',
-        style: 'solid',
-        color: 'rgba(253, 152, 64, 0.4)', // Más suave
-        offset: '3px',
-      },
-    },
-  },
-};
-
-/**
- * PRESET: contrast
- * Inspirado en dashboards profesionales (imagen referencia 3)
- * Características:
- * - Alto contraste entre neutrales
- * - Radius pequeños (sm, md)
- * - Sombras más marcadas (md, lg)
- * - Densidad compacta
- * - Tipografía más definida
- */
-const PRESET_CONTRAST: DesignPreset = {
-  id: 'contrast',
-  label: 'Studia – Contrast',
-  description: 'Estilo de alto contraste con radius pequeños y sombras marcadas',
-  design: {
-    ...PRESET_DEFAULT.design,
-    colors: {
-      ...PRESET_DEFAULT.design.colors,
-      // REGLA: primary SIEMPRE #fd9840 (no cambia)
-      primary: '#fd9840',
-      primarySoft: '#FFF0E0', // Versión más contrastada
-      secondary: deriveSecondary('#fd9840'),
-      // Neutrales más contrastados
-      background: '#FFFFFF',
-      surface: '#F5F5F5', // Más oscuro que default
-      surfaceElevated: '#FFFFFF',
-      surfaceMuted: '#E8E8E8', // Más oscuro para mayor contraste
-      text: {
-        primary: '#000000', // Negro puro para máximo contraste
-        secondary: '#4B5563', // Más oscuro
-        muted: '#6B7280',
-        inverse: '#FFFFFF',
-      },
-      border: {
-        default: '#D1D5DB', // Bordes más marcados
-        muted: '#E5E7EB',
-        strong: '#9CA3AF', // Bordes muy marcados
-      },
-    },
-    layout: {
-      ...PRESET_DEFAULT.design.layout,
-      radius: {
-        global: 'md', // Radius más pequeños
-        card: 'md', // Cards menos redondeadas
-        controls: 'md', // Inputs/botones menos redondeados
-        pill: 'lg', // Pills moderadamente redondeadas
-        modal: 'lg', // Modales menos redondeadas
-      },
-      shadow: 'lg', // Sombras más marcadas
-      density: 'compact', // Densidad compacta
-    },
-    typography: {
-      ...PRESET_DEFAULT.design.typography,
-      // Tipografía más definida
-      fontSizeBase: 15, // Ligeramente más pequeño
-      fontSizeScale: 1.3, // Escala más agresiva
-      lineHeight: {
-        tight: 1.2,
-        normal: 1.5,
-        relaxed: 1.7,
-      },
-    },
-    focus: {
-      ring: {
-        width: '3px', // Ring más grueso
-        style: 'solid',
-        color: 'rgba(253, 152, 64, 0.7)', // Más visible
-        offset: '2px',
-      },
-    },
+    theme: 'system', // Por defecto usar preferencia del sistema
   },
 };
 
 /**
  * Lista de todos los presets base disponibles
+ * NOTA: Solo existe un único preset oficial "Studia" (light y dark se manejan con toggle de tema)
  */
 export const DESIGN_PRESETS: DesignPreset[] = [
-  PRESET_DEFAULT,
-  PRESET_SOFT,
-  PRESET_CONTRAST,
+  PRESET_STUDIA,
+  // Nota: El modo dark se maneja mediante el toggle de tema en DesignProvider.
+  // Los colores dark se derivan automáticamente usando deriveDarkColors(), deriveDarkChrome() y deriveDarkControls().
 ];
 
 /**
@@ -258,6 +230,5 @@ export function findPresetById(id: string): DesignPreset | undefined {
  * Helper para obtener el preset por defecto
  */
 export function getDefaultPreset(): DesignPreset {
-  return PRESET_DEFAULT;
+  return PRESET_STUDIA;
 }
-

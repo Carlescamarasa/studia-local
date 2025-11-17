@@ -61,13 +61,21 @@ Objetivo: que un re-temeado se resuelva aquí y/o en tokens, no en componentes a
 1. Headers: usar `PageHeader` con `componentStyles.typography.pageTitle/pageSubtitle`.
 2. Tabs: `Tabs` unificado; estado activo = `primarySoft` + borde `primary`.
 3. Botones: `btn-*` y tamaños (`btn-sm/md/lg`) o `Button` con `variant/size`.
-4. Cards/Paneles: 
+4. Layout de página:
+   - Todas las páginas deben usar `componentStyles.layout.page` como wrapper principal en vez de combinaciones ad-hoc de `max-w-* mx-auto p-* space-y-*`.
+   - Las secciones grandes (paneles, tablas, bloques de KPIs) deben usar `componentStyles.layout.*` en vez de combinaciones ad-hoc de utilidades.
+   - Para filas de KPIs: usar `componentStyles.layout.kpiRow` (responsive: 1/2/4 columnas).
+   - Para grids de contenido: usar `componentStyles.layout.grid12` junto con `grid12Main` / `grid12Aside` para layouts main + aside.
+   - Para secciones de tabla: envolver en `componentStyles.layout.tableSection` para overflow-x-auto.
+   - Para barras de filtros: usar `componentStyles.layout.filterBar`.
+   - Dentro de una card/componente pequeño se permiten flex/gap locales, pero no maxWidth/paddings globales.
+5. Cards/Paneles: 
    - Uso directo: `className="app-card"` para el contenedor, `className="card-header"` / `className="card-content"` para secciones internas.
    - Variantes: usar `componentStyles.containers.*` (cardBase, cardElevated, cardMetric, panelBase) o `componentStyles.items.*` (itemCard, itemCardHighlight, itemRow). Todas se basan en `.app-card` y solo añaden variantes de color/borde.
    - El radius, padding y shadow se controlan desde tokens CSS (`components.card.*`) sin tocar JSX. Las clases usan `!important` para anular utilidades Tailwind (`rounded-*`, `p-*`, `shadow-*`).
-5. Contraste: usar `text-ui` para contenido primario, `text-ui/80` para secundario. Reservar `text-muted` solo para meta/desactivado.
-6. Colores: siempre usar tokens `var(--color-*)` o clases semánticas. No usar colores literales Tailwind (`bg-gray-50`, `text-slate-600`, etc.).
-7. Inline styles: evitarlos salvo layout dinámico (anchos/transformaciones basadas en datos). Preferir utilidades o estilos centralizados.
+6. Contraste: usar `text-ui` para contenido primario, `text-ui/80` para secundario. Reservar `text-muted` solo para meta/desactivado.
+7. Colores: siempre usar tokens `var(--color-*)` o clases semánticas. No usar colores literales Tailwind (`bg-gray-50`, `text-slate-600`, etc.).
+8. Inline styles: evitarlos salvo layout dinámico (anchos/transformaciones basadas en datos). Preferir utilidades o estilos centralizados.
 
 ## 6) Checklist por página
 
@@ -116,10 +124,29 @@ Esta sección recoge todos los elementos/atributos ya mapeados a tokens y CSS gl
 3) Layout, radius y sombras
 - Tokens: `layout.radius.{global,card,controls,pill,modal}`, `layout.density`, `layout.shadow`.
 - Tokens específicos de card: `components.card.*` (padding X/Y, radius, shadow, gap) - ver sección 6) Cards y Paneles.
+- Tokens de layout de página:
+  - `layout.page.{maxWidth,paddingX,paddingY,sectionGapY}`: configuración del wrapper principal de página.
+  - `layout.grid.{columns,gapX,gapY}`: configuración del grid de 12 columnas.
+  - `layout.sidebar.{width}`: ancho del sidebar (también disponible en `components.sidebar`).
+  - `layout.section.{paddingY}`: padding vertical de secciones.
 - Vars generadas:
   - `--radius-card`, `--radius-ctrl`, `--shadow-card`, `--space-*`, `--gap-*`.
+  - Layout de página: `--page-max-width`, `--page-padding-x`, `--page-padding-y`, `--page-section-gap-y`.
+  - Layout de grid: `--grid-columns`, `--grid-gap-x`, `--grid-gap-y`.
+  - Layout de sidebar: `--sidebar-width`.
+  - Layout de sección: `--section-padding-y`.
   - Card específicas: `--card-padding-x/y`, `--card-header-padding-x/y`, `--card-content-padding-x/y`, `--card-footer-padding-x/y`, `--card-gap`.
 - Densidad en `body`: `ds-density-{compact|normal|spacious}`.
+- Clases de layout en `componentStyles.layout`:
+  - `page`: wrapper principal de página (max-width, padding, spacing).
+  - `pageHeaderRow`: fila de header con título y acciones.
+  - `pageContent`: contenedor principal con spacing vertical.
+  - `grid12`: grid de 12 columnas base.
+  - `grid12Main`: columna principal (12/12 móvil, 8/12 desktop).
+  - `grid12Aside`: columna aside (12/12 móvil, 4/12 desktop).
+  - `kpiRow`: grid de KPIs responsive (1 col móvil, 2 cols tablet, 4 cols desktop).
+  - `tableSection`: contenedor para tablas con overflow-x-auto.
+  - `filterBar`: barra de filtros con flex y gaps.
 
 4) Controles (Inputs/Selects)
 - Clase: `.ctrl-field` (via `Input`/`SelectTrigger` o `useClassTokens.control`).

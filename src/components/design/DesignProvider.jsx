@@ -38,7 +38,7 @@ const DesignContext = createContext({
   deleteDesignPreset: () => {},
   isBuiltInPreset: () => false,
   // Nuevos: sistema de presets base
-  currentPresetId: 'default',
+      currentPresetId: 'studia',
   setPresetId: () => {},
   basePresets: DESIGN_PRESETS,
 });
@@ -65,7 +65,7 @@ function setNestedValue(obj, path, value) {
 }
 
 export function DesignProvider({ children }) {
-  // Estado para presetId base (default, soft, contrast)
+  // Estado para presetId base (solo 'studia' disponible)
   const [presetId, setPresetId] = useState(() => {
     try {
       const saved = localStorage.getItem("studia_base_preset_id");
@@ -73,34 +73,80 @@ export function DesignProvider({ children }) {
         return saved;
       }
     } catch (_) {}
-    return 'default';
+    return 'studia'; // Preset único oficial
   });
 
   // Helper para derivar colores dark desde colores light
+  // Usa los mismos colores cálidos que PRESET_STUDIA_DARK para mantener consistencia
   const deriveDarkColors = (lightColors) => {
     return {
       ...lightColors,
-      // Mantener primary siempre #fd9840
+      // REGLA: primary SIEMPRE #fd9840 (obligatorio, no cambia en dark)
       primary: lightColors.primary || '#fd9840',
-      primarySoft: '#1a1a1a', // Versión oscura del primary soft
+      primarySoft: '#2A1F16',     // Versión oscura cálida del primary soft
       secondary: lightColors.secondary || '#FB8C3A',
-      // Colores de superficie oscuros
-      background: '#0b0f19',
-      surface: '#0f172a',
-      surfaceElevated: '#111827',
-      surfaceMuted: '#1f2937',
-      // Colores de texto oscuros
+      // Estados mantienen coherencia
+      success: lightColors.success || '#10B981',
+      warning: lightColors.warning || '#F59E0B',
+      danger: lightColors.danger || '#EF4444',
+      info: lightColors.info || '#3B82F6',
+      // Neutrales: fondos oscuros con tinte cálido (marrón oscuro/negro cálido)
+      background: '#1A1512',      // Negro cálido (marrón muy oscuro)
+      surface: '#231D18',         // Superficie oscura cálida
+      surfaceElevated: '#2A241F', // Superficie elevada oscura cálida
+      surfaceMuted: '#1F1915',   // Gris oscuro cálido
+      // Colores de texto oscuros cálidos
       text: {
-        primary: '#e5e7eb',
-        secondary: '#cbd5e1',
-        muted: '#94a3b8',
-        inverse: '#0b0f19', // Fondo oscuro para texto inverso
+        primary: '#F5F0E8',       // Texto claro cálido (crema claro)
+        secondary: '#D4C4B0',    // Gris claro cálido (beige claro)
+        muted: '#A69581',         // Gris medio cálido
+        inverse: '#1A1512',       // Fondo oscuro para texto inverso
       },
-      // Colores de borde oscuros
+      // Colores de borde oscuros cálidos
       border: {
-        default: '#1f2937',
-        muted: '#0b1220',
-        strong: '#334155',
+        default: '#3A3229',       // Bordes oscuros cálidos (marrón oscuro)
+        muted: '#2A241F',
+        strong: '#4A3F35',        // Bordes oscuros cálidos más marcados
+      },
+    };
+  };
+
+  // Helper para derivar chrome dark (sidebar, header) desde chrome light
+  const deriveDarkChrome = () => {
+    return {
+      sidebar: {
+        background: '#231D18',    // Sidebar oscuro cálido coherente
+        border: '#3A3229',        // Borde oscuro cálido
+        activeItemBg: '#2A1F16', // Item activo oscuro cálido (primary soft oscuro)
+        activeItemText: '#F5F0E8', // Texto claro cálido
+        mutedItemText: '#A69581', // Texto muted cálido
+      },
+      header: {
+        background: '#2A241F',     // Header oscuro cálido
+        border: '#3A3229',        // Borde oscuro cálido
+      },
+    };
+  };
+
+  // Helper para derivar controls dark desde controls light
+  const deriveDarkControls = () => {
+    return {
+      field: {
+        height: '2.5rem',
+        background: '#231D18',    // Fondo oscuro cálido
+        border: '#3A3229',        // Borde oscuro cálido
+        radius: 'lg',
+      },
+      button: {
+        height: '2.5rem',
+        radius: 'lg',
+        shadow: 'md',             // Sombra más pronunciada en oscuro
+      },
+      search: {
+        background: '#231D18',    // Fondo oscuro cálido
+        border: '#3A3229',        // Borde oscuro cálido
+        radius: 'lg',
+        height: '2.5rem',
       },
     };
   };
@@ -113,11 +159,13 @@ export function DesignProvider({ children }) {
         const parsed = JSON.parse(custom);
         // Normalizar para asegurar estructura completa con merge profundo
         const normalized = normalizeDesign(parsed);
-        // Si el tema es dark, aplicar colores dark
+        // Si el tema es dark, aplicar colores dark, chrome y controls
         if (normalized.theme === 'dark') {
           return {
             ...normalized,
             colors: deriveDarkColors(normalized.colors),
+            chrome: deriveDarkChrome(),
+            controls: deriveDarkControls(),
           };
         }
         return normalized;
@@ -125,7 +173,17 @@ export function DesignProvider({ children }) {
     } catch (_) {}
     // Si no hay custom, usar el preset base por defecto
     const defaultPreset = findPresetById(presetId) || getDefaultPreset();
-    return normalizeDesign(defaultPreset.design);
+    const normalized = normalizeDesign(defaultPreset.design);
+    // Si el preset tiene theme dark, aplicar colores dark, chrome y controls
+    if (normalized.theme === 'dark') {
+      return {
+        ...normalized,
+        colors: deriveDarkColors(normalized.colors),
+        chrome: deriveDarkChrome(),
+        controls: deriveDarkControls(),
+      };
+    }
+    return normalized;
   });
 
   // Función para cambiar de preset base
@@ -136,11 +194,13 @@ export function DesignProvider({ children }) {
       // Limpiar preset personalizado al cambiar de preset base
       localStorage.removeItem("custom_design_preset");
       const normalized = normalizeDesign(preset.design);
-      // Si el tema actual es dark, aplicar colores dark
+      // Si el tema actual es dark, aplicar colores dark, chrome y controls
       if (normalized.theme === 'dark') {
         setDesign({
           ...normalized,
           colors: deriveDarkColors(normalized.colors),
+          chrome: deriveDarkChrome(),
+          controls: deriveDarkControls(),
         });
       } else {
         setDesign(normalized);
@@ -158,13 +218,7 @@ export function DesignProvider({ children }) {
     try {
       // Normalizar design antes de generar variables
       const normalized = normalizeDesign(design);
-      const vars = generateCSSVariables(normalized);
       const root = document.documentElement;
-      
-      // Aplicar todas las variables CSS
-      Object.entries(vars).forEach(([key, value]) => {
-        root.style.setProperty(key, value);
-      });
       
       // Aplicar clase de serif si corresponde
       if (normalized.typography?.serifHeadings) {
@@ -178,7 +232,40 @@ export function DesignProvider({ children }) {
       document.body.classList.add(`ds-density-${normalized.layout?.density || 'normal'}`);
 
       // Alternar modo oscuro/claro según el preset activo
-      if (normalized.theme === 'dark') {
+      // Si es 'system', detectar la preferencia del sistema
+      let effectiveTheme = normalized.theme;
+      let designToUse = normalized;
+      
+      if (normalized.theme === 'system') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        effectiveTheme = prefersDark ? 'dark' : 'light';
+        
+        // Si el sistema prefiere dark, aplicar colores dark temporalmente
+        if (prefersDark) {
+          designToUse = {
+            ...normalized,
+            colors: deriveDarkColors(normalized.colors),
+            chrome: deriveDarkChrome(),
+            controls: deriveDarkControls(),
+          };
+        }
+      } else if (normalized.theme === 'dark') {
+        designToUse = {
+          ...normalized,
+          colors: deriveDarkColors(normalized.colors),
+          chrome: deriveDarkChrome(),
+          controls: deriveDarkControls(),
+        };
+      }
+      
+      // Aplicar variables CSS del diseño correcto
+      const finalVars = generateCSSVariables(designToUse);
+      Object.entries(finalVars).forEach(([key, value]) => {
+        root.style.setProperty(key, value);
+      });
+      
+      // Aplicar clase dark según el tema efectivo
+      if (effectiveTheme === 'dark') {
         root.classList.add('dark');
       } else {
         root.classList.remove('dark');
@@ -203,28 +290,60 @@ export function DesignProvider({ children }) {
     }
   }, [design]);
 
+  // Detectar cambios en la preferencia del sistema cuando el tema es 'system'
+  // Esto fuerza una re-renderización cuando cambia la preferencia del sistema
+  useEffect(() => {
+    if (design?.theme !== 'system') return;
+    
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = () => {
+      // Forzar actualización del diseño para que se re-evalúe el tema efectivo
+      setDesign(prev => ({ ...prev }));
+    };
+    
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [design?.theme]);
+
   // Actualizar parcialmente el diseño usando un path
   const setDesignPartial = (path, value) => {
     setDesign(prev => {
       const updated = setNestedValue(prev, path, value);
       
-      // Si se cambia el tema a dark, derivar colores dark
-      if (path === 'theme' && value === 'dark') {
+      // Si se cambia el tema
+      if (path === 'theme') {
         const normalized = normalizeDesign(updated);
+        
+        // Si es dark, aplicar colores dark
+        if (value === 'dark') {
         return {
-          ...updated,
+            ...normalized,
           colors: deriveDarkColors(normalized.colors),
+            chrome: deriveDarkChrome(),
+            controls: deriveDarkControls(),
+            theme: 'dark',
         };
       }
       
-      // Si se cambia el tema a light, restaurar colores light del preset base
-      if (path === 'theme' && value === 'light') {
+        // Si es light, restaurar colores light del preset base
+        if (value === 'light') {
+          const preset = findPresetById(presetId) || getDefaultPreset();
+          const normalizedPreset = normalizeDesign(preset.design);
+          return {
+            ...normalizedPreset,
+            theme: 'light',
+          };
+        }
+        
+        // Si es system, mantener colores light pero marcar como system
+        if (value === 'system') {
         const preset = findPresetById(presetId) || getDefaultPreset();
-        const presetColors = normalizeDesign(preset.design).colors;
+          const normalizedPreset = normalizeDesign(preset.design);
         return {
-          ...updated,
-          colors: presetColors,
+            ...normalizedPreset,
+            theme: 'system',
         };
+        }
       }
       
       return updated;
@@ -290,7 +409,7 @@ export function DesignProvider({ children }) {
       },
       isBuiltInPreset,
       // Nuevos: sistema de presets base
-      currentPresetId: presetId,
+      currentPresetId: presetId || 'studia',
       setPresetId: handleSetPresetId,
       basePresets: DESIGN_PRESETS,
     }),

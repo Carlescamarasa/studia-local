@@ -492,55 +492,55 @@ function AgendaPageContent() {
             onPrev={() => cambiarSemana(-1)}
             onNext={() => cambiarSemana(1)}
             onToday={irSemanaActual}
-          />
+          >
+            {/* Búsqueda */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
+              <Input
+                id="search-input"
+                placeholder="Buscar estudiante... (Ctrl/⌘+K)"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={`w-full pl-9 pr-9 ${componentStyles.controls.inputDefault}`}
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </WeekNavigator>
         }
       />
 
-      <div className="max-w-7xl mx-auto p-4 md:p-6 lg:px-8 space-y-4">
-        {/* Búsqueda */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
-          <Input
-            id="search-input"
-            placeholder="Buscar estudiante... (Ctrl/⌘+K)"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={`w-full pl-9 pr-9 h-10 bg-transparent rounded-none border-0 border-b-2 border-[var(--color-border-strong)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${componentStyles.controls.inputDefault}`}
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-              aria-label="Limpiar búsqueda"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+      <div className={componentStyles.layout.page}>
 
         {/* Tabla de estudiantes */}
-        <Card className={componentStyles.containers.cardBase}>
-          <CardContent className="p-0">
-            <UnifiedTable
-              columns={columns}
-              data={tableData}
-              getRowActions={(row) => {
-                const actions = [];
-                if (row.asignacionActiva) {
-                  actions.push({
-                    id: 'view',
-                    label: 'Ver detalle de asignación',
-                    onClick: () => navigate(createPageUrl(`asignacion-detalle?id=${row.asignacionActiva.id}`)),
-                    icon: <Eye className="w-4 h-4" />,
-                  });
-                }
-                return actions;
-              }}
-              emptyMessage={searchTerm ? 'No se encontraron estudiantes' : 'No hay estudiantes asignados'}
-              keyField="id"
-            />
-          </CardContent>
-        </Card>
+        {/* Nota: UnifiedTable maneja sus propios Cards en móvil, no necesita contenedor adicional */}
+        <div className={componentStyles.layout.tableSection}>
+          <UnifiedTable
+            columns={columns}
+            data={tableData}
+            getRowActions={(row) => {
+              const actions = [];
+              if (row.asignacionActiva) {
+                actions.push({
+                  id: 'view',
+                  label: 'Ver detalle de asignación',
+                  onClick: () => navigate(createPageUrl(`asignacion-detalle?id=${row.asignacionActiva.id}`)),
+                  icon: <Eye className="w-4 h-4" />,
+                });
+              }
+              return actions;
+            }}
+            emptyMessage={searchTerm ? 'No se encontraron estudiantes' : 'No hay estudiantes asignados'}
+            keyField="id"
+          />
+        </div>
       </div>
 
       {/* Modal de feedback */}

@@ -11,7 +11,7 @@
 export type RadiusValue = 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
 export type ShadowValue = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'card';
 export type DensityValue = 'compact' | 'normal' | 'spacious';
-export type ThemeValue = 'light' | 'dark';
+export type ThemeValue = 'light' | 'dark' | 'system';
 
 // Mapeo de valores de radius a píxeles
 export const RADIUS_MAP: Record<RadiusValue, string> = {
@@ -114,6 +114,24 @@ export interface DesignTokens {
       xl: string;
       '2xl': string;
     };
+    // Nuevos tokens de layout de página
+    page: {
+      maxWidth: string;
+      paddingX: string;
+      paddingY: string;
+      sectionGapY: string;
+    };
+    grid: {
+      columns: number;
+      gapX: string;
+      gapY: string;
+    };
+    sidebar: {
+      width: string;
+    };
+    section: {
+      paddingY: string;
+    };
   };
   
   // Tipografía
@@ -128,6 +146,42 @@ export interface DesignTokens {
       tight: number;
       normal: number;
       relaxed: number;
+    };
+  };
+  
+  // Chrome (shell de la app: sidebar, header, paneles laterales)
+  chrome: {
+    sidebar: {
+      background: string;
+      border: string;
+      activeItemBg: string;
+      activeItemText: string;
+      mutedItemText?: string;
+    };
+    header: {
+      background: string;
+      border: string;
+    };
+  };
+  
+  // Controls (botones, inputs, search, textareas, selects)
+  controls: {
+    field: {
+      height: string;
+      background: string;
+      border: string;
+      radius: RadiusValue;
+    };
+    button: {
+      height: string;
+      radius: RadiusValue;
+      shadow: ShadowValue;
+    };
+    search: {
+      background: string;
+      border: string;
+      radius: RadiusValue;
+      height: string;
     };
   };
   
@@ -282,12 +336,30 @@ export const DEFAULT_DESIGN: DesignTokens = {
       xl: '1.5rem',            // 24px
       '2xl': '2rem',           // 32px
     },
+    // Nuevos tokens de layout de página
+    page: {
+      maxWidth: '1280px',      // max-w-7xl equivalente (80rem)
+      paddingX: '1rem',        // 16px base (responsive se maneja en CSS)
+      paddingY: '1.5rem',      // 24px base
+      sectionGapY: '1.5rem',   // 24px separación entre secciones
+    },
+    grid: {
+      columns: 12,             // Grid de 12 columnas
+      gapX: '1rem',            // 16px gap horizontal
+      gapY: '1rem',            // 16px gap vertical
+    },
+    sidebar: {
+      width: '16rem',          // 256px - ya existe en components.sidebar, pero lo exponemos aquí también
+    },
+    section: {
+      paddingY: '1rem',        // 16px padding vertical de secciones
+    },
   },
   
   // Tipografía
   typography: {
-    fontFamilyBase: 'Inter, system-ui, -apple-system, sans-serif',
-    fontFamilyHeadings: 'Inter, system-ui, -apple-system, sans-serif',
+    fontFamilyBase: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    fontFamilyHeadings: '"Tenor Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     fontFamilySerif: 'Georgia, "Times New Roman", serif',
     fontSizeBase: 16,          // px
     fontSizeScale: 1.25,        // Ratio entre tamaños
@@ -296,6 +368,42 @@ export const DEFAULT_DESIGN: DesignTokens = {
       tight: 1.25,
       normal: 1.5,
       relaxed: 1.75,
+    },
+  },
+  
+  // Chrome (shell de la app)
+  chrome: {
+    sidebar: {
+      background: 'var(--color-surface-elevated)',
+      border: 'var(--color-border-default)',
+      activeItemBg: 'var(--color-primary-soft)',
+      activeItemText: 'var(--color-text-primary)',
+      mutedItemText: 'var(--color-text-secondary)',
+    },
+    header: {
+      background: 'var(--color-surface-elevated)',
+      border: 'var(--color-border-default)',
+    },
+  },
+  
+  // Controls (botones, inputs, search)
+  controls: {
+    field: {
+      height: '2.5rem', // 40px - altura estándar para inputs
+      background: 'var(--color-surface)',
+      border: 'var(--color-border-default)',
+      radius: 'lg',
+    },
+    button: {
+      height: '2.5rem', // 40px - altura estándar para botones
+      radius: 'lg',
+      shadow: 'sm',
+    },
+    search: {
+      background: 'var(--color-surface)',
+      border: 'var(--color-border-default)',
+      radius: 'lg',
+      height: '2.5rem', // 40px - altura estándar para search
     },
   },
   
@@ -540,6 +648,31 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
     });
   }
   
+  // Layout de página
+  if (normalized.layout?.page) {
+    vars['--page-max-width'] = normalized.layout.page.maxWidth || DEFAULT_DESIGN.layout.page.maxWidth;
+    vars['--page-padding-x'] = normalized.layout.page.paddingX || DEFAULT_DESIGN.layout.page.paddingX;
+    vars['--page-padding-y'] = normalized.layout.page.paddingY || DEFAULT_DESIGN.layout.page.paddingY;
+    vars['--page-section-gap-y'] = normalized.layout.page.sectionGapY || DEFAULT_DESIGN.layout.page.sectionGapY;
+  }
+  
+  // Layout de grid
+  if (normalized.layout?.grid) {
+    vars['--grid-columns'] = String(normalized.layout.grid.columns || DEFAULT_DESIGN.layout.grid.columns);
+    vars['--grid-gap-x'] = normalized.layout.grid.gapX || DEFAULT_DESIGN.layout.grid.gapX;
+    vars['--grid-gap-y'] = normalized.layout.grid.gapY || DEFAULT_DESIGN.layout.grid.gapY;
+  }
+  
+  // Layout de sidebar
+  if (normalized.layout?.sidebar) {
+    vars['--sidebar-width'] = normalized.layout.sidebar.width || DEFAULT_DESIGN.layout.sidebar.width;
+  }
+  
+  // Layout de sección
+  if (normalized.layout?.section) {
+    vars['--section-padding-y'] = normalized.layout.section.paddingY || DEFAULT_DESIGN.layout.section.paddingY;
+  }
+  
   // Focus ring (con valores por defecto)
   const focusRing = normalized.focus?.ring || DEFAULT_DESIGN.focus.ring;
   vars['--focus-ring'] = `${focusRing.width} ${focusRing.style} ${focusRing.color}`;
@@ -555,18 +688,63 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
     // TODO(auditoría-DS3): Evaluar si hace falta exponer más escala (sm, md, lg) como CSS vars derivadas de `fontSizeBase` + `fontSizeScale`.
   }
   
+  // Chrome (shell de la app)
+  if (normalized.chrome) {
+    if (normalized.chrome.sidebar) {
+      vars['--sidebar-bg'] = normalized.chrome.sidebar.background || DEFAULT_DESIGN.chrome.sidebar.background;
+      vars['--sidebar-border'] = normalized.chrome.sidebar.border || DEFAULT_DESIGN.chrome.sidebar.border;
+      vars['--sidebar-item-active-bg'] = normalized.chrome.sidebar.activeItemBg || DEFAULT_DESIGN.chrome.sidebar.activeItemBg;
+      vars['--sidebar-item-active-text'] = normalized.chrome.sidebar.activeItemText || DEFAULT_DESIGN.chrome.sidebar.activeItemText;
+      if (normalized.chrome.sidebar.mutedItemText) {
+        vars['--sidebar-item-muted-text'] = normalized.chrome.sidebar.mutedItemText;
+      }
+    }
+    if (normalized.chrome.header) {
+      vars['--header-bg'] = normalized.chrome.header.background || DEFAULT_DESIGN.chrome.header.background;
+      vars['--header-border'] = normalized.chrome.header.border || DEFAULT_DESIGN.chrome.header.border;
+    }
+  }
+  
+  // Controls (botones, inputs, search)
+  if (normalized.controls) {
+    if (normalized.controls.field) {
+      vars['--ctrl-field-height'] = normalized.controls.field.height || DEFAULT_DESIGN.controls.field.height;
+      vars['--ctrl-field-bg'] = normalized.controls.field.background || DEFAULT_DESIGN.controls.field.background;
+      vars['--ctrl-field-border'] = normalized.controls.field.border || DEFAULT_DESIGN.controls.field.border;
+      vars['--ctrl-field-radius'] = getRadiusValue(normalized.controls.field.radius || DEFAULT_DESIGN.controls.field.radius);
+    }
+    if (normalized.controls.button) {
+      vars['--btn-height'] = normalized.controls.button.height || DEFAULT_DESIGN.controls.button.height;
+      vars['--btn-radius'] = getRadiusValue(normalized.controls.button.radius || DEFAULT_DESIGN.controls.button.radius);
+      vars['--btn-shadow'] = getShadowValue(normalized.controls.button.shadow || DEFAULT_DESIGN.controls.button.shadow);
+    }
+    if (normalized.controls.search) {
+      vars['--search-bg'] = normalized.controls.search.background || DEFAULT_DESIGN.controls.search.background;
+      vars['--search-border'] = normalized.controls.search.border || DEFAULT_DESIGN.controls.search.border;
+      vars['--search-radius'] = getRadiusValue(normalized.controls.search.radius || DEFAULT_DESIGN.controls.search.radius);
+      vars['--search-height'] = normalized.controls.search.height || DEFAULT_DESIGN.controls.search.height;
+    }
+  }
+  
   // Componentes
   if (normalized.components) {
     if (normalized.components.input) {
       vars['--input-padding'] = normalized.components.input.padding || DEFAULT_DESIGN.components.input.padding;
       vars['--input-radius'] = getRadiusValue(normalized.components.input.radius || DEFAULT_DESIGN.components.input.radius);
+      // Extraer width del border (ej: "2px solid" -> "2px")
+      const borderValue = normalized.components.input.border || DEFAULT_DESIGN.components.input.border;
+      const borderWidth = borderValue.split(' ')[0] || '1px';
+      vars['--input-border-width'] = borderWidth;
+      vars['--input-border-color'] = normalized.components.input.borderColor || DEFAULT_DESIGN.components.input.borderColor;
       // TODO(auditoría-DS3): Confirmar uso de `--input-radius`. En CSS global se usa principalmente `--radius-ctrl`.
     }
     if (normalized.components.button) {
       vars['--button-padding-sm'] = normalized.components.button.padding?.sm || DEFAULT_DESIGN.components.button.padding.sm;
       vars['--button-padding-md'] = normalized.components.button.padding?.md || DEFAULT_DESIGN.components.button.padding.md;
       vars['--button-padding-lg'] = normalized.components.button.padding?.lg || DEFAULT_DESIGN.components.button.padding.lg;
-      vars['--button-radius'] = getRadiusValue(normalized.components.button.radius || DEFAULT_DESIGN.components.button.radius);
+      // Alias de compatibilidad: --button-radius usa --btn-radius si está disponible
+      const btnRadius = normalized.controls?.button?.radius || normalized.components.button.radius || DEFAULT_DESIGN.components.button.radius;
+      vars['--button-radius'] = getRadiusValue(btnRadius);
     }
     if (normalized.components.card) {
       const card = normalized.components.card;
@@ -597,7 +775,8 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
       vars['--card-gap'] = card.gap || cardDefault.gap;
     }
     if (normalized.components.sidebar) {
-      vars['--sidebar-width'] = normalized.components.sidebar.width || DEFAULT_DESIGN.components.sidebar.width;
+      // Prioridad: layout.sidebar.width > components.sidebar.width
+      vars['--sidebar-width'] = normalized.layout?.sidebar?.width || normalized.components.sidebar.width || DEFAULT_DESIGN.components.sidebar.width;
       vars['--sidebar-width-collapsed'] = normalized.components.sidebar.widthCollapsed || DEFAULT_DESIGN.components.sidebar.widthCollapsed;
     }
     if (normalized.components.header) {
