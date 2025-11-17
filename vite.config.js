@@ -25,12 +25,17 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // React y React Router - chunk separado (debe cargarse primero)
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router')) {
-            return 'react-vendor';
+          // React y React DOM - DEBE cargarse primero, en su propio chunk
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+            return 'react-core';
           }
           
-          // Recharts - chunk separado (librería de gráficos grande e independiente)
+          // React Router - depende de React, pero separado
+          if (id.includes('node_modules/react-router')) {
+            return 'react-router';
+          }
+          
+          // Recharts - librería grande e independiente
           if (id.includes('node_modules/recharts')) {
             return 'recharts';
           }
@@ -40,9 +45,14 @@ export default defineConfig({
             return 'data-vendor';
           }
           
-          // Utilidades grandes
-          if (id.includes('node_modules/date-fns') || id.includes('node_modules/zod') || id.includes('node_modules/lucide-react')) {
+          // Utilidades grandes pero independientes
+          if (id.includes('node_modules/date-fns') || id.includes('node_modules/zod')) {
             return 'utils-vendor';
+          }
+          
+          // Lucide React - iconos (puede ser grande)
+          if (id.includes('node_modules/lucide-react')) {
+            return 'icons-vendor';
           }
           
           // React Hook Form y validadores
@@ -50,32 +60,35 @@ export default defineConfig({
             return 'forms-vendor';
           }
           
-          // Framer Motion - chunk separado (puede ser grande)
+          // Framer Motion - animaciones (puede ser grande)
           if (id.includes('node_modules/framer-motion')) {
             return 'framer-motion';
           }
           
-          // Radix UI y otras dependencias de UI juntas para evitar problemas de inicialización
-          // Incluimos Radix UI en el vendor principal para evitar dependencias circulares
+          // Radix UI - mantener todos juntos para evitar problemas de inicialización
+          // PERO asegurar que se carga después de React
           if (id.includes('node_modules/@radix-ui')) {
-            return 'vendor';
+            return 'radix-ui';
           }
           
-          // Otras dependencias de node_modules
+          // Otras dependencias de node_modules - vendor general
+          // Esto incluye cosas como sonner, cmdk, @hello-pangea/dnd, etc.
           if (id.includes('node_modules')) {
             return 'vendor';
           }
         },
-        // Asegurar que los chunks se generen con nombres consistentes
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
       },
     },
-    chunkSizeWarningLimit: 1000, // Aumentar el límite a 1MB para evitar warnings innecesarios
-    // Asegurar que CommonJS se maneje correctamente
+    chunkSizeWarningLimit: 1000,
     commonjsOptions: {
       include: [/node_modules/],
       transformMixedEsModules: true,
+    },
+    // Asegurar que los módulos se resuelvan correctamente
+    modulePreload: {
+      polyfill: true,
     },
   },
 }) 
