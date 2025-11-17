@@ -7,14 +7,17 @@ export function SidebarProvider({ children }) {
   const location = useLocation();
   
   const [abierto, setAbierto] = useState(() => {
-    const isModoEstudio = location.pathname === '/hoy' || location.pathname.startsWith('/estudio');
-    if (isModoEstudio) return false;
+    // En desktop, siempre abierto por defecto (incluso en /hoy)
+    const isDesktop = window.innerWidth >= 1024;
     
+    // Si hay un valor guardado en localStorage, respetarlo
     const stored = localStorage.getItem('ui.sidebar.abierto');
     if (stored !== null) {
       return stored === 'true';
     }
-    return window.innerWidth >= 1024;
+    
+    // Por defecto: abierto en desktop, cerrado en mobile
+    return isDesktop;
   });
 
   useEffect(() => {
