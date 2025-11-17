@@ -45,21 +45,24 @@ export default function PageHeader({
               </div>
             </div>
           )}
-          {/* Tercera fila: Acciones */}
-          {actions && (
-            <div className="flex gap-2 flex-wrap items-center">
-              {/* Espaciador para alinear con el título (mismo ancho que icono + gap-3) */}
-              {Icon && <div className="w-12 shrink-0" />}
-              <div className="flex-1 min-w-0">
-                {actions}
-              </div>
-            </div>
-          )}
         </div>
       </div>
-      {filters && (
+      {(filters || actions) && (
         <div className="w-full flex justify-center px-4 md:px-6 pb-4">
-          <div className="w-full max-w-full space-y-3">{filters}</div>
+          <div className="w-full max-w-full">
+            <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
+              {filters && (
+                <div className="flex gap-2 flex-wrap flex-1 w-full md:w-auto">
+                  {filters}
+                </div>
+              )}
+              {actions && (
+                <div className="flex gap-2 flex-wrap items-center w-full md:w-auto">
+                  {actions}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

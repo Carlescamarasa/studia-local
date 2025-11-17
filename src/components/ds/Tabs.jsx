@@ -192,7 +192,7 @@ export default function Tabs({
             className={cn(
               componentStyles.components.tabsSegmentedContainer, 
               "flex w-full flex-shrink-0 relative",
-              showIconsOnly ? "min-w-[75vw] md:min-w-0" : "min-w-fit md:min-w-0",
+              "min-w-fit md:min-w-0",
               className
             )}
             role="tablist"

@@ -218,14 +218,8 @@ function AsignacionesPageContent() {
         icon={Target}
         title="Asignaciones"
         subtitle="Gestiona las asignaciones de tus estudiantes"
-        actions={
-          <Button onClick={() => setShowForm(!showForm)} className={componentStyles.buttons.primary}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva
-          </Button>
-        }
         filters={
-          <div className="flex gap-3 flex-wrap">
+          <>
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ui/80" />
               <Input
@@ -246,7 +240,7 @@ function AsignacionesPageContent() {
             </div>
             
             <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-              <SelectTrigger className={`w-40 ${componentStyles.controls.selectDefault}`}>
+              <SelectTrigger className={`w-full md:w-48 ${componentStyles.controls.selectDefault}`}>
                 <SelectValue placeholder="Estado" />
               </SelectTrigger>
               <SelectContent>
@@ -257,7 +251,13 @@ function AsignacionesPageContent() {
                 <SelectItem value="cerrada">Cerradas</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </>
+        }
+        actions={
+          <Button onClick={() => setShowForm(!showForm)} className={`w-full md:w-auto ${componentStyles.buttons.primary}`}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nueva
+          </Button>
         }
       />
 
