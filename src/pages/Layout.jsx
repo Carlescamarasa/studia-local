@@ -402,8 +402,8 @@ function LayoutContent() {
                   } 
                   // Si cambia el preset base, cambiar preset y tema
                   else if (presetId !== (currentPresetId || 'default')) {
-                    setPresetId(presetId);
-                    setDesignPartial('theme', theme);
+                  setPresetId(presetId);
+                  setDesignPartial('theme', theme);
                   }
                 }}
               >

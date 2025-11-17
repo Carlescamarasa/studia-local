@@ -290,13 +290,13 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
           <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-2xl px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div>
+              <div>
                   <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
-                    {isInlineMode ? 'Editar Ejercicio (inline)' : ejercicio ? 'Editar Ejercicio' : 'Nuevo Ejercicio'}
-                  </h2>
+                  {isInlineMode ? 'Editar Ejercicio (inline)' : ejercicio ? 'Editar Ejercicio' : 'Nuevo Ejercicio'}
+                </h2>
                   <p className="text-sm text-[var(--color-text-secondary)]">
-                    {isInlineMode ? 'Cambios aplicados a la sesión actual' : 'Plantilla de ejercicio'}
-                  </p>
+                  {isInlineMode ? 'Cambios aplicados a la sesión actual' : 'Plantilla de ejercicio'}
+                </p>
                 </div>
               </div>
               <Button variant="ghost" size="icon" onClick={() => onClose(null)} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-9 w-9 rounded-xl">

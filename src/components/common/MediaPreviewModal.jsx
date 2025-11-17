@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { componentStyles } from '@/design/componentStyles';
 
 /**
  * Modal con carrusel para previsualizar medios
@@ -154,10 +155,10 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
 
         {/* Tarjeta compacta para audio */}
         <div className="relative z-10 mx-auto w-full max-w-md px-4">
-          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-card border border-[var(--color-border-default)] p-6">
+          <div className="bg-[var(--color-surface-elevated)]/95 backdrop-blur-sm rounded-2xl shadow-card border border-[var(--color-border-default)] p-6">
             {/* Header */}
             <div className="flex items-center justify-between gap-4 mb-4">
-              <h2 id="media-preview-title" className="font-semibold text-base truncate flex-1">
+              <h2 id="media-preview-title" className={`font-semibold text-base truncate flex-1 ${componentStyles.typography.cardTitle}`}>
                 {getMediaLabel(currentUrl)}
               </h2>
               <div className="flex items-center gap-2 shrink-0">
@@ -165,7 +166,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                   variant="ghost"
                   size="sm"
                   onClick={handleOpenExternal}
-                  className="text-blue-600 hover:text-blue-700 h-8 rounded-xl"
+                  className="text-[var(--color-info)] hover:text-[var(--color-info)]/80 h-8 rounded-xl"
                   aria-label="Abrir en nueva pestaña"
                 >
                   <ExternalLink className="w-4 h-4" />
@@ -174,7 +175,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                   variant="ghost"
                   size="icon"
                   onClick={onClose}
-                  className="h-8 w-8 rounded-xl"
+                  className="h-8 w-8 rounded-xl text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
                   aria-label="Cerrar"
                 >
                   <X className="w-5 h-5" />
@@ -196,7 +197,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
 
               {/* Control de velocidad */}
               <div className="flex items-center gap-3">
-                <label className="text-sm text-ui/80 font-medium shrink-0">
+                <label className={`text-sm font-medium shrink-0 ${componentStyles.typography.smallMetaText} text-[var(--color-text-primary)]`}>
                   Velocidad:
                 </label>
                 <div className="flex gap-1 flex-wrap">
@@ -206,8 +207,8 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                       onClick={() => handlePlaybackRateChange(rate.toString())}
                       className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                         playbackRate === rate
-                          ? 'bg-blue-600 text-white shadow-sm'
-                          : 'bg-[var(--color-surface-muted)] text-ui hover:bg-[var(--color-border-default)]/20'
+                          ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-sm'
+                          : 'bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)]/20'
                       }`}
                       aria-label={`Velocidad ${rate}x`}
                     >
@@ -219,8 +220,8 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
             </div>
 
             {/* Ayuda de teclado */}
-            <div className="mt-4 text-center border-t pt-3">
-              <p className="text-xs text-ui/80">
+            <div className="mt-4 text-center border-t border-[var(--color-border-default)] pt-3">
+              <p className="text-xs text-[var(--color-text-secondary)]">
                 Ctrl/⌘+. : cerrar
               </p>
             </div>
@@ -252,15 +253,15 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
 
       {/* Contenedor del modal */}
       <div className="relative z-10 mx-auto w-full max-w-[1100px] px-4 lg:px-6 flex items-center justify-center max-h-[95vh]">
-        <div className="bg-white rounded-2xl shadow-card w-full max-h-full overflow-hidden flex flex-col">
+        <div className="bg-[var(--color-surface-elevated)] rounded-2xl shadow-card w-full max-h-full overflow-hidden flex flex-col border border-[var(--color-border-default)]">
           {/* Header con título y botón de cierre */}
-          <div className="px-4 lg:px-6 py-4 border-b bg-white sticky top-0 z-20 flex items-center justify-between gap-4 shrink-0">
+          <div className="px-4 lg:px-6 py-4 border-b border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] sticky top-0 z-20 flex items-center justify-between gap-4 shrink-0">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <h2 id="media-preview-title" className="font-semibold text-base lg:text-lg truncate">
+              <h2 id="media-preview-title" className={`font-semibold text-base lg:text-lg truncate ${componentStyles.typography.cardTitle}`}>
                 {getMediaLabel(currentUrl)}
               </h2>
               {hasMultiple && (
-                <span className="text-xs lg:text-sm text-ui/80 whitespace-nowrap">
+                <span className="text-xs lg:text-sm text-[var(--color-text-secondary)] whitespace-nowrap">
                   {currentIndex + 1} de {urls.length}
                 </span>
               )}
@@ -270,7 +271,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                 variant="ghost"
                 size="sm"
                 onClick={handleOpenExternal}
-                className="text-blue-600 hover:text-blue-700 h-8 rounded-xl"
+                className="text-[var(--color-info)] hover:text-[var(--color-info)]/80 h-8 rounded-xl"
                 aria-label="Abrir en nueva pestaña"
               >
                 <ExternalLink className="w-4 h-4 mr-1" />
@@ -280,7 +281,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
-                className="h-8 w-8 rounded-xl"
+                className="h-8 w-8 rounded-xl text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
                 aria-label="Cerrar"
               >
                 <X className="w-5 h-5" />
@@ -298,7 +299,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                     variant="ghost"
                     size="icon"
                     onClick={handlePrevious}
-                    className="absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/95 hover:bg-white shadow-card"
+                    className="absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-[var(--color-surface-elevated)]/95 hover:bg-[var(--color-surface-elevated)] shadow-card text-[var(--color-text-primary)]"
                     aria-label="Anterior"
                   >
                     <ChevronLeft className="w-5 h-5" />
@@ -308,7 +309,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                     variant="ghost"
                     size="icon"
                     onClick={handleNext}
-                    className="absolute right-2 lg:right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/95 hover:bg-white shadow-card"
+                    className="absolute right-2 lg:right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-[var(--color-surface-elevated)]/95 hover:bg-[var(--color-surface-elevated)] shadow-card text-[var(--color-text-primary)]"
                     aria-label="Siguiente"
                   >
                     <ChevronRight className="w-5 h-5" />
@@ -332,7 +333,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                       onClick={() => setCurrentIndex(idx)}
                       className={`h-2 rounded-full transition-all ${
                         idx === currentIndex 
-                          ? 'bg-blue-600 w-6' 
+                          ? 'bg-[var(--color-primary)] w-6' 
                           : 'bg-[var(--color-border-default)] hover:bg-[var(--color-border-strong)] w-2'
                       }`}
                       aria-label={`Ir a medio ${idx + 1}`}
@@ -344,7 +345,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
 
             {/* Ayuda de teclado */}
             <div className="px-4 lg:px-6 pb-4 text-center">
-              <p className="text-xs text-ui/80">
+              <p className="text-xs text-[var(--color-text-secondary)]">
                 {hasMultiple && 'Usa las flechas ← → para navegar • '}Ctrl/⌘+. : cerrar
               </p>
             </div>

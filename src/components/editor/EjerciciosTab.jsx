@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ds"; // Changed import to "@/components/ds"
-import { Plus, Search, Copy, Trash2, Edit, Dumbbell } from "lucide-react";
+import { Plus, Search, Copy, Trash2, Edit, Dumbbell, Clock } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ExerciseEditor from "./ExerciseEditor";
 import { toast } from "sonner";
@@ -203,7 +203,8 @@ export default function EjerciciosTab() {
 
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-xs"> {/* Removed rounded-full */}
-                        ⏱ {Math.floor(ejercicio.duracionSeg / 60)}:{String(ejercicio.duracionSeg % 60).padStart(2, '0')} min
+                        <Clock className="w-3 h-3 mr-1" />
+                        {Math.floor(ejercicio.duracionSeg / 60)}:{String(ejercicio.duracionSeg % 60).padStart(2, '0')} min
                       </Badge>
                     </div>
 

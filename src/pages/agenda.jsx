@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Calendar, User, Music, Target, MessageSquare, 
-  Search, X, Edit, Trash2, Save, Eye
+  Search, X, Edit, Trash2, Save, Eye, Clock, Activity
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -386,7 +386,8 @@ function AgendaPageContent() {
                         {sesion.nombre}
                       </span>
                       <Badge variant="outline" className={componentStyles.status.badgeSuccess}>
-                        ⏱ {mins}:{String(secs).padStart(2, '0')} min
+                        <Clock className="w-3 h-3 mr-1" />
+                        {mins}:{String(secs).padStart(2, '0')} min
                       </Badge>
                     </div>
                     {isExpanded && (
@@ -535,11 +536,6 @@ function AgendaPageContent() {
                 }
                 return actions;
               }}
-              onRowClick={(row) => {
-                if (row.asignacionActiva) {
-                  navigate(createPageUrl(`asignacion-detalle?id=${row.asignacionActiva.id}`));
-                }
-              }}
               emptyMessage={searchTerm ? 'No se encontraron estudiantes' : 'No hay estudiantes asignados'}
               keyField="id"
             />
@@ -547,28 +543,35 @@ function AgendaPageContent() {
         </Card>
       </div>
 
-      {/* Drawer de feedback */}
+      {/* Modal de feedback */}
       {feedbackDrawer && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-[100]" onClick={() => setFeedbackDrawer(null)} />
-          <div className="fixed inset-0 z-[100] flex items-center justify-end pointer-events-none overflow-hidden">
+          <div 
+            className="fixed inset-0 bg-black/40 z-[100]"
+            onClick={() => setFeedbackDrawer(null)}
+          />
+          <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
             <div 
-              className="bg-card w-full max-w-lg h-full shadow-card flex flex-col animate-in slide-in-from-right pointer-events-auto overflow-y-auto rounded-l-2xl"
+              className="bg-[var(--color-surface-elevated)] w-full max-w-lg max-h-[95vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-4 border border-[var(--color-border-default)]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="border-b border-[var(--color-border-default)] px-6 py-4 flex items-center justify-between bg-[var(--color-primary)] sticky top-0 z-10">
-                <div className="flex items-center gap-3 text-[var(--color-text-inverse)]">
-                  <MessageSquare className="w-6 h-6" />
-                  <h2 className="text-xl font-bold">
-                    {feedbackDrawer.existingId ? 'Editar Feedback' : 'Dar Feedback'}
-                  </h2>
+              <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-2xl px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <MessageSquare className="w-6 h-6 text-[var(--color-text-primary)]" />
+                    <div>
+                      <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
+                        {feedbackDrawer.existingId ? 'Editar Feedback' : 'Dar Feedback'}
+                      </h2>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setFeedbackDrawer(null)} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-9 w-9 rounded-xl" aria-label="Cerrar modal">
+                    <X className="w-5 h-5" />
+                  </Button>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setFeedbackDrawer(null)} className="text-[var(--color-text-inverse)] hover:bg-[var(--color-text-inverse)]/20 h-9 w-9 rounded-xl" aria-label="Cerrar drawer">
-                  <X className="w-5 h-5" />
-                </Button>
               </div>
 
-              <div className="flex-1 p-6 space-y-6">
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 <div>
                   <Label htmlFor="nota" className="text-sm font-medium text-[var(--color-text-primary)]">Observaciones del profesor *</Label>
                   <Textarea
@@ -591,8 +594,8 @@ function AgendaPageContent() {
                 />
               </div>
 
-              <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] sticky bottom-0">
-                <div className="flex gap-3">
+              <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
+                <div className="flex gap-3 mb-2">
                   <Button variant="outline" onClick={() => setFeedbackDrawer(null)} className={`flex-1 ${componentStyles.buttons.outline}`}>
                     Cancelar
                   </Button>
@@ -606,7 +609,7 @@ function AgendaPageContent() {
                     Guardar
                   </Button>
                 </div>
-                <p className="text-xs text-center text-[var(--color-text-secondary)] mt-2">
+                <p className="text-xs text-center text-[var(--color-text-secondary)]">
                   Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar
                 </p>
               </div>

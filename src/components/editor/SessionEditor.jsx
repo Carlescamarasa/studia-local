@@ -213,9 +213,9 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
       nuevoSeqIndex = nuevaSecuencia.length - 1; // Índice de la nueva ronda en la secuencia
       
       return {
-        ...prev,
-        bloques: [...prev.bloques, ...newBloquesToAdd],
-        rondas: [...prev.rondas, nuevaRonda],
+      ...prev,
+      bloques: [...prev.bloques, ...newBloquesToAdd],
+      rondas: [...prev.rondas, nuevaRonda],
         secuencia: nuevaSecuencia,
       };
     });

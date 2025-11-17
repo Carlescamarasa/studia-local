@@ -197,9 +197,10 @@ function SemanaPageContent() {
               {row.sesion.nombre}
             </p>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <Badge variant="outline" className={componentStyles.status.badgeSuccess}>
-                ⏱ {row.minutos}:{String(row.segundos).padStart(2, '0')} min
-              </Badge>
+                <Badge variant="outline" className={componentStyles.status.badgeSuccess}>
+                  <Clock className="w-3 h-3 mr-1" />
+                  {row.minutos}:{String(row.segundos).padStart(2, '0')} min
+                </Badge>
               <Badge className={focoColors[row.sesion.foco]} variant="outline">
                 {focoLabels[row.sesion.foco]}
               </Badge>

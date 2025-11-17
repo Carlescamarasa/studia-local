@@ -9,6 +9,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { componentStyles } from "@/design/componentStyles";
 
 /**
  * Componente que muestra badges/chips de enlaces multimedia
@@ -40,11 +41,11 @@ export default function MediaLinksBadges({ mediaLinks = [], onMediaClick, compac
                   variant="outline"
                   size="sm"
                   onClick={() => onMediaClick?.(idx)}
-                  className="h-8 gap-1.5 text-xs hover:shadow-sm transition-all"
+                  className={`h-8 gap-1.5 text-xs ${componentStyles.buttons.outline}`}
                 >
                   <MediaIcon url={url} className="w-3.5 h-3.5" />
                   <span>{label}</span>
-                  <Play className="w-3 h-3 opacity-60" />
+                  <Play className="w-3 h-3 text-[var(--color-text-secondary)]" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -59,7 +60,7 @@ export default function MediaLinksBadges({ mediaLinks = [], onMediaClick, compac
             variant="outline"
             size="sm"
             onClick={() => onMediaClick?.(0)}
-            className="h-8 gap-1 text-xs text-blue-600 hover:text-blue-700"
+            className={`h-8 gap-1 text-xs ${componentStyles.buttons.outline} text-[var(--color-info)] hover:text-[var(--color-info)]/80`}
           >
             <Eye className="w-3.5 h-3.5" />
             +{normalizedLinks.length - maxDisplay} más

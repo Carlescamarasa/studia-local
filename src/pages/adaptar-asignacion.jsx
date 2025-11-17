@@ -589,7 +589,8 @@ function AdaptarAsignacionPageContent() {
                                                                     variant="outline"
                                                                     className={tiempoTotal > 0 ? componentStyles.status.badgeSuccess : componentStyles.status.badgeDefault}
                                                                   >
-                                                                    ⏱ {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
+                                                                    <Clock className="w-3 h-3 mr-1" />
+                                                                    {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
                                                                   </Badge>
                                                                   <Badge className={`rounded-full ${focoColors[sesion.foco]}`} variant="outline">
                                                                     {focoLabels[sesion.foco]}

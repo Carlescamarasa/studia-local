@@ -371,12 +371,12 @@ function EstudiantesPageContent() {
                   );
 
                   return [
-                    {
+                  {
                       id: 'feedback',
-                      label: 'Dar feedback',
-                      icon: <MessageSquare className="w-4 h-4" />,
-                      onClick: () => handleAbrirFeedback(alumno),
-                    },
+                    label: 'Dar feedback',
+                    icon: <MessageSquare className="w-4 h-4" />,
+                    onClick: () => handleAbrirFeedback(alumno),
+                  },
                     {
                       id: 'estadisticas',
                       label: 'Ver estadísticas',
@@ -395,12 +395,12 @@ function EstudiantesPageContent() {
                       icon: <Calendar className="w-4 h-4" />,
                       onClick: () => navigate(createPageUrl(`asignaciones?alumno=${alumno.id}`)),
                     },
-                    ...(isAdminOrProf && alumno.id !== currentUser?.id ? [{
-                      id: 'impersonate',
-                      label: 'Ver como estudiante',
+                  ...(isAdminOrProf && alumno.id !== currentUser?.id ? [{
+                    id: 'impersonate',
+                    label: 'Ver como estudiante',
                       icon: <Eye className="w-4 h-4" />,
-                      onClick: () => simularAlumno(alumno),
-                    }] : []),
+                    onClick: () => simularAlumno(alumno),
+                  }] : []),
                   ];
                 }}
                 keyField="id"

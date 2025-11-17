@@ -221,12 +221,12 @@ export default function UnifiedTable({
                         className="flex-1 min-w-0 cursor-pointer"
                         onClick={() => onRowClick && onRowClick(item)}
                       >
-                        {columns.slice(0, 3).map((col) => (
-                          <div key={col.key} className="mb-2">
+                        {columns.map((col) => (
+                          <div key={col.key} className="mb-3 last:mb-0">
                             {col.render ? col.render(item) : (
                               <>
-                                <p className="text-xs text-muted">{col.label}</p>
-                                <p className="text-sm font-medium text-ui">{item[col.key]}</p>
+                                <p className="text-xs text-[var(--color-text-secondary)] mb-1">{col.label}</p>
+                                <p className="text-sm font-medium text-[var(--color-text-primary)]">{item[col.key]}</p>
                               </>
                             )}
                           </div>

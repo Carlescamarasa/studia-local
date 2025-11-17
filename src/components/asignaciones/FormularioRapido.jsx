@@ -218,7 +218,7 @@ export default function FormularioRapido({ onClose }) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Target className="w-6 h-6 text-[var(--color-text-primary)]" />
-                <div>
+              <div>
                   <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Nueva Asignación</h2>
                   <p className="text-sm text-[var(--color-text-secondary)]">Creación rápida de asignación</p>
                 </div>
@@ -369,12 +369,12 @@ export default function FormularioRapido({ onClose }) {
             </div>
 
             <Card className="app-panel">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
+              <CardHeader>
+                <div className="flex items-center gap-2">
                     <Settings className="w-5 h-5 text-[var(--color-primary)]" />
                     <CardTitle className="text-base text-[var(--color-text-primary)]">Opciones</CardTitle>
-                  </div>
-                </CardHeader>
+                </div>
+              </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="foco" className="text-[var(--color-text-primary)]">Foco</Label>

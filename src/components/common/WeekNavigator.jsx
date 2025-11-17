@@ -57,7 +57,7 @@ export default function WeekNavigator({ mondayISO, onPrev, onNext, onToday }) {
   sunday.setDate(monday.getDate() + 6);
 
   return (
-    <Card className={`rounded-2xl border-[var(--color-border-default)] shadow-sm ${componentStyles.containers.cardBase} p-4 md:p-5`}>
+    <Card className={`rounded-2xl border-[var(--color-border-default)] shadow-sm ${componentStyles.containers.cardBase} p-4 md:p-6 w-full`}>
       <div className="text-center mb-3 md:mb-4">
         <div className="flex items-center justify-center gap-2 mb-1">
           <Calendar className="w-4 h-4 md:w-5 md:h-5 text-[var(--color-primary)]" />

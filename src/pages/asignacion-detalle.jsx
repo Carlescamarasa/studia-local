@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCurrentUser } from "@/api/localDataClient";
@@ -114,6 +114,25 @@ export default function AsignacionDetallePage() {
     });
     setShowEditDrawer(true);
   };
+
+  // Atajos de teclado para el modal de edición
+  useEffect(() => {
+    if (!showEditDrawer) return;
+
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === '.') {
+        e.preventDefault();
+        setShowEditDrawer(false);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleGuardarEdicion();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showEditDrawer, editData]);
 
   const handleGuardarEdicion = () => {
     if (!editData.piezaId) {
@@ -445,7 +464,8 @@ export default function AsignacionDetallePage() {
                                               variant="outline" 
                                               className={tiempoTotal > 0 ? componentStyles.status.badgeSuccess : componentStyles.status.badgeDefault}
                                             >
-                                              ⏱ {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
+                                              <Clock className="w-3 h-3 mr-1" />
+                                              {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
                                             </Badge>
                                             <Badge className={focoColors[sesion.foco]} variant="outline">
                                               {focoLabels[sesion.foco]}
@@ -476,26 +496,33 @@ export default function AsignacionDetallePage() {
         </Card>
       </div>
 
-      {/* Drawer de edición */}
+      {/* Modal de edición */}
       {showEditDrawer && editData && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-[100]" onClick={() => setShowEditDrawer(false)} />
-          <div className="fixed inset-0 z-[100] flex items-center justify-end pointer-events-none overflow-hidden">
+          <div 
+            className="fixed inset-0 bg-black/40 z-[100]"
+            onClick={() => setShowEditDrawer(false)}
+          />
+          <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
             <div 
-              className="bg-[var(--color-surface-elevated)] w-full max-w-2xl h-full shadow-card flex flex-col animate-in slide-in-from-right pointer-events-auto rounded-l-2xl"
+              className="bg-[var(--color-surface-elevated)] w-full max-w-2xl max-h-[95vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-4 border border-[var(--color-border-default)]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="border-b border-[var(--color-border-default)] px-4 py-3 flex items-center justify-between bg-[var(--color-primary)]">
-                <div className="flex items-center gap-3 text-[var(--color-text-inverse)]">
-                  <Edit className="w-6 h-6 text-[var(--color-text-inverse)]" />
-                  <h2 className="text-xl font-bold text-[var(--color-text-inverse)]">Editar Asignación</h2>
+              <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-2xl px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Edit className="w-6 h-6 text-[var(--color-text-primary)]" />
+                    <div>
+                      <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Editar Asignación</h2>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setShowEditDrawer(false)} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-9 w-9 rounded-xl" aria-label="Cerrar modal">
+                    <X className="w-5 h-5" />
+                  </Button>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setShowEditDrawer(false)} className="text-[var(--color-text-inverse)] hover:bg-[var(--color-text-inverse)]/20 h-9 w-9 rounded-xl" aria-label="Cerrar drawer">
-                  <X className="w-5 h-5" />
-                </Button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 <div>
                   <Label htmlFor="pieza" className="text-[var(--color-text-primary)]">Pieza *</Label>
                   <Select 
@@ -527,7 +554,7 @@ export default function AsignacionDetallePage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="fecha" className="text-[var(--color-text-primary)]">Fecha de inicio (cualquier día) *</Label>
+                  <Label htmlFor="fecha" className="text-sm font-medium text-[var(--color-text-primary)]">Fecha de inicio (cualquier día) *</Label>
                   <Input
                     id="fecha"
                     type="date"
@@ -546,7 +573,7 @@ export default function AsignacionDetallePage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="foco" className="text-[var(--color-text-primary)]">Foco</Label>
+                  <Label htmlFor="foco" className="text-sm font-medium text-[var(--color-text-primary)]">Foco</Label>
                   <Select 
                     value={editData.foco} 
                     onValueChange={(v) => setEditData({ ...editData, foco: v })}
@@ -570,7 +597,7 @@ export default function AsignacionDetallePage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="notas" className="text-[var(--color-text-primary)]">Notas del profesor</Label>
+                  <Label htmlFor="notas" className="text-sm font-medium text-[var(--color-text-primary)]">Notas del profesor</Label>
                   <Textarea
                     id="notas"
                     value={editData.notas}
@@ -582,18 +609,24 @@ export default function AsignacionDetallePage() {
                 </div>
               </div>
 
-              <div className="border-t border-[var(--color-border-default)] px-4 py-3 bg-[var(--color-surface-muted)]">
-                <div className="flex gap-3">
+              <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
+                <div className="flex gap-3 mb-2">
                   <Button variant="outline" onClick={() => setShowEditDrawer(false)} className={`flex-1 ${componentStyles.buttons.outline}`}>
                     Cancelar
                   </Button>
                   <Button onClick={handleGuardarEdicion} disabled={editarMutation.isPending} className={`flex-1 ${componentStyles.buttons.primary}`}>
-                    <Save className="w-4 h-4 mr-2" />
-                    {editarMutation.isPending ? 'Guardando...' : 'Guardar'}
+                    {editarMutation.isPending ? (
+                      'Guardando...'
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Guardar
+                      </>
+                    )}
                   </Button>
                 </div>
-                <p className="text-xs text-[var(--color-text-secondary)] text-center mt-1.5">
-                  Ctrl/⌘+. : cerrar • Ctrl/⌘+Intro : guardar
+                <p className="text-xs text-center text-[var(--color-text-secondary)]">
+                  Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar
                 </p>
               </div>
             </div>

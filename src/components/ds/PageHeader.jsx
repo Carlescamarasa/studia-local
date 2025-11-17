@@ -39,7 +39,7 @@ export default function PageHeader({
           </div>
           {actions && <div className="flex gap-2 shrink-0">{actions}</div>}
         </div>
-        {filters && <div className="space-y-3">{filters}</div>}
+        {filters && <div className="space-y-3 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8">{filters}</div>}
       </div>
     </div>
   );

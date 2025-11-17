@@ -71,7 +71,7 @@ export default function MediaViewer({ media, onClose }) {
         return (
           <iframe 
             src={media.url} 
-            className="w-[90vw] h-[80vh] bg-card rounded-[var(--radius-card)] shadow-card"
+            className="w-[90vw] h-[80vh] bg-[var(--color-surface-elevated)] rounded-[var(--radius-card)] shadow-card"
             title="PDF Viewer"
             onError={(e) => {
               e.target.innerHTML = '<p>Error al cargar PDF</p>';
@@ -79,7 +79,7 @@ export default function MediaViewer({ media, onClose }) {
           />
         );
       default:
-        return <p className="text-white">Tipo de medio no soportado</p>;
+        return <p className="text-[var(--color-text-primary)]">Tipo de medio no soportado</p>;
     }
   };
 
@@ -98,7 +98,7 @@ export default function MediaViewer({ media, onClose }) {
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="text-white hover:bg-white/20 shrink-0 focus-brand"
+              className="text-white hover:bg-white/20 shrink-0"
               aria-label="Cerrar (Esc)"
             >
               <X className="w-6 h-6" />

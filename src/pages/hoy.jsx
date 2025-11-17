@@ -1482,7 +1482,8 @@ function HoyPageContent() {
                                       variant="outline"
                                       className={componentStyles.status.badgeSuccess}
                                     >
-                                      ⏱ {minutos}:{String(segundos).padStart(2, '0')} min
+                                      <Clock className="w-3 h-3 mr-1" />
+                                      {minutos}:{String(segundos).padStart(2, '0')} min
                                     </Badge>
                                     <Badge className={focoColors[sesion.foco]} variant="outline">
                                       {focoLabels[sesion.foco]}
