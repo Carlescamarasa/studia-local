@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,18 +16,18 @@ export default function AsignacionesArchivadas() {
   const { data: asignaciones = [], isLoading } = useQuery({
     queryKey: ['asignaciones-archivadas'],
     queryFn: async () => {
-      const all = await base44.entities.Asignacion.list('-created_date');
+      const all = await localDataClient.entities.Asignacion.list('-created_date');
       return all.filter(a => a.estado === 'cerrada');
     },
   });
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
   });
 
   const reabrirMutation = useMutation({
-    mutationFn: (id) => base44.entities.Asignacion.update(id, { estado: 'borrador' }),
+    mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'borrador' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones-archivadas'] });
       queryClient.invalidateQueries({ queryKey: ['asignaciones-activas'] });
@@ -36,7 +36,7 @@ export default function AsignacionesArchivadas() {
   });
 
   const eliminarMutation = useMutation({
-    mutationFn: (id) => base44.entities.Asignacion.delete(id),
+    mutationFn: (id) => localDataClient.entities.Asignacion.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones-archivadas'] });
       toast.success('✅ Asignación eliminada');

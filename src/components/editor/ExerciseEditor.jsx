@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,12 +57,12 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
 
   const { data: allEjercicios = [] } = useQuery({
     queryKey: ['bloques'],
-    queryFn: () => base44.entities.Bloque.list(),
+    queryFn: () => localDataClient.entities.Bloque.list(),
   });
 
   const { data: piezas = [] } = useQuery({
     queryKey: ['piezas'],
-    queryFn: () => base44.entities.Pieza.list(),
+    queryFn: () => localDataClient.entities.Pieza.list(),
   });
 
   const piezaRef = piezas.find(p => p.id === piezaRefId);
@@ -166,9 +166,9 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
       }
 
       if (ejercicio?.id) {
-        return base44.entities.Bloque.update(ejercicio.id, data);
+        return localDataClient.entities.Bloque.update(ejercicio.id, data);
       }
-      return base44.entities.Bloque.create(data);
+      return localDataClient.entities.Bloque.create(data);
     },
     onSuccess: (result) => {
       if (isInlineMode) {

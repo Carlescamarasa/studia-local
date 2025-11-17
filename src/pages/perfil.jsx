@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCurrentUser } from "@/api/localDataClient";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ export default function PerfilPage() {
 
   const { data: allUsers } = useQuery({
     queryKey: ['allUsers'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
     enabled: true,
   });
 
@@ -46,7 +46,7 @@ export default function PerfilPage() {
     queryKey: ['targetUser', userIdParam],
     queryFn: async () => {
       if (userIdParam && currentUser?.rolPersonalizado === 'ADMIN') {
-        const users = await base44.entities.User.list();
+        const users = await localDataClient.entities.User.list();
         return users.find(u => u.id === userIdParam);
       }
       return currentUser;
@@ -78,9 +78,9 @@ export default function PerfilPage() {
   const updateUserMutation = useMutation({
     mutationFn: async (data) => {
       if (targetUser?.id === currentUser?.id) {
-        await base44.auth.updateMe(data);
+        await localDataClient.auth.updateMe(data);
       } else {
-        await base44.entities.User.update(targetUser.id, data);
+        await localDataClient.entities.User.update(targetUser.id, data);
       }
     },
     onSuccess: async () => {

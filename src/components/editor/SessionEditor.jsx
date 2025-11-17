@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,7 +34,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
 
   const { data: ejercicios = [] } = useQuery({
     queryKey: ['bloques'],
-    queryFn: () => base44.entities.Bloque.list(),
+    queryFn: () => localDataClient.entities.Bloque.list(),
   });
 
   useEffect(() => {

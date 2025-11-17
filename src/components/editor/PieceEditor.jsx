@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,9 +86,9 @@ export default function PieceEditor({ pieza, onClose }) {
   const saveMutation = useMutation({
     mutationFn: async (data) => {
       if (pieza?.id) {
-        return base44.entities.Pieza.update(pieza.id, data);
+        return localDataClient.entities.Pieza.update(pieza.id, data);
       }
-      return base44.entities.Pieza.create(data);
+      return localDataClient.entities.Pieza.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['piezas'] });

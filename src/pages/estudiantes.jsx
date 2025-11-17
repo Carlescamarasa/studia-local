@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
@@ -48,7 +48,7 @@ function EstudiantesPageContent() {
   const { data: asignaciones = [], isLoading: loadingAsignaciones } = useQuery({
     queryKey: ['asignacionesProfesor', currentUser?.id],
     queryFn: async () => {
-      const allAsignaciones = await base44.entities.Asignacion.list();
+      const allAsignaciones = await localDataClient.entities.Asignacion.list();
       return allAsignaciones;
     },
     enabled: !!currentUser,
@@ -57,7 +57,7 @@ function EstudiantesPageContent() {
   const { data: usuariosAdmin = [] } = useQuery({
     queryKey: ['usersAdmin'],
     queryFn: async () => {
-      const users = await base44.entities.User.list();
+      const users = await localDataClient.entities.User.list();
       return users;
     },
     enabled: isAdmin,
@@ -65,12 +65,12 @@ function EstudiantesPageContent() {
 
   const { data: registros = [] } = useQuery({
     queryKey: ['registrosSesion'],
-    queryFn: () => base44.entities.RegistroSesion.list('-inicioISO'),
+    queryFn: () => localDataClient.entities.RegistroSesion.list('-inicioISO'),
   });
 
   const { data: feedbacksExistentes = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
-    queryFn: () => base44.entities.FeedbackSemanal.list('-created_date'),
+    queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_date'),
   });
 
   const guardarFeedbackMutation = useMutation({
@@ -81,9 +81,9 @@ function EstudiantesPageContent() {
       );
 
       if (feedbackExistente) {
-        return base44.entities.FeedbackSemanal.update(feedbackExistente.id, data);
+        return localDataClient.entities.FeedbackSemanal.update(feedbackExistente.id, data);
       }
-      return base44.entities.FeedbackSemanal.create(data);
+      return localDataClient.entities.FeedbackSemanal.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] });

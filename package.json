@@ -1,7 +1,8 @@
 {
-  "name": "base44-app",
+  "name": "studia-local",
   "private": true,
   "version": "0.0.0",
+  "description": "Aplicación local de Studia que funciona de forma independiente con persistencia en localStorage",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +11,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@base44/sdk": "^0.1.2",
     "@hello-pangea/dnd": "^18.0.1",
     "@hookform/resolvers": "^4.1.2",
     "@radix-ui/react-accordion": "^1.2.3",

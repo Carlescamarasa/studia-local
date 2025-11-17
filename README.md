@@ -1,8 +1,6 @@
-# Base44 App
+# Studia Local
 
-
-This app was originally created automatically by Base44.
-It's a Vite+React app that communicates with the Base44 API, but it has become local now.
+Aplicación Vite+React que funciona en modo local con persistencia en `localStorage`. La aplicación es completamente independiente y no requiere conexión a servidores externos.
 
 ## Running the app
 

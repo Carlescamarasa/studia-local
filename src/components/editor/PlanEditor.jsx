@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +37,7 @@ export default function PlanEditor({ plan, onClose }) {
 
   const { data: piezas = [] } = useQuery({
     queryKey: ['piezas'],
-    queryFn: () => base44.entities.Pieza.list(),
+    queryFn: () => localDataClient.entities.Pieza.list(),
   });
 
   useEffect(() => {
@@ -67,9 +67,9 @@ export default function PlanEditor({ plan, onClose }) {
       }
 
       if (plan?.id) {
-        return base44.entities.Plan.update(plan.id, data);
+        return localDataClient.entities.Plan.update(plan.id, data);
       }
-      return base44.entities.Plan.create(data);
+      return localDataClient.entities.Plan.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['planes'] });

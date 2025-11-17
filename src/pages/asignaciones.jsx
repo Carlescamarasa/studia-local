@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
@@ -40,16 +40,16 @@ function AsignacionesPageContent() {
 
   const { data: asignaciones = [] } = useQuery({
     queryKey: ['asignaciones'],
-    queryFn: () => base44.entities.Asignacion.list('-created_date'),
+    queryFn: () => localDataClient.entities.Asignacion.list('-created_date'),
   });
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
   });
 
   const cerrarMutation = useMutation({
-    mutationFn: (id) => base44.entities.Asignacion.update(id, { estado: 'cerrada' }),
+    mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'cerrada' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
       toast.success('✅ Asignación cerrada');
@@ -57,7 +57,7 @@ function AsignacionesPageContent() {
   });
 
   const reabrirMutation = useMutation({
-    mutationFn: (id) => base44.entities.Asignacion.update(id, { estado: 'publicada' }),
+    mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'publicada' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
       toast.success('✅ Asignación reabierta');
@@ -65,7 +65,7 @@ function AsignacionesPageContent() {
   });
 
   const publicarMutation = useMutation({
-    mutationFn: (id) => base44.entities.Asignacion.update(id, { estado: 'publicada' }),
+    mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'publicada' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
       toast.success('✅ Asignación publicada');
@@ -85,7 +85,7 @@ function AsignacionesPageContent() {
         piezaSnapshot: JSON.parse(JSON.stringify(asignacion.piezaSnapshot)),
         profesorId: currentUser.id,
       };
-      return base44.entities.Asignacion.create(newData);
+      return localDataClient.entities.Asignacion.create(newData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
@@ -94,7 +94,7 @@ function AsignacionesPageContent() {
   });
 
   const eliminarMutation = useMutation({
-    mutationFn: (id) => base44.entities.Asignacion.delete(id),
+    mutationFn: (id) => localDataClient.entities.Asignacion.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
       toast.success('✅ Asignación eliminada');

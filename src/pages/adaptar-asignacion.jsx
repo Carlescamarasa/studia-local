@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
@@ -52,7 +52,7 @@ function AdaptarAsignacionPageContent() {
       if (!asignacionId) {
         throw new Error('ID de asignación no proporcionado');
       }
-      const result = await base44.entities.Asignacion.list();
+      const result = await localDataClient.entities.Asignacion.list();
       const found = result.find(a => a.id === asignacionId);
       if (!found) {
         throw new Error(`Asignación con ID ${asignacionId} no encontrada`);
@@ -74,7 +74,7 @@ function AdaptarAsignacionPageContent() {
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
   });
 
   useEffect(() => {
@@ -85,7 +85,7 @@ function AdaptarAsignacionPageContent() {
 
   const guardarMutation = useMutation({
     mutationFn: async (updatedPlan) => {
-      return base44.entities.Asignacion.update(asignacionId, { plan: updatedPlan });
+      return localDataClient.entities.Asignacion.update(asignacionId, { plan: updatedPlan });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignacion', asignacionId] });
@@ -95,7 +95,7 @@ function AdaptarAsignacionPageContent() {
 
   const publicarMutation = useMutation({
     mutationFn: async () => {
-      return base44.entities.Asignacion.update(asignacionId, {
+      return localDataClient.entities.Asignacion.update(asignacionId, {
         estado: 'publicada',
         plan: planData
       });

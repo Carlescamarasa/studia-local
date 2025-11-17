@@ -283,7 +283,8 @@ function LayoutContent() {
     sessionStorage.removeItem("simulatingUser");
     sessionStorage.removeItem("originalUser");
     sessionStorage.removeItem("originalPath");
-    // No llamar a base44.auth.logout() - solo limpiar sessionStorage
+    // Eliminado: llamada al cliente de Base44, ya no es necesaria
+    // Reemplazado por lógica local con almacenamiento en localStorage
   };
 
   const stopSimulation = () => {

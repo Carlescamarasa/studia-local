@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
@@ -113,7 +113,7 @@ function HoyPageContent() {
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
   });
 
   const simulatingUser = sessionStorage.getItem('simulatingUser') ?
@@ -125,7 +125,7 @@ function HoyPageContent() {
 
   const { data: asignacionesRaw = [] } = useQuery({
     queryKey: ['asignaciones'],
-    queryFn: () => base44.entities.Asignacion.list(),
+    queryFn: () => localDataClient.entities.Asignacion.list(),
   });
 
   // Filtrar y validar asignaciones
@@ -341,9 +341,9 @@ function HoyPageContent() {
 
     try {
       if (registroSesionId) {
-        await base44.entities.RegistroSesion.update(registroSesionId, dataRegistro);
+        await localDataClient.entities.RegistroSesion.update(registroSesionId, dataRegistro);
       } else {
-        const nuevoRegistro = await base44.entities.RegistroSesion.create(dataRegistro);
+        const nuevoRegistro = await localDataClient.entities.RegistroSesion.create(dataRegistro);
         setRegistroSesionId(nuevoRegistro.id);
       }
     } catch (error) {
@@ -382,7 +382,7 @@ function HoyPageContent() {
     };
 
     try {
-      await base44.entities.RegistroBloque.create(dataBloque);
+      await localDataClient.entities.RegistroBloque.create(dataBloque);
     } catch (error) {
       colaOfflineRef.current.push({
         tipo: 'bloque',
@@ -502,7 +502,7 @@ function HoyPageContent() {
         .reduce((sum, e) => sum + (e.duracionSeg || 0), 0);
 
       try {
-        const nuevoRegistro = await base44.entities.RegistroSesion.create({
+        const nuevoRegistro = await localDataClient.entities.RegistroSesion.create({
           asignacionId: asignacionActiva.id,
           alumnoId: userIdActual,
           profesorAsignadoId: alumnoActual?.profesorAsignadoId || null,
@@ -817,7 +817,7 @@ function HoyPageContent() {
 
           if (!isSimulacion && registroSesionId) {
             try {
-              await base44.entities.RegistroSesion.update(registroSesionId, {
+              await localDataClient.entities.RegistroSesion.update(registroSesionId, {
                 calificacion: calidad,
                 notas: notas,
                 mediaLinks: mediaLinks || [],

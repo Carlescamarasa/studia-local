@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +15,7 @@ export default function BloquesTab() {
 
   const { data: bloques = [], isLoading } = useQuery({
     queryKey: ['bloques'],
-    queryFn: () => base44.entities.Bloque.list('-created_date'),
+    queryFn: () => localDataClient.entities.Bloque.list('-created_date'),
   });
 
   const filteredBloques = bloques.filter(b =>

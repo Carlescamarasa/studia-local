@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+// Eliminado: importación de base44Client, ya no es necesaria
+// Reemplazado por lógica local con almacenamiento en localStorage
 import { getCurrentUser } from "@/api/localDataClient";
 import { Music, BookOpen, Layers } from "lucide-react";
 import PiezasTab from "../components/editor/PiezasTab";

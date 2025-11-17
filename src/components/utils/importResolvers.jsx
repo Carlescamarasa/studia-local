@@ -1,4 +1,4 @@
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 
 /**
  * Normaliza texto para comparación (trim, lowercase)
@@ -14,7 +14,7 @@ function normalize(str) {
 export async function resolveUserIdByEmail(email) {
   if (!email) return null;
   
-  const users = await base44.entities.User.list();
+  const users = await localDataClient.entities.User.list();
   const found = users.find(u => normalize(u.email) === normalize(email));
   return found?.id || null;
 }
@@ -25,7 +25,7 @@ export async function resolveUserIdByEmail(email) {
 export async function resolvePieceIdByName(nombrePieza) {
   if (!nombrePieza) return null;
   
-  const piezas = await base44.entities.Pieza.list();
+  const piezas = await localDataClient.entities.Pieza.list();
   const found = piezas.find(p => normalize(p.nombre) === normalize(nombrePieza));
   return found?.id || null;
 }
@@ -36,7 +36,7 @@ export async function resolvePieceIdByName(nombrePieza) {
 export async function resolvePieceIdByNameOrSlug(nombreOSlug) {
   if (!nombreOSlug) return null;
   
-  const piezas = await base44.entities.Pieza.list();
+  const piezas = await localDataClient.entities.Pieza.list();
   const normalized = normalize(nombreOSlug);
   const found = piezas.find(p => 
     normalize(p.nombre) === normalized || 
@@ -51,7 +51,7 @@ export async function resolvePieceIdByNameOrSlug(nombreOSlug) {
 export async function resolveExerciseIdByCode(code) {
   if (!code) return null;
   
-  const bloques = await base44.entities.Bloque.list();
+  const bloques = await localDataClient.entities.Bloque.list();
   const found = bloques.find(b => normalize(b.code) === normalize(code));
   return found?.id || null;
 }
@@ -62,7 +62,7 @@ export async function resolveExerciseIdByCode(code) {
 export async function resolveExerciseIdByName(nombre) {
   if (!nombre) return null;
   
-  const bloques = await base44.entities.Bloque.list();
+  const bloques = await localDataClient.entities.Bloque.list();
   const found = bloques.find(b => normalize(b.nombre) === normalize(nombre));
   return found?.id || null;
 }
@@ -73,7 +73,7 @@ export async function resolveExerciseIdByName(nombre) {
 export async function resolvePlanIdByName(nombrePlan) {
   if (!nombrePlan) return null;
   
-  const planes = await base44.entities.Plan.list();
+  const planes = await localDataClient.entities.Plan.list();
   const found = planes.find(p => normalize(p.nombre) === normalize(nombrePlan));
   return found?.id || null;
 }
@@ -84,7 +84,7 @@ export async function resolvePlanIdByName(nombrePlan) {
 export async function resolveExerciseIdsByCodes(codes) {
   if (!codes || !Array.isArray(codes)) return [];
   
-  const bloques = await base44.entities.Bloque.list();
+  const bloques = await localDataClient.entities.Bloque.list();
   return codes.map(code => {
     const found = bloques.find(b => normalize(b.code) === normalize(code));
     return found?.id || null;
@@ -97,7 +97,7 @@ export async function resolveExerciseIdsByCodes(codes) {
 export async function resolveExercisesByCodes(codes) {
   if (!codes || !Array.isArray(codes)) return [];
   
-  const bloques = await base44.entities.Bloque.list();
+  const bloques = await localDataClient.entities.Bloque.list();
   return codes.map(code => {
     const found = bloques.find(b => normalize(b.code) === normalize(code));
     if (!found) return null;

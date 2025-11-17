@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,11 +22,11 @@ export default function EjerciciosTab() {
 
   const { data: ejercicios = [], isLoading } = useQuery({
     queryKey: ['bloques'],
-    queryFn: () => base44.entities.Bloque.list('-updated_date'),
+    queryFn: () => localDataClient.entities.Bloque.list('-updated_date'),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Bloque.delete(id),
+    mutationFn: (id) => localDataClient.entities.Bloque.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bloques'] });
       toast.success("✅ Ejercicio eliminado");
@@ -49,7 +49,7 @@ export default function EjerciciosTab() {
       delete newData.updated_date;
       delete newData.created_by;
 
-      return base44.entities.Bloque.create(newData);
+      return localDataClient.entities.Bloque.create(newData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bloques'] });

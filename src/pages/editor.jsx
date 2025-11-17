@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+// Eliminado: importación de base44Client, ya no es necesaria
+// Reemplazado por lógica local con almacenamiento en localStorage
 import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent } from "@/components/ds";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCurrentUser } from "@/api/localDataClient";
 import { Button } from "@/components/ds/Button";
@@ -68,14 +68,14 @@ export default function TestSeedPage() {
     queryKey: ['seedStats'],
     queryFn: async () => {
       const [users, piezas, planes, bloques, asignaciones, registrosSesion, registrosBloques, feedbacks] = await Promise.all([
-        base44.entities.User.list(),
-        base44.entities.Pieza.list(),
-        base44.entities.Plan.list(),
-        base44.entities.Bloque.list(),
-        base44.entities.Asignacion.list(),
-        base44.entities.RegistroSesion.list(),
-        base44.entities.RegistroBloque.list(),
-        base44.entities.FeedbackSemanal.list(),
+        localDataClient.entities.User.list(),
+        localDataClient.entities.Pieza.list(),
+        localDataClient.entities.Plan.list(),
+        localDataClient.entities.Bloque.list(),
+        localDataClient.entities.Asignacion.list(),
+        localDataClient.entities.RegistroSesion.list(),
+        localDataClient.entities.RegistroBloque.list(),
+        localDataClient.entities.FeedbackSemanal.list(),
       ]);
       return { users, piezas, planes, bloques, asignaciones, registrosSesion, registrosBloques, feedbacks };
     },
@@ -95,7 +95,7 @@ export default function TestSeedPage() {
 
     try {
       const startTime = Date.now();
-      const usuarios = await base44.entities.User.list();
+      const usuarios = await localDataClient.entities.User.list();
       const estudiantes = usuarios.filter(u => u.rolPersonalizado === 'ESTU');
       const profesores = usuarios.filter(u => u.rolPersonalizado === 'PROF');
 
@@ -111,12 +111,12 @@ export default function TestSeedPage() {
         addLog('⚠️ No hay profesor disponible, usando administrador', 'warning');
       }
 
-      let piezas = await base44.entities.Pieza.list();
+      let piezas = await localDataClient.entities.Pieza.list();
       let piezaBase = piezas.find(p => p.nombre === 'Seed – Estudio base');
 
       if (!piezaBase) {
         addLog('📝 Creando pieza base...', 'info');
-        piezaBase = await base44.entities.Pieza.create({
+        piezaBase = await localDataClient.entities.Pieza.create({
           nombre: 'Seed – Estudio base',
           descripcion: 'Pieza de referencia para generación de datos de prueba',
           nivel: 'intermedio',
@@ -131,7 +131,7 @@ export default function TestSeedPage() {
         addLog('✅ Pieza base creada', 'success');
       }
 
-      let bloques = await base44.entities.Bloque.list();
+      let bloques = await localDataClient.entities.Bloque.list();
       const tiposRequeridos = ['CA', 'CB', 'TC', 'TM', 'FM', 'VC', 'AD'];
       const ejerciciosBase = {};
 
@@ -148,7 +148,7 @@ export default function TestSeedPage() {
             AD: { nombre: 'Advertencia', duracion: 0 },
           };
 
-          ejercicio = await base44.entities.Bloque.create({
+          ejercicio = await localDataClient.entities.Bloque.create({
             nombre: configs[tipo].nombre,
             code: `${tipo}-SEED-001`,
             tipo: tipo,
@@ -164,14 +164,14 @@ export default function TestSeedPage() {
         ejerciciosBase[tipo] = ejercicio;
       }
 
-      bloques = await base44.entities.Bloque.list();
+      bloques = await localDataClient.entities.Bloque.list();
 
-      let planes = await base44.entities.Plan.list();
+      let planes = await localDataClient.entities.Plan.list();
       let planBase = planes.find(p => p.nombre === 'Seed – Plan Base');
 
       if (!planBase) {
         addLog('📅 Creando plan base...', 'info');
-        planBase = await base44.entities.Plan.create({
+        planBase = await localDataClient.entities.Plan.create({
           nombre: 'Seed – Plan Base',
           focoGeneral: 'GEN',
           objetivoSemanalPorDefecto: 'Desarrollar técnica y musicalidad',
@@ -282,14 +282,14 @@ export default function TestSeedPage() {
           const semanaInicioISO = formatLocalDate(lunesSemana);
 
           // Verificar si ya existe asignación para esta semana
-          const asignaciones = await base44.entities.Asignacion.list();
+          const asignaciones = await localDataClient.entities.Asignacion.list();
           let asignacion = asignaciones.find(a =>
             a.alumnoId === estudiante.id &&
             a.semanaInicioISO === semanaInicioISO
           );
 
           if (!asignacion) {
-            asignacion = await base44.entities.Asignacion.create({
+            asignacion = await localDataClient.entities.Asignacion.create({
               alumnoId: estudiante.id,
               piezaId: piezaBase.id,
               semanaInicioISO: semanaInicioISO,
@@ -381,7 +381,7 @@ export default function TestSeedPage() {
               .filter(b => b.tipo !== 'AD')
               .reduce((sum, b) => sum + (b.duracionSeg || 0), 0);
 
-            const registroSesion = await base44.entities.RegistroSesion.create({
+            const registroSesion = await localDataClient.entities.RegistroSesion.create({
               asignacionId: asignacion.id,
               alumnoId: estudiante.id,
               profesorAsignadoId: profesorAsignado.id,
@@ -417,7 +417,7 @@ export default function TestSeedPage() {
               const esOmitido = Math.random() < 0.15; // 15% omitidos
               const duracionReal = esOmitido ? 0 : (bloque.duracionSeg || 0) + Math.floor((Math.random() * 60) - 30);
 
-              await base44.entities.RegistroBloque.create({
+              await localDataClient.entities.RegistroBloque.create({
                 registroSesionId: registroSesion.id,
                 asignacionId: asignacion.id,
                 alumnoId: estudiante.id,
@@ -450,7 +450,7 @@ export default function TestSeedPage() {
             'Necesitas mayor dedicación. Ajusta la embocadura y practica escalas con metrónomo.'
           ];
 
-          await base44.entities.FeedbackSemanal.create({
+          await localDataClient.entities.FeedbackSemanal.create({
             asignacionId: asignacion.id,
             alumnoId: estudiante.id,
             profesorId: profesorAsignado.id,
@@ -488,55 +488,55 @@ export default function TestSeedPage() {
     try {
       // Orden: FeedbackSemanal → RegistroBloque → RegistroSesion → Asignacion → Plan → Bloque → Pieza
 
-      const feedbacks = await base44.entities.FeedbackSemanal.list();
+      const feedbacks = await localDataClient.entities.FeedbackSemanal.list();
       for (const f of feedbacks) {
         if (f.profesorId === currentUser?.id || currentUser?.rolPersonalizado === 'ADMIN') { // Only delete current user's or all if admin
-          await base44.entities.FeedbackSemanal.delete(f.id);
+          await localDataClient.entities.FeedbackSemanal.delete(f.id);
         }
       }
       addLog(`✅ ${feedbacks.length} feedbacks eliminados`, 'info');
 
-      const registrosBloques = await base44.entities.RegistroBloque.list();
+      const registrosBloques = await localDataClient.entities.RegistroBloque.list();
       for (const rb of registrosBloques) {
         // Assuming RegistroBloque has some link to who created it or its parent Registration
         // For now, removing all if a seed is being deleted, or adding check if needed
-        await base44.entities.RegistroBloque.delete(rb.id);
+        await localDataClient.entities.RegistroBloque.delete(rb.id);
       }
       addLog(`✅ ${registrosBloques.length} registros de bloques eliminados`, 'info');
 
-      const registrosSesion = await base44.entities.RegistroSesion.list();
+      const registrosSesion = await localDataClient.entities.RegistroSesion.list();
       for (const rs of registrosSesion) {
         // Assuming RegistroSesion has some link to who created it or its parent Assignment
-        await base44.entities.RegistroSesion.delete(rs.id);
+        await localDataClient.entities.RegistroSesion.delete(rs.id);
       }
       addLog(`✅ ${registrosSesion.length} registros de sesión eliminados`, 'info');
 
-      const asignaciones = await base44.entities.Asignacion.list();
+      const asignaciones = await localDataClient.entities.Asignacion.list();
       for (const a of asignaciones) {
         if (a.profesorId === currentUser?.id || currentUser?.rolPersonalizado === 'ADMIN') { // Only delete current user's or all if admin
-          await base44.entities.Asignacion.delete(a.id);
+          await localDataClient.entities.Asignacion.delete(a.id);
         }
       }
       addLog(`✅ ${asignaciones.length} asignaciones eliminadas`, 'info');
 
-      const planes = await base44.entities.Plan.list();
+      const planes = await localDataClient.entities.Plan.list();
       const planesSeed = planes.filter(p => p.nombre.startsWith('Seed') && (p.profesorId === currentUser?.id || currentUser?.rolPersonalizado === 'ADMIN'));
       for (const p of planesSeed) {
-        await base44.entities.Plan.delete(p.id);
+        await localDataClient.entities.Plan.delete(p.id);
       }
       addLog(`✅ ${planesSeed.length} planes seed eliminados`, 'info');
 
-      const bloques = await base44.entities.Bloque.list();
+      const bloques = await localDataClient.entities.Bloque.list();
       const bloquesSeed = bloques.filter(b => b.code?.includes('SEED') && (b.profesorId === currentUser?.id || currentUser?.rolPersonalizado === 'ADMIN'));
       for (const b of bloquesSeed) {
-        await base44.entities.Bloque.delete(b.id);
+        await localDataClient.entities.Bloque.delete(b.id);
       }
       addLog(`✅ ${bloquesSeed.length} ejercicios seed eliminados`, 'info');
 
-      const piezas = await base44.entities.Pieza.list();
+      const piezas = await localDataClient.entities.Pieza.list();
       const piezasSeed = piezas.filter(p => p.nombre.startsWith('Seed') && (p.profesorId === currentUser?.id || currentUser?.rolPersonalizado === 'ADMIN'));
       for (const p of piezasSeed) {
-        await base44.entities.Pieza.delete(p.id);
+        await localDataClient.entities.Pieza.delete(p.id);
       }
       addLog(`✅ ${piezasSeed.length} piezas seed eliminadas`, 'info');
 

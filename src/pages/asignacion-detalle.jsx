@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCurrentUser } from "@/api/localDataClient";
 // Updated Card, Badge, Alert paths from @/components/ui to @/components/ds
@@ -44,7 +44,7 @@ export default function AsignacionDetallePage() {
   const { data: asignacion, isLoading } = useQuery({
     queryKey: ['asignacion', asignacionId],
     queryFn: async () => {
-      const result = await base44.entities.Asignacion.list();
+      const result = await localDataClient.entities.Asignacion.list();
       return result.find(a => a.id === asignacionId);
     },
     enabled: !!asignacionId,
@@ -52,16 +52,16 @@ export default function AsignacionDetallePage() {
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
   });
 
   const { data: piezas = [] } = useQuery({
     queryKey: ['piezas'],
-    queryFn: () => base44.entities.Pieza.list(),
+    queryFn: () => localDataClient.entities.Pieza.list(),
   });
 
   const cerrarMutation = useMutation({
-    mutationFn: () => base44.entities.Asignacion.update(asignacionId, { estado: 'cerrada' }),
+    mutationFn: () => localDataClient.entities.Asignacion.update(asignacionId, { estado: 'cerrada' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignacion', asignacionId] });
       toast.success('✅ Asignación cerrada');
@@ -69,7 +69,7 @@ export default function AsignacionDetallePage() {
   });
 
   const publicarMutation = useMutation({
-    mutationFn: () => base44.entities.Asignacion.update(asignacionId, { estado: 'publicada' }),
+    mutationFn: () => localDataClient.entities.Asignacion.update(asignacionId, { estado: 'publicada' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignacion', asignacionId] });
       toast.success('✅ Asignación publicada');
@@ -91,7 +91,7 @@ export default function AsignacionDetallePage() {
         }
       }
       
-      return base44.entities.Asignacion.update(asignacionId, data);
+      return localDataClient.entities.Asignacion.update(asignacionId, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignacion', asignacionId] });

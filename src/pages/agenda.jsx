@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
@@ -65,12 +65,12 @@ function AgendaPageContent() {
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
   });
 
   const { data: asignacionesRaw = [] } = useQuery({
     queryKey: ['asignaciones'],
-    queryFn: () => base44.entities.Asignacion.list(),
+    queryFn: () => localDataClient.entities.Asignacion.list(),
   });
 
   // Filtrar y validar asignaciones
@@ -91,11 +91,11 @@ function AgendaPageContent() {
 
   const { data: feedbacksSemanal = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
-    queryFn: () => base44.entities.FeedbackSemanal.list('-created_date'),
+    queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_date'),
   });
 
   const crearFeedbackMutation = useMutation({
-    mutationFn: (data) => base44.entities.FeedbackSemanal.create(data),
+    mutationFn: (data) => localDataClient.entities.FeedbackSemanal.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] });
       toast.success('✅ Feedback guardado');
@@ -104,7 +104,7 @@ function AgendaPageContent() {
   });
 
   const actualizarFeedbackMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.FeedbackSemanal.update(id, data),
+    mutationFn: ({ id, data }) => localDataClient.entities.FeedbackSemanal.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] });
       toast.success('✅ Feedback actualizado');
@@ -113,7 +113,7 @@ function AgendaPageContent() {
   });
 
   const eliminarFeedbackMutation = useMutation({
-    mutationFn: (id) => base44.entities.FeedbackSemanal.delete(id),
+    mutationFn: (id) => localDataClient.entities.FeedbackSemanal.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] });
       toast.success('✅ Feedback eliminado');

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCurrentUser } from "@/api/localDataClient";
 import { Button } from "@/components/ui/button";
@@ -49,12 +49,12 @@ export default function FormularioRapido({ onClose }) {
 
   const { data: piezas = [] } = useQuery({
     queryKey: ['piezas'],
-    queryFn: () => base44.entities.Pieza.list(),
+    queryFn: () => localDataClient.entities.Pieza.list(),
   });
 
   const { data: planes = [] } = useQuery({
     queryKey: ['planes'],
-    queryFn: () => base44.entities.Plan.list(),
+    queryFn: () => localDataClient.entities.Plan.list(),
   });
 
   const crearAsignacionesMutation = useMutation({
@@ -90,7 +90,7 @@ export default function FormularioRapido({ onClose }) {
       const results = [];
       for (const asignacion of asignaciones) {
         try {
-          const result = await base44.entities.Asignacion.create(asignacion);
+          const result = await localDataClient.entities.Asignacion.create(asignacion);
           results.push(result);
         } catch (error) {
           const alumno = estudiantes.find(e => e.id === asignacion.alumnoId);

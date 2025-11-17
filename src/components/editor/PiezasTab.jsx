@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,11 +22,11 @@ export default function PiezasTab() {
 
   const { data: piezas = [], isLoading } = useQuery({
     queryKey: ['piezas'],
-    queryFn: () => base44.entities.Pieza.list('-created_date'),
+    queryFn: () => localDataClient.entities.Pieza.list('-created_date'),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Pieza.delete(id),
+    mutationFn: (id) => localDataClient.entities.Pieza.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['piezas'] });
       toast.success('✅ Pieza eliminada');
@@ -43,7 +43,7 @@ export default function PiezasTab() {
       delete copia.created_date;
       delete copia.updated_date;
       delete copia.created_by;
-      return base44.entities.Pieza.create(copia);
+      return localDataClient.entities.Pieza.create(copia);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['piezas'] });

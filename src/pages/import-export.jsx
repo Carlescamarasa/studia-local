@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
@@ -41,37 +41,37 @@ export default function ImportExportPage() {
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
   });
 
   const { data: asignaciones = [] } = useQuery({
     queryKey: ['asignaciones'],
-    queryFn: () => base44.entities.Asignacion.list('-created_date'),
+    queryFn: () => localDataClient.entities.Asignacion.list('-created_date'),
   });
 
   const { data: bloques = [] } = useQuery({
     queryKey: ['bloques'],
-    queryFn: () => base44.entities.Bloque.list(),
+    queryFn: () => localDataClient.entities.Bloque.list(),
   });
 
   const { data: piezas = [] } = useQuery({
     queryKey: ['piezas'],
-    queryFn: () => base44.entities.Pieza.list(),
+    queryFn: () => localDataClient.entities.Pieza.list(),
   });
 
   const { data: planes = [] } = useQuery({
     queryKey: ['planes'],
-    queryFn: () => base44.entities.Plan.list(),
+    queryFn: () => localDataClient.entities.Plan.list(),
   });
 
   const { data: registrosSesion = [] } = useQuery({
     queryKey: ['registrosSesion'],
-    queryFn: () => base44.entities.RegistroSesion.list('-inicioISO'),
+    queryFn: () => localDataClient.entities.RegistroSesion.list('-inicioISO'),
   });
 
   const { data: registrosBloques = [] } = useQuery({
     queryKey: ['registrosBloques'],
-    queryFn: () => base44.entities.RegistroBloque.list('-inicioISO'),
+    queryFn: () => localDataClient.entities.RegistroBloque.list('-inicioISO'),
   });
 
   const importMutation = useMutation({
@@ -80,7 +80,7 @@ export default function ImportExportPage() {
         const results = { created: 0, errors: [] };
         for (const item of data) {
           try {
-            await base44.entities.Pieza.create({
+            await localDataClient.entities.Pieza.create({
               nombre: item.nombre,
               descripcion: item.descripcion || '',
               nivel: item.nivel || 'principiante',
@@ -103,7 +103,7 @@ export default function ImportExportPage() {
               results.skipped++;
               continue;
             }
-            await base44.entities.Bloque.create({
+            await localDataClient.entities.Bloque.create({
               nombre: item.nombre,
               code: item.code,
               tipo: item.tipo,
@@ -164,7 +164,7 @@ export default function ImportExportPage() {
               }))
             }));
 
-            await base44.entities.Plan.create({
+            await localDataClient.entities.Plan.create({
               nombre: item.nombre,
               focoGeneral: item.focoGeneral || 'GEN',
               objetivoSemanalPorDefecto: item.objetivoSemanalPorDefecto || '',

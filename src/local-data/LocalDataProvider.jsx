@@ -55,7 +55,7 @@ export function LocalDataProvider({ children }) {
           loading: false,
         };
 
-        // Inyectar datos en localDataClient para que base44.entities funcione
+        // Inyectar datos en localDataClient para que localDataClient.entities funcione
         setLocalDataRef(loadedData);
         setData(loadedData);
       } catch (error) {

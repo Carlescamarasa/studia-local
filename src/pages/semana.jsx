@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentUser } from "@/api/localDataClient";
 import { Button } from "@/components/ds/Button";
@@ -49,22 +49,22 @@ function SemanaPageContent() {
 
   const { data: asignaciones = [] } = useQuery({
     queryKey: ['asignaciones'],
-    queryFn: () => base44.entities.Asignacion.list(),
+    queryFn: () => localDataClient.entities.Asignacion.list(),
   });
 
   const { data: feedbacksSemanal = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
-    queryFn: () => base44.entities.FeedbackSemanal.list('-created_date'),
+    queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_date'),
   });
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
   });
 
   const { data: registrosSesion = [] } = useQuery({
     queryKey: ['registrosSesion'],
-    queryFn: () => base44.entities.RegistroSesion.list('-inicioISO'),
+    queryFn: () => localDataClient.entities.RegistroSesion.list('-inicioISO'),
   });
 
   const simulatingUser = sessionStorage.getItem('simulatingUser') ? 

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
@@ -151,7 +151,7 @@ function EstadisticasPageContent() {
 
   const { data: asignacionesProf = [] } = useQuery({
     queryKey: ['asignacionesProf', currentUser?.id],
-    queryFn: () => base44.entities.Asignacion.list(),
+    queryFn: () => localDataClient.entities.Asignacion.list(),
     enabled: isProf && !!currentUser?.id,
   });
 
@@ -169,27 +169,27 @@ function EstadisticasPageContent() {
 
   const { data: registros = [] } = useQuery({
     queryKey: ['registrosSesion'],
-    queryFn: () => base44.entities.RegistroSesion.list('-inicioISO'),
+    queryFn: () => localDataClient.entities.RegistroSesion.list('-inicioISO'),
   });
 
   const { data: bloques = [] } = useQuery({
     queryKey: ['registrosBloques'],
-    queryFn: () => base44.entities.RegistroBloque.list('-inicioISO'),
+    queryFn: () => localDataClient.entities.RegistroBloque.list('-inicioISO'),
   });
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
   });
 
   const { data: asignaciones = [] } = useQuery({
     queryKey: ['asignaciones'],
-    queryFn: () => base44.entities.Asignacion.list(),
+    queryFn: () => localDataClient.entities.Asignacion.list(),
   });
 
   const { data: feedbacksSemanal = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
-    queryFn: () => base44.entities.FeedbackSemanal.list('-created_date'),
+    queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_date'),
   });
 
   const estudiantes = usuarios.filter(u => u.rolPersonalizado === 'ESTU');
