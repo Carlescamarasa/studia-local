@@ -102,7 +102,7 @@ export default function StudentSearchBar({
         />
       </div>
 
-      <div className="border border-[var(--color-border-default)] rounded-xl overflow-hidden">
+      <div className="border border-[var(--color-border-default)] rounded-[var(--radius-card)] overflow-hidden">
         <div className="max-h-64 overflow-auto">
           {filtered.length === 0 ? (
             <div className="p-3 text-sm text-[var(--color-text-secondary)]">Sin resultados</div>

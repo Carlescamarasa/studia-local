@@ -436,16 +436,16 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
       
       <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
         <div 
-          className="w-full max-w-6xl my-8 overflow-hidden flex flex-col max-h-[92vh] pointer-events-auto shadow-card rounded-2xl bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)]"
+          className="w-full max-w-6xl my-8 overflow-hidden flex flex-col max-h-[92vh] pointer-events-auto shadow-card rounded-[var(--radius-modal)] bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-2xl px-6 py-4">
+          <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-[var(--radius-modal)] px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <PlayCircle className="w-6 h-6 text-[var(--color-text-primary)]" />
                 <CardTitle className="text-[var(--color-text-primary)]">Editar Sesión</CardTitle>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-9 w-9 rounded-xl">
+              <Button variant="ghost" size="icon" onClick={onClose} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-9 w-9 rounded-[var(--btn-radius)]">
                 <X className="w-5 h-5" />
               </Button>
             </div>
@@ -532,7 +532,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                     <div
                                       ref={provided.innerRef}
                                       {...provided.draggableProps}
-                                      className={`flex items-center gap-2 p-3 border border-[var(--color-border-default)] rounded-xl bg-[var(--color-surface-elevated)] hover:shadow-sm transition-all ${
+                                      className={`flex items-center gap-2 p-3 border border-[var(--color-border-default)] rounded-[var(--radius-card)] bg-[var(--color-surface-elevated)] hover:shadow-sm transition-all ${
                                         snapshot.isDragging ? 'shadow-card border-[var(--color-primary)]' : ''
                                       }`}
                                     >
@@ -556,7 +556,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                           ejercicio: bloque, 
                                           piezaSnapshot: piezaSnapshot || pieza 
                                         })}
-                                        className="h-8 w-8 p-0 rounded-xl hover:bg-[var(--color-surface-muted)]"
+                                        className="h-8 w-8 p-0 rounded-[var(--radius-card)] hover:bg-[var(--color-surface-muted)]"
                                       >
                                         <Edit className="w-4 h-4" />
                                       </Button>
@@ -564,7 +564,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => removeEjercicio(formData.bloques.findIndex(b => b.code === bloque.code))}
-                                        className="h-8 w-8 p-0 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-xl"
+                                        className="h-8 w-8 p-0 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-[var(--radius-card)]"
                                       >
                                         <Trash2 className="w-4 h-4" />
                                       </Button>
@@ -591,7 +591,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                   >
                                     <CardContent className="pt-4">
                                       <div 
-                                        className="flex items-center gap-2 mb-2 cursor-pointer hover:bg-[var(--color-primary-soft)] rounded-xl p-1 -m-1 transition-colors"
+                                        className="flex items-center gap-2 mb-2 cursor-pointer hover:bg-[var(--color-primary-soft)] rounded-[var(--radius-card)] p-1 -m-1 transition-colors"
                                         onClick={() => setExpandedRondas(prev => {
                                           const n = new Set(prev);
                                           n.has(seqIndex) ? n.delete(seqIndex) : n.add(seqIndex);
@@ -637,7 +637,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                             size="sm"
                                             onClick={() => duplicateRonda(ronda.id)}
                                             title="Duplicar ronda"
-                                            className="h-8 w-8 p-0 hover:bg-[var(--color-primary-soft)] rounded-xl"
+                                            className="h-8 w-8 p-0 hover:bg-[var(--color-primary-soft)] rounded-[var(--radius-card)]"
                                           >
                                             <Copy className="w-4 h-4" />
                                           </Button>
@@ -653,7 +653,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                                 });
                                               }
                                             }}
-                                            className="h-8 w-8 p-0 text-[var(--color-danger)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-xl"
+                                            className="h-8 w-8 p-0 text-[var(--color-danger)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-[var(--radius-card)]"
                                           >
                                             <Trash2 className="w-4 h-4" />
                                           </Button>
@@ -672,7 +672,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                                 const ejercicio = formData.bloques.find(b => b.code === code);
                                                 if (!ejercicio) {
                                                   return (
-                                                    <div key={`${ronda.id}-${eIndex}`} className="p-2 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/20 rounded-xl text-sm text-[var(--color-danger)] flex items-center gap-2">
+                                                    <div key={`${ronda.id}-${eIndex}`} className="p-2 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/20 rounded-[var(--radius-card)] text-sm text-[var(--color-danger)] flex items-center gap-2">
                                                       <AlertTriangle className="w-4 h-4" />
                                                       ⚠️ Referencia huérfana: {code}
                                                     </div>
@@ -689,7 +689,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                                       <div 
                                                         ref={p.innerRef}
                                                         {...p.draggableProps}
-                                                        className={`flex items-center gap-2 p-2 bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded-xl ${
+                                                        className={`flex items-center gap-2 p-2 bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded-[var(--radius-card)] ${
                                                           s.isDragging ? 'shadow-card border-[var(--color-primary)]' : ''
                                                         }`}
                                                       >
@@ -715,7 +715,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                                               });
                                                             }
                                                           }}
-                                                          className="h-6 px-2 rounded-xl hover:bg-[var(--color-surface-muted)]"
+                                                          className="h-6 px-2 rounded-[var(--radius-card)] hover:bg-[var(--color-surface-muted)]"
                                                           title="Editar ejercicio"
                                                         >
                                                           <Edit className="w-3 h-3" />
@@ -727,7 +727,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                                             formData.rondas.findIndex(r => r.id === ronda.id), 
                                                             code
                                                           )}
-                                                          className="h-6 px-2 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-xl"
+                                                          className="h-6 px-2 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-[var(--radius-card)]"
                                                           title="Quitar de la ronda"
                                                         >
                                                           <X className="w-3 h-3" />
@@ -790,7 +790,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                         variant="ghost"
                         size="sm"
                         onClick={() => setTiposFilter(new Set())}
-                        className="h-6 px-2 rounded-xl"
+                        className="h-6 px-2 rounded-[var(--radius-card)]"
                       >
                         <RotateCcw className="w-3 h-3 mr-1" />
                         Todos
@@ -800,7 +800,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                 </div>
 
                 {selectedEjercicios.size > 0 && (
-                  <Alert className="rounded-xl border-[var(--color-info)]/20 bg-[var(--color-info)]/10">
+                  <Alert className="rounded-[var(--radius-card)] border-[var(--color-info)]/20 bg-[var(--color-info)]/10">
                     <AlertDescription className="text-[var(--color-text-primary)] flex items-center justify-between flex-wrap gap-2">
                       <span>
                         <strong className="text-[var(--color-info)]">{selectedEjercicios.size} ejercicio(s) seleccionado(s).</strong> 
@@ -836,7 +836,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                   </Alert>
                 )}
 
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto border border-[var(--color-border-default)] rounded-xl p-3 bg-[var(--color-surface-muted)]">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-card)] p-3 bg-[var(--color-surface-muted)]">
                   {filteredEjercicios.length === 0 ? (
                     <div className="col-span-full text-center py-8">
                       <p className="text-sm text-[var(--color-text-secondary)]">No se encontraron ejercicios</p>
@@ -845,7 +845,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                     filteredEjercicios.map((ejercicio) => (
                       <div
                         key={ejercicio.id}
-                        className={`flex items-center gap-2 p-2 border border-[var(--color-border-default)] rounded-xl cursor-pointer transition-all ${
+                        className={`flex items-center gap-2 p-2 border border-[var(--color-border-default)] rounded-[var(--radius-card)] cursor-pointer transition-all ${
                           selectedEjercicios.has(ejercicio.id) 
                             ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm' 
                             : 'bg-[var(--color-surface-elevated)] hover:bg-[var(--color-surface-muted)] hover:shadow-sm'

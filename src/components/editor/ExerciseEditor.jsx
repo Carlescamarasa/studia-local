@@ -309,10 +309,10 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
       
       <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
         <div 
-          className="bg-[var(--color-surface-elevated)] w-full max-w-3xl max-h-[92vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-8 border border-[var(--color-border-default)]"
+          className="bg-[var(--color-surface-elevated)] w-full max-w-3xl max-h-[92vh] shadow-card rounded-[var(--radius-modal)] flex flex-col pointer-events-auto my-8 border border-[var(--color-border-default)]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-2xl px-6 py-4">
+          <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-[var(--radius-modal)] px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
               <div>
@@ -324,7 +324,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                 </p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => onClose(null)} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-9 w-9 rounded-xl">
+              <Button variant="ghost" size="icon" onClick={() => onClose(null)} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-9 w-9 rounded-[var(--btn-radius)]">
                 <X className="w-5 h-5" />
               </Button>
             </div>
@@ -332,7 +332,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
 
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {saveResult && (
-              <Alert className={`rounded-xl ${saveResult.success ? 'border-[var(--color-success)]/20 bg-[var(--color-success)]/10' : 'border-[var(--color-danger)]/20 bg-[var(--color-danger)]/10'}`}>
+              <Alert className={`rounded-[var(--radius-card)] ${saveResult.success ? 'border-[var(--color-success)]/20 bg-[var(--color-success)]/10' : 'border-[var(--color-danger)]/20 bg-[var(--color-danger)]/10'}`}>
                 <AlertDescription className="text-[var(--color-text-primary)]">
                   {saveResult.message}
                 </AlertDescription>
@@ -340,7 +340,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
             )}
 
             {isFM && usandoPiezaSnapshot && (
-              <Alert className="rounded-xl border-blue-200 bg-blue-50">
+              <Alert className="rounded-[var(--radius-card)] border-blue-200 bg-blue-50">
                 <Info className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-800">
                   <strong>Este FM usa el material de la Pieza de la Asignación.</strong>
@@ -349,7 +349,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
             )}
 
             {isAD && (
-              <Alert className="rounded-xl border-[var(--color-warning)]/20 bg-[var(--color-warning)]/10">
+              <Alert className="rounded-[var(--radius-card)] border-[var(--color-warning)]/20 bg-[var(--color-warning)]/10">
                 <AlertTriangle className="h-4 w-4 text-[var(--color-warning)]" />
                 <AlertDescription className="text-[var(--color-text-primary)]">
                   Este ejercicio no activa cronómetro ni suma tiempo real. La duración es solo referencia visual.
@@ -378,7 +378,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                       }}
                       modal={false}
                     >
-                        <SelectTrigger id="tipo" className="w-full h-10 rounded-xl border-[var(--color-border-default)] focus-orange">
+                        <SelectTrigger id="tipo" className="w-full h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange">
                         <SelectValue placeholder="Selecciona un tipo..." />
                       </SelectTrigger>
                       <SelectContent 
@@ -403,7 +403,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                         value={formData.code}
                         onChange={(e) => handleCodeChange(e.target.value)}
                         placeholder="Ej: CA-0001"
-                        className="flex-1 h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
+                        className="flex-1 h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange"
                       />
                       <Button
                         type="button"
@@ -411,7 +411,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                         size="icon"
                         onClick={handleRegenerateCode}
                         title="Regenerar código"
-                        className="h-10 w-10 rounded-xl"
+                        className="h-10 w-10 rounded-[var(--radius-ctrl)]"
                       >
                         <RefreshCw className="w-4 h-4" />
                       </Button>
@@ -426,7 +426,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                     value={formData.nombre}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                     placeholder="Ej: Escalas cromáticas"
-                    className="h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
+                    className="h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange"
                   />
                 </div>
 
@@ -438,7 +438,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                     min="0"
                     value={formData.duracionSeg}
                     onChange={(e) => setFormData({ ...formData, duracionSeg: parseInt(e.target.value || 0) })}
-                    className="h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
+                    className="h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange"
                   />
                   <p className="text-xs text-[var(--color-text-secondary)] mt-1">
                     {Math.floor(formData.duracionSeg / 60)}:{String(formData.duracionSeg % 60).padStart(2, '0')} minutos
@@ -453,7 +453,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                     onChange={(e) => setFormData({ ...formData, instrucciones: e.target.value })}
                     placeholder="Instrucciones detalladas para el ejercicio..."
                     rows={3}
-                    className="rounded-xl border-[var(--color-border-default)] focus-orange resize-none"
+                    className="rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange resize-none"
                   />
                 </div>
 
@@ -464,7 +464,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                     value={formData.indicadorLogro}
                     onChange={(e) => setFormData({ ...formData, indicadorLogro: e.target.value })}
                     placeholder="¿Cómo sabe el estudiante que lo logró?"
-                    className="h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
+                    className="h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange"
                   />
                 </div>
               </CardContent>
@@ -486,7 +486,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                         onValueChange={setPiezaRefId}
                         modal={false}
                       >
-                        <SelectTrigger id="piezaRef" className="w-full h-10 rounded-xl border-[var(--color-border-default)] focus-orange">
+                        <SelectTrigger id="piezaRef" className="w-full h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange">
                           <SelectValue placeholder="Selecciona una Pieza para previsualizar FM (opcional)" />
                         </SelectTrigger>
                         <SelectContent 
@@ -518,11 +518,11 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                     <>
                       <div>
                         <Label>Elementos disponibles (multi-selección y ordenación)</Label>
-                        <div className="border border-[var(--color-border-default)] rounded-xl p-3 max-h-48 overflow-y-auto space-y-2 bg-muted">
+                        <div className="border border-[var(--color-border-default)] rounded-[var(--radius-ctrl)] p-3 max-h-48 overflow-y-auto space-y-2 bg-muted">
                           {elementosDisponibles.map((elemento) => (
                             <div 
                               key={elemento.nombre}
-                              className="flex items-center gap-2 p-2 bg-card border border-[var(--color-border-default)] rounded-xl cursor-pointer hover:bg-muted hover:shadow-sm transition-all"
+                              className="flex items-center gap-2 p-2 bg-card border border-[var(--color-border-default)] rounded-[var(--radius-ctrl)] cursor-pointer hover:bg-muted hover:shadow-sm transition-all"
                               onClick={() => toggleElementoSeleccion(elemento)}
                             >
                               <Checkbox 
@@ -547,7 +547,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                                   variant="outline"
                                   size="sm"
                                   onClick={resetElementosOrden}
-                                  className="h-8 rounded-xl hover:shadow-sm"
+                                  className="h-8 rounded-[var(--radius-ctrl)] hover:shadow-sm"
                                 >
                                   <RotateCcw className="w-3 h-3 mr-1" />
                                   Restablecer
@@ -557,15 +557,15 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => setSelectedElementos([])}
-                                  className="h-8 rounded-xl hover:shadow-sm"
+                                  className="h-8 rounded-[var(--radius-ctrl)] hover:shadow-sm"
                                 >
                                   Vaciar
                                 </Button>
                               </div>
                             </div>
-                            <div className="border border-[var(--color-border-default)] rounded-xl p-3 space-y-1 bg-card">
+                            <div className="border border-[var(--color-border-default)] rounded-[var(--radius-ctrl)] p-3 space-y-1 bg-card">
                               {selectedElementos.map((elemento, index) => (
-                                <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-xl">
+                                <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-[var(--radius-ctrl)]">
                                   <div className="flex flex-col gap-0.5">
                                     <Button
                                       type="button"
@@ -613,7 +613,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                               {selectedElementos.map((elemento, idx) => (
                                 <TabsContent key={idx} value={String(idx)} className="space-y-2">
                                   {elemento.media?.video && (
-                                    <div className="border border-[var(--color-border-default)] rounded-xl p-2 bg-card">
+                                    <div className="border border-[var(--color-border-default)] rounded-[var(--radius-ctrl)] p-2 bg-card">
                                       <div className="flex items-center gap-2 text-sm mb-1">
                                         <Play className="w-4 h-4 text-blue-600" />
                                         <span className="font-medium text-ui">Video</span>
@@ -624,7 +624,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                                     </div>
                                   )}
                                   {elemento.media?.audio && (
-                                    <div className="border border-[var(--color-border-default)] rounded-xl p-2 bg-card">
+                                    <div className="border border-[var(--color-border-default)] rounded-[var(--radius-ctrl)] p-2 bg-card">
                                       <div className="flex items-center gap-2 text-sm mb-1">
                                         <Volume2 className="w-4 h-4 text-purple-600" />
                                         <span className="font-medium text-ui">Audio</span>
@@ -635,7 +635,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                                     </div>
                                   )}
                                   {elemento.media?.imagen && (
-                                    <div className="border border-[var(--color-border-default)] rounded-xl p-2 bg-card">
+                                    <div className="border border-[var(--color-border-default)] rounded-[var(--radius-ctrl)] p-2 bg-card">
                                       <div className="flex items-center gap-2 text-sm mb-1">
                                         <ImageIcon className="w-4 h-4 text-green-600" />
                                         <span className="font-medium text-ui">Imagen</span>
@@ -646,7 +646,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                                     </div>
                                   )}
                                   {elemento.media?.pdf && (
-                                    <div className="border border-[var(--color-border-default)] rounded-xl p-2 bg-card">
+                                    <div className="border border-[var(--color-border-default)] rounded-[var(--radius-ctrl)] p-2 bg-card">
                                       <div className="flex items-center gap-2 text-sm mb-1">
                                         <FileText className="w-4 h-4 text-red-600" />
                                         <span className="font-medium text-ui">PDF</span>
@@ -669,7 +669,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                   )}
 
                   {elementosDisponibles.length === 0 && isFM && (
-                    <Alert className="rounded-xl border-amber-200 bg-amber-50">
+                    <Alert className="rounded-[var(--radius-ctrl)] border-amber-200 bg-amber-50">
                       <AlertTriangle className="h-4 w-4 text-amber-600" />
                       <AlertDescription className="text-amber-700 text-sm">
                         {usandoPiezaSnapshot ? 
@@ -693,9 +693,9 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                     value={nuevoMaterial}
                     onChange={(e) => setNuevoMaterial(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addMaterial())}
-                    className="h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
+                    className="h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange"
                   />
-                  <Button onClick={addMaterial} type="button" className="h-10 rounded-xl btn-primary shadow-sm">
+                  <Button onClick={addMaterial} type="button" className="h-10 rounded-[var(--radius-ctrl)] btn-primary shadow-sm">
                     <Plus className="w-4 h-4" />
                   </Button>
                 </div>

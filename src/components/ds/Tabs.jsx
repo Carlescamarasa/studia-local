@@ -46,6 +46,14 @@ export default function Tabs({
       return;
     }
 
+    // En desktop sin showIconsOnlyMobile, siempre mostrar texto + icono
+    // No ejecutar la detección automática de espacio para evitar cambios de tamaño
+    if (!showIconsOnlyMobile && !isMobile) {
+      setShowIconsOnly(false);
+      return;
+    }
+
+    // Solo ejecutar detección de espacio si estamos en mobile o si showIconsOnlyMobile no está definido
     let timeoutId;
     let rafId;
     let isChecking = false;
@@ -194,7 +202,7 @@ export default function Tabs({
             {/* Slider deslizante - debe estar detrás de los botones pero visible */}
             <div
               ref={sliderRef}
-              className="absolute top-1 bottom-1 bg-[var(--color-primary-soft)] border border-[var(--color-primary)] rounded-[var(--btn-radius)] shadow-sm transition-all duration-300 ease-out pointer-events-none"
+              className="absolute top-1.5 bottom-1.5 bg-[var(--color-primary-soft)] border border-[var(--color-primary)] rounded-[var(--btn-radius)] shadow-sm transition-all duration-300 ease-out pointer-events-none"
               style={{
                 ...sliderStyle,
                 opacity: sliderStyle.opacity ?? 0,
@@ -213,14 +221,18 @@ export default function Tabs({
                   }}
                   onClick={() => onChange(item.value)}
                   className={cn(
-                    // No usar tabsSegmentedButtonActive porque el slider maneja el background
-                    "px-3 py-1.5 text-xs sm:text-sm rounded-[var(--btn-radius)] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] font-buttons font-medium",
+                    // Usar componentStyles en lugar de clases hardcodeadas
+                    componentStyles.components.tabsSegmentedButton,
+                    // Clases necesarias para el layout y posicionamiento
                     "relative flex-1 min-w-0 flex items-center justify-center",
                     // Asegurar que los botones no tengan background sólido que tape el slider
                     // El background activo se maneja con el slider, no con el botón
                     isActive ? "text-[var(--color-text-primary)]" : "text-ui/80",
                     !isActive && "hover:bg-[var(--color-surface-muted)]/50",
-                    showIconsOnly ? "flex-row px-2" : "flex-col"
+                    // Layout: flex-row para iconos solo, flex-col para icono + texto
+                    showIconsOnly ? "flex-row" : "flex-col",
+                    // Asegurar que min-h se respete incluso con flex-col
+                    "min-h-[var(--btn-height)]"
                   )}
                   style={{ 
                     zIndex: 2,

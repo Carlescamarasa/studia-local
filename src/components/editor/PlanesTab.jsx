@@ -126,7 +126,7 @@ export default function PlanesTab() {
           <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
         </div>
       ) : filteredPlanes.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-[var(--color-border-default)] rounded-lg">
+        <div className="text-center py-12 border-2 border-dashed border-[var(--color-border-default)] rounded-[var(--radius-card)]">
           <BookOpen className="w-16 h-16 mx-auto mb-4 text-[var(--color-text-secondary)]" />
           <p className="text-[var(--color-text-secondary)] mb-2">
             {searchTerm || focoFilter !== 'all' ? 'No se encontraron planes' : 'Aún no hay planes'}

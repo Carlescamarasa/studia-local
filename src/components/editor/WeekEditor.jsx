@@ -64,16 +64,16 @@ export default function WeekEditor({ semana, onSave, onClose }) {
       
       <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
         <Card 
-          className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col pointer-events-auto shadow-card rounded-2xl app-card my-8"
+          className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col pointer-events-auto shadow-card rounded-[var(--radius-modal)] app-card my-8"
           onClick={(e) => e.stopPropagation()}
         >
-          <CardHeader className="border-b border-[var(--color-border-default)] bg-brand-500 text-white rounded-t-2xl">
+          <CardHeader className="border-b border-[var(--color-border-default)] bg-brand-500 text-white rounded-t-[var(--radius-modal)]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Calendar className="w-6 h-6" />
                 <CardTitle>Editar Semana</CardTitle>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20 h-9 w-9 rounded-xl" aria-label="Cerrar editor">
+              <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20 h-9 w-9 rounded-[var(--btn-radius)]" aria-label="Cerrar editor">
                 <X className="w-5 h-5" />
               </Button>
             </div>
@@ -87,7 +87,7 @@ export default function WeekEditor({ semana, onSave, onClose }) {
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                 placeholder="Ej: Semana 1"
-                className="h-10 rounded-xl border-[var(--color-border-default)] focus-orange"
+                className="h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange"
               />
             </div>
 
@@ -98,7 +98,7 @@ export default function WeekEditor({ semana, onSave, onClose }) {
                 onValueChange={(v) => setFormData({ ...formData, foco: v })}
                 modal={false}
               >
-                <SelectTrigger id="foco" className="w-full h-10 rounded-xl border-[var(--color-border-default)] focus-orange">
+                <SelectTrigger id="foco" className="w-full h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange">
                   <SelectValue placeholder="Selecciona foco..." />
                 </SelectTrigger>
                 <SelectContent 
@@ -123,7 +123,7 @@ export default function WeekEditor({ semana, onSave, onClose }) {
                 onChange={(e) => setFormData({ ...formData, objetivo: e.target.value })}
                 placeholder="Si está vacío, heredará el objetivo por defecto del plan"
                 rows={3}
-                className="rounded-xl border-[var(--color-border-default)] focus-orange resize-none"
+                className="rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange resize-none"
               />
             </div>
 
@@ -134,10 +134,10 @@ export default function WeekEditor({ semana, onSave, onClose }) {
 
           <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-muted rounded-b-2xl">
             <div className="flex gap-3 mb-2">
-              <Button variant="outline" onClick={onClose} className="flex-1 h-10 rounded-xl">
+              <Button variant="outline" onClick={onClose} className="flex-1 h-10 rounded-[var(--radius-ctrl)]">
                 Cancelar
               </Button>
-              <Button onClick={handleSave} className="flex-1 btn-primary h-10 rounded-xl shadow-sm">
+              <Button onClick={handleSave} className="flex-1 btn-primary h-10 rounded-[var(--radius-ctrl)] shadow-sm">
                 <Save className="w-4 h-4 mr-2" />
                 Guardar
               </Button>

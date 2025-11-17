@@ -150,10 +150,10 @@ export default function PieceEditor({ pieza, onClose }) {
       />
       <div className="fixed inset-0 z-[90] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
         <div 
-          className="bg-[var(--color-surface-elevated)] w-full max-w-3xl max-h-[92vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-8"
+          className="bg-[var(--color-surface-elevated)] w-full max-w-3xl max-h-[92vh] shadow-card rounded-[var(--radius-modal)] flex flex-col pointer-events-auto my-8"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-2xl px-6 py-4">
+          <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-[var(--radius-modal)] px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Music className="w-6 h-6 text-[var(--color-text-primary)]" />
@@ -164,7 +164,7 @@ export default function PieceEditor({ pieza, onClose }) {
                   <p className="text-sm text-[var(--color-text-secondary)]">Plantilla de pieza musical</p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-9 w-9 rounded-xl">
+              <Button variant="ghost" size="icon" onClick={onClose} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-9 w-9 rounded-[var(--btn-radius)]">
                 <X className="w-5 h-5" />
               </Button>
             </div>

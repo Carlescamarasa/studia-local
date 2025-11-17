@@ -199,13 +199,13 @@ export default function CrearAsignacionWizard({ onClose }) {
       
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <Card className="w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col pointer-events-auto app-card shadow-card">
-          <CardHeader className="border-b border-[var(--color-border-default)] bg-brand-500 text-white rounded-t-2xl">
+          <CardHeader className="border-b border-[var(--color-border-default)] bg-brand-500 text-white rounded-t-[var(--radius-modal)]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Target className="w-6 h-6" />
                 <CardTitle className="text-xl">Nueva Asignación</CardTitle>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20 h-9 w-9 rounded-xl" aria-label="Cerrar wizard">
+              <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20 h-9 w-9 rounded-[var(--btn-radius)]" aria-label="Cerrar wizard">
                 <X className="w-5 h-5" />
               </Button>
             </div>
@@ -246,7 +246,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                     placeholder="Buscar por nombre o email..."
                     value={searchEstudiante}
                     onChange={(e) => setSearchEstudiante(e.target.value)}
-                    className="pl-10 h-10 rounded-xl border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                    className="pl-10 h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
                     autoComplete="off"
                     autoCorrect="off"
                     spellCheck={false}
@@ -258,7 +258,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                 </div>
 
                 {formData.estudiantesIds.length > 0 && (
-                  <Alert className="rounded-xl border-blue-200 bg-blue-50">
+                  <Alert className="rounded-[var(--radius-card)] border-blue-200 bg-blue-50">
                     <AlertDescription className="text-blue-800">
                       <strong>{formData.estudiantesIds.length} estudiante(s) seleccionado(s)</strong>
                     </AlertDescription>
@@ -313,7 +313,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                     placeholder="Buscar piezas..."
                     value={searchPieza}
                     onChange={(e) => setSearchPieza(e.target.value)}
-                    className="pl-10 h-10 rounded-xl border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                    className="pl-10 h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
                     aria-label="Buscar piezas"
                   />
                 </div>
@@ -354,7 +354,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                 </div>
 
                 {piezaSeleccionada && (
-                  <Alert className="rounded-xl border-green-200 bg-green-50">
+                  <Alert className="rounded-[var(--radius-card)] border-green-200 bg-green-50">
                     <AlertDescription className="text-green-800">
                       ✅ Pieza seleccionada: <strong>{piezaSeleccionada.nombre}</strong>
                     </AlertDescription>
@@ -381,7 +381,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                     placeholder="Buscar planes..."
                     value={searchPlan}
                     onChange={(e) => setSearchPlan(e.target.value)}
-                    className="pl-10 h-10 rounded-xl border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                    className="pl-10 h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
                     aria-label="Buscar planes"
                   />
                 </div>
@@ -428,7 +428,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                 </div>
 
                 {planSeleccionado && (
-                  <Alert className="rounded-xl border-green-200 bg-green-50">
+                  <Alert className="rounded-[var(--radius-card)] border-green-200 bg-green-50">
                     <AlertDescription className="text-green-800">
                       ✅ Plan seleccionado: <strong>{planSeleccionado.nombre}</strong> ({planSeleccionado.semanas?.length || 0} semanas)
                     </AlertDescription>
@@ -456,12 +456,12 @@ export default function CrearAsignacionWizard({ onClose }) {
                     type="date"
                     value={formData.fechaSeleccionada}
                     onChange={(e) => setFormData({ ...formData, fechaSeleccionada: e.target.value })}
-                    className="max-w-md h-10 rounded-xl border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                    className="max-w-md h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
                   />
                 </div>
 
                 {formData.fechaSeleccionada && formData.semanaInicioISO && (
-                  <Alert className="rounded-xl border-blue-200 bg-blue-50 max-w-md">
+                  <Alert className="rounded-[var(--radius-card)] border-blue-200 bg-blue-50 max-w-md">
                     <AlertDescription className="text-blue-800">
                       <strong>Fecha elegida:</strong> {parseLocalDate(formData.fechaSeleccionada).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                       <br />
@@ -493,7 +493,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                 <div>
                   <Label htmlFor="foco">Foco Específico</Label>
                   <Select value={formData.foco} onValueChange={(v) => setFormData({ ...formData, foco: v })}>
-                    <SelectTrigger className="h-10 rounded-xl border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]" aria-label="Seleccionar foco">
+                    <SelectTrigger className="h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]" aria-label="Seleccionar foco">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="z-[120]" position="popper">
@@ -513,11 +513,11 @@ export default function CrearAsignacionWizard({ onClose }) {
                     onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
                     placeholder="Instrucciones adicionales o notas..."
                     rows={4}
-                    className="rounded-xl border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))] resize-none"
+                    className="rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))] resize-none"
                   />
                 </div>
 
-                <div className="flex items-center space-x-2 p-4 border border-[var(--color-border-default)] rounded-xl app-panel">
+                <div className="flex items-center space-x-2 p-4 border border-[var(--color-border-default)] rounded-[var(--radius-card)] app-panel">
                   <Checkbox
                     id="publicar"
                     checked={formData.publicarAlTerminar}
@@ -533,7 +533,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                   </div>
                 </div>
 
-                <Alert className="rounded-xl border-brand-200 bg-brand-50">
+                <Alert className="rounded-[var(--radius-card)] border-brand-200 bg-brand-50">
                   <AlertDescription className="text-brand-800">
                     <strong>Resumen:</strong>
                     <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
@@ -550,13 +550,13 @@ export default function CrearAsignacionWizard({ onClose }) {
             )}
           </CardContent>
 
-          <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-muted rounded-b-2xl">
+          <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-muted rounded-b-[var(--radius-modal)]">
             <div className="flex justify-between">
               <Button
                 variant="outline"
                 onClick={() => step === 1 ? onClose() : setStep(step - 1)}
                 disabled={crearAsignacionesMutation.isPending}
-                className="h-10 rounded-xl"
+                className="h-10 rounded-[var(--btn-radius)]"
               >
                 <ChevronLeft className="w-4 h-4 mr-2" />
                 {step === 1 ? 'Cancelar' : 'Anterior'}
@@ -566,7 +566,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                 <Button
                   onClick={() => setStep(step + 1)}
                   disabled={!canProceed()}
-                  className="btn-primary h-10 rounded-xl shadow-sm"
+                  className="btn-primary h-10 rounded-[var(--btn-radius)] shadow-sm"
                 >
                   Siguiente
                   <ChevronRight className="w-4 h-4 ml-2" />
@@ -575,7 +575,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                 <Button
                   onClick={handleFinalizar}
                   disabled={crearAsignacionesMutation.isPending}
-                  className="btn-primary h-10 rounded-xl shadow-sm"
+                  className="btn-primary h-10 rounded-[var(--btn-radius)] shadow-sm"
                 >
                   {crearAsignacionesMutation.isPending ? (
                     'Creando...'

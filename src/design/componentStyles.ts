@@ -24,14 +24,14 @@ export const componentStyles = {
     panelBackground: "app-panel",
     
     // Nuevos patrones de layout de página
-    page: "max-w-[var(--page-max-width)] mx-auto px-[var(--page-padding-x)] py-[var(--page-padding-y)] space-y-[var(--page-section-gap-y)]",
+    page: "max-w-[var(--page-max-width)] mx-auto px-3 md:px-6 lg:px-[var(--page-padding-x)] py-4 md:py-6 lg:py-[var(--page-padding-y)] space-y-4 md:space-y-6 lg:space-y-[var(--page-section-gap-y)]",
     
     pageHeaderRow: "flex items-center justify-between gap-4 flex-wrap",
     
     pageContent: "space-y-[var(--page-section-gap-y)]",
     
     // Grid de 12 columnas
-    grid12: "grid grid-cols-12 gap-x-[var(--grid-gap-x)] gap-y-[var(--grid-gap-y)]",
+    grid12: "grid grid-cols-12 gap-x-2 md:gap-x-4 lg:gap-x-[var(--grid-gap-x)] gap-y-2 md:gap-y-4 lg:gap-y-[var(--grid-gap-y)]",
     
     // Grid main + aside (12 columnas)
     grid12MainAside: "", // Se usa junto con grid12, las clases específicas se aplican en los hijos
@@ -50,13 +50,13 @@ export const componentStyles = {
 
   typography: {
     // Títulos usan Tenor Sans (fontFamilyHeadings) desde variables CSS
-    pageTitle: "text-3xl font-bold text-ui font-headings",
-    sectionTitle: "text-lg md:text-xl font-semibold text-ui font-headings",
-    cardTitle: "text-base md:text-lg font-semibold text-ui font-headings",
+    pageTitle: "text-2xl sm:text-3xl md:text-4xl font-bold text-ui font-headings",
+    sectionTitle: "text-base sm:text-lg md:text-xl font-semibold text-ui font-headings",
+    cardTitle: "text-sm sm:text-base md:text-lg font-semibold text-ui font-headings",
     // Textos base usan fuente del sistema (fontFamilyBase) desde variables CSS
-    bodyText: "text-sm md:text-base text-ui font-base",
+    bodyText: "text-base sm:text-base md:text-base text-ui font-base",
     smallMetaText: "text-xs text-muted font-base",
-    pageSubtitle: "text-sm md:text-base text-ui/80 leading-relaxed font-base",
+    pageSubtitle: "text-base sm:text-base md:text-base text-ui/80 leading-relaxed font-base",
   },
 
   // Nuevos grupos genéricos
@@ -103,8 +103,8 @@ export const componentStyles = {
   },
 
   tabs: {
-    tabsSegmentedContainer: "inline-flex items-center gap-1 rounded-lg bg-[var(--color-surface-muted)] p-1 shadow-sm",
-    tabsSegmentedItem: "px-3 py-1.5 text-xs sm:text-sm rounded-[var(--btn-radius)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] text-ui/80 hover:bg-[var(--color-surface-muted)] font-buttons font-medium",
+    tabsSegmentedContainer: "inline-flex items-center gap-1 rounded-[var(--btn-radius)] bg-[var(--color-surface-muted)] p-1.5 shadow-sm",
+    tabsSegmentedItem: "px-4 py-2 text-sm sm:text-base rounded-[var(--btn-radius)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] text-ui/80 hover:bg-[var(--color-surface-muted)] font-buttons font-medium min-h-[var(--btn-height)]",
     tabsSegmentedItemActive: "bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border border-[var(--color-primary)] shadow-sm font-buttons font-medium",
     tabsUnderlineContainer: "flex items-center gap-1 border-b border-[var(--color-border-default)]",
     tabsUnderlineItem: "px-2.5 py-2 text-sm text-ui/80 hover:text-ui border-b-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background font-buttons font-medium",
@@ -207,8 +207,8 @@ export const componentStyles = {
     emptyStateText: "text-ui/80 text-sm",
 
     // Tabs (alias hacia tabs.*)
-    tabsSegmentedContainer: "inline-flex items-center gap-1 rounded-lg bg-[var(--color-surface-muted)] p-1 shadow-sm",
-    tabsSegmentedButton: "px-3 py-1.5 text-xs sm:text-sm rounded-[var(--btn-radius)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] text-ui/80 hover:bg-[var(--color-surface-muted)] font-buttons font-medium",
+    tabsSegmentedContainer: "inline-flex items-center gap-1 rounded-[var(--btn-radius)] bg-[var(--color-surface-muted)] p-1.5 shadow-sm",
+    tabsSegmentedButton: "px-4 py-2 text-sm sm:text-base rounded-[var(--btn-radius)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] text-ui/80 hover:bg-[var(--color-surface-muted)] font-buttons font-medium min-h-[var(--btn-height)]",
     tabsSegmentedButtonActive: "bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border border-[var(--color-primary)] shadow-sm font-buttons font-medium",
     tabsUnderlineContainer: "flex items-center gap-1 border-b border-[var(--color-border-default)]",
     tabsUnderlineButton: "px-2.5 py-2 text-sm text-ui/80 hover:text-ui border-b-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background font-buttons font-medium",

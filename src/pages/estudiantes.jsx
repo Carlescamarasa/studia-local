@@ -275,7 +275,7 @@ function EstudiantesPageContent() {
         }
       />
 
-      <div className="max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8">
+      <div className={componentStyles.layout.page}>
         <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
             <CardTitle className="text-lg">

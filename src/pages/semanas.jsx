@@ -5,7 +5,7 @@ import { componentStyles } from "@/design/componentStyles";
 
 export default function SemanasPage() {
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto">
+    <div className={componentStyles.layout.page}>
       <PageHeader
         title="Semanas"
         subtitle="Organiza semanas dentro de planes"

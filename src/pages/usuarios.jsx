@@ -183,7 +183,7 @@ function UsuariosPageContent() {
         }
       />
 
-      <div className="max-w-7xl mx-auto p-4 md:p-6 lg:px-8">
+      <div className={componentStyles.layout.page}>
         <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
             <CardTitle className="text-lg">{usuariosFiltrados.length} usuarios</CardTitle>

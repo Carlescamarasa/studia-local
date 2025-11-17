@@ -9,7 +9,8 @@ import { Badge } from "@/components/ds";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import {
   Activity, Clock, Calendar, Star, Smile, BarChart3, TrendingUp,
-  MessageSquare, Eye, RefreshCw, Dumbbell, List, PieChart, CalendarDays, Calendar as CalendarIcon
+  MessageSquare, Eye, RefreshCw, Dumbbell, List, PieChart, CalendarDays, Calendar as CalendarIcon,
+  Sun, CalendarRange, Grid3x3
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -827,9 +828,9 @@ function EstadisticasPageContent() {
                 onChange={setGranularidad}
                 showIconsOnlyMobile={true}
                 items={[
-                  { value: 'dia', label: 'Diario', icon: CalendarDays },
-                  { value: 'semana', label: 'Semanal', icon: Calendar },
-                  { value: 'mes', label: 'Mensual', icon: CalendarIcon },
+                  { value: 'dia', label: 'Diario', icon: Sun },
+                  { value: 'semana', label: 'Semanal', icon: CalendarRange },
+                  { value: 'mes', label: 'Mensual', icon: Grid3x3 },
                 ]}
               />
             </div>

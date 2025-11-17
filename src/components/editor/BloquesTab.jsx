@@ -49,7 +49,7 @@ export default function BloquesTab() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Biblioteca de Bloques</CardTitle>
-            <Button onClick={() => setShowEditor(true)} className="btn-primary h-10 rounded-xl shadow-sm">
+            <Button onClick={() => setShowEditor(true)} className="btn-primary h-10 rounded-[var(--btn-radius)] shadow-sm">
               <Plus className="w-4 h-4 mr-2" />
               Nuevo Bloque
             </Button>
@@ -63,7 +63,7 @@ export default function BloquesTab() {
                 placeholder="Buscar bloques por nombre o código..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 rounded-xl"
+                className="pl-10 rounded-[var(--btn-radius)]"
               />
             </div>
           </div>
@@ -77,7 +77,7 @@ export default function BloquesTab() {
                 {searchTerm ? 'No se encontraron bloques' : 'Aún no hay bloques. Crea el primer bloque.'}
               </p>
               {!searchTerm && (
-                <Button onClick={() => setShowEditor(true)} variant="outline" className="rounded-xl">
+                <Button onClick={() => setShowEditor(true)} variant="outline" className="rounded-[var(--btn-radius)]">
                   <Plus className="w-4 h-4 mr-2" />
                   Crear Primer Bloque
                 </Button>

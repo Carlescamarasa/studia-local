@@ -1270,7 +1270,7 @@ export default function TestSeedPage() {
         subtitle="Semillas de datos, pruebas y utilidades"
       />
 
-      <div className="max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+      <div className={`${componentStyles.layout.page} space-y-6`}>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           <Card className="app-card hover:shadow-md transition-shadow">
             <CardContent className="pt-4 text-center">

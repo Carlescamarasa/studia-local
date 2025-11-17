@@ -10,6 +10,7 @@ import EjerciciosTab from "../components/editor/EjerciciosTab";
 import RequireRole from "@/components/auth/RequireRole";
 import PageHeader from "@/components/ds/PageHeader";
 import Tabs from "@/components/ds/Tabs";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function PlantillasPage() {
   return (
@@ -57,7 +58,7 @@ function PlantillasPageContent() {
         subtitle="Crea y gestiona piezas, planes y ejercicios"
       />
 
-      <div className="max-w-7xl mx-auto p-4 md:p-6 lg:px-8">
+      <div className={componentStyles.layout.page}>
         <Tabs
           variant="segmented"
           value={activeTab}

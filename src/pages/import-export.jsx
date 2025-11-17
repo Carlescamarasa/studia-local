@@ -482,7 +482,7 @@ export default function ImportExportPage() {
         subtitle="Gestiona datos del sistema"
       />
 
-      <div className="max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8">
+      <div className={componentStyles.layout.page}>
         <Card className="app-card">
           <CardContent className="pt-6 text-[var(--color-text-primary)]">
             <div className="space-y-6">

@@ -25,7 +25,7 @@ export default function PageHeader({
           {/* Primera fila: Icono + Título */}
           <div className="flex items-center gap-3 mb-2">
             {Icon && (
-              <div className="w-9 h-9 rounded-xl bg-[var(--color-primary-soft)] border border-[var(--color-primary)] text-ui flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-[var(--radius-card)] bg-[var(--color-primary-soft)] border border-[var(--color-primary)] text-ui flex items-center justify-center shrink-0">
                 <Icon className="w-6 h-6" />
               </div>
             )}

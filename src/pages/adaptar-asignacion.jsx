@@ -468,8 +468,8 @@ function AdaptarAsignacionPageContent() {
       />
 
       {isCerrada && (
-        <div className="max-w-[1600px] mx-auto px-6 md:px-8 mt-4">
-          <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-warning)] bg-[var(--color-warning)]/10 rounded-xl`}>
+        <div className={`${componentStyles.layout.page} mt-4`}>
+          <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-warning)] bg-[var(--color-warning)]/10 rounded-[var(--radius-card)]`}>
             <AlertCircle className="h-4 w-4 text-[var(--color-warning)]" />
             <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-warning)]`}>
               <strong>Advertencia:</strong> Esta asignación está cerrada. Los cambios se guardarán pero considera duplicar como borrador para preservar el histórico.
@@ -478,7 +478,7 @@ function AdaptarAsignacionPageContent() {
         </div>
       )}
 
-      <div className="max-w-[1600px] mx-auto p-6 md:p-8">
+      <div className={componentStyles.layout.page}>
         <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
             <div className="flex items-center justify-between">
