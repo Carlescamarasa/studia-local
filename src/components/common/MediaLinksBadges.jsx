@@ -49,7 +49,7 @@ export default function MediaLinksBadges({ mediaLinks = [], onMediaClick, compac
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p className="text-xs max-w-xs truncate">{url}</p>
+                <p className="text-xs max-w-xs break-all" title={url}>{url}</p>
               </TooltipContent>
             </Tooltip>
           );

@@ -101,14 +101,36 @@ export default function AsignacionDetallePage() {
   });
 
   const calcularLunesSemanaISO = (fecha) => {
-    const date = parseLocalDate(fecha);
-    return formatLocalDate(startOfMonday(date));
+    if (!fecha) return formatLocalDate(startOfMonday(new Date()));
+    try {
+      const date = parseLocalDate(fecha);
+      return formatLocalDate(startOfMonday(date));
+    } catch (error) {
+      return formatLocalDate(startOfMonday(new Date()));
+    }
   };
 
+  // Actualizar semanaInicioISO cuando cambia fechaSeleccionada
+  useEffect(() => {
+    if (editData?.fechaSeleccionada) {
+      const lunes = calcularLunesSemanaISO(editData.fechaSeleccionada);
+      setEditData(prev => ({ ...prev, semanaInicioISO: lunes }));
+    }
+  }, [editData?.fechaSeleccionada]);
+
   const handleEditarInformacion = () => {
+    if (!asignacion) return;
+    // Usar semanaInicioISO si existe, sino usar la fecha actual
+    const fechaInicial = asignacion.semanaInicioISO 
+      ? asignacion.semanaInicioISO 
+      : formatLocalDate(new Date());
+    
+    console.log('Inicializando edición con fecha:', fechaInicial, 'de asignación:', asignacion.semanaInicioISO);
+    
     setEditData({
       piezaId: asignacion.piezaId,
-      fechaSeleccionada: asignacion.semanaInicioISO,
+      fechaSeleccionada: fechaInicial,
+      semanaInicioISO: fechaInicial,
       foco: asignacion.foco || 'GEN',
       notas: asignacion.notas || '',
     });
@@ -135,11 +157,15 @@ export default function AsignacionDetallePage() {
   }, [showEditDrawer, editData]);
 
   const handleGuardarEdicion = () => {
+    if (!editData) {
+      toast.error('❌ Error: No hay datos para guardar');
+      return;
+    }
     if (!editData.piezaId) {
       toast.error('❌ Debes seleccionar una pieza');
       return;
     }
-    if (!editData.fechaSeleccionada) {
+    if (!editData.fechaSeleccionada || editData.fechaSeleccionada.trim() === '') {
       toast.error('❌ Debes seleccionar una fecha');
       return;
     }
@@ -150,13 +176,20 @@ export default function AsignacionDetallePage() {
       }
     }
 
+    const semanaInicioISO = calcularLunesSemanaISO(editData.fechaSeleccionada);
+    if (!semanaInicioISO) {
+      toast.error('❌ Error al calcular la fecha de inicio');
+      return;
+    }
+
     const dataToSave = {
       piezaId: editData.piezaId,
-      semanaInicioISO: calcularLunesSemanaISO(editData.fechaSeleccionada),
+      semanaInicioISO: semanaInicioISO,
       foco: editData.foco || 'GEN',
       notas: editData.notas || null,
     };
 
+    console.log('Guardando asignación con datos:', dataToSave);
     editarMutation.mutate(dataToSave);
   };
 
@@ -239,6 +272,10 @@ export default function AsignacionDetallePage() {
         </Card>
       </div>
     );
+  }
+
+  if (!asignacion) {
+    return null; // Early return si asignacion es undefined
   }
 
   const alumno = usuarios.find(u => u.id === asignacion.alumnoId);
@@ -365,12 +402,24 @@ export default function AsignacionDetallePage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wide">Semana de Inicio</p>
                   <p className="text-base md:text-lg font-semibold text-[var(--color-text-primary)]">
-                    {parseLocalDate(asignacion.semanaInicioISO).toLocaleDateString('es-ES', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
+                    {asignacion?.semanaInicioISO && typeof asignacion.semanaInicioISO === 'string' && asignacion.semanaInicioISO.trim() !== '' ? (
+                      (() => {
+                        try {
+                          const fecha = parseLocalDate(asignacion.semanaInicioISO);
+                          return fecha.toLocaleDateString('es-ES', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          });
+                        } catch (error) {
+                          console.error('Error parsing fecha:', error, asignacion.semanaInicioISO);
+                          return <span className="text-[var(--color-text-secondary)]">Fecha inválida</span>;
+                        }
+                      })()
+                    ) : (
+                      <span className="text-[var(--color-text-secondary)]">No definida</span>
+                    )}
                   </p>
                 </div>
               </div>
@@ -563,15 +612,30 @@ export default function AsignacionDetallePage() {
                   <Input
                     id="fecha"
                     type="date"
-                    value={editData.fechaSeleccionada}
-                    onChange={(e) => setEditData({ ...editData, fechaSeleccionada: e.target.value })}
+                    value={editData.fechaSeleccionada || ''}
+                    onChange={(e) => {
+                      const nuevaFecha = e.target.value;
+                      setEditData({ ...editData, fechaSeleccionada: nuevaFecha });
+                    }}
                     className={componentStyles.controls.inputDefault}
                   />
                   {editData.fechaSeleccionada && (
                     <Alert className={`mt-2 ${componentStyles.containers.panelBase} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
                       <AlertDescription className="text-xs text-[var(--color-info)]">
                         Se guardará la semana ISO del Lunes{' '}
-                        {parseLocalDate(calcularLunesSemanaISO(editData.fechaSeleccionada)).toLocaleDateString('es-ES')}
+                        {editData.fechaSeleccionada ? (
+                          (() => {
+                            try {
+                              const lunesISO = calcularLunesSemanaISO(editData.fechaSeleccionada);
+                              if (lunesISO && typeof lunesISO === 'string') {
+                                return parseLocalDate(lunesISO).toLocaleDateString('es-ES');
+                              }
+                              return '-';
+                            } catch (error) {
+                              return '-';
+                            }
+                          })()
+                        ) : '-'}
                       </AlertDescription>
                     </Alert>
                   )}

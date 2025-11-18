@@ -96,7 +96,7 @@ function MediaLinkItem({ url, index, isValid, label, onPreview, onRemove }) {
   
   return (
     <div 
-      className={`flex items-start gap-2 p-2 rounded-lg border transition-colors min-w-0 w-full ${
+      className={`flex items-start gap-2 p-2 rounded-lg border transition-colors w-full ${
         isValid 
           ? 'bg-[var(--color-surface-elevated)] border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]' 
           : 'bg-[var(--color-danger)]/10 border-[var(--color-danger)]/20'
@@ -104,8 +104,8 @@ function MediaLinkItem({ url, index, isValid, label, onPreview, onRemove }) {
     >
       <MediaIcon url={url} className="w-4 h-4 shrink-0 text-[var(--color-text-secondary)] mt-0.5" />
       
-      <div className="flex-1 min-w-0 overflow-hidden">
-        <div className="flex items-center gap-2 min-w-0 mb-1">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 mb-1 flex-wrap">
           <Badge variant="outline" className="text-xs shrink-0">
             {label}
           </Badge>
@@ -118,7 +118,7 @@ function MediaLinkItem({ url, index, isValid, label, onPreview, onRemove }) {
             <p className="text-xs font-medium text-[var(--color-text-primary)] break-words mt-0.5" title={title}>
               {title}
             </p>
-            <p className="text-xs text-[var(--color-text-muted)] truncate mt-0.5" title={url}>
+            <p className="text-xs text-[var(--color-text-muted)] break-all mt-0.5" title={url}>
               {url}
             </p>
           </>
@@ -244,13 +244,22 @@ https://drive.google.com/file/d/ID/view`}
           </p>
           <div className="space-y-2 w-full min-w-0 max-w-full">
             {value.map((url, idx) => {
-              const isValid = isValidUrl(url);
-              const label = getMediaLabel(url);
+              if (!url || typeof url !== 'string') {
+                return null;
+              }
+              
+              const trimmedUrl = url.trim();
+              if (!trimmedUrl) {
+                return null;
+              }
+              
+              const isValid = isValidUrl(trimmedUrl);
+              const label = getMediaLabel(trimmedUrl);
               
               return (
                 <MediaLinkItem
                   key={idx}
-                  url={url}
+                  url={trimmedUrl}
                   index={idx}
                   isValid={isValid}
                   label={label}

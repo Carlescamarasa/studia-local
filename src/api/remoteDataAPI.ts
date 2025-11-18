@@ -91,6 +91,41 @@ function normalizeISOFields<T>(obj: any): T {
 }
 
 /**
+ * Normaliza campos ISO en objetos Asignacion
+ * Convierte semanaInicioIso → semanaInicioISO
+ */
+function normalizeAsignacionISO<T>(obj: any): T {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => normalizeAsignacionISO(item)) as T;
+  }
+  
+  if (typeof obj !== 'object') {
+    return obj;
+  }
+  
+  const result: any = { ...obj };
+  
+  // Normalizar semanaInicioIso → semanaInicioISO
+  if ('semanaInicioIso' in result && !('semanaInicioISO' in result)) {
+    result.semanaInicioISO = result.semanaInicioIso;
+    delete result.semanaInicioIso;
+  }
+  
+  // Aplicar recursivamente a propiedades anidadas
+  for (const key in result) {
+    if (Object.prototype.hasOwnProperty.call(result, key) && typeof result[key] === 'object') {
+      result[key] = normalizeAsignacionISO(result[key]);
+    }
+  }
+  
+  return result as T;
+}
+
+/**
  * Convierte un objeto de snake_case a camelCase recursivamente
  */
 function snakeToCamel<T>(obj: any): T {
@@ -825,7 +860,8 @@ export function createRemoteDataAPI(): AppDataAPI {
         // Deserializar campos JSON después de leer
         return (data || []).map((a: any) => {
           const parsed = snakeToCamel<Asignacion>(a);
-          return deserializeJsonFields(parsed, ['plan', 'piezaSnapshot']);
+          const normalized = normalizeAsignacionISO(parsed);
+          return deserializeJsonFields(normalized, ['plan', 'piezaSnapshot']);
         });
       },
       get: async (id: string) => {
@@ -841,7 +877,8 @@ export function createRemoteDataAPI(): AppDataAPI {
         }
         // Deserializar campos JSON después de leer
         const parsed = snakeToCamel<Asignacion>(data);
-        return deserializeJsonFields(parsed, ['plan', 'piezaSnapshot']);
+        const normalized = normalizeAsignacionISO(parsed);
+        return deserializeJsonFields(normalized, ['plan', 'piezaSnapshot']);
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
         let query = supabase.from('asignaciones').select('*');
@@ -860,7 +897,8 @@ export function createRemoteDataAPI(): AppDataAPI {
         // Deserializar campos JSON después de leer
         return (data || []).map((a: any) => {
           const parsed = snakeToCamel<Asignacion>(a);
-          return deserializeJsonFields(parsed, ['plan', 'piezaSnapshot']);
+          const normalized = normalizeAsignacionISO(parsed);
+          return deserializeJsonFields(normalized, ['plan', 'piezaSnapshot']);
         });
       },
       create: async (data) => {
@@ -899,7 +937,8 @@ export function createRemoteDataAPI(): AppDataAPI {
         
         // Deserializar campos JSON después de leer (por si acaso vienen como strings)
         const parsed = snakeToCamel<Asignacion>(result);
-        return deserializeJsonFields(parsed, ['plan', 'piezaSnapshot']);
+        const normalized = normalizeAsignacionISO(parsed);
+        return deserializeJsonFields(normalized, ['plan', 'piezaSnapshot']);
       },
       update: async (id: string, updates: any) => {
         // Extraer campos JSON antes de camelToSnake
@@ -930,7 +969,8 @@ export function createRemoteDataAPI(): AppDataAPI {
         
         // Deserializar campos JSON después de leer
         const parsed = snakeToCamel<Asignacion>(data);
-        return deserializeJsonFields(parsed, ['plan', 'piezaSnapshot']);
+        const normalized = normalizeAsignacionISO(parsed);
+        return deserializeJsonFields(normalized, ['plan', 'piezaSnapshot']);
       },
       delete: async (id: string) => {
         const { error } = await supabase

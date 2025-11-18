@@ -45,7 +45,7 @@ export default function ImportExportPage() {
 
   const { data: asignaciones = [] } = useQuery({
     queryKey: ['asignaciones'],
-    queryFn: () => localDataClient.entities.Asignacion.list('-created_date'),
+    queryFn: () => localDataClient.entities.Asignacion.list('-created_at'),
   });
 
   const { data: bloques = [] } = useQuery({

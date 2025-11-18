@@ -24,7 +24,7 @@ export default function AsignacionesActivas() {
   const { data: asignaciones = [], isLoading } = useQuery({
     queryKey: ['asignaciones-activas'],
     queryFn: async () => {
-      const all = await localDataClient.entities.Asignacion.list('-created_date');
+      const all = await localDataClient.entities.Asignacion.list('-created_at');
       return all.filter(a => a.estado === 'publicada' || a.estado === 'en_curso');
     },
   });

@@ -22,7 +22,7 @@ export default function EjerciciosTab() {
 
   const { data: ejercicios = [], isLoading } = useQuery({
     queryKey: ['bloques'],
-    queryFn: () => localDataClient.entities.Bloque.list('-updated_date'),
+    queryFn: () => localDataClient.entities.Bloque.list('-updated_at'),
   });
 
   const deleteMutation = useMutation({
@@ -182,6 +182,7 @@ export default function EjerciciosTab() {
                 { id: 'duplicate', label: 'Duplicar', icon: <Copy className="w-4 h-4" />, onClick: () => handleDuplicar(e) },
                 { id: 'delete', label: 'Eliminar', icon: <Trash2 className="w-4 h-4" />, onClick: () => handleEliminar(e) }
               ]}
+              onRowClick={(e) => handleEditar(e)}
               keyField="id"
             />
           </div>
@@ -192,7 +193,10 @@ export default function EjerciciosTab() {
                 <CardContent className="pt-4">
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
+                      <div 
+                        className="flex-1 min-w-0 cursor-pointer"
+                        onClick={() => handleEditar(ejercicio)}
+                      >
                         <Badge variant={tipoVariants[ejercicio.tipo]} className="mb-2"> {/* Updated Badge usage, removed rounded-full */}
                           {tipoLabels[ejercicio.tipo]}
                         </Badge>

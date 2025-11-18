@@ -129,6 +129,9 @@ const pad2 = (n) => String(n).padStart(2, "0");
 export const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
 
 export const parseLocalDate = (s) => { 
+  if (!s || typeof s !== 'string') {
+    throw new Error('parseLocalDate: Invalid input');
+  }
   const [y,m,d] = s.split("-").map(Number); 
   return new Date(y, m-1, d); 
 };

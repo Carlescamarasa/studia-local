@@ -142,7 +142,7 @@ export default function MediaEmbed({ url, className = '', open = false }) {
           <div className="flex items-center gap-3">
             <LinkIcon className="w-5 h-5 text-ui/60 shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-ui/80 truncate">{media.originalUrl}</p>
+              <p className="text-sm text-ui/80 break-all" title={media.originalUrl}>{media.originalUrl}</p>
             </div>
             <a
               href={media.originalUrl}

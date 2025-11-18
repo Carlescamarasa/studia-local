@@ -159,6 +159,7 @@ export default function PiezasTab() {
                 { id: 'duplicate', label: 'Duplicar', icon: <Copy className="w-4 h-4" />, onClick: () => handleDuplicate(p) },
                 { id: 'delete', label: 'Eliminar', icon: <Trash2 className="w-4 h-4" />, onClick: () => handleDelete(p) }
               ]}
+              onRowClick={(p) => handleEdit(p)}
               keyField="id"
             />
           </div>
@@ -169,7 +170,10 @@ export default function PiezasTab() {
                 <CardContent className="pt-4">
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
+                      <div 
+                        className="flex-1 min-w-0 cursor-pointer"
+                        onClick={() => handleEdit(pieza)}
+                      >
                         <Badge variant={nivelVariants[pieza.nivel]} className="mb-2"> {/* Changed Badge variant and removed rounded-full */}
                           {nivelLabels[pieza.nivel]}
                         </Badge>

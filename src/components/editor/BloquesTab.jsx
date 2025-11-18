@@ -15,7 +15,7 @@ export default function BloquesTab() {
 
   const { data: bloques = [], isLoading } = useQuery({
     queryKey: ['bloques'],
-    queryFn: () => localDataClient.entities.Bloque.list('-created_date'),
+    queryFn: () => localDataClient.entities.Bloque.list('-created_at'),
   });
 
   const filteredBloques = bloques.filter(b =>

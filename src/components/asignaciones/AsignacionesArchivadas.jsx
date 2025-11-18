@@ -16,7 +16,7 @@ export default function AsignacionesArchivadas() {
   const { data: asignaciones = [], isLoading } = useQuery({
     queryKey: ['asignaciones-archivadas'],
     queryFn: async () => {
-      const all = await localDataClient.entities.Asignacion.list('-created_date');
+      const all = await localDataClient.entities.Asignacion.list('-created_at');
       return all.filter(a => a.estado === 'cerrada');
     },
   });

@@ -39,7 +39,7 @@ function AsignacionesPageContent() {
 
   const { data: asignaciones = [] } = useQuery({
     queryKey: ['asignaciones'],
-    queryFn: () => localDataClient.entities.Asignacion.list('-created_date'),
+    queryFn: () => localDataClient.entities.Asignacion.list('-created_at'),
   });
 
   const { data: usuarios = [] } = useQuery({
@@ -195,9 +195,16 @@ function AsignacionesPageContent() {
     {
       key: 'inicio',
       label: 'Inicio',
-      render: (a) => (
-        <p className="text-sm">{parseLocalDate(a.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</p>
-      ),
+      render: (a) => {
+        if (!a.semanaInicioISO) {
+          return <p className="text-sm text-ui/60">-</p>;
+        }
+        try {
+          return <p className="text-sm">{parseLocalDate(a.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</p>;
+        } catch (error) {
+          return <p className="text-sm text-ui/60">-</p>;
+        }
+      },
     },
     {
       key: 'estado',
