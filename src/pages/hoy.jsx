@@ -1831,11 +1831,11 @@ function HoyPageContent() {
           </Card>
         ) : (
           <>
-            <div className={`border-2 ${componentStyles.containers.cardBase} border-[var(--color-primary)] pt-4`}>
+            <div className="border-l-4 border-[var(--color-primary)] bg-[var(--color-primary-soft)]/50 rounded-r-lg p-3">
               {/* Información de la semana - siempre visible */}
-              <div className="mb-4 px-4">
+              <div className="mb-3">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <h2 className={`${componentStyles.typography.sectionTitle} font-bold`}>{semanaDelPlan.nombre}</h2>
+                  <h2 className={`text-base font-bold text-[var(--color-text-primary)]`}>{semanaDelPlan.nombre}</h2>
                   <Badge className={focoColors[semanaDelPlan.foco]}>
                     {focoLabels[semanaDelPlan.foco]}
                   </Badge>
@@ -1848,28 +1848,24 @@ function HoyPageContent() {
                 )}
               </div>
 
-              {/* Card clickeable para desplegar/colapsar sesiones */}
-              <Card 
-                className={`cursor-pointer hover:shadow-md transition-all ${componentStyles.containers.panelBase} mx-4`}
+              {/* Botón clickeable para desplegar/colapsar sesiones */}
+              <button
+                className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-[var(--color-primary-soft)] transition-colors"
                 onClick={() => setPlanDesplegado(!planDesplegado)}
               >
-                <CardContent className="py-2">
-                  <div className="flex items-center gap-2">
-                    {planDesplegado ? (
-                      <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                    )}
-                    <span className="text-base font-medium text-[var(--color-text-primary)]">
-                      {planDesplegado ? 'Ocultar sesiones' : 'Mostrar sesiones'}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
+                {planDesplegado ? (
+                  <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                )}
+                <span className="text-base font-medium text-[var(--color-text-primary)]">
+                  {planDesplegado ? 'Ocultar sesiones' : 'Mostrar sesiones'}
+                </span>
+              </button>
 
               {/* Sesiones - desplegables */}
               {planDesplegado && semanaDelPlan.sesiones && (
-                <div className="mt-4 space-y-2 px-4 pb-4">
+                <div className="mt-3 space-y-2">
                     {semanaDelPlan.sesiones.map((sesion, sesionIdx) => {
                       const tiempoTotal = calcularTiempoSesion(sesion);
                       const minutos = Math.floor(tiempoTotal / 60);
@@ -1890,86 +1886,82 @@ function HoyPageContent() {
                       };
 
                       return (
-                        <Card
+                        <div
                           key={sesionIdx}
-                          className={`border-2 cursor-pointer hover:shadow-sm transition-all ${
+                          className={`ml-4 border-l-2 cursor-pointer hover:shadow-sm transition-all rounded-r-lg p-2.5 ${
                             sesionSeleccionada === sesionIdx
-                              ? `border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm ${componentStyles.items.itemCardHighlight}`
-                              : `border-[var(--color-info)] bg-[var(--color-info)]/10 ${componentStyles.items.itemCard}`
+                              ? `border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm`
+                              : `border-[var(--color-info)]/40 bg-[var(--color-info)]/10 hover:bg-[var(--color-info)]/20`
                           }`}
                           onClick={(e) => {
                             e.stopPropagation();
                             setSesionSeleccionada(sesionIdx);
                           }}
                         >
-                          <CardContent className="pt-4 pb-4">
-                            <div className="space-y-3">
-                              {/* Header de la sesión */}
-                              <div className="flex items-start gap-3">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 flex-wrap mb-2">
-                                    <PlayCircle className="w-4 h-4 text-[var(--color-info)]" />
-                                    <span className={`${componentStyles.typography.cardTitle} font-semibold`}>{sesion.nombre}</span>
-                                    <Badge
-                                      variant="outline"
-                                      className={componentStyles.status.badgeSuccess}
-                                    >
-                                      <Clock className="w-3 h-3 mr-1" />
-                                      {minutos}:{String(segundos).padStart(2, '0')} min
-                                    </Badge>
-                                    <Badge className={focoColors[sesion.foco]} variant="outline">
-                                      {focoLabels[sesion.foco]}
-                                    </Badge>
-                                  </div>
+                          <div className="space-y-2">
+                            {/* Header de la sesión */}
+                            <div className="flex items-start gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <PlayCircle className="w-3.5 h-3.5 text-[var(--color-info)] flex-shrink-0" />
+                                  <span className={`text-sm font-semibold text-[var(--color-text-primary)]`}>{sesion.nombre}</span>
+                                  <Badge
+                                    variant="outline"
+                                    className={componentStyles.status.badgeSuccess}
+                                  >
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    {minutos}:{String(segundos).padStart(2, '0')} min
+                                  </Badge>
+                                  <Badge className={focoColors[sesion.foco]} variant="outline">
+                                    {focoLabels[sesion.foco]}
+                                  </Badge>
                                 </div>
                               </div>
-
-                              {/* Botón de resumen de sesión */}
-                              <Card 
-                                className={`cursor-pointer hover:shadow-sm transition-all ${componentStyles.containers.panelBase}`}
-                                onClick={toggleResumen}
-                              >
-                                <CardContent className="py-1.5 px-3">
-                                  <div className="flex items-center gap-2">
-                                    {resumenExpandido ? (
-                                      <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                                    ) : (
-                                      <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                                    )}
-                                    <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                                      {resumenExpandido ? 'Ocultar resumen' : 'Ver resumen de la sesión'}
-                                    </span>
-                                  </div>
-                                </CardContent>
-                              </Card>
-
-                              {/* Resumen expandido */}
-                              {resumenExpandido && (
-                                <div className="pt-2 border-t border-[var(--color-border-default)]" onClick={(e) => e.stopPropagation()}>
-                                  <SessionContentView sesion={sesion} compact />
-                                </div>
-                              )}
-
-                              {/* Botón de iniciar práctica (solo si está seleccionada) */}
-                              {sesionSeleccionada === sesionIdx && (
-                                <div className="pt-2 border-t border-[var(--color-border-default)]" onClick={(e) => e.stopPropagation()}>
-                                  <Button
-                                    variant="primary"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      empezarSesion(sesion, sesionIdx);
-                                    }}
-                                    size="lg"
-                                    className={`w-full h-14 text-lg font-bold shadow-card ${componentStyles.buttons.primary} focus-brand`}
-                                  >
-                                    <PlayCircle className="w-6 h-6 mr-2" />
-                                    Iniciar Práctica
-                                  </Button>
-                                </div>
-                              )}
                             </div>
-                          </CardContent>
-                        </Card>
+
+                            {/* Botón de resumen de sesión */}
+                            <button
+                              className={`w-full flex items-center gap-2 p-1.5 rounded-lg transition-colors ${
+                                resumenExpandido ? 'bg-[var(--color-surface-muted)]' : 'hover:bg-[var(--color-surface-muted)]'
+                              }`}
+                              onClick={toggleResumen}
+                            >
+                              {resumenExpandido ? (
+                                <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                              )}
+                              <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                                {resumenExpandido ? 'Ocultar resumen' : 'Ver resumen de la sesión'}
+                              </span>
+                            </button>
+
+                            {/* Resumen expandido */}
+                            {resumenExpandido && (
+                              <div className="ml-2 sm:ml-4 mt-2 pt-2 border-t border-[var(--color-border-default)]" onClick={(e) => e.stopPropagation()}>
+                                <SessionContentView sesion={sesion} compact />
+                              </div>
+                            )}
+
+                            {/* Botón de iniciar práctica (solo si está seleccionada) */}
+                            {sesionSeleccionada === sesionIdx && (
+                              <div className="pt-2 border-t border-[var(--color-border-default)]" onClick={(e) => e.stopPropagation()}>
+                                <Button
+                                  variant="primary"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    empezarSesion(sesion, sesionIdx);
+                                  }}
+                                  size="lg"
+                                  className={`w-full h-14 text-lg font-bold shadow-card ${componentStyles.buttons.primary} focus-brand`}
+                                >
+                                  <PlayCircle className="w-6 h-6 mr-2" />
+                                  Iniciar Práctica
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       );
                     })}
                 </div>

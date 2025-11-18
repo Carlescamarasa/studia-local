@@ -407,100 +407,95 @@ export default function AsignacionDetallePage() {
           </CardHeader>
           <CardContent className="space-y-2">
             {asignacion.plan?.semanas?.map((semana, semanaIndex) => (
-              <Card 
+              <div
                 key={semanaIndex}
-                className={`${componentStyles.containers.panelBase} cursor-pointer hover:shadow-md transition-all`}
+                className="border-l-4 border-[var(--color-primary)] bg-[var(--color-primary-soft)]/50 rounded-r-lg p-3 transition-all hover:bg-[var(--color-primary-soft)] cursor-pointer"
                 onClick={() => toggleSemana(semanaIndex)}
               >
-                <CardContent className="p-3">
-                  <div className="flex items-start gap-2">
-                    <div className="pt-1">
-                      {expandedSemanas.has(semanaIndex) ? (
-                        <ChevronDown className="w-5 h-5 text-[var(--color-text-secondary)]" />
-                      ) : (
-                        <ChevronRight className="w-5 h-5 text-[var(--color-text-secondary)]" />
-                      )}
+                {/* Semana Header */}
+                <div className="flex items-start gap-2">
+                  <button className="pt-1 flex-shrink-0">
+                    {expandedSemanas.has(semanaIndex) ? (
+                      <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                    )}
+                  </button>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h3 className="font-semibold text-base text-[var(--color-text-primary)]">{semana.nombre}</h3>
+                      <Badge className={`rounded-full ${focoColors[semana.foco]}`}>
+                        {focoLabels[semana.foco]}
+                      </Badge>
+                      <span className="text-sm text-[var(--color-text-secondary)]">
+                        ({semana.sesiones?.length || 0} sesiones)
+                      </span>
                     </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <h3 className="font-semibold text-[var(--color-text-primary)]">{semana.nombre}</h3>
-                        <Badge className={`rounded-full ${focoColors[semana.foco]}`}>
-                          {focoLabels[semana.foco]}
-                        </Badge>
-                        <span className="text-sm text-[var(--color-text-secondary)]">
-                          ({semana.sesiones?.length || 0} sesiones)
-                        </span>
-                      </div>
-
-                      {expandedSemanas.has(semanaIndex) && (
-                        <div className="ml-4 mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
-                          {semana.objetivo && (
-                            <p className="text-sm text-[var(--color-text-secondary)] italic">"{semana.objetivo}"</p>
-                          )}
-
-                          {semana.sesiones && semana.sesiones.length > 0 && (
-                            <div className="space-y-1.5">
-                              {semana.sesiones.map((sesion, sesionIndex) => {
-                                const sesionKey = `${semanaIndex}-${sesionIndex}`;
-                                const isExpanded = expandedSesiones.has(sesionKey);
-                                const tiempoTotal = calcularTiempoSesion(sesion);
-                                const tiempoMinutos = Math.floor(tiempoTotal / 60);
-                                const tiempoSegundos = tiempoTotal % 60;
-                                
-                                return (
-                                  <Card 
-                                    key={sesionIndex}
-                                    className={`${componentStyles.containers.panelBase} cursor-pointer hover:shadow-md transition-all`}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleSesion(semanaIndex, sesionIndex);
-                                    }}
-                                  >
-                                    <CardContent className="p-3">
-                                      <div className="flex items-start gap-2">
-                                        <div className="pt-1">
-                                          {isExpanded ? (
-                                            <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                                          ) : (
-                                            <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                                          )}
-                                        </div>
-                                        
-                                        <div className="flex-1">
-                                          <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="text-base md:text-lg font-semibold text-[var(--color-text-primary)]">{sesion.nombre}</span>
-                                            <Badge 
-                                              variant="outline" 
-                                              className={tiempoTotal > 0 ? componentStyles.status.badgeSuccess : componentStyles.status.badgeDefault}
-                                            >
-                                              <Clock className="w-3 h-3 mr-1" />
-                                              {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
-                                            </Badge>
-                                            <Badge className={focoColors[sesion.foco]} variant="outline">
-                                              {focoLabels[sesion.foco]}
-                                            </Badge>
-                                          </div>
-
-                                          {isExpanded && (
-                                            <div className="ml-6 mt-1.5" onClick={(e) => e.stopPropagation()}>
-                                              <SessionContentView sesion={sesion} />
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    {semana.objetivo && expandedSemanas.has(semanaIndex) && (
+                      <p className="text-sm text-[var(--color-text-secondary)] italic mb-2">"{semana.objetivo}"</p>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+
+                {/* Sesiones - Expandidas */}
+                {expandedSemanas.has(semanaIndex) && semana.sesiones && semana.sesiones.length > 0 && (
+                  <div className="mt-3 space-y-2" onClick={(e) => e.stopPropagation()}>
+                    {semana.sesiones.map((sesion, sesionIndex) => {
+                      const sesionKey = `${semanaIndex}-${sesionIndex}`;
+                      const isExpanded = expandedSesiones.has(sesionKey);
+                      const tiempoTotal = calcularTiempoSesion(sesion);
+                      const tiempoMinutos = Math.floor(tiempoTotal / 60);
+                      const tiempoSegundos = tiempoTotal % 60;
+
+                      return (
+                        <div
+                          key={sesionIndex}
+                          className="ml-4 border-l-2 border-[var(--color-info)]/40 bg-[var(--color-info)]/10 rounded-r-lg p-2.5 transition-all hover:bg-[var(--color-info)]/20 cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSesion(semanaIndex, sesionIndex);
+                          }}
+                        >
+                          {/* Sesión Header */}
+                          <div className="flex items-start gap-2">
+                            <button className="pt-1 flex-shrink-0">
+                              {isExpanded ? (
+                                <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+                              ) : (
+                                <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+                              )}
+                            </button>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <PlayCircle className="w-3.5 h-3.5 text-[var(--color-info)] flex-shrink-0" />
+                                <span className="text-sm font-semibold text-[var(--color-text-primary)]">{sesion.nombre}</span>
+                                <Badge 
+                                  variant="outline" 
+                                  className={tiempoTotal > 0 ? componentStyles.status.badgeSuccess : componentStyles.status.badgeDefault}
+                                >
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
+                                </Badge>
+                                <Badge className={focoColors[sesion.foco]} variant="outline">
+                                  {focoLabels[sesion.foco]}
+                                </Badge>
+                              </div>
+
+                              {isExpanded && (
+                                <div className="ml-2 mt-1.5" onClick={(e) => e.stopPropagation()}>
+                                  <SessionContentView sesion={sesion} />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             ))}
           </CardContent>
         </Card>

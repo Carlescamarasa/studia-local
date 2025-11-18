@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Save, Plus, Edit, Trash2, Calendar, ChevronDown, ChevronRight, Copy, PlayCircle, GripVertical, Layers, Clock } from "lucide-react";
+import { X, Save, Plus, Edit, Trash2, Calendar, ChevronDown, ChevronRight, Copy, PlayCircle, GripVertical, Layers, Clock, Shuffle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
@@ -17,6 +17,7 @@ import SessionEditor from "./SessionEditor";
 import ExerciseEditor from "./ExerciseEditor";
 import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
+import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "@/components/study/sessionSequence";
 
 export default function PlanEditor({ plan, onClose }) {
   const queryClient = useQueryClient();
@@ -526,346 +527,373 @@ export default function PlanEditor({ plan, onClose }) {
                           {formData.semanas.map((semana, semanaIndex) => (
                             <Draggable key={`semana-${semanaIndex}`} draggableId={`semana-${semanaIndex}`} index={semanaIndex}>
                               {(provided, snapshot) => (
-                                <Card 
+                                <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
-                                  className={`border-2 border-[var(--color-primary)]/30 cursor-pointer hover:bg-[var(--color-primary-soft)] transition-colors ${snapshot.isDragging ? 'shadow-card border-[var(--color-primary)]' : ''}`}
-                                  onClick={(e) => toggleSemana(semanaIndex, e)}
+                                  className={`border-l-4 border-[var(--color-primary)] bg-[var(--color-primary-soft)]/50 rounded-r-lg p-3 transition-all ${
+                                    snapshot.isDragging ? 'shadow-card border-[var(--color-primary)] opacity-90' : 'hover:bg-[var(--color-primary-soft)]'
+                                  }`}
                                 >
-                                  <CardContent className="pt-4">
-                                    <div className="flex items-start gap-2">
-                                      <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing pt-1" onClick={(e) => e.stopPropagation()}>
-                                        <GripVertical className="w-5 h-5 text-[var(--color-text-secondary)]" />
+                                  {/* Semana Header */}
+                                  <div className="flex items-start gap-2">
+                                    <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing pt-1" onClick={(e) => e.stopPropagation()}>
+                                      <GripVertical className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                                    </div>
+
+                                    <button
+                                      onClick={(e) => toggleSemana(semanaIndex, e)}
+                                      className="pt-1 flex-shrink-0"
+                                    >
+                                      {expandedSemanas.has(semanaIndex) ? (
+                                        <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                                      ) : (
+                                        <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                                      )}
+                                    </button>
+
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                        <h4 className="font-semibold text-base text-[var(--color-text-primary)]">{semana.nombre}</h4>
+                                        <Badge className={focoColors[semana.foco]}>
+                                          {focoLabels[semana.foco]}
+                                        </Badge>
+                                        <span className="text-sm text-[var(--color-text-secondary)]">
+                                          ({semana.sesiones?.length || 0} sesiones)
+                                        </span>
                                       </div>
-                                      
-                                      <div className="pt-1">
-                                        {expandedSemanas.has(semanaIndex) ? (
-                                          <ChevronDown className="w-5 h-5 text-[var(--color-text-secondary)]" />
-                                        ) : (
-                                          <ChevronRight className="w-5 h-5 text-[var(--color-text-secondary)]" />
-                                        )}
-                                      </div>
-                                      
-                                      <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-2">
-                                          <h4 className="font-semibold text-[var(--color-text-primary)]">{semana.nombre}</h4>
-                                          <Badge className={focoColors[semana.foco]}>
-                                            {focoLabels[semana.foco]}
-                                          </Badge>
-                                          <span className="text-sm text-[var(--color-text-secondary)]">
-                                            ({semana.sesiones?.length || 0} sesiones)
-                                          </span>
-                                        </div>
+                                      {semana.objetivo && expandedSemanas.has(semanaIndex) && (
+                                        <p className="text-sm text-[var(--color-text-secondary)] italic mb-2">"{semana.objetivo}"</p>
+                                      )}
+                                    </div>
 
-                                        {expandedSemanas.has(semanaIndex) && (
-                                          <div className="ml-4 mt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
-                                            {semana.objetivo && (
-                                              <p className="text-sm text-[var(--color-text-secondary)] italic">"{semana.objetivo}"</p>
-                                            )}
+                                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          duplicateSemana(semanaIndex);
+                                        }}
+                                        title="Duplicar semana"
+                                        className={componentStyles.buttons.ghost}
+                                      >
+                                        <Copy className="w-4 h-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          removeSemana(semanaIndex);
+                                        }}
+                                        className={componentStyles.buttons.danger}
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
 
-                                            {semana.sesiones && semana.sesiones.length > 0 && (
-                                              <Droppable droppableId={`sesiones-${semanaIndex}`} type={`SESION-${semanaIndex}`}>
-                                                {(provided) => (
-                                                  <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
-                                                    {semana.sesiones.map((sesion, sesionIndex) => {
-                                                      const sesionKey = `${semanaIndex}-${sesionIndex}`;
-                                                      const isExpanded = expandedSesiones.has(sesionKey);
-                                                      const tiempoTotal = calcularTiempoSesion(sesion);
-                                                      const tiempoMinutos = Math.floor(tiempoTotal / 60);
-                                                      const tiempoSegundos = tiempoTotal % 60;
-                                                      
-                                                      return (
-                                                        <Draggable key={`sesion-${sesionIndex}`} draggableId={`sesion-${semanaIndex}-${sesionIndex}`} index={sesionIndex}>
-                                                          {(provided, snapshot) => (
-                                                            <Card 
-                                                              ref={provided.innerRef}
-                                                              {...provided.draggableProps}
-                                                              className={`border border-[var(--color-info)]/30 bg-[var(--color-info)]/10 cursor-pointer hover:bg-[var(--color-info)]/20 transition-colors ${snapshot.isDragging ? 'shadow-card border-[var(--color-info)]' : ''}`}
-                                                              onClick={(e) => toggleSesion(semanaIndex, sesionIndex, e)}
-                                                            >
-                                                              <CardContent className="pt-3 pb-3">
-                                                                <div className="flex items-start gap-2">
-                                                                  <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing pt-1" onClick={(e) => e.stopPropagation()}>
-                                                                <GripVertical className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                                  {/* Sesiones - Expandidas */}
+                                  {expandedSemanas.has(semanaIndex) && semana.sesiones && semana.sesiones.length > 0 && (
+                                    <Droppable droppableId={`sesiones-${semanaIndex}`} type={`SESION-${semanaIndex}`}>
+                                      {(provided) => (
+                                        <div {...provided.droppableProps} ref={provided.innerRef} className="mt-3 space-y-2" onClick={(e) => e.stopPropagation()}>
+                                          {semana.sesiones.map((sesion, sesionIndex) => {
+                                            const sesionKey = `${semanaIndex}-${sesionIndex}`;
+                                            const isExpanded = expandedSesiones.has(sesionKey);
+                                            const tiempoTotal = calcularTiempoSesion(sesion);
+                                            const tiempoMinutos = Math.floor(tiempoTotal / 60);
+                                            const tiempoSegundos = tiempoTotal % 60;
+
+                                            return (
+                                              <Draggable key={`sesion-${sesionIndex}`} draggableId={`sesion-${semanaIndex}-${sesionIndex}`} index={sesionIndex}>
+                                                {(provided, snapshot) => (
+                                                  <div
+                                                    ref={provided.innerRef}
+                                                    {...provided.draggableProps}
+                                                    className={`ml-4 border-l-2 border-[var(--color-info)]/40 bg-[var(--color-info)]/10 rounded-r-lg p-2.5 transition-all ${
+                                                      snapshot.isDragging ? 'shadow-card border-[var(--color-info)] opacity-90' : 'hover:bg-[var(--color-info)]/20'
+                                                    }`}
+                                                  >
+                                                    {/* Sesión Header */}
+                                                    <div className="flex items-start gap-2">
+                                                      <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing pt-1" onClick={(e) => e.stopPropagation()}>
+                                                        <GripVertical className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+                                                      </div>
+
+                                                      <button
+                                                        onClick={(e) => toggleSesion(semanaIndex, sesionIndex, e)}
+                                                        className="pt-1 flex-shrink-0"
+                                                      >
+                                                        {isExpanded ? (
+                                                          <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+                                                        ) : (
+                                                          <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+                                                        )}
+                                                      </button>
+
+                                                      <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                          <PlayCircle className="w-3.5 h-3.5 text-[var(--color-info)] flex-shrink-0" />
+                                                          <span className="text-sm font-medium text-[var(--color-text-primary)]">{sesion.nombre}</span>
+                                                          <Badge 
+                                                            variant="outline" 
+                                                            className={`text-xs ${
+                                                              tiempoTotal > 0 ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]/30 text-[var(--color-success)]' : 'bg-[var(--color-surface-muted)]'
+                                                            }`}
+                                                          >
+                                                            <Clock className="w-3 h-3 mr-1" />
+                                                            {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
+                                                          </Badge>
+                                                          <Badge className={focoColors[sesion.foco]} variant="outline">
+                                                            {focoLabels[sesion.foco]}
+                                                          </Badge>
+                                                        </div>
+                                                        {!isExpanded && (
+                                                          <div className="flex items-center gap-1.5 mt-1 text-xs text-[var(--color-text-secondary)]">
+                                                            <Layers className="w-2.5 h-2.5" />
+                                                            <span>
+                                                              {sesion.bloques?.length || 0} ejercicios
+                                                              {sesion.rondas && sesion.rondas.length > 0 && `, ${sesion.rondas.length} rondas`}
+                                                            </span>
+                                                          </div>
+                                                        )}
+                                                      </div>
+                                                    </div>
+
+                                                    {/* Ejercicios y Rondas - Expandidos */}
+                                                    {isExpanded && (
+                                                      <div className="mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
+                                                        <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)] mb-2">
+                                                          <Layers className="w-2.5 h-2.5" />
+                                                          <span>
+                                                            {sesion.bloques?.length || 0} ejercicios
+                                                            {sesion.rondas && sesion.rondas.length > 0 && `, ${sesion.rondas.length} rondas`}
+                                                          </span>
+                                                          <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            onClick={(e) => {
+                                                              e.stopPropagation();
+                                                              toggleEjercicios(semanaIndex, sesionIndex);
+                                                            }}
+                                                            className={`text-xs h-6 px-2 ${componentStyles.buttons.ghost}`}
+                                                          >
+                                                            {expandedEjercicios.has(`${sesionKey}-ej`) ? 'Ocultar' : 'Ver'} contenido
+                                                          </Button>
+                                                        </div>
+
+                                                        {expandedEjercicios.has(`${sesionKey}-ej`) && (
+                                                          <div className="ml-2 space-y-1.5">
+                                                            {(() => {
+                                                              const S = ensureRondaIds(sesion);
+                                                              const secuencia = getSecuencia(S);
+                                                              const bloquesMap = mapBloquesByCode(S);
+                                                              
+                                                              if (!secuencia || secuencia.length === 0) {
+                                                                return (
+                                                                  <div className="text-xs text-[var(--color-text-secondary)] p-2">
+                                                                    No hay ejercicios ni rondas en esta sesión.
                                                                   </div>
-                                                                  
-                                                                  <div className="pt-1">
-                                                                    {isExpanded ? (
-                                                                      <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                                                                    ) : (
-                                                                      <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                                                                    )}
-                                                                  </div>
-                                                                  
-                                                                  <div className="flex-1">
-                                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                                      <PlayCircle className="w-4 h-4 text-[var(--color-info)]" />
-                                                                      <span className="font-medium text-sm text-[var(--color-text-primary)]">{sesion.nombre}</span>
-                                                                      <Badge 
-                                                                        variant="outline" 
-                                                                        className={`text-xs ${
-                                                                          tiempoTotal > 0 ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]/30 text-[var(--color-success)]' : 'bg-[var(--color-surface-muted)]'
-                                                                        }`}
-                                                                      >
-                                                                        <Clock className="w-3 h-3 mr-1" />
-                                                                        {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
-                                                                      </Badge>
-                                                                      <Badge className={focoColors[sesion.foco]} variant="outline">
-                                                                        {focoLabels[sesion.foco]}
-                                                                      </Badge>
-                                                                    </div>
-
-                                                                    {isExpanded && (
-                                                                      <div className="ml-6 mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
-                                                                        <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
-                                                                          <Layers className="w-3 h-3" />
-                                                                          <span>
-                                                                            {sesion.bloques?.length || 0} ejercicios
-                                                                            {sesion.rondas && sesion.rondas.length > 0 && `, ${sesion.rondas.length} rondas`}
-                                                                          </span>
+                                                                );
+                                                              }
+                                                              
+                                                              return (
+                                                                <>
+                                                                  {secuencia.map((item, seqIdx) => {
+                                                                    if (item.kind === 'BLOQUE') {
+                                                                      const ejercicio = bloquesMap.get(item.code);
+                                                                      if (!ejercicio) return null;
+                                                                      
+                                                                      const ejercicioIndex = sesion.bloques.findIndex(b => b.code === item.code);
+                                                                      
+                                                                      return (
+                                                                        <div key={`bloque-${item.code}-${seqIdx}`} className={componentStyles.items.compactItem}>
+                                                                          <Badge variant="outline" className={`${tipoColors[ejercicio.tipo]} rounded-full ${componentStyles.typography.compactText}`}>
+                                                                            {ejercicio.tipo}
+                                                                          </Badge>
+                                                                          <span className="flex-1 text-[var(--color-text-primary)] font-medium truncate">{ejercicio.nombre}</span>
+                                                                          <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0`}>{ejercicio.code}</span>
                                                                           <Button
                                                                             size="sm"
                                                                             variant="ghost"
                                                                             onClick={(e) => {
                                                                               e.stopPropagation();
-                                                                              toggleEjercicios(semanaIndex, sesionIndex);
+                                                                              setEditingEjercicio({ semanaIndex, sesionIndex, ejercicioIndex, ejercicio, source: 'session' });
                                                                             }}
-                                                                            className={`text-xs h-6 px-2 ${componentStyles.buttons.ghost}`}
+                                                                            className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost}`}
                                                                           >
-                                                                            {expandedEjercicios.has(`${sesionKey}-ej`) ? 'Ocultar' : 'Ver'} contenido
+                                                                            <Edit className="w-3 h-3" />
+                                                                          </Button>
+                                                                          <Button
+                                                                            size="sm"
+                                                                            variant="ghost"
+                                                                            onClick={(e) => {
+                                                                              e.stopPropagation();
+                                                                              removeEjercicio(semanaIndex, sesionIndex, ejercicioIndex);
+                                                                            }}
+                                                                            className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.danger}`}
+                                                                          >
+                                                                            <Trash2 className="w-3 h-3" />
                                                                           </Button>
                                                                         </div>
+                                                                      );
+                                                                    } else if (item.kind === 'RONDA') {
+                                                                      const ronda = S.rondas.find(r => r.id === item.id);
+                                                                      if (!ronda) return null;
+                                                                      
+                                                                      const rondaIndex = sesion.rondas.findIndex(r => r.id === item.id);
+                                                                      const rondaKey = `${semanaIndex}-${sesionIndex}-ronda-${rondaIndex}`;
+                                                                      const isRondaExpanded = expandedEjercicios.has(rondaKey);
+                                                                      
+                                                                      return (
+                                                                        <div key={`ronda-${item.id}-${seqIdx}`}>
+                                                                          <div 
+                                                                            className={componentStyles.items.compactItemHover}
+                                                                            onClick={(e) => toggleRonda(semanaIndex, sesionIndex, rondaIndex, e)}
+                                                                          >
+                                                                            <div className={`flex items-center ${componentStyles.layout.gapCompact} flex-shrink-0`}>
+                                                                              {isRondaExpanded ? (
+                                                                                <ChevronDown className="w-3 h-3 text-[var(--color-text-secondary)]" />
+                                                                              ) : (
+                                                                                <ChevronRight className="w-3 h-3 text-[var(--color-text-secondary)]" />
+                                                                              )}
+                                                                              <Badge variant="outline" className={`bg-[var(--color-primary)]/10 border-[var(--color-primary)]/30 text-[var(--color-primary)] rounded-full ${componentStyles.typography.compactText} font-semibold`}>
+                                                                                RONDA
+                                                                              </Badge>
+                                                                            </div>
+                                                                            <span className="flex-1 text-[var(--color-text-primary)] font-medium truncate">
+                                                                              {ronda.aleatoria && <Shuffle className="w-3 h-3 inline mr-1 text-[var(--color-primary)]" />}
+                                                                              × {ronda.repeticiones} repeticiones ({ronda.bloques.length} ejercicios)
+                                                                            </span>
+                                                                            <Button
+                                                                              size="sm"
+                                                                              variant="ghost"
+                                                                              onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                removeRonda(semanaIndex, sesionIndex, rondaIndex);
+                                                                              }}
+                                                                              className={`${componentStyles.buttons.iconTiny} ${componentStyles.buttons.danger}`}
+                                                                            >
+                                                                              <Trash2 className="w-3 h-3" />
+                                                                            </Button>
+                                                                          </div>
 
-                                                                        {expandedEjercicios.has(`${sesionKey}-ej`) && (
-                                                                          <div className="border-l-2 border-[var(--color-info)]/30 pl-3 space-y-2">
-                                                                            {sesion.bloques && sesion.bloques.length > 0 && (
-                                                                              <div className="space-y-1">
-                                                                                <p className="text-xs font-semibold text-[var(--color-text-primary)] mb-1">Ejercicios:</p>
-                                                                                {sesion.bloques.map((ejercicio, ejercicioIndex) => (
-                                                                                  <div key={ejercicioIndex} className="flex items-center gap-2 p-2 bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded text-xs">
-                                                                                    <Badge className={tipoColors[ejercicio.tipo]} variant="outline">
+                                                                          {isRondaExpanded && (
+                                                                            <div className="ml-2 mt-1.5 space-y-1">
+                                                                              {ronda.bloques.map((code, eIndex) => {
+                                                                                const ejercicio = sesion.bloques.find(b => b.code === code);
+                                                                                if (!ejercicio) {
+                                                                                  return (
+                                                                                    <div key={eIndex} className="text-xs text-[var(--color-danger)] p-1 ml-2">
+                                                                                      ⚠️ Referencia huérfana: {code}
+                                                                                    </div>
+                                                                                  );
+                                                                                }
+                                                                                return (
+                                                                                  <div key={eIndex} className={`${componentStyles.items.compactItem} ml-2`}>
+                                                                                    <Badge variant="outline" className={`${componentStyles.typography.compactText} rounded-full ${tipoColors[ejercicio.tipo]}`}>
                                                                                       {ejercicio.tipo}
                                                                                     </Badge>
-                                                                                    <span className="flex-1 text-[var(--color-text-primary)]">{ejercicio.nombre}</span>
-                                                                                    <span className="text-[var(--color-text-secondary)]">{ejercicio.code}</span>
-                                                                                    <Button
-                                                                                      size="sm"
-                                                                                      variant="ghost"
-                                                                                      onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        setEditingEjercicio({ semanaIndex, sesionIndex, ejercicioIndex, ejercicio, source: 'session' });
-                                                                                      }}
-                                                                                      className={`h-6 px-2 ${componentStyles.buttons.ghost}`}
-                                                                                    >
-                                                                                      <Edit className="w-3 h-3" />
-                                                                                    </Button>
-                                                                                    <Button
-                                                                                      size="sm"
-                                                                                      variant="ghost"
-                                                                                      onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        removeEjercicio(semanaIndex, sesionIndex, ejercicioIndex);
-                                                                                      }}
-                                                                                      className={`h-6 px-2 ${componentStyles.buttons.danger}`}
-                                                                                    >
-                                                                                      <Trash2 className="w-3 h-3" />
-                                                                                    </Button>
+                                                                                    <span className="flex-1 text-[var(--color-text-primary)] truncate">{ejercicio.nombre}</span>
+                                                                                    <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0`}>{ejercicio.code}</span>
                                                                                   </div>
-                                                                                ))}
-                                                                              </div>
-                                                                            )}
-
-                                                                            {sesion.rondas && sesion.rondas.length > 0 && (
-                                                                              <div className="space-y-1">
-                                                                                <p className="text-xs font-semibold text-[var(--color-text-primary)] mb-1">Rondas:</p>
-                                                                                {sesion.rondas.map((ronda, rondaIndex) => {
-                                                                                  const rondaKey = `${semanaIndex}-${sesionIndex}-ronda-${rondaIndex}`;
-                                                                                  const isRondaExpanded = expandedEjercicios.has(rondaKey);
-                                                                                  return (
-                                                                                    <Card 
-                                                                                      key={rondaIndex}
-                                                                                      className="border border-[var(--color-primary)]/30 bg-[var(--color-primary-soft)] cursor-pointer hover:bg-[var(--color-primary-soft)] transition-colors"
-                                                                                      onClick={(e) => toggleRonda(semanaIndex, sesionIndex, rondaIndex, e)}
-                                                                                    >
-                                                                                      <CardContent className="pt-2 pb-2">
-                                                                                        <div className="flex items-center gap-2">
-                                                                                          <div className="pt-0.5">
-                                                                                            {isRondaExpanded ? (
-                                                                                              <ChevronDown className="w-3 h-3 text-[var(--color-primary)]" />
-                                                                                            ) : (
-                                                                                              <ChevronRight className="w-3 h-3 text-[var(--color-primary)]" />
-                                                                                            )}
-                                                                                          </div>
-                                                                                          <Badge className="bg-[var(--color-primary)] text-[var(--color-text-inverse)] text-xs">Ronda</Badge>
-                                                                                          <span className="text-xs text-[var(--color-text-secondary)]">× {ronda.repeticiones} repeticiones</span>
-                                                                                          <span className="text-xs text-[var(--color-text-secondary)]">({ronda.bloques.length} ejercicios)</span>
-                                                                                          <Button
-                                                                                            size="sm"
-                                                                                            variant="ghost"
-                                                                                            onClick={(e) => {
-                                                                                              e.stopPropagation();
-                                                                                              removeRonda(semanaIndex, sesionIndex, rondaIndex);
-                                                                                            }}
-                                                                                            className={`ml-auto h-5 px-1 ${componentStyles.buttons.danger}`}
-                                                                                          >
-                                                                                            <Trash2 className="w-3 h-3" />
-                                                                                          </Button>
-                                                                                        </div>
-                                                                                        
-                                                                                        {isRondaExpanded && (
-                                                                                          <div className="ml-4 mt-2 space-y-1" onClick={(e) => e.stopPropagation()}>
-                                                                                            {ronda.bloques.map((code, eIndex) => {
-                                                                                              const ejercicio = sesion.bloques.find(b => b.code === code);
-                                                                                              if (!ejercicio) {
-                                                                                                return (
-                                                                                                  <div key={eIndex} className="text-xs text-[var(--color-danger)] p-1">
-                                                                                                    ⚠️ Referencia huérfana: {code}
-                                                                                                  </div>
-                                                                                                );
-                                                                                              }
-                                                                                              return (
-                                                                                                <div key={eIndex} className="flex items-center gap-2 p-1.5 bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded text-xs">
-                                                                                                  <Badge variant="outline" className={`text-xs ${tipoColors[ejercicio.tipo]}`}>
-                                                                                                    {ejercicio.tipo}
-                                                                                                  </Badge>
-                                                                                                  <span className="flex-1 text-[var(--color-text-primary)]">{ejercicio.nombre}</span>
-                                                                                                  <Button
-                                                                                                    size="sm"
-                                                                                                    variant="ghost"
-                                                                                                    onClick={(e) => {
-                                                                                                      e.stopPropagation();
-                                                                                                      setEditingEjercicio({ semanaIndex, sesionIndex, rondaIndex, ejercicio, ejercicioCode: code, source: 'ronda' });
-                                                                                                    }}
-                                                                                                    className={`h-5 px-1 ${componentStyles.buttons.ghost}`}
-                                                                                                  >
-                                                                                                    <Edit className="w-3 h-3" />
-                                                                                                  </Button>
-                                                                                                </div>
-                                                                                              );
-                                                                                            })}
-                                                                                          </div>
-                                                                                        )}
-                                                                                      </CardContent>
-                                                                                    </Card>
-                                                                                  );
-                                                                                })}
-                                                                              </div>
-                                                                            )}
-                                                                          </div>
-                                                                        )}
-                                                                        
-                                                                        <div className="flex gap-2">
-                                                                          <Button
-                                                                            size="sm"
-                                                                            variant="outline"
-                                                                            onClick={(e) => {
-                                                                              e.stopPropagation();
-                                                                              addSesion(semanaIndex);
-                                                                            }}
-                                                                            className={componentStyles.buttons.outline}
-                                                                          >
-                                                                            <Plus className="w-3 h-3 mr-1" />
-                                                                            Añadir Sesión
-                                                                          </Button>
-                                                                          <Button
-                                                                            size="sm"
-                                                                            variant="outline"
-                                                                            onClick={(e) => {
-                                                                              e.stopPropagation();
-                                                                              setEditingSesion({ semanaIndex, sesionIndex, sesion });
-                                                                            }}
-                                                                            className={componentStyles.buttons.outline}
-                                                                          >
-                                                                            <Edit className="w-3 h-3 mr-1" />
-                                                                            Editar Sesión
-                                                                          </Button>
-                                                                          <Button
-                                                                            size="sm"
-                                                                            variant="ghost"
-                                                                            onClick={(e) => {
-                                                                              e.stopPropagation();
-                                                                              removeSesion(semanaIndex, sesionIndex);
-                                                                            }}
-                                                                            className={componentStyles.buttons.danger}
-                                                                          >
-                                                                            <Trash2 className="w-3 h-3 mr-1" />
-                                                                            Eliminar
-                                                                          </Button>
+                                                                                );
+                                                                              })}
+                                                                            </div>
+                                                                          )}
                                                                         </div>
-                                                                      </div>
-                                                                    )}
-                                                                  </div>
-                                                                </div>
-                                                              </CardContent>
-                                                            </Card>
-                                                          )}
-                                                        </Draggable>
-                                                      );
-                                                    })}
-                                                    {provided.placeholder}
+                                                                      );
+                                                                    }
+                                                                    return null;
+                                                                  })}
+                                                                </>
+                                                              );
+                                                            })()}
+                                                          </div>
+                                                        )}
+
+                                                        <div className={`flex ${componentStyles.layout.gapCompact} flex-wrap pt-1`}>
+                                                          <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={(e) => {
+                                                              e.stopPropagation();
+                                                              addSesion(semanaIndex);
+                                                            }}
+                                                            className={componentStyles.buttons.outline}
+                                                          >
+                                                            <Plus className="w-3 h-3 mr-1" />
+                                                            Añadir Sesión
+                                                          </Button>
+                                                          <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={(e) => {
+                                                              e.stopPropagation();
+                                                              setEditingSesion({ semanaIndex, sesionIndex, sesion });
+                                                            }}
+                                                            className={componentStyles.buttons.actionCompact}
+                                                          >
+                                                            <Edit className="w-3 h-3 mr-1" />
+                                                            Editar Sesión
+                                                          </Button>
+                                                          <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            onClick={(e) => {
+                                                              e.stopPropagation();
+                                                              removeSesion(semanaIndex, sesionIndex);
+                                                            }}
+                                                            className={`${componentStyles.buttons.actionCompact} text-[var(--color-danger)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10`}
+                                                          >
+                                                            <Trash2 className="w-3 h-3 mr-1" />
+                                                            Eliminar
+                                                          </Button>
+                                                        </div>
+                                                      </div>
+                                                    )}
                                                   </div>
                                                 )}
-                                              </Droppable>
-                                            )}
+                                              </Draggable>
+                                            );
+                                          })}
+                                          {provided.placeholder}
+                                        </div>
+                                      )}
+                                    </Droppable>
+                                  )}
 
-                                            <div className="flex gap-2">
-                                              <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  addSesion(semanaIndex);
-                                                }}
-                                                className={componentStyles.buttons.outline}
-                                              >
-                                                <Plus className="w-3 h-3 mr-1" />
-                                                Añadir Sesión
-                                              </Button>
-                                              <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  setEditingSemana({ index: semanaIndex, semana });
-                                                }}
-                                                className={componentStyles.buttons.outline}
-                                              >
-                                                <Edit className="w-3 h-3 mr-1" />
-                                                Editar Semana
-                                              </Button>
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            duplicateSemana(semanaIndex);
-                                          }}
-                                          title="Duplicar semana"
-                                          className={componentStyles.buttons.ghost}
-                                        >
-                                          <Copy className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            removeSemana(semanaIndex);
-                                          }}
-                                          className={componentStyles.buttons.danger}
-                                        >
-                                          <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                      </div>
+                                  {/* Botones de acción de semana */}
+                                  {expandedSemanas.has(semanaIndex) && (
+                                    <div className="flex gap-2 flex-wrap mt-3" onClick={(e) => e.stopPropagation()}>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          addSesion(semanaIndex);
+                                        }}
+                                        className={componentStyles.buttons.outline}
+                                      >
+                                        <Plus className="w-3 h-3 mr-1" />
+                                        Añadir Sesión
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingSemana({ index: semanaIndex, semana });
+                                        }}
+                                        className={componentStyles.buttons.outline}
+                                      >
+                                        <Edit className="w-3 h-3 mr-1" />
+                                        Editar Semana
+                                      </Button>
                                     </div>
-                                  </CardContent>
-                                </Card>
+                                  )}
+                                </div>
                               )}
                             </Draggable>
                           ))}

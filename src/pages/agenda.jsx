@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Calendar, User, Music, Target, MessageSquare, 
-  Search, X, Edit, Trash2, Save, Eye, Clock, Activity
+  Search, X, Edit, Trash2, Save, Eye, Clock, Activity,
+  ChevronDown, ChevronRight, PlayCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -371,31 +372,42 @@ function AgendaPageContent() {
               const secs = tiempo % 60;
 
               return (
-                <Card 
+                <div
                   key={sesionIdx}
-                  className={componentStyles.components.panelSesion + " cursor-pointer"}
+                  className="ml-4 border-l-2 border-[var(--color-info)]/40 bg-[var(--color-info)]/10 rounded-r-lg p-2.5 transition-all hover:bg-[var(--color-info)]/20 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleSession(sesionKey);
                   }}
                 >
-                  <CardContent className="pt-3 pb-3 px-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                        {sesion.nombre}
-                      </span>
-                      <Badge variant="outline" className={componentStyles.status.badgeSuccess}>
-                        <Clock className="w-3 h-3 mr-1" />
-                        {mins}:{String(secs).padStart(2, '0')} min
-                      </Badge>
-                    </div>
-                    {isExpanded && (
-                      <div className="mt-3 pt-3 border-t border-[var(--color-border-default)]" onClick={(e) => e.stopPropagation()}>
-                        <SessionContentView sesion={sesion} compact />
+                  <div className="flex items-start gap-2">
+                    <button className="pt-1 flex-shrink-0">
+                      {isExpanded ? (
+                        <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+                      ) : (
+                        <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+                      )}
+                    </button>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <PlayCircle className="w-3.5 h-3.5 text-[var(--color-info)] flex-shrink-0" />
+                        <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                          {sesion.nombre}
+                        </span>
+                        <Badge variant="outline" className={componentStyles.status.badgeSuccess}>
+                          <Clock className="w-3 h-3 mr-1" />
+                          {mins}:{String(secs).padStart(2, '0')} min
+                        </Badge>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      {isExpanded && (
+                        <div className="ml-2 mt-2" onClick={(e) => e.stopPropagation()}>
+                          <SessionContentView sesion={sesion} compact />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               );
             })}
           </div>

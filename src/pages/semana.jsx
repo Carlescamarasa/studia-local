@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ds";
 import {
   Music, Calendar, Target, PlayCircle, MessageSquare,
   Layers,
-  ChevronLeft, ChevronRight, Home, Clock, CheckCircle2,
+  ChevronLeft, ChevronRight, ChevronDown, Home, Clock, CheckCircle2,
   Activity, Eye, Star
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -222,28 +222,37 @@ function SemanaPageContent() {
         
         return (
           <div className="space-y-2">
-            <Card 
-              className={componentStyles.components.panelSesion + " cursor-pointer"}
+            <div
+              className="ml-4 border-l-2 border-[var(--color-info)]/40 bg-[var(--color-info)]/10 rounded-r-lg p-2.5 transition-all hover:bg-[var(--color-info)]/20 cursor-pointer"
               data-sesion-key={sesionKey}
               onClick={(e) => {
                 e.stopPropagation();
                 toggleSession(sesionKey);
               }}
             >
-              <CardContent className="pt-3 pb-3 px-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[var(--color-text-secondary)]">
-                    {isExpanded ? 'Ocultar detalles' : 'Ver detalles'}
-                  </span>
-                  <ChevronRight className={`w-4 h-4 text-[var(--color-text-secondary)] transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                </div>
-                {isExpanded && (
-                  <div className="mt-3 pt-3 border-t border-[var(--color-border-default)]" onClick={(e) => e.stopPropagation()}>
-                    <SessionContentView sesion={row.sesion} compact />
+              <div className="flex items-start gap-2">
+                <button className="pt-1 flex-shrink-0">
+                  {isExpanded ? (
+                    <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+                  ) : (
+                    <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+                  )}
+                </button>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[var(--color-text-secondary)]">
+                      {isExpanded ? 'Ocultar detalles' : 'Ver detalles'}
+                    </span>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                  {isExpanded && (
+                    <div className="ml-2 mt-2" onClick={(e) => e.stopPropagation()}>
+                      <SessionContentView sesion={row.sesion} compact />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         );
       },

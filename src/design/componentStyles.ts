@@ -51,6 +51,9 @@ export const componentStyles = {
     
     // Barra de filtros
     filterBar: "flex flex-wrap items-center gap-2 md:gap-3",
+    // Espaciados compactos reutilizables
+    gapCompact: "gap-1.5",
+    paddingCompact: "p-1.5",
   },
 
   typography: {
@@ -62,6 +65,9 @@ export const componentStyles = {
     bodyText: "text-base sm:text-base md:text-base text-ui font-base",
     smallMetaText: "text-xs text-[var(--color-text-secondary)] font-base",
     pageSubtitle: "text-base sm:text-base md:text-base text-ui/80 leading-relaxed font-base",
+    // Textos pequeños para elementos compactos (ejercicios, rondas, etc.)
+    compactText: "text-xs",
+    compactTextTiny: "text-[10px]",
   },
 
   // Nuevos grupos genéricos
@@ -77,6 +83,9 @@ export const componentStyles = {
     itemCardHighlight: CARD_TONE_PRIMARY,
     itemRow: "flex items-center gap-2 px-3 py-2 rounded-lg border-b border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)] transition-colors",
     itemRowTone: "pl-3 border-l-4",
+    // Elementos compactos (ejercicios, rondas en secuencia)
+    compactItem: "flex items-center gap-1.5 p-1.5 bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded-[var(--radius-ctrl)] text-xs",
+    compactItemHover: "flex items-center gap-1.5 p-1.5 bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded-[var(--radius-ctrl)] text-xs cursor-pointer hover:bg-[var(--color-surface-muted)] transition-colors",
   },
 
   controls: {
@@ -105,6 +114,11 @@ export const componentStyles = {
     ghost: "btn btn-ghost btn-md",
     outline: "btn btn-outline btn-md",
     danger: "btn btn-danger btn-md",
+    // Botones pequeños con iconos (para ejercicios, rondas, etc.)
+    iconSmall: "h-6 px-2 text-xs rounded-[var(--btn-radius)]",
+    iconTiny: "h-5 px-1 text-xs rounded-[var(--btn-radius)]",
+    // Botones de acción compactos (Editar Sesión, Eliminar, etc.)
+    actionCompact: "text-xs h-7 rounded-[var(--btn-radius)]",
   },
 
   tabs: {
