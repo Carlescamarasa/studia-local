@@ -93,7 +93,16 @@ export default function TestSeedPage() {
     addLog(`🌱 Iniciando generación de ${numSemanas} ${numSemanas === 1 ? 'semana' : 'semanas'} realistas...`, 'info');
 
     try {
+      // Validar que se está usando modo remoto
+      const dataSource = import.meta.env.VITE_DATA_SOURCE || 'local';
+      if (dataSource !== 'remote') {
+        addLog('⚠️ Advertencia: No se detectó modo remoto. Asegúrate de que VITE_DATA_SOURCE=remote', 'warning');
+      } else {
+        addLog('✓ Modo remoto detectado (Supabase)', 'info');
+      }
+
       const startTime = Date.now();
+      addLog('📋 Obteniendo lista de usuarios...', 'info');
       const usuarios = await localDataClient.entities.User.list();
       const estudiantes = usuarios.filter(u => u.rolPersonalizado === 'ESTU');
       const profesores = usuarios.filter(u => u.rolPersonalizado === 'PROF');
@@ -115,7 +124,8 @@ export default function TestSeedPage() {
 
       if (!piezaBase) {
         addLog('📝 Creando pieza base...', 'info');
-        piezaBase = await localDataClient.entities.Pieza.create({
+        try {
+          piezaBase = await localDataClient.entities.Pieza.create({
           nombre: 'Seed – Estudio base',
           descripcion: 'Pieza de referencia para generación de datos de prueba',
           nivel: 'intermedio',
@@ -126,8 +136,14 @@ export default function TestSeedPage() {
             { nombre: 'Partitura', media: { imagen: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Music_notes.svg/800px-Music_notes.svg.png' } },
           ],
           profesorId: profesor.id,
-        });
-        addLog('✅ Pieza base creada', 'success');
+          });
+          addLog('✅ Pieza base creada', 'success');
+        } catch (error) {
+          const errorMsg = error?.message || error?.toString() || 'Error desconocido';
+          const errorDetails = error?.details || error?.hint || '';
+          addLog(`❌ Error al crear pieza base: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+          throw error;
+        }
       }
 
       let bloques = await localDataClient.entities.Bloque.list();
@@ -147,7 +163,9 @@ export default function TestSeedPage() {
             AD: { nombre: 'Advertencia', duracion: 0 },
           };
 
-          ejercicio = await localDataClient.entities.Bloque.create({
+          addLog(`📝 Creando ejercicio ${tipo}...`, 'info');
+          try {
+            ejercicio = await localDataClient.entities.Bloque.create({
             nombre: configs[tipo].nombre,
             code: `${tipo}-SEED-001`,
             tipo: tipo,
@@ -157,8 +175,14 @@ export default function TestSeedPage() {
             materialesRequeridos: [],
             media: {},
             profesorId: profesor.id,
-          });
-          addLog(`✅ Ejercicio ${tipo} creado`, 'info');
+            });
+            addLog(`✅ Ejercicio ${tipo} creado`, 'info');
+          } catch (error) {
+            const errorMsg = error?.message || error?.toString() || 'Error desconocido';
+            const errorDetails = error?.details || error?.hint || '';
+            addLog(`❌ Error al crear ejercicio ${tipo}: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+            throw error;
+          }
         }
         ejerciciosBase[tipo] = ejercicio;
       }
@@ -170,7 +194,8 @@ export default function TestSeedPage() {
 
       if (!planBase) {
         addLog('📅 Creando plan base...', 'info');
-        planBase = await localDataClient.entities.Plan.create({
+        try {
+          planBase = await localDataClient.entities.Plan.create({
           nombre: 'Seed – Plan Base',
           focoGeneral: 'GEN',
           objetivoSemanalPorDefecto: 'Desarrollar técnica y musicalidad',
@@ -259,8 +284,14 @@ export default function TestSeedPage() {
               ]
             }
           ]
-        });
-        addLog('✅ Plan base creado (4 semanas)', 'success');
+          });
+          addLog('✅ Plan base creado (4 semanas)', 'success');
+        } catch (error) {
+          const errorMsg = error?.message || error?.toString() || 'Error desconocido';
+          const errorDetails = error?.details || error?.hint || '';
+          addLog(`❌ Error al crear plan base: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+          throw error;
+        }
       }
 
       const hoy = new Date();
@@ -289,7 +320,9 @@ export default function TestSeedPage() {
           );
 
           if (!asignacion) {
-            asignacion = await localDataClient.entities.Asignacion.create({
+            addLog(`📝 Creando asignación para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}...`, 'info');
+            try {
+              asignacion = await localDataClient.entities.Asignacion.create({
               alumnoId: estudiante.id,
               piezaId: piezaBase.id,
               semanaInicioISO: semanaInicioISO,
@@ -305,8 +338,14 @@ export default function TestSeedPage() {
                 tiempoObjetivoSeg: piezaBase.tiempoObjetivoSeg,
               },
               profesorId: profesorAsignado.id
-            });
-            addLog(`✅ Asignación creada para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}`, 'info');
+              });
+              addLog(`✅ Asignación creada para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}`, 'info');
+            } catch (error) {
+              const errorMsg = error?.message || error?.toString() || 'Error desconocido';
+              const errorDetails = error?.details || error?.hint || '';
+              addLog(`❌ Error al crear asignación para ${estudiante.nombreCompleto || estudiante.email}: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+              throw error;
+            }
           }
 
           // Generar 3-5 sesiones para esta semana
@@ -381,7 +420,10 @@ export default function TestSeedPage() {
               .filter(b => b.tipo !== 'AD')
               .reduce((sum, b) => sum + (b.duracionSeg || 0), 0);
 
-            const registroSesion = await localDataClient.entities.RegistroSesion.create({
+            addLog(`📝 Creando registro de sesión ${i + 1}/${numSesionesEnSemana}...`, 'info');
+            let registroSesion;
+            try {
+              registroSesion = await localDataClient.entities.RegistroSesion.create({
               asignacionId: asignacion.id,
               alumnoId: estudiante.id,
               profesorAsignadoId: profesorAsignado.id,
@@ -406,9 +448,15 @@ export default function TestSeedPage() {
               semanaNombre: 'Semana 1',
               sesionNombre: `Sesión ${String.fromCharCode(65 + i)}`,
               foco
-            });
+              });
 
-            totalSesiones++;
+              totalSesiones++;
+            } catch (error) {
+              const errorMsg = error?.message || error?.toString() || 'Error desconocido';
+              const errorDetails = error?.details || error?.hint || '';
+              addLog(`❌ Error al crear registro de sesión: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+              throw error;
+            }
 
             // Crear registros de bloques
             let tiempoAcumulado = 0;
@@ -417,26 +465,33 @@ export default function TestSeedPage() {
               const esOmitido = Math.random() < 0.15; // 15% omitidos
               const duracionReal = esOmitido ? 0 : (bloque.duracionSeg || 0) + Math.floor((Math.random() * 60) - 30);
 
-              await localDataClient.entities.RegistroBloque.create({
-                registroSesionId: registroSesion.id,
-                asignacionId: asignacion.id,
-                alumnoId: estudiante.id,
-                semanaIdx,
-                sesionIdx,
-                ordenEjecucion: b,
-                tipo: bloque.tipo,
-                code: bloque.code,
-                nombre: bloque.nombre,
-                duracionObjetivoSeg: bloque.duracionSeg,
-                duracionRealSeg: Math.max(0, duracionReal),
-                estado: esOmitido ? 'omitido' : 'completado',
-                iniciosPausa: Math.floor(Math.random() * 2),
-                inicioISO: new Date(fechaSesion.getTime() + tiempoAcumulado * 1000).toISOString(),
-                finISO: new Date(fechaSesion.getTime() + (tiempoAcumulado + duracionReal) * 1000).toISOString()
-              });
+              try {
+                await localDataClient.entities.RegistroBloque.create({
+                  registroSesionId: registroSesion.id,
+                  asignacionId: asignacion.id,
+                  alumnoId: estudiante.id,
+                  semanaIdx,
+                  sesionIdx,
+                  ordenEjecucion: b,
+                  tipo: bloque.tipo,
+                  code: bloque.code,
+                  nombre: bloque.nombre,
+                  duracionObjetivoSeg: bloque.duracionSeg,
+                  duracionRealSeg: Math.max(0, duracionReal),
+                  estado: esOmitido ? 'omitido' : 'completado',
+                  iniciosPausa: Math.floor(Math.random() * 2),
+                  inicioISO: new Date(fechaSesion.getTime() + tiempoAcumulado * 1000).toISOString(),
+                  finISO: new Date(fechaSesion.getTime() + (tiempoAcumulado + duracionReal) * 1000).toISOString()
+                });
 
-              tiempoAcumulado += duracionReal;
-              totalBloques++;
+                tiempoAcumulado += duracionReal;
+                totalBloques++;
+              } catch (error) {
+                const errorMsg = error?.message || error?.toString() || 'Error desconocido';
+                const errorDetails = error?.details || error?.hint || '';
+                addLog(`❌ Error al crear registro de bloque ${b + 1}: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+                throw error;
+              }
             }
           }
 
@@ -450,15 +505,22 @@ export default function TestSeedPage() {
             'Necesitas mayor dedicación. Ajusta la embocadura y practica escalas con metrónomo.'
           ];
 
-          await localDataClient.entities.FeedbackSemanal.create({
-            asignacionId: asignacion.id,
-            alumnoId: estudiante.id,
-            profesorId: profesorAsignado.id,
-            semanaInicioISO: semanaInicioISO,
-            notaProfesor: notasProfesor[Math.floor(Math.random() * notasProfesor.length)]
-          });
+          try {
+            await localDataClient.entities.FeedbackSemanal.create({
+              asignacionId: asignacion.id,
+              alumnoId: estudiante.id,
+              profesorId: profesorAsignado.id,
+              semanaInicioISO: semanaInicioISO,
+              notaProfesor: notasProfesor[Math.floor(Math.random() * notasProfesor.length)]
+            });
 
-          totalFeedbacks++;
+            totalFeedbacks++;
+          } catch (error) {
+            const errorMsg = error?.message || error?.toString() || 'Error desconocido';
+            const errorDetails = error?.details || error?.hint || '';
+            addLog(`❌ Error al crear feedback semanal: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+            throw error;
+          }
         }
       }
 
@@ -467,11 +529,23 @@ export default function TestSeedPage() {
       addLog(`📊 Resumen: ${estudiantes.length} estudiantes × ${numSemanas} semanas`, 'info');
       addLog(`📊 ${totalSesiones} sesiones, ${totalBloques} bloques, ${totalFeedbacks} feedbacks`, 'info');
 
+      // Invalidar todas las queries relacionadas
       await queryClient.invalidateQueries({ queryKey: ['seedStats'] });
+      await queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
+      await queryClient.invalidateQueries({ queryKey: ['registrosSesion'] });
+      await queryClient.invalidateQueries({ queryKey: ['registrosBloque'] });
+      await queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] });
+      await queryClient.invalidateQueries({ queryKey: ['piezas'] });
+      await queryClient.invalidateQueries({ queryKey: ['planes'] });
+      await queryClient.invalidateQueries({ queryKey: ['bloques'] });
       toast.success(`✅ ${numSemanas} ${numSemanas === 1 ? 'semana' : 'semanas'} generadas`);
     } catch (error) {
-      addLog(`❌ Error: ${error.message}`, 'error');
-      toast.error('Error al generar semillas');
+      const errorMsg = error?.message || error?.toString() || 'Error desconocido';
+      const errorDetails = error?.details || error?.hint || '';
+      const errorCode = error?.code || '';
+      addLog(`❌ Error general: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}${errorCode ? ` (Código: ${errorCode})` : ''}`, 'error');
+      console.error('Error completo:', error);
+      toast.error(`Error al generar semillas: ${errorMsg}`);
     }
     setIsSeeding(false);
   };

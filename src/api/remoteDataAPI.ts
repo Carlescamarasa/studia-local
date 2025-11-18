@@ -92,6 +92,37 @@ function generateId(prefix: string = 'item'): string {
 }
 
 /**
+ * Helper para serializar campos JSON específicos antes de enviar a Supabase
+ */
+function serializeJsonFields(data: any, jsonFields: string[]): any {
+  const result = { ...data };
+  for (const field of jsonFields) {
+    if (result[field] && (typeof result[field] === 'object' || Array.isArray(result[field]))) {
+      // Serializar objetos y arrays a string JSON
+      result[field] = JSON.stringify(result[field]);
+    }
+  }
+  return result;
+}
+
+/**
+ * Helper para deserializar campos JSON específicos después de leer de Supabase
+ */
+function deserializeJsonFields(data: any, jsonFields: string[]): any {
+  const result = { ...data };
+  for (const field of jsonFields) {
+    if (result[field] && typeof result[field] === 'string') {
+      try {
+        result[field] = JSON.parse(result[field]);
+      } catch (e) {
+        // Mantener como string si falla el parse
+      }
+    }
+  }
+  return result;
+}
+
+/**
  * Implementación remota de AppDataAPI
  */
 export function createRemoteDataAPI(): AppDataAPI {
@@ -420,7 +451,11 @@ export function createRemoteDataAPI(): AppDataAPI {
         
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((a: any) => snakeToCamel<Asignacion>(a));
+        // Deserializar campos JSON después de leer
+        return (data || []).map((a: any) => {
+          const parsed = snakeToCamel<Asignacion>(a);
+          return deserializeJsonFields(parsed, ['plan', 'piezaSnapshot']);
+        });
       },
       get: async (id: string) => {
         const { data, error } = await supabase
@@ -433,7 +468,9 @@ export function createRemoteDataAPI(): AppDataAPI {
           if (error.code === 'PGRST116') return null;
           throw error;
         }
-        return snakeToCamel<Asignacion>(data);
+        // Deserializar campos JSON después de leer
+        const parsed = snakeToCamel<Asignacion>(data);
+        return deserializeJsonFields(parsed, ['plan', 'piezaSnapshot']);
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
         let query = supabase.from('asignaciones').select('*');
@@ -449,11 +486,17 @@ export function createRemoteDataAPI(): AppDataAPI {
         
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((a: any) => snakeToCamel<Asignacion>(a));
+        // Deserializar campos JSON después de leer
+        return (data || []).map((a: any) => {
+          const parsed = snakeToCamel<Asignacion>(a);
+          return deserializeJsonFields(parsed, ['plan', 'piezaSnapshot']);
+        });
       },
       create: async (data) => {
+        // Serializar campos JSON antes de convertir a snake_case
+        const dataWithSerializedJson = serializeJsonFields(data, ['plan', 'piezaSnapshot']);
         const snakeData = camelToSnake({
-          ...data,
+          ...dataWithSerializedJson,
           id: data.id || generateId('asignacion'),
         });
         const { data: result, error } = await supabase
@@ -463,10 +506,14 @@ export function createRemoteDataAPI(): AppDataAPI {
           .single();
         
         if (error) throw error;
-        return snakeToCamel<Asignacion>(result);
+        // Deserializar campos JSON después de leer
+        const parsed = snakeToCamel<Asignacion>(result);
+        return deserializeJsonFields(parsed, ['plan', 'piezaSnapshot']);
       },
       update: async (id: string, updates: any) => {
-        const snakeUpdates = camelToSnake(updates);
+        // Serializar campos JSON si están presentes
+        const updatesWithSerializedJson = serializeJsonFields(updates, ['plan', 'piezaSnapshot']);
+        const snakeUpdates = camelToSnake(updatesWithSerializedJson);
         const { data, error } = await supabase
           .from('asignaciones')
           .update(snakeUpdates)
@@ -475,7 +522,9 @@ export function createRemoteDataAPI(): AppDataAPI {
           .single();
         
         if (error) throw error;
-        return snakeToCamel<Asignacion>(data);
+        // Deserializar campos JSON después de leer
+        const parsed = snakeToCamel<Asignacion>(data);
+        return deserializeJsonFields(parsed, ['plan', 'piezaSnapshot']);
       },
       delete: async (id: string) => {
         const { error } = await supabase
