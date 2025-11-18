@@ -800,6 +800,13 @@ function HoyPageContent() {
         totalEjercicios={listaEjecucion.length}
         onGuardarYSalir={cerrarSesion}
         onReiniciar={reiniciarSesion}
+        open={sesionFinalizada}
+        onOpenChange={(open) => {
+          if (!open) {
+            // Si se cierra el modal sin guardar, cerrar la sesión
+            cerrarSesion();
+          }
+        }}
         onCalidadNotas={async (calidad, notas, mediaLinks) => {
           setDatosFinal(prev => ({ ...prev, calidad, notas, mediaLinks }));
 

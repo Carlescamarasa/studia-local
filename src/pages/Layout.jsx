@@ -46,6 +46,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import RequireRole from "@/components/auth/RequireRole";
 import { DesignPageContent } from "@/pages/design.jsx";
+import PerfilModal from "@/components/common/PerfilModal";
 
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
@@ -300,9 +301,11 @@ function LayoutContent() {
     }
   };
 
+  const [perfilModalOpen, setPerfilModalOpen] = useState(false);
+
   const goProfile = () => {
     if (isMobile) closeSidebar();
-    navigate(createPageUrl("perfil"));
+    setPerfilModalOpen(true);
   };
 
   /* ------------------------------- Render -------------------------------- */
@@ -584,6 +587,10 @@ function LayoutContent() {
           </div>
         </>
       )}
+      <PerfilModal 
+        open={perfilModalOpen} 
+        onOpenChange={setPerfilModalOpen}
+      />
     </RoleBootstrap>
   );
 }
