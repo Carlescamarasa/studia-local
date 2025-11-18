@@ -5,7 +5,7 @@ import { componentStyles } from "@/design/componentStyles";
 /**
  * Card - Componente de tarjeta del Design System
  * Capa semántica que aplica clases definidas en globals.css
- * Usa forwardRef para soportar refs de librerías como @hello-pangea/dnd
+ * Usa forwardRef para soportar refs de librerías como @dnd-kit
  * 
  * @param {boolean} interactive - Si es true, añade efectos hover y active
  */

@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Save, Plus, Trash2, GripVertical, Music } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { DndProvider, SortableContext, verticalListSortingStrategy, arrayMove } from "@/components/dnd/DndProvider";
+import { SortableItem } from "@/components/dnd/SortableItem";
 import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
 import MediaLinksInput from "@/components/common/MediaLinksInput";
@@ -132,14 +133,19 @@ export default function PieceEditor({ pieza, onClose }) {
     });
   };
 
-  const onDragEnd = (result) => {
-    if (!result.destination) return;
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = formData.elementos.findIndex((_, i) => `elemento-${i}` === active.id);
+    const newIndex = formData.elementos.findIndex((_, i) => `elemento-${i}` === over.id);
     
-    const items = Array.from(formData.elementos);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+    if (oldIndex === -1 || newIndex === -1) return;
     
-    setFormData({ ...formData, elementos: items });
+    setFormData({
+      ...formData,
+      elementos: arrayMove(formData.elementos, oldIndex, newIndex),
+    });
   };
 
   const modalContent = (
@@ -263,59 +269,61 @@ export default function PieceEditor({ pieza, onClose }) {
                     <p className="text-sm text-[var(--color-text-secondary)]">No hay elementos. Añade el primer elemento multimedia.</p>
                   </div>
                 ) : (
-                  <DragDropContext onDragEnd={onDragEnd}>
-                    <Droppable droppableId="elementos">
-                      {(provided) => (
-                        <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
-                          {formData.elementos.map((elemento, index) => (
-                            <Draggable key={`elemento-${index}`} draggableId={`elemento-${index}`} index={index}>
-                              {(provided, snapshot) => (
-                                <Card 
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  className={`border-2 ${snapshot.isDragging ? 'shadow-card border-[var(--color-primary)]' : ''}`}
-                                >
-                                  <CardContent className="pt-4 space-y-3">
-                                    <div className="flex items-start gap-3">
-                                      <div {...provided.dragHandleProps} className="flex flex-col gap-1 pt-2 cursor-grab active:cursor-grabbing">
-                                        <GripVertical className="w-5 h-5 text-[var(--color-text-secondary)]" />
-                                      </div>
-                                      <div className="flex-1 space-y-3">
-                                        <div>
-                                          <Label htmlFor={`elemento-nombre-${index}`} className={componentStyles.typography.cardTitle}>Nombre del elemento</Label>
-                                          <Input
-                                            id={`elemento-nombre-${index}`}
-                                            placeholder="Ej: Partitura, Audio guía, Video tutorial..."
-                                            value={elemento.nombre}
-                                            onChange={(e) => updateElemento(index, 'nombre', e.target.value)}
-                                            className={`mt-1 ${componentStyles.controls.inputDefault}`}
-                                          />
-                                        </div>
-                                        
-                                        <MediaLinksInput
-                                          value={elemento.mediaLinks || []}
-                                          onChange={(links) => updateElemento(index, 'mediaLinks', links)}
+                  <DndProvider onDragEnd={handleDragEnd}>
+                    <SortableContext 
+                      items={formData.elementos.map((_, i) => `elemento-${i}`)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-3">
+                        {formData.elementos.map((elemento, index) => (
+                          <SortableItem 
+                            key={`elemento-${index}`}
+                            id={`elemento-${index}`}
+                            className="border-2"
+                          >
+                            {({ dragHandleProps, isDragging }) => (
+                              <Card 
+                                className={`border-2 ${isDragging ? 'shadow-card border-[var(--color-primary)]' : ''}`}
+                              >
+                                <CardContent className="pt-4 space-y-3">
+                                  <div className="flex items-start gap-3">
+                                    <div {...dragHandleProps} className="flex flex-col gap-1 pt-2">
+                                      <GripVertical className="w-5 h-5 text-[var(--color-text-secondary)]" />
+                                    </div>
+                                    <div className="flex-1 space-y-3">
+                                      <div>
+                                        <Label htmlFor={`elemento-nombre-${index}`} className={componentStyles.typography.cardTitle}>Nombre del elemento</Label>
+                                        <Input
+                                          id={`elemento-nombre-${index}`}
+                                          placeholder="Ej: Partitura, Audio guía, Video tutorial..."
+                                          value={elemento.nombre}
+                                          onChange={(e) => updateElemento(index, 'nombre', e.target.value)}
+                                          className={`mt-1 ${componentStyles.controls.inputDefault}`}
                                         />
                                       </div>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => removeElemento(index)}
-                                        className={componentStyles.buttons.deleteIcon}
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </Button>
+                                      
+                                      <MediaLinksInput
+                                        value={elemento.mediaLinks || []}
+                                        onChange={(links) => updateElemento(index, 'mediaLinks', links)}
+                                      />
                                     </div>
-                                  </CardContent>
-                                </Card>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
-                  </DragDropContext>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => removeElemento(index)}
+                                      className={componentStyles.buttons.deleteIcon}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )}
+                          </SortableItem>
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndProvider>
                 )}
               </CardContent>
             </Card>

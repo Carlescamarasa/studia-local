@@ -351,45 +351,54 @@ export default function PerfilModal({
 
                   {isEditingOwnProfile && (
                     <div className="space-y-1.5">
-                      <Label htmlFor="theme" className="text-sm text-[var(--color-text-primary)]">Tema de la Aplicación</Label>
-                      <Select
-                        value={design?.theme || 'system'}
-                        onValueChange={(value) => {
-                          setDesignPartial('theme', value);
-                          toast.success(`Tema cambiado a ${value === 'system' ? 'Predeterminado' : value === 'dark' ? 'Oscuro' : 'Claro'}`);
-                        }}
-                      >
-                        <SelectTrigger id="theme" className={componentStyles.controls.selectDefault}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="light">
-                            <div className="flex items-center gap-2">
-                              <Sun className="w-4 h-4" />
-                              Claro
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="dark">
-                            <div className="flex items-center gap-2">
-                              <Moon className="w-4 h-4" />
-                              Oscuro
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="system">
-                            <div className="flex items-center gap-2">
-                              <Monitor className="w-4 h-4" />
-                              Predeterminado (Sistema)
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-[var(--color-text-secondary)]">
-                        {design?.theme === 'system' 
-                          ? 'Sigue la preferencia de tu sistema operativo'
-                          : design?.theme === 'dark'
-                          ? 'Tema oscuro activado'
-                          : 'Tema claro activado'}
-                      </p>
+                      <Label className="text-sm text-[var(--color-text-primary)]">Tema</Label>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setDesignPartial('theme', 'light');
+                            toast.success('Tema claro activado');
+                          }}
+                          className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border transition-all ${
+                            design?.theme === 'light'
+                              ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)]'
+                              : 'border-[var(--color-border-default)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
+                          }`}
+                          aria-label="Tema claro"
+                        >
+                          <Sun className="w-4 h-4" />
+                          <span className="text-sm">Claro</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDesignPartial('theme', 'dark');
+                            toast.success('Tema oscuro activado');
+                          }}
+                          className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border transition-all ${
+                            design?.theme === 'dark'
+                              ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)]'
+                              : 'border-[var(--color-border-default)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
+                          }`}
+                          aria-label="Tema oscuro"
+                        >
+                          <Moon className="w-4 h-4" />
+                          <span className="text-sm">Oscuro</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDesignPartial('theme', 'system');
+                            toast.success('Tema del sistema activado');
+                          }}
+                          className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border transition-all ${
+                            (design?.theme === 'system' || !design?.theme)
+                              ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)]'
+                              : 'border-[var(--color-border-default)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
+                          }`}
+                          aria-label="Tema del sistema"
+                        >
+                          <Monitor className="w-4 h-4" />
+                          <span className="text-sm">Sistema</span>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
