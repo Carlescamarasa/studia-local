@@ -9,7 +9,7 @@ import {
   Music, Calendar, Target, PlayCircle, MessageSquare,
   Layers,
   ChevronLeft, ChevronRight, ChevronDown, Home, Clock, CheckCircle2,
-  Activity, Eye, Star
+  Star
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -19,7 +19,6 @@ import WeekNavigator from "../components/common/WeekNavigator";
 import RequireRole from "@/components/auth/RequireRole";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
-import UnifiedTable from "@/components/tables/UnifiedTable";
 import SessionContentView from "../components/study/SessionContentView";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
 import MediaViewer from "@/components/common/MediaViewer";
@@ -162,95 +161,6 @@ function SemanaPageContent() {
     });
   };
 
-  // Preparar datos para la tabla
-  const tableData = semanaDelPlan?.sesiones?.map((sesion, idx) => {
-    const tiempoTotal = calcularTiempoSesion(sesion);
-    const minutos = Math.floor(tiempoTotal / 60);
-    const segundos = tiempoTotal % 60;
-    
-    return {
-      id: `sesion-${idx}`,
-      sesion,
-      sesionIdx: idx,
-      tiempoTotal,
-      minutos,
-      segundos,
-    };
-  }) || [];
-
-  // Definir columnas de la tabla
-  const columns = [
-    {
-      key: 'sesion',
-      label: 'Sesión',
-      sortable: true,
-      sortValue: (row) => row.sesion?.nombre || '',
-      render: (row) => (
-        <div className="flex items-start gap-2 min-w-0">
-          <PlayCircle className="w-4 h-4 text-[var(--color-primary)] mt-0.5 shrink-0" />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-[var(--color-text-primary)] break-words">
-              {row.sesion.nombre}
-            </p>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <Badge variant="outline" className={componentStyles.status.badgeSuccess}>
-                  <Clock className="w-3 h-3 mr-1" />
-                  {row.minutos}:{String(row.segundos).padStart(2, '0')} min
-                </Badge>
-              <Badge className={focoColors[row.sesion.foco]} variant="outline">
-                {focoLabels[row.sesion.foco]}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-1 mt-1 text-xs text-[var(--color-text-secondary)]">
-              <Layers className="w-3 h-3 shrink-0" />
-              <span>
-                {row.sesion.bloques?.length || 0} ejercicios
-                {row.sesion.rondas && row.sesion.rondas.length > 0 && ` • ${row.sesion.rondas.length} rondas`}
-              </span>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'detalle',
-      label: 'Detalle',
-      sortable: false,
-      render: (row) => {
-        const sesionKey = `sesion-${row.sesionIdx}`;
-        const isExpanded = expandedSessions.has(sesionKey);
-        
-        return (
-          <div className="space-y-2">
-            <button
-              className="ml-4 border-l-2 border-[var(--color-info)]/40 bg-[var(--color-info)]/10 rounded-r-lg p-2.5 transition-all hover:bg-[var(--color-info)]/20 cursor-pointer w-full text-left"
-              data-sesion-key={sesionKey}
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleSession(sesionKey);
-              }}
-            >
-              <div className="flex items-center gap-2">
-                {isExpanded ? (
-                  <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)] flex-shrink-0" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)] flex-shrink-0" />
-                )}
-                <span className="text-sm text-[var(--color-text-secondary)] font-medium">
-                  {isExpanded ? 'Ocultar detalles' : 'Ver detalles'}
-                </span>
-              </div>
-            </button>
-            {isExpanded && (
-              <div className="ml-4 mt-2" onClick={(e) => e.stopPropagation()}>
-                <SessionContentView sesion={row.sesion} compact />
-              </div>
-            )}
-          </div>
-        );
-      },
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -258,7 +168,6 @@ function SemanaPageContent() {
         icon={Calendar}
         title="Mi Semana"
         subtitle="Resumen y planificación semanal"
-        iconVariant="plain"
         filters={
           <WeekNavigator 
             mondayISO={semanaActualISO}
@@ -353,49 +262,77 @@ function SemanaPageContent() {
                   Sesiones ({semanaDelPlan.sesiones?.length || 0})
                 </h3>
                 
-                {/* Tabla de sesiones */}
-                {tableData.length === 0 ? (
+                {/* Lista compacta de sesiones */}
+                {semanaDelPlan.sesiones && semanaDelPlan.sesiones.length === 0 ? (
                   <div className="text-center py-12">
                     <Layers className={`w-16 h-16 mx-auto mb-4 ${componentStyles.empty.emptyIcon}`} />
                     <p className={componentStyles.empty.emptyText}>No hay sesiones planificadas</p>
                   </div>
                 ) : (
-                  <UnifiedTable
-                    columns={columns}
-                    data={tableData}
-                    getRowActions={(row) => [
-                      {
-                        id: 'study',
-                        label: 'Ir a estudiar',
-                        icon: <PlayCircle className="w-4 h-4" />,
-                        onClick: () => navigate(createPageUrl('hoy')),
-                      },
-                      {
-                        id: 'statistics',
-                        label: 'Ver estadísticas',
-                        icon: <Activity className="w-4 h-4" />,
-                        onClick: () => navigate(createPageUrl('estadisticas')),
-                      },
-                      {
-                        id: 'view',
-                        label: 'Ver detalles completos',
-                        icon: <Eye className="w-4 h-4" />,
-                        onClick: () => {
-                          const sesionKey = `sesion-${row.sesionIdx}`;
-                          if (!expandedSessions.has(sesionKey)) {
+                  <div className="space-y-2">
+                    {semanaDelPlan.sesiones.map((sesion, sesionIdx) => {
+                      const sesionKey = `sesion-${sesionIdx}`;
+                      const isExpanded = expandedSessions.has(sesionKey);
+                      const tiempoTotal = calcularTiempoSesion(sesion);
+                      const tiempoMinutos = Math.floor(tiempoTotal / 60);
+                      const tiempoSegundos = tiempoTotal % 60;
+
+                      return (
+                        <div
+                          key={sesionIdx}
+                          className="ml-4 border-l-2 border-[var(--color-info)]/40 bg-[var(--color-info)]/10 rounded-r-lg p-2.5 transition-all hover:bg-[var(--color-info)]/20 cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
                             toggleSession(sesionKey);
-                          }
-                          // Scroll suave al elemento si es necesario
-                          setTimeout(() => {
-                            const element = document.querySelector(`[data-sesion-key="${sesionKey}"]`);
-                            element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          }, 100);
-                        },
-                      },
-                    ]}
-                    keyField="id"
-                    emptyMessage="No hay sesiones planificadas"
-                  />
+                          }}
+                        >
+                          {/* Sesión Header */}
+                          <div className="flex items-start gap-2">
+                            <button className="pt-1 flex-shrink-0">
+                              {isExpanded ? (
+                                <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+                              ) : (
+                                <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+                              )}
+                            </button>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <PlayCircle className="w-3.5 h-3.5 text-[var(--color-info)] flex-shrink-0" />
+                                <span className="text-sm font-medium text-[var(--color-text-primary)]">{sesion.nombre}</span>
+                                <Badge 
+                                  variant="outline" 
+                                  className={tiempoTotal > 0 ? componentStyles.status.badgeSuccess : componentStyles.status.badgeDefault}
+                                >
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
+                                </Badge>
+                                <Badge className={`rounded-full ${focoColors[sesion.foco]}`} variant="outline">
+                                  {focoLabels[sesion.foco]}
+                                </Badge>
+                              </div>
+                              {!isExpanded && (
+                                <div className="flex items-center gap-1.5 mt-1 text-xs text-[var(--color-text-secondary)]">
+                                  <Layers className="w-2.5 h-2.5" />
+                                  <span>
+                                    {sesion.bloques?.length || 0} ejercicios
+                                    {sesion.rondas && sesion.rondas.length > 0 && `, ${sesion.rondas.length} ${sesion.rondas.length === 1 ? 'ronda' : 'rondas'}`}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Contenido expandido */}
+                          {isExpanded && (
+                            <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                              <SessionContentView sesion={sesion} compact />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
 

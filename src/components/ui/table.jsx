@@ -5,7 +5,7 @@ import { componentStyles } from "@/design/componentStyles"
 const Table = React.forwardRef(({ className, ...props }, ref) => (
   <table
     ref={ref}
-    className={cn("w-full caption-bottom text-sm border-collapse bg-card", className)}
+    className={cn("w-full caption-bottom text-sm border-collapse bg-card rounded-[var(--radius-card,0.25rem)] overflow-hidden", className)}
     {...props}
   />
 ))
@@ -16,7 +16,7 @@ const TableHeader = React.forwardRef(({ className, sticky = false, ...props }, r
   return (
     <thead 
       ref={ref} 
-      className={cn("border-b-2 border-[var(--color-border-default)] bg-[var(--color-surface-muted)]", stickyClass, className)} 
+      className={cn("border-b border-[var(--color-border-default)]/30 bg-[var(--color-surface-muted)]/50", stickyClass, className)} 
       {...props} 
     />
   );
@@ -54,7 +54,7 @@ const TableRow = React.forwardRef(({ className, clickable = false, selected = fa
     <tr
       ref={ref}
       className={cn(
-        "border-b border-[var(--color-border-default)] transition-colors",
+        componentStyles.table.row,
         componentStyles.table.rowHover,
         clickableClass,
         selectedClass,

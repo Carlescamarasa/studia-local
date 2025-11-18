@@ -334,19 +334,17 @@ function LayoutContent() {
           inert={!abierto && isMobile ? "" : undefined}
           tabIndex={-1}
           className={`
-            z-[90] flex flex-col
+            z-[90] flex flex-col sidebar-modern
             transition-transform duration-200 will-change-transform transform-gpu
             fixed inset-y-0 left-0 w-[280px]
             ${abierto ? "translate-x-0" : "-translate-x-full lg:-translate-x-full"}
           `}
           style={{
-            backgroundColor: 'var(--sidebar-bg, var(--color-surface-elevated))',
-            borderRight: '1px solid var(--sidebar-border, var(--color-border-default))',
             transform: abierto ? 'translateX(0)' : 'translateX(-100%)',
           }}
         >
           {/* Header del sidebar */}
-          <div className="border-b border-[var(--color-border-default)] p-6">
+          <div className="border-b border-[var(--color-border-default)]/30 p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-card overflow-hidden">
                 <img 
@@ -367,7 +365,7 @@ function LayoutContent() {
           {/* Navegación */}
           <div className="flex-1 overflow-y-auto p-3">
             {Object.entries(grouped).map(([group, groupItems]) => (
-              <div key={group} className="mb-4">
+              <div key={group} className="mb-6">
                 <p className={componentStyles.components.menuSectionTitle}>
                   {group}
                 </p>
@@ -397,7 +395,7 @@ function LayoutContent() {
           </div>
 
           {/* Pie del sidebar */}
-          <div className="border-t border-[var(--color-border-default)] p-4 pt-3 space-y-3 text-[var(--color-text-secondary)]">
+          <div className="border-t border-[var(--color-border-default)]/30 p-4 pt-3 space-y-3 text-[var(--color-text-secondary)]">
             {!isMobile && (
               <Button
                 variant="ghost"
@@ -453,40 +451,43 @@ function LayoutContent() {
           aria-hidden={isMobile && abierto}
           inert={isMobile && abierto ? "" : undefined}
         >
-          {/* Header mobile */}
-          <header
-            className="bg-card border-b border-[var(--color-border-default)] px-4 py-3 lg:hidden sticky top-0 z-[70] cursor-pointer active:bg-[var(--color-surface-muted)] transition-colors"
-            onClick={handleHeaderClick}
-            role="button"
-            aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
-            aria-controls="sidebar"
-            aria-expanded={abierto}
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                safeToggle();
-              }
-            }}
-          >
-            <div className="flex items-center justify-between min-h-[44px]">
-              <button
-                ref={headerToggleButtonRef}
-                className="hover:bg-[var(--color-surface-muted)] p-2 rounded-xl transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
-                onClick={(e) => {
-                  e.stopPropagation();
+          {/* Header mobile - Oculto cuando hay PageHeader (el PageHeader tiene el botón de menú y título) */}
+          {/* Solo visible en páginas sin PageHeader */}
+          {!location.pathname.match(/^\/(estadisticas|agenda|semana|asignaciones|usuarios|estudiantes|piezas|ejercicios|planes|plantillas|sesiones|semanas|perfil|adaptar-asignacion|asignacion-detalle|hoy|editor)/) && (
+            <header
+              className="bg-card border-b border-[var(--color-border-default)] px-4 py-3 lg:hidden cursor-pointer active:bg-[var(--color-surface-muted)] transition-colors"
+              onClick={handleHeaderClick}
+              role="button"
+              aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
+              aria-controls="sidebar"
+              aria-expanded={abierto}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
                   safeToggle();
-                }}
-                aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
-                aria-controls="sidebar"
-                aria-expanded={abierto}
-              >
-                {abierto ? <X className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
-              </button>
-              <h1 className="text-base font-bold text-[var(--color-text-primary)]">{appName}</h1>
-              <div className="w-11" />
-            </div>
-          </header>
+                }
+              }}
+            >
+              <div className="flex items-center justify-between min-h-[44px]">
+                <button
+                  ref={headerToggleButtonRef}
+                  className="hover:bg-[var(--color-surface-muted)] p-2 rounded-[var(--btn-radius,0.25rem)] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    safeToggle();
+                  }}
+                  aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
+                  aria-controls="sidebar"
+                  aria-expanded={abierto}
+                >
+                  {abierto ? <X className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
+                </button>
+                <h1 className="text-base font-bold text-[var(--color-text-primary)]">{appName}</h1>
+                <div className="w-11" />
+              </div>
+            </header>
+          )}
 
           {/* Botón flotante para desktop - solo visible cuando está cerrado */}
           {!isMobile && !abierto && (

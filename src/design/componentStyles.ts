@@ -6,14 +6,14 @@
 // Helpers base para compactar variantes de card/panel
 // NOTA: .app-card ya incluye radius, padding y shadow desde tokens CSS (index.css)
 // Solo añadimos variantes de color/borde que no están en la clase base
-const CARD_BASE = "app-card border border-[var(--color-border-strong)] bg-[var(--color-surface)]";
-const CARD_ELEVATED = "app-card border border-[var(--color-border-strong)] bg-[var(--color-surface-elevated)]";
+const CARD_BASE = "app-card bg-[var(--color-surface)]"; // El borde ya está en .app-card con opacidad
+const CARD_ELEVATED = "app-card bg-[var(--color-surface-elevated)]"; // El borde ya está en .app-card con opacidad
 const PANEL_BASE = "app-panel";
 const CARD_TONE_PRIMARY = "app-card border-2 border-[var(--color-primary)] bg-[var(--color-primary-soft)]";
 const CARD_TONE_ACCENT = "app-card border-2 border-[var(--color-accent)] bg-[var(--color-surface)]";
 const CARD_TONE_SECONDARY = "app-card border-2 border-[var(--color-secondary)] bg-[var(--color-surface)]";
 const PANEL_SESSION = "app-panel bg-[var(--color-surface-muted)] hover:shadow-md transition-all";
-const CARD_METRIC = "app-card border border-[var(--color-border-default)] bg-[var(--color-surface)] hover:shadow-sm transition-shadow";
+const CARD_METRIC = "app-card border border-[var(--color-border-default)]/20 bg-[var(--color-surface)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300";
 
 export const componentStyles = {
   layout: {
@@ -58,9 +58,9 @@ export const componentStyles = {
 
   typography: {
     // Títulos usan Tenor Sans (fontFamilyHeadings) desde variables CSS
-    pageTitle: "text-2xl sm:text-3xl md:text-4xl font-bold text-ui font-headings",
-    sectionTitle: "text-base sm:text-lg md:text-xl font-semibold text-ui font-headings",
-    cardTitle: "text-sm sm:text-base md:text-lg font-semibold text-ui font-headings",
+    pageTitle: "text-2xl sm:text-3xl md:text-4xl font-semibold text-ui font-headings tracking-[-0.02em] leading-[1.1]",
+    sectionTitle: "text-base sm:text-lg md:text-xl font-semibold text-ui font-headings tracking-[-0.01em]",
+    cardTitle: "text-sm sm:text-base md:text-lg font-semibold text-ui font-headings tracking-[-0.01em]",
     // Textos base usan fuente del sistema (fontFamilyBase) desde variables CSS
     bodyText: "text-base sm:text-base md:text-base text-ui font-base",
     smallMetaText: "text-xs text-[var(--color-text-secondary)] font-base",
@@ -131,6 +131,9 @@ export const componentStyles = {
     spinnerInline: "w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin",
     spinnerInlineSm: "w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin",
     spinnerInlineLg: "w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin",
+    // Variantes de radius para botones
+    square: "rounded-sm", // 2-4px - muy cuadrado
+    modern: "rounded-md", // 6px - moderno intermedio
   },
 
   tabs: {
@@ -145,7 +148,7 @@ export const componentStyles = {
   nav: {
     menuSectionTitle: "text-xs uppercase tracking-wide text-ui/70 font-semibold px-2.5 py-2",
     menuItem: "flex items-center gap-2 px-2.5 py-2 rounded-lg text-ui/90 hover:bg-[var(--color-surface-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-    menuItemActive: "bg-[var(--sidebar-item-active-bg,var(--color-primary-soft))] text-[var(--sidebar-item-active-text,var(--color-text-primary))] border border-[var(--color-primary)] shadow-sm",
+    menuItemActive: "bg-[var(--color-primary)]/10 text-[var(--color-text-primary)] border border-[var(--color-primary)]/20 shadow-sm",
   },
 
   empty: {
@@ -196,7 +199,7 @@ export const componentStyles = {
     badgeWarning: "inline-flex items-center rounded-full bg-[var(--color-warning)]/10 text-[var(--color-warning)] border border-[var(--color-warning)]/20 text-xs px-2 py-0.5",
     badgeDanger: "inline-flex items-center rounded-full bg-[var(--color-danger)]/10 text-[var(--color-danger)] border border-[var(--color-danger)]/20 text-xs px-2 py-0.5",
     // Estados semánticos expandidos
-    statusActive: "inline-flex items-center rounded-full bg-[var(--color-success)]/10 text-[var(--color-success)] border border-[var(--color-success)]/20 text-xs px-2 py-0.5",
+    statusActive: "inline-flex items-center rounded-full bg-gradient-to-r from-[var(--color-success)]/10 to-[var(--color-success)]/5 text-[var(--color-success)] border border-[var(--color-success)]/20 text-xs px-2 py-0.5",
     statusPending: "inline-flex items-center rounded-full bg-[var(--color-warning)]/10 text-[var(--color-warning)] border border-[var(--color-warning)]/20 text-xs px-2 py-0.5",
     statusCompleted: "inline-flex items-center rounded-full bg-[var(--color-info)]/10 text-[var(--color-info)] border border-[var(--color-info)]/20 text-xs px-2 py-0.5",
     statusCancelled: "inline-flex items-center rounded-full bg-[var(--color-danger)]/10 text-[var(--color-danger)] border border-[var(--color-danger)]/20 text-xs px-2 py-0.5",
@@ -244,21 +247,21 @@ export const componentStyles = {
   // Microinteracciones y animaciones
   motion: {
     // Transiciones base
-    transitionBase: "transition-all duration-150 ease-out",
-    transitionFast: "transition-all duration-100 ease-out",
-    transitionSlow: "transition-all duration-250 ease-out",
+    transitionBase: "transition-all duration-300 ease-out",
+    transitionFast: "transition-all duration-150 ease-out",
+    transitionSlow: "transition-all duration-400 ease-out",
     // Transiciones específicas
-    transitionTransform: "transition-transform duration-150 ease-out",
-    transitionColors: "transition-colors duration-150 ease-out",
-    transitionOpacity: "transition-opacity duration-150 ease-out",
-    transitionShadow: "transition-shadow duration-200 ease-out",
+    transitionTransform: "transition-transform duration-300 ease-out",
+    transitionColors: "transition-colors duration-300 ease-out",
+    transitionOpacity: "transition-opacity duration-300 ease-out",
+    transitionShadow: "transition-shadow duration-300 ease-out",
     // Hover effects
-    hoverScale: "hover:scale-[1.02] transition-transform duration-150 ease-out",
-    hoverScaleSmall: "hover:scale-[1.01] transition-transform duration-150 ease-out",
-    hoverLift: "hover:-translate-y-0.5 transition-transform duration-150 ease-out",
+    hoverScale: "hover:scale-[1.02] transition-transform duration-300 ease-out",
+    hoverScaleSmall: "hover:scale-[1.01] transition-transform duration-300 ease-out",
+    hoverLift: "hover:-translate-y-0.5 transition-transform duration-300 ease-out",
     // Active effects
-    activeScale: "active:scale-95 transition-transform duration-100 ease-out",
-    activeScaleSmall: "active:scale-[0.98] transition-transform duration-100 ease-out",
+    activeScale: "active:scale-[0.98] transition-transform duration-150 ease-out",
+    activeScaleSmall: "active:scale-[0.97] transition-transform duration-150 ease-out",
     // Focus effects
     focusRing: "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2",
     // Animaciones de entrada
@@ -266,8 +269,8 @@ export const componentStyles = {
     slideUp: "animate-in slide-in-from-bottom-2 duration-300",
     scaleIn: "animate-in zoom-in-95 duration-200",
     // Para cards
-    cardHover: "hover:scale-[1.02] hover:shadow-lg transition-all duration-200 ease-out",
-    cardActive: "active:scale-[0.98] transition-transform duration-100 ease-out",
+    cardHover: "hover:scale-[1.02] hover:shadow-lg transition-all duration-300 ease-out",
+    cardActive: "active:scale-[0.98] transition-transform duration-150 ease-out",
   },
 
   // Sistema de elevación
@@ -292,18 +295,18 @@ export const componentStyles = {
     // Tabla base
     table: "w-full caption-bottom text-sm border-collapse",
     // Header
-    header: "sticky top-0 z-10 border-b-2 border-[var(--color-border-default)] bg-[var(--color-surface-muted)]",
-    headerCell: "h-12 px-4 text-left align-middle font-semibold uppercase text-[11px] tracking-wide text-[var(--color-text-secondary)] bg-[var(--color-surface-muted)]",
-    headerCellSortable: "cursor-pointer hover:bg-[var(--color-surface-muted)]/80 transition-colors",
+    header: "sticky top-0 z-10 border-b border-[var(--color-border-default)]/30 bg-[var(--color-surface-muted)]/50",
+    headerCell: "h-12 px-4 text-left align-middle font-semibold uppercase text-[11px] tracking-wide text-[var(--color-text-secondary)] bg-[var(--color-surface-muted)]/50",
+    headerCellSortable: "cursor-pointer hover:bg-[var(--color-surface-muted)]/70 transition-colors",
     // Body
     body: "bg-[var(--color-surface)]",
     // Row
-    row: "border-b border-[var(--color-border-default)] transition-colors",
-    rowZebra: "even:bg-[var(--color-surface-muted)]/30",
-    rowHover: "hover:bg-[var(--color-surface-muted)]/50",
+    row: "border-b border-[var(--color-border-default)]/20 transition-colors",
+    rowZebra: "even:bg-[var(--color-surface-muted)]/20",
+    rowHover: "hover:bg-[var(--color-surface-muted)]/30",
     rowSelected: "bg-[var(--color-primary-soft)] border-l-4 border-l-[var(--color-primary)]",
     rowClickable: "cursor-pointer",
-    // Cell
+    // Cell - sin bordes verticales
     cell: "px-4 py-3 align-middle text-[var(--color-text-primary)]",
     cellCompact: "px-3 py-2 align-middle text-[var(--color-text-primary)]",
   },
@@ -419,6 +422,18 @@ export const componentStyles = {
     focusEnhanced: "focus-visible-enhanced",
     // Screen reader only
     srOnly: "sr-only absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0",
+  },
+
+  // FASE 2: Refinamiento - Estilos translúcidos y degradados
+  effects: {
+    // Reproductor translúcido y flotante (glassmorphism)
+    playerTranslucent: "bg-[var(--color-surface)]/15 backdrop-blur-xl border border-[var(--color-border-default)]/20 rounded-[var(--radius-card)] shadow-[0_8px_32px_rgba(0,0,0,0.12)] overflow-hidden",
+    playerTranslucentHover: "hover:shadow-[0_12px_40px_rgba(0,0,0,0.15)] transition-all duration-300",
+    // Degradados sutiles para botones primary
+    gradientPrimary: "bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)]",
+    gradientPrimaryHover: "bg-gradient-to-br from-[var(--color-secondary)] to-[var(--color-primary)]",
+    // Degradados sutiles para acentos
+    gradientAccent: "bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-primary)]",
   },
 
   // Componentes (mantener como alias para compatibilidad hacia atrás)

@@ -78,36 +78,37 @@ export function DesignProvider({ children }) {
   });
 
   // Helper para derivar colores dark desde colores light
-  // Usa los mismos colores cálidos que PRESET_STUDIA_DARK para mantener consistencia
+  // Paleta de grises neutros con acentos en color de marca
   const deriveDarkColors = (lightColors) => {
     return {
       ...lightColors,
       // REGLA: primary SIEMPRE #fd9840 (obligatorio, no cambia en dark)
       primary: lightColors.primary || '#fd9840',
-      primarySoft: '#2A1F16',     // Versión oscura cálida del primary soft
+      primarySoft: 'rgba(253, 152, 64, 0.1)', // Versión oscura del primary soft con opacidad
       secondary: lightColors.secondary || '#FB8C3A',
+      accent: lightColors.accent || '#F97316', // Color de marca para acentos
       // Estados mantienen coherencia
       success: lightColors.success || '#10B981',
       warning: lightColors.warning || '#F59E0B',
       danger: lightColors.danger || '#EF4444',
       info: lightColors.info || '#3B82F6',
-      // Neutrales: fondos oscuros con tinte cálido (marrón oscuro/negro cálido)
-      background: '#1A1512',      // Negro cálido (marrón muy oscuro)
-      surface: '#231D18',         // Superficie oscura cálida
-      surfaceElevated: '#2A241F', // Superficie elevada oscura cálida
-      surfaceMuted: '#1F1915',   // Gris oscuro cálido
-      // Colores de texto oscuros cálidos
+      // Neutrales: fondos muy oscuros en grises neutros (sin tinte marrón)
+      background: '#000000',      // Negro puro
+      surface: '#0A0A0A',         // Superficie casi negra
+      surfaceElevated: '#121212', // Superficie elevada ligeramente más clara
+      surfaceMuted: '#050505',   // Casi negro para elementos muted
+      // Colores de texto en grises neutros
       text: {
-        primary: '#F5F0E8',       // Texto claro cálido (crema claro)
-        secondary: '#D4C4B0',    // Gris claro cálido (beige claro)
-        muted: '#A69581',         // Gris medio cálido
-        inverse: '#1A1512',       // Fondo oscuro para texto inverso
+        primary: '#FFFFFF',       // Texto blanco puro
+        secondary: '#CCCCCC',    // Gris claro
+        muted: '#999999',         // Gris medio
+        inverse: '#000000',       // Fondo negro para texto inverso
       },
-      // Colores de borde oscuros cálidos
+      // Colores de borde en grises neutros muy oscuros
       border: {
-        default: '#3A3229',       // Bordes oscuros cálidos (marrón oscuro)
-        muted: '#2A241F',
-        strong: '#4A3F35',        // Bordes oscuros cálidos más marcados
+        default: '#1A1A1A',       // Bordes casi negros
+        muted: '#0F0F0F',
+        strong: '#252525',        // Bordes ligeramente más claros
       },
     };
   };
@@ -116,15 +117,15 @@ export function DesignProvider({ children }) {
   const deriveDarkChrome = () => {
     return {
       sidebar: {
-        background: '#231D18',    // Sidebar oscuro cálido coherente
-        border: '#3A3229',        // Borde oscuro cálido
-        activeItemBg: '#2A1F16', // Item activo oscuro cálido (primary soft oscuro)
-        activeItemText: '#F5F0E8', // Texto claro cálido
-        mutedItemText: '#A69581', // Texto muted cálido
+        background: '#0A0A0A',    // Sidebar casi negro
+        border: '#1A1A1A',        // Borde casi negro
+        activeItemBg: 'rgba(253, 152, 64, 0.15)', // Item activo con color de marca más visible
+        activeItemText: '#FFFFFF', // Texto blanco
+        mutedItemText: '#999999', // Texto muted gris
       },
       header: {
-        background: '#2A241F',     // Header oscuro cálido
-        border: '#3A3229',        // Borde oscuro cálido
+        background: '#121212',     // Header casi negro
+        border: '#1A1A1A',        // Borde casi negro
       },
     };
   };

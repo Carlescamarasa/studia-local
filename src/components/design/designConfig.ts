@@ -320,9 +320,9 @@ export const DEFAULT_DESIGN: DesignTokens = {
   // Layout y espaciado
   layout: {
     radius: {
-      global: 'lg',            // Radio base para todo
-      card: 'lg',              // Cards
-      controls: 'lg',          // Inputs, buttons
+      global: 'sm',            // Radio base para todo (cambiar a sm para más cuadrado)
+      card: 'none',            // Cards más cuadradas (cambiar de sm a none para muy cuadradas)
+      controls: 'lg',          // Inputs, buttons (se maneja en controls.button.radius)
       pill: 'lg',              // Badges, pills
       modal: 'xl',             // Modales
     },
@@ -340,8 +340,8 @@ export const DEFAULT_DESIGN: DesignTokens = {
     page: {
       maxWidth: '1280px',      // max-w-7xl equivalente (80rem)
       paddingX: '1rem',        // 16px base (responsive se maneja en CSS)
-      paddingY: '1.5rem',      // 24px base
-      sectionGapY: '1.5rem',   // 24px separación entre secciones
+      paddingY: '2rem',        // 32px base (aumentado de 24px para más respiración)
+      sectionGapY: '2rem',     // 32px separación entre secciones (aumentado de 24px)
     },
     grid: {
       columns: 12,             // Grid de 12 columnas
@@ -396,8 +396,8 @@ export const DEFAULT_DESIGN: DesignTokens = {
     },
     button: {
       height: '2.5rem', // 40px - altura estándar para botones
-      radius: 'lg',
-      shadow: 'sm',
+      radius: 'sm', // Cambiado de 'lg' a 'sm' para botones más cuadrados (4px)
+      shadow: 'none', // Sin sombra por defecto
     },
     search: {
       background: 'var(--color-surface)',
@@ -425,21 +425,21 @@ export const DEFAULT_DESIGN: DesignTokens = {
     },
     card: {
       padding: {
-        x: '1rem',      // 16px - padding horizontal base de la card
-        y: '1rem',      // 16px - padding vertical base de la card
+        x: '1.5rem',    // 24px - padding horizontal base de la card (aumentado de 16px)
+        y: '1.5rem',    // 24px - padding vertical base de la card (aumentado de 16px)
         header: {
-          x: '1rem',    // 16px - padding horizontal del header
-          y: '1rem',    // 16px - padding vertical del header (top)
+          x: '1.5rem',  // 24px - padding horizontal del header (aumentado de 16px)
+          y: '1.5rem',  // 24px - padding vertical del header (aumentado de 16px)
           // Nota: el padding-bottom del header suele ser menor (pb-2 ≈ 0.5rem)
           // pero usamos y para el padding-block completo; ajustar según necesidad
         },
         content: {
-          x: '1rem',    // 16px - padding horizontal del content
-          y: '1rem',    // 16px - padding vertical del content
+          x: '1.5rem',  // 24px - padding horizontal del content (aumentado de 16px)
+          y: '1.5rem',  // 24px - padding vertical del content (aumentado de 16px)
         },
         footer: {
-          x: '1rem',    // 16px - padding horizontal del footer
-          y: '1rem',    // 16px - padding vertical del footer
+          x: '1.5rem',  // 24px - padding horizontal del footer (aumentado de 16px)
+          y: '1.5rem',  // 24px - padding vertical del footer (aumentado de 16px)
         },
       },
       radius: 'lg',     // rounded-xl en Tailwind = 0.75rem (12px), que corresponde a 'lg' en RADIUS_MAP

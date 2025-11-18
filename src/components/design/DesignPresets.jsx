@@ -24,30 +24,30 @@ export const BUILT_IN_PRESETS = {
   },
   dark: {
     name: 'Dark',
-    description: 'Tema oscuro refinado',
+    description: 'Tema oscuro refinado con grises neutros y acentos en color de marca',
     config: {
       ...DEFAULT_DESIGN,
       theme: 'dark',
       colors: {
         ...DEFAULT_DESIGN.colors,
-        primary: '#60a5fa',
-        primarySoft: '#0b1220',
-        secondary: '#93c5fd',
-        accent: '#f59e0b',
-        background: '#0b0f19',
-        surface: '#0f172a',
-        surfaceElevated: '#111827',
-        surfaceMuted: '#1f2937',
+        primary: '#fd9840',        // Color de marca (naranja)
+        primarySoft: 'rgba(253, 152, 64, 0.1)',
+        secondary: '#FB8C3A',
+        accent: '#F97316',          // Color de marca para acentos
+        background: '#000000',      // Negro puro
+        surface: '#0A0A0A',         // Superficie casi negra
+        surfaceElevated: '#121212', // Superficie elevada ligeramente más clara
+        surfaceMuted: '#050505',   // Casi negro para muted
         text: {
-          primary: '#e5e7eb',
-          secondary: '#cbd5e1',
-          muted: '#94a3b8',
-          inverse: '#0b0f19',
+          primary: '#FFFFFF',       // Texto blanco
+          secondary: '#CCCCCC',      // Gris claro
+          muted: '#999999',         // Gris medio
+          inverse: '#000000',       // Fondo negro para texto inverso
         },
         border: {
-          default: '#1f2937',
-          muted: '#0b1220',
-          strong: '#334155',
+          default: '#1A1A1A',       // Bordes casi negros
+          muted: '#0F0F0F',
+          strong: '#252525',        // Bordes ligeramente más claros
         },
       },
       layout: {
@@ -59,7 +59,7 @@ export const BUILT_IN_PRESETS = {
         ring: {
           width: '2px',
           style: 'solid',
-          color: 'rgba(96, 165, 250, 0.6)',
+          color: 'rgba(253, 152, 64, 0.5)', // Color de marca con opacidad
           offset: '2px',
         },
       },

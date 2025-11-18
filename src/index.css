@@ -146,38 +146,38 @@ button:focus-visible {
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 0 0% 0%;         /* #000000 - Negro puro */
+    --foreground: 0 0% 100%;       /* #FFFFFF - Texto blanco */
+    --card: 0 0% 7%;                /* #121212 - Card casi negro */
+    --card-foreground: 0 0% 100%;  /* #FFFFFF - Texto blanco */
+    --popover: 0 0% 7%;             /* #121212 - Popover casi negro */
+    --popover-foreground: 0 0% 100%; /* #FFFFFF - Texto blanco */
+    --primary: 28 98% 62%;          /* #fd9840 - Color de marca (naranja) */
+    --primary-foreground: 0 0% 0%; /* #000000 - Texto negro sobre primary */
+    --secondary: 0 0% 4%;           /* #0A0A0A - Casi negro */
+    --secondary-foreground: 0 0% 100%; /* #FFFFFF - Texto blanco */
+    --muted: 0 0% 2%;               /* #050505 - Casi negro */
+    --muted-foreground: 0 0% 60%;  /* #999999 - Texto gris medio */
+    --accent: 28 98% 62%;           /* #fd9840 - Color de marca para acentos */
+    --accent-foreground: 0 0% 0%;  /* #000000 - Texto negro sobre accent */
+    --destructive: 0 72% 51%;       /* #EF4444 - Rojo para acciones destructivas */
+    --destructive-foreground: 0 0% 100%; /* Texto blanco sobre destructive */
+    --border: 0 0% 10%;             /* #1A1A1A - Bordes casi negros */
+    --input: 0 0% 10%;              /* #1A1A1A - Inputs con bordes casi negros */
+    --ring: 28 98% 62%;             /* #fd9840 - Ring en color de marca */
+    --chart-1: 28 98% 62%;          /* Color de marca para charts */
+    --chart-2: 142 76% 36%;         /* Verde para charts */
+    --chart-3: 217 91% 60%;         /* Azul para charts */
+    --chart-4: 38 92% 50%;          /* Ámbar para charts */
+    --chart-5: 0 72% 51%;           /* Rojo para charts */
+    --sidebar-background: 0 0% 4%;  /* #0A0A0A - Sidebar casi negro */
+    --sidebar-foreground: 0 0% 100%; /* #FFFFFF - Texto blanco en sidebar */
+    --sidebar-primary: 28 98% 62%; /* #fd9840 - Color de marca en sidebar */
+    --sidebar-primary-foreground: 0 0% 0%; /* Texto negro sobre primary */
+    --sidebar-accent: 0 0% 7%;      /* #121212 - Accent casi negro en sidebar */
+    --sidebar-accent-foreground: 0 0% 100%; /* Texto blanco */
+    --sidebar-border: 0 0% 10%;    /* #1A1A1A - Bordes casi negros */
+    --sidebar-ring: 28 98% 62%;    /* #fd9840 - Ring en color de marca */
   }
 }
 
@@ -218,7 +218,7 @@ button:focus-visible {
     color: var(--color-text-primary);
     border-width: var(--input-border-width, 1px);
     border-style: solid;
-    border-color: var(--ctrl-field-border, var(--input-border-color, var(--color-border-default)));
+    border-color: rgba(0, 0, 0, 0.1); /* Borde más sutil - 30% opacidad */
     border-radius: var(--ctrl-field-radius, var(--radius-ctrl));
     padding: var(--input-padding);
     height: var(--ctrl-field-height, auto);
@@ -227,7 +227,7 @@ button:focus-visible {
     position: relative; /* Para posicionar iconos absolutos dentro */
     font-family: inherit;
     font-size: inherit;
-    transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
+    transition: border-color 0.3s ease-out, box-shadow 0.3s ease-out;
   }
   
   /* Textarea específico - mejorado para múltiples líneas */
@@ -249,15 +249,15 @@ button:focus-visible {
   }
   .ctrl-field::placeholder {
     color: var(--color-text-secondary);
-    opacity: 0.6;
+    opacity: 0.5; /* Placeholder más sutil - 50% opacidad */
   }
   .ctrl-field:focus-visible {
     outline: none;
-    box-shadow: var(--focus-ring);
+    box-shadow: 0 0 0 2px rgba(253, 152, 64, 0.2); /* Focus ring más sutil - 20% opacidad */
     border-color: var(--color-primary);
   }
   .ctrl-field:hover:not(:disabled) {
-    border-color: var(--color-border-strong);
+    border-color: rgba(0, 0, 0, 0.15); /* Hover más sutil */
   }
   .ctrl-field:disabled {
     opacity: 0.5;
@@ -304,21 +304,26 @@ button:focus-visible {
     justify-content: center;
     font-family: "Open Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 500;
-    transition: all 150ms ease-out;
+    transition: all 300ms ease-out;
     cursor: pointer;
     border-radius: var(--btn-radius, var(--button-radius));
     height: var(--btn-height, auto);
     min-height: var(--btn-height, auto);
-    box-shadow: var(--btn-shadow, none);
+    box-shadow: none; /* Sin sombra por defecto - más minimalista */
+  }
+  .btn:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Sombra solo en hover */
   }
   .btn-primary {
-    background-color: var(--color-primary);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
     color: var(--color-text-inverse);
     border: 1px solid var(--color-primary);
+    box-shadow: 0 2px 8px rgba(253, 152, 64, 0.3); /* Sombra con color primary */
   }
   .btn-primary:hover {
-    background-color: var(--color-secondary);
+    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
     border-color: var(--color-secondary);
+    box-shadow: 0 4px 12px rgba(253, 152, 64, 0.4); /* Sombra más intensa en hover */
   }
   .btn-secondary {
     background-color: var(--color-surface);
@@ -408,13 +413,24 @@ button:focus-visible {
   .app-card {
     background-color: var(--color-surface);
     color: var(--color-text-primary);
-    border: 1px solid var(--color-border-strong);
+    border: 1px solid rgba(0, 0, 0, 0.08); /* Borde más sutil - 20% opacidad */
     
     /* Propiedades controladas por tokens - !important para sobreescribir Tailwind */
-    border-radius: var(--radius-card) !important;
+    border-radius: var(--radius-card, 0.25rem) !important; /* Fallback a sm (4px) si no existe la variable */
     padding-inline: var(--card-padding-x) !important;
     padding-block: var(--card-padding-y) !important;
-    box-shadow: var(--shadow-card) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important; /* Sombra más suave */
+    transition: all 300ms ease-out; /* Transición suave */
+  }
+  
+  .app-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important; /* Sombra más pronunciada en hover */
+    transform: translateY(-1px); /* Elevación sutil en hover */
+  }
+  
+  /* Desactivar hover transform para modales fijos */
+  .app-card[class*="fixed"]:hover {
+    transform: none !important;
   }
 
   .card-header {
@@ -597,5 +613,52 @@ button:focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
     border-radius: var(--radius-ctrl);
+  }
+
+  /* ============================================================================
+   * GLASSMORPHISM - Efectos de vidrio translúcido
+   * ============================================================================
+   */
+  
+  .sidebar-modern {
+    background: var(--sidebar-bg, var(--color-surface-elevated)) !important;
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border-right: 1px solid var(--sidebar-border, var(--color-border-default));
+  }
+
+  .header-modern {
+    position: sticky;
+    top: 0;
+    z-index: 50; /* Por encima del header mobile (z-[70]) pero por debajo de modales (z-[110]) */
+    background: var(--header-bg, var(--color-surface-elevated)) !important;
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border-bottom: 1px solid var(--header-border, var(--color-border-default));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Modo oscuro: reducir glassmorphism y usar fondo más sólido */
+  .dark .sidebar-modern {
+    background: var(--sidebar-bg, var(--color-surface-elevated)) !important;
+    backdrop-filter: blur(8px) saturate(120%);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+  }
+
+  .dark .header-modern {
+    background: var(--header-bg, var(--color-surface-elevated)) !important;
+    backdrop-filter: blur(8px) saturate(120%);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Fallback para navegadores sin soporte de backdrop-filter */
+  @supports not (backdrop-filter: blur(20px)) {
+    .sidebar-modern {
+      background: var(--sidebar-bg, var(--color-surface-elevated)) !important;
+    }
+    .header-modern {
+      background: var(--header-bg, var(--color-surface-elevated)) !important;
+    }
   }
 }

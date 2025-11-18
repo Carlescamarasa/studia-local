@@ -20,8 +20,8 @@ const EmojiCalidad = ({ nivel }) => {
   
   return (
     <div className="flex flex-col items-center">
-      <span className="text-3xl">{config.emoji}</span>
-      <span className="text-xs font-medium mt-1 text-[var(--color-text-primary)]">{config.label}</span>
+      <span className="text-2xl">{config.emoji}</span>
+      <span className="text-[10px] font-medium mt-0.5 text-[var(--color-text-primary)]">{config.label}</span>
     </div>
   );
 };
@@ -67,7 +67,7 @@ export default function ResumenFinal({
     <>
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto app-card">
-          <CardHeader className="text-center border-b border-[var(--color-border-default)] pb-4 sticky top-0 bg-[var(--color-surface-elevated)] z-10">
+          <CardHeader className="text-center border-b border-[var(--color-border-default)] pb-4">
             <div className="icon-tile mx-auto mb-3 bg-[var(--color-success)]/10">
               <CheckCircle className="w-8 h-8 text-[var(--color-success)]" />
             </div>
@@ -106,7 +106,7 @@ export default function ResumenFinal({
                   <button
                     key={nivel}
                     onClick={() => setCalidad(nivel)}
-                    className={`flex flex-col items-center justify-center p-3 app-panel border-2 transition-all min-h-[80px] ${
+                    className={`flex flex-col items-center justify-center p-2 app-panel border-2 transition-all ${
                       calidad === nivel 
                         ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' 
                         : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'

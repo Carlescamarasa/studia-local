@@ -698,11 +698,11 @@ function EstadisticasPageContent() {
         title={isEstu ? 'Mis Estadísticas' : isProf ? 'Estadísticas de Estudiantes' : 'Estadísticas Generales'}
         subtitle={isEstu ? 'Tu progreso en la práctica' : 'Análisis del rendimiento y progreso'}
         filters={
-          <div className="w-full space-y-4">
+          <div className="w-full space-y-2 sm:space-y-3 md:space-y-4">
             {/* Filtros de fecha y presets */}
-            <div className={componentStyles.components.panelBase + " p-3 md:p-4"}>
-              <div className="space-y-3">
-                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+            <div className={componentStyles.components.panelBase + " p-2 sm:p-3 md:p-4"}>
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center justify-between">
                   <div className="flex-1 w-full sm:w-auto">
                     <DateRangePicker
                       startDate={periodoInicio}
@@ -721,7 +721,7 @@ function EstadisticasPageContent() {
                         variant={rangoPreset === p.key ? "primary" : "outline"}
                         size="sm"
                         onClick={() => aplicarPreset(p.key)}
-                        className={`text-xs h-9 rounded-xl ${componentStyles.buttons.outline}`}
+                        className={`text-xs h-8 sm:h-9 rounded-[var(--btn-radius,0.25rem)] ${componentStyles.buttons.outline}`}
                         aria-label={`Preset ${p.label}`}
                       >
                         {p.label}
@@ -734,8 +734,8 @@ function EstadisticasPageContent() {
 
             {/* Filtros adicionales (solo si no es estudiante) */}
             {!isEstu && (
-              <div className={componentStyles.components.panelBase + " p-3 md:p-4"}>
-                <div className={`${componentStyles.layout.grid2} gap-3`}>
+              <div className={componentStyles.components.panelBase + " p-2 sm:p-3 md:p-4"}>
+                <div className={`${componentStyles.layout.grid2} gap-2 sm:gap-3`}>
                   <MultiSelect
                     label="Profesores"
                     items={profesores.map(p => ({ value: p.id, label: displayName(p) }))}
@@ -753,8 +753,8 @@ function EstadisticasPageContent() {
             )}
 
             {/* Filtro de Foco y botón Actualizar datos */}
-            <div className={componentStyles.components.panelBase + " p-3 md:p-4"}>
-              <div className={`${componentStyles.layout.grid2} gap-3 items-end`}>
+            <div className={componentStyles.components.panelBase + " p-2 sm:p-3 md:p-4"}>
+              <div className={`${componentStyles.layout.grid2} gap-2 sm:gap-3 items-end`}>
                 <MultiSelect
                   label="Foco"
                   items={Object.entries(focoLabels).map(([key, label]) => ({ value: key, label }))}
@@ -765,9 +765,9 @@ function EstadisticasPageContent() {
                   variant="outline" 
                   size="sm"
                   onClick={() => window.location.reload()}
-                  className={`${componentStyles.buttons.outline} h-9 w-full sm:w-auto`}
+                  className={`${componentStyles.buttons.outline} h-8 sm:h-9 w-full sm:w-auto text-xs sm:text-sm`}
                 >
-                  <RefreshCw className="w-4 h-4 mr-2" />
+                  <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
                   Actualizar datos
                 </Button>
               </div>

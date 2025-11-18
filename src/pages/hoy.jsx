@@ -7,17 +7,17 @@ import { Button } from "@/components/ds/Button"; // Updated import path
 import { Badge } from "@/components/ds";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ds";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   PlayCircle, Calendar, Target, Music, Clock, Layers,
   ChevronRight, ChevronLeft, ChevronsRight, AlertTriangle, ChevronDown,
   Play, Pause, X, List, HelpCircle,
   Maximize2, Minimize2, CheckCircle, XCircle,
-  SkipForward, Shuffle, MoreVertical
+  SkipForward, Shuffle, Menu
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -57,7 +57,7 @@ export default function HoyPage() {
 
 function HoyPageContent() {
   const navigate = useNavigate();
-  const { closeSidebar } = useSidebar();
+  const { closeSidebar, abierto, toggleSidebar } = useSidebar();
 
   const [semanaActualISO, setSemanaActualISO] = useState(() => {
     return calcularLunesSemanaISO(new Date());
@@ -80,7 +80,6 @@ function HoyPageContent() {
   const [sesionFinalizada, setSesionFinalizada] = useState(false);
   const [datosFinal, setDatosFinal] = useState(null);
   const [mediaFullscreen, setMediaFullscreen] = useState(null);
-  const [menuOpcionesAbierto, setMenuOpcionesAbierto] = useState(false);
 
   // Estado para la posición del timer arrastrable
   const [timerPosition, setTimerPosition] = useState(() => {
@@ -689,12 +688,6 @@ function HoyPageContent() {
       // No procesar si está en un input o textarea
       if (e.target.matches('input, textarea, select')) return;
       
-      // Atajo para abrir menú de opciones (Ctrl/Cmd+M)
-      if ((e.metaKey || e.ctrlKey) && e.key === 'm') {
-        e.preventDefault();
-        setMenuOpcionesAbierto(prev => !prev);
-        return;
-      }
 
       if (e.code === 'Space' || e.key === ' ') {
         e.preventDefault();
@@ -723,7 +716,7 @@ function HoyPageContent() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown, true);
     };
-  }, [sesionActiva, sesionFinalizada, indiceActual, mediaFullscreen, mostrarItinerario, mostrarAyuda, mostrarModalCancelar, menuOpcionesAbierto, togglePlayPausa, completarYAvanzar, omitirYAvanzar, handleAnterior]);
+  }, [sesionActiva, sesionFinalizada, indiceActual, mediaFullscreen, mostrarItinerario, mostrarAyuda, mostrarModalCancelar, togglePlayPausa, completarYAvanzar, omitirYAvanzar, handleAnterior]);
 
   const handleCancelar = () => {
     setMostrarModalCancelar(true);
@@ -732,7 +725,8 @@ function HoyPageContent() {
   const guardarYSalir = async () => {
     await guardarRegistroSesion(false);
     setMostrarModalCancelar(false);
-    cerrarSesion();
+    // Finalizar la sesión para mostrar el feedback en lugar de cerrar directamente
+    setSesionFinalizada(true);
   };
 
   const salirSinGuardar = () => {
@@ -923,7 +917,7 @@ function HoyPageContent() {
         {sesionActiva && (
           <div
             ref={timerRef}
-            className="fixed z-[100] select-none"
+            className="fixed z-[30] select-none min-w-[320px] sm:min-w-[380px] md:min-w-[420px]"
             style={{
               top: timerPosition.top !== null ? `${timerPosition.top}px` : undefined,
               left: timerPosition.left !== null ? `${timerPosition.left}px` : undefined,
@@ -935,11 +929,11 @@ function HoyPageContent() {
             onTouchStart={handleTimerTouchStart}
           >
             <div className={cn(
-              "bg-[var(--color-surface-elevated)] border-2 rounded-2xl shadow-lg backdrop-blur-sm overflow-hidden",
+              componentStyles.effects.playerTranslucent,
               !isAD && ejercicioActual?.duracionSeg > 0 && (
-                excedido ? "border-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "border-[var(--color-warning)]" : "border-[var(--color-primary)]/50"
+                excedido ? "border-[var(--color-danger)]/30" : porcentajeEjercicio >= 75 ? "border-[var(--color-warning)]/30" : "border-[var(--color-primary)]/20"
               ),
-              !isAD && ejercicioActual?.duracionSeg > 0 && !isDraggingTimer && "hover:shadow-xl transition-shadow"
+              !isAD && ejercicioActual?.duracionSeg > 0 && !isDraggingTimer && componentStyles.effects.playerTranslucentHover
             )}>
               {/* Header con Timer y Contador */}
               {(!isAD && ejercicioActual?.duracionSeg > 0) || (sesionActiva && listaEjecucion.length > 0) ? (
@@ -1009,27 +1003,28 @@ function HoyPageContent() {
               ) : null}
               
               {/* Controles principales - Compactos pero táctiles */}
-              <div className="p-2 flex items-center justify-center gap-1.5">
-                {/* Navegación: Atrás */}
+              {/* Controles de ejercicio - Distribución 19-2-29-2-29-2-19 con gaps */}
+              <div className="p-2 flex items-center w-full gap-[2%]">
+                {/* Navegación: Atrás - 19% */}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleAnterior}
                   disabled={indiceActual === 0}
-                  className="h-10 w-10 p-0 rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors shrink-0"
+                  className="h-10 flex-[0.19] rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
                   title="Anterior (P)"
                   aria-label="Ejercicio anterior"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
 
-                {/* Control principal: Play/Pause (solo si no es AD) */}
+                {/* Control principal: Play/Pause - 29% */}
                 {!isAD && (
                   <Button
                     variant="primary"
                     size="sm"
                     onClick={togglePlayPausa}
-                    className="h-10 w-10 p-0 rounded-lg focus-brand shadow-sm hover:shadow-md transition-all shrink-0"
+                    className="h-10 flex-[0.29] rounded-lg focus-brand shadow-sm hover:shadow-md transition-all"
                     title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
                     aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
                   >
@@ -1037,13 +1032,13 @@ function HoyPageContent() {
                   </Button>
                 )}
 
-                {/* Acciones de ejercicio: Completar */}
+                {/* Acciones de ejercicio: Completar - 29% */}
                 <Button
                   variant="primary"
                   onClick={completarYAvanzar}
                   className={cn(
-                    "h-10 px-3 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm rounded-lg focus-brand shadow-sm hover:shadow-md transition-all text-white shrink-0",
-                    isAD && "flex-1"
+                    "h-10 flex-[0.29] bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm rounded-lg focus-brand shadow-sm hover:shadow-md transition-all text-white",
+                    isAD && "flex-[0.58]"
                   )}
                   title="Completar (Enter)"
                   aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
@@ -1052,102 +1047,74 @@ function HoyPageContent() {
                   {isUltimo ? 'Finalizar' : 'OK'}
                 </Button>
 
-                {/* Acciones de ejercicio: Saltar */}
+                {/* Acciones de ejercicio: Saltar - 19% */}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={omitirYAvanzar}
                   disabled={isUltimo}
-                  className="h-10 w-10 p-0 rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors shrink-0"
+                  className="h-10 flex-[0.19] rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
                   title="Omitir y pasar (N)"
                   aria-label="Omitir ejercicio"
                 >
                   <ChevronsRight className="w-4 h-4" />
                 </Button>
-
-                {/* Menú de opciones: Índice + Salir */}
-                <DropdownMenu open={menuOpcionesAbierto} onOpenChange={setMenuOpcionesAbierto}>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-10 w-10 p-0 rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors shrink-0"
-                      title="Más opciones (Ctrl/Cmd+M)"
-                      aria-label="Menú de opciones"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 z-[110]">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setMostrarItinerario(true);
-                        setMenuOpcionesAbierto(false);
-                      }}
-                      className="cursor-pointer focus-brand"
-                    >
-                      <List className="w-4 h-4 mr-2" />
-                      <span>Índice de sesión</span>
-                      <span className="ml-auto text-xs text-[var(--color-text-muted)]">I</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        handleCancelar();
-                        setMenuOpcionesAbierto(false);
-                      }}
-                      className="cursor-pointer focus-brand text-[var(--color-danger)] focus:text-[var(--color-danger)]"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      <span>Salir de sesión</span>
-                      <span className="ml-auto text-xs text-[var(--color-text-muted)]">Esc</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
             </div>
           </div>
         )}
 
         {/* Header del Player */}
-        <div className="bg-card border-b border-[var(--color-border-default)] px-4 py-4 lg:sticky lg:top-0 z-10 shadow-card">
-          <div className="max-w-5xl mx-auto">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-600 rounded-xl flex items-center justify-center shadow-card">
-                  <PlayCircle className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-xl md:text-2xl font-bold text-ui truncate">
-                    {ejercicioActual?.nombre || 'Ejercicio sin nombre'}
-                  </h2>
+        <div className="page-header header-modern lg:sticky lg:top-0 z-10">
+          <div className="px-2 sm:px-3 md:px-6 py-1 sm:py-1.5 md:py-2">
+            <div className="max-w-5xl mx-auto">
+              <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 mb-0 sm:mb-0.5 md:mb-1">
+                <PlayCircle className="w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 text-[var(--color-primary)]" />
+                <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl flex-1 min-w-0`}>
+                  <span className="truncate block">{ejercicioActual?.nombre || 'Ejercicio sin nombre'}</span>
                   {ejercicioActual?.esRonda && (
-                    <p className="text-xs text-ui/80">
+                    <span className="text-xs sm:text-sm text-[var(--color-text-secondary)] font-normal block mt-0.5">
                       Ronda {ejercicioActual.rondaIdx + 1} • Rep {ejercicioActual.repeticion}/{ejercicioActual.totalRepeticiones}
-                    </p>
+                    </span>
                   )}
+                </h1>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-xl focus-brand" onClick={() => setMostrarItinerario(true)} aria-label="Mostrar índice de ejercicios">
+                    <List className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-xl focus-brand" onClick={() => setMostrarAyuda(true)} aria-label="Mostrar ayuda de atajos">
+                    <HelpCircle className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-9 w-9 p-0 rounded-xl focus-brand hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)] transition-colors" 
+                    onClick={handleCancelar}
+                    aria-label="Salir del modo estudio"
+                    title="Salir (Esc)"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-xl focus-brand" onClick={() => setMostrarItinerario(true)} aria-label="Mostrar índice de ejercicios">
-                  <List className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-xl focus-brand" onClick={() => setMostrarAyuda(true)} aria-label="Mostrar ayuda de atajos">
-                  <HelpCircle className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
 
-            {/* Breadcrumbs */}
-            <div className="flex items-center gap-2 flex-wrap text-xs text-ui/80">
-              <Music className="w-3 h-3 text-[var(--color-primary)]" />
-              <span className="font-medium">{asignacionActiva.piezaSnapshot?.nombre}</span>
-              <span className="text-ui/60">•</span>
-              <Target className="w-3 h-3 text-[var(--color-info)]" />
-              <span>{asignacionActiva.plan?.nombre}</span>
-              <span className="text-ui/60">•</span>
-              <Badge className={focoColors[sesionActiva.foco]} variant="outline">
-                {focoLabels[sesionActiva.foco]}
-              </Badge>
+              {/* Breadcrumbs */}
+              <div className="hidden sm:flex items-center mb-0.5 md:mb-1">
+                <div className="w-8 md:w-12 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className={`${componentStyles.typography.pageSubtitle} text-xs sm:text-sm md:text-base flex items-center gap-2 flex-wrap`}>
+                    <Music className="w-3 h-3 text-[var(--color-primary)] shrink-0" />
+                    <span className="font-medium">{asignacionActiva.piezaSnapshot?.nombre}</span>
+                    <span className="text-[var(--color-text-secondary)]">•</span>
+                    <Target className="w-3 h-3 text-[var(--color-info)] shrink-0" />
+                    <span>{asignacionActiva.plan?.nombre}</span>
+                    <span className="text-[var(--color-text-secondary)]">•</span>
+                    <Badge className={focoColors[sesionActiva.foco]} variant="outline">
+                      {focoLabels[sesionActiva.foco]}
+                    </Badge>
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1372,28 +1339,28 @@ function HoyPageContent() {
               })}
             </div>
 
-            {/* Controles principales - Optimizado para desktop/tablet */}
-            <div className="flex items-center justify-center gap-3 md:gap-4 mb-2">
-              {/* Navegación: Atrás */}
+            {/* Controles principales - Distribución 19-2-29-2-29-2-19 con gaps */}
+            <div className="flex items-center w-full gap-[2%] mb-2">
+              {/* Navegación: Atrás - 19% */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleAnterior}
                 disabled={indiceActual === 0}
-                className="h-12 md:h-14 px-4 md:px-5 min-w-[52px] md:min-w-[60px] rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
+                className="h-12 md:h-14 flex-[0.19] rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
                 title="Anterior (P)"
                 aria-label="Ejercicio anterior"
               >
                 <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
               </Button>
 
-              {/* Control principal: Play/Pause (solo si no es AD) */}
+              {/* Control principal: Play/Pause - 29% */}
               {!isAD && (
                 <Button
                   variant="primary"
                   size="sm"
                   onClick={togglePlayPausa}
-                  className="h-12 md:h-14 px-5 md:px-6 min-w-[60px] md:min-w-[68px] rounded-xl focus-brand shadow-sm hover:shadow-md transition-all"
+                  className="h-12 md:h-14 flex-[0.29] rounded-xl focus-brand shadow-sm hover:shadow-md transition-all"
                   title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
                   aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
                 >
@@ -1401,11 +1368,14 @@ function HoyPageContent() {
                 </Button>
               )}
 
-              {/* Acciones de ejercicio: Completar */}
+              {/* Acciones de ejercicio: Completar - 29% */}
               <Button
                 variant="primary"
                 onClick={completarYAvanzar}
-                className="h-12 md:h-14 px-6 md:px-7 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 min-w-[100px] md:min-w-[120px] font-semibold text-base md:text-lg rounded-xl focus-brand shadow-sm hover:shadow-md transition-all text-white"
+                className={cn(
+                  "h-12 md:h-14 flex-[0.29] bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-base md:text-lg rounded-xl focus-brand shadow-sm hover:shadow-md transition-all text-white",
+                  isAD && "flex-[0.58]"
+                )}
                 title="Completar (Enter)"
                 aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
               >
@@ -1413,57 +1383,18 @@ function HoyPageContent() {
                 {isUltimo ? 'Finalizar' : 'OK'}
               </Button>
 
-              {/* Acciones de ejercicio: Saltar */}
+              {/* Acciones de ejercicio: Saltar - 19% */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={omitirYAvanzar}
                 disabled={isUltimo}
-                className="h-12 md:h-14 px-4 md:px-5 min-w-[52px] md:min-w-[60px] rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
+                className="h-12 md:h-14 flex-[0.19] rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
                 title="Omitir y pasar (N)"
                 aria-label="Omitir ejercicio"
               >
                 <ChevronsRight className="w-5 h-5 md:w-6 md:h-6" />
               </Button>
-
-              {/* Menú de opciones: Índice + Salir */}
-              <DropdownMenu open={menuOpcionesAbierto} onOpenChange={setMenuOpcionesAbierto}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-12 md:h-14 px-4 md:px-5 min-w-[52px] md:min-w-[60px] rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
-                    title="Más opciones (Ctrl/Cmd+M)"
-                    aria-label="Menú de opciones"
-                  >
-                    <MoreVertical className="w-5 h-5 md:w-6 md:h-6" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 z-[110]">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setMostrarItinerario(true);
-                      setMenuOpcionesAbierto(false);
-                    }}
-                    className="cursor-pointer focus-brand"
-                  >
-                    <List className="w-4 h-4 mr-2" />
-                    <span>Índice de sesión</span>
-                    <span className="ml-auto text-xs text-[var(--color-text-muted)]">I</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      handleCancelar();
-                      setMenuOpcionesAbierto(false);
-                    }}
-                    className="cursor-pointer focus-brand text-[var(--color-danger)] focus:text-[var(--color-danger)]"
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    <span>Salir de sesión</span>
-                    <span className="ml-auto text-xs text-[var(--color-text-muted)]">Esc</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
 
             {/* Progreso de sesión - Compacto */}
@@ -1531,47 +1462,43 @@ function HoyPageContent() {
           </>
         )}
 
-        {/* Panel de itinerario */}
-        {mostrarItinerario && (() => {
-          const S = ensureRondaIds(sesionActiva);
-          const secuencia = getSecuencia(S);
-          const bloquesMap = mapBloquesByCode(S);
-          
-          // Crear mapeo de posiciones en listaEjecucion para cada elemento de la secuencia
-          let contadorLista = 0;
-          const mapeoPosiciones = new Map();
-          
-          secuencia.forEach((item) => {
-            if (item.kind === 'BLOQUE') {
-              mapeoPosiciones.set(`bloque-${item.code}`, contadorLista);
-              contadorLista++;
-            } else if (item.kind === 'RONDA') {
-              const ronda = S.rondas.find(r => r.id === item.id);
-              if (ronda) {
-                const posicionesRonda = [];
-                for (let rep = 0; rep < ronda.repeticiones; rep++) {
-                  ronda.bloques.forEach(() => {
-                    posicionesRonda.push(contadorLista);
-                    contadorLista++;
+        {/* Panel de itinerario - Dialog central mediano */}
+        {sesionActiva && (
+          <Dialog open={mostrarItinerario} onOpenChange={setMostrarItinerario}>
+            <DialogContent size="md" className="max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Índice de Ejercicios</DialogTitle>
+              </DialogHeader>
+              <div className="p-3 space-y-2">
+                {(() => {
+                  const S = ensureRondaIds(sesionActiva);
+                  const secuencia = getSecuencia(S);
+                  const bloquesMap = mapBloquesByCode(S);
+                  
+                  // Crear mapeo de posiciones en listaEjecucion para cada elemento de la secuencia
+                  let contadorLista = 0;
+                  const mapeoPosiciones = new Map();
+                  
+                  secuencia.forEach((item) => {
+                    if (item.kind === 'BLOQUE') {
+                      mapeoPosiciones.set(`bloque-${item.code}`, contadorLista);
+                      contadorLista++;
+                    } else if (item.kind === 'RONDA') {
+                      const ronda = S.rondas.find(r => r.id === item.id);
+                      if (ronda) {
+                        const posicionesRonda = [];
+                        for (let rep = 0; rep < ronda.repeticiones; rep++) {
+                          ronda.bloques.forEach(() => {
+                            posicionesRonda.push(contadorLista);
+                            contadorLista++;
+                          });
+                        }
+                        mapeoPosiciones.set(`ronda-${item.id}`, posicionesRonda);
+                      }
+                    }
                   });
-                }
-                mapeoPosiciones.set(`ronda-${item.id}`, posicionesRonda);
-              }
-            }
-          });
 
-          return (
-            <>
-              <div className="fixed inset-0 bg-black/50 z-[80]" onClick={() => setMostrarItinerario(false)} />
-              <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-card shadow-card z-[90] overflow-y-auto">
-                <div className="sticky top-0 bg-card border-b px-4 py-3 flex items-center justify-between">
-                  <h3 className="text-base font-bold text-[var(--color-text-primary)]">Índice de Ejercicios</h3>
-                  <Button variant="ghost" size="sm" onClick={() => setMostrarItinerario(false)} className="h-8 w-8 p-0 rounded-xl hover:bg-[var(--color-surface-muted)]" aria-label="Cerrar índice">
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="p-3 space-y-2">
-                  {secuencia.map((item, seqIdx) => {
+                  return secuencia.map((item, seqIdx) => {
                     if (item.kind === 'BLOQUE') {
                       const posicion = mapeoPosiciones.get(`bloque-${item.code}`);
                       const ej = bloquesMap.get(item.code);
@@ -1720,61 +1647,49 @@ function HoyPageContent() {
                       );
                     }
                     return null;
-                  })}
+                  });
+                })()}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* Panel de ayuda - Dialog central mediano */}
+        <Dialog open={mostrarAyuda} onOpenChange={setMostrarAyuda}>
+          <DialogContent size="md" className="max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>⌨️ Atajos de Teclado</DialogTitle>
+            </DialogHeader>
+            <div className="pt-4 space-y-2">
+              <div className={`${componentStyles.layout.grid2} gap-2 text-sm`}>
+                <div className="flex items-center gap-2 min-h-[40px]">
+                  <kbd className="kbd">Espacio</kbd>
+                  <span className="text-xs">Play/Pausa</span>
+                </div>
+                <div className="flex items-center gap-2 min-h-[40px]">
+                  <kbd className="kbd">Enter</kbd>
+                  <span className="text-xs">Completar</span>
+                </div>
+                <div className="flex items-center gap-2 min-h-[40px]">
+                  <kbd className="kbd">N</kbd>
+                  <span className="text-xs">Omitir</span>
+                </div>
+                <div className="flex items-center gap-2 min-h-[40px]">
+                  <kbd className="kbd">P</kbd>
+                  <span className="text-xs">Anterior</span>
+                </div>
+                <div className="flex items-center gap-2 min-h-[40px]">
+                  <kbd className="kbd">Esc</kbd>
+                  <span className="text-xs">Cancelar</span>
+                </div>
+                <div className="flex items-center gap-2 min-h-[40px]">
+                  <kbd className="kbd">I</kbd>
+                  <span className="text-xs">Índice</span>
                 </div>
               </div>
-            </>
-          );
-        })()}
-
-        {/* Panel de ayuda */}
-        {mostrarAyuda && (
-          <>
-            <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setMostrarAyuda(false)} />
-            <Card className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md z-50 max-h-[80vh] overflow-y-auto">
-              <CardHeader className="border-b pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">⌨️ Atajos de Teclado</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={() => setMostrarAyuda(false)} className="h-8 w-8 p-0 rounded-xl focus-brand" aria-label="Cerrar ayuda">
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-2">
-                <div className={`${componentStyles.layout.grid2} gap-2 text-sm`}>
-                  <div className="flex items-center gap-2 min-h-[40px]">
-                    <kbd className="kbd">Espacio</kbd>
-                    <span className="text-xs">Play/Pausa</span>
-                  </div>
-                  <div className="flex items-center gap-2 min-h-[40px]">
-                    <kbd className="kbd">Enter</kbd>
-                    <span className="text-xs">Completar</span>
-                  </div>
-                  <div className="flex items-center gap-2 min-h-[40px]">
-                    <kbd className="kbd">N</kbd>
-                    <span className="text-xs">Omitir</span>
-                  </div>
-                  <div className="flex items-center gap-2 min-h-[40px]">
-                    <kbd className="kbd">P</kbd>
-                    <span className="text-xs">Anterior</span>
-                  </div>
-                  <div className="flex items-center gap-2 min-h-[40px]">
-                    <kbd className="kbd">Esc</kbd>
-                    <span className="text-xs">Cancelar</span>
-                  </div>
-                  <div className="flex items-center gap-2 min-h-[40px]">
-                    <kbd className="kbd">I</kbd>
-                    <span className="text-xs">Índice</span>
-                  </div>
-                  <div className="flex items-center gap-2 min-h-[40px] col-span-2">
-                    <kbd className="kbd">Ctrl/Cmd+M</kbd>
-                    <span className="text-xs">Mostrar/Ocultar Menú</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Modal cancelar */}
         {mostrarModalCancelar && (

@@ -37,7 +37,7 @@ export default function Alert({
     <div
       role="alert"
       className={cn(
-        "relative rounded-xl border p-4",
+        "relative rounded-[var(--radius-card,0.25rem)] border p-4",
         variantClass,
         className
       )}
