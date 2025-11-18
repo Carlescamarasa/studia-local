@@ -340,10 +340,13 @@ function LayoutContent() {
             z-[90] flex flex-col sidebar-modern
             transition-transform duration-200 will-change-transform transform-gpu
             fixed inset-y-0 left-0 w-[280px]
+            border-r border-[var(--color-border-strong)]
+            shadow-[1px_0_4px_rgba(0,0,0,0.2)]
             ${abierto ? "translate-x-0" : "-translate-x-full lg:-translate-x-full"}
           `}
           style={{
             transform: abierto ? 'translateX(0)' : 'translateX(-100%)',
+            backgroundColor: 'var(--sidebar-bg)',
           }}
         >
           {/* Header del sidebar */}

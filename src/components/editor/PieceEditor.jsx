@@ -16,9 +16,11 @@ import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
 import MediaLinksInput from "@/components/common/MediaLinksInput";
 import { normalizeMediaLinks } from "@/components/utils/media";
+import { useDataEntities } from "@/providers/DataProvider";
 
 export default function PieceEditor({ pieza, onClose }) {
   const queryClient = useQueryClient();
+  const entities = useDataEntities();
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
@@ -87,9 +89,9 @@ export default function PieceEditor({ pieza, onClose }) {
   const saveMutation = useMutation({
     mutationFn: async (data) => {
       if (pieza?.id) {
-        return localDataClient.entities.Pieza.update(pieza.id, data);
+        return entities.Pieza.update(pieza.id, data);
       }
-      return localDataClient.entities.Pieza.create(data);
+      return entities.Pieza.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['piezas'] });

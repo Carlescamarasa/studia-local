@@ -37,6 +37,30 @@ export default function PerfilModal({
   
   const [editedData, setEditedData] = useState(null);
   const [saveResult, setSaveResult] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // Detectar modo oscuro inicial desde la clase del documento
+    return typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  });
+  
+  // Actualizar isDarkMode cuando cambie el tema o se abra el modal
+  useEffect(() => {
+    const checkDarkMode = () => {
+      const dark = document.documentElement.classList.contains('dark');
+      setIsDarkMode(dark);
+    };
+    
+    // Verificar inmediatamente
+    checkDarkMode();
+    
+    // Observar cambios en la clase del documento
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+    
+    return () => observer.disconnect();
+  }, [design?.theme, open]);
 
   const effectiveUser = useEffectiveUser();
 
@@ -349,58 +373,111 @@ export default function PerfilModal({
                     </Select>
                   </div>
 
-                  {isEditingOwnProfile && (
-                    <div className="space-y-1.5">
-                      <Label className="text-sm text-[var(--color-text-primary)]">Tema</Label>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            setDesignPartial('theme', 'light');
-                            toast.success('Tema claro activado');
-                          }}
-                          className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border transition-all ${
-                            design?.theme === 'light'
-                              ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)]'
-                              : 'border-[var(--color-border-default)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
-                          }`}
-                          aria-label="Tema claro"
-                        >
-                          <Sun className="w-4 h-4" />
-                          <span className="text-sm">Claro</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setDesignPartial('theme', 'dark');
-                            toast.success('Tema oscuro activado');
-                          }}
-                          className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border transition-all ${
-                            design?.theme === 'dark'
-                              ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)]'
-                              : 'border-[var(--color-border-default)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
-                          }`}
-                          aria-label="Tema oscuro"
-                        >
-                          <Moon className="w-4 h-4" />
-                          <span className="text-sm">Oscuro</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setDesignPartial('theme', 'system');
-                            toast.success('Tema del sistema activado');
-                          }}
-                          className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border transition-all ${
-                            (design?.theme === 'system' || !design?.theme)
-                              ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)]'
-                              : 'border-[var(--color-border-default)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
-                          }`}
-                          aria-label="Tema del sistema"
-                        >
-                          <Monitor className="w-4 h-4" />
-                          <span className="text-sm">Sistema</span>
-                        </button>
+                  {isEditingOwnProfile && (() => {
+                    const currentTheme = design?.theme || 'system';
+                    // En modo oscuro, usar colores más claros para mejor visibilidad
+                    // En modo claro, usar las variables CSS del sistema
+                    const inactiveBorderColor = isDarkMode ? '#888888' : 'var(--color-border-strong)';
+                    const inactiveHoverBorderColor = isDarkMode ? '#AAAAAA' : 'var(--color-border-default)';
+                    
+                    return (
+                      <div className="space-y-1.5">
+                        <Label className="text-sm text-[var(--color-text-primary)]">Tema</Label>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setDesignPartial('theme', 'light');
+                              toast.success('Tema claro activado');
+                            }}
+                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
+                              currentTheme === 'light'
+                                ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)] shadow-sm'
+                                : 'bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
+                            }`}
+                            style={currentTheme === 'light' ? {} : {
+                              borderColor: inactiveBorderColor,
+                              borderWidth: '2px',
+                              borderStyle: 'solid',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (currentTheme !== 'light') {
+                                e.currentTarget.style.setProperty('border-color', inactiveHoverBorderColor, 'important');
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (currentTheme !== 'light') {
+                                e.currentTarget.style.setProperty('border-color', inactiveBorderColor, 'important');
+                              }
+                            }}
+                            aria-label="Tema claro"
+                          >
+                            <Sun className="w-4 h-4" />
+                            <span className="text-sm">Claro</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDesignPartial('theme', 'dark');
+                              toast.success('Tema oscuro activado');
+                            }}
+                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
+                              currentTheme === 'dark'
+                                ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)] shadow-sm'
+                                : 'bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
+                            }`}
+                            style={currentTheme === 'dark' ? {} : {
+                              borderColor: inactiveBorderColor,
+                              borderWidth: '2px',
+                              borderStyle: 'solid',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (currentTheme !== 'dark') {
+                                e.currentTarget.style.setProperty('border-color', inactiveHoverBorderColor, 'important');
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (currentTheme !== 'dark') {
+                                e.currentTarget.style.setProperty('border-color', inactiveBorderColor, 'important');
+                              }
+                            }}
+                            aria-label="Tema oscuro"
+                          >
+                            <Moon className="w-4 h-4" />
+                            <span className="text-sm">Oscuro</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDesignPartial('theme', 'system');
+                              toast.success('Tema del sistema activado');
+                            }}
+                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
+                              currentTheme === 'system'
+                                ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)] shadow-sm'
+                                : 'bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
+                            }`}
+                            style={currentTheme === 'system' ? {} : {
+                              borderColor: inactiveBorderColor,
+                              borderWidth: '2px',
+                              borderStyle: 'solid',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (currentTheme !== 'system') {
+                                e.currentTarget.style.setProperty('border-color', inactiveHoverBorderColor, 'important');
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (currentTheme !== 'system') {
+                                e.currentTarget.style.setProperty('border-color', inactiveBorderColor, 'important');
+                              }
+                            }}
+                            aria-label="Tema del sistema"
+                          >
+                            <Monitor className="w-4 h-4" />
+                            <span className="text-sm">Sistema</span>
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
 
                 {isProfesor && (

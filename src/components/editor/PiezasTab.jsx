@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { localDataClient } from "@/api/localDataClient";
+import { useDataEntities } from "@/providers/DataProvider";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { componentStyles } from "@/design/componentStyles";
 
 export default function PiezasTab() {
   const queryClient = useQueryClient();
+  const entities = useDataEntities();
   const [searchTerm, setSearchTerm] = useState("");
   const [nivelFilter, setNivelFilter] = useState('all');
   const [editingPieza, setEditingPieza] = useState(null);
@@ -22,11 +23,11 @@ export default function PiezasTab() {
 
   const { data: piezas = [], isLoading } = useQuery({
     queryKey: ['piezas'],
-    queryFn: () => localDataClient.entities.Pieza.list('-created_date'),
+    queryFn: () => entities.Pieza.list('-created_at'),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => localDataClient.entities.Pieza.delete(id),
+    mutationFn: (id) => entities.Pieza.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['piezas'] });
       toast.success('✅ Pieza eliminada');
@@ -40,10 +41,9 @@ export default function PiezasTab() {
         nombre: `${pieza.nombre} (copia)`,
       };
       delete copia.id;
-      delete copia.created_date;
-      delete copia.updated_date;
-      delete copia.created_by;
-      return localDataClient.entities.Pieza.create(copia);
+      delete copia.created_at;
+      delete copia.updated_at;
+      return entities.Pieza.create(copia);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['piezas'] });

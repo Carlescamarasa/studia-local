@@ -6,13 +6,16 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   server: {
-    allowedHosts: true
+    allowedHosts: true,
+    hmr: {
+      overlay: true
+    }
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
-    extensions: ['.mjs', '.js', '.jsx', '.ts', '.tsx', '.json']
+    extensions: ['.mjs', '.js', '.ts', '.tsx', '.jsx', '.json']
   },
   optimizeDeps: {
     esbuildOptions: {

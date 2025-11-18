@@ -1,5 +1,6 @@
 import "./App.css";
 import { LocalDataProvider } from "@/local-data/LocalDataProvider";
+import { DataProvider } from "@/providers/DataProvider";
 import AppRouter from "./Router";   // 👈 Usa el router central
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -22,8 +23,10 @@ function App() {
       <DesignProvider>
         <AuthProvider>
           <LocalDataProvider>
-            <AppRouter />
-            <Toaster />
+            <DataProvider>
+              <AppRouter />
+              <Toaster />
+            </DataProvider>
           </LocalDataProvider>
         </AuthProvider>
       </DesignProvider>

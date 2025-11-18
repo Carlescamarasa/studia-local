@@ -104,11 +104,11 @@ export function DesignProvider({ children }) {
         muted: '#999999',         // Gris medio
         inverse: '#000000',       // Fondo negro para texto inverso
       },
-      // Colores de borde en grises neutros muy oscuros
+      // Colores de borde en grises neutros - más claros para mejor visibilidad
       border: {
-        default: '#1A1A1A',       // Bordes casi negros
-        muted: '#0F0F0F',
-        strong: '#252525',        // Bordes ligeramente más claros
+        default: '#4A4A4A',       // Bordes más visibles que el original #1A1A1A
+        muted: '#353535',         // Más claro que el original #0F0F0F
+        strong: '#666666',        // Bordes más visibles que el original #252525
       },
     };
   };
@@ -117,8 +117,8 @@ export function DesignProvider({ children }) {
   const deriveDarkChrome = () => {
     return {
       sidebar: {
-        background: '#0A0A0A',    // Sidebar casi negro
-        border: '#1A1A1A',        // Borde casi negro
+        background: '#1F1F1F',    // Sidebar notablemente más claro que el main (#000000) para contraste visible
+        border: '#666666',        // Borde más visible (igual que border.strong)
         activeItemBg: 'rgba(253, 152, 64, 0.15)', // Item activo con color de marca más visible
         activeItemText: '#FFFFFF', // Texto blanco
         mutedItemText: '#999999', // Texto muted gris

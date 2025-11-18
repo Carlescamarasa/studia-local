@@ -55,3 +55,240 @@ export type UpdateStudiaUserInput = Partial<Omit<StudiaUser, 'id' | 'created_at'
   id: string;
 };
 
+/**
+ * Elemento de una pieza (partitura, audio, video, etc.)
+ */
+export interface PiezaElemento {
+  nombre: string;
+  mediaLinks: string[];
+}
+
+/**
+ * Pieza musical
+ * 
+ * Representa una pieza musical que los estudiantes practican.
+ */
+export interface Pieza {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  nivel: 'principiante' | 'intermedio' | 'avanzado';
+  tiempoObjetivoSeg: number;
+  elementos: PiezaElemento[];
+  profesorId: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreatePiezaInput = Omit<Pieza, 'id' | 'created_at' | 'updated_at'>;
+export type UpdatePiezaInput = Partial<Omit<Pieza, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Bloque/Ejercicio de práctica
+ * 
+ * Representa un ejercicio o bloque que forma parte de una sesión de práctica.
+ */
+export interface Bloque {
+  id: string;
+  nombre: string;
+  code: string;
+  tipo: 'CA' | 'CB' | 'TC' | 'TM' | 'FM' | 'VC' | 'AD';
+  duracionSeg: number;
+  instrucciones?: string;
+  indicadorLogro?: string;
+  materialesRequeridos: string[];
+  mediaLinks: string[];
+  elementosOrdenados: string[];
+  piezaRefId?: string | null;
+  profesorId: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreateBloqueInput = Omit<Bloque, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateBloqueInput = Partial<Omit<Bloque, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Bloque dentro de una sesión (con datos embebidos)
+ */
+export interface SesionBloque {
+  id?: string;
+  code: string;
+  nombre: string;
+  tipo: 'CA' | 'CB' | 'TC' | 'TM' | 'FM' | 'VC' | 'AD';
+  duracionSeg: number;
+  [key: string]: any; // Permite campos adicionales del bloque original
+}
+
+/**
+ * Ronda dentro de una sesión
+ */
+export interface SesionRonda {
+  id?: string;
+  nombre?: string;
+  bloques: SesionBloque[];
+  [key: string]: any;
+}
+
+/**
+ * Sesión dentro de una semana
+ */
+export interface PlanSesion {
+  id?: string;
+  nombre: string;
+  foco?: string;
+  bloques: SesionBloque[];
+  rondas: SesionRonda[];
+  [key: string]: any;
+}
+
+/**
+ * Semana dentro de un plan
+ */
+export interface PlanSemana {
+  id?: string;
+  nombre: string;
+  foco?: string;
+  objetivo?: string;
+  sesiones: PlanSesion[];
+  [key: string]: any;
+}
+
+/**
+ * Plan de práctica
+ * 
+ * Representa un plan de práctica con estructura anidada de semanas, sesiones y bloques.
+ */
+export interface Plan {
+  id: string;
+  nombre: string;
+  focoGeneral: 'GEN' | 'LIG' | 'RIT' | 'ART' | 'S&A';
+  objetivoSemanalPorDefecto?: string;
+  piezaId: string;
+  profesorId: string;
+  semanas: PlanSemana[];
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreatePlanInput = Omit<Plan, 'id' | 'created_at' | 'updated_at'>;
+export type UpdatePlanInput = Partial<Omit<Plan, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Snapshot de una pieza embebido en una asignación
+ */
+export interface PiezaSnapshot {
+  nombre: string;
+  descripcion?: string;
+  nivel: string;
+  tiempoObjetivoSeg: number;
+  elementos: PiezaElemento[];
+}
+
+/**
+ * Asignación de práctica
+ * 
+ * Representa una asignación de práctica que un profesor hace a un estudiante.
+ */
+export interface Asignacion {
+  id: string;
+  alumnoId: string;
+  profesorId: string;
+  piezaId: string;
+  semanaInicioISO: string; // YYYY-MM-DD
+  estado: 'borrador' | 'publicada' | 'archivada';
+  foco: 'GEN' | 'LIG' | 'RIT' | 'ART' | 'S&A';
+  notas?: string | null;
+  plan: Plan; // Snapshot completo del plan
+  piezaSnapshot: PiezaSnapshot; // Snapshot completo de la pieza
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreateAsignacionInput = Omit<Asignacion, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateAsignacionInput = Partial<Omit<Asignacion, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Registro de sesión de práctica
+ * 
+ * Representa un registro de una sesión de práctica realizada por un estudiante.
+ */
+export interface RegistroSesion {
+  id: string;
+  asignacionId: string;
+  alumnoId: string;
+  profesorAsignadoId: string;
+  semanaIdx: number;
+  sesionIdx: number;
+  inicioISO: string; // ISO 8601
+  finISO?: string | null; // ISO 8601
+  duracionRealSeg: number;
+  duracionObjetivoSeg: number;
+  bloquesTotales: number;
+  bloquesCompletados: number;
+  bloquesOmitidos: number;
+  finalizada: boolean;
+  finAnticipado: boolean;
+  motivoFin?: string | null;
+  calificacion?: number | null; // 1-4
+  notas?: string | null;
+  dispositivo?: string;
+  versionSchema?: string;
+  piezaNombre?: string;
+  planNombre?: string;
+  semanaNombre?: string;
+  sesionNombre?: string;
+  foco?: string;
+  created_at: string;
+}
+
+export type CreateRegistroSesionInput = Omit<RegistroSesion, 'id' | 'created_at'>;
+export type UpdateRegistroSesionInput = Partial<Omit<RegistroSesion, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Registro de bloque ejecutado
+ * 
+ * Representa un registro detallado de un bloque ejecutado en una sesión.
+ */
+export interface RegistroBloque {
+  id: string;
+  registroSesionId: string;
+  asignacionId: string;
+  alumnoId: string;
+  semanaIdx: number;
+  sesionIdx: number;
+  ordenEjecucion: number;
+  tipo: 'CA' | 'CB' | 'TC' | 'TM' | 'FM' | 'VC' | 'AD';
+  code: string;
+  nombre: string;
+  duracionObjetivoSeg: number;
+  duracionRealSeg: number;
+  estado: 'completado' | 'omitido';
+  iniciosPausa: number;
+  inicioISO: string; // ISO 8601
+  finISO?: string | null; // ISO 8601
+  created_at: string;
+}
+
+export type CreateRegistroBloqueInput = Omit<RegistroBloque, 'id' | 'created_at'>;
+export type UpdateRegistroBloqueInput = Partial<Omit<RegistroBloque, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Feedback semanal
+ * 
+ * Representa un feedback que un profesor da a un estudiante cada semana.
+ */
+export interface FeedbackSemanal {
+  id: string;
+  alumnoId: string;
+  profesorId: string;
+  semanaInicioISO: string; // YYYY-MM-DD
+  notaProfesor: string;
+  mediaLinks: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreateFeedbackSemanalInput = Omit<FeedbackSemanal, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateFeedbackSemanalInput = Partial<Omit<FeedbackSemanal, 'id' | 'created_at'>> & { id: string };
+
