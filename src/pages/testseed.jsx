@@ -264,7 +264,8 @@ export default function TestSeedPage() {
       }
 
       const hoy = new Date();
-      const lunesActual = new Date(hoy.setDate(hoy.getDate() - (hoy.getDay() + 6) % 7)); // startOfMonday
+      const lunesActual = new Date(hoy);
+      lunesActual.setDate(lunesActual.getDate() - (lunesActual.getDay() + 6) % 7); // startOfMonday
 
       let totalSesiones = 0;
       let totalBloques = 0;
@@ -488,38 +489,39 @@ export default function TestSeedPage() {
       // Orden: FeedbackSemanal → RegistroBloque → RegistroSesion → Asignacion → Plan → Bloque → Pieza
 
       const feedbacks = await localDataClient.entities.FeedbackSemanal.list();
+      let feedbacksEliminados = 0;
       for (const f of feedbacks) {
-        if (f.profesorId === effectiveUser?.id || effectiveUser?.rolPersonalizado === 'ADMIN') { // Only delete current user's or all if admin
+        if (f.profesorId === effectiveUser?.id || effectiveUser?.rolPersonalizado === 'ADMIN') {
           await localDataClient.entities.FeedbackSemanal.delete(f.id);
+          feedbacksEliminados++;
         }
       }
-      addLog(`✅ ${feedbacks.length} feedbacks eliminados`, 'info');
+      addLog(`✅ ${feedbacksEliminados} feedbacks eliminados`, 'info');
 
       const registrosBloques = await localDataClient.entities.RegistroBloque.list();
       for (const rb of registrosBloques) {
-        // Assuming RegistroBloque has some link to who created it or its parent Registration
-        // For now, removing all if a seed is being deleted, or adding check if needed
         await localDataClient.entities.RegistroBloque.delete(rb.id);
       }
       addLog(`✅ ${registrosBloques.length} registros de bloques eliminados`, 'info');
 
       const registrosSesion = await localDataClient.entities.RegistroSesion.list();
       for (const rs of registrosSesion) {
-        // Assuming RegistroSesion has some link to who created it or its parent Assignment
         await localDataClient.entities.RegistroSesion.delete(rs.id);
       }
       addLog(`✅ ${registrosSesion.length} registros de sesión eliminados`, 'info');
 
       const asignaciones = await localDataClient.entities.Asignacion.list();
+      let asignacionesEliminadas = 0;
       for (const a of asignaciones) {
-        if (a.profesorId === effectiveUser?.id || effectiveUser?.rolPersonalizado === 'ADMIN') { // Only delete current user's or all if admin
+        if (a.profesorId === effectiveUser?.id || effectiveUser?.rolPersonalizado === 'ADMIN') {
           await localDataClient.entities.Asignacion.delete(a.id);
+          asignacionesEliminadas++;
         }
       }
-      addLog(`✅ ${asignaciones.length} asignaciones eliminadas`, 'info');
+      addLog(`✅ ${asignacionesEliminadas} asignaciones eliminadas`, 'info');
 
       const planes = await localDataClient.entities.Plan.list();
-      const planesSeed = planes.filter(p => p.nombre.startsWith('Seed') && (p.profesorId === effectiveUser?.id || effectiveUser?.rolPersonalizado === 'ADMIN'));
+      const planesSeed = planes.filter(p => p.nombre?.startsWith('Seed') && (p.profesorId === effectiveUser?.id || effectiveUser?.rolPersonalizado === 'ADMIN'));
       for (const p of planesSeed) {
         await localDataClient.entities.Plan.delete(p.id);
       }
@@ -533,7 +535,7 @@ export default function TestSeedPage() {
       addLog(`✅ ${bloquesSeed.length} ejercicios seed eliminados`, 'info');
 
       const piezas = await localDataClient.entities.Pieza.list();
-      const piezasSeed = piezas.filter(p => p.nombre.startsWith('Seed') && (p.profesorId === effectiveUser?.id || effectiveUser?.rolPersonalizado === 'ADMIN'));
+      const piezasSeed = piezas.filter(p => p.nombre?.startsWith('Seed') && (p.profesorId === effectiveUser?.id || effectiveUser?.rolPersonalizado === 'ADMIN'));
       for (const p of piezasSeed) {
         await localDataClient.entities.Pieza.delete(p.id);
       }
@@ -660,11 +662,18 @@ export default function TestSeedPage() {
     const tests = [];
 
     try {
-      await refetchStats();
-      const data = stats;
+      const { data: freshData } = await refetchStats();
+      const data = freshData || stats;
+
+      if (!data) {
+        addLog('❌ No se pudieron cargar los datos', 'error');
+        toast.error('Error al cargar datos para pruebas');
+        setIsSeeding(false);
+        return;
+      }
 
       const tiposRequeridos = ['CA', 'CB', 'TC', 'TM', 'FM', 'VC', 'AD'];
-      const bloquesSeed = data.bloques.filter(b => b.code?.includes('SEED'));
+      const bloquesSeed = (data.bloques || []).filter(b => b.code?.includes('SEED'));
       const tiposPresentes = new Set(bloquesSeed.map(b => b.tipo));
       const todosLosTipos = tiposRequeridos.every(t => tiposPresentes.has(t));
       tests.push({
@@ -673,14 +682,14 @@ export default function TestSeedPage() {
         detail: todosLosTipos ? `✓ Todos los tipos presentes` : `✗ Faltan tipos`
       });
 
-      const piezaBase = data.piezas.find(p => p.nombre.includes('Seed'));
+      const piezaBase = (data.piezas || []).find(p => p.nombre?.includes('Seed'));
       tests.push({
         name: 'Pieza base generada',
         passed: !!piezaBase,
         detail: piezaBase ? `✓ ${piezaBase.nombre}` : '✗ Sin pieza seed'
       });
 
-      const planBase = data.planes.find(p => p.nombre.includes('Seed'));
+      const planBase = (data.planes || []).find(p => p.nombre?.includes('Seed'));
       const planValido = planBase && planBase.semanas && planBase.semanas.length >= 4;
       tests.push({
         name: 'Plan con 4+ semanas',
@@ -688,21 +697,30 @@ export default function TestSeedPage() {
         detail: planValido ? `✓ ${planBase.semanas.length} semanas` : '✗ Plan inválido'
       });
 
-      const asignacionDemo = data.asignaciones.find(a => (a.estado === 'publicada' || a.estado === 'en_curso') && a.plan.nombre.includes('Seed'));
+      const asignacionDemo = (data.asignaciones || []).find(a => 
+        (a.estado === 'publicada' || a.estado === 'en_curso') && 
+        a.plan?.nombre?.includes('Seed')
+      );
       tests.push({
         name: 'Asignación publicada (Seed)',
         passed: !!asignacionDemo,
         detail: asignacionDemo ? `✓ Estado: ${asignacionDemo.estado}` : '✗ Sin asignaciones seed'
       });
 
-      const registroCompleto = data.registrosSesion.find(r => r.finalizada && r.calificacion && r.planNombre.includes('Seed'));
+      const registroCompleto = (data.registrosSesion || []).find(r => 
+        r.finalizada && 
+        r.calificacion && 
+        r.planNombre?.includes('Seed')
+      );
       tests.push({
         name: 'RegistroSesion con feedback (Seed)',
         passed: !!registroCompleto,
         detail: registroCompleto ? `✓ Calificación ${registroCompleto.calificacion}/4` : '✗ Sin registros seed'
       });
 
-      const registrosBloquesSeed = data.registrosBloques.filter(rb => bloquesSeed.some(bs => bs.code === rb.code));
+      const registrosBloquesSeed = (data.registrosBloques || []).filter(rb => 
+        bloquesSeed.some(bs => bs.code === rb.code)
+      );
       const tiposEstado = new Set(registrosBloquesSeed.map(rb => rb.estado));
       const estadosVariados = tiposEstado.has('completado') && tiposEstado.has('omitido');
       tests.push({
@@ -711,7 +729,7 @@ export default function TestSeedPage() {
         detail: estadosVariados ? `✓ Estados: ${Array.from(tiposEstado).join(', ')}` : '✗ Falta variedad'
       });
 
-      const tieneFeedbacks = data.feedbacks.some(f => f.semanaInicioISO && f.asignacionId);
+      const tieneFeedbacks = (data.feedbacks || []).some(f => f.semanaInicioISO && f.asignacionId);
       tests.push({
         name: 'Feedbacks semanales',
         passed: tieneFeedbacks,

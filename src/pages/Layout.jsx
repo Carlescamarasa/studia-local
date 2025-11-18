@@ -457,43 +457,6 @@ function LayoutContent() {
           aria-hidden={isMobile && abierto}
           inert={isMobile && abierto ? "" : undefined}
         >
-          {/* Header mobile - Oculto cuando hay PageHeader (el PageHeader tiene el botón de menú y título) */}
-          {/* Solo visible en páginas sin PageHeader */}
-          {!location.pathname.match(/^\/(estadisticas|agenda|semana|asignaciones|usuarios|estudiantes|piezas|ejercicios|planes|plantillas|sesiones|semanas|perfil|adaptar-asignacion|asignacion-detalle|hoy|editor)/) && (
-            <header
-              className="bg-card border-b border-[var(--color-border-default)] px-4 py-3 lg:hidden cursor-pointer active:bg-[var(--color-surface-muted)] transition-colors"
-              onClick={handleHeaderClick}
-              role="button"
-              aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
-              aria-controls="sidebar"
-              aria-expanded={abierto}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  safeToggle();
-                }
-              }}
-            >
-              <div className="flex items-center justify-between min-h-[44px]">
-                <button
-                  ref={headerToggleButtonRef}
-                  className="hover:bg-[var(--color-surface-muted)] p-2 rounded-[var(--btn-radius,0.25rem)] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    safeToggle();
-                  }}
-                  aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
-                  aria-controls="sidebar"
-                  aria-expanded={abierto}
-                >
-                  {abierto ? <X className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
-                </button>
-                <h1 className="text-base font-bold text-[var(--color-text-primary)]">{appName}</h1>
-                <div className="w-11" />
-              </div>
-            </header>
-          )}
 
           {/* Botón flotante para desktop - solo visible cuando está cerrado */}
           {!isMobile && !abierto && (

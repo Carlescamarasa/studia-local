@@ -321,7 +321,44 @@ export const localDataClient = {
           return await api.usuarios.list();
         }
         // Modo local: usar código existente
-        return localDataRef.usuarios;
+        // Normalizar usuarios para asegurar que todos tengan nombreCompleto
+        const usuarios = localDataRef.usuarios || [];
+        return usuarios.map(u => {
+          // Si ya tiene nombreCompleto, retornar tal cual
+          if (u.nombreCompleto && u.nombreCompleto.trim()) {
+            return u;
+          }
+          // Generar nombreCompleto desde otros campos
+          let nombreCompleto = null;
+          if (u.full_name && u.full_name.trim()) {
+            nombreCompleto = u.full_name.trim();
+          } else if (u.first_name || u.last_name) {
+            nombreCompleto = [u.first_name, u.last_name].filter(Boolean).join(' ').trim();
+          } else if (u.email) {
+            const emailStr = String(u.email);
+            if (emailStr.includes('@')) {
+              const parteLocal = emailStr.split('@')[0];
+              const isLikelyId = /^[a-f0-9]{24}$/i.test(parteLocal) || /^u_[a-z0-9_]+$/i.test(parteLocal);
+              if (parteLocal && !isLikelyId) {
+                nombreCompleto = parteLocal
+                  .replace(/[._+-]/g, ' ')
+                  .replace(/\b\w/g, l => l.toUpperCase())
+                  .trim() || emailStr;
+              } else {
+                nombreCompleto = emailStr;
+              }
+            } else {
+              nombreCompleto = emailStr;
+            }
+          } else {
+            nombreCompleto = `Usuario ${u.id || 'Nuevo'}`;
+          }
+          return {
+            ...u,
+            nombreCompleto: nombreCompleto,
+            full_name: u.full_name || nombreCompleto,
+          };
+        });
       },
       get: async (id) => {
         const api = getDataAPI();
@@ -352,9 +389,39 @@ export const localDataClient = {
           return await api.usuarios.create(data);
         }
         // Modo local: usar código existente
+        // Asegurar que el usuario tenga nombreCompleto si no lo tiene
+        let nombreCompleto = data.nombreCompleto;
+        if (!nombreCompleto || !nombreCompleto.trim()) {
+          // Intentar generar nombreCompleto desde otros campos
+          if (data.full_name && data.full_name.trim()) {
+            nombreCompleto = data.full_name.trim();
+          } else if (data.first_name || data.last_name) {
+            nombreCompleto = [data.first_name, data.last_name].filter(Boolean).join(' ').trim();
+          } else if (data.email) {
+            // Extraer nombre del email
+            const emailStr = String(data.email);
+            if (emailStr.includes('@')) {
+              const parteLocal = emailStr.split('@')[0];
+              // Formatear email: "nombre.apellido" o "nombre" de forma más legible
+              nombreCompleto = parteLocal
+                .replace(/[._+-]/g, ' ')
+                .replace(/\b\w/g, l => l.toUpperCase())
+                .trim() || emailStr;
+            } else {
+              nombreCompleto = emailStr;
+            }
+          } else {
+            // Último recurso: generar nombre genérico
+            nombreCompleto = `Usuario ${data.id || 'Nuevo'}`;
+          }
+        }
+        
         const newUser = {
           ...data,
           id: data.id || `u_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          nombreCompleto: nombreCompleto,
+          // Si no tiene full_name, usar nombreCompleto
+          full_name: data.full_name || nombreCompleto,
         };
         localDataRef.usuarios.push(newUser);
         await UsuariosAPI.createUsuario(newUser);

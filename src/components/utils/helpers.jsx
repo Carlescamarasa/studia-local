@@ -40,15 +40,26 @@ export function displayName(u) {
     if (byId && byId !== 'Sin nombre') return byId;
   }
   
-  // Prioridad 5: email (parte local)
+  // Prioridad 5: email (parte local o completo si la parte local es un ID)
   if (u.email) {
     const email = String(u.email);
     if (email.includes('@')) {
       const parteLocal = email.split('@')[0];
       // Evitar IDs tipo Mongo/ObjectId (24 hex) u otros ids crudos
-      const isLikelyId = /^[a-f0-9]{24}$/i.test(parteLocal);
-      if (parteLocal && !isLikelyId) return parteLocal;
+      const isLikelyId = /^[a-f0-9]{24}$/i.test(parteLocal) || /^u_[a-z0-9_]+$/i.test(parteLocal);
+      if (parteLocal && !isLikelyId) {
+        // Formatear email: "nombre.apellido" o "nombre" de forma más legible
+        const formatted = parteLocal
+          .replace(/[._+-]/g, ' ')
+          .replace(/\b\w/g, l => l.toUpperCase())
+          .trim();
+        return formatted || parteLocal; // Si después de formatear queda vacío, usar parte local
+      }
+      // Si la parte local parece un ID, usar el email completo
+      return email;
     }
+    // Si no tiene @, usar el email tal cual
+    return email;
   }
   
   return 'Sin nombre';

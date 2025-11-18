@@ -1,11 +1,78 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { localUsers } from './localUsers';
 import { setLocalDataRef } from '@/api/localDataClient';
-import { loadFromStorage, bootstrapFromSnapshot } from '@/data/localStorageClient';
+import { loadFromStorage, bootstrapFromSnapshot, saveToStorage } from '@/data/localStorageClient';
 import { rebuildAllLocalData } from './rebuildLocalData';
 import { supabase } from '@/lib/supabaseClient';
 
 const LocalDataContext = createContext(null);
+
+/**
+ * Normaliza un usuario asegurando que tenga nombreCompleto
+ */
+function normalizeUser(user) {
+  if (!user) return user;
+  
+  // Si ya tiene nombreCompleto, retornar tal cual
+  if (user.nombreCompleto && user.nombreCompleto.trim()) {
+    return user;
+  }
+  
+  // Intentar generar nombreCompleto desde otros campos
+  let nombreCompleto = null;
+  
+  if (user.full_name && user.full_name.trim()) {
+    nombreCompleto = user.full_name.trim();
+  } else if (user.first_name || user.last_name) {
+    nombreCompleto = [user.first_name, user.last_name].filter(Boolean).join(' ').trim();
+  } else if (user.email) {
+    const emailStr = String(user.email);
+    if (emailStr.includes('@')) {
+      const parteLocal = emailStr.split('@')[0];
+      // Evitar IDs tipo Mongo/ObjectId (24 hex) u otros ids crudos
+      const isLikelyId = /^[a-f0-9]{24}$/i.test(parteLocal) || /^u_[a-z0-9_]+$/i.test(parteLocal);
+      if (parteLocal && !isLikelyId) {
+        // Formatear email: "nombre.apellido" o "nombre" de forma más legible
+        nombreCompleto = parteLocal
+          .replace(/[._+-]/g, ' ')
+          .replace(/\b\w/g, l => l.toUpperCase())
+          .trim() || emailStr;
+      } else {
+        // Si la parte local parece un ID, usar el email completo
+        nombreCompleto = emailStr;
+      }
+    } else {
+      nombreCompleto = emailStr;
+    }
+  } else {
+    // Último recurso: generar nombre genérico
+    nombreCompleto = `Usuario ${user.id || 'Nuevo'}`;
+  }
+  
+  return {
+    ...user,
+    nombreCompleto: nombreCompleto,
+    full_name: user.full_name || nombreCompleto,
+  };
+}
+
+/**
+ * Migra usuarios para asegurar que todos tengan nombreCompleto
+ */
+function migrateUsers(usuarios) {
+  if (!Array.isArray(usuarios)) {
+    return { usuarios: usuarios || [], needsUpdate: false };
+  }
+  
+  const normalized = usuarios.map(normalizeUser);
+  const needsUpdate = normalized.some((u, i) => {
+    const original = usuarios[i];
+    return u.nombreCompleto !== original?.nombreCompleto || 
+           u.full_name !== original?.full_name;
+  });
+  
+  return { usuarios: normalized, needsUpdate };
+}
 
 export function LocalDataProvider({ children }) {
   const [data, setData] = useState({
@@ -61,6 +128,15 @@ export function LocalDataProvider({ children }) {
           };
         }
 
+        // Normalizar usuarios asegurando que todos tengan nombreCompleto
+        let usuarios = stored.usuarios?.length ? stored.usuarios : localUsers;
+        const { usuarios: normalizedUsuarios, needsUpdate } = migrateUsers(usuarios);
+        
+        // Si hubo cambios, guardar de vuelta en localStorage
+        if (needsUpdate && stored) {
+          saveToStorage({ usuarios: normalizedUsuarios });
+        }
+        
         const loadedData = {
           asignaciones: stored.asignaciones || [],
           bloques: stored.bloques || [],
@@ -69,7 +145,7 @@ export function LocalDataProvider({ children }) {
           planes: stored.planes || [],
           registrosBloque: stored.registrosBloque || [],
           registrosSesion: stored.registrosSesion || [],
-          usuarios: stored.usuarios?.length ? stored.usuarios : localUsers,
+          usuarios: normalizedUsuarios,
           loading: false,
         };
 

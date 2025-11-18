@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ds"; // Changed import to "@/components/ds"
-import { Plus, Search, Copy, Trash2, Edit, Dumbbell, Clock } from "lucide-react";
+import { Plus, Search, Copy, Trash2, Edit, Dumbbell, Clock, Layers } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ExerciseEditor from "./ExerciseEditor";
 import { toast } from "sonner";
@@ -139,7 +139,7 @@ export default function EjerciciosTab() {
         </div>
       ) : ejerciciosFiltrados.length === 0 ? (
         <div className="text-center py-12 border-2 border-dashed border-[var(--color-border-default)] rounded-[var(--radius-card)]">
-          <Dumbbell className="w-16 h-16 mx-auto mb-4 text-[var(--color-text-secondary)]" />
+          <Layers className="w-16 h-16 mx-auto mb-4 text-[var(--color-text-secondary)]" />
           <p className="text-[var(--color-text-secondary)] mb-2">
             {searchTerm || tipoFilter !== 'all' ? 'No se encontraron ejercicios' : 'Aún no hay ejercicios'}
           </p>

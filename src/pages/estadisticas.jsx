@@ -10,7 +10,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsToolti
 import {
   Activity, Clock, Calendar, Star, Smile, BarChart3, TrendingUp,
   MessageSquare, Eye, RefreshCw, Dumbbell, List, PieChart, CalendarDays, Calendar as CalendarIcon,
-  Sun, CalendarRange, Grid3x3
+  Sun, CalendarRange, Grid3x3, Layers
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -1028,14 +1028,14 @@ function EstadisticasPageContent() {
             <Card className={componentStyles.components.cardBase}>
               <CardHeader>
                 <CardTitle className="text-base md:text-lg flex items-center gap-2">
-                  <Dumbbell className="w-5 h-5 text-[var(--color-primary)]" />
+                  <Layers className="w-5 h-5 text-[var(--color-primary)]" />
                   Ejercicios: Completados vs Omitidos
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {datosLinea.length === 0 ? (
                   <div className="text-center py-12">
-                    <Dumbbell className={componentStyles.components.emptyStateIcon} />
+                    <Layers className={componentStyles.components.emptyStateIcon} />
                     <p className={componentStyles.components.emptyStateText}>No hay datos</p>
                   </div>
                 ) : (
