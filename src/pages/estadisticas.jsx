@@ -151,23 +151,41 @@ function EstadisticasPageContent() {
   const isProf = effectiveUser?.rolPersonalizado === 'PROF';
   const isEstu = effectiveUser?.rolPersonalizado === 'ESTU';
 
+  // Cargar usuarios primero para poder calcular userIdActual
+  const { data: usuarios = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => localDataClient.entities.User.list(),
+  });
+
+  // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
+  // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD
+  const usuarioActual = usuarios.find(u => {
+    if (effectiveUser?.email && u.email) {
+      return u.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim();
+    }
+    return u.id === effectiveUser?.id;
+  }) || effectiveUser;
+
+  // Usar el ID del usuario de la base de datos, no el de Supabase Auth
+  const userIdActual = usuarioActual?.id || effectiveUser?.id;
+
   const { data: asignacionesProf = [] } = useQuery({
-    queryKey: ['asignacionesProf', effectiveUser?.id],
+    queryKey: ['asignacionesProf', userIdActual],
     queryFn: () => localDataClient.entities.Asignacion.list(),
-    enabled: isProf && !!effectiveUser?.id,
+    enabled: isProf && !!userIdActual,
   });
 
   const estudiantesDelProfesor = useMemo(() => {
     if (!isProf || !effectiveUser) return [];
     
     const misAsignaciones = asignacionesProf.filter(a => 
-      a.profesorId === effectiveUser.id && 
+      a.profesorId === userIdActual && 
       (a.estado === 'publicada' || a.estado === 'en_curso' || a.estado === 'borrador')
     );
     
     const alumnosIds = [...new Set(misAsignaciones.map(a => a.alumnoId))];
     return alumnosIds;
-  }, [asignacionesProf, effectiveUser, isProf]);
+  }, [asignacionesProf, effectiveUser, isProf, userIdActual]);
 
   const { data: registros = [] } = useQuery({
     queryKey: ['registrosSesion'],
@@ -177,11 +195,6 @@ function EstadisticasPageContent() {
   const { data: bloques = [] } = useQuery({
     queryKey: ['registrosBloques'],
     queryFn: () => localDataClient.entities.RegistroBloque.list('-inicioISO'),
-  });
-
-  const { data: usuarios = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => localDataClient.entities.User.list(),
   });
 
   const { data: asignaciones = [] } = useQuery({
@@ -383,7 +396,7 @@ function EstadisticasPageContent() {
       }));
 
     if (isEstu) {
-      filtered = filtered.filter(r => r.alumnoId === effectiveUser.id);
+      filtered = filtered.filter(r => r.alumnoId === userIdActual);
     } else {
       let targetAlumnoIds = new Set();
 
@@ -462,7 +475,7 @@ function EstadisticasPageContent() {
       const duracion = validarDuracion(r.duracionRealSeg);
       return sum + duracion;
     }, 0);
-    const racha = calcularRacha(registrosFiltradosUnicos, isEstu ? effectiveUser?.id : null);
+    const racha = calcularRacha(registrosFiltradosUnicos, isEstu ? userIdActual : null);
     const calidadPromedio = calcularCalidadPromedio(registrosFiltradosUnicos);
     const semanasDistintas = calcularSemanasDistintas(registrosFiltradosUnicos);
 
@@ -620,7 +633,7 @@ function EstadisticasPageContent() {
     if (!isEstu) return [];
     
     return feedbacksSemanal.filter(f => {
-      if (f.alumnoId !== effectiveUser?.id) return false;
+      if (f.alumnoId !== userIdActual) return false;
       if (!f.semanaInicioISO) return false;
       
       const feedbackDate = parseLocalDate(f.semanaInicioISO);

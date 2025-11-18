@@ -115,8 +115,29 @@ function HoyPageContent() {
     queryFn: () => localDataClient.entities.User.list(),
   });
 
-  const userIdActual = effectiveUser?.id;
-  const alumnoActual = usuarios.find(u => u.id === userIdActual) || effectiveUser;
+  // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
+  // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD
+  const alumnoActual = usuarios.find(u => {
+    if (effectiveUser?.email && u.email) {
+      return u.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim();
+    }
+    return u.id === effectiveUser?.id;
+  }) || effectiveUser;
+
+  // Usar el ID del usuario de la base de datos, no el de Supabase Auth
+  const userIdActual = alumnoActual?.id || effectiveUser?.id;
+
+  // Log de usuarios cargados en desarrollo
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[hoy.jsx] Usuarios y usuario actual:');
+    console.log('  - Total usuarios:', usuarios.length);
+    console.log('  - effectiveUser ID (Supabase):', effectiveUser?.id);
+    console.log('  - effectiveUser email:', effectiveUser?.email);
+    console.log('  - userIdActual (BD):', userIdActual);
+    console.log('  - alumnoActual encontrado:', !!alumnoActual);
+    console.log('  - alumnoActual ID:', alumnoActual?.id);
+    console.log('  - Usuarios disponibles:', usuarios.map(u => `ID: ${u.id}, Email: ${u.email || 'N/A'}, Nombre: ${u.nombre || u.displayName || 'N/A'}`));
+  }
 
   const { data: asignacionesRaw = [] } = useQuery({
     queryKey: ['asignaciones'],
@@ -126,37 +147,152 @@ function HoyPageContent() {
   // Filtrar y validar asignaciones
   const asignaciones = asignacionesRaw.filter(a => {
     // Validar que tiene alumnoId válido
-    if (!a.alumnoId) return false;
+    if (!a.alumnoId) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[hoy.jsx] Asignación filtrada: sin alumnoId', a.id);
+      }
+      return false;
+    }
     const alumno = usuarios.find(u => u.id === a.alumnoId);
-    if (!alumno) return false;
+    if (!alumno) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[hoy.jsx] Asignación filtrada: alumno no encontrado');
+        console.log('  - Asignación ID:', a.id);
+        console.log('  - alumnoId en asignación:', a.alumnoId);
+        console.log('  - userIdActual:', userIdActual);
+        console.log('  - ¿Es usuario actual?', a.alumnoId === userIdActual);
+        console.log('  - Estado:', a.estado);
+        console.log('  - Tiene plan:', !!a.plan);
+        console.log('  - Semanas disponibles:', a.plan?.semanas?.length);
+        console.log('  - semanaInicioISO:', a.semanaInicioISO);
+        console.log('  - IDs de usuarios disponibles:', usuarios.map(u => u.id));
+      }
+      // Si es el usuario actual pero no está en la lista de usuarios, permitir la asignación
+      // Esto puede pasar si los usuarios aún no se han cargado completamente
+      if (a.alumnoId === userIdActual) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[hoy.jsx] Asignación del usuario actual permitida aunque no esté en lista de usuarios');
+        }
+        // Continuar con la validación del plan y semanas
+      } else {
+        return false;
+      }
+    }
     
     // Validar que tiene plan y semanas
-    if (!a.plan || !Array.isArray(a.plan.semanas) || a.plan.semanas.length === 0) return false;
+    if (!a.plan || !Array.isArray(a.plan.semanas) || a.plan.semanas.length === 0) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[hoy.jsx] Asignación filtrada: sin plan o semanas válidas', {
+          asignacionId: a.id,
+          tienePlan: !!a.plan,
+          tieneSemanas: Array.isArray(a.plan?.semanas),
+          semanasLength: a.plan?.semanas?.length
+        });
+      }
+      return false;
+    }
     
     // Validar que tiene semanaInicioISO válida
-    if (!a.semanaInicioISO || typeof a.semanaInicioISO !== 'string') return false;
+    if (!a.semanaInicioISO || typeof a.semanaInicioISO !== 'string') {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[hoy.jsx] Asignación filtrada: sin semanaInicioISO válida', {
+          asignacionId: a.id,
+          semanaInicioISO: a.semanaInicioISO,
+          tipo: typeof a.semanaInicioISO
+        });
+      }
+      return false;
+    }
     
     return true;
   });
+
+  // Log de resumen del filtrado
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[hoy.jsx] Resumen de asignaciones:');
+    console.log('  - Total raw:', asignacionesRaw.length);
+    console.log('  - Total filtradas:', asignaciones.length);
+    console.log('  - Asignaciones raw:', asignacionesRaw.map(a => 
+      `ID: ${a.id}, alumnoId: ${a.alumnoId}, estado: ${a.estado}, tienePlan: ${!!a.plan}, semanas: ${a.plan?.semanas?.length || 0}, inicio: ${a.semanaInicioISO || 'N/A'}`
+    ));
+  }
 
   const asignacionActiva = asignaciones.find(a => {
     if (a.alumnoId !== userIdActual) return false;
     if (a.estado !== 'publicada' && a.estado !== 'en_curso') return false;
     try {
       const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
-      return offset >= 0 && offset < (a.plan?.semanas?.length || 0);
+      const tieneSemanaValida = offset >= 0 && offset < (a.plan?.semanas?.length || 0);
+      
+      // Log de depuración en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[hoy.jsx] Evaluando asignación:', {
+          id: a.id,
+          alumnoId: a.alumnoId,
+          estado: a.estado,
+          semanaInicioISO: a.semanaInicioISO,
+          semanaActualISO,
+          offset,
+          semanasLength: a.plan?.semanas?.length,
+          tieneSemanaValida
+        });
+      }
+      
+      return tieneSemanaValida;
     } catch (error) {
       console.warn('Error calculando offset de semana:', error, a);
       return false;
     }
   });
 
-  const semanaDelPlan = asignacionActiva ?
-    asignacionActiva.plan?.semanas?.[calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO)] :
-    null;
-
-  const semanaIdx = asignacionActiva ?
-    calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO) : 0;
+  // Calcular semanaDelPlan de forma más robusta
+  let semanaDelPlan = null;
+  let semanaIdx = 0;
+  
+  if (asignacionActiva) {
+    try {
+      semanaIdx = calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO);
+      semanaDelPlan = asignacionActiva.plan?.semanas?.[semanaIdx] || null;
+      
+      // Log de depuración en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[hoy.jsx] Asignación activa encontrada:', {
+          asignacionId: asignacionActiva.id,
+          semanaIdx,
+          semanaDelPlan: semanaDelPlan ? { nombre: semanaDelPlan.nombre, foco: semanaDelPlan.foco } : null,
+          semanasDisponibles: asignacionActiva.plan?.semanas?.length
+        });
+      }
+    } catch (error) {
+      console.warn('Error calculando semanaDelPlan:', error, asignacionActiva);
+      semanaDelPlan = null;
+    }
+  } else {
+    // Log de depuración en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      const asignacionesDelUsuario = asignaciones.filter(a => a.alumnoId === userIdActual);
+      console.log('[hoy.jsx] No se encontró asignación activa:');
+      console.log('  - userIdActual:', userIdActual);
+      console.log('  - Total asignaciones (después de filtrado):', asignaciones.length);
+      console.log('  - Asignaciones del usuario:', asignacionesDelUsuario.length);
+      if (asignacionesDelUsuario.length > 0) {
+        console.log('  - Detalles de asignaciones del usuario:');
+        asignacionesDelUsuario.forEach(a => {
+          let offset = null;
+          try {
+            offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
+          } catch (e) {
+            // Ignorar errores en el cálculo
+          }
+          const offsetValido = offset !== null && offset >= 0 && offset < (a.plan?.semanas?.length || 0);
+          console.log(`    * ID: ${a.id}, Estado: ${a.estado}, Offset: ${offset}, Válido: ${offsetValido}, Semanas disponibles: ${a.plan?.semanas?.length || 0}`);
+        });
+      }
+      console.log('  - Todas las asignaciones filtradas:', asignaciones.map(a => 
+        `ID: ${a.id}, alumnoId: ${a.alumnoId}, estado: ${a.estado}, inicio: ${a.semanaInicioISO || 'N/A'}`
+      ));
+    }
+  }
 
   useEffect(() => {
     if (sesionActiva && !sesionFinalizada && !sidebarCerradoRef.current) {
@@ -1742,6 +1878,15 @@ function HoyPageContent() {
               <p className={`${componentStyles.empty.emptyText} mb-4`}>
                 Consulta con tu profesor para obtener asignaciones
               </p>
+              {process.env.NODE_ENV === 'development' && (
+                <div className="text-xs text-[var(--color-text-muted)] mb-4 p-2 bg-[var(--color-surface-muted)] rounded">
+                  <p>Debug: asignacionActiva = {asignacionActiva ? '✓' : '✗'}</p>
+                  <p>Debug: semanaDelPlan = {semanaDelPlan ? '✓' : '✗'}</p>
+                  {asignacionActiva && (
+                    <p>Debug: semanaIdx = {semanaIdx}, semanas disponibles = {asignacionActiva.plan?.semanas?.length}</p>
+                  )}
+                </div>
+              )}
               <Button
                 variant="outline"
                 onClick={() => navigate(createPageUrl('estadisticas'))}

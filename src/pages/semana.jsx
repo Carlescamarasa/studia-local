@@ -65,7 +65,17 @@ function SemanaPageContent() {
     queryFn: () => localDataClient.entities.RegistroSesion.list('-inicioISO'),
   });
 
-  const userIdActual = effectiveUser?.id;
+  // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
+  // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD
+  const usuarioActual = usuarios.find(u => {
+    if (effectiveUser?.email && u.email) {
+      return u.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim();
+    }
+    return u.id === effectiveUser?.id;
+  }) || effectiveUser;
+
+  // Usar el ID del usuario de la base de datos, no el de Supabase Auth
+  const userIdActual = usuarioActual?.id || effectiveUser?.id;
 
   const asignacionActiva = asignaciones.find(a => {
     if (a.alumnoId !== userIdActual) return false;
