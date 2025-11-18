@@ -182,28 +182,28 @@ export default function PiezasTab() {
 
                     <div className="flex gap-2 pt-2 border-t border-[var(--color-border-default)]"> {/* Reemplazado a tokens */}
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         onClick={() => handleEdit(pieza)}
-                        className={`flex-1 ${componentStyles.buttons.secondary}`}
+                        className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
+                        aria-label="Editar pieza"
                       >
-                        <Edit className="w-4 h-4 mr-1" />
-                        Editar
+                        <Edit className="w-4 h-4" />
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         onClick={() => handleDuplicate(pieza)}
-                        className={`flex-1 ${componentStyles.buttons.secondary}`}
+                        className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
+                        aria-label="Duplicar pieza"
                       >
-                        <Copy className="w-4 h-4 mr-1" />
-                        Duplicar
+                        <Copy className="w-4 h-4" />
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(pieza)}
-                        className={`${componentStyles.buttons.danger} px-3`}
+                        className={`${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle} px-3`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

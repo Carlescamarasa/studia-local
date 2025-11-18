@@ -178,28 +178,28 @@ export default function PlanesTab() {
 
                     <div className="flex gap-2 pt-2 border-t border-[var(--color-border-default)]"> {/* Reemplazado a tokens */}
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         onClick={() => handleEdit(plan)}
-                        className={`flex-1 ${componentStyles.buttons.secondary}`}
+                        className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
+                        aria-label="Editar plan"
                       >
-                        <Edit className="w-4 h-4 mr-1" />
-                        Editar
+                        <Edit className="w-4 h-4" />
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         onClick={() => handleDuplicate(plan)}
-                        className={`flex-1 ${componentStyles.buttons.secondary}`}
+                        className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
+                        aria-label="Duplicar plan"
                       >
-                        <Copy className="w-4 h-4 mr-1" />
-                        Duplicar
+                        <Copy className="w-4 h-4" />
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(plan)}
-                        className={`${componentStyles.buttons.danger} px-3`}
+                        className={`${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle} px-3`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

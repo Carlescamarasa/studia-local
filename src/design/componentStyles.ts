@@ -123,6 +123,10 @@ export const componentStyles = {
     deleteSubtle: "text-[var(--color-danger)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10",
     // Botón de eliminar icono (para semanas, etc.)
     deleteIcon: "h-8 w-8 p-0 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-[var(--btn-radius)]",
+    // Botones de editar/duplicar sutiles (ghost con color de texto normal)
+    editSubtle: "text-[var(--color-text-primary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]",
+    // Botón de editar/duplicar icono (para semanas, etc.)
+    editIcon: "h-8 w-8 p-0 text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-[var(--btn-radius)]",
   },
 
   tabs: {

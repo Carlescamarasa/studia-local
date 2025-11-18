@@ -301,7 +301,7 @@ export default function PieceEditor({ pieza, onClose }) {
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => removeElemento(index)}
-                                        className={`text-[var(--color-danger)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10`}
+                                        className={componentStyles.buttons.deleteIcon}
                                       >
                                         <Trash2 className="w-4 h-4" />
                                       </Button>

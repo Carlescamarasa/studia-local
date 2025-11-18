@@ -470,7 +470,7 @@ function AgendaPageContent() {
                 <Edit className="w-3 h-3" />
               </Button>
               <Button
-                variant="danger"
+                variant="ghost"
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -478,7 +478,7 @@ function AgendaPageContent() {
                     eliminarFeedbackMutation.mutate(row.feedback.id);
                   }
                 }}
-                className={`h-8 ${componentStyles.buttons.danger}`}
+                className={`h-8 ${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle}`}
                 aria-label="Eliminar feedback"
               >
                 <Trash2 className="w-3 h-3" />

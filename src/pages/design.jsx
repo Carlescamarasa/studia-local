@@ -440,7 +440,7 @@ function DesignPageContent({ embedded = false }) {
                                   e.stopPropagation();
                                   handleDeletePreset(id);
                                 }}
-                                className="h-8 w-8 p-0 text-[hsl(var(--danger))] hover:bg-[hsl(var(--danger))]/10 rounded-xl"
+                                className={componentStyles.buttons.deleteIcon}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>

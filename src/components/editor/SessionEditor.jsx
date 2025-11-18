@@ -556,7 +556,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                           ejercicio: bloque, 
                                           piezaSnapshot: piezaSnapshot || pieza 
                                         })}
-                                        className="h-8 w-8 p-0 rounded-[var(--radius-card)] hover:bg-[var(--color-surface-muted)]"
+                                        className={componentStyles.buttons.editIcon}
                                       >
                                         <Edit className="w-4 h-4" />
                                       </Button>
@@ -564,7 +564,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => removeEjercicio(formData.bloques.findIndex(b => b.code === bloque.code))}
-                                        className="h-8 w-8 p-0 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-[var(--radius-card)]"
+                                        className={componentStyles.buttons.deleteIcon}
                                       >
                                         <Trash2 className="w-4 h-4" />
                                       </Button>
@@ -637,7 +637,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                             size="sm"
                                             onClick={() => duplicateRonda(ronda.id)}
                                             title="Duplicar ronda"
-                                            className="h-8 w-8 p-0 hover:bg-[var(--color-primary-soft)] rounded-[var(--radius-card)]"
+                                            className={componentStyles.buttons.editIcon}
                                           >
                                             <Copy className="w-4 h-4" />
                                           </Button>
@@ -653,7 +653,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                                 });
                                               }
                                             }}
-                                            className="h-8 w-8 p-0 text-[var(--color-danger)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-[var(--radius-card)]"
+                                            className={componentStyles.buttons.deleteIcon}
                                           >
                                             <Trash2 className="w-4 h-4" />
                                           </Button>
@@ -715,7 +715,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                                               });
                                                             }
                                                           }}
-                                                          className="h-6 px-2 rounded-[var(--radius-card)] hover:bg-[var(--color-surface-muted)]"
+                                                          className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
                                                           title="Editar ejercicio"
                                                         >
                                                           <Edit className="w-3 h-3" />
@@ -727,7 +727,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                                             formData.rondas.findIndex(r => r.id === ronda.id), 
                                                             code
                                                           )}
-                                                          className="h-6 px-2 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-[var(--radius-card)]"
+                                                          className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle}`}
                                                           title="Quitar de la ronda"
                                                         >
                                                           <X className="w-3 h-3" />

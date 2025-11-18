@@ -575,7 +575,8 @@ export default function PlanEditor({ plan, onClose }) {
                                           duplicateSemana(semanaIndex);
                                         }}
                                         title="Duplicar semana"
-                                        className={componentStyles.buttons.ghost}
+                                        className={componentStyles.buttons.editIcon}
+                                        aria-label="Duplicar semana"
                                       >
                                         <Copy className="w-4 h-4" />
                                       </Button>
@@ -722,7 +723,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                                               e.stopPropagation();
                                                                               setEditingEjercicio({ semanaIndex, sesionIndex, ejercicioIndex, ejercicio, source: 'session' });
                                                                             }}
-                                                                            className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost}`}
+                                                                            className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
                                                                           >
                                                                             <Edit className="w-3 h-3" />
                                                                           </Button>
@@ -820,24 +821,12 @@ export default function PlanEditor({ plan, onClose }) {
                                                             variant="outline"
                                                             onClick={(e) => {
                                                               e.stopPropagation();
-                                                              addSesion(semanaIndex);
-                                                            }}
-                                                            className={componentStyles.buttons.outline}
-                                                          >
-                                                            <Plus className="w-3 h-3 mr-1" />
-                                                            Añadir Sesión
-                                                          </Button>
-                                                          <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={(e) => {
-                                                              e.stopPropagation();
                                                               setEditingSesion({ semanaIndex, sesionIndex, sesion });
                                                             }}
-                                                            className={componentStyles.buttons.actionCompact}
+                                                            className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
+                                                            aria-label="Editar sesión"
                                                           >
-                                                            <Edit className="w-3 h-3 mr-1" />
-                                                            Editar Sesión
+                                                            <Edit className="w-3 h-3" />
                                                           </Button>
                                                           <Button
                                                             size="sm"
@@ -873,24 +862,12 @@ export default function PlanEditor({ plan, onClose }) {
                                         variant="outline"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          addSesion(semanaIndex);
-                                        }}
-                                        className={componentStyles.buttons.outline}
-                                      >
-                                        <Plus className="w-3 h-3 mr-1" />
-                                        Añadir Sesión
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
                                           setEditingSemana({ index: semanaIndex, semana });
                                         }}
-                                        className={componentStyles.buttons.outline}
+                                        className={componentStyles.buttons.editIcon}
+                                        aria-label="Editar semana"
                                       >
-                                        <Edit className="w-3 h-3 mr-1" />
-                                        Editar Semana
+                                        <Edit className="w-3 h-3" />
                                       </Button>
                                     </div>
                                   )}

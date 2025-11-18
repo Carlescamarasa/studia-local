@@ -553,11 +553,11 @@ function AdaptarAsignacionPageContent() {
                                       e.stopPropagation();
                                       duplicateSemana(semanaIndex);
                                     }}
-                                    className={`h-8 w-8 p-0 rounded-[var(--btn-radius)] hover:bg-[var(--color-surface-muted)]`}
+                                    className={componentStyles.buttons.editIcon}
                                     title="Duplicar semana"
                                     aria-label="Duplicar semana"
                                   >
-                                    <Copy className="w-4 h-4 text-ui/80" />
+                                    <Copy className="w-4 h-4" />
                                   </Button>
                                   <Button
                                     variant="ghost"
@@ -737,10 +737,10 @@ function AdaptarAsignacionPageContent() {
                                                           e.stopPropagation();
                                                           setEditingSesion({ semanaIndex, sesionIndex, sesion });
                                                         }}
-                                                        className={componentStyles.buttons.actionCompact}
+                                                        className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
+                                                        aria-label="Editar sesión"
                                                       >
-                                                        <Edit className="w-3 h-3 mr-1" />
-                                                        Editar Sesión
+                                                        <Edit className="w-3 h-3" />
                                                       </Button>
                                                       <Button
                                                         size="sm"
@@ -749,7 +749,7 @@ function AdaptarAsignacionPageContent() {
                                                           e.stopPropagation();
                                                           removeSesion(semanaIndex, sesionIndex);
                                                         }}
-                                                        className={`${componentStyles.buttons.actionCompact} text-[var(--color-danger)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10`}
+                                                        className={`${componentStyles.buttons.actionCompact} ${componentStyles.buttons.deleteSubtle}`}
                                                       >
                                                         <Trash2 className="w-3 h-3 mr-1" />
                                                         Eliminar
@@ -776,24 +776,12 @@ function AdaptarAsignacionPageContent() {
                                     variant="outline"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      addSesion(semanaIndex);
-                                    }}
-                                    className={componentStyles.buttons.outline}
-                                  >
-                                    <Plus className="w-3 h-3 mr-1" />
-                                    Añadir Sesión
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
                                       setEditingSemana({ index: semanaIndex, semana });
                                     }}
-                                    className={componentStyles.buttons.outline}
+                                    className={componentStyles.buttons.editIcon}
+                                    aria-label="Editar semana"
                                   >
-                                    <Edit className="w-3 h-3 mr-1" />
-                                    Editar Semana
+                                    <Edit className="w-3 h-3" />
                                   </Button>
                                 </div>
                               )}
