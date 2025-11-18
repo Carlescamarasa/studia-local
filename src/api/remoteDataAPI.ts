@@ -497,9 +497,8 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (updates.telefono !== undefined) {
           supabaseUpdates.telefono = updates.telefono;
         }
-        if (updates.mediaLinks !== undefined) {
-          supabaseUpdates.media_links = updates.mediaLinks;
-        }
+        // mediaLinks no se guarda en profiles (no existe la columna en Supabase)
+        // Se mantiene solo para compatibilidad local
         
         console.log('🔍 [DEBUG UPDATE] Actualizando usuario:', {
           id,

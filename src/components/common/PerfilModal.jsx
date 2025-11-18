@@ -311,7 +311,8 @@ export default function PerfilModal({
       profesorAsignadoId: editedData.profesorAsignadoId || null,
       nivel: editedData.nivel || null,
       telefono: telefonoFinal,
-      mediaLinks: editedData.mediaLinks || [],
+      // mediaLinks no se incluye al guardar (la columna no existe en Supabase profiles)
+      // Se mantiene solo en el estado local para mostrar el componente MediaLinksInput
     };
 
     updateUserMutation.mutate(dataToSave);
