@@ -109,8 +109,18 @@ export function AuthProvider({ children }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
       
+      // Si no hay sesión (sesión expirada o usuario cerrado sesión), limpiar estado
+      if (!session) {
+        setUser(null);
+        setProfile(null);
+        currentUserIdRef.current = null;
+        fetchingProfileRef.current = false;
+        setLoading(false);
+        return;
+      }
+      
       // Actualizar usuario inmediatamente
-      setUser(session?.user ?? null);
+      setUser(session.user);
       setLoading(false);
       
       // Obtener perfil en background (no bloquear)
@@ -159,11 +169,25 @@ export function AuthProvider({ children }) {
   }, []); // fetchProfile está en el scope del componente, no necesita estar en deps
 
   const signOut = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      throw error;
+    try {
+      const { error } = await supabase.auth.signOut();
+      // Si el error es que no hay sesión (403, AuthSessionMissingError), es válido continuar
+      // ya que el objetivo es cerrar sesión y si no hay sesión, ya estamos en el estado deseado
+      if (error && error.message !== 'Auth session missing!' && error.message !== 'JWT expired') {
+        // Solo lanzar error si no es un error de sesión faltante
+        throw error;
+      }
+    } catch (error) {
+      // Si es un error de sesión faltante, es válido continuar con la limpieza
+      if (error?.message?.includes('Auth session missing') || error?.message?.includes('JWT expired')) {
+        // Continuar con la limpieza aunque falló el signOut
+      } else {
+        // Otros errores pueden ser importantes, relanzarlos
+        throw error;
+      }
     }
-    // Limpiar perfil al cerrar sesión
+    
+    // Limpiar perfil al cerrar sesión (siempre, incluso si falló el signOut)
     setProfile(null);
     fetchingProfileRef.current = false;
     currentUserIdRef.current = null;

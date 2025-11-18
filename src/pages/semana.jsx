@@ -89,9 +89,28 @@ function SemanaPageContent() {
 
   const semanaDelPlan = asignacionActiva?.plan?.semanas?.[semanaIdx];
 
+  // Buscar feedbacks del profesor para esta semana
   const feedbackSemana = feedbacksSemanal.find(f => 
     f.alumnoId === userIdActual && f.semanaInicioISO === semanaActualISO
   );
+
+  // Buscar todos los feedbacks del profesor para semanas anteriores (para mostrar historial)
+  const feedbacksAnteriores = feedbacksSemanal
+    .filter(f => {
+      if (f.alumnoId !== userIdActual) return false;
+      if (!f.semanaInicioISO) return false;
+      // Solo mostrar feedbacks de semanas anteriores a la actual
+      const feedbackDate = parseLocalDate(f.semanaInicioISO);
+      const semanaActualDate = parseLocalDate(semanaActualISO);
+      return feedbackDate < semanaActualDate;
+    })
+    .sort((a, b) => {
+      // Ordenar por fecha descendente (más reciente primero)
+      const dateA = parseLocalDate(a.semanaInicioISO);
+      const dateB = parseLocalDate(b.semanaInicioISO);
+      return dateB - dateA;
+    })
+    .slice(0, 5); // Limitar a los 5 más recientes
 
   // Filtrar registros de sesión de la semana actual con feedback
   const registrosConFeedback = registrosSesion.filter(r => {
@@ -247,24 +266,105 @@ function SemanaPageContent() {
                   </div>
                 </div>
 
-                {feedbackSemana && feedbackSemana.notaProfesor && (
-                  <div className={"flex items-start gap-2 py-1 " + componentStyles.components.toneRowFeedback}>
-                    <MessageSquare className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
-                      <p className="text-sm text-[var(--color-text-primary)] italic mt-0.5 break-words">
-                        "{feedbackSemana.notaProfesor}"
-                      </p>
-                      <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-                        {(() => {
-                          const prof = usuarios.find(u => u.id === feedbackSemana.profesorId);
-                          return `Por ${displayName(prof)}`;
-                        })()}
-                      </p>
+                {/* Feedback del profesor de esta semana */}
+                {feedbackSemana && (
+                  (feedbackSemana.notaProfesor || (feedbackSemana.mediaLinks && feedbackSemana.mediaLinks.length > 0)) && (
+                    <div className={"flex items-start gap-2 py-1 " + componentStyles.components.toneRowFeedback}>
+                      <MessageSquare className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
+                          {(() => {
+                            const prof = usuarios.find(u => u.id === feedbackSemana.profesorId);
+                            if (prof) {
+                              return (
+                                <span className="text-xs text-[var(--color-text-secondary)]">
+                                  • {displayName(prof)}
+                                </span>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
+                        {feedbackSemana.notaProfesor && (
+                          <p className="text-sm text-[var(--color-text-primary)] italic mt-0.5 break-words">
+                            "{feedbackSemana.notaProfesor}"
+                          </p>
+                        )}
+                        {feedbackSemana.mediaLinks && feedbackSemana.mediaLinks.length > 0 && (
+                          <div className={feedbackSemana.notaProfesor ? "mt-2" : "mt-0.5"}>
+                            <MediaLinksBadges
+                              mediaLinks={feedbackSemana.mediaLinks}
+                              onMediaClick={(idx) => handlePreviewMedia(idx, feedbackSemana.mediaLinks)}
+                              compact={true}
+                              maxDisplay={3}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )
                 )}
               </div>
+
+              {/* Feedbacks del profesor - Historial */}
+              {feedbacksAnteriores.length > 0 && (
+                <div className="border-t border-[var(--color-border-default)] pt-4">
+                  <h3 className={`${componentStyles.typography.sectionTitle} mb-4`}>
+                    Feedbacks del profesor - Historial
+                  </h3>
+                  <div className="space-y-3">
+                    {feedbacksAnteriores.map((feedback) => {
+                      const prof = usuarios.find(u => u.id === feedback.profesorId);
+                      const fechaFeedback = parseLocalDate(feedback.semanaInicioISO);
+                      const fechaFormateada = fechaFeedback.toLocaleDateString('es-ES', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      });
+
+                      return (
+                        <Card key={feedback.id} className={`${componentStyles.containers.panelBase} hover:shadow-md transition-shadow`}>
+                          <CardContent className="pt-3 pb-3">
+                            <div className="space-y-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                                    <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
+                                    {prof && (
+                                      <span className="text-xs text-[var(--color-text-secondary)]">
+                                        • {displayName(prof)}
+                                      </span>
+                                    )}
+                                    <span className="text-xs text-[var(--color-text-secondary)]">
+                                      • Semana del {fechaFormateada}
+                                    </span>
+                                  </div>
+                                  {feedback.notaProfesor && (
+                                    <p className="text-sm text-[var(--color-text-primary)] italic break-words">
+                                      "{feedback.notaProfesor}"
+                                    </p>
+                                  )}
+                                  {feedback.mediaLinks && feedback.mediaLinks.length > 0 && (
+                                    <div className="mt-2">
+                                      <MediaLinksBadges
+                                        mediaLinks={feedback.mediaLinks}
+                                        onMediaClick={(idx) => handlePreviewMedia(idx, feedback.mediaLinks)}
+                                        compact={true}
+                                        maxDisplay={3}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Separador */}
               <div className="border-t border-[var(--color-border-default)] pt-4">

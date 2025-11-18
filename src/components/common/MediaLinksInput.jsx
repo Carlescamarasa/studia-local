@@ -14,6 +14,49 @@ const MAX_LINKS = 10;
  * Hook para obtener el título de una URL
  * Usa un proxy CORS para evitar problemas de CORS
  */
+/**
+ * Extrae el ID del archivo de una URL de Google Drive
+ */
+function extractGoogleDriveId(url) {
+  // Formato: drive.google.com/file/d/{id}
+  const fileMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (fileMatch) return fileMatch[1];
+  
+  // Formato: drive.google.com/open?id={id}
+  const openMatch = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+  if (openMatch) return openMatch[1];
+  
+  // Formato: drive.google.com/uc?id={id}
+  const ucMatch = url.match(/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/);
+  if (ucMatch) return ucMatch[1];
+  
+  return null;
+}
+
+/**
+ * Fetch con timeout personalizado y manejo silencioso de errores
+ */
+function fetchWithTimeout(url, options = {}, timeout = 6000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timeoutId))
+    .catch(error => {
+      // Silenciar todos los errores (timeout, CORS, QUIC, etc.)
+      // No lanzar el error, simplemente retornar null
+      if (error.name === 'AbortError' || 
+          error.message?.includes('timeout') ||
+          error.message?.includes('QUIC') ||
+          error.message?.includes('CORS') ||
+          error.message?.includes('Failed to fetch')) {
+        return null;
+      }
+      // Para otros errores, también silenciar
+      return null;
+    });
+}
+
 function usePageTitle(url) {
   const [title, setTitle] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,19 +68,86 @@ function usePageTitle(url) {
       return;
     }
 
+    let cancelled = false;
+
+    // Para Google Drive, intentar extraer el ID y usar un nombre más descriptivo
+    if (url.includes('drive.google.com')) {
+      const driveId = extractGoogleDriveId(url);
+      if (driveId) {
+        // Usar un nombre descriptivo basado en el ID
+        setTitle(`Archivo de Google Drive (${driveId.substring(0, 8)}...)`);
+        setIsLoading(false);
+        
+        // Intentar obtener el título real en segundo plano (sin bloquear)
+        // pero no mostrar loading mientras tanto
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+        fetchWithTimeout(proxyUrl, {}, 6000)
+          .then(res => {
+            if (cancelled) return null;
+            if (!res || !res.ok) return null;
+            return res.json();
+          })
+          .then(data => {
+            if (!data) return;
+            if (cancelled) return;
+            if (data.contents) {
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(data.contents, 'text/html');
+              
+              let pageTitle = doc.querySelector('title')?.textContent?.trim() || null;
+              
+              if (!pageTitle) {
+                pageTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content')?.trim() || null;
+              }
+              
+              if (!pageTitle) {
+                const driveTitle = doc.querySelector('[data-title]')?.getAttribute('data-title') ||
+                                  doc.querySelector('.docs-title-input')?.value ||
+                                  doc.querySelector('title')?.textContent?.split(' - ')[0]?.trim();
+                if (driveTitle) {
+                  pageTitle = driveTitle;
+                }
+              }
+              
+              if (pageTitle) {
+                pageTitle = pageTitle
+                  .replace(/\s*-\s*Google\s+Docs\s*/i, '')
+                  .replace(/\s*-\s*Google\s+Drive\s*/i, '')
+                  .trim();
+                
+                if (pageTitle && pageTitle.length > 0) {
+                  setTitle(pageTitle);
+                }
+              }
+            }
+          })
+          .catch(() => {
+            // Silenciar errores para Google Drive ya que tenemos un fallback
+            // No loggear errores de timeout, CORS, QUIC, etc.
+          });
+      }
+      
+      return () => {
+        cancelled = true;
+      };
+    }
+
     setIsLoading(true);
     setTitle(null);
     
     // Intentar obtener el título usando un proxy CORS
     // Usamos allorigins.win como proxy público (gratuito, sin API key)
+    // Para YouTube y otros servicios, si falla simplemente no mostramos título
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
     
-    fetch(proxyUrl)
+    fetchWithTimeout(proxyUrl, {}, 6000)
       .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch');
+        if (cancelled) return null;
+        if (!res || !res.ok) return null;
         return res.json();
       })
       .then(data => {
+        if (!data || cancelled) return;
         if (data.contents) {
           // Parsear el HTML para obtener el título
           const parser = new DOMParser();
@@ -49,16 +159,6 @@ function usePageTitle(url) {
           // Si no hay título en <title>, buscar en meta tags
           if (!pageTitle) {
             pageTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content')?.trim() || null;
-          }
-          
-          // Para Google Drive, el título a veces está en un elemento específico
-          if (!pageTitle && url.includes('drive.google.com')) {
-            const driveTitle = doc.querySelector('[data-title]')?.getAttribute('data-title') ||
-                              doc.querySelector('.docs-title-input')?.value ||
-                              doc.querySelector('title')?.textContent?.split(' - ')[0]?.trim();
-            if (driveTitle) {
-              pageTitle = driveTitle;
-            }
           }
           
           // Limpiar el título (eliminar " - Google Docs" u otros sufijos comunes)
@@ -75,13 +175,23 @@ function usePageTitle(url) {
           }
         }
       })
-      .catch((error) => {
-        console.warn('No se pudo obtener el título de la URL:', url, error);
-        setTitle(null);
+      .catch(() => {
+        // Silenciar errores - ya tenemos un fallback para Google Drive
+        // y para otras URLs simplemente no mostramos título
+        // No loggear errores de timeout, CORS, QUIC, 408, etc.
+        if (!cancelled) {
+          setTitle(null);
+        }
       })
       .finally(() => {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [url]);
 
   return { title, isLoading };

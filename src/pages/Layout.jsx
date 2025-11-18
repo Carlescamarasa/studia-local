@@ -26,7 +26,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ds";
 import SkipLink from "@/components/ds/SkipLink";
-import { setCurrentUser } from "@/api/localDataClient";
+import { setCurrentUser, localDataClient } from "@/api/localDataClient";
 import { useLocalData } from "@/local-data/LocalDataProvider";
 import logoLTS from "@/assets/Logo_LTS.png";
 import RoleBootstrap from "@/components/auth/RoleBootstrap";
@@ -89,7 +89,7 @@ function LayoutContent() {
   const navigate = useNavigate();
   const { abierto, toggleSidebar, closeSidebar } = useSidebar();
   const { usuarios } = useLocalData();
-  const { signOut } = useAuth();
+  const { signOut, user, loading: authLoading } = useAuth();
 
   const [pointerStart, setPointerStart] = useState({ x: 0, y: 0, id: null });
   const [isMobile, setIsMobile] = useState(false);
@@ -239,6 +239,16 @@ function LayoutContent() {
     return () => (document.body.style.overflow = "");
   }, [abierto, isMobile]);
 
+  // Detectar cuando la sesión caduca y redirigir al login
+  useEffect(() => {
+    // Solo verificar si no está cargando y no hay usuario
+    if (!authLoading && !user && location.pathname !== '/login') {
+      // La sesión caducó o no hay usuario autenticado
+      // RequireAuth debería manejar esto, pero esto es un respaldo
+      navigate('/login', { replace: true });
+    }
+  }, [user, authLoading, location.pathname, navigate]);
+
   const onMenuItemClick = () => {
     if (isMobile) closeSidebar();
   };
@@ -291,14 +301,32 @@ function LayoutContent() {
     try {
       // Cerrar sesión en Supabase
       await signOut();
-      
-      // Redirigir a login
-      navigate("/login", { replace: true });
     } catch (error) {
-      console.error("Error al cerrar sesión:", error);
-      // Aun así redirigir a login
-      navigate("/login", { replace: true });
+      // Si es un error de sesión faltante o expirada, es válido continuar
+      // El objetivo es cerrar sesión y si no hay sesión, ya estamos en el estado deseado
+      if (error?.message?.includes('Auth session missing') || 
+          error?.message?.includes('JWT expired') ||
+          error?.status === 403) {
+        // No mostrar error si simplemente no hay sesión
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Layout] No hay sesión activa al cerrar sesión, continuando con limpieza...');
+        }
+      } else {
+        console.error("Error al cerrar sesión:", error);
+      }
     }
+    
+    // Limpiar datos locales siempre (incluso si falló el signOut de Supabase)
+    try {
+      if (localDataClient?.auth?.logout) {
+        await localDataClient.auth.logout();
+      }
+    } catch (localError) {
+      console.warn('[Layout] Error limpiando datos locales:', localError);
+    }
+    
+    // Redirigir a login siempre
+    navigate("/login", { replace: true });
   };
 
   const [perfilModalOpen, setPerfilModalOpen] = useState(false);

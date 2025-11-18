@@ -948,15 +948,55 @@ function HoyPageContent() {
 
           if (registroSesionId) {
             try {
-              await localDataClient.entities.RegistroSesion.update(registroSesionId, {
-                calificacion: calidad,
-                notas: notas,
-                mediaLinks: mediaLinks || [],
+              // Nota: mediaLinks no se guarda en registros_sesion, solo en feedbacks_semanal
+              // Asegurar que notas sea null si está vacía o undefined
+              const updateData = {
+                calificacion: calidad || null,
+                notas: (notas && notas.trim()) ? notas.trim() : null,
                 finalizada: true,
-              });
+              };
+              
+              if (process.env.NODE_ENV === 'development') {
+                console.log('[hoy.jsx] Actualizando registro de sesión:', {
+                  registroSesionId,
+                  updateData,
+                });
+              }
+              
+              // Verificar que el registro existe antes de actualizar
+              const registroExistente = await localDataClient.entities.RegistroSesion.get(registroSesionId);
+              
+              if (!registroExistente) {
+                console.warn('[hoy.jsx] El registro de sesión no existe, no se puede actualizar:', registroSesionId);
+                return;
+              }
+              
+              await localDataClient.entities.RegistroSesion.update(registroSesionId, updateData);
+              
+              if (process.env.NODE_ENV === 'development') {
+                console.log('[hoy.jsx] Registro de sesión actualizado correctamente');
+              }
             } catch (error) {
               console.error("Error guardando feedback:", error);
+              if (error?.message) {
+                console.error("Mensaje de error:", error.message);
+              }
+              if (error?.code) {
+                console.error("Código de error:", error.code);
+              }
+              if (error?.details) {
+                console.error("Detalles:", error.details);
+              }
+              if (error?.hint) {
+                console.error("Hint:", error.hint);
+              }
+              // Mostrar el error completo para debugging
+              if (process.env.NODE_ENV === 'development') {
+                console.error("Error completo:", JSON.stringify(error, null, 2));
+              }
             }
+          } else {
+            console.warn('[hoy.jsx] No hay registroSesionId, no se puede guardar el feedback');
           }
         }}
       />

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsToolti
 import {
   Activity, Clock, Calendar, Star, Smile, BarChart3, TrendingUp,
   MessageSquare, Eye, RefreshCw, Dumbbell, List, PieChart, CalendarDays, Calendar as CalendarIcon,
-  Sun, CalendarRange, Grid3x3, Layers, FileText
+  Sun, CalendarRange, Grid3x3, Layers, FileText, Timer
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -112,6 +112,7 @@ function EstadisticasPageContent() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
   
   const [rangoPreset, setRangoPreset] = useState('4-semanas');
   const [periodoInicio, setPeriodoInicio] = useState(() => {
@@ -478,12 +479,17 @@ function EstadisticasPageContent() {
     const racha = calcularRacha(registrosFiltradosUnicos, isEstu ? userIdActual : null);
     const calidadPromedio = calcularCalidadPromedio(registrosFiltradosUnicos);
     const semanasDistintas = calcularSemanasDistintas(registrosFiltradosUnicos);
+    
+    // Calcular promedio de tiempo por sesión
+    const numSesiones = registrosFiltradosUnicos.length;
+    const tiempoPromedioPorSesion = numSesiones > 0 ? tiempoTotal / numSesiones : 0;
 
     return {
       tiempoTotal,
       racha,
       calidadPromedio,
       semanasDistintas,
+      tiempoPromedioPorSesion,
     };
   }, [registrosFiltradosUnicos, isEstu, effectiveUser]);
 
@@ -777,7 +783,17 @@ function EstadisticasPageContent() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => window.location.reload()}
+                  onClick={async () => {
+                    // Invalidar todas las queries relacionadas con estadísticas
+                    await Promise.all([
+                      queryClient.invalidateQueries({ queryKey: ['users'] }),
+                      queryClient.invalidateQueries({ queryKey: ['asignacionesProf'] }),
+                      queryClient.invalidateQueries({ queryKey: ['registrosSesion'] }),
+                      queryClient.invalidateQueries({ queryKey: ['registrosBloques'] }),
+                      queryClient.invalidateQueries({ queryKey: ['asignaciones'] }),
+                      queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] }),
+                    ]);
+                  }}
                   className={`${componentStyles.buttons.outline} h-8 sm:h-9 w-full sm:w-auto text-xs sm:text-sm`}
                 >
                   <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
@@ -820,10 +836,11 @@ function EstadisticasPageContent() {
               </div>
 
               <div className="text-center min-w-[80px] sm:min-w-[100px]">
-                <Star className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.racha.actual}</p>
-                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Racha</p>
-                <p className="text-[10px] sm:text-xs text-[var(--color-text-muted)] mt-0.5">Máx: {kpis.racha.maxima}</p>
+                <Timer className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
+                <p className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">
+                  {formatDuracionHM(kpis.tiempoPromedioPorSesion)}
+                </p>
+                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Promedio/sesión</p>
               </div>
 
               <div className="text-center min-w-[80px] sm:min-w-[100px]">
@@ -831,13 +848,20 @@ function EstadisticasPageContent() {
                 <p className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">
                   {kpis.calidadPromedio}/4
                 </p>
-                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Calidad</p>
+                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Valoración</p>
+              </div>
+
+              <div className="text-center min-w-[80px] sm:min-w-[100px]">
+                <Star className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
+                <p className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.racha.actual}</p>
+                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Racha</p>
+                <p className="text-[10px] sm:text-xs text-[var(--color-text-muted)] mt-0.5">Máx: {kpis.racha.maxima}</p>
               </div>
 
               <div className="text-center min-w-[80px] sm:min-w-[100px]">
                 <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
                 <p className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.semanasDistintas}</p>
-                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Semanas</p>
+                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Semanas practicadas</p>
               </div>
             </div>
 

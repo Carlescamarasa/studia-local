@@ -52,15 +52,6 @@ function EstudiantesPageContent() {
   const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
   const isAdminOrProf = isAdmin || isProf;
 
-  const { data: asignaciones = [], isLoading: loadingAsignaciones } = useQuery({
-    queryKey: ['asignacionesProfesor', effectiveUser?.id],
-    queryFn: async () => {
-      const allAsignaciones = await localDataClient.entities.Asignacion.list();
-      return allAsignaciones;
-    },
-    enabled: !!effectiveUser,
-  });
-
   const { data: usuariosAdmin = [] } = useQuery({
     queryKey: ['usersAdmin'],
     queryFn: async () => {
@@ -68,6 +59,32 @@ function EstudiantesPageContent() {
       return users;
     },
     enabled: isAdmin,
+  });
+
+  const { data: usuarios = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => localDataClient.entities.User.list(),
+  });
+
+  // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
+  // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD
+  const usuarioActual = usuarios.find(u => {
+    if (effectiveUser?.email && u.email) {
+      return u.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim();
+    }
+    return u.id === effectiveUser?.id;
+  }) || effectiveUser;
+
+  // Usar el ID del usuario de la base de datos, no el de Supabase Auth
+  const userIdActual = usuarioActual?.id || effectiveUser?.id;
+
+  const { data: asignaciones = [], isLoading: loadingAsignaciones } = useQuery({
+    queryKey: ['asignacionesProfesor', userIdActual],
+    queryFn: async () => {
+      const allAsignaciones = await localDataClient.entities.Asignacion.list();
+      return allAsignaciones;
+    },
+    enabled: !!effectiveUser,
   });
 
   const { data: registros = [] } = useQuery({
@@ -82,8 +99,11 @@ function EstudiantesPageContent() {
 
   const guardarFeedbackMutation = useMutation({
     mutationFn: async (data) => {
+      // Buscar específicamente el feedback del profesor actual para este alumno/semana
+      // El índice único es (alumno_id, profesor_id, semana_inicio_iso)
       const feedbackExistente = feedbacksExistentes.find(
         f => f.alumnoId === selectedAlumno.id &&
+             f.profesorId === data.profesorId &&
              f.semanaInicioISO === data.semanaInicioISO
       );
 
@@ -103,14 +123,22 @@ function EstudiantesPageContent() {
   const estudiantes = useMemo(() => {
     if (!effectiveUser) return [];
 
+    // Todos los profesores y admins pueden ver y dar feedback a TODOS los estudiantes
+    // No es necesario que el alumno esté asignado a un profesor en particular
     if (isAdmin && usuariosAdmin.length > 0) {
       const estudiantesAdmin = usuariosAdmin.filter(u => u.rolPersonalizado === 'ESTU');
       return estudiantesAdmin;
     }
 
     if (isProf || isAdmin) {
+      // Si estamos usando usuarios de la BD, obtener todos los estudiantes
+      if (usuarios.length > 0) {
+        return usuarios.filter(u => u.rolPersonalizado === 'ESTU');
+      }
+
+      // Fallback: usar asignaciones si no hay usuarios cargados
       const misAsignaciones = asignaciones.filter(a =>
-        a.profesorId === effectiveUser.id &&
+        a.profesorId === userIdActual &&
         (a.estado === 'publicada' || a.estado === 'en_curso' || a.estado === 'borrador')
       );
 
@@ -141,7 +169,7 @@ function EstudiantesPageContent() {
     }
 
     return [];
-  }, [effectiveUser, usuariosAdmin, asignaciones, isProf, isAdmin]);
+  }, [effectiveUser, usuariosAdmin, usuarios, asignaciones, isProf, isAdmin, userIdActual]);
 
   const filteredEstudiantes = useMemo(() => {
     if (!searchTerm.trim()) return estudiantes;
@@ -182,7 +210,12 @@ function EstudiantesPageContent() {
     const hoy = formatLocalDate(new Date());
     const semanaActual = calcularLunesSemanaISO(hoy);
 
+    // Buscar primero el feedback del profesor actual, sino cualquier feedback de ese alumno/semana
     const feedbackExistente = feedbacksExistentes.find(
+      f => f.alumnoId === alumno.id &&
+           f.profesorId === userIdActual &&
+           f.semanaInicioISO === semanaActual
+    ) || feedbacksExistentes.find(
       f => f.alumnoId === alumno.id && f.semanaInicioISO === semanaActual
     );
 
@@ -209,7 +242,7 @@ function EstudiantesPageContent() {
 
     guardarFeedbackMutation.mutate({
       alumnoId: selectedAlumno.id,
-      profesorId: effectiveUser.id,
+      profesorId: userIdActual,
       asignacionId: asignacionAlumno?.id || null,
       semanaInicioISO: feedbackData.semanaInicioISO,
       notaProfesor: feedbackData.notaProfesor.trim(),
