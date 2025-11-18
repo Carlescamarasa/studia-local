@@ -9,6 +9,7 @@ import { componentStyles } from "@/design/componentStyles";
  * @param {React.ReactNode} actions - Slot para acciones (botones, etc.)
  * @param {React.ReactNode} filters - Slot para filtros (opcional)
  * @param {string} className - Clases adicionales
+ * @param {string} iconVariant - Variante del icono: "default" (con fondo y borde) o "plain" (solo color)
  */
 export default function PageHeader({ 
   icon: Icon, 
@@ -16,8 +17,15 @@ export default function PageHeader({
   subtitle, 
   actions, 
   filters,
-  className = "" 
+  className = "",
+  iconVariant = "default"
 }) {
+  const iconContainerClass = "w-9 h-9 rounded-[var(--radius-card)] bg-[var(--color-primary-soft)] border border-[var(--color-primary)] text-ui flex items-center justify-center shrink-0";
+  
+  const iconClass = iconVariant === "plain"
+    ? "w-6 h-6 text-[var(--color-primary)]"
+    : "w-6 h-6";
+
   return (
     <div className={`page-header ${className}`} data-testid="page-header">
       <div className="px-4 md:px-6 py-4">
@@ -25,9 +33,13 @@ export default function PageHeader({
           {/* Primera fila: Icono + Título */}
           <div className="flex items-center gap-3 mb-2">
             {Icon && (
-              <div className="w-9 h-9 rounded-[var(--radius-card)] bg-[var(--color-primary-soft)] border border-[var(--color-primary)] text-ui flex items-center justify-center shrink-0">
-                <Icon className="w-6 h-6" />
-              </div>
+              iconVariant === "plain" ? (
+                <Icon className={iconClass} />
+              ) : (
+                <div className={iconContainerClass}>
+                  <Icon className={iconClass} />
+                </div>
+              )
             )}
             {title && (
               <h1 className={`${componentStyles.typography.pageTitle}`}>{title}</h1>

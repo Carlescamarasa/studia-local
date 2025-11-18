@@ -188,21 +188,11 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 className={`${componentStyles.buttons.primary} w-full mt-6`}
-                disabled={isLoading}
+                loading={isLoading}
+                loadingText="Iniciando sesión..."
               >
-                {isLoading ? (
-                  <>
-                    <div 
-                      className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" 
-                    />
-                    Iniciando sesión...
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="w-5 h-5 mr-2" />
-                    Iniciar sesión
-                  </>
-                )}
+                <LogIn className="w-5 h-5 mr-2" />
+                Iniciar sesión
               </Button>
             </form>
 

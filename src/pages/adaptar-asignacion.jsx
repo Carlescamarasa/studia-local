@@ -19,6 +19,7 @@ import SessionEditor from "@/components/editor/SessionEditor";
 import ExerciseEditor from "@/components/editor/ExerciseEditor";
 import { Alert, AlertDescription } from "@/components/ds";
 import PageHeader from "@/components/ds/PageHeader";
+import { LoadingSpinner } from "@/components/ds";
 import { getNombreVisible } from "@/components/utils/helpers";
 import { componentStyles } from "@/design/componentStyles";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "@/components/study/sessionSequence";
@@ -385,12 +386,11 @@ function AdaptarAsignacionPageContent() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
-          <p className="text-ui/80">Cargando asignación...</p>
-        </div>
-      </div>
+      <LoadingSpinner 
+        size="xl" 
+        variant="fullPage" 
+        text="Cargando asignación..." 
+      />
     );
   }
 
@@ -421,12 +421,11 @@ function AdaptarAsignacionPageContent() {
 
   if (!planData) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
-          <p className="text-ui/80">Cargando plan...</p>
-        </div>
-      </div>
+      <LoadingSpinner 
+        size="xl" 
+        variant="fullPage" 
+        text="Cargando plan..." 
+      />
     );
   }
 
@@ -510,7 +509,9 @@ function AdaptarAsignacionPageContent() {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               className={`border-l-4 border-[var(--color-primary)] bg-[var(--color-primary-soft)]/50 rounded-r-lg p-3 transition-all ${
-                                snapshot.isDragging ? 'shadow-card border-[var(--color-primary)] opacity-90' : 'hover:bg-[var(--color-primary-soft)]'
+                                snapshot.isDragging 
+                                  ? `${componentStyles.dnd.dragging} ${componentStyles.elevation.level3}` 
+                                  : 'hover:bg-[var(--color-primary-soft)]'
                               }`}
                             >
                               {/* Semana Header */}

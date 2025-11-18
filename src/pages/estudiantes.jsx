@@ -21,6 +21,7 @@ import MediaLinksInput from "../components/common/MediaLinksInput";
 import MediaPreviewModal from "../components/common/MediaPreviewModal";
 import RequireRole from "@/components/auth/RequireRole";
 import PageHeader from "@/components/ds/PageHeader";
+import { LoadingSpinner } from "@/components/ds";
 import { componentStyles } from "@/design/componentStyles";
 
 function EstudiantesPageContent() {
@@ -285,8 +286,11 @@ function EstudiantesPageContent() {
           <CardContent>
             {loadingAsignaciones ? (
               <div className="text-center py-12">
-                <div className="w-12 h-12 border-4 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className={componentStyles.typography.bodyText}>Cargando estudiantes...</p>
+                <LoadingSpinner 
+                  size="xl" 
+                  variant="inline" 
+                  text="Cargando estudiantes..." 
+                />
               </div>
             ) : estadisticasAlumnos.length === 0 ? (
               <div className="text-center py-12">

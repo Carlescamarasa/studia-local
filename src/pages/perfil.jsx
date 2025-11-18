@@ -20,6 +20,7 @@ import { displayName, useEffectiveUser } from "../components/utils/helpers";
 import { useSearchParams } from "react-router-dom";
 import MediaLinksInput from "@/components/common/MediaLinksInput";
 import PageHeader from "@/components/ds/PageHeader";
+import { LoadingSpinner } from "@/components/ds";
 import { componentStyles } from "@/design/componentStyles";
 import { useDesign } from "@/components/design/DesignProvider";
 
@@ -174,12 +175,11 @@ export default function PerfilPage() {
 
   if (isLoading || !editedData) {
     return (
-      <div className="flex items-center justify-center min-h-[80vh]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
-          <p className="text-[var(--color-text-secondary)]">Cargando perfil...</p>
-        </div>
-      </div>
+      <LoadingSpinner 
+        size="xl" 
+        variant="centered" 
+        text="Cargando perfil..." 
+      />
     );
   }
 
@@ -419,20 +419,12 @@ export default function PerfilPage() {
               </div>
               <Button
                 onClick={handleSave}
-                disabled={updateUserMutation.isPending}
+                loading={updateUserMutation.isPending}
+                loadingText="Guardando..."
                 className={componentStyles.buttons.primary}
               >
-                {updateUserMutation.isPending ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Guardando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Guardar Cambios
-                  </>
-                )}
+                <Save className="w-4 h-4 mr-2" />
+                Guardar Cambios
               </Button>
             </div>
           </div>

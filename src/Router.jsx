@@ -23,6 +23,7 @@ const LocalPage = lazy(() => import("@/pages/local.jsx"));
 const Plantillas = lazy(() => import("@/pages/plantillas.jsx"));
 const Design = lazy(() => import("@/pages/design.jsx"));
 const Testseed = lazy(() => import("@/pages/testseed.jsx"));
+const TestLoading = lazy(() => import("@/pages/test-loading.jsx"));
 const Layout = lazy(() => import("@/pages/Layout.jsx"));
 const QAVisualPage = lazy(() => import("@/pages/qa-visual.jsx"));
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage.jsx"));
@@ -73,6 +74,7 @@ export default function AppRouter() {
           <Route path="plantillas" element={<Plantillas />} />
           <Route path="design" element={<Design />} />
           <Route path="testseed" element={<Testseed />} />
+          <Route path="test-loading" element={<TestLoading />} />
           <Route path="local" element={<LocalPage />} />
           <Route path="qa-visual" element={<QAVisualPage />} />
         </Route>

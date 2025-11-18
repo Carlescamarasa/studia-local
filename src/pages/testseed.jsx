@@ -858,31 +858,32 @@ export default function TestSeedPage() {
                 <Button
                   variant="primary"
                   onClick={() => generarSemillasRealistas(1)}
-                  disabled={isSeeding}
+                  loading={isSeeding}
                   className={`w-full ${componentStyles.buttons.primary}`}
                   aria-label="Generar 1 semana de semillas realistas"
                 >
-                  {isSeeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Zap className="w-4 h-4 mr-2" />}
+                  <Zap className="w-4 h-4 mr-2" />
                   1 Semana
                 </Button>
                 <Button
                   variant="primary"
                   onClick={() => generarSemillasRealistas(3)}
-                  disabled={isSeeding}
+                  loading={isSeeding}
                   className={`w-full ${componentStyles.buttons.primary}`}
                   aria-label="Generar 3 semanas de semillas realistas"
                 >
-                  {isSeeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sprout className="w-4 h-4 mr-2" />}
+                  <Sprout className="w-4 h-4 mr-2" />
                   3 Semanas
                 </Button>
                 <Button
                   variant="outline"
                   onClick={refrescarTodo}
-                  disabled={isRefreshing || isSeeding}
+                  loading={isRefreshing}
+                  disabled={isSeeding}
                   className={`w-full ${componentStyles.buttons.outline}`}
                   aria-label="Actualizar datos y ejecutar pruebas"
                 >
-                  {isRefreshing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                  <RefreshCw className="w-4 h-4 mr-2" />
                   Actualizar
                 </Button>
               </div>
@@ -903,11 +904,11 @@ export default function TestSeedPage() {
               <Button
                 variant="danger"
                 onClick={borrarSemillas}
-                disabled={isSeeding}
+                loading={isSeeding}
                 className={`w-full ${componentStyles.buttons.danger}`}
                 aria-label="Borrar todas las semillas de prueba"
               >
-                {isSeeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                <Trash2 className="w-4 h-4 mr-2" />
                 Borrar Semillas
               </Button>
             </CardContent>
@@ -930,12 +931,12 @@ export default function TestSeedPage() {
               <Button
                 variant="primary"
                 onClick={ejecutarPruebas}
-                disabled={isSeeding}
+                loading={isSeeding}
                 size="sm"
                 className={componentStyles.buttons.primary}
                 aria-label="Ejecutar pruebas"
               >
-                {isSeeding ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ejecutar'}
+                Ejecutar
               </Button>
             </div>
           </CardHeader>
@@ -985,11 +986,10 @@ export default function TestSeedPage() {
               <Button
                 variant="primary"
                 onClick={auditarEnlaces}
-                disabled={isSeeding}
+                loading={isSeeding}
                 className={componentStyles.buttons.primary}
                 aria-label="Auditar enlaces"
               >
-                {isSeeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                 Auditar
               </Button>
             </div>
@@ -1089,11 +1089,11 @@ export default function TestSeedPage() {
               <Button
                 variant="primary"
                 onClick={ejecutarAuditoria}
-                disabled={isAuditing}
+                loading={isAuditing}
                 className={componentStyles.buttons.primary}
                 aria-label="Ejecutar auditoría"
               >
-                {isAuditing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Search className="w-4 h-4 mr-2" />}
+                <Search className="w-4 h-4 mr-2" />
                 Ejecutar
               </Button>
               <Button

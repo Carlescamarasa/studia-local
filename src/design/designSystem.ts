@@ -53,11 +53,14 @@ export const designSystem = {
   },
 
   spacing: {
-    spacingXs: "var(--space-sm)",
-    spacingSm: "var(--space-base)",
-    spacingMd: "var(--space-md)",
-    spacingLg: "var(--space-lg)",
-    spacingXl: "var(--space-xl)",
+    spacingXs: "0.25rem",   // 4px
+    spacingSm: "0.5rem",    // 8px
+    spacingMd: "0.75rem",   // 12px
+    spacingBase: "1rem",   // 16px
+    spacingLg: "1.5rem",   // 24px
+    spacingXl: "2rem",     // 32px
+    spacing2xl: "3rem",    // 48px
+    spacing3xl: "4rem",    // 64px
   },
 
   radius: {
@@ -71,12 +74,27 @@ export const designSystem = {
     shadowSm: "0 1px 2px rgba(15, 23, 42, 0.06)",
     shadowMd: "var(--shadow-card)",
     shadowLg: "0 20px 40px rgba(15, 23, 42, 0.12)",
+    // Sistema de elevación
+    elevation1: "0 1px 2px rgba(0, 0, 0, 0.04)",      // Cards base
+    elevation2: "0 2px 8px rgba(0, 0, 0, 0.08)",      // Cards hover
+    elevation3: "0 4px 16px rgba(0, 0, 0, 0.12)",     // Modales
+    elevation4: "0 8px 24px rgba(0, 0, 0, 0.16)",     // Dropdowns
+    elevation5: "0 12px 32px rgba(0, 0, 0, 0.20)",    // Popovers
   },
 
   motion: {
     transitionBase: "150ms ease-out",
     transitionFast: "100ms ease-out",
     transitionSlow: "250ms ease-out",
+    // Animaciones
+    fadeIn: "fade-in 200ms ease-out",
+    slideUp: "slide-up 300ms ease-out",
+    scaleIn: "scale-in 200ms ease-out",
+    // Transiciones específicas
+    transform: "transform 150ms ease-out",
+    opacity: "opacity 150ms ease-out",
+    colors: "colors 150ms ease-out",
+    shadow: "box-shadow 200ms ease-out",
   },
 
   layout: {

@@ -159,30 +159,33 @@ export default function LocalPage() {
                 <div className="flex gap-2 flex-wrap">
                   <Button
                     onClick={handleRepairData}
-                    disabled={isRepairing}
+                    loading={isRepairing}
+                    loadingText="Reparando..."
                     variant="outline"
                     className={componentStyles.buttons.outline}
                   >
-                    <RefreshCw className={`w-4 h-4 mr-2 ${isRepairing ? 'animate-spin' : ''}`} />
-                    {isRepairing ? 'Reparando...' : 'Reparar Datos'}
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Reparar Datos
                   </Button>
                   <Button
                     onClick={handleRegenerateData}
-                    disabled={isRegenerating}
+                    loading={isRegenerating}
+                    loadingText="Regenerando..."
                     variant="outline"
                     className={componentStyles.buttons.outline}
                   >
                     <Database className="w-4 h-4 mr-2" />
-                    {isRegenerating ? 'Regenerando...' : 'Regenerar Datos Locales'}
+                    Regenerar Datos Locales
                   </Button>
                   <Button
                     onClick={handleValidateData}
-                    disabled={isValidating}
+                    loading={isValidating}
+                    loadingText="Validando..."
                     variant="outline"
                     className={componentStyles.buttons.outline}
                   >
-                    <RefreshCw className={`w-4 h-4 mr-2 ${isValidating ? 'animate-spin' : ''}`} />
-                    {isValidating ? 'Validando...' : 'Validar Datos'}
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Validar Datos
                   </Button>
                 </div>
                 <p className={componentStyles.typography.smallMetaText}>

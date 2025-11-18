@@ -25,6 +25,7 @@ import { getNombreVisible, formatLocalDate, parseLocalDate, startOfMonday, useEf
 import { calcularTiempoSesion } from "../components/study/sessionSequence";
 import SessionContentView from "../components/study/SessionContentView";
 import PageHeader from "@/components/ds/PageHeader";
+import { LoadingSpinner } from "@/components/ds";
 import { componentStyles } from "@/design/componentStyles";
 
 export default function AsignacionDetallePage() {
@@ -212,12 +213,11 @@ export default function AsignacionDetallePage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
-          <p className="text-[var(--color-text-secondary)]">Cargando asignación...</p>
-        </div>
-      </div>
+      <LoadingSpinner 
+        size="xl" 
+        variant="fullPage" 
+        text="Cargando asignación..." 
+      />
     );
   }
 

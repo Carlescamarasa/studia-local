@@ -24,6 +24,8 @@ import {
   Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LoadingSpinner } from "@/components/ds";
+import SkipLink from "@/components/ds/SkipLink";
 import { setCurrentUser } from "@/api/localDataClient";
 import { useLocalData } from "@/local-data/LocalDataProvider";
 import logoLTS from "@/assets/Logo_LTS.png";
@@ -242,12 +244,11 @@ function LayoutContent() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
-          <p className="text-[var(--color-text-secondary)]">Cargando {appName}...</p>
-        </div>
-      </div>
+      <LoadingSpinner 
+        size="xl" 
+        variant="fullPage" 
+        text={`Cargando ${appName}...`}
+      />
     );
   }
 
@@ -307,9 +308,11 @@ function LayoutContent() {
   /* ------------------------------- Render -------------------------------- */
   return (
     <RoleBootstrap>
+      <SkipLink href="#main-content" />
       <div
         className="min-h-screen w-full bg-background"
         data-sidebar-abierto={abierto}
+        id="main-content"
       >
         {/* Overlay mobile */}
         <div

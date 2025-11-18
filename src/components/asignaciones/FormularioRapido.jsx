@@ -469,27 +469,30 @@ export default function FormularioRapido({ onClose }) {
               {formData.adaptarPlanAhora ? (
                 <Button
                   onClick={handleCrear}
-                  disabled={crearAsignacionesMutation.isPending}
+                  loading={crearAsignacionesMutation.isPending}
+                  loadingText="Creando..."
                   className={`flex-1 ${componentStyles.buttons.primary}`}
                 >
-                  {crearAsignacionesMutation.isPending ? 'Creando...' : 'Crear y adaptar'}
+                  Crear y adaptar
                 </Button>
               ) : formData.publicarAhora ? (
                 <Button
                   onClick={handleCrear}
-                  disabled={crearAsignacionesMutation.isPending}
+                  loading={crearAsignacionesMutation.isPending}
+                  loadingText="Creando..."
                   className={`flex-1 ${componentStyles.buttons.primary}`}
                 >
-                  {crearAsignacionesMutation.isPending ? 'Creando...' : 'Crear y publicar'}
+                  Crear y publicar
                 </Button>
               ) : (
                 <Button
                   onClick={handleCrear}
-                  disabled={crearAsignacionesMutation.isPending}
+                  loading={crearAsignacionesMutation.isPending}
+                  loadingText="Guardando..."
                   className={`flex-1 ${componentStyles.buttons.primary}`}
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  {crearAsignacionesMutation.isPending ? 'Guardando...' : 'Guardar borrador'}
+                  Guardar borrador
                 </Button>
               )}
             </div>

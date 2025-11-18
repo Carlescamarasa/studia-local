@@ -258,6 +258,7 @@ function SemanaPageContent() {
         icon={Calendar}
         title="Mi Semana"
         subtitle="Resumen y planificación semanal"
+        iconVariant="plain"
         filters={
           <WeekNavigator 
             mondayISO={semanaActualISO}

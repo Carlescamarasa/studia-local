@@ -100,7 +100,7 @@ export default function UnifiedTable({
         <>
           <div className="w-full overflow-x-auto">
             <Table>
-              <TableHeader>
+              <TableHeader sticky>
                 <TableRow>
                   {selectable && (
                     <TableHead className="w-12">
@@ -114,7 +114,7 @@ export default function UnifiedTable({
                   {columns.map((col) => (
                     <TableHead
                       key={col.key}
-                      className={col.sortable ? 'cursor-pointer hover:bg-muted transition-colors' : ''}
+                      sortable={col.sortable}
                       onClick={() => col.sortable && handleSort(col.key)}
                       aria-sort={sortColumn === col.key ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
                     >
@@ -129,7 +129,7 @@ export default function UnifiedTable({
                   {hasActions && <TableHead className="w-10"></TableHead>}
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <TableBody zebra>
                 {sortedData.map((item) => {
                   const actions = getRowActions ? getRowActions(item) : (rowActions ? rowActions(item) : []);
                   const isSelected = selectedItems.has(item[keyField]);
@@ -137,7 +137,9 @@ export default function UnifiedTable({
                   return (
                     <TableRow
                       key={item[keyField]}
-                      className={`group transition-colors ${onRowClick ? 'cursor-pointer' : ''} ${isSelected ? 'bg-[hsl(var(--brand-50))] border-l-4 border-l-[hsl(var(--brand-500))]' : 'hover:bg-muted'}`}
+                      clickable={!!onRowClick}
+                      selected={isSelected}
+                      className="group"
                       onClick={() => onRowClick && onRowClick(item)}
                     >
                       {selectable && (

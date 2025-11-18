@@ -914,20 +914,13 @@ export default function ImportExportPage() {
                       </Button>
                       <Button 
                         onClick={handleImport} 
-                        disabled={!importFile || importMutation.isPending}
+                        loading={importMutation.isPending}
+                        loadingText="Importando..."
+                        disabled={!importFile}
                         className={`flex-1 ${componentStyles.buttons.primary}`}
                       >
-                        {importMutation.isPending ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Importando...
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="w-4 h-4 mr-2" />
-                            Importar
-                          </>
-                        )}
+                        <Upload className="w-4 h-4 mr-2" />
+                        Importar
                       </Button>
                     </div>
                   </>
