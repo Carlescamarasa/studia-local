@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ds/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ds";
 import { Badge } from "@/components/ds";
@@ -99,6 +100,21 @@ export default function TestSeedPage() {
         addLog('⚠️ Advertencia: No se detectó modo remoto. Asegúrate de que VITE_DATA_SOURCE=remote', 'warning');
       } else {
         addLog('✓ Modo remoto detectado (Supabase)', 'info');
+        
+        // Verificar autenticación de Supabase
+        try {
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError) {
+            addLog(`⚠️ Error al verificar sesión: ${sessionError.message}`, 'warning');
+          } else if (!session) {
+            addLog('⚠️ No hay sesión de Supabase activa. Las políticas RLS pueden bloquear las inserciones.', 'warning');
+          } else {
+            addLog(`✓ Sesión de Supabase activa para usuario: ${session.user.email}`, 'info');
+            addLog(`✓ User ID: ${session.user.id}`, 'info');
+          }
+        } catch (authError) {
+          addLog(`⚠️ Error al verificar autenticación: ${authError.message}`, 'warning');
+        }
       }
 
       const startTime = Date.now();
@@ -117,6 +133,27 @@ export default function TestSeedPage() {
       let profesor = profesores[0] || effectiveUser;
       if (!profesor || (profesor.rolPersonalizado !== 'PROF' && profesor.rolPersonalizado !== 'ADMIN')) {
         addLog('⚠️ No hay profesor disponible, usando administrador', 'warning');
+      }
+      
+      // En modo remoto, verificar que el profesor_id coincida con auth.uid() para RLS
+      if (dataSource === 'remote') {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session && session.user.id !== profesor.id) {
+            addLog(`⚠️ ADVERTENCIA: profesor_id (${profesor.id}) no coincide con auth.uid() (${session.user.id}). Las políticas RLS pueden bloquear las inserciones.`, 'warning');
+            addLog(`💡 Solución: Usa el ID del usuario autenticado como profesor_id`, 'info');
+            // Intentar encontrar el usuario autenticado en la lista
+            const usuarioAutenticado = usuarios.find(u => u.id === session.user.id);
+            if (usuarioAutenticado && (usuarioAutenticado.rolPersonalizado === 'PROF' || usuarioAutenticado.rolPersonalizado === 'ADMIN')) {
+              profesor = usuarioAutenticado;
+              addLog(`✓ Usando usuario autenticado como profesor: ${profesor.email}`, 'info');
+            }
+          } else if (session && session.user.id === profesor.id) {
+            addLog(`✓ profesor_id coincide con auth.uid() - RLS debería permitir las inserciones`, 'info');
+          }
+        } catch (authError) {
+          addLog(`⚠️ Error al verificar coincidencia de IDs: ${authError.message}`, 'warning');
+        }
       }
 
       let piezas = await localDataClient.entities.Pieza.list();
@@ -302,9 +339,32 @@ export default function TestSeedPage() {
       let totalBloques = 0;
       let totalFeedbacks = 0;
 
+      // En modo remoto, obtener el usuario autenticado una vez para cumplir con RLS
+      let profesorParaRLS = profesor;
+      if (dataSource === 'remote') {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const usuarioAutenticado = usuarios.find(u => u.id === session.user.id);
+            if (usuarioAutenticado && (usuarioAutenticado.rolPersonalizado === 'PROF' || usuarioAutenticado.rolPersonalizado === 'ADMIN')) {
+              profesorParaRLS = usuarioAutenticado;
+              addLog(`✓ Usando usuario autenticado para todas las asignaciones: ${profesorParaRLS.email} (${profesorParaRLS.id})`, 'info');
+            } else {
+              addLog(`⚠️ El usuario autenticado (${session.user.id}) no tiene rol PROF o ADMIN. Las políticas RLS pueden bloquear las inserciones.`, 'warning');
+            }
+          }
+        } catch (e) {
+          addLog(`⚠️ Error al obtener sesión para RLS: ${e.message}`, 'warning');
+        }
+      }
+
       // Para cada estudiante
       for (const estudiante of estudiantes) {
-        const profesorAsignado = usuarios.find(u => u.id === estudiante.profesorAsignadoId) || profesor;
+        // En modo remoto, siempre usar el profesor autenticado para cumplir con RLS
+        // En modo local, usar el profesor asignado al estudiante si existe
+        const profesorAsignado = dataSource === 'remote' 
+          ? profesorParaRLS 
+          : (usuarios.find(u => u.id === estudiante.profesorAsignadoId) || profesor);
 
         // Para cada semana (-2, -1, 0)
         for (let offsetSemana = -(numSemanas - 1); offsetSemana <= 0; offsetSemana++) {
@@ -322,6 +382,27 @@ export default function TestSeedPage() {
           if (!asignacion) {
             addLog(`📝 Creando asignación para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}...`, 'info');
             try {
+              const planCopy = JSON.parse(JSON.stringify(planBase));
+              const piezaSnapshotData = {
+                nombre: piezaBase.nombre,
+                descripcion: piezaBase.descripcion,
+                nivel: piezaBase.nivel,
+                elementos: piezaBase.elementos,
+                tiempoObjetivoSeg: piezaBase.tiempoObjetivoSeg,
+              };
+              
+              console.log('Datos antes de crear asignación:', {
+                alumnoId: estudiante.id,
+                piezaId: piezaBase.id,
+                semanaInicioISO,
+                estado: 'publicada',
+                hasPlan: !!planCopy,
+                planType: typeof planCopy,
+                hasPiezaSnapshot: !!piezaSnapshotData,
+                piezaSnapshotType: typeof piezaSnapshotData,
+                profesorId: profesorAsignado.id
+              });
+              
               asignacion = await localDataClient.entities.Asignacion.create({
               alumnoId: estudiante.id,
               piezaId: piezaBase.id,
@@ -329,21 +410,25 @@ export default function TestSeedPage() {
               estado: 'publicada',
               foco: 'GEN',
               notas: `Asignación automática - semana del ${parseLocalDate(semanaInicioISO).toLocaleDateString('es-ES')}`,
-              plan: JSON.parse(JSON.stringify(planBase)),
-              piezaSnapshot: {
-                nombre: piezaBase.nombre,
-                descripcion: piezaBase.descripcion,
-                nivel: piezaBase.nivel,
-                elementos: piezaBase.elementos,
-                tiempoObjetivoSeg: piezaBase.tiempoObjetivoSeg,
-              },
+              plan: planCopy,
+              piezaSnapshot: piezaSnapshotData,
               profesorId: profesorAsignado.id
               });
+              
+              console.log('Asignación creada exitosamente:', {
+                id: asignacion.id,
+                estado: asignacion.estado,
+                hasPlan: !!asignacion.plan,
+                hasPiezaSnapshot: !!asignacion.piezaSnapshot
+              });
+              
               addLog(`✅ Asignación creada para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}`, 'info');
             } catch (error) {
               const errorMsg = error?.message || error?.toString() || 'Error desconocido';
               const errorDetails = error?.details || error?.hint || '';
-              addLog(`❌ Error al crear asignación para ${estudiante.nombreCompleto || estudiante.email}: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+              const errorCode = error?.code || '';
+              addLog(`❌ Error al crear asignación para ${estudiante.nombreCompleto || estudiante.email}: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}${errorCode ? ` (Código: ${errorCode})` : ''}`, 'error');
+              console.error('Error completo al crear asignación:', error);
               throw error;
             }
           }
@@ -1363,38 +1448,30 @@ export default function TestSeedPage() {
       />
 
       <div className={`${componentStyles.layout.page} space-y-6`}>
-        <div className={componentStyles.layout.grid4}>
-          <Card className="app-card hover:shadow-md transition-shadow">
-            <CardContent className="pt-4 text-center">
-              <Music className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />
-              <p className="text-2xl font-bold text-[var(--color-text-primary)]">{countPiezas}</p>
-              <p className="text-xs text-[var(--color-text-secondary)]">Piezas</p>
-            </CardContent>
-          </Card>
+        <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 md:gap-6">
+          <div className="text-center min-w-[80px] sm:min-w-[100px]">
+            <Music className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-primary)]" />
+            <p className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">{countPiezas}</p>
+            <p className="text-[10px] sm:text-xs text-[var(--color-text-secondary)]">Piezas</p>
+          </div>
 
-          <Card className="app-card hover:shadow-md transition-shadow">
-            <CardContent className="pt-4 text-center">
-              <Calendar className="w-6 h-6 mx-auto mb-2 text-[var(--color-info)]" />
-              <p className="text-2xl font-bold text-[var(--color-text-primary)]">{countPlanes}</p>
-              <p className="text-xs text-[var(--color-text-secondary)]">Planes</p>
-            </CardContent>
-          </Card>
+          <div className="text-center min-w-[80px] sm:min-w-[100px]">
+            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-info)]" />
+            <p className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">{countPlanes}</p>
+            <p className="text-[10px] sm:text-xs text-[var(--color-text-secondary)]">Planes</p>
+          </div>
 
-          <Card className="app-card hover:shadow-md transition-shadow">
-            <CardContent className="pt-4 text-center">
-              <Layers className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />
-              <p className="text-2xl font-bold text-[var(--color-text-primary)]">{countBloques}</p>
-              <p className="text-xs text-[var(--color-text-secondary)]">Ejercicios</p>
-            </CardContent>
-          </Card>
+          <div className="text-center min-w-[80px] sm:min-w-[100px]">
+            <Layers className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-primary)]" />
+            <p className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">{countBloques}</p>
+            <p className="text-[10px] sm:text-xs text-[var(--color-text-secondary)]">Ejercicios</p>
+          </div>
 
-          <Card className="app-card hover:shadow-md transition-shadow">
-            <CardContent className="pt-4 text-center">
-              <Target className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />
-              <p className="text-2xl font-bold text-[var(--color-text-primary)]">{countAsignaciones}</p>
-              <p className="text-xs text-[var(--color-text-secondary)]">Asignaciones</p>
-            </CardContent>
-          </Card>
+          <div className="text-center min-w-[80px] sm:min-w-[100px]">
+            <Target className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-primary)]" />
+            <p className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">{countAsignaciones}</p>
+            <p className="text-[10px] sm:text-xs text-[var(--color-text-secondary)]">Asignaciones</p>
+          </div>
         </div>
 
         <Tabs

@@ -880,7 +880,7 @@ export default function ImportExportPage() {
                       Importar {importType === 'piezas' ? 'Piezas' : importType === 'bloques' ? 'Ejercicios' : 'Planes'}
                     </CardTitle>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => setShowImportModal(false)} className="text-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] h-9 w-9 rounded-xl" aria-label="Cerrar modal">
+                  <Button variant="ghost" size="icon" onClick={() => setShowImportModal(false)} className="text-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-xl touch-manipulation" aria-label="Cerrar modal">
                     <X className="w-5 h-5 " />
                   </Button>
                 </div>

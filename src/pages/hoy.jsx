@@ -1086,16 +1086,16 @@ function HoyPageContent() {
                   )}
                 </h1>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-xl focus-brand" onClick={() => setMostrarItinerario(true)} aria-label="Mostrar índice de ejercicios">
-                    <List className="w-4 h-4" />
+                  <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand touch-manipulation" onClick={() => setMostrarItinerario(true)} aria-label="Mostrar índice de ejercicios">
+                    <List className="w-5 h-5 sm:w-4 sm:h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-xl focus-brand" onClick={() => setMostrarAyuda(true)} aria-label="Mostrar ayuda de atajos">
-                    <HelpCircle className="w-4 h-4" />
+                  <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand touch-manipulation" onClick={() => setMostrarAyuda(true)} aria-label="Mostrar ayuda de atajos">
+                    <HelpCircle className="w-5 h-5 sm:w-4 sm:h-4" />
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-9 w-9 p-0 rounded-xl focus-brand hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)] transition-colors" 
+                    className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)] transition-colors touch-manipulation" 
                     onClick={handleCancelar}
                     aria-label="Salir del modo estudio"
                     title="Salir (Esc)"

@@ -797,43 +797,35 @@ function EstadisticasPageContent() {
         {tabActiva === 'resumen' && (
           <div className="space-y-6">
             {/* KPIs */}
-            <div className={componentStyles.layout.grid4}>
-              <Card className={componentStyles.components.cardKpi}>
-                <CardContent className="p-3 text-center">
-                  <Clock className="w-5 h-5 mx-auto mb-2 text-[var(--color-text-secondary)]" />
-                  <p className="text-3xl font-bold text-[var(--color-text-primary)] mb-1">
-                    {formatDuracionHM(kpis.tiempoTotal)}
-                  </p>
-                  <p className="text-sm text-[var(--color-text-secondary)]">Tiempo total</p>
-                </CardContent>
-              </Card>
+            <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 md:gap-6">
+              <div className="text-center min-w-[80px] sm:min-w-[100px]">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
+                <p className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">
+                  {formatDuracionHM(kpis.tiempoTotal)}
+                </p>
+                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Tiempo total</p>
+              </div>
 
-              <Card className={componentStyles.components.cardKpi}>
-                <CardContent className="p-3 text-center">
-                  <Star className="w-5 h-5 mx-auto mb-2 text-[var(--color-text-secondary)]" />
-                  <p className="text-3xl font-bold text-[var(--color-text-primary)] mb-1">{kpis.racha.actual}</p>
-                  <p className="text-sm text-[var(--color-text-secondary)]">Racha</p>
-                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">Máx: {kpis.racha.maxima}</p>
-                </CardContent>
-              </Card>
+              <div className="text-center min-w-[80px] sm:min-w-[100px]">
+                <Star className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
+                <p className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.racha.actual}</p>
+                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Racha</p>
+                <p className="text-[10px] sm:text-xs text-[var(--color-text-muted)] mt-0.5">Máx: {kpis.racha.maxima}</p>
+              </div>
 
-              <Card className={componentStyles.components.cardKpi}>
-                <CardContent className="p-3 text-center">
-                  <Smile className="w-5 h-5 mx-auto mb-2 text-[var(--color-text-secondary)]" />
-                  <p className="text-3xl font-bold text-[var(--color-text-primary)] mb-1">
-                    {kpis.calidadPromedio}/4
-                  </p>
-                  <p className="text-sm text-[var(--color-text-secondary)]">Calidad</p>
-                </CardContent>
-              </Card>
+              <div className="text-center min-w-[80px] sm:min-w-[100px]">
+                <Smile className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
+                <p className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">
+                  {kpis.calidadPromedio}/4
+                </p>
+                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Calidad</p>
+              </div>
 
-              <Card className={componentStyles.components.cardKpi}>
-                <CardContent className="p-3 text-center">
-                  <Calendar className="w-5 h-5 mx-auto mb-2 text-[var(--color-text-secondary)]" />
-                  <p className="text-3xl font-bold text-[var(--color-text-primary)] mb-1">{kpis.semanasDistintas}</p>
-                  <p className="text-sm text-[var(--color-text-secondary)]">Semanas</p>
-                </CardContent>
-              </Card>
+              <div className="text-center min-w-[80px] sm:min-w-[100px]">
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
+                <p className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.semanasDistintas}</p>
+                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Semanas</p>
+              </div>
             </div>
 
             {/* Tabs de granularidad y gráfico */}
@@ -853,21 +845,21 @@ function EstadisticasPageContent() {
               </div>
 
               <Card className={componentStyles.components.cardBase}>
-                <CardHeader>
-                  <CardTitle className="text-base md:text-lg flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-[var(--color-primary)]" />
+                <CardHeader className="p-1.5 sm:p-2 md:p-3">
+                  <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primary)]" />
                     Tiempo de Estudio
                   </CardTitle>
                 </CardHeader>
-              <CardContent>
+              <CardContent className="p-1.5 sm:p-2 md:p-3">
                 {datosLinea.length === 0 ? (
-                  <div className="text-center py-12">
+                  <div className="text-center py-8 sm:py-12">
                     <TrendingUp className={componentStyles.components.emptyStateIcon} />
                     <p className={componentStyles.components.emptyStateText}>No hay datos en el periodo seleccionado</p>
                   </div>
                 ) : (
                   <div className="w-full overflow-x-auto -mx-2 px-2">
-                    <ResponsiveContainer width="100%" height={isMobile ? 250 : 300} minHeight={250}>
+                    <ResponsiveContainer width="100%" height={isMobile ? 180 : 250} minHeight={180}>
                       <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                         <XAxis 
@@ -942,21 +934,21 @@ function EstadisticasPageContent() {
             </Card>
 
             <Card className={componentStyles.components.cardBase}>
-              <CardHeader>
-                <CardTitle className="text-base md:text-lg flex items-center gap-2">
-                  <Smile className="w-5 h-5 text-[var(--color-info)]" />
+              <CardHeader className="p-1.5 sm:p-2 md:p-3">
+                <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
+                  <Smile className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-info)]" />
                   Autoevaluación (1-4)
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-1.5 sm:p-2 md:p-3">
                 {datosLinea.filter(d => d.satisfaccion !== null).length === 0 ? (
-                  <div className="text-center py-12">
+                  <div className="text-center py-8 sm:py-12">
                     <Smile className={componentStyles.components.emptyStateIcon} />
                     <p className={componentStyles.components.emptyStateText}>No hay datos de autoevaluación</p>
                   </div>
                 ) : (
                   <div className="w-full overflow-x-auto -mx-2 px-2">
-                    <ResponsiveContainer width="100%" height={isMobile ? 250 : 300} minHeight={250}>
+                    <ResponsiveContainer width="100%" height={isMobile ? 180 : 250} minHeight={180}>
                       <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                         <XAxis 
@@ -1026,21 +1018,21 @@ function EstadisticasPageContent() {
             </Card>
 
             <Card className={componentStyles.components.cardBase}>
-              <CardHeader>
-                <CardTitle className="text-base md:text-lg flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-[var(--color-primary)]" />
+              <CardHeader className="p-1.5 sm:p-2 md:p-3">
+                <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
+                  <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primary)]" />
                   Ejercicios: Completados vs Omitidos
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-1.5 sm:p-2 md:p-3">
                 {datosLinea.length === 0 ? (
-                  <div className="text-center py-12">
+                  <div className="text-center py-8 sm:py-12">
                     <Layers className={componentStyles.components.emptyStateIcon} />
                     <p className={componentStyles.components.emptyStateText}>No hay datos</p>
                   </div>
                 ) : (
                   <div className="w-full overflow-x-auto -mx-2 px-2">
-                    <ResponsiveContainer width="100%" height={isMobile ? 250 : 300} minHeight={250}>
+                    <ResponsiveContainer width="100%" height={isMobile ? 180 : 250} minHeight={180}>
                       <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                         <XAxis 
@@ -1359,7 +1351,7 @@ function EstadisticasPageContent() {
                         variant={calificacionFilter == val ? "primary" : "outline"}
                         size="sm"
                         onClick={() => setCalificacionFilter(calificacionFilter == val ? 'all' : String(val))}
-                        className="h-8 w-8 p-0 rounded-xl focus-brand"
+                        className="h-11 w-11 sm:h-8 sm:w-8 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand touch-manipulation"
                         aria-label={`Filtrar por calificación ${val}`}
                       >
                         {val}

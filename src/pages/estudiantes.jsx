@@ -8,6 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
   Users, Search, MessageSquare, TrendingUp,
   Clock, Star, X, Save, AlertCircle, Edit, UserCog,
   Eye, Activity, Target, Calendar
@@ -400,129 +407,110 @@ function EstudiantesPageContent() {
         </Card>
       </div>
 
-      {showFeedbackDrawer && selectedAlumno && (
-        <>
-          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowFeedbackDrawer(false)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-end pointer-events-none overflow-hidden">
-            <div
-              className="bg-card w-full max-w-2xl h-full shadow-card flex flex-col animate-in slide-in-from-right pointer-events-auto overflow-hidden rounded-l-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className={`border-b border-[var(--color-border-default)] px-6 py-4 flex items-center justify-between bg-[var(--color-info)] sticky top-0 z-10`}>
-                <div className="flex items-center gap-3 text-[var(--color-text-inverse)]">
-                  <MessageSquare className="w-6 h-6" />
-                  <div>
-                    <h2 className={componentStyles.typography.pageTitle}>Feedback Semanal</h2>
-                    <p className={`${componentStyles.typography.bodyText} text-[var(--color-text-inverse)]/90`}>{displayName(selectedAlumno)}</p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowFeedbackDrawer(false)}
-                  className={`text-[var(--color-text-inverse)] hover:bg-[var(--color-text-inverse)]/20 h-9 w-9 rounded-xl`}
-                  aria-label="Cerrar drawer"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                <div>
-                  <Label htmlFor="semana">Semana (Lunes inicio)</Label>
-                  <Input
-                    id="semana"
-                    type="date"
-                    value={feedbackData.semanaInicioISO}
-                    onChange={(e) => {
-                      const nuevaSemana = calcularLunesSemanaISO(e.target.value);
-                      setFeedbackData({ ...feedbackData, semanaInicioISO: nuevaSemana });
-                    }}
-                    className={componentStyles.controls.inputDefault}
-                  />
-                  <p className={`${componentStyles.typography.smallMetaText} mt-1`}>
-                    Semana ISO: {parseLocalDate(feedbackData.semanaInicioISO).toLocaleDateString('es-ES', {
-                      weekday: 'long', day: 'numeric', month: 'long'
-                    })}
-                  </p>
-                </div>
-
-                <Card className={`${componentStyles.items.itemCardHighlight} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
-                  <CardContent className="pt-4">
-                    <h3 className={`${componentStyles.typography.sectionTitle} mb-3 text-[var(--color-info)]`}>Resumen de la Semana</h3>
-                    {(() => {
-                      const stats = calcularEstadisticasSemana(selectedAlumno.id, feedbackData.semanaInicioISO);
-                      return (
-                        <div className={componentStyles.layout.grid3}>
-                          <div className="text-center">
-                            <Clock className="w-5 h-5 mx-auto mb-1 text-[var(--color-info)]" />
-                            <p className={`${componentStyles.typography.cardTitle} text-[var(--color-info)]`}>{stats.minutosReales}</p>
-                            <p className={`${componentStyles.typography.smallMetaText} text-[var(--color-info)]`}>Minutos</p>
-                          </div>
-                          <div className="text-center">
-                            <TrendingUp className="w-5 h-5 mx-auto mb-1 text-[var(--color-info)]" />
-                            <p className={`${componentStyles.typography.cardTitle} text-[var(--color-info)]`}>{stats.sesionesRealizadas}</p>
-                            <p className={`${componentStyles.typography.smallMetaText} text-[var(--color-info)]`}>Sesiones</p>
-                          </div>
-                          <div className="text-center">
-                            <Star className="w-5 h-5 mx-auto mb-1 text-[var(--color-info)]" />
-                            <p className={`${componentStyles.typography.cardTitle} text-[var(--color-info)]`}>{stats.calidadMedia}/4</p>
-                            <p className={`${componentStyles.typography.smallMetaText} text-[var(--color-info)]`}>Calidad</p>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
-
-                <div>
-                  <Label htmlFor="notas">Observaciones del profesor *</Label>
-                  <Textarea
-                    id="notas"
-                    value={feedbackData.notaProfesor}
-                    onChange={(e) => setFeedbackData({ ...feedbackData, notaProfesor: e.target.value })}
-                    placeholder="Comentarios sobre el progreso, áreas de mejora, logros destacados..."
-                    rows={8}
-                    className={`${componentStyles.controls.inputDefault} resize-none`}
-                  />
-                  <p className={`${componentStyles.typography.smallMetaText} mt-1`}>
-                    Escribe observaciones sobre el progreso del estudiante esta semana
-                  </p>
-                </div>
-
-                <MediaLinksInput
-                  value={feedbackData.mediaLinks}
-                  onChange={(links) => setFeedbackData({...feedbackData, mediaLinks: links})}
-                  onPreview={(idx) => handlePreviewMedia(idx, feedbackData.mediaLinks)}
-                />
-              </div>
-
-              <div className={`border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] sticky bottom-0`}>
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowFeedbackDrawer(false)}
-                    className={`flex-1 ${componentStyles.buttons.outline}`}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={handleGuardarFeedback}
-                    disabled={guardarFeedbackMutation.isPending}
-                    className={`flex-1 ${componentStyles.buttons.primary} shadow-sm`}
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {guardarFeedbackMutation.isPending ? 'Guardando...' : 'Guardar'}
-                  </Button>
-                </div>
-                <p className={`${componentStyles.typography.smallMetaText} text-center mt-2`}>
-                  Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar
-                </p>
+      <Dialog open={showFeedbackDrawer} onOpenChange={setShowFeedbackDrawer}>
+        <DialogContent size="lg" className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--color-info)]" />
+              <div>
+                <DialogTitle className={componentStyles.typography.pageTitle}>Feedback Semanal</DialogTitle>
+                <DialogDescription>{displayName(selectedAlumno)}</DialogDescription>
               </div>
             </div>
-          </div>
-        </>
-      )}
+          </DialogHeader>
+          
+          {selectedAlumno && (
+            <div className="pt-3 sm:pt-4 space-y-3 sm:space-y-4">
+              <div>
+                <Label htmlFor="semana">Semana (Lunes inicio)</Label>
+                <Input
+                  id="semana"
+                  type="date"
+                  value={feedbackData.semanaInicioISO}
+                  onChange={(e) => {
+                    const nuevaSemana = calcularLunesSemanaISO(e.target.value);
+                    setFeedbackData({ ...feedbackData, semanaInicioISO: nuevaSemana });
+                  }}
+                  className={componentStyles.controls.inputDefault}
+                />
+                <p className={`${componentStyles.typography.smallMetaText} mt-1`}>
+                  Semana ISO: {parseLocalDate(feedbackData.semanaInicioISO).toLocaleDateString('es-ES', {
+                    weekday: 'long', day: 'numeric', month: 'long'
+                  })}
+                </p>
+              </div>
+
+              {/* Estadísticas inline sin cuadro */}
+              {(() => {
+                const stats = calcularEstadisticasSemana(selectedAlumno.id, feedbackData.semanaInicioISO);
+                return (
+                  <div className="flex gap-4 sm:gap-6 justify-center items-center pb-2 sm:pb-3 border-b border-[var(--color-border-default)]">
+                    <div className="text-center">
+                      <Clock className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-info)]" />
+                      <p className="text-base sm:text-lg font-bold text-[var(--color-text-primary)]">{stats.minutosReales}</p>
+                      <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Minutos</p>
+                    </div>
+                    
+                    <div className="text-center">
+                      <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-info)]" />
+                      <p className="text-base sm:text-lg font-bold text-[var(--color-text-primary)]">{stats.sesionesRealizadas}</p>
+                      <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Sesiones</p>
+                    </div>
+                    
+                    <div className="text-center">
+                      <Star className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-info)]" />
+                      <p className="text-base sm:text-lg font-bold text-[var(--color-text-primary)]">{stats.calidadMedia}/4</p>
+                      <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Calidad</p>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div>
+                <Label htmlFor="notas">Observaciones del profesor *</Label>
+                <Textarea
+                  id="notas"
+                  value={feedbackData.notaProfesor}
+                  onChange={(e) => setFeedbackData({ ...feedbackData, notaProfesor: e.target.value })}
+                  placeholder="Comentarios sobre el progreso, áreas de mejora, logros destacados..."
+                  rows={6}
+                  className={`${componentStyles.controls.inputDefault} resize-none`}
+                />
+                <p className={`${componentStyles.typography.smallMetaText} mt-1`}>
+                  Escribe observaciones sobre el progreso del estudiante esta semana
+                </p>
+              </div>
+
+              <MediaLinksInput
+                value={feedbackData.mediaLinks}
+                onChange={(links) => setFeedbackData({...feedbackData, mediaLinks: links})}
+                onPreview={(idx) => handlePreviewMedia(idx, feedbackData.mediaLinks)}
+              />
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFeedbackDrawer(false)}
+                  className={`flex-1 text-xs sm:text-sm h-9 sm:h-10 ${componentStyles.buttons.outline}`}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleGuardarFeedback}
+                  disabled={guardarFeedbackMutation.isPending}
+                  className={`flex-1 text-xs sm:text-sm h-9 sm:h-10 ${componentStyles.buttons.primary}`}
+                >
+                  <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
+                  {guardarFeedbackMutation.isPending ? 'Guardando...' : 'Guardar'}
+                </Button>
+              </div>
+              <p className={`${componentStyles.typography.smallMetaText} text-center`}>
+                Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {showMediaPreview && (
         <MediaPreviewModal

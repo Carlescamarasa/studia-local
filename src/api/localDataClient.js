@@ -302,6 +302,17 @@ export const localDataClient = {
     },
     updateMe: async (data) => {
       const currentUser = resolveCurrentUser();
+      if (!currentUser || !currentUser.id) {
+        throw new Error('No hay usuario autenticado');
+      }
+      
+      const api = getDataAPI();
+      if (api && api.usuarios) {
+        // Modo remote: usar API remota
+        return await api.usuarios.update(currentUser.id, data);
+      }
+      
+      // Modo local: usar código existente
       const updated = { ...currentUser, ...data };
       const index = localDataRef.usuarios.findIndex(u => u.id === currentUser.id);
       if (index !== -1) {

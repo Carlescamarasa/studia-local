@@ -43,7 +43,7 @@ const DialogContent = React.forwardRef(({ className, size = "md", children, ...p
         {children}
         <DialogPrimitive.Close
           className={componentStyles.modal.closeButton}>
-          <X className="h-4 w-4" />
+          <X className="h-5 w-5" />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>

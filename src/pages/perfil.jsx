@@ -77,10 +77,16 @@ export default function PerfilPage() {
 
   const updateUserMutation = useMutation({
     mutationFn: async (data) => {
-      if (targetUser?.id === effectiveUser?.id) {
-        await localDataClient.auth.updateMe(data);
+      if (!targetUser || !targetUser.id) {
+        throw new Error('No se puede actualizar: usuario no encontrado');
+      }
+      
+      if (targetUser.id === effectiveUser?.id) {
+        // Actualizar perfil propio
+        return await localDataClient.auth.updateMe(data);
       } else {
-        await localDataClient.entities.User.update(targetUser.id, data);
+        // Actualizar perfil de otro usuario (solo admins)
+        return await localDataClient.entities.User.update(targetUser.id, data);
       }
     },
     onSuccess: async () => {

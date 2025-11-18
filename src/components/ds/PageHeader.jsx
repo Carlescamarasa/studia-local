@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { componentStyles } from "@/design/componentStyles";
-import { Menu, X, ChevronUp, ChevronDown } from "lucide-react";
+import { Menu, X, Info } from "lucide-react";
 import { useSidebar } from "@/components/ui/SidebarState";
+import { Button } from "@/components/ui/button";
 
 /**
  * PageHeader - Componente unificado para headers de página
@@ -34,7 +35,7 @@ export default function PageHeader({
     <div className={`page-header header-modern ${className}`} data-testid="page-header">
       <div className="px-2 sm:px-3 md:px-6 py-1 sm:py-1.5 md:py-2">
         <div className="max-w-7xl mx-auto">
-          {/* Primera fila: Botón menú (mobile) + Icono + Título */}
+          {/* Primera fila: Botón menú (mobile) + Icono + Título + Botón Filtros */}
           <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 mb-0 sm:mb-0.5 md:mb-1">
             {/* Botón de menú solo en mobile */}
             {showMenuButton && (
@@ -53,7 +54,25 @@ export default function PageHeader({
               <Icon className={iconClass} />
             )}
             {title && (
-              <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl`}>{title}</h1>
+              <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl flex-1`}>{title}</h1>
+            )}
+            {/* Botón de filtros en línea con el título */}
+            {filters && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFiltersExpanded(!filtersExpanded)}
+                className={`${componentStyles.buttons.outline} flex items-center justify-center gap-1.5 text-xs sm:text-sm h-11 w-11 sm:h-9 sm:w-auto sm:min-w-0 min-h-[44px] min-w-[44px] px-0 sm:px-3 py-0 sm:py-2 touch-manipulation shrink-0`}
+                aria-label={filtersExpanded ? "Ocultar filtros" : "Mostrar filtros"}
+                aria-expanded={filtersExpanded}
+              >
+                <Info className="w-5 h-5 sm:w-4 sm:h-4" />
+                {filtersExpanded ? (
+                  <span className="hidden sm:inline ml-0.5">Ocultar</span>
+                ) : (
+                  <span className="hidden sm:inline ml-0.5">Filtros</span>
+                )}
+              </Button>
             )}
           </div>
           {/* Segunda fila: Subtítulo - solo en desktop si hay espacio */}
@@ -73,31 +92,6 @@ export default function PageHeader({
       {(filters || actions) && (
         <div className="w-full flex justify-center px-2 sm:px-3 md:px-6 pb-1 sm:pb-1.5 md:pb-2">
           <div className="w-full max-w-full">
-            {/* Botón para plegar/desplegar filtros (mobile y desktop) */}
-            {filters && (
-              <div className="flex justify-end mb-0.5 sm:mb-1">
-                <button
-                  onClick={() => setFiltersExpanded(!filtersExpanded)}
-                  className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-                  aria-label={filtersExpanded ? "Ocultar filtros" : "Mostrar filtros"}
-                  aria-expanded={filtersExpanded}
-                >
-                  {filtersExpanded ? (
-                    <>
-                      <ChevronUp className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline">Ocultar filtros</span>
-                      <span className="sm:hidden">Ocultar</span>
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline">Mostrar filtros</span>
-                      <span className="sm:hidden">Filtros</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
             <div className="flex flex-col md:flex-row gap-1.5 sm:gap-2 md:gap-2.5 items-start md:items-center justify-between">
               {filters && (
                 <div className={`flex gap-1.5 sm:gap-2 flex-wrap flex-1 w-full md:w-auto text-sm transition-all duration-300 ${

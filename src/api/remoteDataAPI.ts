@@ -123,18 +123,238 @@ function deserializeJsonFields(data: any, jsonFields: string[]): any {
 }
 
 /**
+ * Normaliza un usuario de Supabase para que tenga los campos esperados por el código
+ * Mapea: role → rolPersonalizado, fullName → nombreCompleto, y normaliza nombreCompleto
+ */
+function normalizeSupabaseUser(user: any, email?: string): any {
+  if (!user) return user;
+
+  // Después de snakeToCamel, los campos están en camelCase:
+  // - role → role (no cambia porque no tiene guiones bajos)
+  // - full_name → fullName
+  // - profesor_asignado_id → profesorAsignadoId
+  // - is_active → isActive
+
+  // Mapear role → rolPersonalizado
+  // El campo 'role' viene directamente de Supabase y no se modifica por snakeToCamel
+  // Verificar tanto 'role' (directo de Supabase) como 'rolPersonalizado' (ya mapeado)
+  const roleValue = user.role || user.rolPersonalizado;
+  const rolPersonalizado = (roleValue && ['ADMIN', 'PROF', 'ESTU'].includes(roleValue.toUpperCase())) 
+    ? roleValue.toUpperCase() 
+    : 'ESTU';
+
+  // Obtener full_name (puede estar como fullName o full_name después de snakeToCamel)
+  const fullName = user.fullName || user.full_name || '';
+
+  // Generar nombreCompleto desde full_name si está disponible
+  let nombreCompleto = '';
+  if (fullName && fullName.trim()) {
+    nombreCompleto = fullName.trim();
+  } else if (user.email) {
+    // Intentar derivar del email
+    const emailStr = String(user.email);
+    if (emailStr.includes('@')) {
+      const parteLocal = emailStr.split('@')[0];
+      const isLikelyId = /^[a-f0-9]{24}$/i.test(parteLocal) || /^u_[a-z0-9_]+$/i.test(parteLocal);
+      if (parteLocal && !isLikelyId) {
+        nombreCompleto = parteLocal
+          .replace(/[._+-]/g, ' ')
+          .replace(/\b\w/g, l => l.toUpperCase())
+          .trim() || emailStr;
+      } else {
+        nombreCompleto = emailStr;
+      }
+    } else {
+      nombreCompleto = emailStr;
+    }
+  } else if (email) {
+    // Usar el email proporcionado como parámetro
+    const emailStr = String(email);
+    if (emailStr.includes('@')) {
+      const parteLocal = emailStr.split('@')[0];
+      const isLikelyId = /^[a-f0-9]{24}$/i.test(parteLocal) || /^u_[a-z0-9_]+$/i.test(parteLocal);
+      if (parteLocal && !isLikelyId) {
+        nombreCompleto = parteLocal
+          .replace(/[._+-]/g, ' ')
+          .replace(/\b\w/g, l => l.toUpperCase())
+          .trim() || emailStr;
+      } else {
+        nombreCompleto = emailStr;
+      }
+    } else {
+      nombreCompleto = emailStr;
+    }
+  } else {
+    // Último recurso
+    nombreCompleto = `Usuario ${user.id || 'Nuevo'}`;
+  }
+
+  // Retornar usuario normalizado con todos los campos necesarios
+  return {
+    ...user,
+    // Campos mapeados
+    rolPersonalizado: rolPersonalizado,
+    nombreCompleto: nombreCompleto,
+    full_name: fullName || nombreCompleto, // Mantener full_name
+    // Email: usar el proporcionado o el que ya está en el usuario
+    email: email || user.email || '',
+    // Profesor asignado (ya está en camelCase como profesorAsignadoId)
+    profesorAsignadoId: user.profesorAsignadoId || null,
+    // Estado (mapear isActive a estado si es necesario)
+    estado: user.isActive !== false ? 'activo' : 'inactivo',
+    isActive: user.isActive !== false,
+  };
+}
+
+/**
+ * Obtiene emails de usuarios desde auth.users usando Admin API o función SQL
+ * Por ahora, retornamos un mapa vacío ya que no tenemos acceso directo a auth.users
+ * desde el cliente. Los emails se obtendrán del usuario autenticado cuando coincidan.
+ * 
+ * Para obtener emails de todos los usuarios, se recomienda:
+ * 1. Crear una función SQL en Supabase que haga JOIN entre profiles y auth.users
+ * 2. O almacenar email también en profiles (duplicación pero funcional)
+ * 3. O usar el Admin API de Supabase con service_role key
+ */
+async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>> {
+  const emailMap = new Map<string, string>();
+  
+  if (!userIds || userIds.length === 0) return emailMap;
+
+  // Por ahora, solo podemos obtener el email del usuario autenticado
+  // Para obtener emails de todos los usuarios, se requiere una función SQL
+  // o usar el Admin API con permisos service_role
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && user.id && userIds.includes(user.id)) {
+      emailMap.set(user.id, user.email || '');
+    }
+  } catch (error) {
+    // Ignorar si no hay usuario autenticado
+  }
+
+  return emailMap;
+}
+
+/**
  * Implementación remota de AppDataAPI
  */
 export function createRemoteDataAPI(): AppDataAPI {
   return {
     usuarios: {
       list: async () => {
+        // Obtener perfiles desde Supabase - INCLUIR EXPLÍCITAMENTE el campo role
         const { data, error } = await supabase
           .from('profiles')
-          .select('*');
+          .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at');
         
-        if (error) throw error;
-        return (data || []).map((u: any) => snakeToCamel<StudiaUser>(u));
+        if (error) {
+          console.error('❌ Error al leer profiles:', error);
+          throw error;
+        }
+        
+        // LOGGING CRÍTICO: Ver qué está llegando realmente desde Supabase
+        console.log('🔍 [DEBUG] Datos RAW de Supabase:', data);
+        if (data && data.length > 0) {
+          console.log('🔍 [DEBUG] Primer usuario RAW:', data[0]);
+          console.log('🔍 [DEBUG] Roles en datos RAW:', data.map(u => ({ 
+            id: u.id, 
+            role: u.role, 
+            roleType: typeof u.role,
+            full_name: u.full_name 
+          })));
+        }
+        
+        // Obtener email e ID del usuario autenticado si existe (para comparación)
+        let currentUserEmail: string | null = null;
+        let currentUserId: string | null = null;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          currentUserEmail = user?.email || null;
+          currentUserId = user?.id || null;
+        } catch (e) {
+          // Ignorar si no hay usuario autenticado
+        }
+        
+        // Obtener emails usando función SQL si está disponible, o usar el usuario autenticado
+        let emailsMap = new Map<string, string>();
+        try {
+          const userIds = (data || []).map((u: any) => u.id);
+          emailsMap = await getEmailsForUsers(userIds);
+          // Añadir email del usuario autenticado al mapa si coincide
+          if (currentUserId && currentUserEmail && userIds.includes(currentUserId)) {
+            emailsMap.set(currentUserId, currentUserEmail);
+          }
+        } catch (e) {
+          // Si falla, continuar sin emails adicionales
+          if (currentUserId && currentUserEmail) {
+            emailsMap.set(currentUserId, currentUserEmail);
+          }
+        }
+        
+        // Normalizar usuarios
+        return (data || []).map((u: any) => {
+          // LOGGING: Ver el usuario antes de procesar
+          console.log('🔍 [DEBUG] Procesando usuario:', {
+            id: u.id,
+            roleOriginal: u.role,
+            roleType: typeof u.role,
+            roleValue: String(u.role),
+            full_name: u.full_name,
+          });
+          
+          // Preservar el campo 'role' ANTES de snakeToCamel (es crítico)
+          const originalRole = u.role;
+          
+          // Verificar que role existe y tiene valor
+          if (!originalRole) {
+            console.warn('⚠️ [DEBUG] Usuario sin role:', u.id, u);
+          }
+          
+          const camelUser = snakeToCamel<StudiaUser>(u);
+          
+          // LOGGING: Ver qué pasa después de snakeToCamel
+          console.log('🔍 [DEBUG] Después de snakeToCamel:', {
+            id: camelUser.id,
+            role: camelUser.role,
+            roleOriginal: originalRole
+          });
+          
+          // Asegurar que el campo 'role' se preserve explícitamente
+          if (originalRole && !camelUser.role) {
+            camelUser.role = originalRole;
+            console.log('✅ [DEBUG] Role restaurado después de snakeToCamel');
+          }
+          
+          // Priorizar: email del mapeo, luego del usuario mismo
+          const email = emailsMap.get(u.id) || camelUser.email;
+          
+          // Normalizar usuario
+          const normalized = normalizeSupabaseUser(camelUser, email);
+          
+          // LOGGING: Ver qué pasa después de normalizar
+          console.log('🔍 [DEBUG] Después de normalizeSupabaseUser:', {
+            id: normalized.id,
+            rolPersonalizado: normalized.rolPersonalizado,
+            roleOriginal: originalRole,
+            roleEnCamelUser: camelUser.role
+          });
+          
+          // Verificación CRÍTICA: forzar el rol desde el valor original de Supabase
+          if (originalRole) {
+            const roleUpper = String(originalRole).toUpperCase().trim();
+            if (['ADMIN', 'PROF', 'ESTU'].includes(roleUpper)) {
+              normalized.rolPersonalizado = roleUpper;
+              console.log('✅ [DEBUG] Rol forzado correctamente:', roleUpper, 'para usuario:', normalized.id);
+            } else {
+              console.warn('⚠️ [DEBUG] Rol no válido:', roleUpper, 'de originalRole:', originalRole);
+            }
+          } else {
+            console.warn('⚠️ [DEBUG] originalRole es null/undefined para usuario:', u.id);
+          }
+          
+          return normalized;
+        });
       },
       get: async (id: string) => {
         const { data, error } = await supabase
@@ -147,7 +367,40 @@ export function createRemoteDataAPI(): AppDataAPI {
           if (error.code === 'PGRST116') return null; // No encontrado
           throw error;
         }
-        return snakeToCamel<StudiaUser>(data);
+        
+        // Preservar el campo 'role' ANTES de snakeToCamel
+        const originalRole = data.role;
+        
+        const camelUser = snakeToCamel<StudiaUser>(data);
+        
+        // Asegurar que el campo 'role' se preserve
+        if (originalRole && !camelUser.role) {
+          camelUser.role = originalRole;
+        }
+        
+        // Intentar obtener email del usuario autenticado si coincide
+        let email: string | undefined = undefined;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user && user.id === id) {
+            email = user.email || undefined;
+          }
+        } catch (e) {
+          // Ignorar si no hay usuario autenticado
+        }
+        
+        // Normalizar usuario
+        const normalized = normalizeSupabaseUser(camelUser, email);
+        
+        // Verificación CRÍTICA: forzar el rol desde el valor original de Supabase
+        if (originalRole) {
+          const roleUpper = String(originalRole).toUpperCase().trim();
+          if (['ADMIN', 'PROF', 'ESTU'].includes(roleUpper)) {
+            normalized.rolPersonalizado = roleUpper;
+          }
+        }
+        
+        return normalized;
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
         let query = supabase.from('profiles').select('*');
@@ -163,7 +416,47 @@ export function createRemoteDataAPI(): AppDataAPI {
         
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((u: any) => snakeToCamel<StudiaUser>(u));
+        
+        // Obtener email e ID del usuario autenticado si existe
+        let currentUserEmail: string | null = null;
+        let currentUserId: string | null = null;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          currentUserEmail = user?.email || null;
+          currentUserId = user?.id || null;
+        } catch (e) {
+          // Ignorar si no hay usuario autenticado
+        }
+        
+        return (data || []).map((u: any) => {
+          // Preservar el campo 'role' ANTES de snakeToCamel
+          const originalRole = u.role;
+          
+          const camelUser = snakeToCamel<StudiaUser>(u);
+          
+          // Asegurar que el campo 'role' se preserve
+          if (originalRole && !camelUser.role) {
+            camelUser.role = originalRole;
+          }
+          
+          // Usar email del usuario autenticado si coincide con el ID, sino usar el del usuario
+          const email = (currentUserId && u.id === currentUserId && currentUserEmail) 
+            ? currentUserEmail 
+            : camelUser.email;
+          
+          // Normalizar usuario
+          const normalized = normalizeSupabaseUser(camelUser, email);
+          
+          // Verificación CRÍTICA: forzar el rol desde el valor original de Supabase
+          if (originalRole) {
+            const roleUpper = String(originalRole).toUpperCase().trim();
+            if (['ADMIN', 'PROF', 'ESTU'].includes(roleUpper)) {
+              normalized.rolPersonalizado = roleUpper;
+            }
+          }
+          
+          return normalized;
+        });
       },
       create: async (data) => {
         const snakeData = camelToSnake(data);
@@ -174,19 +467,95 @@ export function createRemoteDataAPI(): AppDataAPI {
           .single();
         
         if (error) throw error;
-        return snakeToCamel<StudiaUser>(result);
+        
+        const camelUser = snakeToCamel<StudiaUser>(result);
+        return normalizeSupabaseUser(camelUser, data.email);
       },
       update: async (id: string, updates: any) => {
-        const snakeUpdates = camelToSnake(updates);
+        // Mapear campos del frontend a campos de Supabase
+        const supabaseUpdates: any = {};
+        
+        // Mapear nombreCompleto → full_name
+        if (updates.nombreCompleto !== undefined) {
+          supabaseUpdates.full_name = updates.nombreCompleto;
+        }
+        
+        // Mapear rolPersonalizado → role
+        if (updates.rolPersonalizado !== undefined) {
+          supabaseUpdates.role = updates.rolPersonalizado.toUpperCase();
+        }
+        
+        // Mapear profesorAsignadoId → profesor_asignado_id
+        if (updates.profesorAsignadoId !== undefined) {
+          supabaseUpdates.profesor_asignado_id = updates.profesorAsignadoId || null;
+        }
+        
+        // Otros campos que no necesitan mapeo especial
+        if (updates.nivel !== undefined) {
+          supabaseUpdates.nivel = updates.nivel;
+        }
+        if (updates.telefono !== undefined) {
+          supabaseUpdates.telefono = updates.telefono;
+        }
+        if (updates.mediaLinks !== undefined) {
+          supabaseUpdates.media_links = updates.mediaLinks;
+        }
+        
+        console.log('🔍 [DEBUG UPDATE] Actualizando usuario:', {
+          id,
+          updatesOriginales: updates,
+          updatesParaSupabase: supabaseUpdates
+        });
+        
         const { data, error } = await supabase
           .from('profiles')
-          .update(snakeUpdates)
+          .update(supabaseUpdates)
           .eq('id', id)
           .select()
           .single();
         
-        if (error) throw error;
-        return snakeToCamel<StudiaUser>(data);
+        if (error) {
+          console.error('❌ [DEBUG UPDATE] Error al actualizar:', error);
+          throw error;
+        }
+        
+        // Preservar el campo 'role' ANTES de snakeToCamel
+        const originalRole = data.role;
+        
+        const camelUser = snakeToCamel<StudiaUser>(data);
+        
+        // Asegurar que el campo 'role' se preserve
+        if (originalRole && !camelUser.role) {
+          camelUser.role = originalRole;
+        }
+        
+        // Intentar obtener email del usuario autenticado si coincide
+        let email: string | undefined = updates.email;
+        if (!email) {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && user.id === id) {
+              email = user.email || undefined;
+            }
+          } catch (e) {
+            // Ignorar si no hay usuario autenticado
+          }
+        }
+        
+        // Normalizar usuario
+        const normalized = normalizeSupabaseUser(camelUser, email);
+        
+        // Verificación CRÍTICA: forzar el rol desde el valor original de Supabase
+        if (originalRole) {
+          const roleUpper = String(originalRole).toUpperCase().trim();
+          if (['ADMIN', 'PROF', 'ESTU'].includes(roleUpper)) {
+            normalized.rolPersonalizado = roleUpper;
+          }
+        }
+        
+        console.log('✅ [DEBUG UPDATE] Usuario actualizado correctamente:', normalized);
+        
+        return normalized;
       },
       delete: async (id: string) => {
         const { error } = await supabase
@@ -493,27 +862,69 @@ export function createRemoteDataAPI(): AppDataAPI {
         });
       },
       create: async (data) => {
-        // Serializar campos JSON antes de convertir a snake_case
-        const dataWithSerializedJson = serializeJsonFields(data, ['plan', 'piezaSnapshot']);
+        // Para campos JSONB, Supabase acepta objetos directamente, pero necesitamos
+        // convertirlos a snake_case sin serializar a string primero
+        // Extraer campos JSON antes de camelToSnake para manejarlos por separado
+        const planValue = data.plan;
+        const piezaSnapshotValue = data.piezaSnapshot;
+        const dataWithoutJson = { ...data };
+        delete dataWithoutJson.plan;
+        delete dataWithoutJson.piezaSnapshot;
+        
         const snakeData = camelToSnake({
-          ...dataWithSerializedJson,
+          ...dataWithoutJson,
           id: data.id || generateId('asignacion'),
         });
+        
+        // Agregar campos JSONB directamente como objetos (Supabase los maneja automáticamente)
+        if (planValue) {
+          snakeData.plan = planValue; // Mantener como objeto, Supabase lo serializa internamente
+        }
+        if (piezaSnapshotValue) {
+          snakeData.pieza_snapshot = piezaSnapshotValue; // Convertir nombre a snake_case
+        }
+        
+        console.log('Insertando asignación en Supabase:', { 
+          snakeDataKeys: Object.keys(snakeData),
+          hasPlan: !!snakeData.plan,
+          hasPiezaSnapshot: !!snakeData.pieza_snapshot,
+          planType: typeof snakeData.plan,
+          piezaSnapshotType: typeof snakeData.pieza_snapshot
+        });
+        
         const { data: result, error } = await supabase
           .from('asignaciones')
           .insert(snakeData)
           .select()
           .single();
         
-        if (error) throw error;
-        // Deserializar campos JSON después de leer
+        if (error) {
+          console.error('Error de Supabase al crear asignación:', error);
+          throw error;
+        }
+        
+        // Deserializar campos JSON después de leer (por si acaso vienen como strings)
         const parsed = snakeToCamel<Asignacion>(result);
         return deserializeJsonFields(parsed, ['plan', 'piezaSnapshot']);
       },
       update: async (id: string, updates: any) => {
-        // Serializar campos JSON si están presentes
-        const updatesWithSerializedJson = serializeJsonFields(updates, ['plan', 'piezaSnapshot']);
-        const snakeUpdates = camelToSnake(updatesWithSerializedJson);
+        // Extraer campos JSON antes de camelToSnake
+        const planValue = updates.plan;
+        const piezaSnapshotValue = updates.piezaSnapshot;
+        const updatesWithoutJson = { ...updates };
+        delete updatesWithoutJson.plan;
+        delete updatesWithoutJson.piezaSnapshot;
+        
+        const snakeUpdates = camelToSnake(updatesWithoutJson);
+        
+        // Agregar campos JSONB directamente como objetos
+        if (planValue !== undefined) {
+          snakeUpdates.plan = planValue;
+        }
+        if (piezaSnapshotValue !== undefined) {
+          snakeUpdates.pieza_snapshot = piezaSnapshotValue;
+        }
+        
         const { data, error } = await supabase
           .from('asignaciones')
           .update(snakeUpdates)
@@ -521,7 +932,11 @@ export function createRemoteDataAPI(): AppDataAPI {
           .select()
           .single();
         
-        if (error) throw error;
+        if (error) {
+          console.error('Error de Supabase al actualizar asignación:', error);
+          throw error;
+        }
+        
         // Deserializar campos JSON después de leer
         const parsed = snakeToCamel<Asignacion>(data);
         return deserializeJsonFields(parsed, ['plan', 'piezaSnapshot']);

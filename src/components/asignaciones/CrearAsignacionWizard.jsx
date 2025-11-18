@@ -205,7 +205,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                 <Target className="w-6 h-6" />
                 <CardTitle className="text-xl">Nueva Asignación</CardTitle>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20 h-9 w-9 rounded-[var(--btn-radius)]" aria-label="Cerrar wizard">
+              <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20 h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-[var(--btn-radius)] touch-manipulation" aria-label="Cerrar wizard">
                 <X className="w-5 h-5" />
               </Button>
             </div>

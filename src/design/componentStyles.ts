@@ -368,8 +368,8 @@ export const componentStyles = {
     description: "text-sm text-[var(--color-text-secondary)]",
     // Footer
     footer: "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2",
-    // Close button
-    closeButton: "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 disabled:pointer-events-none",
+    // Close button (accesible para touch - mínimo 44x44px)
+    closeButton: "absolute right-3 top-3 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 disabled:pointer-events-none touch-manipulation",
   },
 
   // Sistema de notificaciones/toasts

@@ -324,7 +324,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
                 </p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => onClose(null)} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-9 w-9 rounded-[var(--btn-radius)]">
+              <Button variant="ghost" size="icon" onClick={() => onClose(null)} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-[var(--btn-radius)] touch-manipulation">
                 <X className="w-5 h-5" />
               </Button>
             </div>

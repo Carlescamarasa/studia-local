@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ds";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   User, Mail, Shield, Target, Music,
-  Save, AlertCircle, CheckCircle, Sun, Moon, Monitor, X
+  Save, AlertCircle, CheckCircle, Sun, Moon, Monitor, X, MessageCircle, Search
 } from "lucide-react";
 import { toast } from "sonner";
 import { displayName, useEffectiveUser } from "../utils/helpers";
@@ -37,10 +37,40 @@ export default function PerfilModal({
   
   const [editedData, setEditedData] = useState(null);
   const [saveResult, setSaveResult] = useState(null);
+  const [phoneCountryCode, setPhoneCountryCode] = useState('+34'); // Default: España
+  const [phoneSearch, setPhoneSearch] = useState(''); // Para búsqueda/filtrado de teléfono
   const [isDarkMode, setIsDarkMode] = useState(() => {
     // Detectar modo oscuro inicial desde la clase del documento
     return typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
   });
+
+  // Lista de prefijos de país comunes con longitud estándar de número y formato de placeholder
+  const countryCodes = [
+    { code: '+34', country: '🇪🇸 España', digits: 9, placeholder: '600 000 000' },
+    { code: '+1', country: '🇺🇸 USA/Canadá', digits: 10, placeholder: '(555) 123-4567' },
+    { code: '+52', country: '🇲🇽 México', digits: 10, placeholder: '55 1234 5678' },
+    { code: '+54', country: '🇦🇷 Argentina', digits: 10, placeholder: '11 1234-5678' },
+    { code: '+57', country: '🇨🇴 Colombia', digits: 10, placeholder: '300 123 4567' },
+    { code: '+51', country: '🇵🇪 Perú', digits: 9, placeholder: '987 654 321' },
+    { code: '+56', country: '🇨🇱 Chile', digits: 9, placeholder: '9 1234 5678' },
+    { code: '+591', country: '🇧🇴 Bolivia', digits: 8, placeholder: '7123 4567' },
+    { code: '+593', country: '🇪🇨 Ecuador', digits: 9, placeholder: '098 765 432' },
+    { code: '+595', country: '🇵🇾 Paraguay', digits: 9, placeholder: '981 123 456' },
+    { code: '+598', country: '🇺🇾 Uruguay', digits: 8, placeholder: '99 123 456' },
+    { code: '+58', country: '🇻🇪 Venezuela', digits: 10, placeholder: '412 123 4567' },
+    { code: '+55', country: '🇧🇷 Brasil', digits: 11, placeholder: '(11) 91234-5678' },
+    { code: '+33', country: '🇫🇷 Francia', digits: 9, placeholder: '6 12 34 56 78' },
+    { code: '+39', country: '🇮🇹 Italia', digits: 10, placeholder: '333 123 4567' },
+    { code: '+49', country: '🇩🇪 Alemania', digits: 11, placeholder: '0171 1234567' },
+    { code: '+44', country: '🇬🇧 Reino Unido', digits: 10, placeholder: '7700 123456' },
+    { code: '+351', country: '🇵🇹 Portugal', digits: 9, placeholder: '912 345 678' },
+  ];
+  
+  // Obtener placeholder según el país seleccionado
+  const getPhonePlaceholder = (countryCode) => {
+    const country = countryCodes.find(cc => cc.code === countryCode);
+    return country?.placeholder || '600 000 000';
+  };
   
   // Actualizar isDarkMode cuando cambie el tema o se abra el modal
   useEffect(() => {
@@ -87,17 +117,105 @@ export default function PerfilModal({
     return displayName(user);
   };
 
-  const profesores = allUsers?.filter(u => u.rolPersonalizado === 'PROF') || [];
+  // Filtrar usuarios con rol PROF o ADMIN para el selector de profesores
+  const profesores = React.useMemo(() => {
+    if (!allUsers || !Array.isArray(allUsers)) return [];
+    return allUsers.filter(u => u.rolPersonalizado === 'PROF' || u.rolPersonalizado === 'ADMIN');
+  }, [allUsers]);
+
+  // Extraer código de país del teléfono si existe
+  const extractCountryCodeFromPhone = (phone) => {
+    if (!phone) return '+34';
+    
+    // Buscar si el teléfono empieza con un código de país conocido
+    const matched = countryCodes.find(cc => phone.startsWith(cc.code));
+    if (matched) {
+      return matched.code;
+    }
+    
+    // Si empieza con +, intentar extraer el código
+    if (phone.startsWith('+')) {
+      // Buscar el código más largo que coincida
+      for (const cc of countryCodes.sort((a, b) => b.code.length - a.code.length)) {
+        if (phone.startsWith(cc.code)) {
+          return cc.code;
+        }
+      }
+    }
+    
+    return '+34'; // Default
+  };
+
+  // Filtrar y normalizar entrada de teléfono (solo permitir números, espacios, guiones)
+  const filterPhoneInput = (value) => {
+    // Permitir solo números, espacios, guiones, paréntesis y puntos
+    return value.replace(/[^\d\s\-\(\)\.]/g, '');
+  };
+
+  // Normalizar número de teléfono (eliminar espacios, guiones, paréntesis, etc.)
+  const normalizePhoneNumber = (phone, countryCode) => {
+    if (!phone) return '';
+    
+    // Eliminar código de país si está presente
+    let cleaned = phone;
+    if (phone.startsWith(countryCode)) {
+      cleaned = phone.substring(countryCode.length);
+    } else if (phone.startsWith('+')) {
+      // Eliminar cualquier código de país que empiece con +
+      for (const cc of countryCodes.sort((a, b) => b.code.length - a.code.length)) {
+        if (phone.startsWith(cc.code)) {
+          cleaned = phone.substring(cc.code.length);
+          break;
+        }
+      }
+    }
+    
+    // Eliminar espacios, guiones, puntos, paréntesis, etc.
+    cleaned = cleaned.replace(/[\s\-\(\)\.]/g, '');
+    
+    return cleaned;
+  };
+
+  // Obtener longitud de dígitos estándar para un código de país
+  const getCountryDigits = (countryCode) => {
+    const country = countryCodes.find(cc => cc.code === countryCode);
+    return country?.digits || 9; // Default: 9 dígitos (España)
+  };
+
+  // Generar link de WhatsApp (solo si el número tiene la longitud correcta)
+  const getWhatsAppLink = (phone, countryCode) => {
+    if (!phone) return null;
+    
+    const normalized = normalizePhoneNumber(phone, countryCode);
+    if (!normalized) return null;
+    
+    // Verificar que el número tenga la longitud estándar del país
+    const requiredDigits = getCountryDigits(countryCode);
+    if (normalized.length !== requiredDigits) return null;
+    
+    // Combinar código de país + número normalizado
+    const fullNumber = countryCode.replace('+', '') + normalized;
+    
+    return `https://wa.me/${fullNumber}`;
+  };
 
   useEffect(() => {
     if (targetUser && open) {
+      const telefono = targetUser.telefono || '';
+      const extractedCode = extractCountryCodeFromPhone(telefono);
+      const normalizedPhone = extractedCode !== '+34' 
+        ? normalizePhoneNumber(telefono, extractedCode)
+        : telefono.replace(/^\+34\s*/, ''); // Si ya tiene +34, quitarlo
+      
+      setPhoneCountryCode(extractedCode);
+      
       setEditedData({
         nombreCompleto: targetUser.nombreCompleto || getNombreCompleto(targetUser),
         email: targetUser.email || '',
         rolPersonalizado: targetUser.rolPersonalizado || 'ESTU',
-        profesorAsignadoId: targetUser.profesorAsignadoId || '',
-        nivel: targetUser.nivel || '',
-        telefono: targetUser.telefono || '',
+        profesorAsignadoId: targetUser.profesorAsignadoId || null,
+        nivel: targetUser.nivel || null,
+        telefono: normalizedPhone,
         mediaLinks: targetUser.mediaLinks || [],
       });
       setSaveResult(null);
@@ -148,10 +266,11 @@ export default function PerfilModal({
     }
 
     if (editedData.profesorAsignadoId) {
-      const profesor = allUsers?.find(u => u.id === editedData.profesorAsignadoId);
-      if (!profesor || profesor.rolPersonalizado !== 'PROF') {
-        setSaveResult({ success: false, message: '❌ El profesor asignado debe tener rol de Profesor' });
-        toast.error('El profesor asignado debe tener rol de Profesor');
+      // Verificar que el profesor asignado realmente tenga rol PROF o ADMIN
+      const profesor = profesores.find(p => p.id === editedData.profesorAsignadoId);
+      if (!profesor) {
+        setSaveResult({ success: false, message: '❌ El profesor asignado debe tener rol de Profesor o Administrador' });
+        toast.error('El profesor asignado debe tener rol de Profesor o Administrador');
         return;
       }
     }
@@ -176,12 +295,22 @@ export default function PerfilModal({
       }
     }
 
+    // Normalizar y guardar teléfono con código de país
+    let telefonoFinal = null;
+    if (editedData.telefono && editedData.telefono.trim()) {
+      const normalized = normalizePhoneNumber(editedData.telefono, phoneCountryCode);
+      if (normalized) {
+        // Guardar con formato: +[código][número normalizado]
+        telefonoFinal = `${phoneCountryCode}${normalized}`;
+      }
+    }
+
     const dataToSave = {
       nombreCompleto: editedData.nombreCompleto,
       rolPersonalizado: editedData.rolPersonalizado,
       profesorAsignadoId: editedData.profesorAsignadoId || null,
       nivel: editedData.nivel || null,
-      telefono: editedData.telefono || null,
+      telefono: telefonoFinal,
       mediaLinks: editedData.mediaLinks || [],
     };
 
@@ -195,9 +324,16 @@ export default function PerfilModal({
   };
 
   const isEditingOwnProfile = targetUser?.id === effectiveUser?.id;
-  const canEditRole = effectiveUser?.rolPersonalizado === 'ADMIN';
-  const canEditProfesor = (effectiveUser?.rolPersonalizado === 'ADMIN' || effectiveUser?.rolPersonalizado === 'PROF') 
-                          && targetUser?.rolPersonalizado === 'ESTU';
+  const userRole = effectiveUser?.rolPersonalizado;
+  
+  // Permisos de edición según rol
+  const canEditNombreCompleto = userRole === 'ADMIN' || userRole === 'PROF' || userRole === 'ESTU'; // Todos pueden editar
+  const canEditEmail = false; // Nadie puede editar
+  const canEditRole = userRole === 'ADMIN'; // Solo ADMIN
+  const canEditProfesor = userRole === 'ADMIN'; // Solo ADMIN (antes también PROF)
+  const canEditTelefono = userRole === 'ADMIN' || userRole === 'PROF' || userRole === 'ESTU'; // Todos pueden editar
+  const canEditNivel = userRole === 'ADMIN' || userRole === 'PROF' || userRole === 'ESTU'; // Todos pueden editar
+  
   const isEstudiante = targetUser?.rolPersonalizado === 'ESTU';
   const isProfesor = targetUser?.rolPersonalizado === 'PROF';
 
@@ -231,16 +367,25 @@ export default function PerfilModal({
               )}
 
               <div className="space-y-4">
-                <div className={componentStyles.layout.grid2}>
+                <div className="space-y-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="nombreCompleto" className="text-sm text-[var(--color-text-primary)]">Nombre Completo *</Label>
-                    <Input
-                      id="nombreCompleto"
-                      value={editedData.nombreCompleto}
-                      onChange={(e) => setEditedData({ ...editedData, nombreCompleto: e.target.value })}
-                      placeholder="Nombre y apellidos"
-                      className={componentStyles.controls.inputDefault}
-                    />
+                    {canEditNombreCompleto ? (
+                      <Input
+                        id="nombreCompleto"
+                        value={editedData.nombreCompleto}
+                        onChange={(e) => setEditedData({ ...editedData, nombreCompleto: e.target.value })}
+                        placeholder="Nombre y apellidos"
+                        className={componentStyles.controls.inputDefault}
+                      />
+                    ) : (
+                      <Input
+                        id="nombreCompleto"
+                        value={editedData.nombreCompleto}
+                        disabled
+                        className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
+                      />
+                    )}
                     <p className="text-xs text-[var(--color-text-secondary)]">Este es el nombre visible en toda la aplicación</p>
                   </div>
 
@@ -257,7 +402,7 @@ export default function PerfilModal({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="role" className="text-sm text-[var(--color-text-primary)]">Rol en el Sistema</Label>
+                    <Label htmlFor="role" className="text-sm text-[var(--color-text-primary)]">Perfil</Label>
                     {canEditRole ? (
                       <div className="space-y-1.5">
                         <Select
@@ -303,7 +448,7 @@ export default function PerfilModal({
                           disabled
                           className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
                         />
-                        <p className="text-xs mt-1 text-[var(--color-text-secondary)]">Solo administradores pueden cambiar roles</p>
+                        <p className="text-xs mt-1 text-[var(--color-text-secondary)]">Solo administradores pueden cambiar el perfil</p>
                       </div>
                     )}
                   </div>
@@ -313,65 +458,158 @@ export default function PerfilModal({
                       <Label htmlFor="profesorAsignado" className="text-sm text-[var(--color-text-primary)]">Profesor Asignado</Label>
                       {canEditProfesor ? (
                         <Select
-                          value={editedData.profesorAsignadoId}
-                          onValueChange={(value) => setEditedData({ ...editedData, profesorAsignadoId: value })}
+                          value={editedData.profesorAsignadoId ? String(editedData.profesorAsignadoId) : "__none__"}
+                          onValueChange={(value) => {
+                            // Si el valor es "__none__", establecer como null
+                            // Si no, usar el ID directamente (el Select devuelve el value como string)
+                            const newValue = value === "__none__" ? null : value;
+                            setEditedData({ ...editedData, profesorAsignadoId: newValue });
+                          }}
                         >
                           <SelectTrigger id="profesorAsignado" className={componentStyles.controls.selectDefault}>
-                            <SelectValue placeholder="Sin asignar" />
+                            <SelectValue placeholder="Sin asignar">
+                              {editedData.profesorAsignadoId ? (() => {
+                                const prof = profesores.find(p => p.id === editedData.profesorAsignadoId);
+                                return prof ? getNombreCompleto(prof) : "Sin asignar";
+                              })() : "Sin asignar"}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value={null}>Sin asignar</SelectItem>
-                            {profesores.map(prof => (
-                              <SelectItem key={prof.id} value={prof.id}>
+                            <SelectItem value="__none__">Sin asignar</SelectItem>
+                            {profesores.length > 0 ? profesores.map(prof => (
+                              <SelectItem key={prof.id} value={String(prof.id)}>
                                 {getNombreCompleto(prof)}
                               </SelectItem>
-                            ))}
+                            )) : (
+                              <SelectItem value="__none__" disabled>No hay profesores disponibles</SelectItem>
+                            )}
                           </SelectContent>
                         </Select>
                       ) : (
                         <Input
                           id="profesorAsignado"
-                          value={editedData.profesorAsignadoId ? getNombreCompleto(allUsers?.find(u => u.id === editedData.profesorAsignadoId)) : 'Sin asignar'}
+                          value={editedData.profesorAsignadoId ? (() => {
+                            const prof = profesores.find(p => p.id === editedData.profesorAsignadoId);
+                            return prof ? getNombreCompleto(prof) : 'Sin asignar';
+                          })() : 'Sin asignar'}
                           disabled
                           className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
                         />
                       )}
                       <p className="text-xs text-[var(--color-text-secondary)]">
-                        {canEditProfesor ? 'Asigna un profesor a este estudiante' : 'Solo administradores y profesores pueden editar'}
+                        {canEditProfesor ? 'Asigna un profesor o administrador a este estudiante' : 'Solo administradores pueden editar'}
                       </p>
                     </div>
                   )}
 
                   <div className="space-y-1.5">
                     <Label htmlFor="telefono" className="text-sm text-[var(--color-text-primary)]">Teléfono</Label>
-                    <Input
-                      id="telefono"
-                      type="tel"
-                      value={editedData.telefono}
-                      onChange={(e) => setEditedData({ ...editedData, telefono: e.target.value })}
-                      placeholder="Ej: +34 600 000 000"
-                      className={componentStyles.controls.inputDefault}
-                    />
+                    <div className="flex items-center gap-2">
+                      {canEditTelefono ? (
+                        <>
+                          <Select
+                            value={phoneCountryCode}
+                            onValueChange={(value) => setPhoneCountryCode(value)}
+                          >
+                            <SelectTrigger className={`w-32 ${componentStyles.controls.selectDefault}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {countryCodes.map(cc => (
+                                <SelectItem key={cc.code} value={cc.code}>
+                                  {cc.country}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <div className="flex-1 flex items-center gap-2">
+                            <div className="relative flex-1">
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)] pointer-events-none" />
+                              <Input
+                                id="telefono"
+                                type="tel"
+                                value={editedData.telefono || ''}
+                                onChange={(e) => {
+                                  const filtered = filterPhoneInput(e.target.value);
+                                  setEditedData({ ...editedData, telefono: filtered });
+                                  setPhoneSearch(filtered);
+                                }}
+                                placeholder={getPhonePlaceholder(phoneCountryCode)}
+                                className={`pl-9 ${componentStyles.controls.inputDefault}`}
+                                aria-label="Buscar o ingresar teléfono"
+                              />
+                              {editedData.telefono && (
+                                <button
+                                  onClick={() => {
+                                    setEditedData({ ...editedData, telefono: '' });
+                                    setPhoneSearch('');
+                                  }}
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                                  aria-label="Limpiar teléfono"
+                                  type="button"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                            {editedData.telefono && editedData.telefono.trim() && getWhatsAppLink(editedData.telefono, phoneCountryCode) && (
+                              <a
+                                href={getWhatsAppLink(editedData.telefono, phoneCountryCode)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center w-10 h-10 rounded-lg bg-[#25D366] text-white hover:bg-[#20BA5A] transition-colors flex-shrink-0"
+                                aria-label="Abrir WhatsApp"
+                                title="Abrir WhatsApp"
+                              >
+                                <MessageCircle className="w-5 h-5" />
+                              </a>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <Input
+                          id="telefono"
+                          type="tel"
+                          value={editedData.telefono || ''}
+                          disabled
+                          className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
+                        />
+                      )}
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="nivel" className="text-sm text-[var(--color-text-primary)]">Nivel Técnico</Label>
-                    <Select
-                      value={editedData.nivel}
-                      onValueChange={(value) => setEditedData({ ...editedData, nivel: value })}
-                    >
-                      <SelectTrigger id="nivel" className={componentStyles.controls.selectDefault}>
-                        <SelectValue placeholder="Seleccionar nivel" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={null}>Sin especificar</SelectItem>
-                        <SelectItem value="principiante">Principiante</SelectItem>
-                        <SelectItem value="intermedio">Intermedio</SelectItem>
-                        <SelectItem value="avanzado">Avanzado</SelectItem>
-                        <SelectItem value="profesional">Profesional</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {isEstudiante && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="nivel" className="text-sm text-[var(--color-text-primary)]">Experiencia</Label>
+                      {canEditNivel ? (
+                        <Select
+                          value={editedData.nivel || "__none__"}
+                          onValueChange={(value) => {
+                            const newValue = value === "__none__" ? null : value;
+                            setEditedData({ ...editedData, nivel: newValue });
+                          }}
+                        >
+                          <SelectTrigger id="nivel" className={componentStyles.controls.selectDefault}>
+                            <SelectValue placeholder="Seleccionar experiencia" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">Sin especificar</SelectItem>
+                            <SelectItem value="principiante">Principiante</SelectItem>
+                            <SelectItem value="intermedio">Intermedio</SelectItem>
+                            <SelectItem value="avanzado">Avanzado</SelectItem>
+                            <SelectItem value="profesional">Profesional</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          id="nivel"
+                          value={editedData.nivel ? editedData.nivel.charAt(0).toUpperCase() + editedData.nivel.slice(1) : 'Sin especificar'}
+                          disabled
+                          className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
+                        />
+                      )}
+                    </div>
+                  )}
 
                   {isEditingOwnProfile && (() => {
                     const currentTheme = design?.theme || 'system';
@@ -501,11 +739,15 @@ export default function PerfilModal({
                   </Alert>
                 )}
 
-                <div className="pt-4 border-t border-[var(--color-border-default)] flex items-center justify-between gap-4">
-                  <div className={`text-xs ${componentStyles.typography.smallMetaText} flex-shrink-0`}>
-                    <p className="text-[var(--color-text-primary)]">ID: <span className="font-mono text-[var(--color-text-secondary)]">{targetUser?.id?.slice(0, 8)}...</span></p>
-                    <p className="text-[var(--color-text-primary)]">Registrado: <span className="text-[var(--color-text-secondary)]">{targetUser?.created_date ? new Date(targetUser.created_date).toLocaleDateString('es-ES') : '-'}</span></p>
-                  </div>
+                <div className="pt-4 border-t border-[var(--color-border-default)] flex items-center justify-end gap-3">
+                  <Button
+                    onClick={() => onOpenChange(false)}
+                    disabled={updateUserMutation.isPending}
+                    variant="outline"
+                    className={componentStyles.buttons.secondary}
+                  >
+                    Cancelar
+                  </Button>
                   <Button
                     onClick={handleSave}
                     loading={updateUserMutation.isPending}

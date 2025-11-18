@@ -85,6 +85,13 @@ export default function UnifiedTable({
   }, []);
 
   const hasActions = (rowActions && typeof rowActions === 'function') || getRowActions;
+  
+  // Verificar si solo hay una acción para todos los items (si es así, ocultar columna de acciones)
+  const sampleActions = data.length > 0 && hasActions 
+    ? (getRowActions ? getRowActions(data[0]) : (rowActions ? rowActions(data[0]) : []))
+    : [];
+  const hasOnlyOneAction = sampleActions.length === 1;
+  const shouldHideActionsColumn = hasOnlyOneAction;
 
   if (data.length === 0) {
     return (
@@ -126,7 +133,7 @@ export default function UnifiedTable({
                       </div>
                     </TableHead>
                   ))}
-                  {hasActions && <TableHead className="w-10"></TableHead>}
+                  {hasActions && !shouldHideActionsColumn && <TableHead className="w-10"></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody zebra>
@@ -134,13 +141,24 @@ export default function UnifiedTable({
                   const actions = getRowActions ? getRowActions(item) : (rowActions ? rowActions(item) : []);
                   const isSelected = selectedItems.has(item[keyField]);
                   
+                  // Si solo hay una acción, ejecutarla directamente en el click de la fila si no hay onRowClick
+                  const handleRowClick = () => {
+                    if (onRowClick) {
+                      // Usar onRowClick si existe (tiene prioridad)
+                      onRowClick(item);
+                    } else if (hasOnlyOneAction && actions.length === 1) {
+                      // Si no hay onRowClick pero hay una acción, ejecutarla directamente
+                      actions[0].onClick?.();
+                    }
+                  };
+                  
                   return (
                     <TableRow
                       key={item[keyField]}
-                      clickable={!!onRowClick}
+                      clickable={!!(onRowClick || (hasOnlyOneAction && actions.length === 1))}
                       selected={isSelected}
                       className="group"
-                      onClick={() => onRowClick && onRowClick(item)}
+                      onClick={handleRowClick}
                     >
                       {selectable && (
                         <TableCell onClick={(e) => e.stopPropagation()}>
@@ -156,7 +174,7 @@ export default function UnifiedTable({
                           {col.render ? col.render(item) : item[col.key]}
                         </TableCell>
                       ))}
-                      {hasActions && (
+                      {hasActions && !shouldHideActionsColumn && (
                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 flex justify-end">
                             <RowActionsMenu actions={actions} />
@@ -199,18 +217,31 @@ export default function UnifiedTable({
         </>
       ) : (
         <>
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {sortedData.map((item) => {
               const actions = getRowActions ? getRowActions(item) : (rowActions ? rowActions(item) : []);
               const isSelected = selectedItems.has(item[keyField]);
               
+              // Si solo hay una acción, ejecutarla directamente en el click de la tarjeta
+              const handleCardClick = () => {
+                if (onRowClick) {
+                  // Usar onRowClick si existe (tiene prioridad)
+                  onRowClick(item);
+                } else if (hasOnlyOneAction && actions.length === 1) {
+                  // Si no hay onRowClick pero hay una acción, ejecutarla directamente
+                  actions[0].onClick?.();
+                }
+              };
+              
+              const isClickable = !!(onRowClick || (hasOnlyOneAction && actions.length === 1));
+              
               return (
                 <Card 
                   key={item[keyField]} 
-                  className={`app-card hover:shadow-md transition-all ${isSelected ? 'border-l-4 border-l-[hsl(var(--brand-500))] bg-[hsl(var(--brand-50))]' : ''}`}
+                  className={`app-card hover:shadow-md transition-all ${isSelected ? 'border-l-4 border-l-[hsl(var(--brand-500))] bg-[hsl(var(--brand-50))]' : ''} ${isClickable ? 'cursor-pointer' : ''}`}
                 >
-                  <CardContent className="pt-4">
-                    <div className="flex items-start gap-3">
+                  <CardContent className="p-0.5 sm:p-1 md:p-1.5">
+                    <div className="flex items-start gap-1.5 sm:gap-2">
                       {selectable && (
                         <Checkbox
                           checked={isSelected}
@@ -220,21 +251,21 @@ export default function UnifiedTable({
                         />
                       )}
                       <div 
-                        className="flex-1 min-w-0 cursor-pointer"
-                        onClick={() => onRowClick && onRowClick(item)}
+                        className={`flex-1 min-w-0 ${isClickable ? 'cursor-pointer' : ''}`}
+                        onClick={isClickable ? handleCardClick : undefined}
                       >
                         {columns.map((col) => (
-                          <div key={col.key} className="mb-3 last:mb-0">
+                          <div key={col.key} className="mb-1 sm:mb-1.5 md:mb-2 last:mb-0">
                             {col.render ? col.render(item) : (
                               <>
-                                <p className="text-xs text-[var(--color-text-secondary)] mb-1">{col.label}</p>
-                                <p className="text-sm font-medium text-[var(--color-text-primary)]">{item[col.key]}</p>
+                                <p className="text-[10px] sm:text-xs text-[var(--color-text-secondary)] mb-0.5 sm:mb-1">{col.label}</p>
+                                <p className="text-xs sm:text-sm font-medium text-[var(--color-text-primary)]">{item[col.key]}</p>
                               </>
                             )}
                           </div>
                         ))}
                       </div>
-                      {hasActions && actions.length > 0 && (
+                      {hasActions && !shouldHideActionsColumn && actions.length > 0 && (
                         <div onClick={(e) => e.stopPropagation()}>
                           <RowActionsMenu actions={actions} />
                         </div>

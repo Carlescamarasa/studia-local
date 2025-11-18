@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,19 +13,41 @@ import { getNombreVisible, useEffectiveUser } from "../components/utils/helpers"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
+import PerfilModal from "@/components/common/PerfilModal";
 
 function UsuariosPageContent() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [profesorFilter, setProfesorFilter] = useState('all');
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
 
   const effectiveUser = useEffectiveUser();
 
-  const { data: usuarios = [] } = useQuery({
+  const { data: usuarios = [], isLoading } = useQuery({
     queryKey: ['users'],
-    queryFn: () => localDataClient.entities.User.list(),
+    queryFn: async () => {
+      const users = await localDataClient.entities.User.list();
+      // LOGGING: Ver qué usuarios llegan a la UI
+      console.log('🔍 [DEBUG UI] Usuarios recibidos en la UI:', users.map(u => ({
+        id: u.id,
+        email: u.email,
+        rolPersonalizado: u.rolPersonalizado,
+        nombreCompleto: u.nombreCompleto,
+        full_name: u.full_name
+      })));
+      return users;
+    },
+    staleTime: 0, // No usar caché, siempre obtener datos frescos
+    cacheTime: 0, // No mantener en caché
   });
+
+  // Invalidar query al montar el componente para asegurar datos frescos
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['users'] });
+  }, [queryClient]);
 
   const exportarCSV = () => {
     const headers = ['Nombre', 'Email', 'Rol', 'Profesor Asignado'];
@@ -88,7 +110,8 @@ function UsuariosPageContent() {
       label: 'Usuario',
       render: (u) => (
         <div>
-          <p className="font-medium text-sm">{getNombreVisible(u)}</p>
+          {/* Priorizar nombreCompleto sobre full_name (que puede ser email en la BD) */}
+          <p className="font-medium text-sm">{u.nombreCompleto || (u.full_name && !u.full_name.includes('@') ? u.full_name : null) || u.email}</p>
           <p className="text-xs text-ui/80">{u.email}</p>
         </div>
       ),
@@ -96,11 +119,21 @@ function UsuariosPageContent() {
     {
       key: 'rol',
       label: 'Rol',
-      render: (u) => (
-        <Badge variant={roleVariants[u.rolPersonalizado] || roleVariants.ESTU}>
-          {roleLabels[u.rolPersonalizado] || 'Estudiante'}
-        </Badge>
-      ),
+      render: (u) => {
+        // LOGGING: Ver qué rol se está renderizando
+        console.log('🔍 [DEBUG RENDER] Renderizando rol para usuario:', {
+          id: u.id,
+          email: u.email,
+          rolPersonalizado: u.rolPersonalizado,
+          roleVariant: roleVariants[u.rolPersonalizado],
+          roleLabel: roleLabels[u.rolPersonalizado]
+        });
+        return (
+          <Badge variant={roleVariants[u.rolPersonalizado] || roleVariants.ESTU}>
+            {roleLabels[u.rolPersonalizado] || 'Estudiante'}
+          </Badge>
+        );
+      },
     },
     {
       key: 'profesor',
@@ -185,22 +218,34 @@ function UsuariosPageContent() {
               data={usuariosFiltrados}
               getRowActions={(u) => [
                 {
-                  id: 'view',
-                  label: 'Ver perfil',
-                  onClick: () => navigate(createPageUrl(`perfil?userId=${u.id}`)),
-                },
-                {
                   id: 'edit',
                   label: 'Editar perfil',
-                  onClick: () => navigate(createPageUrl(`perfil?userId=${u.id}`)),
+                  onClick: () => {
+                    setSelectedUserId(u.id);
+                    setIsPerfilModalOpen(true);
+                  },
                 },
               ]}
-              onRowClick={(u) => navigate(createPageUrl(`perfil?userId=${u.id}`))}
+              onRowClick={(u) => {
+                setSelectedUserId(u.id);
+                setIsPerfilModalOpen(true);
+              }}
               emptyMessage="No hay usuarios"
             />
           </CardContent>
         </Card>
       </div>
+
+      <PerfilModal
+        open={isPerfilModalOpen}
+        onOpenChange={(open) => {
+          setIsPerfilModalOpen(open);
+          if (!open) {
+            setSelectedUserId(null);
+          }
+        }}
+        userId={selectedUserId}
+      />
     </div>
   );
 }
