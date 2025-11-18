@@ -6,7 +6,14 @@ import { DEFAULT_DESIGN, getSpacingForDensity } from "./designConfig";
  * Útil para componentes que necesitan adaptarse a la configuración runtime
  */
 export function useClassTokens() {
-  const designContext = useDesign();
+  let designContext;
+  try {
+    designContext = useDesign();
+  } catch (error) {
+    // Si el hook falla (contexto no disponible), usar valores por defecto
+    designContext = null;
+  }
+  
   // Usar design del contexto, o DEFAULT_DESIGN como fallback
   const design = designContext?.design || DEFAULT_DESIGN;
   
@@ -17,12 +24,18 @@ export function useClassTokens() {
   
   // Obtener valores de spacing según densidad usando helper del config
   const density = design?.layout?.density || 'normal';
-  const densitySpacing = getSpacingForDensity(density);
+  let densitySpacing;
+  try {
+    densitySpacing = getSpacingForDensity(density);
+  } catch (error) {
+    densitySpacing = { lg: '1rem' };
+  }
   const spacing = {
-    header: densitySpacing.lg || '1rem',
-    content: densitySpacing.lg || '1rem',
+    header: densitySpacing?.lg || '1rem',
+    content: densitySpacing?.lg || '1rem',
   };
   
+  // Siempre devolver un objeto válido, incluso si hay errores
   return {
     // Cards y paneles - usando CSS variables
     card: `rounded-[var(--radius-card)] shadow-[var(--shadow-card)] border border-[var(--color-border-default)] bg-[var(--color-surface-elevated)]`,
@@ -50,6 +63,6 @@ export function useClassTokens() {
     shadowLevel: design?.layout?.shadow || 'md',
     
     // Acceso directo a valores del diseño
-    design,
+    design: design || DEFAULT_DESIGN,
   };
 }

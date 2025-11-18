@@ -77,7 +77,7 @@ function EstudiantesPageContent() {
 
   const { data: feedbacksExistentes = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
-    queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_date'),
+    queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_at'),
   });
 
   const guardarFeedbackMutation = useMutation({
@@ -401,6 +401,7 @@ function EstudiantesPageContent() {
                 }}
                 keyField="id"
                 emptyMessage="No hay estudiantes"
+                emptyIcon={Users}
               />
             )}
           </CardContent>

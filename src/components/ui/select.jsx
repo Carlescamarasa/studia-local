@@ -9,7 +9,13 @@ const SelectGroup = SelectPrimitive.Group
 const SelectValue = SelectPrimitive.Value
 
 const SelectTrigger = React.forwardRef(({ className, children, ...props }, ref) => {
-  const tokens = useClassTokens();
+  let tokens;
+  try {
+    tokens = useClassTokens();
+  } catch (error) {
+    // Si hay error, usar valores por defecto
+    tokens = null;
+  }
   const control = tokens?.control || 'ctrl-field';
   
   return (

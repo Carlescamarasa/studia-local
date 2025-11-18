@@ -354,6 +354,7 @@ function AsignacionesPageContent() {
               }}
               onRowClick={(a) => navigate(createPageUrl(`asignacion-detalle?id=${a.id}`))}
               emptyMessage="No hay asignaciones"
+              emptyIcon={Target}
             />
           </CardContent>
         </Card>

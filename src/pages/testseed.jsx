@@ -87,6 +87,195 @@ export default function TestSeedPage() {
 
   const clearLogs = () => setSeedLogs([]);
 
+  // ======================== CREAR USUARIOS DE PRUEBA ========================
+  const crearUsuariosPrueba = async () => {
+    setIsSeeding(true);
+    clearLogs();
+    addLog('👥 Creando usuarios de prueba...', 'info');
+
+    try {
+      const dataSource = import.meta.env.VITE_DATA_SOURCE || 'local';
+      if (dataSource !== 'remote') {
+        addLog('⚠️ Esta función solo funciona en modo remoto (Supabase)', 'warning');
+        toast.error('Solo disponible en modo remoto');
+        setIsSeeding(false);
+        return;
+      }
+
+      // Verificar autenticación
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        addLog('⚠️ No hay sesión de Supabase activa', 'warning');
+        toast.error('Debes estar autenticado para crear usuarios');
+        setIsSeeding(false);
+        return;
+      }
+
+      addLog('✓ Sesión de Supabase activa', 'info');
+
+      // Obtener usuarios existentes para verificar duplicados
+      const usuariosExistentes = await localDataClient.entities.User.list();
+      const emailsExistentes = new Set(usuariosExistentes.map(u => u.email?.toLowerCase()));
+
+      // Crear 2 profesores
+      const profesores = [
+        { nombre: 'Profesor Prueba 1', email: 'prof1@test.studia', role: 'PROF' },
+        { nombre: 'Profesor Prueba 2', email: 'prof2@test.studia', role: 'PROF' }
+      ];
+
+      // Crear 5 estudiantes
+      const estudiantes = [
+        { nombre: 'Estudiante Prueba 1', email: 'estudiante1@test.studia', role: 'ESTU' },
+        { nombre: 'Estudiante Prueba 2', email: 'estudiante2@test.studia', role: 'ESTU' },
+        { nombre: 'Estudiante Prueba 3', email: 'estudiante3@test.studia', role: 'ESTU' },
+        { nombre: 'Estudiante Prueba 4', email: 'estudiante4@test.studia', role: 'ESTU' },
+        { nombre: 'Estudiante Prueba 5', email: 'estudiante5@test.studia', role: 'ESTU' }
+      ];
+
+      const usuariosACrear = [...profesores, ...estudiantes];
+      let creados = 0;
+      let saltados = 0;
+      const profesoresCreados = [];
+
+      for (const usuario of usuariosACrear) {
+        const emailLower = usuario.email.toLowerCase();
+        if (emailsExistentes.has(emailLower)) {
+          addLog(`⚠️ Usuario ${usuario.email} ya existe. Saltando.`, 'warning');
+          saltados++;
+          // Si es profesor, añadirlo a la lista de profesores disponibles
+          const usuarioExistente = usuariosExistentes.find(u => u.email?.toLowerCase() === emailLower);
+          if (usuarioExistente && usuarioExistente.rolPersonalizado === 'PROF') {
+            profesoresCreados.push(usuarioExistente.id);
+          }
+          continue;
+        }
+
+        try {
+          addLog(`📝 Creando usuario ${usuario.nombre} (${usuario.email})...`, 'info');
+          
+          // Crear usuario usando signUp
+          // Nota: Requiere que la confirmación de email esté deshabilitada en Supabase
+          // o que uses Admin API con service_role key
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: usuario.email,
+            password: 'TestPassword123!', // Contraseña temporal
+            options: {
+              data: {
+                full_name: usuario.nombre,
+                role: usuario.role
+              },
+              emailRedirectTo: undefined
+            }
+          });
+
+          if (authError) {
+            // Si el usuario ya existe, intentar obtenerlo
+            if (authError.message?.includes('already registered') || authError.message?.includes('already exists') || authError.message?.includes('User already registered')) {
+            addLog(`ℹ️ Usuario ${usuario.email} ya existe. Obteniendo información...`, 'info');
+              const usuariosActualizados = await localDataClient.entities.User.list();
+              const usuarioExistente = usuariosActualizados.find(u => u.email?.toLowerCase() === emailLower);
+              if (usuarioExistente) {
+                addLog(`✅ Usuario ${usuario.email} ya existe y está disponible`, 'success');
+                creados++;
+                if (usuario.role === 'PROF') {
+                  profesoresCreados.push(usuarioExistente.id);
+                }
+                continue;
+              }
+            }
+            addLog(`❌ Error al crear usuario ${usuario.email}: ${authError.message}`, 'error');
+            addLog(`💡 Nota: Si falla, puede requerir confirmación de email. Verifica la configuración de Supabase.`, 'info');
+            continue;
+          }
+
+          if (authData?.user) {
+            addLog(`✅ Usuario ${usuario.email} creado en auth.users (ID: ${authData.user.id})`, 'success');
+            
+            // Actualizar el perfil con los datos correctos
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({
+                full_name: usuario.nombre,
+                role: usuario.role,
+                is_active: true
+              })
+              .eq('id', authData.user.id);
+
+            if (updateError) {
+              addLog(`⚠️ Error al actualizar perfil: ${updateError.message}. Verificando si existe...`, 'warning');
+              // Verificar si el perfil existe
+              const { data: perfilExistente } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', authData.user.id)
+                .single();
+              
+              if (perfilExistente) {
+                addLog(`✅ Perfil encontrado para ${usuario.email}`, 'success');
+                creados++;
+                if (usuario.role === 'PROF') {
+                  profesoresCreados.push(authData.user.id);
+                }
+              } else {
+                addLog(`⚠️ Perfil no encontrado. Puede requerir creación manual.`, 'warning');
+              }
+            } else {
+              addLog(`✅ Perfil actualizado para ${usuario.email}`, 'success');
+              creados++;
+              
+              if (usuario.role === 'PROF') {
+                profesoresCreados.push(authData.user.id);
+              }
+            }
+          } else if (authData?.user === null && !authError) {
+            // Usuario creado pero requiere confirmación de email
+            addLog(`⚠️ Usuario ${usuario.email} creado pero requiere confirmación de email.`, 'warning');
+            addLog(`💡 Verifica tu email o deshabilita la confirmación de email en Supabase para usuarios de prueba.`, 'info');
+          }
+        } catch (error) {
+          addLog(`❌ Error al crear usuario ${usuario.email}: ${error.message}`, 'error');
+          console.error('Error completo:', error);
+        }
+      }
+
+      // Asignar estudiantes a profesores aleatoriamente
+      if (profesoresCreados.length > 0) {
+        addLog('📝 Asignando estudiantes a profesores...', 'info');
+        const estudiantesCreados = await localDataClient.entities.User.list();
+        const estudiantesParaAsignar = estudiantesCreados.filter(u => 
+          u.rolPersonalizado === 'ESTU' && 
+          estudiantes.some(e => e.email.toLowerCase() === u.email?.toLowerCase())
+        );
+
+        for (const estudiante of estudiantesParaAsignar) {
+          if (!estudiante.profesorAsignadoId) {
+            const profesorAleatorio = profesoresCreados[Math.floor(Math.random() * profesoresCreados.length)];
+            try {
+              await localDataClient.entities.User.update(estudiante.id, {
+                profesorAsignadoId: profesorAleatorio
+              });
+              addLog(`✅ Estudiante ${estudiante.email} asignado a profesor`, 'success');
+            } catch (error) {
+              addLog(`⚠️ Error al asignar profesor: ${error.message}`, 'warning');
+            }
+          }
+        }
+      }
+
+      // Invalidar y refrescar queries
+      await queryClient.invalidateQueries({ queryKey: ['users'] });
+      await queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      await queryClient.refetchQueries({ queryKey: ['users'] });
+
+      addLog(`✅ Completado: ${creados} usuarios creados, ${saltados} saltados`, 'success');
+      toast.success(`${creados} usuarios de prueba creados`);
+    } catch (error) {
+      addLog(`❌ Error general: ${error.message}`, 'error');
+      toast.error(`Error al crear usuarios: ${error.message}`);
+    }
+    setIsSeeding(false);
+  };
+
   // ======================== SEMILLAS REALISTAS ========================
   const generarSemillasRealistas = async (numSemanas) => {
     setIsSeeding(true);
@@ -199,14 +388,39 @@ export default function TestSeedPage() {
       for (const tipo of tiposRequeridos) {
         let ejercicio = bloques.find(b => b.tipo === tipo && b.code?.includes('SEED'));
         if (!ejercicio) {
+          // Nombres variados y únicos para cada tipo de ejercicio
+          const nombresVariados = {
+            CA: ['Respiración Profunda', 'Calentamiento de Embocadura', 'Ejercicios de Respiración', 'Preparación Técnica', 'Calentamiento Respiratorio'],
+            CB: ['Escalas Básicas', 'Calentamiento de Dedos', 'Ejercicios de Agilidad', 'Técnica Fundamental', 'Ejercicios de Velocidad'],
+            TC: ['Ligaduras Avanzadas', 'Técnica de Articulación', 'Ejercicios de Control', 'Práctica Técnica', 'Técnica de Precisión'],
+            TM: ['Mantenimiento de Técnica', 'Ejercicios de Consistencia', 'Técnica de Refuerzo', 'Práctica de Mantenimiento', 'Refuerzo Técnico'],
+            FM: ['Fragmento Principal', 'Pasaje Musical', 'Sección de la Pieza', 'Fragmento de Estudio', 'Pasaje de la Obra'],
+            VC: ['Relajación Final', 'Vuelta a la Calma', 'Ejercicios de Respiración Final', 'Cierre de Sesión', 'Relajación Post-Práctica'],
+            AD: ['Recordatorio Postura', 'Nota Importante', 'Aviso Técnico', 'Recomendación', 'Punto de Atención']
+          };
+
+          // Seleccionar nombre aleatorio para este ejercicio
+          const nombresDisponibles = nombresVariados[tipo];
+          const nombreAleatorio = nombresDisponibles[Math.floor(Math.random() * nombresDisponibles.length)];
+          
+          const duraciones = {
+            CA: 300,
+            CB: 360,
+            TC: 480,
+            TM: 360,
+            FM: 600,
+            VC: 240,
+            AD: 0,
+          };
+
           const configs = {
-            CA: { nombre: 'Calentamiento A', duracion: 300 },
-            CB: { nombre: 'Calentamiento B', duracion: 360 },
-            TC: { nombre: 'Técnica Central', duracion: 480 },
-            TM: { nombre: 'Técnica Mantenimiento', duracion: 360 },
-            FM: { nombre: 'Fragmento Musical', duracion: 600 },
-            VC: { nombre: 'Vuelta a la Calma', duracion: 240 },
-            AD: { nombre: 'Advertencia', duracion: 0 },
+            CA: { nombre: nombreAleatorio, duracion: duraciones.CA },
+            CB: { nombre: nombreAleatorio, duracion: duraciones.CB },
+            TC: { nombre: nombreAleatorio, duracion: duraciones.TC },
+            TM: { nombre: nombreAleatorio, duracion: duraciones.TM },
+            FM: { nombre: nombreAleatorio, duracion: duraciones.FM },
+            VC: { nombre: nombreAleatorio, duracion: duraciones.VC },
+            AD: { nombre: nombreAleatorio, duracion: duraciones.AD },
           };
 
           addLog(`📝 Creando ejercicio ${tipo}...`, 'info');
@@ -369,19 +583,23 @@ export default function TestSeedPage() {
 
       // Para cada estudiante
       for (const estudiante of estudiantes) {
+        addLog(`👤 Procesando estudiante: ${estudiante.nombreCompleto || estudiante.email}`, 'info');
         // En modo remoto, siempre usar el profesor autenticado para cumplir con RLS
         // En modo local, usar el profesor asignado al estudiante si existe
         const profesorAsignado = dataSource === 'remote' 
           ? profesorParaRLS 
           : (usuarios.find(u => u.id === estudiante.profesorAsignadoId) || profesor);
 
-        // Para cada semana (-2, -1, 0)
+        // Para cada semana: generar desde -(numSemanas-1) hasta 0
+        // Ejemplo: 3 semanas = -2, -1, 0 (3 semanas: hace 2 semanas, hace 1 semana, esta semana)
         for (let offsetSemana = -(numSemanas - 1); offsetSemana <= 0; offsetSemana++) {
           const lunesSemana = new Date(lunesActual);
           lunesSemana.setDate(lunesSemana.getDate() + (offsetSemana * 7));
           const semanaInicioISO = formatLocalDate(lunesSemana);
+          addLog(`📅 Procesando semana ${semanaInicioISO} (offset: ${offsetSemana})...`, 'info');
 
           // Verificar si ya existe asignación para esta semana
+          // Si existe, usarla; si no, crearla
           const asignaciones = await localDataClient.entities.Asignacion.list();
           let asignacion = asignaciones.find(a =>
             a.alumnoId === estudiante.id &&
@@ -438,16 +656,27 @@ export default function TestSeedPage() {
               const errorCode = error?.code || '';
               addLog(`❌ Error al crear asignación para ${estudiante.nombreCompleto || estudiante.email}: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}${errorCode ? ` (Código: ${errorCode})` : ''}`, 'error');
               console.error('Error completo al crear asignación:', error);
-              throw error;
+              // No lanzar error, intentar continuar con la siguiente semana
+              continue;
             }
+          } else {
+            addLog(`ℹ️ Usando asignación existente para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}`, 'info');
           }
 
-          // Generar 3-5 sesiones para esta semana
-          const numSesionesEnSemana = 3 + Math.floor(Math.random() * 3); // 3-5
+          // Verificar duplicados a nivel de sesión individual (fecha/hora específica)
+          // Permitir crear múltiples ejecuciones con datos diferentes usando timestamps únicos
+          // No saltar semanas completas, solo verificar duplicados exactos por fecha/hora
+
+          // Contador local de sesiones para esta semana
+          let sesionesCreadasEstaSemana = 0;
+
+          // Generar número variable de sesiones (2-6) para más variación
+          const numSesionesEnSemana = 2 + Math.floor(Math.random() * 5); // 2-6
+          addLog(`📝 Generando ${numSesionesEnSemana} sesiones para semana ${semanaInicioISO}...`, 'info');
           const diasPracticados = new Set();
 
-          // Seleccionar días únicos (4-5 días diferentes)
-          while (diasPracticados.size < Math.min(numSesionesEnSemana, 5)) {
+          // Seleccionar días únicos (hasta 6 días diferentes)
+          while (diasPracticados.size < Math.min(numSesionesEnSemana, 6)) {
             const diaOffset = Math.floor(Math.random() * 7); // 0-6 (lunes-domingo)
             diasPracticados.add(diaOffset);
           }
@@ -455,6 +684,9 @@ export default function TestSeedPage() {
           const diasArray = Array.from(diasPracticados).sort();
           const franjas = ['manana', 'tarde', 'noche'];
           const focos = ['GEN', 'LIG', 'RIT', 'ART', 'S&A'];
+
+          // Añadir offset aleatorio para variar fechas entre ejecuciones
+          const offsetAleatorio = Math.floor(Math.random() * 1440); // 0-1440 minutos (0-24h)
 
           for (let i = 0; i < numSesionesEnSemana; i++) {
             const diaOffset = diasArray[i % diasArray.length];
@@ -472,40 +704,69 @@ export default function TestSeedPage() {
               minuto = Math.floor(Math.random() * 60);
             }
 
+            // Añadir variación aleatoria adicional a la hora para hacer cada ejecución única
+            const variacionMinutos = Math.floor(Math.random() * 30) - 15; // -15 a +15 minutos
+            const minutoFinal = Math.max(0, Math.min(59, minuto + variacionMinutos));
+
             const fechaSesion = new Date(lunesSemana);
             fechaSesion.setDate(fechaSesion.getDate() + diaOffset);
-            fechaSesion.setHours(hora, minuto, 0, 0);
+            fechaSesion.setHours(hora, minutoFinal, 0, 0);
+            // Añadir offset aleatorio para variar entre ejecuciones
+            fechaSesion.setMinutes(fechaSesion.getMinutes() + (offsetAleatorio % 60));
 
-            const duracionSesion = (20 + Math.floor(Math.random() * 41)) * 60; // 20-60 min en segundos
+            // Variar duración más ampliamente (15-75 min) para más variación
+            const duracionSesion = (15 + Math.floor(Math.random() * 61)) * 60; // 15-75 min en segundos
             const fechaFin = new Date(fechaSesion.getTime() + duracionSesion * 1000);
 
-            // Seleccionar 2-4 bloques
-            const numBloques = 2 + Math.floor(Math.random() * 3); // 2-4
-            const tiposPesos = { CA: 0.2, CB: 0.2, TC: 0.3, TM: 0.15, FM: 0.25, VC: 0.08, AD: 0.02 };
+            // Seleccionar 2-5 bloques para más variación
+            const numBloques = 2 + Math.floor(Math.random() * 4); // 2-5
+            // Variar pesos aleatoriamente para cada sesión
+            const variacionPesos = Math.random() * 0.3 - 0.15; // -0.15 a +0.15
+            const tiposPesos = { 
+              CA: 0.2 + variacionPesos, 
+              CB: 0.2 + variacionPesos, 
+              TC: 0.3 + variacionPesos, 
+              TM: 0.15 + variacionPesos, 
+              FM: 0.25 + variacionPesos, 
+              VC: 0.08 + variacionPesos, 
+              AD: 0.02 
+            };
             const bloquesSeleccionados = [];
             const tiposUsados = new Set();
+            const tiposDisponibles = Object.keys(tiposPesos);
 
-            for (let b = 0; b < numBloques; b++) {
-              const rand = Math.random();
-              let acumulado = 0;
-              let tipoSeleccionado = 'TC'; // Default to a common type if none match
+            // Mezclar tipos disponibles para más aleatoriedad
+            const tiposMezclados = [...tiposDisponibles].sort(() => Math.random() - 0.5);
 
-              for (const [tipo, peso] of Object.entries(tiposPesos)) {
-                acumulado += peso;
-                if (rand < acumulado && !tiposUsados.has(tipo)) {
-                  tipoSeleccionado = tipo;
-                  tiposUsados.add(tipo);
-                  break;
-                }
-              }
-
+            for (let b = 0; b < numBloques && b < tiposMezclados.length; b++) {
+              const tipoSeleccionado = tiposMezclados[b];
               const ejercicio = bloques.find(e => e.tipo === tipoSeleccionado && e.code?.includes('SEED'));
-              if (ejercicio) {
+              if (ejercicio && !tiposUsados.has(tipoSeleccionado)) {
                 bloquesSeleccionados.push(ejercicio);
+                tiposUsados.add(tipoSeleccionado);
+              }
+            }
+            
+            // Si no hay suficientes, añadir más aleatoriamente
+            while (bloquesSeleccionados.length < numBloques && bloquesSeleccionados.length < tiposDisponibles.length) {
+              const tipoAleatorio = tiposDisponibles[Math.floor(Math.random() * tiposDisponibles.length)];
+              if (!tiposUsados.has(tipoAleatorio)) {
+                const ejercicio = bloques.find(e => e.tipo === tipoAleatorio && e.code?.includes('SEED'));
+                if (ejercicio) {
+                  bloquesSeleccionados.push(ejercicio);
+                  tiposUsados.add(tipoAleatorio);
+                }
               }
             }
 
-            const calificacion = 1 + Math.floor(Math.random() * 4); // 1-4
+            // Variar calificación con distribución más realista (más 3s y 4s)
+            const randCalif = Math.random();
+            let calificacion;
+            if (randCalif < 0.2) calificacion = 1;
+            else if (randCalif < 0.4) calificacion = 2;
+            else if (randCalif < 0.7) calificacion = 3;
+            else calificacion = 4;
+            
             const semanaIdx = 0;
             const sesionIdx = i;
             const foco = focos[Math.floor(Math.random() * focos.length)];
@@ -514,7 +775,7 @@ export default function TestSeedPage() {
               .filter(b => b.tipo !== 'AD')
               .reduce((sum, b) => sum + (b.duracionSeg || 0), 0);
 
-            addLog(`📝 Creando registro de sesión ${i + 1}/${numSesionesEnSemana}...`, 'info');
+            addLog(`📝 Creando registro de sesión ${i + 1}/${numSesionesEnSemana} para semana ${semanaInicioISO}...`, 'info');
             let registroSesion;
             try {
               registroSesion = await localDataClient.entities.RegistroSesion.create({
@@ -545,11 +806,15 @@ export default function TestSeedPage() {
               });
 
               totalSesiones++;
+              sesionesCreadasEstaSemana++;
+              addLog(`✅ Registro de sesión creado: ${registroSesion.id}`, 'success');
             } catch (error) {
               const errorMsg = error?.message || error?.toString() || 'Error desconocido';
               const errorDetails = error?.details || error?.hint || '';
               addLog(`❌ Error al crear registro de sesión: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
-              throw error;
+              console.error('Error completo al crear registro de sesión:', error);
+              // Continuar con la siguiente sesión en lugar de detener todo
+              continue;
             }
 
             // Crear registros de bloques
@@ -560,7 +825,7 @@ export default function TestSeedPage() {
               const duracionReal = esOmitido ? 0 : (bloque.duracionSeg || 0) + Math.floor((Math.random() * 60) - 30);
 
               try {
-                await localDataClient.entities.RegistroBloque.create({
+                const registroBloque = await localDataClient.entities.RegistroBloque.create({
                   registroSesionId: registroSesion.id,
                   asignacionId: asignacion.id,
                   alumnoId: estudiante.id,
@@ -577,43 +842,73 @@ export default function TestSeedPage() {
                   inicioISO: new Date(fechaSesion.getTime() + tiempoAcumulado * 1000).toISOString(),
                   finISO: new Date(fechaSesion.getTime() + (tiempoAcumulado + duracionReal) * 1000).toISOString()
                 });
+                
+                if (!registroBloque) {
+                  addLog(`⚠️ Registro de bloque ${b + 1} no se creó correctamente`, 'warning');
+                }
 
                 tiempoAcumulado += duracionReal;
                 totalBloques++;
+                addLog(`✅ Registro de bloque creado: ${bloque.code}`, 'info');
               } catch (error) {
                 const errorMsg = error?.message || error?.toString() || 'Error desconocido';
                 const errorDetails = error?.details || error?.hint || '';
                 addLog(`❌ Error al crear registro de bloque ${b + 1}: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
-                throw error;
+                console.error('Error completo al crear registro de bloque:', error);
+                // Continuar con el siguiente bloque en lugar de detener todo
+                continue;
               }
             }
           }
+          
+          // Crear feedback semanal solo si se crearon sesiones para esta semana
+          if (sesionesCreadasEstaSemana > 0) {
+            // Notas más variadas y específicas
+            const notasProfesor = [
+              'Excelente progreso esta semana. Sigue mejorando la técnica de respiración.',
+              'Buen trabajo general. Recomiendo enfocarte más en la articulación.',
+              'Mejora la consistencia en la práctica diaria. Intenta practicar al menos 4 días por semana.',
+              'Se nota avance en el control del sonido. Trabaja más en la afinación en el registro agudo.',
+              'Práctica sólida esta semana. Continúa con el trabajo de ligaduras.',
+              'Necesitas mayor dedicación. Ajusta la embocadura y practica escalas con metrónomo.',
+              'Muy buena evolución en el fraseo. Sigue trabajando la dinámica.',
+              'El ritmo está mejorando notablemente. Mantén la constancia.',
+              'Excelente control de la respiración. Ahora enfócate en la proyección del sonido.',
+              'Buen trabajo en las escalas. Próximo paso: trabajar la velocidad con precisión.',
+              'La postura ha mejorado mucho. Continúa prestando atención a este aspecto.',
+              'Se nota dedicación en la práctica. Sigue así y verás resultados pronto.'
+            ];
+            // Verificar si ya existe feedback para esta semana
+            const feedbacksExistentes = await localDataClient.entities.FeedbackSemanal.list();
+            const feedbackExistente = feedbacksExistentes.find(f => 
+              f.asignacionId === asignacion.id && 
+              f.semanaInicioISO === semanaInicioISO
+            );
 
-          // Crear feedback semanal (SOLO texto, sin valoración)
-          const notasProfesor = [
-            'Excelente progreso esta semana. Sigue mejorando la técnica de respiración.',
-            'Buen trabajo general. Recomiendo enfocarte más en la articulación.',
-            'Mejora la consistencia en la práctica diaria. Intenta practicar al menos 4 días por semana.',
-            'Se nota avance en el control del sonido. Trabaja más en la afinación en el registro agudo.',
-            'Práctica sólida esta semana. Continúa con el trabajo de ligaduras.',
-            'Necesitas mayor dedicación. Ajusta la embocadura y practica escalas con metrónomo.'
-          ];
+            if (!feedbackExistente) {
+              try {
+                addLog(`📝 Creando feedback semanal para semana ${semanaInicioISO}...`, 'info');
+                await localDataClient.entities.FeedbackSemanal.create({
+                  asignacionId: asignacion.id,
+                  alumnoId: estudiante.id,
+                  profesorId: profesorAsignado.id,
+                  semanaInicioISO: semanaInicioISO,
+                  notaProfesor: notasProfesor[Math.floor(Math.random() * notasProfesor.length)]
+                });
 
-          try {
-            await localDataClient.entities.FeedbackSemanal.create({
-              asignacionId: asignacion.id,
-              alumnoId: estudiante.id,
-              profesorId: profesorAsignado.id,
-              semanaInicioISO: semanaInicioISO,
-              notaProfesor: notasProfesor[Math.floor(Math.random() * notasProfesor.length)]
-            });
-
-            totalFeedbacks++;
-          } catch (error) {
-            const errorMsg = error?.message || error?.toString() || 'Error desconocido';
-            const errorDetails = error?.details || error?.hint || '';
-            addLog(`❌ Error al crear feedback semanal: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
-            throw error;
+                totalFeedbacks++;
+                addLog(`✅ Feedback semanal creado para semana ${semanaInicioISO}`, 'success');
+              } catch (error) {
+                const errorMsg = error?.message || error?.toString() || 'Error desconocido';
+                const errorDetails = error?.details || error?.hint || '';
+                addLog(`❌ Error al crear feedback semanal: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+                console.error('Error al crear feedback:', error);
+              }
+            } else {
+              addLog(`⚠️ Ya existe feedback para semana ${semanaInicioISO}. Saltando.`, 'warning');
+            }
+          } else {
+            addLog(`⚠️ No se crearon sesiones para semana ${semanaInicioISO}. Saltando feedback.`, 'warning');
           }
         }
       }
@@ -623,15 +918,19 @@ export default function TestSeedPage() {
       addLog(`📊 Resumen: ${estudiantes.length} estudiantes × ${numSemanas} semanas`, 'info');
       addLog(`📊 ${totalSesiones} sesiones, ${totalBloques} bloques, ${totalFeedbacks} feedbacks`, 'info');
 
-      // Invalidar todas las queries relacionadas
-      await queryClient.invalidateQueries({ queryKey: ['seedStats'] });
-      await queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
-      await queryClient.invalidateQueries({ queryKey: ['registrosSesion'] });
-      await queryClient.invalidateQueries({ queryKey: ['registrosBloque'] });
-      await queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] });
-      await queryClient.invalidateQueries({ queryKey: ['piezas'] });
-      await queryClient.invalidateQueries({ queryKey: ['planes'] });
-      await queryClient.invalidateQueries({ queryKey: ['bloques'] });
+      // Invalidar todas las queries relacionadas (sin esperar)
+      addLog('🔄 Invalidando cache...', 'info');
+      queryClient.invalidateQueries({ queryKey: ['seedStats'] });
+      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
+      queryClient.invalidateQueries({ queryKey: ['asignacionesProf'] });
+      queryClient.invalidateQueries({ queryKey: ['registrosSesion'] });
+      queryClient.invalidateQueries({ queryKey: ['registrosBloques'] });
+      queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] });
+      queryClient.invalidateQueries({ queryKey: ['piezas'] });
+      queryClient.invalidateQueries({ queryKey: ['planes'] });
+      queryClient.invalidateQueries({ queryKey: ['bloques'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+
       toast.success(`✅ ${numSemanas} ${numSemanas === 1 ? 'semana' : 'semanas'} generadas`);
     } catch (error) {
       const errorMsg = error?.message || error?.toString() || 'Error desconocido';
@@ -1040,6 +1339,18 @@ export default function TestSeedPage() {
                   <strong>Importante:</strong> Usa estudiantes existentes. Crea usuarios con rol ESTU antes de semillar.
                 </AlertDescription>
               </Alert>
+              <div className="space-y-3">
+                <Button
+                  variant="outline"
+                  onClick={crearUsuariosPrueba}
+                  loading={isSeeding}
+                  className={`w-full ${componentStyles.buttons.outline}`}
+                  aria-label="Crear usuarios de prueba"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Crear Usuarios de Prueba (2 PROF + 5 ESTU)
+                </Button>
+              </div>
               <div className={componentStyles.layout.grid3}>
                 <Button
                   variant="primary"

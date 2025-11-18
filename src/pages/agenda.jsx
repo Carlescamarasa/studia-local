@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Calendar, User, Music, Target, MessageSquare, 
+  Calendar, User, Users, Music, Target, MessageSquare, 
   Search, X, Edit, Trash2, Save, Eye, Clock, Activity,
   ChevronDown, ChevronRight, PlayCircle
 } from "lucide-react";
@@ -107,7 +107,7 @@ function AgendaPageContent() {
 
   const { data: feedbacksSemanal = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
-    queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_date'),
+    queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_at'),
   });
 
   const crearFeedbackMutation = useMutation({
@@ -573,6 +573,7 @@ function AgendaPageContent() {
               return actions;
             }}
             emptyMessage={searchTerm ? 'No se encontraron estudiantes' : 'No hay estudiantes asignados'}
+            emptyIcon={Users}
             keyField="id"
           />
         </div>

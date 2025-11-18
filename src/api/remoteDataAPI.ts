@@ -20,9 +20,28 @@ import type {
 
 /**
  * Helper para convertir camelCase a snake_case
+ * Maneja correctamente siglas como ISO, ID, etc.
+ * Ejemplos:
+ * - semanaInicioISO -> semana_inicio_iso
+ * - userId -> user_id
+ * - XMLHttpRequest -> xml_http_request
  */
 function toSnakeCase(str: string): string {
-  return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+  // Procesar de derecha a izquierda para manejar siglas correctamente
+  // Primero, separar siglas finales (secuencias de mayúsculas al final)
+  // Ej: "semanaInicioISO" -> "semanaInicio_ISO"
+  let result = str.replace(/([a-z])([A-Z]+)$/g, '$1_$2');
+  
+  // Luego, insertar _ antes de mayúsculas que siguen a minúsculas o números
+  // Esto maneja casos como "semanaInicio" -> "semana_Inicio"
+  result = result.replace(/([a-z0-9])([A-Z])/g, '$1_$2');
+  
+  // Insertar _ antes de mayúsculas que siguen a otras mayúsculas seguidas de minúsculas
+  // (ej: "HTTP" seguido de "Request" en "HTTPRequest")
+  result = result.replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2');
+  
+  // Convertir todo a minúsculas
+  return result.toLowerCase();
 }
 
 /**
@@ -253,18 +272,6 @@ export function createRemoteDataAPI(): AppDataAPI {
           throw error;
         }
         
-        // LOGGING CRÍTICO: Ver qué está llegando realmente desde Supabase
-        console.log('🔍 [DEBUG] Datos RAW de Supabase:', data);
-        if (data && data.length > 0) {
-          console.log('🔍 [DEBUG] Primer usuario RAW:', data[0]);
-          console.log('🔍 [DEBUG] Roles en datos RAW:', data.map(u => ({ 
-            id: u.id, 
-            role: u.role, 
-            roleType: typeof u.role,
-            full_name: u.full_name 
-          })));
-        }
-        
         // Obtener email e ID del usuario autenticado si existe (para comparación)
         let currentUserEmail: string | null = null;
         let currentUserId: string | null = null;
@@ -294,36 +301,14 @@ export function createRemoteDataAPI(): AppDataAPI {
         
         // Normalizar usuarios
         return (data || []).map((u: any) => {
-          // LOGGING: Ver el usuario antes de procesar
-          console.log('🔍 [DEBUG] Procesando usuario:', {
-            id: u.id,
-            roleOriginal: u.role,
-            roleType: typeof u.role,
-            roleValue: String(u.role),
-            full_name: u.full_name,
-          });
-          
           // Preservar el campo 'role' ANTES de snakeToCamel (es crítico)
           const originalRole = u.role;
           
-          // Verificar que role existe y tiene valor
-          if (!originalRole) {
-            console.warn('⚠️ [DEBUG] Usuario sin role:', u.id, u);
-          }
-          
           const camelUser = snakeToCamel<StudiaUser>(u);
-          
-          // LOGGING: Ver qué pasa después de snakeToCamel
-          console.log('🔍 [DEBUG] Después de snakeToCamel:', {
-            id: camelUser.id,
-            role: camelUser.role,
-            roleOriginal: originalRole
-          });
           
           // Asegurar que el campo 'role' se preserve explícitamente
           if (originalRole && !camelUser.role) {
             camelUser.role = originalRole;
-            console.log('✅ [DEBUG] Role restaurado después de snakeToCamel');
           }
           
           // Priorizar: email del mapeo, luego del usuario mismo
@@ -332,25 +317,12 @@ export function createRemoteDataAPI(): AppDataAPI {
           // Normalizar usuario
           const normalized = normalizeSupabaseUser(camelUser, email);
           
-          // LOGGING: Ver qué pasa después de normalizar
-          console.log('🔍 [DEBUG] Después de normalizeSupabaseUser:', {
-            id: normalized.id,
-            rolPersonalizado: normalized.rolPersonalizado,
-            roleOriginal: originalRole,
-            roleEnCamelUser: camelUser.role
-          });
-          
           // Verificación CRÍTICA: forzar el rol desde el valor original de Supabase
           if (originalRole) {
             const roleUpper = String(originalRole).toUpperCase().trim();
             if (['ADMIN', 'PROF', 'ESTU'].includes(roleUpper)) {
               normalized.rolPersonalizado = roleUpper;
-              console.log('✅ [DEBUG] Rol forzado correctamente:', roleUpper, 'para usuario:', normalized.id);
-            } else {
-              console.warn('⚠️ [DEBUG] Rol no válido:', roleUpper, 'de originalRole:', originalRole);
             }
-          } else {
-            console.warn('⚠️ [DEBUG] originalRole es null/undefined para usuario:', u.id);
           }
           
           return normalized;
@@ -500,12 +472,6 @@ export function createRemoteDataAPI(): AppDataAPI {
         // mediaLinks no se guarda en profiles (no existe la columna en Supabase)
         // Se mantiene solo para compatibilidad local
         
-        console.log('🔍 [DEBUG UPDATE] Actualizando usuario:', {
-          id,
-          updatesOriginales: updates,
-          updatesParaSupabase: supabaseUpdates
-        });
-        
         const { data, error } = await supabase
           .from('profiles')
           .update(supabaseUpdates)
@@ -514,7 +480,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .single();
         
         if (error) {
-          console.error('❌ [DEBUG UPDATE] Error al actualizar:', error);
+          console.error('❌ Error al actualizar usuario:', error);
           throw error;
         }
         
@@ -551,8 +517,6 @@ export function createRemoteDataAPI(): AppDataAPI {
             normalized.rolPersonalizado = roleUpper;
           }
         }
-        
-        console.log('✅ [DEBUG UPDATE] Usuario actualizado correctamente:', normalized);
         
         return normalized;
       },
@@ -883,14 +847,6 @@ export function createRemoteDataAPI(): AppDataAPI {
           snakeData.pieza_snapshot = piezaSnapshotValue; // Convertir nombre a snake_case
         }
         
-        console.log('Insertando asignación en Supabase:', { 
-          snakeDataKeys: Object.keys(snakeData),
-          hasPlan: !!snakeData.plan,
-          hasPiezaSnapshot: !!snakeData.pieza_snapshot,
-          planType: typeof snakeData.plan,
-          piezaSnapshotType: typeof snakeData.pieza_snapshot
-        });
-        
         const { data: result, error } = await supabase
           .from('asignaciones')
           .insert(snakeData)
@@ -931,10 +887,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .select()
           .single();
         
-        if (error) {
-          console.error('Error de Supabase al actualizar asignación:', error);
-          throw error;
-        }
+        if (error) throw error;
         
         // Deserializar campos JSON después de leer
         const parsed = snakeToCamel<Asignacion>(data);

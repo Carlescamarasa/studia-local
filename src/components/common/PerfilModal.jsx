@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ds";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   User, Mail, Shield, Target, Music,
-  Save, AlertCircle, CheckCircle, Sun, Moon, Monitor, X, MessageCircle, Search
+  Save, AlertCircle, Sun, Moon, Monitor, X, MessageCircle, Search
 } from "lucide-react";
 import { toast } from "sonner";
 import { displayName, useEffectiveUser } from "../utils/helpers";
@@ -25,6 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 
 export default function PerfilModal({ 
@@ -39,6 +40,7 @@ export default function PerfilModal({
   const [saveResult, setSaveResult] = useState(null);
   const [phoneCountryCode, setPhoneCountryCode] = useState('+34'); // Default: España
   const [phoneSearch, setPhoneSearch] = useState(''); // Para búsqueda/filtrado de teléfono
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     // Detectar modo oscuro inicial desde la clase del documento
     return typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
@@ -208,6 +210,7 @@ export default function PerfilModal({
         : telefono.replace(/^\+34\s*/, ''); // Si ya tiene +34, quitarlo
       
       setPhoneCountryCode(extractedCode);
+      setIsEditingPhone(false); // Resetear modo edición al cargar usuario
       
       setEditedData({
         nombreCompleto: targetUser.nombreCompleto || getNombreCompleto(targetUser),
@@ -238,6 +241,7 @@ export default function PerfilModal({
       
       setSaveResult({ success: true, message: '✅ Usuario actualizado correctamente.' });
       toast.success('Perfil actualizado correctamente.');
+      setIsEditingPhone(false); // Salir del modo edición después de guardar
 
       if (targetUser?.id === effectiveUser?.id && editedData.rolPersonalizado !== effectiveUser.rolPersonalizado) {
         setTimeout(() => {
@@ -255,6 +259,56 @@ export default function PerfilModal({
       toast.error(`Error al actualizar el perfil: ${error.message}`);
     },
   });
+
+  // Función para guardar solo el teléfono
+  const handleSavePhone = async () => {
+    if (!editedData) return;
+
+    // Normalizar y guardar teléfono con código de país
+    let telefonoFinal = null;
+    if (editedData.telefono && editedData.telefono.trim()) {
+      const normalized = normalizePhoneNumber(editedData.telefono, phoneCountryCode);
+      if (normalized) {
+        // Guardar con formato: +[código][número normalizado]
+        telefonoFinal = `${phoneCountryCode}${normalized}`;
+      }
+    }
+
+    const dataToSave = {
+      telefono: telefonoFinal,
+    };
+
+    try {
+      if (!targetUser?.id) {
+        throw new Error('Usuario no encontrado');
+      }
+
+      if (targetUser.id === effectiveUser?.id) {
+        await localDataClient.auth.updateMe(dataToSave);
+      } else {
+        await localDataClient.entities.User.update(targetUser.id, dataToSave);
+      }
+
+      // Actualizar el targetUser localmente para reflejar el cambio
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      await queryClient.invalidateQueries({ queryKey: ['targetUser', userId] });
+      await queryClient.invalidateQueries({ queryKey: ['users'] });
+      await queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+
+      // Refetch inmediato para actualizar el targetUser
+      await queryClient.refetchQueries({ queryKey: ['targetUser', userId] });
+      
+      // También refetch de users para asegurar que se actualice
+      await queryClient.refetchQueries({ queryKey: ['users'] });
+
+      // Salir del modo edición
+      setIsEditingPhone(false);
+      toast.success('Teléfono guardado correctamente');
+    } catch (error) {
+      console.error('Error al guardar teléfono:', error);
+      toast.error(`Error al guardar el teléfono: ${error.message || 'Error desconocido'}`);
+    }
+  };
 
   const handleSave = async () => {
     if (!editedData) return;
@@ -340,28 +394,34 @@ export default function PerfilModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg" className="max-h-[90vh] overflow-y-auto">
+      <DialogContent size="lg" className="max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-[var(--color-border-default)] shadow-sm">
+          <DialogTitle className="flex items-center gap-2">
+            <User className="w-5 h-5 text-[var(--color-primary)]" />
+            {isLoading || !targetUser 
+              ? 'Cargando perfil...' 
+              : (isEditingOwnProfile ? 'Mi Perfil' : `Perfil de ${getNombreCompleto(targetUser)}`)
+            }
+          </DialogTitle>
+          <DialogDescription>
+            {isEditingOwnProfile ? 'Edita tu información personal' : 'Edita la información del usuario'}
+          </DialogDescription>
+        </DialogHeader>
+
         {isLoading || !editedData ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex-1 flex items-center justify-center py-12">
             <LoadingSpinner size="lg" text="Cargando perfil..." />
           </div>
         ) : (
           <>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <User className="w-5 h-5 text-[var(--color-primary)]" />
-                {isEditingOwnProfile ? 'Mi Perfil' : `Perfil de ${getNombreCompleto(targetUser)}`}
-              </DialogTitle>
-              <DialogDescription>
-                {isEditingOwnProfile ? 'Edita tu información personal' : 'Edita la información del usuario'}
-              </DialogDescription>
-            </DialogHeader>
 
-            <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               {saveResult && (
-                <Alert className={`${componentStyles.containers.panelBase} ${saveResult.success ? 'border-[var(--color-success)] bg-[var(--color-success)]/10' : 'border-[var(--color-danger)] bg-[var(--color-danger)]/10'}`}>
-                  <AlertDescription className={saveResult.success ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}>
-                    {saveResult.success ? <CheckCircle className="w-4 h-4 inline mr-2" /> : <AlertCircle className="w-4 h-4 inline mr-2" />}
+                <Alert 
+                  variant={saveResult.success ? 'success' : 'danger'}
+                  className={componentStyles.containers.panelBase}
+                >
+                  <AlertDescription>
                     {saveResult.message}
                   </AlertDescription>
                 </Alert>
@@ -370,7 +430,7 @@ export default function PerfilModal({
               <div className="space-y-4">
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="nombreCompleto" className="text-sm text-[var(--color-text-primary)]">Nombre Completo *</Label>
+                    <Label htmlFor="nombreCompleto" className="block text-sm text-[var(--color-text-primary)]">Nombre Completo *</Label>
                     {canEditNombreCompleto ? (
                       <Input
                         id="nombreCompleto"
@@ -391,7 +451,7 @@ export default function PerfilModal({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="email" className="text-sm text-[var(--color-text-primary)]">Email</Label>
+                    <Label htmlFor="email" className="block text-sm text-[var(--color-text-primary)]">Email</Label>
                     <Input
                       id="email"
                       type="email"
@@ -403,7 +463,7 @@ export default function PerfilModal({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="role" className="text-sm text-[var(--color-text-primary)]">Perfil</Label>
+                    <Label htmlFor="role" className="block text-sm text-[var(--color-text-primary)]">Perfil</Label>
                     {canEditRole ? (
                       <div className="space-y-1.5">
                         <Select
@@ -456,7 +516,7 @@ export default function PerfilModal({
 
                   {isEstudiante && (
                     <div className="space-y-1.5">
-                      <Label htmlFor="profesorAsignado" className="text-sm text-[var(--color-text-primary)]">Profesor Asignado</Label>
+                      <Label htmlFor="profesorAsignado" className="block text-sm text-[var(--color-text-primary)]">Profesor Asignado</Label>
                       {canEditProfesor ? (
                         <Select
                           value={editedData.profesorAsignadoId ? String(editedData.profesorAsignadoId) : "__none__"}
@@ -504,9 +564,48 @@ export default function PerfilModal({
                   )}
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="telefono" className="text-sm text-[var(--color-text-primary)]">Teléfono</Label>
+                    <Label htmlFor="telefono" className="block text-sm text-[var(--color-text-primary)]">Teléfono</Label>
                     <div className="flex items-center gap-2">
-                      {canEditTelefono ? (
+                      {canEditTelefono && !isEditingPhone ? (
+                        // Modo visualización: mostrar teléfono guardado (clickeable para editar)
+                        <>
+                          <Input
+                            id="telefono"
+                            type="tel"
+                            value={targetUser?.telefono ? String(targetUser.telefono) : ''}
+                            readOnly
+                            onClick={() => setIsEditingPhone(true)}
+                            className={`flex-1 ${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-pointer`}
+                            aria-label="Haz clic para editar el teléfono"
+                            title="Haz clic para editar el teléfono"
+                          />
+                          {(() => {
+                            try {
+                              if (!targetUser?.telefono) return null;
+                              const countryCode = extractCountryCodeFromPhone(targetUser.telefono);
+                              const whatsappLink = getWhatsAppLink(targetUser.telefono, countryCode);
+                              if (!whatsappLink) return null;
+                              return (
+                                <a
+                                  href={whatsappLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-[#25D366] text-white hover:bg-[#20BA5A] transition-colors flex-shrink-0"
+                                  aria-label="Abrir WhatsApp"
+                                  title="Abrir WhatsApp"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MessageCircle className="w-5 h-5" />
+                                </a>
+                              );
+                            } catch (error) {
+                              console.error('Error al generar link de WhatsApp:', error);
+                              return null;
+                            }
+                          })()}
+                        </>
+                      ) : canEditTelefono && isEditingPhone ? (
+                        // Modo edición: mostrar formulario de edición
                         <>
                           <Select
                             value={phoneCountryCode}
@@ -539,41 +638,43 @@ export default function PerfilModal({
                                 className={`pl-9 ${componentStyles.controls.inputDefault}`}
                                 aria-label="Buscar o ingresar teléfono"
                               />
-                              {editedData.telefono && (
-                                <button
-                                  onClick={() => {
-                                    setEditedData({ ...editedData, telefono: '' });
-                                    setPhoneSearch('');
-                                  }}
-                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                                  aria-label="Limpiar teléfono"
-                                  type="button"
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
-                              )}
                             </div>
-                            {editedData.telefono && editedData.telefono.trim() && getWhatsAppLink(editedData.telefono, phoneCountryCode) && (
-                              <a
-                                href={getWhatsAppLink(editedData.telefono, phoneCountryCode)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-center w-10 h-10 rounded-lg bg-[#25D366] text-white hover:bg-[#20BA5A] transition-colors flex-shrink-0"
-                                aria-label="Abrir WhatsApp"
-                                title="Abrir WhatsApp"
-                              >
-                                <MessageCircle className="w-5 h-5" />
-                              </a>
-                            )}
+                            <button
+                              onClick={handleSavePhone}
+                              className="flex items-center justify-center w-10 h-10 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-inverse)] hover:bg-[var(--color-secondary)] transition-colors flex-shrink-0"
+                              aria-label="Guardar teléfono"
+                              title="Guardar teléfono"
+                            >
+                              <Save className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setIsEditingPhone(false);
+                                // Restaurar teléfono original si se cancela
+                                const telefono = targetUser?.telefono || '';
+                                const extractedCode = extractCountryCodeFromPhone(telefono);
+                                const normalizedPhone = extractedCode !== '+34' 
+                                  ? normalizePhoneNumber(telefono, extractedCode)
+                                  : telefono.replace(/^\+34\s*/, '');
+                                setPhoneCountryCode(extractedCode);
+                                setEditedData({ ...editedData, telefono: normalizedPhone });
+                              }}
+                              className="flex items-center justify-center w-10 h-10 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] transition-colors flex-shrink-0"
+                              aria-label="Cancelar edición"
+                              title="Cancelar edición"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
                           </div>
                         </>
                       ) : (
+                        // Sin permisos de edición
                         <Input
                           id="telefono"
                           type="tel"
-                          value={editedData.telefono || ''}
+                          value={targetUser?.telefono || ''}
                           disabled
-                          className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
+                          className={`flex-1 ${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
                         />
                       )}
                     </div>
@@ -581,7 +682,7 @@ export default function PerfilModal({
 
                   {isEstudiante && (
                     <div className="space-y-1.5">
-                      <Label htmlFor="nivel" className="text-sm text-[var(--color-text-primary)]">Experiencia</Label>
+                      <Label htmlFor="nivel" className="block text-sm text-[var(--color-text-primary)]">Experiencia</Label>
                       {canEditNivel ? (
                         <Select
                           value={editedData.nivel || "__none__"}
@@ -621,7 +722,7 @@ export default function PerfilModal({
                     
                     return (
                       <div className="space-y-1.5">
-                        <Label className="text-sm text-[var(--color-text-primary)]">Tema</Label>
+                        <Label className="block text-sm text-[var(--color-text-primary)]">Tema</Label>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => {
@@ -732,36 +833,46 @@ export default function PerfilModal({
                 )}
 
                 {canEditRole && isEditingOwnProfile && (
-                  <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-warning)]/20 bg-[var(--color-warning)]/10`}>
-                    <AlertCircle className="h-4 w-4 text-[var(--color-warning)]" />
-                    <AlertDescription className="text-[var(--color-warning)] text-sm">
+                  <Alert 
+                    variant="warning"
+                    className={componentStyles.containers.panelBase}
+                  >
+                    <AlertDescription>
                       <strong>Advertencia:</strong> Si cambias tu propio rol, tu acceso y navegación en la aplicación se actualizarán automáticamente.
                     </AlertDescription>
                   </Alert>
                 )}
-
-                <div className="pt-4 border-t border-[var(--color-border-default)] flex items-center justify-end gap-3">
-                  <Button
-                    onClick={() => onOpenChange(false)}
-                    disabled={updateUserMutation.isPending}
-                    variant="outline"
-                    className={componentStyles.buttons.secondary}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    loading={updateUserMutation.isPending}
-                    loadingText="Guardando..."
-                    className={componentStyles.buttons.primary}
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Guardar Cambios
-                  </Button>
-                </div>
               </div>
+
             </div>
           </>
+        )}
+
+        {!isLoading && editedData && (
+          <DialogFooter className="flex-shrink-0 min-h-[3.5rem] px-6 py-4 border-t border-[var(--color-border-default)] bg-[var(--color-surface)] shadow-sm">
+            <div className="flex items-center justify-end gap-3 w-full">
+              <Button
+                onClick={() => {
+                  setIsEditingPhone(false);
+                  onOpenChange(false);
+                }}
+                disabled={updateUserMutation.isPending}
+                variant="outline"
+                className={componentStyles.buttons.secondary}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSave}
+                loading={updateUserMutation.isPending}
+                loadingText="Guardando..."
+                className={componentStyles.buttons.primary}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Guardar Cambios
+              </Button>
+            </div>
+          </DialogFooter>
         )}
       </DialogContent>
     </Dialog>

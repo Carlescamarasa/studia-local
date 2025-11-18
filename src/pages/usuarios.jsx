@@ -21,6 +21,8 @@ function UsuariosPageContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [profesorFilter, setProfesorFilter] = useState('all');
+  const [nivelFilter, setNivelFilter] = useState('all');
+  const [profesorAsignadoFilter, setProfesorAsignadoFilter] = useState('all');
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
 
@@ -30,14 +32,6 @@ function UsuariosPageContent() {
     queryKey: ['users'],
     queryFn: async () => {
       const users = await localDataClient.entities.User.list();
-      // LOGGING: Ver qué usuarios llegan a la UI
-      console.log('🔍 [DEBUG UI] Usuarios recibidos en la UI:', users.map(u => ({
-        id: u.id,
-        email: u.email,
-        rolPersonalizado: u.rolPersonalizado,
-        nombreCompleto: u.nombreCompleto,
-        full_name: u.full_name
-      })));
       return users;
     },
     staleTime: 0, // No usar caché, siempre obtener datos frescos
@@ -81,6 +75,18 @@ function UsuariosPageContent() {
     usuariosFiltrados = usuariosFiltrados.filter(u => u.profesorAsignadoId === profesorFilter);
   }
 
+  if (nivelFilter !== 'all') {
+    usuariosFiltrados = usuariosFiltrados.filter(u => u.nivel === nivelFilter);
+  }
+
+  if (profesorAsignadoFilter !== 'all') {
+    if (profesorAsignadoFilter === 'with') {
+      usuariosFiltrados = usuariosFiltrados.filter(u => u.profesorAsignadoId !== null && u.profesorAsignadoId !== undefined);
+    } else if (profesorAsignadoFilter === 'without') {
+      usuariosFiltrados = usuariosFiltrados.filter(u => !u.profesorAsignadoId);
+    }
+  }
+
   if (searchTerm) {
     const term = searchTerm.toLowerCase();
     usuariosFiltrados = usuariosFiltrados.filter(u => {
@@ -120,14 +126,6 @@ function UsuariosPageContent() {
       key: 'rol',
       label: 'Rol',
       render: (u) => {
-        // LOGGING: Ver qué rol se está renderizando
-        console.log('🔍 [DEBUG RENDER] Renderizando rol para usuario:', {
-          id: u.id,
-          email: u.email,
-          rolPersonalizado: u.rolPersonalizado,
-          roleVariant: roleVariants[u.rolPersonalizado],
-          roleLabel: roleLabels[u.rolPersonalizado]
-        });
         return (
           <Badge variant={roleVariants[u.rolPersonalizado] || roleVariants.ESTU}>
             {roleLabels[u.rolPersonalizado] || 'Estudiante'}
@@ -203,6 +201,34 @@ function UsuariosPageContent() {
                 </SelectContent>
               </Select>
             )}
+
+            {roleFilter === 'ESTU' && (
+              <Select value={nivelFilter} onValueChange={setNivelFilter}>
+                <SelectTrigger className={`w-40 ${componentStyles.controls.selectDefault}`}>
+                  <SelectValue placeholder="Nivel" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los niveles</SelectItem>
+                  <SelectItem value="principiante">Principiante</SelectItem>
+                  <SelectItem value="intermedio">Intermedio</SelectItem>
+                  <SelectItem value="avanzado">Avanzado</SelectItem>
+                  <SelectItem value="profesional">Profesional</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+
+            {roleFilter === 'ESTU' && (
+              <Select value={profesorAsignadoFilter} onValueChange={setProfesorAsignadoFilter}>
+                <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
+                  <SelectValue placeholder="Profesor asignado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="with">Con profesor</SelectItem>
+                  <SelectItem value="without">Sin profesor</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
         }
       />
@@ -231,6 +257,7 @@ function UsuariosPageContent() {
                 setIsPerfilModalOpen(true);
               }}
               emptyMessage="No hay usuarios"
+              emptyIcon={Users}
             />
           </CardContent>
         </Card>

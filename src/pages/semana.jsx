@@ -52,7 +52,7 @@ function SemanaPageContent() {
 
   const { data: feedbacksSemanal = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
-    queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_date'),
+    queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_at'),
   });
 
   const { data: usuarios = [] } = useQuery({

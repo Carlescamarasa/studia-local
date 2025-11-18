@@ -3,8 +3,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ds";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, FileText } from "lucide-react";
 import RowActionsMenu from "@/components/common/RowActionsMenu";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function UnifiedTable({
   columns,
@@ -15,7 +16,8 @@ export default function UnifiedTable({
   bulkActions,
   keyField = "id",
   selectable = false,
-  emptyMessage = "No hay datos disponibles"
+  emptyMessage = "No hay datos disponibles",
+  emptyIcon: EmptyIcon = FileText
 }) {
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
@@ -95,8 +97,9 @@ export default function UnifiedTable({
 
   if (data.length === 0) {
     return (
-      <div className="text-center py-12 text-muted">
-        {emptyMessage}
+      <div className="text-center py-12">
+        <EmptyIcon className={componentStyles.components.emptyStateIcon} />
+        <p className={componentStyles.components.emptyStateText}>{emptyMessage}</p>
       </div>
     );
   }

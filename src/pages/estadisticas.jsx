@@ -10,7 +10,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsToolti
 import {
   Activity, Clock, Calendar, Star, Smile, BarChart3, TrendingUp,
   MessageSquare, Eye, RefreshCw, Dumbbell, List, PieChart, CalendarDays, Calendar as CalendarIcon,
-  Sun, CalendarRange, Grid3x3, Layers
+  Sun, CalendarRange, Grid3x3, Layers, FileText
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -191,7 +191,7 @@ function EstadisticasPageContent() {
 
   const { data: feedbacksSemanal = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
-    queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_date'),
+    queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_at'),
   });
 
   const estudiantes = usuarios.filter(u => u.rolPersonalizado === 'ESTU');
@@ -1232,7 +1232,7 @@ function EstadisticasPageContent() {
             <CardContent>
               {topEjerciciosFiltrados.length === 0 ? (
                 <div className="text-center py-12">
-                  <Dumbbell className={componentStyles.components.emptyStateIcon} />
+                  <FileText className={componentStyles.components.emptyStateIcon} />
                   <p className={componentStyles.components.emptyStateText}>No hay ejercicios registrados</p>
                 </div>
               ) : (

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ds';
 import { componentStyles } from '@/design/componentStyles';
 import { useDesign } from '@/components/design/DesignProvider';
@@ -12,14 +13,29 @@ import { LogIn, Music } from 'lucide-react';
 import logoLTS from '@/assets/Logo_LTS.png';
 import { getAppName } from '@/components/utils/appMeta';
 
+const REMEMBER_EMAIL_KEY = 'studia_remember_email';
+const REMEMBER_EMAIL_ENABLED_KEY = 'studia_remember_email_enabled';
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const appName = getAppName();
   const { design } = useDesign();
+
+  // Cargar email guardado al montar el componente
+  useEffect(() => {
+    const savedEmail = localStorage.getItem(REMEMBER_EMAIL_KEY);
+    const rememberEnabled = localStorage.getItem(REMEMBER_EMAIL_ENABLED_KEY) === 'true';
+    
+    if (rememberEnabled && savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,6 +43,16 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password);
+      
+      // Guardar o eliminar email según el checkbox
+      if (rememberMe) {
+        localStorage.setItem(REMEMBER_EMAIL_KEY, email);
+        localStorage.setItem(REMEMBER_EMAIL_ENABLED_KEY, 'true');
+      } else {
+        localStorage.removeItem(REMEMBER_EMAIL_KEY);
+        localStorage.removeItem(REMEMBER_EMAIL_ENABLED_KEY);
+      }
+      
       toast.success('Sesión iniciada correctamente');
       // Redirigir a la página principal - index.jsx se encargará de redirigir según el rol
       navigate('/', { replace: true });
@@ -182,6 +208,22 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   className={`${componentStyles.controls.inputDefault} w-full`}
                 />
+              </div>
+
+              {/* Checkbox Recordar inicio de sesión */}
+              <div className="flex items-center space-x-2 mt-4">
+                <Checkbox
+                  id="rememberMe"
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked)}
+                  disabled={isLoading}
+                />
+                <Label
+                  htmlFor="rememberMe"
+                  className="cursor-pointer font-medium text-ui text-sm"
+                >
+                  Recordar inicio de sesión
+                </Label>
               </div>
 
               {/* Botón de submit */}
