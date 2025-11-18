@@ -566,7 +566,7 @@ function AdaptarAsignacionPageContent() {
                                       e.stopPropagation();
                                       removeSemana(semanaIndex);
                                     }}
-                                    className={`h-8 w-8 p-0 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-[var(--btn-radius)]`}
+                                    className={componentStyles.buttons.deleteIcon}
                                     aria-label="Eliminar semana"
                                   >
                                     <Trash2 className="w-4 h-4" />

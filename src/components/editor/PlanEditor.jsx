@@ -586,7 +586,8 @@ export default function PlanEditor({ plan, onClose }) {
                                           e.stopPropagation();
                                           removeSemana(semanaIndex);
                                         }}
-                                        className={componentStyles.buttons.danger}
+                                        className={componentStyles.buttons.deleteIcon}
+                                        aria-label="Eliminar semana"
                                       >
                                         <Trash2 className="w-4 h-4" />
                                       </Button>
@@ -732,7 +733,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                                               e.stopPropagation();
                                                                               removeEjercicio(semanaIndex, sesionIndex, ejercicioIndex);
                                                                             }}
-                                                                            className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.danger}`}
+                                                                            className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle}`}
                                                                           >
                                                                             <Trash2 className="w-3 h-3" />
                                                                           </Button>
@@ -773,7 +774,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                                                 e.stopPropagation();
                                                                                 removeRonda(semanaIndex, sesionIndex, rondaIndex);
                                                                               }}
-                                                                              className={`${componentStyles.buttons.iconTiny} ${componentStyles.buttons.danger}`}
+                                                                              className={`${componentStyles.buttons.iconTiny} ${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle}`}
                                                                             >
                                                                               <Trash2 className="w-3 h-3" />
                                                                             </Button>
@@ -845,7 +846,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                               e.stopPropagation();
                                                               removeSesion(semanaIndex, sesionIndex);
                                                             }}
-                                                            className={`${componentStyles.buttons.actionCompact} text-[var(--color-danger)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10`}
+                                                            className={`${componentStyles.buttons.actionCompact} ${componentStyles.buttons.deleteSubtle}`}
                                                           >
                                                             <Trash2 className="w-3 h-3 mr-1" />
                                                             Eliminar

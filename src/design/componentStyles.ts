@@ -119,6 +119,10 @@ export const componentStyles = {
     iconTiny: "h-5 px-1 text-xs rounded-[var(--btn-radius)]",
     // Botones de acción compactos (Editar Sesión, Eliminar, etc.)
     actionCompact: "text-xs h-7 rounded-[var(--btn-radius)]",
+    // Botones de eliminar sutiles (ghost con texto rojo, sin fondo rojo sólido)
+    deleteSubtle: "text-[var(--color-danger)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10",
+    // Botón de eliminar icono (para semanas, etc.)
+    deleteIcon: "h-8 w-8 p-0 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-[var(--btn-radius)]",
   },
 
   tabs: {
