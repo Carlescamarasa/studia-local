@@ -15,7 +15,7 @@ import RequireRole from "@/components/auth/RequireRole";
 import PageHeader from "@/components/ds/PageHeader";
 import { runDesignAudit, QUICK_PROFILES, parseAuditSpec, runAudit } from "@/components/utils/auditor";
 import Tabs from "@/components/ds/Tabs";
-import { getAllPresets, saveCustomPreset, deleteCustomPreset, isBuiltInPreset, exportCustomPresets, importCustomPresets } from "@/components/design/DesignPresets";
+import { getAllPresets, saveCustomPreset, deleteCustomPreset, exportCustomPresets, importCustomPresets } from "@/components/design/DesignPresets";
 import { QAVisualContent } from "@/pages/qa-visual.jsx";
 import { componentStyles } from "@/design/componentStyles";
 
@@ -96,7 +96,24 @@ function DesignPageContent({ embedded = false }) {
     }));
   }, []);
 
-  const allPresets = useMemo(() => getAllPresets(), [config]);
+  // Combinar presets base (desde BasePresets.ts) con presets personalizados
+  const customPresets = useMemo(() => getAllPresets(), [config]);
+  const allPresets = useMemo(() => {
+    // Convertir basePresets a formato compatible con la UI
+    const basePresetsMap = {};
+    if (basePresets && Array.isArray(basePresets)) {
+      basePresets.forEach(preset => {
+        basePresetsMap[preset.id] = {
+          name: preset.label,
+          description: preset.description,
+          config: preset.design,
+          isBase: true, // Marcar como preset base
+        };
+      });
+    }
+    // Combinar con presets personalizados
+    return { ...basePresetsMap, ...customPresets };
+  }, [basePresets, customPresets]);
 
   const handleCopyConfig = useCallback(() => {
     try {
@@ -135,13 +152,23 @@ function DesignPageContent({ embedded = false }) {
   }, [presetName, presetDescription, config]);
 
   const handleLoadPreset = useCallback((presetId) => {
+    // Verificar si es un preset base
+    const basePreset = basePresets?.find(p => p.id === presetId);
+    if (basePreset) {
+      // Cargar preset base usando setPresetId
+      setPresetId(presetId);
+      toast.success('✅ Preset base cargado');
+      return;
+    }
+    
+    // Si no es base, intentar cargar como preset personalizado
     const result = loadPreset(presetId);
     if (result.success) {
-      toast.success('✅ Preset cargado');
+      toast.success('✅ Preset personalizado cargado');
     } else {
       toast.error('❌ Preset no encontrado');
     }
-  }, [loadPreset]);
+  }, [loadPreset, basePresets, setPresetId]);
 
   const handleDeletePreset = useCallback((presetId) => {
     if (!window.confirm('¿Eliminar este preset?')) return;
@@ -409,48 +436,100 @@ function DesignPageContent({ embedded = false }) {
                 </div>
               </CardHeader>
                     <CardContent className="pt-4 text-[var(--color-text-primary)]">
-                <div className={componentStyles.layout.grid2}>
-                  {Object.entries(allPresets).map(([id, preset]) => {
-                    const isActive = JSON.stringify(config) === JSON.stringify(preset.config);
-                    const isBuiltIn = isBuiltInPreset(id);
-                    
-                    return (
-                      <Card 
-                        key={id}
-                        className={`app-panel cursor-pointer transition-all ${
-                          isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'hover:bg-[var(--color-surface-muted)]'
-                        }`}
-                        onClick={() => handleLoadPreset(id)}
-                      >
-                        <CardContent className="pt-4">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-[var(--color-text-primary)] flex items-center gap-2">
-                                {preset.name}
-                                {isActive && <Badge className="badge-primary">Activo</Badge>}
-                                {isBuiltIn && <Badge className="badge-outline text-[10px]">Built-in</Badge>}
-                              </h4>
-                              <p className="text-xs text-[var(--color-text-secondary)] mt-1">{preset.description}</p>
-                            </div>
-                            {!isBuiltIn && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeletePreset(id);
-                                }}
-                                className={componentStyles.buttons.deleteIcon}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
+                {/* Presets Base */}
+                {basePresets && basePresets.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">
+                      Presets Base (Oficiales)
+                    </h3>
+                    <p className="text-xs text-[var(--color-text-secondary)] mb-4">
+                      Estos presets son parte del sistema y no se pueden eliminar. El modo dark/light se controla mediante el toggle de tema en el sidebar.
+                    </p>
+                    <div className={componentStyles.layout.grid2}>
+                      {basePresets.map((preset) => {
+                        const isActive = currentPresetId === preset.id;
+                        
+                        return (
+                          <Card 
+                            key={preset.id}
+                            className={`app-panel cursor-pointer transition-all ${
+                              isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'hover:bg-[var(--color-surface-muted)]'
+                            }`}
+                            onClick={() => handleLoadPreset(preset.id)}
+                          >
+                            <CardContent className="pt-4">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-[var(--color-text-primary)] flex items-center gap-2">
+                                    {preset.label}
+                                    {isActive && <Badge className="badge-primary">Activo</Badge>}
+                                    <Badge className="badge-outline text-[10px]">Base</Badge>
+                                  </h4>
+                                  <p className="text-xs text-[var(--color-text-secondary)] mt-1">{preset.description}</p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Presets Personalizados */}
+                {Object.keys(customPresets).length > 0 && (
+                  <div className="mt-8">
+                    <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">
+                      Presets Personalizados
+                    </h3>
+                    <div className={componentStyles.layout.grid2}>
+                      {Object.entries(customPresets).map(([id, preset]) => {
+                        const isActive = JSON.stringify(config) === JSON.stringify(preset.config);
+                        
+                        return (
+                          <Card 
+                            key={id}
+                            className={`app-panel cursor-pointer transition-all ${
+                              isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'hover:bg-[var(--color-surface-muted)]'
+                            }`}
+                            onClick={() => handleLoadPreset(id)}
+                          >
+                            <CardContent className="pt-4">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-[var(--color-text-primary)] flex items-center gap-2">
+                                    {preset.name}
+                                    {isActive && <Badge className="badge-primary">Activo</Badge>}
+                                  </h4>
+                                  <p className="text-xs text-[var(--color-text-secondary)] mt-1">{preset.description}</p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeletePreset(id);
+                                  }}
+                                  className={componentStyles.buttons.deleteIcon}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mensaje si no hay presets personalizados */}
+                {Object.keys(customPresets).length === 0 && (
+                  <div className="text-center py-8 text-sm text-[var(--color-text-secondary)]">
+                    <p>No hay presets personalizados guardados.</p>
+                    <p className="mt-2">Usa "Guardar Como..." para crear uno nuevo.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

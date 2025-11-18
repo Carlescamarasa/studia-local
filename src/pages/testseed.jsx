@@ -168,9 +168,18 @@ export default function TestSeedPage() {
           nivel: 'intermedio',
           tiempoObjetivoSeg: 1200,
           elementos: [
-            { nombre: 'Introducción', media: { video: 'https://www.youtube.com/embed/dQw4w9WgXcQ' } },
-            { nombre: 'Tema Principal', media: { audio: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' } },
-            { nombre: 'Partitura', media: { imagen: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Music_notes.svg/800px-Music_notes.svg.png' } },
+            { 
+              nombre: 'Introducción', 
+              mediaLinks: ['https://www.youtube.com/watch?v=dQw4w9WgXcQ'] 
+            },
+            { 
+              nombre: 'Tema Principal', 
+              mediaLinks: ['https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'] 
+            },
+            { 
+              nombre: 'Partitura', 
+              mediaLinks: ['https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Music_notes.svg/800px-Music_notes.svg.png'] 
+            },
           ],
           profesorId: profesor.id,
           });
@@ -210,7 +219,7 @@ export default function TestSeedPage() {
             instrucciones: `Ejercicio ${configs[tipo].nombre}`,
             indicadorLogro: `Completar ${configs[tipo].nombre}`,
             materialesRequeridos: [],
-            media: {},
+            mediaLinks: [],
             profesorId: profesor.id,
             });
             addLog(`✅ Ejercicio ${tipo} creado`, 'info');
