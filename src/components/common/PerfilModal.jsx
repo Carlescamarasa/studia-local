@@ -563,122 +563,125 @@ export default function PerfilModal({
                     </div>
                   )}
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="telefono" className="block text-sm text-[var(--color-text-primary)]">Teléfono</Label>
-                    <div className="flex items-center gap-2">
-                      {canEditTelefono && !isEditingPhone ? (
-                        // Modo visualización: mostrar teléfono guardado (clickeable para editar)
-                        <>
+                  {/* Campo de teléfono oculto temporalmente */}
+                  {false && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="telefono" className="block text-sm text-[var(--color-text-primary)]">Teléfono</Label>
+                      <div className="flex items-center gap-2">
+                        {canEditTelefono && !isEditingPhone ? (
+                          // Modo visualización: mostrar teléfono guardado (clickeable para editar)
+                          <>
+                            <Input
+                              id="telefono"
+                              type="tel"
+                              value={targetUser?.telefono ? String(targetUser.telefono) : ''}
+                              readOnly
+                              onClick={() => setIsEditingPhone(true)}
+                              className={`flex-1 ${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-pointer`}
+                              aria-label="Haz clic para editar el teléfono"
+                              title="Haz clic para editar el teléfono"
+                            />
+                            {(() => {
+                              try {
+                                if (!targetUser?.telefono) return null;
+                                const countryCode = extractCountryCodeFromPhone(targetUser.telefono);
+                                const whatsappLink = getWhatsAppLink(targetUser.telefono, countryCode);
+                                if (!whatsappLink) return null;
+                                return (
+                                  <a
+                                    href={whatsappLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-[#25D366] text-white hover:bg-[#20BA5A] transition-colors flex-shrink-0"
+                                    aria-label="Abrir WhatsApp"
+                                    title="Abrir WhatsApp"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <MessageCircle className="w-5 h-5" />
+                                  </a>
+                                );
+                              } catch (error) {
+                                console.error('Error al generar link de WhatsApp:', error);
+                                return null;
+                              }
+                            })()}
+                          </>
+                        ) : canEditTelefono && isEditingPhone ? (
+                          // Modo edición: mostrar formulario de edición
+                          <>
+                            <Select
+                              value={phoneCountryCode}
+                              onValueChange={(value) => setPhoneCountryCode(value)}
+                            >
+                              <SelectTrigger className={`w-32 ${componentStyles.controls.selectDefault}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {countryCodes.map(cc => (
+                                  <SelectItem key={cc.code} value={cc.code}>
+                                    {cc.country}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <div className="flex-1 flex items-center gap-2">
+                              <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)] pointer-events-none" />
+                                <Input
+                                  id="telefono"
+                                  type="tel"
+                                  value={editedData.telefono || ''}
+                                  onChange={(e) => {
+                                    const filtered = filterPhoneInput(e.target.value);
+                                    setEditedData({ ...editedData, telefono: filtered });
+                                    setPhoneSearch(filtered);
+                                  }}
+                                  placeholder={getPhonePlaceholder(phoneCountryCode)}
+                                  className={`pl-9 ${componentStyles.controls.inputDefault}`}
+                                  aria-label="Buscar o ingresar teléfono"
+                                />
+                              </div>
+                              <button
+                                onClick={handleSavePhone}
+                                className="flex items-center justify-center w-10 h-10 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-inverse)] hover:bg-[var(--color-secondary)] transition-colors flex-shrink-0"
+                                aria-label="Guardar teléfono"
+                                title="Guardar teléfono"
+                              >
+                                <Save className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setIsEditingPhone(false);
+                                  // Restaurar teléfono original si se cancela
+                                  const telefono = targetUser?.telefono || '';
+                                  const extractedCode = extractCountryCodeFromPhone(telefono);
+                                  const normalizedPhone = extractedCode !== '+34'
+                                    ? normalizePhoneNumber(telefono, extractedCode)
+                                    : telefono.replace(/^\+34\s*/, '');
+                                  setPhoneCountryCode(extractedCode);
+                                  setEditedData({ ...editedData, telefono: normalizedPhone });
+                                }}
+                                className="flex items-center justify-center w-10 h-10 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] transition-colors flex-shrink-0"
+                                aria-label="Cancelar edición"
+                                title="Cancelar edición"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          // Sin permisos de edición
                           <Input
                             id="telefono"
                             type="tel"
-                            value={targetUser?.telefono ? String(targetUser.telefono) : ''}
-                            readOnly
-                            onClick={() => setIsEditingPhone(true)}
-                            className={`flex-1 ${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-pointer`}
-                            aria-label="Haz clic para editar el teléfono"
-                            title="Haz clic para editar el teléfono"
+                            value={targetUser?.telefono || ''}
+                            disabled
+                            className={`flex-1 ${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
                           />
-                          {(() => {
-                            try {
-                              if (!targetUser?.telefono) return null;
-                              const countryCode = extractCountryCodeFromPhone(targetUser.telefono);
-                              const whatsappLink = getWhatsAppLink(targetUser.telefono, countryCode);
-                              if (!whatsappLink) return null;
-                              return (
-                                <a
-                                  href={whatsappLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-[#25D366] text-white hover:bg-[#20BA5A] transition-colors flex-shrink-0"
-                                  aria-label="Abrir WhatsApp"
-                                  title="Abrir WhatsApp"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <MessageCircle className="w-5 h-5" />
-                                </a>
-                              );
-                            } catch (error) {
-                              console.error('Error al generar link de WhatsApp:', error);
-                              return null;
-                            }
-                          })()}
-                        </>
-                      ) : canEditTelefono && isEditingPhone ? (
-                        // Modo edición: mostrar formulario de edición
-                        <>
-                          <Select
-                            value={phoneCountryCode}
-                            onValueChange={(value) => setPhoneCountryCode(value)}
-                          >
-                            <SelectTrigger className={`w-32 ${componentStyles.controls.selectDefault}`}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {countryCodes.map(cc => (
-                                <SelectItem key={cc.code} value={cc.code}>
-                                  {cc.country}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <div className="flex-1 flex items-center gap-2">
-                            <div className="relative flex-1">
-                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)] pointer-events-none" />
-                              <Input
-                                id="telefono"
-                                type="tel"
-                                value={editedData.telefono || ''}
-                                onChange={(e) => {
-                                  const filtered = filterPhoneInput(e.target.value);
-                                  setEditedData({ ...editedData, telefono: filtered });
-                                  setPhoneSearch(filtered);
-                                }}
-                                placeholder={getPhonePlaceholder(phoneCountryCode)}
-                                className={`pl-9 ${componentStyles.controls.inputDefault}`}
-                                aria-label="Buscar o ingresar teléfono"
-                              />
-                            </div>
-                            <button
-                              onClick={handleSavePhone}
-                              className="flex items-center justify-center w-10 h-10 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-inverse)] hover:bg-[var(--color-secondary)] transition-colors flex-shrink-0"
-                              aria-label="Guardar teléfono"
-                              title="Guardar teléfono"
-                            >
-                              <Save className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setIsEditingPhone(false);
-                                // Restaurar teléfono original si se cancela
-                                const telefono = targetUser?.telefono || '';
-                                const extractedCode = extractCountryCodeFromPhone(telefono);
-                                const normalizedPhone = extractedCode !== '+34' 
-                                  ? normalizePhoneNumber(telefono, extractedCode)
-                                  : telefono.replace(/^\+34\s*/, '');
-                                setPhoneCountryCode(extractedCode);
-                                setEditedData({ ...editedData, telefono: normalizedPhone });
-                              }}
-                              className="flex items-center justify-center w-10 h-10 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] transition-colors flex-shrink-0"
-                              aria-label="Cancelar edición"
-                              title="Cancelar edición"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        // Sin permisos de edición
-                        <Input
-                          id="telefono"
-                          type="tel"
-                          value={targetUser?.telefono || ''}
-                          disabled
-                          className={`flex-1 ${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
-                        />
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {isEstudiante && (
                     <div className="space-y-1.5">

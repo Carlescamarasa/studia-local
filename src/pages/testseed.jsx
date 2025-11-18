@@ -16,7 +16,7 @@ import {
   Search, FileSearch, Clock, FileDown, Sprout,
   ClipboardList,
   ChevronDown, ChevronRight, Link2, ScrollText, Zap, Database,
-  Calendar, Layers,
+  Calendar, Layers, MessageSquare, Activity,
   FlaskConical, Download, Upload, Play, FileText, Link as LinkIcon
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ds";
@@ -346,38 +346,115 @@ export default function TestSeedPage() {
       }
 
       let piezas = await localDataClient.entities.Pieza.list();
-      let piezaBase = piezas.find(p => p.nombre === 'Seed – Estudio base');
+      
+      // Definir múltiples piezas variadas para más realismo
+      const piezasSeed = [
+        {
+          nombre: 'Seed – Estudio en Do Mayor',
+          descripcion: 'Estudio clásico para desarrollar técnica y musicalidad',
+          nivel: 'principiante',
+          tiempoObjetivoSeg: 900,
+          elementos: [
+            { nombre: 'Partitura completa', mediaLinks: ['https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Music_notes.svg/800px-Music_notes.svg.png'] },
+            { nombre: 'Grabación de referencia', mediaLinks: ['https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'] }
+          ]
+        },
+        {
+          nombre: 'Seed – Concierto en Re Menor',
+          descripcion: 'Obra de nivel intermedio con pasajes técnicos',
+          nivel: 'intermedio',
+          tiempoObjetivoSeg: 1200,
+          elementos: [
+            { nombre: 'Introducción', mediaLinks: ['https://www.youtube.com/watch?v=dQw4w9WgXcQ'] },
+            { nombre: 'Tema Principal', mediaLinks: ['https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'] },
+            { nombre: 'Partitura', mediaLinks: ['https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Music_notes.svg/800px-Music_notes.svg.png'] }
+          ]
+        },
+        {
+          nombre: 'Seed – Sonata Clásica',
+          descripcion: 'Pieza avanzada con estructura sonata completa',
+          nivel: 'avanzado',
+          tiempoObjetivoSeg: 1800,
+          elementos: [
+            { nombre: 'Exposición', mediaLinks: ['https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'] },
+            { nombre: 'Desarrollo', mediaLinks: ['https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Music_notes.svg/800px-Music_notes.svg.png'] },
+            { nombre: 'Recapitulación', mediaLinks: ['https://www.youtube.com/watch?v=dQw4w9WgXcQ'] }
+          ]
+        },
+        {
+          nombre: 'Seed – Estudio de Velocidad',
+          descripcion: 'Ejercicio técnico para mejorar agilidad y precisión',
+          nivel: 'intermedio',
+          tiempoObjetivoSeg: 600,
+          elementos: [
+            { nombre: 'Ejercicios progresivos', mediaLinks: ['https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Music_notes.svg/800px-Music_notes.svg.png'] },
+            { nombre: 'Metrónomo', mediaLinks: ['https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'] }
+          ]
+        },
+        {
+          nombre: 'Seed – Melodía Expresiva',
+          descripcion: 'Pieza para desarrollar fraseo y expresión musical',
+          nivel: 'principiante',
+          tiempoObjetivoSeg: 750,
+          elementos: [
+            { nombre: 'Partitura', mediaLinks: ['https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Music_notes.svg/800px-Music_notes.svg.png'] },
+            { nombre: 'Interpretación de referencia', mediaLinks: ['https://www.youtube.com/watch?v=dQw4w9WgXcQ'] }
+          ]
+        }
+      ];
 
-      if (!piezaBase) {
-        addLog('📝 Creando pieza base...', 'info');
-        try {
-          piezaBase = await localDataClient.entities.Pieza.create({
+      // Crear piezas que no existan
+      const piezasCreadas = [];
+      for (const piezaData of piezasSeed) {
+        let piezaExistente = piezas.find(p => p.nombre === piezaData.nombre);
+        if (!piezaExistente) {
+          addLog(`📝 Creando pieza: ${piezaData.nombre}...`, 'info');
+          try {
+            piezaExistente = await localDataClient.entities.Pieza.create({
+              ...piezaData,
+              profesorId: profesor.id,
+            });
+            addLog(`✅ Pieza creada: ${piezaData.nombre}`, 'success');
+          } catch (error) {
+            const errorMsg = error?.message || error?.toString() || 'Error desconocido';
+            const errorDetails = error?.details || error?.hint || '';
+            addLog(`❌ Error al crear pieza ${piezaData.nombre}: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+            // Continuar con la siguiente pieza en lugar de fallar completamente
+            continue;
+          }
+        }
+        if (piezaExistente) {
+          piezasCreadas.push(piezaExistente);
+        }
+      }
+
+      // Actualizar lista de piezas
+      piezas = await localDataClient.entities.Pieza.list();
+      
+      // Si no hay piezas creadas, usar la primera disponible o crear una básica
+      if (piezasCreadas.length === 0) {
+        const piezaDisponible = piezas.find(p => p.profesorId === profesor.id);
+        if (piezaDisponible) {
+          piezasCreadas.push(piezaDisponible);
+        } else {
+          // Crear una pieza básica de emergencia
+          try {
+            const piezaEmergencia = await localDataClient.entities.Pieza.create({
           nombre: 'Seed – Estudio base',
           descripcion: 'Pieza de referencia para generación de datos de prueba',
           nivel: 'intermedio',
           tiempoObjetivoSeg: 1200,
           elementos: [
-            { 
-              nombre: 'Introducción', 
-              mediaLinks: ['https://www.youtube.com/watch?v=dQw4w9WgXcQ'] 
-            },
-            { 
-              nombre: 'Tema Principal', 
-              mediaLinks: ['https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'] 
-            },
-            { 
-              nombre: 'Partitura', 
-              mediaLinks: ['https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Music_notes.svg/800px-Music_notes.svg.png'] 
-            },
+                { nombre: 'Partitura', mediaLinks: ['https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Music_notes.svg/800px-Music_notes.svg.png'] }
           ],
           profesorId: profesor.id,
           });
-          addLog('✅ Pieza base creada', 'success');
+            piezasCreadas.push(piezaEmergencia);
+            addLog('✅ Pieza de emergencia creada', 'success');
         } catch (error) {
-          const errorMsg = error?.message || error?.toString() || 'Error desconocido';
-          const errorDetails = error?.details || error?.hint || '';
-          addLog(`❌ Error al crear pieza base: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+            addLog(`❌ Error crítico al crear pieza de emergencia: ${error.message}`, 'error');
           throw error;
+          }
         }
       }
 
@@ -385,82 +462,107 @@ export default function TestSeedPage() {
       const tiposRequeridos = ['CA', 'CB', 'TC', 'TM', 'FM', 'VC', 'AD'];
       const ejerciciosBase = {};
 
+      // Nombres variados para cada tipo de ejercicio (múltiples opciones)
+      const nombresVariados = {
+        CA: ['Respiración Profunda', 'Calentamiento de Embocadura', 'Ejercicios de Respiración', 'Preparación Técnica', 'Calentamiento Respiratorio'],
+        CB: ['Escalas Básicas', 'Calentamiento de Dedos', 'Ejercicios de Agilidad', 'Técnica Fundamental', 'Ejercicios de Velocidad'],
+        TC: ['Ligaduras Avanzadas', 'Técnica de Articulación', 'Ejercicios de Control', 'Práctica Técnica', 'Técnica de Precisión'],
+        TM: ['Mantenimiento de Técnica', 'Ejercicios de Consistencia', 'Técnica de Refuerzo', 'Práctica de Mantenimiento', 'Refuerzo Técnico'],
+        FM: ['Fragmento Principal', 'Pasaje Musical', 'Sección de la Pieza', 'Fragmento de Estudio', 'Pasaje de la Obra'],
+        VC: ['Relajación Final', 'Vuelta a la Calma', 'Ejercicios de Respiración Final', 'Cierre de Sesión', 'Relajación Post-Práctica'],
+        AD: ['Recordatorio Postura', 'Nota Importante', 'Aviso Técnico', 'Recomendación', 'Punto de Atención']
+      };
+
+      const duracionesBase = {
+        CA: [240, 300, 360],
+        CB: [300, 360, 420],
+        TC: [420, 480, 540],
+        TM: [300, 360, 420],
+        FM: [540, 600, 660],
+        VC: [180, 240, 300],
+        AD: [0]
+      };
+
+      // Crear múltiples variantes de cada tipo (2-3 por tipo)
       for (const tipo of tiposRequeridos) {
-        let ejercicio = bloques.find(b => b.tipo === tipo && b.code?.includes('SEED'));
-        if (!ejercicio) {
-          // Nombres variados y únicos para cada tipo de ejercicio
-          const nombresVariados = {
-            CA: ['Respiración Profunda', 'Calentamiento de Embocadura', 'Ejercicios de Respiración', 'Preparación Técnica', 'Calentamiento Respiratorio'],
-            CB: ['Escalas Básicas', 'Calentamiento de Dedos', 'Ejercicios de Agilidad', 'Técnica Fundamental', 'Ejercicios de Velocidad'],
-            TC: ['Ligaduras Avanzadas', 'Técnica de Articulación', 'Ejercicios de Control', 'Práctica Técnica', 'Técnica de Precisión'],
-            TM: ['Mantenimiento de Técnica', 'Ejercicios de Consistencia', 'Técnica de Refuerzo', 'Práctica de Mantenimiento', 'Refuerzo Técnico'],
-            FM: ['Fragmento Principal', 'Pasaje Musical', 'Sección de la Pieza', 'Fragmento de Estudio', 'Pasaje de la Obra'],
-            VC: ['Relajación Final', 'Vuelta a la Calma', 'Ejercicios de Respiración Final', 'Cierre de Sesión', 'Relajación Post-Práctica'],
-            AD: ['Recordatorio Postura', 'Nota Importante', 'Aviso Técnico', 'Recomendación', 'Punto de Atención']
-          };
+        const ejerciciosDelTipo = [];
+        const nombresDisponibles = nombresVariados[tipo];
+        const duracionesDisponibles = duracionesBase[tipo];
+        const numVariantes = tipo === 'AD' ? 1 : 3; // AD solo necesita 1 variante
 
-          // Seleccionar nombre aleatorio para este ejercicio
-          const nombresDisponibles = nombresVariados[tipo];
-          const nombreAleatorio = nombresDisponibles[Math.floor(Math.random() * nombresDisponibles.length)];
+        for (let variante = 1; variante <= numVariantes; variante++) {
+          const code = `${tipo}-SEED-${String(variante).padStart(3, '0')}`;
+          let ejercicio = bloques.find(b => b.tipo === tipo && b.code === code);
           
-          const duraciones = {
-            CA: 300,
-            CB: 360,
-            TC: 480,
-            TM: 360,
-            FM: 600,
-            VC: 240,
-            AD: 0,
-          };
+        if (!ejercicio) {
+            // Seleccionar nombre y duración variados
+            const nombreIndex = (variante - 1) % nombresDisponibles.length;
+            const nombre = nombresDisponibles[nombreIndex];
+            const duracion = duracionesDisponibles[(variante - 1) % duracionesDisponibles.length];
 
-          const configs = {
-            CA: { nombre: nombreAleatorio, duracion: duraciones.CA },
-            CB: { nombre: nombreAleatorio, duracion: duraciones.CB },
-            TC: { nombre: nombreAleatorio, duracion: duraciones.TC },
-            TM: { nombre: nombreAleatorio, duracion: duraciones.TM },
-            FM: { nombre: nombreAleatorio, duracion: duraciones.FM },
-            VC: { nombre: nombreAleatorio, duracion: duraciones.VC },
-            AD: { nombre: nombreAleatorio, duracion: duraciones.AD },
-          };
-
-          addLog(`📝 Creando ejercicio ${tipo}...`, 'info');
+            addLog(`📝 Creando ejercicio ${tipo} variante ${variante}...`, 'info');
           try {
             ejercicio = await localDataClient.entities.Bloque.create({
-            nombre: configs[tipo].nombre,
-            code: `${tipo}-SEED-001`,
+                nombre: nombre,
+                code: code,
             tipo: tipo,
-            duracionSeg: configs[tipo].duracion,
-            instrucciones: `Ejercicio ${configs[tipo].nombre}`,
-            indicadorLogro: `Completar ${configs[tipo].nombre}`,
+                duracionSeg: duracion,
+                instrucciones: `Ejercicio ${nombre} - Variante ${variante}`,
+                indicadorLogro: `Completar ${nombre}`,
             materialesRequeridos: [],
-            mediaLinks: [],
+                mediaLinks: [],
             profesorId: profesor.id,
             });
-            addLog(`✅ Ejercicio ${tipo} creado`, 'info');
+              addLog(`✅ Ejercicio ${tipo} variante ${variante} creado`, 'info');
           } catch (error) {
             const errorMsg = error?.message || error?.toString() || 'Error desconocido';
             const errorDetails = error?.details || error?.hint || '';
-            addLog(`❌ Error al crear ejercicio ${tipo}: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
-            throw error;
+              addLog(`❌ Error al crear ejercicio ${tipo} variante ${variante}: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+              // Continuar con la siguiente variante
+              continue;
+            }
+          }
+          
+          if (ejercicio) {
+            ejerciciosDelTipo.push(ejercicio);
           }
         }
-        ejerciciosBase[tipo] = ejercicio;
+
+        // Usar la primera variante como base, pero tener todas disponibles
+        if (ejerciciosDelTipo.length > 0) {
+          ejerciciosBase[tipo] = ejerciciosDelTipo[0];
+          ejerciciosBase[`${tipo}_variantes`] = ejerciciosDelTipo; // Guardar todas las variantes
+        } else {
+          // Si no se pudo crear ninguna, buscar cualquier bloque del tipo
+          const bloqueExistente = bloques.find(b => b.tipo === tipo);
+          if (bloqueExistente) {
+            ejerciciosBase[tipo] = bloqueExistente;
+            ejerciciosBase[`${tipo}_variantes`] = [bloqueExistente];
+          } else {
+            addLog(`⚠️ No se pudo crear ni encontrar ningún bloque de tipo ${tipo}`, 'warning');
+          }
+        }
       }
 
       bloques = await localDataClient.entities.Bloque.list();
 
       let planes = await localDataClient.entities.Plan.list();
-      let planBase = planes.find(p => p.nombre === 'Seed – Plan Base');
+      
+      // Función helper para seleccionar bloque aleatorio de un tipo (usando variantes si están disponibles)
+      const seleccionarBloque = (tipo) => {
+        const variantes = ejerciciosBase[`${tipo}_variantes`];
+        if (variantes && variantes.length > 0) {
+          return variantes[Math.floor(Math.random() * variantes.length)];
+        }
+        return ejerciciosBase[tipo];
+      };
 
-      if (!planBase) {
-        addLog('📅 Creando plan base...', 'info');
-        try {
-          planBase = await localDataClient.entities.Plan.create({
+      // Definir múltiples planes variados
+      const planesSeed = [
+        {
           nombre: 'Seed – Plan Base',
           focoGeneral: 'GEN',
           objetivoSemanalPorDefecto: 'Desarrollar técnica y musicalidad',
-          piezaId: piezaBase.id,
-          profesorId: profesor.id,
           semanas: [
             {
               nombre: 'Semana 1',
@@ -470,24 +572,12 @@ export default function TestSeedPage() {
                 {
                   nombre: 'Sesión A',
                   foco: 'GEN',
-                  bloques: [
-                    { ...ejerciciosBase.CA, code: ejerciciosBase.CA.code, nombre: ejerciciosBase.CA.nombre, tipo: 'CA', duracionSeg: 300 },
-                    { ...ejerciciosBase.TC, code: ejerciciosBase.TC.code, nombre: ejerciciosBase.TC.nombre, tipo: 'TC', duracionSeg: 480 },
-                    { ...ejerciciosBase.FM, code: ejerciciosBase.FM.code, nombre: ejerciciosBase.FM.nombre, tipo: 'FM', duracionSeg: 600 },
-                    { ...ejerciciosBase.VC, code: ejerciciosBase.VC.code, nombre: ejerciciosBase.VC.nombre, tipo: 'VC', duracionSeg: 240 },
-                  ],
-                  rondas: []
+                  bloques: ['CA', 'TC', 'FM', 'VC']
                 },
                 {
                   nombre: 'Sesión B',
                   foco: 'RIT',
-                  bloques: [
-                    { ...ejerciciosBase.CB, code: ejerciciosBase.CB.code, nombre: ejerciciosBase.CB.nombre, tipo: 'CB', duracionSeg: 360 },
-                    { ...ejerciciosBase.TM, code: ejerciciosBase.TM.code, nombre: ejerciciosBase.TM.nombre, tipo: 'TM', duracionSeg: 360 },
-                    { ...ejerciciosBase.AD, code: ejerciciosBase.AD.code, nombre: ejerciciosBase.AD.nombre, tipo: 'AD', duracionSeg: 0 },
-                    { ...ejerciciosBase.VC, code: ejerciciosBase.VC.code, nombre: ejerciciosBase.VC.nombre, tipo: 'VC', duracionSeg: 240 },
-                  ],
-                  rondas: []
+                  bloques: ['CB', 'TM', 'AD', 'VC']
                 }
               ]
             },
@@ -499,12 +589,7 @@ export default function TestSeedPage() {
                 {
                   nombre: 'Sesión A',
                   foco: 'ART',
-                  bloques: [
-                    { ...ejerciciosBase.CA, code: ejerciciosBase.CA.code, nombre: ejerciciosBase.CA.nombre, tipo: 'CA', duracionSeg: 300 },
-                    { ...ejerciciosBase.TC, code: ejerciciosBase.TC.code, nombre: ejerciciosBase.TC.nombre, tipo: 'TC', duracionSeg: 480 },
-                    { ...ejerciciosBase.FM, code: ejerciciosBase.FM.code, nombre: ejerciciosBase.FM.nombre, tipo: 'FM', duracionSeg: 600 },
-                  ],
-                  rondas: []
+                  bloques: ['CA', 'TC', 'FM']
                 }
               ]
             },
@@ -516,13 +601,7 @@ export default function TestSeedPage() {
                 {
                   nombre: 'Sesión A',
                   foco: 'S&A',
-                  bloques: [
-                    { ...ejerciciosBase.CA, code: ejerciciosBase.CA.code, nombre: ejerciciosBase.CA.nombre, tipo: 'CA', duracionSeg: 300 },
-                    { ...ejerciciosBase.CB, code: ejerciciosBase.CB.code, nombre: ejerciciosBase.CB.nombre, tipo: 'CB', duracionSeg: 360 },
-                    { ...ejerciciosBase.FM, code: ejerciciosBase.FM.code, nombre: ejerciciosBase.FM.nombre, tipo: 'FM', duracionSeg: 600 },
-                    { ...ejerciciosBase.VC, code: ejerciciosBase.VC.code, nombre: ejerciciosBase.VC.nombre, tipo: 'VC', duracionSeg: 240 },
-                  ],
-                  rondas: []
+                  bloques: ['CA', 'CB', 'FM', 'VC']
                 }
               ]
             },
@@ -534,10 +613,198 @@ export default function TestSeedPage() {
                 {
                   nombre: 'Sesión A',
                   foco: 'LIG',
+                  bloques: ['CA', 'TC', 'TM']
+                }
+              ]
+            }
+          ]
+        },
+        {
+          nombre: 'Seed – Plan Intensivo',
+          focoGeneral: 'TC',
+          objetivoSemanalPorDefecto: 'Enfoque en técnica avanzada',
+          semanas: [
+            {
+              nombre: 'Semana 1',
+              foco: 'TC',
+              objetivo: 'Técnica central intensiva',
+              sesiones: [
+                {
+                  nombre: 'Sesión A',
+                  foco: 'TC',
+                  bloques: ['CA', 'TC', 'TC', 'VC']
+                },
+                {
+                  nombre: 'Sesión B',
+                  foco: 'TC',
+                  bloques: ['CB', 'TC', 'TM', 'VC']
+                }
+              ]
+            },
+            {
+              nombre: 'Semana 2',
+              foco: 'LIG',
+              objetivo: 'Ligaduras y técnica',
+              sesiones: [
+                {
+                  nombre: 'Sesión A',
+                  foco: 'LIG',
+                  bloques: ['CA', 'TC', 'FM', 'VC']
+                }
+              ]
+            },
+            {
+              nombre: 'Semana 3',
+              foco: 'ART',
+              objetivo: 'Articulación precisa',
+              sesiones: [
+                {
+                  nombre: 'Sesión A',
+                  foco: 'ART',
+                  bloques: ['CA', 'TC', 'TM', 'VC']
+                }
+              ]
+            }
+          ]
+        },
+        {
+          nombre: 'Seed – Plan Musical',
+          focoGeneral: 'FM',
+          objetivoSemanalPorDefecto: 'Desarrollo musical y expresivo',
+          semanas: [
+            {
+              nombre: 'Semana 1',
+              foco: 'FM',
+              objetivo: 'Fragmentos musicales',
+              sesiones: [
+                {
+                  nombre: 'Sesión A',
+                  foco: 'FM',
+                  bloques: ['CA', 'FM', 'FM', 'VC']
+                },
+                {
+                  nombre: 'Sesión B',
+                  foco: 'GEN',
+                  bloques: ['CB', 'FM', 'VC']
+                }
+              ]
+            },
+            {
+              nombre: 'Semana 2',
+              foco: 'S&A',
+              objetivo: 'Sonido y expresión',
+              sesiones: [
+                {
+                  nombre: 'Sesión A',
+                  foco: 'S&A',
+                  bloques: ['CA', 'FM', 'VC']
+                }
+              ]
+            },
+            {
+              nombre: 'Semana 3',
+              foco: 'RIT',
+              objetivo: 'Ritmo y fraseo',
+              sesiones: [
+                {
+                  nombre: 'Sesión A',
+                  foco: 'RIT',
+                  bloques: ['CB', 'FM', 'TM', 'VC']
+                }
+              ]
+            }
+          ]
+        }
+      ];
+
+      // Crear planes que no existan
+      const planesCreados = [];
+      for (const planData of planesSeed) {
+        let planExistente = planes.find(p => p.nombre === planData.nombre);
+        if (!planExistente) {
+          addLog(`📅 Creando plan: ${planData.nombre}...`, 'info');
+          try {
+            // Convertir estructura de bloques a objetos completos
+            const semanasCompletas = planData.semanas.map(semana => ({
+              ...semana,
+              sesiones: semana.sesiones.map(sesion => ({
+                ...sesion,
+                bloques: sesion.bloques.map(tipo => {
+                  const bloque = seleccionarBloque(tipo);
+                  if (!bloque) return null;
+                  return {
+                    ...bloque,
+                    code: bloque.code,
+                    nombre: bloque.nombre,
+                    tipo: bloque.tipo,
+                    duracionSeg: bloque.duracionSeg || 0
+                  };
+                }).filter(b => b !== null),
+                rondas: []
+              }))
+            }));
+
+            // Usar la primera pieza disponible para este plan
+            const piezaParaPlan = piezasCreadas.length > 0 
+              ? piezasCreadas[Math.floor(Math.random() * piezasCreadas.length)]
+              : piezasCreadas[0];
+
+            planExistente = await localDataClient.entities.Plan.create({
+              nombre: planData.nombre,
+              focoGeneral: planData.focoGeneral,
+              objetivoSemanalPorDefecto: planData.objetivoSemanalPorDefecto,
+              piezaId: piezaParaPlan.id,
+              profesorId: profesor.id,
+              semanas: semanasCompletas
+            });
+            addLog(`✅ Plan creado: ${planData.nombre}`, 'success');
+          } catch (error) {
+            const errorMsg = error?.message || error?.toString() || 'Error desconocido';
+            const errorDetails = error?.details || error?.hint || '';
+            addLog(`❌ Error al crear plan ${planData.nombre}: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+            // Continuar con el siguiente plan
+            continue;
+          }
+        }
+        if (planExistente) {
+          planesCreados.push(planExistente);
+        }
+      }
+
+      // Actualizar lista de planes
+      planes = await localDataClient.entities.Plan.list();
+      
+      // Si no hay planes creados, usar el primero disponible o crear uno básico
+      if (planesCreados.length === 0) {
+        const planDisponible = planes.find(p => p.profesorId === profesor.id);
+        if (planDisponible) {
+          planesCreados.push(planDisponible);
+        } else {
+          // Crear un plan básico de emergencia
+          try {
+            const piezaParaPlan = piezasCreadas.length > 0 ? piezasCreadas[0] : null;
+            if (!piezaParaPlan) {
+              throw new Error('No hay piezas disponibles para crear plan');
+            }
+            
+            const planEmergencia = await localDataClient.entities.Plan.create({
+              nombre: 'Seed – Plan Base',
+              focoGeneral: 'GEN',
+              objetivoSemanalPorDefecto: 'Desarrollar técnica y musicalidad',
+              piezaId: piezaParaPlan.id,
+              profesorId: profesor.id,
+              semanas: [
+                {
+                  nombre: 'Semana 1',
+                  foco: 'GEN',
+                  objetivo: 'Bases técnicas',
+                  sesiones: [
+                    {
+                      nombre: 'Sesión A',
+                      foco: 'GEN',
                   bloques: [
                     { ...ejerciciosBase.CA, code: ejerciciosBase.CA.code, nombre: ejerciciosBase.CA.nombre, tipo: 'CA', duracionSeg: 300 },
-                    { ...ejerciciosBase.TC, code: ejerciciosBase.TC.code, nombre: ejerciciosBase.TC.nombre, tipo: 'TC', duracionSeg: 480 },
-                    { ...ejerciciosBase.TM, code: ejerciciosBase.TM.code, nombre: ejerciciosBase.TM.nombre, tipo: 'TM', duracionSeg: 360 },
+                        { ...ejerciciosBase.VC, code: ejerciciosBase.VC.code, nombre: ejerciciosBase.VC.nombre, tipo: 'VC', duracionSeg: 240 }
                   ],
                   rondas: []
                 }
@@ -545,12 +812,12 @@ export default function TestSeedPage() {
             }
           ]
           });
-          addLog('✅ Plan base creado (4 semanas)', 'success');
+            planesCreados.push(planEmergencia);
+            addLog('✅ Plan de emergencia creado', 'success');
         } catch (error) {
-          const errorMsg = error?.message || error?.toString() || 'Error desconocido';
-          const errorDetails = error?.details || error?.hint || '';
-          addLog(`❌ Error al crear plan base: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+            addLog(`❌ Error crítico al crear plan de emergencia: ${error.message}`, 'error');
           throw error;
+          }
         }
       }
 
@@ -607,20 +874,29 @@ export default function TestSeedPage() {
           );
 
           if (!asignacion) {
-            addLog(`📝 Creando asignación para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}...`, 'info');
+            // Seleccionar pieza y plan aleatorios para este estudiante (rotación variada)
+            const indiceEstudiante = estudiantes.indexOf(estudiante);
+            const piezaSeleccionada = piezasCreadas.length > 0 
+              ? piezasCreadas[indiceEstudiante % piezasCreadas.length]
+              : piezasCreadas[0];
+            const planSeleccionado = planesCreados.length > 0
+              ? planesCreados[indiceEstudiante % planesCreados.length]
+              : planesCreados[0];
+
+            addLog(`📝 Creando asignación para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO} (pieza: ${piezaSeleccionada?.nombre}, plan: ${planSeleccionado?.nombre})...`, 'info');
             try {
-              const planCopy = JSON.parse(JSON.stringify(planBase));
+              const planCopy = JSON.parse(JSON.stringify(planSeleccionado));
               const piezaSnapshotData = {
-                nombre: piezaBase.nombre,
-                descripcion: piezaBase.descripcion,
-                nivel: piezaBase.nivel,
-                elementos: piezaBase.elementos,
-                tiempoObjetivoSeg: piezaBase.tiempoObjetivoSeg,
+                nombre: piezaSeleccionada.nombre,
+                descripcion: piezaSeleccionada.descripcion,
+                nivel: piezaSeleccionada.nivel,
+                elementos: piezaSeleccionada.elementos,
+                tiempoObjetivoSeg: piezaSeleccionada.tiempoObjetivoSeg,
               };
               
               console.log('Datos antes de crear asignación:', {
                 alumnoId: estudiante.id,
-                piezaId: piezaBase.id,
+                piezaId: piezaSeleccionada.id,
                 semanaInicioISO,
                 estado: 'publicada',
                 hasPlan: !!planCopy,
@@ -632,7 +908,7 @@ export default function TestSeedPage() {
               
               asignacion = await localDataClient.entities.Asignacion.create({
               alumnoId: estudiante.id,
-              piezaId: piezaBase.id,
+              piezaId: piezaSeleccionada.id,
               semanaInicioISO: semanaInicioISO,
               estado: 'publicada',
               foco: 'GEN',
@@ -662,6 +938,14 @@ export default function TestSeedPage() {
           } else {
             addLog(`ℹ️ Usando asignación existente para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}`, 'info');
           }
+
+          // Obtener pieza y plan para esta asignación (para usar en registros)
+          const piezaAsignacion = asignacion.piezaSnapshot 
+            ? piezasCreadas.find(p => p.nombre === asignacion.piezaSnapshot.nombre) || piezasCreadas[0]
+            : (piezasCreadas.find(p => p.id === asignacion.piezaId) || piezasCreadas[0]);
+          const planAsignacion = asignacion.plan 
+            ? planesCreados.find(p => p.nombre === asignacion.plan.nombre) || planesCreados[0]
+            : planesCreados[0];
 
           // Verificar duplicados a nivel de sesión individual (fecha/hora específica)
           // Permitir crear múltiples ejecuciones con datos diferentes usando timestamps únicos
@@ -752,8 +1036,8 @@ export default function TestSeedPage() {
               const tipoAleatorio = tiposDisponibles[Math.floor(Math.random() * tiposDisponibles.length)];
               if (!tiposUsados.has(tipoAleatorio)) {
                 const ejercicio = bloques.find(e => e.tipo === tipoAleatorio && e.code?.includes('SEED'));
-                if (ejercicio) {
-                  bloquesSeleccionados.push(ejercicio);
+              if (ejercicio) {
+                bloquesSeleccionados.push(ejercicio);
                   tiposUsados.add(tipoAleatorio);
                 }
               }
@@ -798,8 +1082,8 @@ export default function TestSeedPage() {
               notas: calificacion === 4 ? 'Excelente sesión' : calificacion === 3 ? 'Buena práctica' : calificacion === 2 ? 'Práctica aceptable' : 'Sesión difícil',
               dispositivo: 'TestSeed',
               versionSchema: '1.0',
-              piezaNombre: piezaBase.nombre,
-              planNombre: planBase.nombre,
+              piezaNombre: piezaAsignacion?.nombre || 'Pieza',
+              planNombre: planAsignacion?.nombre || 'Plan',
               semanaNombre: 'Semana 1',
               sesionNombre: `Sesión ${String.fromCharCode(65 + i)}`,
               foco
@@ -860,16 +1144,16 @@ export default function TestSeedPage() {
               }
             }
           }
-          
+
           // Crear feedback semanal solo si se crearon sesiones para esta semana
           if (sesionesCreadasEstaSemana > 0) {
             // Notas más variadas y específicas
-            const notasProfesor = [
-              'Excelente progreso esta semana. Sigue mejorando la técnica de respiración.',
-              'Buen trabajo general. Recomiendo enfocarte más en la articulación.',
-              'Mejora la consistencia en la práctica diaria. Intenta practicar al menos 4 días por semana.',
-              'Se nota avance en el control del sonido. Trabaja más en la afinación en el registro agudo.',
-              'Práctica sólida esta semana. Continúa con el trabajo de ligaduras.',
+          const notasProfesor = [
+            'Excelente progreso esta semana. Sigue mejorando la técnica de respiración.',
+            'Buen trabajo general. Recomiendo enfocarte más en la articulación.',
+            'Mejora la consistencia en la práctica diaria. Intenta practicar al menos 4 días por semana.',
+            'Se nota avance en el control del sonido. Trabaja más en la afinación en el registro agudo.',
+            'Práctica sólida esta semana. Continúa con el trabajo de ligaduras.',
               'Necesitas mayor dedicación. Ajusta la embocadura y practica escalas con metrónomo.',
               'Muy buena evolución en el fraseo. Sigue trabajando la dinámica.',
               'El ritmo está mejorando notablemente. Mantén la constancia.',
@@ -881,27 +1165,28 @@ export default function TestSeedPage() {
             // Verificar si ya existe feedback para esta semana
             const feedbacksExistentes = await localDataClient.entities.FeedbackSemanal.list();
             const feedbackExistente = feedbacksExistentes.find(f => 
-              f.asignacionId === asignacion.id && 
+              f.alumnoId === estudiante.id && 
+              f.profesorId === profesorAsignado.id &&
               f.semanaInicioISO === semanaInicioISO
             );
 
             if (!feedbackExistente) {
               try {
                 addLog(`📝 Creando feedback semanal para semana ${semanaInicioISO}...`, 'info');
-                await localDataClient.entities.FeedbackSemanal.create({
-                  asignacionId: asignacion.id,
-                  alumnoId: estudiante.id,
-                  profesorId: profesorAsignado.id,
-                  semanaInicioISO: semanaInicioISO,
-                  notaProfesor: notasProfesor[Math.floor(Math.random() * notasProfesor.length)]
-                });
+            await localDataClient.entities.FeedbackSemanal.create({
+              alumnoId: estudiante.id,
+              profesorId: profesorAsignado.id,
+              semanaInicioISO: semanaInicioISO,
+                  notaProfesor: notasProfesor[Math.floor(Math.random() * notasProfesor.length)],
+                  mediaLinks: []
+            });
 
-                totalFeedbacks++;
+            totalFeedbacks++;
                 addLog(`✅ Feedback semanal creado para semana ${semanaInicioISO}`, 'success');
-              } catch (error) {
-                const errorMsg = error?.message || error?.toString() || 'Error desconocido';
-                const errorDetails = error?.details || error?.hint || '';
-                addLog(`❌ Error al crear feedback semanal: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+          } catch (error) {
+            const errorMsg = error?.message || error?.toString() || 'Error desconocido';
+            const errorDetails = error?.details || error?.hint || '';
+            addLog(`❌ Error al crear feedback semanal: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
                 console.error('Error al crear feedback:', error);
               }
             } else {
@@ -1149,19 +1434,19 @@ export default function TestSeedPage() {
         detail: todosLosTipos ? `✓ Todos los tipos presentes` : `✗ Faltan tipos`
       });
 
-      const piezaBase = (data.piezas || []).find(p => p.nombre?.includes('Seed'));
+      const piezasSeed = (data.piezas || []).filter(p => p.nombre?.includes('Seed'));
       tests.push({
-        name: 'Pieza base generada',
-        passed: !!piezaBase,
-        detail: piezaBase ? `✓ ${piezaBase.nombre}` : '✗ Sin pieza seed'
+        name: 'Piezas generadas',
+        passed: piezasSeed.length > 0,
+        detail: piezasSeed.length > 0 ? `✓ ${piezasSeed.length} piezas` : '✗ Sin piezas seed'
       });
 
-      const planBase = (data.planes || []).find(p => p.nombre?.includes('Seed'));
-      const planValido = planBase && planBase.semanas && planBase.semanas.length >= 4;
+      const planesSeed = (data.planes || []).filter(p => p.nombre?.includes('Seed'));
+      const planValido = planesSeed.length > 0 && planesSeed.some(p => p.semanas && p.semanas.length >= 3);
       tests.push({
-        name: 'Plan con 4+ semanas',
+        name: 'Planes con 3+ semanas',
         passed: planValido,
-        detail: planValido ? `✓ ${planBase.semanas.length} semanas` : '✗ Plan inválido'
+        detail: planValido ? `✓ ${planesSeed.length} planes` : '✗ Planes inválidos'
       });
 
       const asignacionDemo = (data.asignaciones || []).find(a => 
@@ -1196,7 +1481,7 @@ export default function TestSeedPage() {
         detail: estadosVariados ? `✓ Estados: ${Array.from(tiposEstado).join(', ')}` : '✗ Falta variedad'
       });
 
-      const tieneFeedbacks = (data.feedbacks || []).some(f => f.semanaInicioISO && f.asignacionId);
+      const tieneFeedbacks = (data.feedbacks || []).some(f => f.semanaInicioISO && f.alumnoId && f.profesorId);
       tests.push({
         name: 'Feedbacks semanales',
         passed: tieneFeedbacks,
@@ -1297,6 +1582,15 @@ export default function TestSeedPage() {
   const countPlanes = stats?.planes.length || 0;
   const countBloques = stats?.bloques.length || 0;
   const countAsignaciones = stats?.asignaciones.length || 0;
+  const countFeedbacks = stats?.feedbacks.length || 0;
+  const countRegistrosSesion = stats?.registrosSesion.length || 0;
+  const countRegistrosBloques = stats?.registrosBloques.length || 0;
+  
+  // Usuarios por rol
+  const countUsuarios = stats?.users.length || 0;
+  const countAdmin = stats?.users.filter(u => u.rolPersonalizado === 'ADMIN').length || 0;
+  const countProf = stats?.users.filter(u => u.rolPersonalizado === 'PROF').length || 0;
+  const countEstu = stats?.users.filter(u => u.rolPersonalizado === 'ESTU').length || 0;
 
   // ======================== RENDER ========================
   if (effectiveUser?.rolPersonalizado !== 'ADMIN') {
@@ -1791,6 +2085,33 @@ export default function TestSeedPage() {
             <Target className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-primary)]" />
             <p className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">{countAsignaciones}</p>
             <p className="text-[10px] sm:text-xs text-[var(--color-text-secondary)]">Asignaciones</p>
+          </div>
+
+          <div className="text-center min-w-[80px] sm:min-w-[100px]">
+            <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-info)]" />
+            <p className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">{countFeedbacks}</p>
+            <p className="text-[10px] sm:text-xs text-[var(--color-text-secondary)]">Feedbacks</p>
+          </div>
+
+          <div className="text-center min-w-[80px] sm:min-w-[100px]">
+            <Activity className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-success)]" />
+            <p className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">{countRegistrosSesion}</p>
+            <p className="text-[10px] sm:text-xs text-[var(--color-text-secondary)]">Sesiones</p>
+          </div>
+
+          <div className="text-center min-w-[80px] sm:min-w-[100px]">
+            <PlayCircle className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-primary)]" />
+            <p className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">{countRegistrosBloques}</p>
+            <p className="text-[10px] sm:text-xs text-[var(--color-text-secondary)]">Bloques</p>
+          </div>
+
+          <div className="text-center min-w-[80px] sm:min-w-[100px]">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-primary)]" />
+            <p className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">{countUsuarios}</p>
+            <p className="text-[10px] sm:text-xs text-[var(--color-text-secondary)]">Usuarios</p>
+            <p className="text-[9px] sm:text-[10px] text-[var(--color-text-muted)] mt-0.5">
+              {countAdmin}A {countProf}P {countEstu}E
+            </p>
           </div>
         </div>
 

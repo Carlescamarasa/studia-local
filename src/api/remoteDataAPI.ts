@@ -52,6 +52,45 @@ function toCamelCase(str: string): string {
 }
 
 /**
+ * Normaliza campos ISO en objetos RegistroSesion y RegistroBloque
+ * Convierte inicioIso → inicioISO y finIso → finISO
+ */
+function normalizeISOFields<T>(obj: any): T {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => normalizeISOFields(item)) as T;
+  }
+  
+  if (typeof obj !== 'object') {
+    return obj;
+  }
+  
+  const result: any = { ...obj };
+  
+  // Normalizar campos ISO específicos
+  if ('inicioIso' in result && !('inicioISO' in result)) {
+    result.inicioISO = result.inicioIso;
+    delete result.inicioIso;
+  }
+  if ('finIso' in result && !('finISO' in result)) {
+    result.finISO = result.finIso;
+    delete result.finIso;
+  }
+  
+  // Aplicar recursivamente a propiedades anidadas
+  for (const key in result) {
+    if (Object.prototype.hasOwnProperty.call(result, key) && typeof result[key] === 'object') {
+      result[key] = normalizeISOFields(result[key]);
+    }
+  }
+  
+  return result as T;
+}
+
+/**
  * Convierte un objeto de snake_case a camelCase recursivamente
  */
 function snakeToCamel<T>(obj: any): T {
@@ -916,7 +955,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((r: any) => snakeToCamel<RegistroSesion>(r));
+        return (data || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroSesion>(r)));
       },
       get: async (id: string) => {
         const { data, error } = await supabase
@@ -929,7 +968,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           if (error.code === 'PGRST116') return null;
           throw error;
         }
-        return snakeToCamel<RegistroSesion>(data);
+        return normalizeISOFields(snakeToCamel<RegistroSesion>(data));
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
         let query = supabase.from('registros_sesion').select('*');
@@ -945,7 +984,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((r: any) => snakeToCamel<RegistroSesion>(r));
+        return (data || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroSesion>(r)));
       },
       create: async (data) => {
         const snakeData = camelToSnake({
@@ -959,7 +998,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .single();
         
         if (error) throw error;
-        return snakeToCamel<RegistroSesion>(result);
+        return normalizeISOFields(snakeToCamel<RegistroSesion>(result));
       },
       update: async (id: string, updates: any) => {
         const snakeUpdates = camelToSnake(updates);
@@ -971,7 +1010,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .single();
         
         if (error) throw error;
-        return snakeToCamel<RegistroSesion>(data);
+        return normalizeISOFields(snakeToCamel<RegistroSesion>(data));
       },
       delete: async (id: string) => {
         const { error } = await supabase
@@ -996,7 +1035,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((r: any) => snakeToCamel<RegistroBloque>(r));
+        return (data || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(r)));
       },
       get: async (id: string) => {
         const { data, error } = await supabase
@@ -1009,7 +1048,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           if (error.code === 'PGRST116') return null;
           throw error;
         }
-        return snakeToCamel<RegistroBloque>(data);
+        return normalizeISOFields(snakeToCamel<RegistroBloque>(data));
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
         let query = supabase.from('registros_bloque').select('*');
@@ -1025,7 +1064,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((r: any) => snakeToCamel<RegistroBloque>(r));
+        return (data || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(r)));
       },
       create: async (data) => {
         const snakeData = camelToSnake({
@@ -1039,7 +1078,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .single();
         
         if (error) throw error;
-        return snakeToCamel<RegistroBloque>(result);
+        return normalizeISOFields(snakeToCamel<RegistroBloque>(result));
       },
       update: async (id: string, updates: any) => {
         const snakeUpdates = camelToSnake(updates);
@@ -1051,7 +1090,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .single();
         
         if (error) throw error;
-        return snakeToCamel<RegistroBloque>(data);
+        return normalizeISOFields(snakeToCamel<RegistroBloque>(data));
       },
       delete: async (id: string) => {
         const { error } = await supabase
