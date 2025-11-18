@@ -1953,9 +1953,9 @@ function HoyPageContent() {
                                     empezarSesion(sesion, sesionIdx);
                                   }}
                                   size="lg"
-                                  className={`w-full h-14 text-lg font-bold shadow-card ${componentStyles.buttons.primary} focus-brand`}
+                                  className={`${componentStyles.buttons.primary} w-full md:w-auto h-12 shadow-sm`}
                                 >
-                                  <PlayCircle className="w-6 h-6 mr-2" />
+                                  <PlayCircle className="w-5 h-5 mr-2" />
                                   Iniciar Práctica
                                 </Button>
                               </div>

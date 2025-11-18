@@ -63,6 +63,22 @@ function AgendaPageContent() {
 
   const effectiveUser = useEffectiveUser();
 
+  const focoLabels = {
+    GEN: 'General',
+    LIG: 'Ligaduras',
+    RIT: 'Ritmo',
+    ART: 'Articulación',
+    'S&A': 'Sonido y Afinación',
+  };
+
+  const focoColors = {
+    GEN: componentStyles.status.badgeDefault,
+    LIG: componentStyles.status.badgeInfo,
+    RIT: componentStyles.status.badgeDefault,
+    ART: componentStyles.status.badgeSuccess,
+    'S&A': componentStyles.status.badgeDefault,
+  };
+
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => localDataClient.entities.User.list(),
@@ -395,10 +411,18 @@ function AgendaPageContent() {
                         <span className="text-sm font-medium text-[var(--color-text-primary)]">
                           {sesion.nombre}
                         </span>
-                        <Badge variant="outline" className={componentStyles.status.badgeSuccess}>
+                        <Badge 
+                          variant="outline" 
+                          className={tiempo > 0 ? componentStyles.status.badgeSuccess : componentStyles.status.badgeDefault}
+                        >
                           <Clock className="w-3 h-3 mr-1" />
                           {mins}:{String(secs).padStart(2, '0')} min
                         </Badge>
+                        {sesion.foco && (
+                          <Badge className={`rounded-full ${focoColors[sesion.foco]}`} variant="outline">
+                            {focoLabels[sesion.foco]}
+                          </Badge>
+                        )}
                       </div>
                       {isExpanded && (
                         <div className="ml-2 mt-2" onClick={(e) => e.stopPropagation()}>

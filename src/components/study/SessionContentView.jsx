@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { ChevronDown, ChevronRight, Layers, Shuffle } from "lucide-react";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "./sessionSequence";
 import { componentStyles } from "@/design/componentStyles";
@@ -65,29 +64,25 @@ export default function SessionContentView({ sesion, compact = false }) {
         </span>
       </div>
 
-      <div className="space-y-1">
+      <div className="ml-2 space-y-1.5">
         {secuencia.map((item, idx) => {
           if (item.kind === "BLOQUE") {
             const ej = bloquesMap.get(item.code);
             if (!ej) {
               return (
-                <div key={`miss-b-${idx}`} className="p-2 app-panel bg-[var(--color-danger)]/10 border-[var(--color-danger)]/20 text-xs text-[var(--color-danger)]">
-                  ⚠️ Ejercicio no encontrado: {item.code}
+                <div key={`miss-b-${idx}`} className={`text-xs text-[var(--color-danger)] p-1`}>
+                  ⚠️ Referencia huérfana: {item.code}
                 </div>
               );
             }
             
             return (
-              <div key={`b-${item.code}-${idx}`} className="flex items-center gap-2 py-2 px-3 app-card border-[var(--color-border-default)] text-sm">
-                <Badge variant="outline" className={tipoColors[ej.tipo]}>
+              <div key={`b-${item.code}-${idx}`} className={componentStyles.items.compactItem}>
+                <Badge variant="outline" className={`${tipoColors[ej.tipo]} rounded-full ${componentStyles.typography.compactText}`}>
                   {ej.tipo}
                 </Badge>
-                <span className="flex-1 text-[var(--color-text-primary)]">
-                  {ej.nombre} {!compact && <span className="text-[var(--color-text-secondary)]">({ej.code})</span>}
-                </span>
-                <span className="text-[var(--color-text-secondary)]">
-                  {Math.floor((ej.duracionSeg || 0) / 60)}:{String((ej.duracionSeg || 0) % 60).padStart(2, '0')}
-                </span>
+                <span className="flex-1 text-[var(--color-text-primary)] font-medium truncate">{ej.nombre}</span>
+                <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0`}>{ej.code}</span>
               </div>
             );
           }
@@ -96,7 +91,7 @@ export default function SessionContentView({ sesion, compact = false }) {
           const r = (S.rondas || []).find(x => x.id === item.id);
           if (!r) {
             return (
-              <div key={`miss-r-${idx}`} className="p-2 app-panel bg-[var(--color-danger)]/10 border-[var(--color-danger)]/20 text-xs text-[var(--color-danger)]">
+              <div key={`miss-r-${idx}`} className={`text-xs text-[var(--color-danger)] p-1`}>
                 ⚠️ Ronda no encontrada
               </div>
             );
@@ -106,61 +101,52 @@ export default function SessionContentView({ sesion, compact = false }) {
           const isOpen = !!expanded[key];
 
           return (
-            <Card 
-              key={`r-${key}`} 
-              className="app-panel border-[var(--color-primary)]/30 bg-[var(--color-primary-soft)] cursor-pointer hover:bg-[var(--color-primary-soft)] transition-colors"
-              onClick={() => toggleRonda(key)}
-            >
-              <CardContent className="pt-2 pb-2">
-                <div className="flex items-center gap-2">
-                  <div className="pt-0.5">
-                    {isOpen ? (
-                      <ChevronDown className="w-3 h-3 text-[var(--color-primary)]" />
-                    ) : (
-                      <ChevronRight className="w-3 h-3 text-[var(--color-primary)]" />
-                    )}
-                  </div>
-                  <Badge className="bg-[var(--color-primary)] text-[var(--color-text-inverse)] text-sm badge">Ronda</Badge>
-                  <span className="text-sm text-[var(--color-text-secondary)]">× {r.repeticiones} repeticiones</span>
-                  <span className="text-sm text-[var(--color-text-secondary)]">({r.bloques.length} ejercicios)</span>
-                  {r.aleatoria && (
-                    <Badge variant="outline" className="text-[10px] border-[var(--color-primary)]/40 text-[var(--color-primary)] bg-[var(--color-primary-soft)] badge flex items-center gap-1">
-                      <Shuffle className="w-3 h-3" />
-                      aleatorio
-                    </Badge>
+            <div key={`r-${key}`}>
+              <div 
+                className={componentStyles.items.compactItemHover}
+                onClick={() => toggleRonda(key)}
+              >
+                <div className={`flex items-center ${componentStyles.layout.gapCompact} flex-shrink-0`}>
+                  {isOpen ? (
+                    <ChevronDown className="w-3 h-3 text-[var(--color-text-secondary)]" />
+                  ) : (
+                    <ChevronRight className="w-3 h-3 text-[var(--color-text-secondary)]" />
                   )}
+                  <Badge variant="outline" className={`bg-[var(--color-primary)]/10 border-[var(--color-primary)]/30 text-[var(--color-primary)] rounded-full ${componentStyles.typography.compactText} font-semibold`}>
+                    RONDA
+                  </Badge>
                 </div>
+                <span className="flex-1 text-[var(--color-text-primary)] font-medium truncate">
+                  {r.aleatoria && <Shuffle className="w-3 h-3 inline mr-1 text-[var(--color-primary)]" />}
+                  × {r.repeticiones} repeticiones ({r.bloques.length} ejercicios)
+                </span>
+              </div>
 
-                {isOpen && (
-                  <div className="space-y-1 ml-6 mt-2 border-l-2 border-[var(--color-primary)]/30 pl-3">
-                    {r.bloques.map((code, j) => {
-                      const ej = bloquesMap.get(code);
-                      if (!ej) {
-                        return (
-                          <div key={`r-${key}-${j}`} className="p-1.5 app-panel bg-[var(--color-danger)]/10 border-[var(--color-danger)]/20 text-xs text-[var(--color-danger)]">
-                            ⚠️ {code} no encontrado
-                          </div>
-                        );
-                      }
-                      
+              {isOpen && (
+                <div className="ml-2 mt-1.5 space-y-1">
+                  {r.bloques.map((code, j) => {
+                    const ej = bloquesMap.get(code);
+                    if (!ej) {
                       return (
-                        <div key={`r-${key}-${code}-${j}`} className="flex items-center gap-2 py-2 px-3 app-card border-[var(--color-border-default)] text-sm">
-                          <Badge variant="outline" className={tipoColors[ej.tipo]}>
-                            {ej.tipo}
-                          </Badge>
-                          <span className="flex-1 text-[var(--color-text-primary)]">
-                            {ej.nombre} {!compact && <span className="text-[var(--color-text-secondary)]">({ej.code})</span>}
-                          </span>
-                          <span className="text-[var(--color-text-secondary)]">
-                            {Math.floor((ej.duracionSeg || 0) / 60)}:{String((ej.duracionSeg || 0) % 60).padStart(2, '0')}
-                          </span>
+                        <div key={`r-${key}-${j}`} className={`text-xs text-[var(--color-danger)] p-1 ml-2`}>
+                          ⚠️ Referencia huérfana: {code}
                         </div>
                       );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    }
+                    
+                    return (
+                      <div key={`r-${key}-${code}-${j}`} className={`${componentStyles.items.compactItem} ml-2`}>
+                        <Badge variant="outline" className={`${componentStyles.typography.compactText} rounded-full ${tipoColors[ej.tipo]}`}>
+                          {ej.tipo}
+                        </Badge>
+                        <span className="flex-1 text-[var(--color-text-primary)] truncate">{ej.nombre}</span>
+                        <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0`}>{ej.code}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>

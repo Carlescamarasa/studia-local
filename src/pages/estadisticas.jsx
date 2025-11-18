@@ -23,6 +23,7 @@ import Tabs from "@/components/ds/Tabs";
 import { componentStyles } from "@/design/componentStyles";
 import { designSystem } from "@/design/designSystem";
 import PageHeader from "@/components/ds/PageHeader";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const pad2 = (n) => String(n).padStart(2, "0");
 const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
@@ -110,6 +111,7 @@ const formatDuracionHM = (duracionSeg) => {
 function EstadisticasPageContent() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const isMobile = useIsMobile();
   
   const [rangoPreset, setRangoPreset] = useState('4-semanas');
   const [periodoInicio, setPeriodoInicio] = useState(() => {
@@ -695,68 +697,79 @@ function EstadisticasPageContent() {
         icon={Activity}
         title={isEstu ? 'Mis Estadísticas' : isProf ? 'Estadísticas de Estudiantes' : 'Estadísticas Generales'}
         subtitle={isEstu ? 'Tu progreso en la práctica' : 'Análisis del rendimiento y progreso'}
-        actions={
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => window.location.reload()}
-            className="shrink-0 h-9 rounded-xl focus-brand"
-            aria-label="Actualizar datos"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-        }
         filters={
-          <div className={componentStyles.components.panelBase + " p-3 md:p-4"}>
-            <div className="max-w-4xl mx-auto space-y-3">
-              <div className="flex gap-2 flex-wrap items-center justify-center">
-                <DateRangePicker
-                  startDate={periodoInicio}
-                  endDate={periodoFin}
-                  onDateChange={(start, end) => {
-                    setPeriodoInicio(start);
-                    setPeriodoFin(end);
-                  }}
-                  className="w-auto"
-                />
-                <div className="flex gap-1 flex-wrap justify-center">
-                  {presets.map(p => (
-                    <Button
-                      key={p.key}
-                      variant={rangoPreset === p.key ? "primary" : "outline"}
-                      size="sm"
-                      onClick={() => aplicarPreset(p.key)}
-                      className="text-xs h-9 rounded-xl focus-brand"
-                      aria-label={`Preset ${p.label}`}
-                    >
-                      {p.label}
-                    </Button>
-                  ))}
+          <div className="w-full space-y-4">
+            {/* Filtros de fecha y presets */}
+            <div className={componentStyles.components.panelBase + " p-3 md:p-4"}>
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+                  <div className="flex-1 w-full sm:w-auto">
+                    <DateRangePicker
+                      startDate={periodoInicio}
+                      endDate={periodoFin}
+                      onDateChange={(start, end) => {
+                        setPeriodoInicio(start);
+                        setPeriodoFin(end);
+                      }}
+                      className="w-full sm:w-auto"
+                    />
+                  </div>
+                  <div className="flex gap-1 flex-wrap">
+                    {presets.map(p => (
+                      <Button
+                        key={p.key}
+                        variant={rangoPreset === p.key ? "primary" : "outline"}
+                        size="sm"
+                        onClick={() => aplicarPreset(p.key)}
+                        className={`text-xs h-9 rounded-xl ${componentStyles.buttons.outline}`}
+                        aria-label={`Preset ${p.label}`}
+                      >
+                        {p.label}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-2 flex-wrap items-center justify-center">
-                {!isEstu && (
-                  <>
-                    <MultiSelect
-                      label="Profesores"
-                      items={profesores.map(p => ({ value: p.id, label: displayName(p) }))}
-                      value={profesoresSeleccionados}
-                      onChange={setProfesoresSeleccionados}
-                    />
-                    <MultiSelect
-                      label="Alumnos"
-                      items={estudiantes.map(a => ({ value: a.id, label: displayName(a) }))}
-                      value={alumnosSeleccionados}
-                      onChange={setAlumnosSeleccionados}
-                    />
-                  </>
-                )}
+            </div>
+
+            {/* Filtros adicionales (solo si no es estudiante) */}
+            {!isEstu && (
+              <div className={componentStyles.components.panelBase + " p-3 md:p-4"}>
+                <div className={`${componentStyles.layout.grid2} gap-3`}>
+                  <MultiSelect
+                    label="Profesores"
+                    items={profesores.map(p => ({ value: p.id, label: displayName(p) }))}
+                    value={profesoresSeleccionados}
+                    onChange={setProfesoresSeleccionados}
+                  />
+                  <MultiSelect
+                    label="Alumnos"
+                    items={estudiantes.map(a => ({ value: a.id, label: displayName(a) }))}
+                    value={alumnosSeleccionados}
+                    onChange={setAlumnosSeleccionados}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Filtro de Foco y botón Actualizar datos */}
+            <div className={componentStyles.components.panelBase + " p-3 md:p-4"}>
+              <div className={`${componentStyles.layout.grid2} gap-3 items-end`}>
                 <MultiSelect
                   label="Foco"
                   items={Object.entries(focoLabels).map(([key, label]) => ({ value: key, label }))}
                   value={focosSeleccionados}
                   onChange={setFocosSeleccionados}
                 />
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.location.reload()}
+                  className={`${componentStyles.buttons.outline} h-9 w-full sm:w-auto`}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Actualizar datos
+                </Button>
               </div>
             </div>
           </div>
@@ -764,7 +777,8 @@ function EstadisticasPageContent() {
       />
 
       <div className={componentStyles.layout.page}>
-        <div className="flex justify-center">
+        {/* Tabs principales */}
+        <div className="flex justify-center mb-6">
           <Tabs
             variant="segmented"
             value={tabActiva}
@@ -781,8 +795,9 @@ function EstadisticasPageContent() {
         </div>
 
         {tabActiva === 'resumen' && (
-          <div className="space-y-4">
-            <div className={componentStyles.layout.kpiRow}>
+          <div className="space-y-6">
+            {/* KPIs */}
+            <div className={componentStyles.layout.grid4}>
               <Card className={componentStyles.components.cardKpi}>
                 <CardContent className="p-3 text-center">
                   <Clock className="w-5 h-5 mx-auto mb-2 text-[var(--color-text-secondary)]" />
@@ -821,27 +836,29 @@ function EstadisticasPageContent() {
               </Card>
             </div>
 
-            <div className="flex justify-center">
-              <Tabs
-                variant="segmented"
-                value={granularidad}
-                onChange={setGranularidad}
-                showIconsOnlyMobile={true}
-                items={[
-                  { value: 'dia', label: 'Diario', icon: Sun },
-                  { value: 'semana', label: 'Semanal', icon: CalendarRange },
-                  { value: 'mes', label: 'Mensual', icon: Grid3x3 },
-                ]}
-              />
-            </div>
+            {/* Tabs de granularidad y gráfico */}
+            <div className="space-y-4">
+              <div className="flex justify-center">
+                <Tabs
+                  variant="segmented"
+                  value={granularidad}
+                  onChange={setGranularidad}
+                  showIconsOnlyMobile={true}
+                  items={[
+                    { value: 'dia', label: 'Diario', icon: Sun },
+                    { value: 'semana', label: 'Semanal', icon: CalendarRange },
+                    { value: 'mes', label: 'Mensual', icon: Grid3x3 },
+                  ]}
+                />
+              </div>
 
-            <Card className={componentStyles.components.cardBase}>
-              <CardHeader>
-                <CardTitle className="text-base md:text-lg flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-[var(--color-primary)]" />
-                  Tiempo de Estudio
-                </CardTitle>
-              </CardHeader>
+              <Card className={componentStyles.components.cardBase}>
+                <CardHeader>
+                  <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-[var(--color-primary)]" />
+                    Tiempo de Estudio
+                  </CardTitle>
+                </CardHeader>
               <CardContent>
                 {datosLinea.length === 0 ? (
                   <div className="text-center py-12">
@@ -849,38 +866,48 @@ function EstadisticasPageContent() {
                     <p className={componentStyles.components.emptyStateText}>No hay datos en el periodo seleccionado</p>
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={datosLinea}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                      <XAxis 
-                        dataKey="fecha" 
-                        tick={{ fontSize: 11 }}
-                        tickFormatter={(fecha) => {
-                          if (granularidad === 'dia') {
-                            const d = parseLocalDate(fecha);
-                            return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-                          } else if (granularidad === 'semana') {
-                            const d = parseLocalDate(fecha);
-                            return `${d.getDate()}/${d.getMonth() + 1}`;
-                          } else {
-                            const [y, m] = fecha.split('-');
-                            const d = new Date(Number(y), Number(m) - 1, 1);
-                            return d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
-                          }
-                        }}
-                      />
-                      <YAxis 
-                        tick={{ fontSize: 11 }} 
-                        tickFormatter={(v) => {
-                          const minutos = safeNumber(v);
-                          if (minutos >= 60) {
-                            const horas = Math.floor(minutos / 60);
-                            return `${horas} h`;
-                          }
-                          return `${minutos} min`;
-                        }}
-                        label={{ value: 'Tiempo', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} 
-                      />
+                  <div className="w-full overflow-x-auto -mx-2 px-2">
+                    <ResponsiveContainer width="100%" height={isMobile ? 250 : 300} minHeight={250}>
+                      <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis 
+                          dataKey="fecha" 
+                          tick={{ fontSize: isMobile ? 9 : 11 }}
+                          angle={isMobile ? -45 : 0}
+                          textAnchor={isMobile ? 'end' : 'middle'}
+                          height={isMobile ? 60 : 30}
+                          interval={isMobile ? 'preserveStartEnd' : 0}
+                          tickFormatter={(fecha) => {
+                            if (granularidad === 'dia') {
+                              const d = parseLocalDate(fecha);
+                              return isMobile 
+                                ? `${d.getDate()}/${d.getMonth() + 1}`
+                                : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                            } else if (granularidad === 'semana') {
+                              const d = parseLocalDate(fecha);
+                              return `${d.getDate()}/${d.getMonth() + 1}`;
+                            } else {
+                              const [y, m] = fecha.split('-');
+                              const d = new Date(Number(y), Number(m) - 1, 1);
+                              return isMobile
+                                ? `${m}/${y.slice(-2)}`
+                                : d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+                            }
+                          }}
+                        />
+                        <YAxis 
+                          tick={{ fontSize: isMobile ? 9 : 11 }} 
+                          width={isMobile ? 40 : 60}
+                          tickFormatter={(v) => {
+                            const minutos = safeNumber(v);
+                            if (minutos >= 60) {
+                              const horas = Math.floor(minutos / 60);
+                              return isMobile ? `${horas}h` : `${horas} h`;
+                            }
+                            return isMobile ? `${minutos}m` : `${minutos} min`;
+                          }}
+                          label={isMobile ? undefined : { value: 'Tiempo', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} 
+                        />
                       <RechartsTooltip 
                         content={({ active, payload }) => {
                           if (!active || !payload || payload.length === 0) return null;
@@ -902,13 +929,14 @@ function EstadisticasPageContent() {
                         type="monotone"
                         dataKey="tiempo"
                         stroke={designSystem.colors.primary}
-                        strokeWidth={2}
+                        strokeWidth={isMobile ? 1.5 : 2}
                         name="Tiempo"
-                        dot={{ r: 3, stroke: designSystem.colors.primary, fill: designSystem.colors.primary }}
-                        activeDot={{ r: 4 }}
+                        dot={{ r: isMobile ? 2 : 3, stroke: designSystem.colors.primary, fill: designSystem.colors.primary }}
+                        activeDot={{ r: isMobile ? 3 : 4 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -927,27 +955,41 @@ function EstadisticasPageContent() {
                     <p className={componentStyles.components.emptyStateText}>No hay datos de autoevaluación</p>
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={datosLinea}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                      <XAxis 
-                        dataKey="fecha" 
-                        tick={{ fontSize: 11 }}
-                        tickFormatter={(fecha) => {
-                          if (granularidad === 'dia') {
-                            const d = parseLocalDate(fecha);
-                            return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-                          } else if (granularidad === 'semana') {
-                            const d = parseLocalDate(fecha);
-                            return `${d.getDate()}/${d.getMonth() + 1}`;
-                          } else {
-                            const [y, m] = fecha.split('-');
-                            const d = new Date(Number(y), Number(m) - 1, 1);
-                            return d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
-                          }
-                        }}
-                      />
-                      <YAxis tick={{ fontSize: 11 }} domain={[0, 4]} label={{ value: 'Nivel', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} />
+                  <div className="w-full overflow-x-auto -mx-2 px-2">
+                    <ResponsiveContainer width="100%" height={isMobile ? 250 : 300} minHeight={250}>
+                      <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis 
+                          dataKey="fecha" 
+                          tick={{ fontSize: isMobile ? 9 : 11 }}
+                          angle={isMobile ? -45 : 0}
+                          textAnchor={isMobile ? 'end' : 'middle'}
+                          height={isMobile ? 60 : 30}
+                          interval={isMobile ? 'preserveStartEnd' : 0}
+                          tickFormatter={(fecha) => {
+                            if (granularidad === 'dia') {
+                              const d = parseLocalDate(fecha);
+                              return isMobile 
+                                ? `${d.getDate()}/${d.getMonth() + 1}`
+                                : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                            } else if (granularidad === 'semana') {
+                              const d = parseLocalDate(fecha);
+                              return `${d.getDate()}/${d.getMonth() + 1}`;
+                            } else {
+                              const [y, m] = fecha.split('-');
+                              const d = new Date(Number(y), Number(m) - 1, 1);
+                              return isMobile
+                                ? `${m}/${y.slice(-2)}`
+                                : d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+                            }
+                          }}
+                        />
+                        <YAxis 
+                          tick={{ fontSize: isMobile ? 9 : 11 }} 
+                          width={isMobile ? 30 : 60}
+                          domain={[0, 4]} 
+                          label={isMobile ? undefined : { value: 'Nivel', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} 
+                        />
                       <RechartsTooltip 
                         content={({ active, payload }) => {
                           if (!active || !payload || payload.length === 0) return null;
@@ -971,13 +1013,14 @@ function EstadisticasPageContent() {
                         type="monotone"
                         dataKey="satisfaccion"
                         stroke={designSystem.colors.secondary}
-                        strokeWidth={2}
+                        strokeWidth={isMobile ? 1.5 : 2}
                         name="Autoevaluación"
-                        dot={{ r: 3, stroke: designSystem.colors.secondary, fill: designSystem.colors.secondary }}
+                        dot={{ r: isMobile ? 2 : 3, stroke: designSystem.colors.secondary, fill: designSystem.colors.secondary }}
                         connectNulls
                       />
                     </LineChart>
                   </ResponsiveContainer>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -996,27 +1039,40 @@ function EstadisticasPageContent() {
                     <p className={componentStyles.components.emptyStateText}>No hay datos</p>
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={datosLinea}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                      <XAxis 
-                        dataKey="fecha" 
-                        tick={{ fontSize: 11 }}
-                        tickFormatter={(fecha) => {
-                          if (granularidad === 'dia') {
-                            const d = parseLocalDate(fecha);
-                            return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-                          } else if (granularidad === 'semana') {
-                            const d = parseLocalDate(fecha);
-                            return `${d.getDate()}/${d.getMonth() + 1}`;
-                          } else {
-                            const [y, m] = fecha.split('-');
-                            const d = new Date(Number(y), Number(m) - 1, 1);
-                            return d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
-                          }
-                        }}
-                      />
-                      <YAxis tick={{ fontSize: 11 }} label={{ value: 'Ejercicios', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} />
+                  <div className="w-full overflow-x-auto -mx-2 px-2">
+                    <ResponsiveContainer width="100%" height={isMobile ? 250 : 300} minHeight={250}>
+                      <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis 
+                          dataKey="fecha" 
+                          tick={{ fontSize: isMobile ? 9 : 11 }}
+                          angle={isMobile ? -45 : 0}
+                          textAnchor={isMobile ? 'end' : 'middle'}
+                          height={isMobile ? 60 : 30}
+                          interval={isMobile ? 'preserveStartEnd' : 0}
+                          tickFormatter={(fecha) => {
+                            if (granularidad === 'dia') {
+                              const d = parseLocalDate(fecha);
+                              return isMobile 
+                                ? `${d.getDate()}/${d.getMonth() + 1}`
+                                : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                            } else if (granularidad === 'semana') {
+                              const d = parseLocalDate(fecha);
+                              return `${d.getDate()}/${d.getMonth() + 1}`;
+                            } else {
+                              const [y, m] = fecha.split('-');
+                              const d = new Date(Number(y), Number(m) - 1, 1);
+                              return isMobile
+                                ? `${m}/${y.slice(-2)}`
+                                : d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+                            }
+                          }}
+                        />
+                        <YAxis 
+                          tick={{ fontSize: isMobile ? 9 : 11 }} 
+                          width={isMobile ? 30 : 60}
+                          label={isMobile ? undefined : { value: 'Ejercicios', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} 
+                        />
                       <RechartsTooltip 
                         content={({ active, payload }) => {
                           if (!active || !payload || payload.length === 0) return null;
@@ -1041,23 +1097,25 @@ function EstadisticasPageContent() {
                         type="monotone"
                         dataKey="completados"
                         stroke={designSystem.colors.success}
-                        strokeWidth={2}
+                        strokeWidth={isMobile ? 1.5 : 2}
                         name="Completados"
-                        dot={{ r: 3, stroke: designSystem.colors.success, fill: designSystem.colors.success }}
+                        dot={{ r: isMobile ? 2 : 3, stroke: designSystem.colors.success, fill: designSystem.colors.success }}
                       />
                       <Line
                         type="monotone"
                         dataKey="omitidos"
                         stroke={designSystem.colors.danger}
-                        strokeWidth={2}
+                        strokeWidth={isMobile ? 1.5 : 2}
                         name="Omitidos"
-                        dot={{ r: 3, stroke: designSystem.colors.danger, fill: designSystem.colors.danger }}
+                        dot={{ r: isMobile ? 2 : 3, stroke: designSystem.colors.danger, fill: designSystem.colors.danger }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
+                  </div>
                 )}
               </CardContent>
-            </Card>
+              </Card>
+            </div>
           </div>
         )}
 

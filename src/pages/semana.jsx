@@ -222,37 +222,30 @@ function SemanaPageContent() {
         
         return (
           <div className="space-y-2">
-            <div
-              className="ml-4 border-l-2 border-[var(--color-info)]/40 bg-[var(--color-info)]/10 rounded-r-lg p-2.5 transition-all hover:bg-[var(--color-info)]/20 cursor-pointer"
+            <button
+              className="ml-4 border-l-2 border-[var(--color-info)]/40 bg-[var(--color-info)]/10 rounded-r-lg p-2.5 transition-all hover:bg-[var(--color-info)]/20 cursor-pointer w-full text-left"
               data-sesion-key={sesionKey}
               onClick={(e) => {
                 e.stopPropagation();
                 toggleSession(sesionKey);
               }}
             >
-              <div className="flex items-start gap-2">
-                <button className="pt-1 flex-shrink-0">
-                  {isExpanded ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
-                  ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
-                  )}
-                </button>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-[var(--color-text-secondary)]">
-                      {isExpanded ? 'Ocultar detalles' : 'Ver detalles'}
-                    </span>
-                  </div>
-                  {isExpanded && (
-                    <div className="ml-2 mt-2" onClick={(e) => e.stopPropagation()}>
-                      <SessionContentView sesion={row.sesion} compact />
-                    </div>
-                  )}
-                </div>
+              <div className="flex items-center gap-2">
+                {isExpanded ? (
+                  <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)] flex-shrink-0" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)] flex-shrink-0" />
+                )}
+                <span className="text-sm text-[var(--color-text-secondary)] font-medium">
+                  {isExpanded ? 'Ocultar detalles' : 'Ver detalles'}
+                </span>
               </div>
-            </div>
+            </button>
+            {isExpanded && (
+              <div className="ml-4 mt-2" onClick={(e) => e.stopPropagation()}>
+                <SessionContentView sesion={row.sesion} compact />
+              </div>
+            )}
           </div>
         );
       },

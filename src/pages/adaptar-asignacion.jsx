@@ -551,6 +551,18 @@ function AdaptarAsignacionPageContent() {
                                     size="sm"
                                     onClick={(e) => {
                                       e.stopPropagation();
+                                      setEditingSemana({ index: semanaIndex, semana });
+                                    }}
+                                    className={componentStyles.buttons.editIcon}
+                                    aria-label="Editar semana"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
                                       duplicateSemana(semanaIndex);
                                     }}
                                     className={componentStyles.buttons.editIcon}
@@ -729,18 +741,18 @@ function AdaptarAsignacionPageContent() {
                                                       );
                                                     })()}
 
-                                                    <div className={`flex ${componentStyles.layout.gapCompact} flex-wrap pt-1`}>
+                                                    <div className={`flex ${componentStyles.layout.gapCompact} items-center pt-1`}>
                                                       <Button
                                                         size="sm"
-                                                        variant="outline"
+                                                        variant="ghost"
                                                         onClick={(e) => {
                                                           e.stopPropagation();
                                                           setEditingSesion({ semanaIndex, sesionIndex, sesion });
                                                         }}
-                                                        className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
-                                                        aria-label="Editar sesión"
+                                                        className={`${componentStyles.buttons.actionCompact} ${componentStyles.buttons.editSubtle}`}
                                                       >
-                                                        <Edit className="w-3 h-3" />
+                                                        <Edit className="w-3 h-3 mr-1" />
+                                                        Editar sesión
                                                       </Button>
                                                       <Button
                                                         size="sm"
@@ -752,7 +764,7 @@ function AdaptarAsignacionPageContent() {
                                                         className={`${componentStyles.buttons.actionCompact} ${componentStyles.buttons.deleteSubtle}`}
                                                       >
                                                         <Trash2 className="w-3 h-3 mr-1" />
-                                                        Eliminar
+                                                        Eliminar sesión
                                                       </Button>
                                                     </div>
                                                   </div>
@@ -770,18 +782,18 @@ function AdaptarAsignacionPageContent() {
 
                               {/* Botones de acción de semana */}
                               {expandedSemanas.has(semanaIndex) && (
-                                <div className="flex gap-2 flex-wrap mt-3" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex gap-2 items-center mt-3" onClick={(e) => e.stopPropagation()}>
                                   <Button
                                     size="sm"
-                                    variant="outline"
+                                    variant="ghost"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setEditingSemana({ index: semanaIndex, semana });
+                                      addSesion(semanaIndex);
                                     }}
-                                    className={componentStyles.buttons.editIcon}
-                                    aria-label="Editar semana"
+                                    className={`${componentStyles.buttons.actionCompact} ${componentStyles.buttons.editSubtle}`}
                                   >
-                                    <Edit className="w-3 h-3" />
+                                    <Plus className="w-3 h-3 mr-1" />
+                                    Añadir sesión
                                   </Button>
                                 </div>
                               )}

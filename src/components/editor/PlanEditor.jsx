@@ -351,11 +351,11 @@ export default function PlanEditor({ plan, onClose }) {
   };
 
   const focoColors = {
-    GEN: 'bg-[var(--color-surface-muted)] text-ui',
-    LIG: 'bg-blue-100 text-blue-800',
-    RIT: 'bg-purple-100 text-purple-800',
-    ART: 'bg-green-100 text-green-800',
-    'S&A': 'bg-brand-100 text-brand-800',
+    GEN: componentStyles.status.badgeDefault,
+    LIG: componentStyles.status.badgeInfo,
+    RIT: componentStyles.status.badgeDefault,
+    ART: componentStyles.status.badgeSuccess,
+    'S&A': componentStyles.status.badgeDefault,
   };
 
   const tipoColors = {
@@ -554,7 +554,7 @@ export default function PlanEditor({ plan, onClose }) {
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                                         <h4 className="font-semibold text-base text-[var(--color-text-primary)]">{semana.nombre}</h4>
-                                        <Badge className={focoColors[semana.foco]}>
+                                        <Badge className={`rounded-full ${focoColors[semana.foco]}`}>
                                           {focoLabels[semana.foco]}
                                         </Badge>
                                         <span className="text-sm text-[var(--color-text-secondary)]">
@@ -567,6 +567,18 @@ export default function PlanEditor({ plan, onClose }) {
                                     </div>
 
                                     <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingSemana({ index: semanaIndex, semana });
+                                        }}
+                                        className={componentStyles.buttons.editIcon}
+                                        aria-label="Editar semana"
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </Button>
                                       <Button
                                         variant="ghost"
                                         size="sm"
@@ -640,14 +652,12 @@ export default function PlanEditor({ plan, onClose }) {
                                                           <span className="text-sm font-medium text-[var(--color-text-primary)]">{sesion.nombre}</span>
                                                           <Badge 
                                                             variant="outline" 
-                                                            className={`text-xs ${
-                                                              tiempoTotal > 0 ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]/30 text-[var(--color-success)]' : 'bg-[var(--color-surface-muted)]'
-                                                            }`}
+                                                            className={tiempoTotal > 0 ? componentStyles.status.badgeSuccess : componentStyles.status.badgeDefault}
                                                           >
                                                             <Clock className="w-3 h-3 mr-1" />
                                                             {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
                                                           </Badge>
-                                                          <Badge className={focoColors[sesion.foco]} variant="outline">
+                                                          <Badge className={`rounded-full ${focoColors[sesion.foco]}`} variant="outline">
                                                             {focoLabels[sesion.foco]}
                                                           </Badge>
                                                         </div>
@@ -815,18 +825,18 @@ export default function PlanEditor({ plan, onClose }) {
                                                           </div>
                                                         )}
 
-                                                        <div className={`flex ${componentStyles.layout.gapCompact} flex-wrap pt-1`}>
+                                                        <div className={`flex ${componentStyles.layout.gapCompact} items-center pt-1`}>
                                                           <Button
                                                             size="sm"
-                                                            variant="outline"
+                                                            variant="ghost"
                                                             onClick={(e) => {
                                                               e.stopPropagation();
                                                               setEditingSesion({ semanaIndex, sesionIndex, sesion });
                                                             }}
-                                                            className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
-                                                            aria-label="Editar sesión"
+                                                            className={`${componentStyles.buttons.actionCompact} ${componentStyles.buttons.editSubtle}`}
                                                           >
-                                                            <Edit className="w-3 h-3" />
+                                                            <Edit className="w-3 h-3 mr-1" />
+                                                            Editar sesión
                                                           </Button>
                                                           <Button
                                                             size="sm"
@@ -838,7 +848,7 @@ export default function PlanEditor({ plan, onClose }) {
                                                             className={`${componentStyles.buttons.actionCompact} ${componentStyles.buttons.deleteSubtle}`}
                                                           >
                                                             <Trash2 className="w-3 h-3 mr-1" />
-                                                            Eliminar
+                                                            Eliminar sesión
                                                           </Button>
                                                         </div>
                                                       </div>
@@ -856,18 +866,18 @@ export default function PlanEditor({ plan, onClose }) {
 
                                   {/* Botones de acción de semana */}
                                   {expandedSemanas.has(semanaIndex) && (
-                                    <div className="flex gap-2 flex-wrap mt-3" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex gap-2 items-center mt-3" onClick={(e) => e.stopPropagation()}>
                                       <Button
                                         size="sm"
-                                        variant="outline"
+                                        variant="ghost"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          setEditingSemana({ index: semanaIndex, semana });
+                                          addSesion(semanaIndex);
                                         }}
-                                        className={componentStyles.buttons.editIcon}
-                                        aria-label="Editar semana"
+                                        className={`${componentStyles.buttons.actionCompact} ${componentStyles.buttons.editSubtle}`}
                                       >
-                                        <Edit className="w-3 h-3" />
+                                        <Plus className="w-3 h-3 mr-1" />
+                                        Añadir sesión
                                       </Button>
                                     </div>
                                   )}
