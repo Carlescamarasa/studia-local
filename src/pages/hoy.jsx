@@ -39,6 +39,7 @@ import { toast } from "sonner";
 import { useSidebar } from "@/components/ui/SidebarState";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
+import MediaEmbed from "../components/common/MediaEmbed";
 
 import RequireRole from "@/components/auth/RequireRole";
 
@@ -142,6 +143,28 @@ function HoyPageContent() {
   const { data: asignacionesRaw = [] } = useQuery({
     queryKey: ['asignaciones'],
     queryFn: () => localDataClient.entities.Asignacion.list(),
+  });
+
+  // Cargar bloques actuales para actualizar mediaLinks
+  const { data: bloquesActuales = [] } = useQuery({
+    queryKey: ['bloques'],
+    queryFn: async () => {
+      const bloques = await localDataClient.entities.Bloque.list();
+      // Debug: Verificar bloque específico
+      if (process.env.NODE_ENV === 'development') {
+        const bloqueRespiración = bloques.find(b => b.code === 'CA-SEED-003');
+        if (bloqueRespiración) {
+          console.log('[hoy.jsx] Bloque CA-SEED-003 en BD:', {
+            nombre: bloqueRespiración.nombre,
+            code: bloqueRespiración.code,
+            tieneMediaLinks: !!bloqueRespiración.mediaLinks,
+            mediaLinks: bloqueRespiración.mediaLinks,
+            todasLasPropiedades: Object.keys(bloqueRespiración)
+          });
+        }
+      }
+      return bloques;
+    },
   });
 
   // Filtrar y validar asignaciones
@@ -616,7 +639,44 @@ function HoyPageContent() {
   }, [mostrarModalCancelar, mostrarItinerario, mostrarAyuda, mediaFullscreen, cronometroActivo, cronometroPausadoPorModal, sesionActiva, sesionFinalizada, timestampInicio]);
 
   const empezarSesion = async (sesion, sesionIdxProp) => {
-    setSesionActiva(sesion);
+    // Actualizar bloques con mediaLinks actuales de la base de datos
+    const sesionActualizada = {
+      ...sesion,
+      bloques: (sesion.bloques || []).map(bloqueSnapshot => {
+        // Buscar el bloque actual en la base de datos por código
+        const bloqueActual = bloquesActuales.find(b => b.code === bloqueSnapshot.code);
+        if (bloqueActual) {
+          // Debug: Log para verificar mediaLinks
+          if (process.env.NODE_ENV === 'development' && bloqueSnapshot.code === 'CA-SEED-003') {
+            console.log('[hoy.jsx] Actualizando bloque CA-SEED-003:', {
+              bloqueSnapshot_mediaLinks: bloqueSnapshot.mediaLinks,
+              bloqueActual_mediaLinks: bloqueActual.mediaLinks,
+              bloqueActual_completo: bloqueActual
+            });
+          }
+          
+          // Actualizar con mediaLinks y otras propiedades actualizadas
+          // Priorizar mediaLinks del bloque actual si existe y no está vacío
+          const mediaLinksFinal = (bloqueActual.mediaLinks && bloqueActual.mediaLinks.length > 0) 
+            ? bloqueActual.mediaLinks 
+            : (bloqueSnapshot.mediaLinks && bloqueSnapshot.mediaLinks.length > 0)
+              ? bloqueSnapshot.mediaLinks
+              : [];
+          
+          return {
+            ...bloqueSnapshot,
+            mediaLinks: mediaLinksFinal,
+            // Mantener otras propiedades actualizadas si existen
+            instrucciones: bloqueActual.instrucciones || bloqueSnapshot.instrucciones,
+            indicadorLogro: bloqueActual.indicadorLogro || bloqueSnapshot.indicadorLogro,
+            materialesRequeridos: bloqueActual.materialesRequeridos || bloqueSnapshot.materialesRequeridos || [],
+          };
+        }
+        return bloqueSnapshot;
+      })
+    };
+    
+    setSesionActiva(sesionActualizada);
     setIndiceActual(0);
     setTiempoActual(0);
     setCronometroActiva(false);
@@ -626,7 +686,7 @@ function HoyPageContent() {
     setDatosFinal(null);
 
     const ahora = new Date().toISOString();
-    const listaEjecucion = aplanarSesion(sesion);
+    const listaEjecucion = aplanarSesion(sesionActualizada);
     const tiempoPrevisto = listaEjecucion
       .filter(e => e.tipo !== 'AD')
       .reduce((sum, e) => sum + (e.duracionSeg || 0), 0);
@@ -1042,6 +1102,20 @@ function HoyPageContent() {
 
     const ejercicioActual = listaEjecucion[indiceActual];
     
+    // Debug: Verificar mediaLinks del ejercicio actual
+    if (process.env.NODE_ENV === 'development' && ejercicioActual?.nombre?.includes('Respiración')) {
+      console.log('[hoy.jsx] Ejercicio actual (Respiración):', {
+        nombre: ejercicioActual.nombre,
+        code: ejercicioActual.code,
+        instrucciones: ejercicioActual.instrucciones,
+        tieneMedia: !!ejercicioActual.media,
+        media: ejercicioActual.media,
+        tieneMediaLinks: !!ejercicioActual.mediaLinks,
+        mediaLinks: ejercicioActual.mediaLinks,
+        todasLasPropiedades: Object.keys(ejercicioActual)
+      });
+    }
+    
     // Validar que ejercicioActual existe (doble validación)
     if (!ejercicioActual) {
       return (
@@ -1335,7 +1409,7 @@ function HoyPageContent() {
             </Card>
           )}
 
-          {!isAD && (isFM ? elementosFM.length > 0 : (ejercicioActual.media && Object.keys(ejercicioActual.media).length > 0)) && (
+          {!isAD && (isFM ? elementosFM.length > 0 : ((ejercicioActual.media && Object.keys(ejercicioActual.media).length > 0) || (ejercicioActual.mediaLinks && ejercicioActual.mediaLinks.length > 0))) && (
             <Card className={isFM ? `border-[var(--color-accent)]` : ""}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -1349,6 +1423,15 @@ function HoyPageContent() {
                   elementosFM.map((elemento, idx) => (
                     <div key={idx} className={`border rounded-lg p-3 bg-[var(--color-accent)]/10 space-y-2`}>
                       <h3 className={`${componentStyles.typography.cardTitle} text-[var(--color-accent)]`}>{elemento.nombre}</h3>
+
+                      {/* Mostrar mediaLinks si existen */}
+                      {elemento.mediaLinks && elemento.mediaLinks.length > 0 && (
+                        <div className="space-y-3">
+                          {elemento.mediaLinks.map((url, urlIdx) => (
+                            <MediaEmbed key={urlIdx} url={url} className="w-full" />
+                          ))}
+                        </div>
+                      )}
 
                       {elemento.media?.pdf && (
                         <div>
@@ -1406,6 +1489,15 @@ function HoyPageContent() {
                   ))
                 ) : (
                   <>
+                    {/* Mostrar mediaLinks si existen */}
+                    {ejercicioActual.mediaLinks && ejercicioActual.mediaLinks.length > 0 && (
+                      <div className="space-y-3">
+                        {ejercicioActual.mediaLinks.map((url, urlIdx) => (
+                          <MediaEmbed key={urlIdx} url={url} className="w-full" />
+                        ))}
+                      </div>
+                    )}
+
                     {ejercicioActual.media?.pdf && (
                       <div>
                         <div className="flex items-center justify-between mb-1">

@@ -1,24 +1,28 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import DateRangePicker from "@/components/ui/DateRangePicker";
 import { Badge } from "@/components/ds";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, Legend, BarChart, Bar } from 'recharts';
 import {
   Activity, Clock, Calendar, Star, Smile, BarChart3, TrendingUp,
   MessageSquare, Eye, RefreshCw, Dumbbell, List, PieChart, CalendarDays, Calendar as CalendarIcon,
-  Sun, CalendarRange, Grid3x3, Layers, FileText, Timer
+  Sun, CalendarRange, Grid3x3, Layers, FileText, Timer, Edit, X, Save
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { displayName, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
 import MultiSelect from "../components/ui/MultiSelect";
 import MediaLinksBadges from "../components/common/MediaLinksBadges";
+import MediaLinksInput from "../components/common/MediaLinksInput";
 import MediaViewer from "../components/common/MediaViewer";
+import { resolveMedia } from "../components/utils/media";
 import RequireRole from "@/components/auth/RequireRole";
 import Tabs from "@/components/ds/Tabs";
 import { componentStyles } from "@/design/componentStyles";
@@ -146,6 +150,7 @@ function EstadisticasPageContent() {
   const [soloConNotas, setSoloConNotas] = useState(false);
   const [searchEjercicio, setSearchEjercicio] = useState('');
   const [viewingMedia, setViewingMedia] = useState(null);
+  const [feedbackDrawer, setFeedbackDrawer] = useState(null);
 
   const effectiveUser = useEffectiveUser();
 
@@ -729,17 +734,26 @@ function EstadisticasPageContent() {
       });
     }
     
+    // Solo filtrar por profesores si hay selección EXPLÍCITA
+    if (profesoresSeleccionados.length > 0) {
+      const antes = resultado.length;
+      resultado = resultado.filter(f => profesoresSeleccionados.includes(f.profesorId));
+      console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Filtro por profesores (explícito):', {
+        antes,
+        despues: resultado.length,
+        profesoresSeleccionados: profesoresSeleccionados.length,
+      });
+    }
+    
     // Solo filtrar por período si hay filtro EXPLÍCITO de período
+    // IMPORTANTE: Para ADMIN y PROF, incluir feedbacks sin semanaInicioISO también
+    // Si el filtro de período excluye todos los feedbacks, no aplicar el filtro
     if (periodoInicio || periodoFin) {
       const antes = resultado.length;
-      resultado = resultado.filter(f => {
-        // Si no tiene semanaInicioISO, incluir si no hay filtro de período estricto
+      const resultadoConFiltroPeriodo = resultado.filter(f => {
+        // Si no tiene semanaInicioISO, INCLUIR siempre (no excluir feedbacks sin fecha)
+        // Esto permite ver todos los feedbacks aunque no tengan fecha configurada
         if (!f.semanaInicioISO) {
-          // Si hay ambos filtros, excluir los que no tienen fecha
-          if (periodoInicio && periodoFin) {
-            return false;
-          }
-          // Si solo hay uno de los filtros, incluir los sin fecha
           return true;
         }
         
@@ -764,11 +778,15 @@ function EstadisticasPageContent() {
         
         return true;
       });
-      console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Filtro por período:', {
+      
+      // Aplicar el filtro de período (sin ignorar si no hay resultados)
+      resultado = resultadoConFiltroPeriodo;
+      console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Filtro por período aplicado:', {
         antes,
         despues: resultado.length,
         periodoInicio,
         periodoFin,
+        feedbacksSinFecha: resultado.filter(f => !f.semanaInicioISO).length,
       });
     }
     
@@ -786,17 +804,120 @@ function EstadisticasPageContent() {
       total: resultado.length,
       conNotaProfesor: resultado.filter(f => f.notaProfesor).length,
       sinNotaProfesor: resultado.filter(f => !f.notaProfesor).length,
+      conSemanaInicioISO: resultado.filter(f => f.semanaInicioISO).length,
+      sinSemanaInicioISO: resultado.filter(f => !f.semanaInicioISO).length,
       primeros3: resultado.slice(0, 3).map(f => ({
         id: f.id?.substring(0, 20),
         tieneNotaProfesor: !!f.notaProfesor,
-        notaProfesorPreview: f.notaProfesor?.substring(0, 30),
+        notaProfesorPreview: f.notaProfesor?.substring(0, 50) || null,
         alumnoId: f.alumnoId?.substring(0, 20),
+        profesorId: f.profesorId?.substring(0, 20),
         semanaInicioISO: f.semanaInicioISO,
       })),
     });
     
     return resultado;
-  }, [feedbacksSemanal, alumnosSeleccionados, periodoInicio, periodoFin, isEstu, isAdmin, isProf]);
+  }, [feedbacksSemanal, alumnosSeleccionados, profesoresSeleccionados, periodoInicio, periodoFin, isEstu, isAdmin, isProf]);
+
+  // Mutación para actualizar feedback
+  const actualizarFeedbackMutation = useMutation({
+    mutationFn: async ({ id, data }) => {
+      return localDataClient.entities.FeedbackSemanal.update(id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] });
+      toast.success('✅ Feedback actualizado');
+      setFeedbackDrawer(null);
+    },
+    onError: (error) => {
+      console.error('[estadisticas.jsx] Error al actualizar feedback:', error);
+      toast.error('❌ Error al actualizar feedback. Inténtalo de nuevo.');
+    },
+  });
+
+  // Función para abrir el drawer de edición
+  const abrirEditarFeedback = (feedback) => {
+    setFeedbackDrawer({
+      id: feedback.id,
+      alumnoId: feedback.alumnoId,
+      profesorId: feedback.profesorId,
+      semanaInicioISO: feedback.semanaInicioISO,
+      notaProfesor: feedback.notaProfesor || '',
+      mediaLinks: feedback.mediaLinks || [],
+    });
+  };
+
+  // Función para guardar feedback
+  const guardarFeedback = () => {
+    if (!feedbackDrawer) return;
+    
+    if (!feedbackDrawer.notaProfesor?.trim()) {
+      toast.error('❌ Las observaciones del profesor son obligatorias');
+      return;
+    }
+
+    const data = {
+      alumnoId: feedbackDrawer.alumnoId,
+      profesorId: feedbackDrawer.profesorId,
+      semanaInicioISO: feedbackDrawer.semanaInicioISO,
+      notaProfesor: feedbackDrawer.notaProfesor.trim(),
+      mediaLinks: feedbackDrawer.mediaLinks || [],
+    };
+
+    actualizarFeedbackMutation.mutate({ id: feedbackDrawer.id, data });
+  };
+
+  // Función para manejar clicks en medialinks
+  // MediaLinksBadges pasa un índice, pero MediaViewer espera un objeto {url, kind}
+  const handleMediaClick = (mediaLinks, index) => {
+    if (!mediaLinks || !Array.isArray(mediaLinks) || index < 0 || index >= mediaLinks.length) {
+      return;
+    }
+    
+    const url = typeof mediaLinks[index] === 'string' 
+      ? mediaLinks[index] 
+      : (mediaLinks[index]?.url || '');
+    
+    if (!url) return;
+    
+    const media = resolveMedia(url);
+    setViewingMedia({
+      url: media.originalUrl || url,
+      kind: media.kind,
+      embedUrl: media.embedUrl,
+      title: media.title,
+    });
+  };
+
+  // Atajos de teclado para el drawer de feedback
+  useEffect(() => {
+    if (!feedbackDrawer) return;
+    
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (feedbackDrawer && feedbackDrawer.notaProfesor?.trim()) {
+          const data = {
+            alumnoId: feedbackDrawer.alumnoId,
+            profesorId: feedbackDrawer.profesorId,
+            semanaInicioISO: feedbackDrawer.semanaInicioISO,
+            notaProfesor: feedbackDrawer.notaProfesor.trim(),
+            mediaLinks: feedbackDrawer.mediaLinks || [],
+          };
+          actualizarFeedbackMutation.mutate({ id: feedbackDrawer.id, data });
+        } else {
+          toast.error('❌ Las observaciones del profesor son obligatorias');
+        }
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === '.') {
+        e.preventDefault();
+        setFeedbackDrawer(null);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [feedbackDrawer, actualizarFeedbackMutation]);
 
   const tipoLabels = {
     CA: 'Calentamiento A',
@@ -1715,14 +1836,62 @@ function EstadisticasPageContent() {
                   <div className="space-y-2">
                     {feedbackProfesor.map(f => {
                       const profesor = usuarios.find(u => u.id === f.profesorId);
+                      const puedeEditar = isAdmin || f.profesorId === userIdActual;
+                      const fechaSemana = f.semanaInicioISO ? parseLocalDate(f.semanaInicioISO) : null;
+                      const fechaFormateada = fechaSemana ? fechaSemana.toLocaleDateString('es-ES', { 
+                        weekday: 'short',
+                        day: 'numeric', 
+                        month: 'short', 
+                        year: 'numeric' 
+                      }) : 'N/A';
+                      
                       return (
-                        <div key={f.id} className="p-3 border border-[var(--color-border-default)] rounded">
-                          <p className="text-sm text-[var(--color-text-primary)] break-words mb-2">
-                            {f.notaProfesor || '(Sin nota)'}
-                          </p>
-                          <div className="text-xs text-[var(--color-text-secondary)] space-y-1">
-                            <div><strong>Profesor:</strong> {profesor ? displayName(profesor) : f.profesorId || 'N/A'}</div>
-                            <div><strong>Semana:</strong> {f.semanaInicioISO ? parseLocalDate(f.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}</div>
+                        <div key={f.id} className="p-3 border border-[var(--color-border-default)] rounded relative">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-[var(--color-text-primary)] break-words mb-2">
+                                {f.notaProfesor || '(Sin nota)'}
+                              </p>
+                              {f.mediaLinks && f.mediaLinks.length > 0 && (
+                                <div className="mb-2">
+                                  <MediaLinksBadges 
+                                    mediaLinks={f.mediaLinks}
+                                    onMediaClick={(index) => handleMediaClick(f.mediaLinks, index)}
+                                  />
+                                </div>
+                              )}
+                              <div className="text-xs text-[var(--color-text-secondary)] space-y-1">
+                                <div><strong>Profesor:</strong> {profesor ? displayName(profesor) : f.profesorId || 'N/A'}</div>
+                                <div><strong>Semana:</strong> {fechaFormateada}</div>
+                                {(f.created_at || f.createdAt) && (
+                                  <div><strong>Creado:</strong> {
+                                    (() => {
+                                      const createdDate = f.created_at || f.createdAt;
+                                      const date = typeof createdDate === 'string' 
+                                        ? parseLocalDate(createdDate.split('T')[0]) 
+                                        : new Date(createdDate);
+                                      return date.toLocaleDateString('es-ES', {
+                                        weekday: 'short',
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: 'numeric'
+                                      });
+                                    })()
+                                  }</div>
+                                )}
+                              </div>
+                            </div>
+                            {puedeEditar && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => abrirEditarFeedback(f)}
+                                className="h-8 w-8 p-0 shrink-0"
+                                aria-label="Editar feedback"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       );
@@ -1755,15 +1924,63 @@ function EstadisticasPageContent() {
                     {feedbacksParaProfAdmin.map(f => {
                       const alumno = usuarios.find(u => u.id === f.alumnoId);
                       const profesor = usuarios.find(u => u.id === f.profesorId);
+                      const puedeEditar = isAdmin || f.profesorId === userIdActual;
+                      const fechaSemana = f.semanaInicioISO ? parseLocalDate(f.semanaInicioISO) : null;
+                      const fechaFormateada = fechaSemana ? fechaSemana.toLocaleDateString('es-ES', { 
+                        weekday: 'short',
+                        day: 'numeric', 
+                        month: 'short', 
+                        year: 'numeric' 
+                      }) : 'N/A';
+                      
                       return (
-                        <div key={f.id} className="p-3 border border-[var(--color-border-default)] rounded">
-                          <p className="text-sm text-[var(--color-text-primary)] break-words mb-2">
-                            {f.notaProfesor || '(Sin nota)'}
-                          </p>
-                          <div className="text-xs text-[var(--color-text-secondary)] space-y-1">
-                            <div><strong>Alumno:</strong> {alumno ? displayName(alumno) : f.alumnoId || 'N/A'}</div>
-                            <div><strong>Profesor:</strong> {profesor ? displayName(profesor) : f.profesorId || 'N/A'}</div>
-                            <div><strong>Semana:</strong> {f.semanaInicioISO ? parseLocalDate(f.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}</div>
+                        <div key={f.id} className="p-3 border border-[var(--color-border-default)] rounded relative">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-[var(--color-text-primary)] break-words mb-2">
+                                {f.notaProfesor || '(Sin nota)'}
+                              </p>
+                              {f.mediaLinks && f.mediaLinks.length > 0 && (
+                                <div className="mb-2">
+                                  <MediaLinksBadges 
+                                    mediaLinks={f.mediaLinks}
+                                    onMediaClick={(index) => handleMediaClick(f.mediaLinks, index)}
+                                  />
+                                </div>
+                              )}
+                              <div className="text-xs text-[var(--color-text-secondary)] space-y-1">
+                                <div><strong>Alumno:</strong> {alumno ? displayName(alumno) : f.alumnoId || 'N/A'}</div>
+                                <div><strong>Profesor:</strong> {profesor ? displayName(profesor) : f.profesorId || 'N/A'}</div>
+                                <div><strong>Semana:</strong> {fechaFormateada}</div>
+                                {(f.created_at || f.createdAt) && (
+                                  <div><strong>Creado:</strong> {
+                                    (() => {
+                                      const createdDate = f.created_at || f.createdAt;
+                                      const date = typeof createdDate === 'string' 
+                                        ? parseLocalDate(createdDate.split('T')[0]) 
+                                        : new Date(createdDate);
+                                      return date.toLocaleDateString('es-ES', {
+                                        weekday: 'short',
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: 'numeric'
+                                      });
+                                    })()
+                                  }</div>
+                                )}
+                              </div>
+                            </div>
+                            {puedeEditar && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => abrirEditarFeedback(f)}
+                                className="h-8 w-8 p-0 shrink-0"
+                                aria-label="Editar feedback"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       );
@@ -1781,6 +1998,90 @@ function EstadisticasPageContent() {
           media={viewingMedia}
           onClose={() => setViewingMedia(null)}
         />
+      )}
+
+      {/* Drawer de edición de feedback */}
+      {feedbackDrawer && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black/40 z-[100]"
+            onClick={() => setFeedbackDrawer(null)}
+          />
+          <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
+            <div 
+              className="bg-[var(--color-surface-elevated)] w-full max-w-lg max-h-[95vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-4 border border-[var(--color-border-default)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-2xl px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <MessageSquare className="w-6 h-6 text-[var(--color-text-primary)]" />
+                    <div>
+                      <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
+                        Editar Feedback
+                      </h2>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setFeedbackDrawer(null)} 
+                    className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-xl touch-manipulation" 
+                    aria-label="Cerrar modal"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div>
+                  <Label htmlFor="nota" className="text-sm font-medium text-[var(--color-text-primary)]">Observaciones del profesor *</Label>
+                  <Textarea
+                    id="nota"
+                    value={feedbackDrawer.notaProfesor}
+                    onChange={(e) => setFeedbackDrawer({...feedbackDrawer, notaProfesor: e.target.value})}
+                    placeholder="Comentarios, áreas de mejora, felicitaciones..."
+                    rows={8}
+                    className={`resize-none mt-1 ${componentStyles.controls.inputDefault}`}
+                  />
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+                    Escribe observaciones sobre el progreso del estudiante esta semana
+                  </p>
+                </div>
+
+                <MediaLinksInput
+                  value={feedbackDrawer.mediaLinks}
+                  onChange={(links) => setFeedbackDrawer({...feedbackDrawer, mediaLinks: links})}
+                />
+              </div>
+
+              <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
+                <div className="flex gap-3 mb-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setFeedbackDrawer(null)} 
+                    className={`flex-1 ${componentStyles.buttons.outline}`}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    variant="primary"
+                    onClick={guardarFeedback} 
+                    disabled={actualizarFeedbackMutation.isPending} 
+                    className={`flex-1 ${componentStyles.buttons.primary}`}
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    Guardar
+                  </Button>
+                </div>
+                <p className="text-xs text-center text-[var(--color-text-secondary)]">
+                  Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar
+                </p>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

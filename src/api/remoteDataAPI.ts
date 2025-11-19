@@ -743,7 +743,25 @@ export function createRemoteDataAPI(): AppDataAPI {
         return snakeToCamel<Bloque>(result);
       },
       update: async (id: string, updates: any) => {
+        // Debug: Verificar mediaLinks antes de convertir
+        if (process.env.NODE_ENV === 'development' && updates.mediaLinks) {
+          console.log('[remoteDataAPI] Actualizando bloque con mediaLinks:', {
+            id,
+            mediaLinks_original: updates.mediaLinks,
+            updates_completo: updates
+          });
+        }
+        
         const snakeUpdates = camelToSnake(updates);
+        
+        // Debug: Verificar conversión a snake_case
+        if (process.env.NODE_ENV === 'development' && updates.mediaLinks) {
+          console.log('[remoteDataAPI] Después de camelToSnake:', {
+            media_links: snakeUpdates.media_links,
+            snakeUpdates_completo: snakeUpdates
+          });
+        }
+        
         const { data, error } = await supabase
           .from('bloques')
           .update(snakeUpdates)
@@ -751,8 +769,23 @@ export function createRemoteDataAPI(): AppDataAPI {
           .select()
           .single();
         
-        if (error) throw error;
-        return snakeToCamel<Bloque>(data);
+        if (error) {
+          console.error('[remoteDataAPI] Error al actualizar bloque:', error);
+          throw error;
+        }
+        
+        const resultado = snakeToCamel<Bloque>(data);
+        
+        // Debug: Verificar resultado
+        if (process.env.NODE_ENV === 'development' && updates.mediaLinks) {
+          console.log('[remoteDataAPI] Bloque actualizado:', {
+            id: resultado.id,
+            code: resultado.code,
+            mediaLinks_guardado: resultado.mediaLinks
+          });
+        }
+        
+        return resultado;
       },
       delete: async (id: string) => {
         const { error } = await supabase
@@ -946,9 +979,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (updates.plan !== undefined) {
           const errorMsg = 'No se puede actualizar el campo "plan" directamente en una actualización parcial. Este campo solo se actualiza al crear una asignación completa o cuando se cambia la pieza (piezaId), lo que regenera el plan automáticamente. Si necesitas cambiar el plan, crea una nueva asignación.';
           console.warn('[remoteDataAPI]', errorMsg);
-          if (process.env.NODE_ENV === 'development') {
-            throw new Error(errorMsg);
-          }
+          // Eliminar el campo plan sin lanzar error, solo mostrar advertencia
           delete updates.plan;
         }
         
