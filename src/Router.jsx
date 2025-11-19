@@ -5,6 +5,7 @@ import RequireAuth from "@/components/auth/RequireAuth";
 // Lazy load de páginas para code-splitting
 const IndexPage = lazy(() => import("@/pages/index.jsx"));
 const Usuarios = lazy(() => import("@/pages/usuarios.jsx"));
+const Reportes = lazy(() => import("@/pages/reportes.jsx"));
 const Planes = lazy(() => import("@/pages/planes.jsx"));
 const Piezas = lazy(() => import("@/pages/piezas.jsx"));
 const Sesiones = lazy(() => import("@/pages/sesiones.jsx"));
@@ -57,6 +58,7 @@ export default function AppRouter() {
         >
           <Route index element={<IndexPage />} />
           <Route path="usuarios" element={<Usuarios />} />
+          <Route path="reportes" element={<Reportes />} />
           <Route path="planes" element={<Planes />} />
           <Route path="piezas" element={<Piezas />} />
           <Route path="sesiones" element={<Sesiones />} />

@@ -41,7 +41,7 @@ export default function PageHeader({
       
       const timer = setTimeout(() => {
         setHighlightButton(false);
-      }, 1000);
+      }, 500);
       
       return () => clearTimeout(timer);
     }

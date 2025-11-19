@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/auth/AuthProvider";
 import { DesignProvider } from "@/components/design/DesignProvider";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
 
 // Crear una instancia de QueryClient
 const queryClient = new QueryClient({
@@ -19,18 +20,20 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <DesignProvider>
-        <AuthProvider>
-          <LocalDataProvider>
-            <DataProvider>
-              <AppRouter />
-              <Toaster />
-            </DataProvider>
-          </LocalDataProvider>
-        </AuthProvider>
-      </DesignProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <DesignProvider>
+          <AuthProvider>
+            <LocalDataProvider>
+              <DataProvider>
+                <AppRouter />
+                <Toaster />
+              </DataProvider>
+            </LocalDataProvider>
+          </AuthProvider>
+        </DesignProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

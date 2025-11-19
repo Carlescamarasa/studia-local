@@ -22,6 +22,7 @@ import {
   Beaker,
   Layers,
   Palette,
+  Bug,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ds";
@@ -46,11 +47,14 @@ import { displayName, getEffectiveRole, useEffectiveUser } from "@/components/ut
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PerfilModal from "@/components/common/PerfilModal";
 import { useDesign } from "@/components/design/DesignProvider";
+import ReportErrorButton from "@/components/common/ReportErrorButton";
+import ReportErrorModal from "@/components/common/ReportErrorModal";
 
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
   ADMIN: [
     { title: "Usuarios", url: "/usuarios", icon: Users, group: "Planificador" },
+    { title: "Reportes", url: "/reportes", icon: Bug, group: "Admin" },
     { title: "Asignaciones", url: "/asignaciones", icon: Target, group: "Planificador" },
     { title: "Plantillas", url: "/plantillas", icon: Edit3, group: "Planificador" },
     { title: "Agenda", url: "/agenda", icon: Calendar, group: "Vista" },
@@ -302,6 +306,7 @@ function LayoutContent() {
   // Mapeo de URLs a los roles que tienen acceso
   const pagePermissions = {
     '/usuarios': ['ADMIN'],
+    '/reportes': ['ADMIN'],
     '/estudiantes': ['PROF', 'ADMIN'],
     '/asignaciones': ['PROF', 'ADMIN'],
     '/plantillas': ['PROF', 'ADMIN'],
@@ -359,11 +364,26 @@ function LayoutContent() {
   };
 
   const [perfilModalOpen, setPerfilModalOpen] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportModalError, setReportModalError] = useState(null);
+  const [reportModalCategory, setReportModalCategory] = useState(null);
 
   const goProfile = () => {
     if (isMobile) closeSidebar();
     setPerfilModalOpen(true);
   };
+
+  // Escuchar eventos para abrir modal de reporte
+  useEffect(() => {
+    const handleOpenReport = (event) => {
+      setReportModalError(event.detail?.error || null);
+      setReportModalCategory(event.detail?.category || null);
+      setReportModalOpen(true);
+    };
+
+    window.addEventListener('open-error-report', handleOpenReport);
+    return () => window.removeEventListener('open-error-report', handleOpenReport);
+  }, []);
 
   /* ------------------------------- Render -------------------------------- */
   return (
@@ -552,6 +572,9 @@ function LayoutContent() {
             <Outlet />
           </div>
 
+          {/* Botón flotante de reporte de errores */}
+          <ReportErrorButton />
+
           {/* Footer global - centrado con nombre de app */}
           <footer className="border-t border-[var(--color-border-default)] bg-card text-xs text-[var(--color-text-secondary)] mt-auto">
             <div className="max-w-7xl mx-auto px-4 py-4 md:py-5 flex flex-wrap items-center justify-center gap-2 text-center">
@@ -581,6 +604,12 @@ function LayoutContent() {
       <PerfilModal 
         open={perfilModalOpen} 
         onOpenChange={setPerfilModalOpen}
+      />
+      <ReportErrorModal
+        open={reportModalOpen}
+        onOpenChange={setReportModalOpen}
+        initialError={reportModalError}
+        initialCategory={reportModalCategory}
       />
     </RoleBootstrap>
   );
