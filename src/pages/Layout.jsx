@@ -287,6 +287,44 @@ function LayoutContent() {
     if (isMobile) closeSidebar();
   };
 
+  // Obtener el rol efectivo usando la función unificada
+  const { appRole } = useAuth();
+  const userRole = getEffectiveRole({ appRole, currentUser: effectiveUser }) || null;
+  
+  // Obtener conteos de reportes para el badge (solo para ADMIN)
+  // IMPORTANTE: Este hook debe estar antes del return condicional
+  const { data: reportCounts } = useQuery({
+    queryKey: ['error-reports-counts'],
+    queryFn: async () => {
+      if (userRole !== 'ADMIN') {
+        return { nuevos: 0, enRevision: 0 };
+      }
+      
+      try {
+        const [nuevos, enRevision] = await Promise.all([
+          listErrorReports({ status: 'nuevo' }),
+          listErrorReports({ status: 'en_revision' })
+        ]);
+        
+        return {
+          nuevos: Array.isArray(nuevos) ? nuevos.length : 0,
+          enRevision: Array.isArray(enRevision) ? enRevision.length : 0
+        };
+      } catch (error) {
+        console.error('[Layout] Error obteniendo conteos de reportes:', error);
+        return { nuevos: 0, enRevision: 0 };
+      }
+    },
+    enabled: Boolean(userRole) && userRole === 'ADMIN',
+    refetchInterval: 30000, // Refrescar cada 30 segundos
+    staleTime: 10000, // Considerar datos frescos por 10 segundos
+  });
+  
+  // Debug: verificar el rol calculado
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Layout] Rol efectivo:', userRole, 'EffectiveUser:', effectiveUser?.rolPersonalizado, 'AppRole:', appRole);
+  }
+
   if (isLoading) {
     return (
       <LoadingSpinner 
@@ -295,35 +333,6 @@ function LayoutContent() {
         text={`Cargando ${appName}...`}
       />
     );
-  }
-
-  // Obtener el rol efectivo usando la función unificada
-  const { appRole } = useAuth();
-  const userRole = getEffectiveRole({ appRole, currentUser: effectiveUser });
-  
-  // Obtener conteos de reportes para el badge (solo para ADMIN)
-  const { data: reportCounts } = useQuery({
-    queryKey: ['error-reports-counts'],
-    queryFn: async () => {
-      if (userRole !== 'ADMIN') return { nuevos: 0, enRevision: 0 };
-      
-      const [nuevos, enRevision] = await Promise.all([
-        listErrorReports({ status: 'nuevo' }),
-        listErrorReports({ status: 'en_revision' })
-      ]);
-      
-      return {
-        nuevos: nuevos?.length || 0,
-        enRevision: enRevision?.length || 0
-      };
-    },
-    enabled: userRole === 'ADMIN',
-    refetchInterval: 30000, // Refrescar cada 30 segundos
-  });
-  
-  // Debug: verificar el rol calculado
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Layout] Rol efectivo:', userRole, 'EffectiveUser:', effectiveUser?.rolPersonalizado, 'AppRole:', appRole);
   }
   
   // Mapeo de URLs a los roles que tienen acceso
@@ -479,9 +488,9 @@ function LayoutContent() {
                   {groupItems.map((item) => {
                     const isActive = location.pathname === item.url;
                     const isReportes = item.url === '/reportes';
-                    const totalCount = isReportes && reportCounts 
-                      ? (reportCounts.nuevos + reportCounts.enRevision) 
-                      : 0;
+                    const nuevos = reportCounts?.nuevos || 0;
+                    const enRevision = reportCounts?.enRevision || 0;
+                    const totalCount = isReportes ? (nuevos + enRevision) : 0;
                     
                     return (
                       <Link
@@ -503,16 +512,16 @@ function LayoutContent() {
                           )}
                         </div>
                         <span className="font-medium flex-1">{item.title}</span>
-                        {isReportes && reportCounts && (reportCounts.nuevos > 0 || reportCounts.enRevision > 0) && (
+                        {isReportes && totalCount > 0 && (
                           <div className="flex items-center gap-1 ml-2 shrink-0">
-                            {reportCounts.nuevos > 0 && (
+                            {nuevos > 0 && (
                               <Badge variant="danger" className="text-[10px] px-1.5 py-0 h-5 min-w-[20px] flex items-center justify-center">
-                                {reportCounts.nuevos}
+                                {nuevos}
                               </Badge>
                             )}
-                            {reportCounts.enRevision > 0 && (
+                            {enRevision > 0 && (
                               <Badge variant="warning" className="text-[10px] px-1.5 py-0 h-5 min-w-[20px] flex items-center justify-center">
-                                {reportCounts.enRevision}
+                                {enRevision}
                               </Badge>
                             )}
                           </div>
