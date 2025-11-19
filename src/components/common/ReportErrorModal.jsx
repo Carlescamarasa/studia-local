@@ -42,9 +42,15 @@ const CATEGORIES = [
 ];
 
 export default function ReportErrorModal({ open, onOpenChange, initialError = null, initialCategory = null }) {
-  const { user } = useAuth();
+  // Hooks siempre en el mismo orden
+  const auth = useAuth();
   const location = useLocation();
-  const [category, setCategory] = useState(initialCategory || '');
+  
+  // Extraer user de forma segura
+  const user = auth?.user || null;
+  
+  // Estados siempre en el mismo orden
+  const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [screenshot, setScreenshot] = useState(null);
   const [isCapturing, setIsCapturing] = useState(false);
@@ -67,14 +73,14 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   };
 
   // Capturar contexto automático
-  const captureContext = () => {
+  const captureContext = React.useCallback(() => {
     return {
-      url: window.location.href,
-      pathname: location.pathname,
-      userAgent: navigator.userAgent,
+      url: typeof window !== 'undefined' ? window.location.href : '',
+      pathname: location?.pathname || '',
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
       screenSize: {
-        width: window.innerWidth,
-        height: window.innerHeight
+        width: typeof window !== 'undefined' ? window.innerWidth : 0,
+        height: typeof window !== 'undefined' ? window.innerHeight : 0
       },
       timestamp: new Date().toISOString(),
       userId: user?.id || null,
@@ -86,7 +92,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         name: initialError?.name
       } : null
     };
-  };
+  }, [location?.pathname, user?.id, user?.email, initialError]);
 
   // Capturar pantalla
   const handleCaptureScreenshot = async () => {
@@ -155,7 +161,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         screenshotUrl = await uploadScreenshot(screenshot.blob);
       }
 
-      // Capturar contexto
+      // Capturar contexto (usar la función memoizada)
       const context = captureContext();
 
       // Crear reporte usando la API
@@ -185,14 +191,25 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
     }
   };
 
-  // Limpiar al cerrar
+  // Limpiar y establecer valores iniciales cuando se abre/cierra el modal
   useEffect(() => {
-    if (!open) {
-      setCategory(initialCategory || '');
+    if (open) {
+      // Al abrir, establecer valores desde props o eventos
+      if (initialError) {
+        setCategory(initialCategory || 'algo_no_funciona');
+        setDescription(initialError?.message || String(initialError) || '');
+      } else if (initialCategory) {
+        setCategory(initialCategory);
+      } else {
+        setCategory('');
+      }
+    } else {
+      // Al cerrar, limpiar todo
+      setCategory('');
       setDescription('');
       setScreenshot(null);
     }
-  }, [open, initialCategory]);
+  }, [open, initialError, initialCategory]);
 
   // Escuchar eventos para abrir modal
   useEffect(() => {
@@ -200,21 +217,15 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       if (event.detail?.error) {
         setCategory(event.detail.category || 'algo_no_funciona');
         setDescription(event.detail.error?.message || '');
+      } else if (event.detail?.category) {
+        setCategory(event.detail.category);
       }
-      // El modal se abre desde el componente padre
+      // El modal se abre desde el componente padre (Layout)
     };
 
     window.addEventListener('open-error-report', handleOpenReport);
     return () => window.removeEventListener('open-error-report', handleOpenReport);
   }, []);
-
-  // Si hay error inicial, establecer categoría y descripción
-  useEffect(() => {
-    if (initialError && open) {
-      setCategory(initialCategory || 'algo_no_funciona');
-      setDescription(initialError?.message || String(initialError) || '');
-    }
-  }, [initialError, initialCategory, open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
