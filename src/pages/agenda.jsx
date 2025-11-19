@@ -103,19 +103,19 @@ function AgendaPageContent() {
   // Filtrar y validar asignaciones
   const asignaciones = useMemo(() => {
     return asignacionesRaw.filter(a => {
-      // Validar que tiene alumnoId válido
-      if (!a.alumnoId) return false;
-      const alumno = usuarios.find(u => u.id === a.alumnoId);
-      if (!alumno) return false;
-      
-      // Validar que tiene plan y semanas
-      if (!a.plan || !Array.isArray(a.plan.semanas) || a.plan.semanas.length === 0) return false;
-      
-      // Validar que tiene semanaInicioISO válida
-      if (!a.semanaInicioISO || typeof a.semanaInicioISO !== 'string') return false;
-      
-      return true;
-    });
+    // Validar que tiene alumnoId válido
+    if (!a.alumnoId) return false;
+    const alumno = usuarios.find(u => u.id === a.alumnoId);
+    if (!alumno) return false;
+    
+    // Validar que tiene plan y semanas
+    if (!a.plan || !Array.isArray(a.plan.semanas) || a.plan.semanas.length === 0) return false;
+    
+    // Validar que tiene semanaInicioISO válida
+    if (!a.semanaInicioISO || typeof a.semanaInicioISO !== 'string') return false;
+    
+    return true;
+  });
   }, [asignacionesRaw, usuarios]);
 
   const feedbacksSemanal = useMemo(() => feedbacksSemanalRaw, [feedbacksSemanalRaw]);
@@ -128,7 +128,7 @@ function AgendaPageContent() {
       totalFeedbacks: feedbacksSemanal.length,
       feedbacksPorProfesor: feedbacksSemanal.filter(f => f.profesorId === userIdActual).length,
       esProfesorOAdmin: effectiveUser?.rolPersonalizado === 'PROF' || effectiveUser?.rolPersonalizado === 'ADMIN',
-    });
+  });
   }
 
   const crearFeedbackMutation = useMutation({
@@ -457,18 +457,18 @@ function AgendaPageContent() {
   // Usar useMemo para recalcular cuando userIdActual, feedbacksSemanal o asignaciones cambien
   const tableData = useMemo(() => {
     return estudiantesFiltrados.map(alumno => {
-      const asignacionActiva = asignaciones.find(a => {
-        if (a.alumnoId !== alumno.id) return false;
-        if (a.estado !== 'publicada' && a.estado !== 'en_curso') return false;
-        const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
-        return offset >= 0 && offset < (a.plan?.semanas?.length || 0);
-      });
+    const asignacionActiva = asignaciones.find(a => {
+      if (a.alumnoId !== alumno.id) return false;
+      if (a.estado !== 'publicada' && a.estado !== 'en_curso') return false;
+      const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
+      return offset >= 0 && offset < (a.plan?.semanas?.length || 0);
+    });
 
       // Buscar TODOS los feedbacks para este alumno/semana (puede haber múltiples de diferentes profesores)
       // Mostraremos el más reciente o el del profesor actual si existe
       const feedbacksAlumno = feedbacksSemanal.filter(f => 
-        f.alumnoId === alumno.id && f.semanaInicioISO === semanaActualISO
-      );
+      f.alumnoId === alumno.id && f.semanaInicioISO === semanaActualISO
+    );
       
       // Logs de depuración
       if (process.env.NODE_ENV === 'development' && feedbacksAlumno.length > 0) {
@@ -499,20 +499,20 @@ function AgendaPageContent() {
         });
       }
 
-      const semanaIdx = asignacionActiva ? 
-        calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO) : 0;
-      
-      const semana = asignacionActiva?.plan?.semanas?.[semanaIdx];
+    const semanaIdx = asignacionActiva ? 
+      calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO) : 0;
+    
+    const semana = asignacionActiva?.plan?.semanas?.[semanaIdx];
 
-      return {
-        id: alumno.id,
-        alumno,
-        asignacionActiva,
-        semana,
-        semanaIdx,
-        feedback,
-      };
-    });
+    return {
+      id: alumno.id,
+      alumno,
+      asignacionActiva,
+      semana,
+      semanaIdx,
+      feedback,
+    };
+  });
   }, [estudiantesFiltrados, asignaciones, feedbacksSemanal, semanaActualISO, userIdActual, usuarios]);
 
   // Definir columnas de la tabla
@@ -692,7 +692,7 @@ function AgendaPageContent() {
             <MessageSquare className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
+              <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
                 {(() => {
                   const profesor = usuarios.find(u => u.id === row.feedback.profesorId);
                   if (profesor) {

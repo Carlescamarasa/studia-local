@@ -188,7 +188,7 @@ function AsignacionesPageContent() {
         totalProfesoresDisponibles: profesores.length,
         profesores: profesores.map(p => ({ id: p.value, nombre: p.label })),
       });
-    }
+  }
     
     return profesores;
   }, [asignacionesFiltradas, usuarios]);
@@ -197,23 +197,23 @@ function AsignacionesPageContent() {
   const asignacionesFinales = useMemo(() => {
     let resultado = asignacionesFiltradas;
 
-    if (estadoFilter !== 'all') {
+  if (estadoFilter !== 'all') {
       resultado = resultado.filter(a => a.estado === estadoFilter);
     }
 
     if (profesoresFilter.length > 0) {
       resultado = resultado.filter(a => profesoresFilter.includes(a.profesorId));
-    }
+  }
 
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
+  if (searchTerm) {
+    const term = searchTerm.toLowerCase();
       resultado = resultado.filter(a => {
-        const alumno = usuarios.find(u => u.id === a.alumnoId);
-        const nombreAlumno = getNombreVisible(alumno).toLowerCase();
-        const pieza = (a.piezaSnapshot?.nombre || '').toLowerCase();
-        return nombreAlumno.includes(term) || pieza.includes(term);
-      });
-    }
+      const alumno = usuarios.find(u => u.id === a.alumnoId);
+      const nombreAlumno = getNombreVisible(alumno).toLowerCase();
+      const pieza = (a.piezaSnapshot?.nombre || '').toLowerCase();
+      return nombreAlumno.includes(term) || pieza.includes(term);
+    });
+  }
 
     return resultado;
   }, [asignacionesFiltradas, estadoFilter, profesoresFilter, searchTerm, usuarios]);

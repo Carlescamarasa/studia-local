@@ -200,7 +200,10 @@ function EstadisticasPageContent() {
 
   const { data: feedbacksSemanal = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
-    queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_at'),
+    queryFn: () => {
+      console.log('[estadisticas.jsx] Consultando tabla feedbacks_semanal (NO registros_sesion)');
+      return localDataClient.entities.FeedbackSemanal.list('-created_at');
+    },
   });
 
   const estudiantes = usuarios.filter(u => u.rolPersonalizado === 'ESTU');
@@ -695,43 +698,105 @@ function EstadisticasPageContent() {
     }).sort((a, b) => b.semanaInicioISO.localeCompare(a.semanaInicioISO));
   }, [feedbacksSemanal, userIdActual, periodoInicio, periodoFin, isEstu]);
 
-  // Feedbacks para profesores y admins: mostrar feedbacks de estudiantes seleccionados (o todos si no hay filtro)
+  // Feedbacks para profesores y admins: ADMIN y PROF ven TODOS los feedbacks
   const feedbacksParaProfAdmin = useMemo(() => {
     if (isEstu) return [];
     
-    // Si hay estudiantes seleccionados, filtrar por ellos; si no, mostrar todos
-    const estudiantesIdsFiltro = alumnosSeleccionados.length > 0 
-      ? alumnosSeleccionados 
-      : estudiantes.map(e => e.id);
-    
-    return feedbacksSemanal.filter(f => {
-      // Filtrar por estudiantes seleccionados
-      if (!estudiantesIdsFiltro.includes(f.alumnoId)) return false;
-      
-      // Filtrar por período
-      if (!f.semanaInicioISO) return false;
-      
-      const feedbackDate = parseLocalDate(f.semanaInicioISO);
-      
-      if (periodoInicio) {
-        const inicioDate = parseLocalDate(periodoInicio);
-        if (feedbackDate < inicioDate) return false;
-      }
-      
-      if (periodoFin) {
-        const finDate = parseLocalDate(periodoFin);
-        if (feedbackDate > finDate) return false;
-      }
-      
-      return true;
-    }).sort((a, b) => {
-      // Ordenar primero por alumno, luego por fecha descendente
-      if (a.alumnoId !== b.alumnoId) {
-        return a.alumnoId.localeCompare(b.alumnoId);
-      }
-      return b.semanaInicioISO.localeCompare(a.semanaInicioISO);
+    // Logs exhaustivos para diagnóstico
+    console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Inicio del filtrado:', {
+      totalFeedbacksSemanal: feedbacksSemanal.length,
+      feedbacksConNotaProfesor: feedbacksSemanal.filter(f => f.notaProfesor).length,
+      alumnosSeleccionados: alumnosSeleccionados,
+      alumnosSeleccionadosLength: alumnosSeleccionados.length,
+      periodoInicio,
+      periodoFin,
+      isAdmin,
+      isProf,
     });
-  }, [feedbacksSemanal, alumnosSeleccionados, estudiantes, periodoInicio, periodoFin, isEstu]);
+    
+    // Para ADMIN: mostrar TODOS los feedbacks si no hay filtros explícitos
+    // Para PROF: mostrar TODOS los feedbacks si no hay filtros explícitos
+    let resultado = [...feedbacksSemanal];
+    
+    // Solo filtrar por estudiantes si hay selección EXPLÍCITA
+    if (alumnosSeleccionados.length > 0) {
+      const antes = resultado.length;
+      resultado = resultado.filter(f => alumnosSeleccionados.includes(f.alumnoId));
+      console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Filtro por estudiantes (explícito):', {
+        antes,
+        despues: resultado.length,
+        alumnosSeleccionados: alumnosSeleccionados.length,
+      });
+    }
+    
+    // Solo filtrar por período si hay filtro EXPLÍCITO de período
+    if (periodoInicio || periodoFin) {
+      const antes = resultado.length;
+      resultado = resultado.filter(f => {
+        // Si no tiene semanaInicioISO, incluir si no hay filtro de período estricto
+        if (!f.semanaInicioISO) {
+          // Si hay ambos filtros, excluir los que no tienen fecha
+          if (periodoInicio && periodoFin) {
+            return false;
+          }
+          // Si solo hay uno de los filtros, incluir los sin fecha
+          return true;
+        }
+        
+        const feedbackDate = parseLocalDate(f.semanaInicioISO);
+        const feedbackDateOnly = new Date(feedbackDate.getFullYear(), feedbackDate.getMonth(), feedbackDate.getDate());
+        
+        if (periodoInicio) {
+          const inicioDate = parseLocalDate(periodoInicio);
+          const inicioDateOnly = new Date(inicioDate.getFullYear(), inicioDate.getMonth(), inicioDate.getDate());
+          if (feedbackDateOnly < inicioDateOnly) {
+            return false;
+          }
+        }
+        
+        if (periodoFin) {
+          const finDate = parseLocalDate(periodoFin);
+          const finDateOnly = new Date(finDate.getFullYear(), finDate.getMonth(), finDate.getDate());
+          if (feedbackDateOnly > finDateOnly) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+      console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Filtro por período:', {
+        antes,
+        despues: resultado.length,
+        periodoInicio,
+        periodoFin,
+      });
+    }
+    
+    // Ordenar: primero por alumno, luego por fecha descendente
+    resultado.sort((a, b) => {
+      if (a.alumnoId !== b.alumnoId) {
+        return (a.alumnoId || '').localeCompare(b.alumnoId || '');
+      }
+      const fechaA = a.semanaInicioISO || '';
+      const fechaB = b.semanaInicioISO || '';
+      return fechaB.localeCompare(fechaA);
+    });
+    
+    console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Resultado final:', {
+      total: resultado.length,
+      conNotaProfesor: resultado.filter(f => f.notaProfesor).length,
+      sinNotaProfesor: resultado.filter(f => !f.notaProfesor).length,
+      primeros3: resultado.slice(0, 3).map(f => ({
+        id: f.id?.substring(0, 20),
+        tieneNotaProfesor: !!f.notaProfesor,
+        notaProfesorPreview: f.notaProfesor?.substring(0, 30),
+        alumnoId: f.alumnoId?.substring(0, 20),
+        semanaInicioISO: f.semanaInicioISO,
+      })),
+    });
+    
+    return resultado;
+  }, [feedbacksSemanal, alumnosSeleccionados, periodoInicio, periodoFin, isEstu, isAdmin, isProf]);
 
   const tipoLabels = {
     CA: 'Calentamiento A',
@@ -1640,50 +1705,32 @@ function EstadisticasPageContent() {
             </CardHeader>
             <CardContent>
               {isEstu ? (
-                // Vista para estudiantes: mostrar feedbacks del profesor
+                // Vista para estudiantes: lista simple de feedbacks
                 feedbackProfesor.length === 0 ? (
                   <div className="text-center py-12">
                     <MessageSquare className={componentStyles.components.emptyStateIcon} />
                     <p className={componentStyles.components.emptyStateText}>No hay feedback del profesor en este periodo</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {feedbackProfesor.map(f => {
                       const profesor = usuarios.find(u => u.id === f.profesorId);
                       return (
-                        <Card key={f.id} className={`${componentStyles.containers.cardBase} border-[var(--color-info)] bg-[var(--color-info)]/10 hover:shadow-md transition-shadow`}>
-                          <CardContent className="pt-4">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Badge className={componentStyles.status.badgeInfo}>
-                                  Semana {parseLocalDate(f.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                                </Badge>
-                                {profesor && (
-                                  <span className="text-xs text-[var(--color-text-secondary)]">
-                                    {displayName(profesor)}
-                                  </span>
-                                )}
-                              </div>
-                              {f.notaProfesor && (
-                                <p className="text-sm text-[var(--color-text-primary)] italic border-l-2 border-[var(--color-info)] pl-3 break-words">
-                                  "{f.notaProfesor}"
-                                </p>
-                              )}
-                              {f.mediaLinks && f.mediaLinks.length > 0 && (
-                                <MediaLinksBadges 
-                                  mediaLinks={f.mediaLinks}
-                                  onMediaClick={(media) => setViewingMedia(media)}
-                                />
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
+                        <div key={f.id} className="p-3 border border-[var(--color-border-default)] rounded">
+                          <p className="text-sm text-[var(--color-text-primary)] break-words mb-2">
+                            {f.notaProfesor || '(Sin nota)'}
+                          </p>
+                          <div className="text-xs text-[var(--color-text-secondary)] space-y-1">
+                            <div><strong>Profesor:</strong> {profesor ? displayName(profesor) : f.profesorId || 'N/A'}</div>
+                            <div><strong>Semana:</strong> {f.semanaInicioISO ? parseLocalDate(f.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}</div>
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
                 )
               ) : (
-                // Vista para profesores y admins: mostrar feedbacks de estudiantes
+                // Vista para profesores y admins: lista simple de feedbacks
                 feedbacksParaProfAdmin.length === 0 ? (
                   <div className="text-center py-12">
                     <MessageSquare className={componentStyles.components.emptyStateIcon} />
@@ -1693,45 +1740,32 @@ function EstadisticasPageContent() {
                         : 'No hay feedbacks en este periodo'
                       }
                     </p>
+                    {feedbacksSemanal.length > 0 && (
+                      <div className="mt-4 p-3 bg-[var(--color-surface-muted)] rounded text-xs text-left">
+                        <p className="font-semibold mb-2">Total en BD: {feedbacksSemanal.length} feedbacks</p>
+                        <p>Estudiantes cargados: {estudiantes.length}</p>
+                        <p>Filtros aplicados: {alumnosSeleccionados.length > 0 ? `${alumnosSeleccionados.length} estudiantes` : 'Todos'} | 
+                           {periodoInicio || periodoFin ? ` Período: ${periodoInicio || '...'} - ${periodoFin || '...'}` : ' Sin período'}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {feedbacksParaProfAdmin.map(f => {
-                      const profesor = usuarios.find(u => u.id === f.profesorId);
                       const alumno = usuarios.find(u => u.id === f.alumnoId);
+                      const profesor = usuarios.find(u => u.id === f.profesorId);
                       return (
-                        <Card key={f.id} className={`${componentStyles.containers.cardBase} border-[var(--color-info)] bg-[var(--color-info)]/10 hover:shadow-md transition-shadow`}>
-                          <CardContent className="pt-4">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Badge className={componentStyles.status.badgeInfo}>
-                                  Semana {parseLocalDate(f.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                                </Badge>
-                                {alumno && (
-                                  <Badge className={componentStyles.status.badgeDefault}>
-                                    {displayName(alumno)}
-                                  </Badge>
-                                )}
-                                {profesor && (
-                                  <span className="text-xs text-[var(--color-text-secondary)]">
-                                    Por: {displayName(profesor)}
-                                  </span>
-                                )}
-                              </div>
-                              {f.notaProfesor && (
-                                <p className="text-sm text-[var(--color-text-primary)] italic border-l-2 border-[var(--color-info)] pl-3 break-words">
-                                  "{f.notaProfesor}"
-                                </p>
-                              )}
-                              {f.mediaLinks && f.mediaLinks.length > 0 && (
-                                <MediaLinksBadges 
-                                  mediaLinks={f.mediaLinks}
-                                  onMediaClick={(media) => setViewingMedia(media)}
-                                />
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
+                        <div key={f.id} className="p-3 border border-[var(--color-border-default)] rounded">
+                          <p className="text-sm text-[var(--color-text-primary)] break-words mb-2">
+                            {f.notaProfesor || '(Sin nota)'}
+                          </p>
+                          <div className="text-xs text-[var(--color-text-secondary)] space-y-1">
+                            <div><strong>Alumno:</strong> {alumno ? displayName(alumno) : f.alumnoId || 'N/A'}</div>
+                            <div><strong>Profesor:</strong> {profesor ? displayName(profesor) : f.profesorId || 'N/A'}</div>
+                            <div><strong>Semana:</strong> {f.semanaInicioISO ? parseLocalDate(f.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}</div>
+                          </div>
+                        </div>
                       );
                     })}
                   </div>

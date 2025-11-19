@@ -213,7 +213,7 @@ function EstudiantesPageContent() {
              f.profesorId === userIdActual &&
              f.semanaInicioISO === semanaActual
       ) || feedbacksExistentes.find(
-        f => f.alumnoId === alumno.id && f.semanaInicioISO === semanaActual
+      f => f.alumnoId === alumno.id && f.semanaInicioISO === semanaActual
       )
     );
 
@@ -283,7 +283,7 @@ function EstudiantesPageContent() {
   const semanaActual = calcularLunesSemanaISO(formatLocalDate(new Date()));
   const estadisticasAlumnos = useMemo(() => {
     return filteredEstudiantes.map(alumno => {
-      const stats = calcularEstadisticasSemana(alumno.id, semanaActual);
+    const stats = calcularEstadisticasSemana(alumno.id, semanaActual);
       
       // Buscar TODOS los feedbacks para este alumno/semana (puede haber múltiples de diferentes profesores)
       const feedbacksAlumno = feedbacksExistentes.filter(f => 
@@ -293,7 +293,7 @@ function EstudiantesPageContent() {
       const feedback = feedbacksAlumno.find(f => f.profesorId === userIdActual) || feedbacksAlumno[0];
       
       return { ...alumno, ...stats, feedback };
-    });
+  });
   }, [filteredEstudiantes, semanaActual, feedbacksExistentes, userIdActual]);
 
   return (
