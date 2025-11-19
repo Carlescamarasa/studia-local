@@ -3,7 +3,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { X, Eye, AlertCircle } from "lucide-react";
+import { X, Eye, AlertCircle, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { MediaIcon, getMediaLabel } from "./MediaEmbed";
 import { isValidUrl, extractUrlsFromText, normalizeMediaLinks } from "../utils/media";
 import { componentStyles } from "@/design/componentStyles";
@@ -330,13 +331,33 @@ export default function MediaLinksInput({ value = [], onChange, onPreview }) {
           placeholder={`https://ejemplo.com/imagen.jpg
 https://youtu.be/VIDEO
 https://soundcloud.com/artist/track
-https://drive.google.com/file/d/ID/view`}
+https://drive.google.com/file/d/ID/view?usp=sharing&format=mp3`}
           rows={4}
           className={`resize-none font-mono text-xs ${componentStyles.controls.inputDefault}`}
         />
-        <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-          Pega una URL por línea. Soporta imágenes, audio, vídeo, PDF, YouTube, Vimeo, SoundCloud y Google Drive.
-        </p>
+        <div className="flex items-start gap-2 mt-1">
+          <p className="text-xs text-[var(--color-text-secondary)] flex-1">
+            Pega una URL por línea. Soporta imágenes, audio, vídeo, PDF, YouTube, Vimeo, SoundCloud y Google Drive.
+          </p>
+          <div className="flex items-center gap-1.5 bg-[var(--color-surface-muted)] border border-[var(--color-border-default)] rounded-lg px-2 py-1 shrink-0">
+            <span className="text-xs text-[var(--color-text-secondary)] font-mono">
+              &format=mp3
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText('&format=mp3');
+                toast.success('Copiado: &format=mp3');
+              }}
+              className="h-6 w-6 p-0 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] min-h-[24px] min-w-[24px] touch-manipulation"
+              aria-label="Copiar &format=mp3"
+            >
+              <Copy className="w-3 h-3" />
+            </Button>
+          </div>
+        </div>
         {errors.length > 0 && (
           <div className="flex items-center gap-2 mt-2 text-xs text-[var(--color-danger)]">
             <AlertCircle className="w-4 h-4 shrink-0" />

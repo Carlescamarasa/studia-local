@@ -1432,8 +1432,8 @@ function HoyPageContent() {
                         <div className="flex flex-wrap gap-2">
                           {elemento.mediaLinks.map((url, urlIdx) => {
                             const media = resolveMedia(url);
-                            // Audio: embedido directamente
-                            if (media.kind === MediaKind.AUDIO) {
+                            // Audio y SoundCloud: embedidos directamente (solo en modo estudio)
+                            if (media.kind === MediaKind.AUDIO || media.kind === MediaKind.SOUNDCLOUD) {
                               return (
                                 <div key={urlIdx} className="w-full">
                                   <MediaEmbed url={url} className="w-full" />
@@ -1514,8 +1514,8 @@ function HoyPageContent() {
                       <div className="flex flex-wrap gap-2">
                         {ejercicioActual.mediaLinks.map((url, urlIdx) => {
                           const media = resolveMedia(url);
-                          // Audio: embedido directamente
-                          if (media.kind === MediaKind.AUDIO) {
+                          // Audio y SoundCloud: embedidos directamente (solo en modo estudio)
+                          if (media.kind === MediaKind.AUDIO || media.kind === MediaKind.SOUNDCLOUD) {
                             return (
                               <div key={urlIdx} className="w-full">
                                 <MediaEmbed url={url} className="w-full" />

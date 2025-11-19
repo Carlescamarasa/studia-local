@@ -117,6 +117,31 @@ export function resolveMedia(urlString) {
     const match = url.match(pattern);
     if (match) {
       const fileId = match[1];
+      
+      // Verificar si tiene parámetro format=mp3 o similar para audio
+      const urlLower = url.toLowerCase();
+      if (urlLower.includes('format=mp3') || 
+          urlLower.includes('format=wav') || 
+          urlLower.includes('format=ogg') || 
+          urlLower.includes('format=m4a') || 
+          urlLower.includes('format=aac') || 
+          urlLower.includes('format=flac') ||
+          urlLower.includes('&format=mp3') ||
+          urlLower.includes('&format=wav') ||
+          urlLower.includes('&format=ogg') ||
+          urlLower.includes('&format=m4a') ||
+          urlLower.includes('&format=aac') ||
+          urlLower.includes('&format=flac')) {
+        // Es un archivo de audio desde Google Drive
+        return {
+          kind: MediaKind.AUDIO,
+          embedUrl: url, // Usar la URL completa con el parámetro format
+          originalUrl: url,
+          title: 'Audio File (Google Drive)',
+        };
+      }
+      
+      // Si no es audio, tratarlo como Drive normal
       return {
         kind: MediaKind.DRIVE,
         embedUrl: `https://drive.google.com/file/d/${fileId}/preview`,
