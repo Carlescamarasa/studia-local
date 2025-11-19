@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { componentStyles } from "@/design/componentStyles";
 import { Menu, X, Info } from "lucide-react";
 import { useSidebar } from "@/components/ui/SidebarState";
@@ -29,6 +29,103 @@ export default function PageHeader({
   const [filtersExpanded, setFiltersExpanded] = useState(false); // Por defecto oculto
   const [highlightButton, setHighlightButton] = useState(false);
   
+  // Refs para gestos de swipe
+  const swipeStartRef = useRef({ x: 0, y: 0, time: 0 });
+  const headerRef = useRef(null);
+  const isMobileRef = useRef(false);
+  
+  // Detectar si es móvil
+  useEffect(() => {
+    const checkMobile = () => {
+      isMobileRef.current = window.innerWidth < 1024;
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  // Gestos de swipe en el header
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const header = headerRef.current;
+    
+    const handleTouchStart = (e) => {
+      if (!isMobileRef.current) return;
+      const touch = e.touches[0];
+      swipeStartRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        time: Date.now()
+      };
+    };
+    
+    const handleTouchMove = (e) => {
+      if (!isMobileRef.current || !swipeStartRef.current.x) return;
+      const touch = e.touches[0];
+      const dx = Math.abs(touch.clientX - swipeStartRef.current.x);
+      const dy = Math.abs(touch.clientY - swipeStartRef.current.y);
+      
+      // Solo prevenir scroll si el movimiento es principalmente horizontal
+      // o si es vertical y hay filtros disponibles
+      if (dx > dy && dx > 20) {
+        e.preventDefault(); // Prevenir scroll horizontal durante swipe horizontal
+      } else if (dy > dx && dy > 20 && filters) {
+        e.preventDefault(); // Prevenir scroll vertical durante swipe vertical en header con filtros
+      }
+    };
+    
+    const handleTouchEnd = (e) => {
+      if (!isMobileRef.current || !swipeStartRef.current.x) return;
+      
+      const touch = e.changedTouches[0];
+      const dx = touch.clientX - swipeStartRef.current.x;
+      const dy = touch.clientY - swipeStartRef.current.y;
+      const dt = Date.now() - swipeStartRef.current.time;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Reset
+      swipeStartRef.current = { x: 0, y: 0, time: 0 };
+      
+      // Validar que sea un swipe rápido y con suficiente distancia
+      if (dt > 500 || distance < 30) return;
+      
+      // Determinar dirección principal
+      const isHorizontal = Math.abs(dx) > Math.abs(dy);
+      
+      if (isHorizontal) {
+        // Swipe horizontal: izquierda-derecha para sidebar
+        if (dx > 50 && !abierto) {
+          // Swipe derecha: abrir sidebar
+          toggleSidebar();
+        } else if (dx < -50 && abierto) {
+          // Swipe izquierda: cerrar sidebar
+          toggleSidebar();
+        }
+      } else {
+        // Swipe vertical: arriba-abajo para filtros
+        if (filters) {
+          if (dy > 50 && !filtersExpanded) {
+            // Swipe abajo: mostrar filtros
+            setFiltersExpanded(true);
+          } else if (dy < -50 && filtersExpanded) {
+            // Swipe arriba: ocultar filtros
+            setFiltersExpanded(false);
+          }
+        }
+      }
+    };
+    
+    header.addEventListener('touchstart', handleTouchStart, { passive: true });
+    header.addEventListener('touchmove', handleTouchMove, { passive: false });
+    header.addEventListener('touchend', handleTouchEnd, { passive: true });
+    
+    return () => {
+      header.removeEventListener('touchstart', handleTouchStart);
+      header.removeEventListener('touchmove', handleTouchMove);
+      header.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [abierto, filters, filtersExpanded, toggleSidebar]);
+  
   // Highlight del botón de filtros al cargar la página (solo una vez por sesión)
   useEffect(() => {
     // Verificar si ya se mostró el highlight en esta sesión
@@ -51,22 +148,28 @@ export default function PageHeader({
   const iconClass = "w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 text-[var(--color-primary)]";
 
   return (
-    <div className={`page-header header-modern ${className}`} data-testid="page-header">
-      <div className="px-2 sm:px-3 md:px-6 py-1 sm:py-1.5 md:py-2">
+    <div 
+      ref={headerRef}
+      className={`page-header header-modern ${className}`} 
+      data-testid="page-header" 
+      style={{ position: 'relative', zIndex: 1 }}
+    >
+      <div className="px-2 sm:px-3 md:px-6 py-1 sm:py-1.5 md:py-2" style={{ position: 'relative', zIndex: 1 }}>
         <div className="max-w-7xl mx-auto">
           {/* Primera fila: Botón menú (mobile) + Icono + Título + Botón Filtros */}
-          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 mb-0 sm:mb-0.5 md:mb-1">
+          <div className="flex items-center gap-2 sm:gap-2 md:gap-2.5 mb-0 sm:mb-0.5 md:mb-1" style={{ position: 'relative', zIndex: 1 }}>
             {/* Botón de menú solo en mobile */}
             {showMenuButton && (
               <button
                 onClick={toggleSidebar}
-                className="lg:hidden hover:bg-[var(--color-surface-muted)] active:bg-[var(--color-surface-muted)]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 p-2 rounded-[var(--btn-radius,0.25rem)] transition-all h-10 w-10 min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0 touch-manipulation"
+                className="lg:hidden hover:bg-[var(--color-surface-muted)] active:bg-[var(--color-surface-muted)]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 p-3 rounded-[var(--btn-radius,0.25rem)] transition-all min-h-[48px] min-w-[48px] h-12 w-12 flex items-center justify-center shrink-0 touch-manipulation -ml-1 -mr-1 relative z-10"
                 aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
                 aria-controls="sidebar"
                 aria-expanded={abierto}
                 type="button"
+                style={{ pointerEvents: 'auto' }}
               >
-                {abierto ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {abierto ? <X className="w-6 h-6 pointer-events-none" /> : <Menu className="w-6 h-6 pointer-events-none" />}
               </button>
             )}
             {Icon && (
@@ -81,23 +184,24 @@ export default function PageHeader({
                 variant="outline"
                 size="sm"
                 onClick={() => setFiltersExpanded(!filtersExpanded)}
-                className={`${componentStyles.buttons.outline} flex items-center justify-center gap-1.5 text-xs sm:text-sm h-11 w-11 sm:h-9 sm:w-auto sm:min-w-0 min-h-[44px] min-w-[44px] px-0 sm:px-3 py-0 sm:py-2 touch-manipulation shrink-0 transition-all duration-300 ${
+                className={`${componentStyles.buttons.outline} flex items-center justify-center gap-1.5 text-xs sm:text-sm min-h-[48px] min-w-[48px] h-12 w-12 sm:h-9 sm:w-auto sm:min-w-0 px-3 sm:px-3 py-3 sm:py-2 touch-manipulation shrink-0 transition-all duration-300 -mr-1 relative z-10 ${
                   highlightButton 
                     ? 'ring-2 ring-[var(--color-primary)] ring-offset-2 bg-[var(--color-primary-soft)] scale-105 shadow-lg animate-pulse' 
                     : ''
                 }`}
                 aria-label={filtersExpanded ? "Ocultar filtros" : "Mostrar filtros"}
                 aria-expanded={filtersExpanded}
+                style={{ pointerEvents: 'auto' }}
               >
-                <Info className={`w-5 h-5 sm:w-4 sm:h-4 transition-all duration-300 ${
+                <Info className={`w-6 h-6 sm:w-4 sm:h-4 transition-all duration-300 pointer-events-none ${
                   highlightButton 
                     ? 'text-[var(--color-primary)] scale-125' 
                     : ''
                 }`} />
                 {filtersExpanded ? (
-                  <span className="hidden sm:inline ml-0.5">Ocultar</span>
+                  <span className="hidden sm:inline ml-0.5 pointer-events-none">Ocultar</span>
                 ) : (
-                  <span className="hidden sm:inline ml-0.5">Filtros</span>
+                  <span className="hidden sm:inline ml-0.5 pointer-events-none">Filtros</span>
                 )}
               </Button>
             )}
