@@ -49,6 +49,9 @@ import PerfilModal from "@/components/common/PerfilModal";
 import { useDesign } from "@/components/design/DesignProvider";
 import ReportErrorButton from "@/components/common/ReportErrorButton";
 import ReportErrorModal from "@/components/common/ReportErrorModal";
+import { useQuery } from "@tanstack/react-query";
+import { listErrorReports } from "@/api/errorReportsAPI";
+import { Badge } from "@/components/ds";
 
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
@@ -298,9 +301,29 @@ function LayoutContent() {
   const { appRole } = useAuth();
   const userRole = getEffectiveRole({ appRole, currentUser: effectiveUser });
   
+  // Obtener conteos de reportes para el badge (solo para ADMIN)
+  const { data: reportCounts } = useQuery({
+    queryKey: ['error-reports-counts'],
+    queryFn: async () => {
+      if (userRole !== 'ADMIN') return { nuevos: 0, enRevision: 0 };
+      
+      const [nuevos, enRevision] = await Promise.all([
+        listErrorReports({ status: 'nuevo' }),
+        listErrorReports({ status: 'en_revision' })
+      ]);
+      
+      return {
+        nuevos: nuevos?.length || 0,
+        enRevision: enRevision?.length || 0
+      };
+    },
+    enabled: userRole === 'ADMIN',
+    refetchInterval: 30000, // Refrescar cada 30 segundos
+  });
+  
   // Debug: verificar el rol calculado
   if (process.env.NODE_ENV === 'development') {
-  console.log('[Layout] Rol efectivo:', userRole, 'EffectiveUser:', effectiveUser?.rolPersonalizado, 'AppRole:', appRole);
+    console.log('[Layout] Rol efectivo:', userRole, 'EffectiveUser:', effectiveUser?.rolPersonalizado, 'AppRole:', appRole);
   }
   
   // Mapeo de URLs a los roles que tienen acceso
@@ -455,6 +478,11 @@ function LayoutContent() {
                 <div className="space-y-1">
                   {groupItems.map((item) => {
                     const isActive = location.pathname === item.url;
+                    const isReportes = item.url === '/reportes';
+                    const totalCount = isReportes && reportCounts 
+                      ? (reportCounts.nuevos + reportCounts.enRevision) 
+                      : 0;
+                    
                     return (
                       <Link
                         key={item.title}
@@ -466,9 +494,30 @@ function LayoutContent() {
                         }
                         onClick={onMenuItemClick}
                       >
-                        <item.icon className="w-5 h-5 text-[var(--color-text-secondary)]" />
-                        <span className="font-medium">{item.title}</span>
-                        {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
+                        <div className="relative shrink-0">
+                          <item.icon className="w-5 h-5 text-[var(--color-text-secondary)]" />
+                          {isReportes && totalCount > 0 && (
+                            <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-[var(--color-danger)] rounded-full z-10">
+                              {totalCount > 99 ? '99+' : totalCount}
+                            </span>
+                          )}
+                        </div>
+                        <span className="font-medium flex-1">{item.title}</span>
+                        {isReportes && reportCounts && (reportCounts.nuevos > 0 || reportCounts.enRevision > 0) && (
+                          <div className="flex items-center gap-1 ml-2 shrink-0">
+                            {reportCounts.nuevos > 0 && (
+                              <Badge variant="danger" className="text-[10px] px-1.5 py-0 h-5 min-w-[20px] flex items-center justify-center">
+                                {reportCounts.nuevos}
+                              </Badge>
+                            )}
+                            {reportCounts.enRevision > 0 && (
+                              <Badge variant="warning" className="text-[10px] px-1.5 py-0 h-5 min-w-[20px] flex items-center justify-center">
+                                {reportCounts.enRevision}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                        {isActive && <ChevronRight className="w-4 h-4 ml-auto shrink-0" />}
                       </Link>
                     );
                   })}
