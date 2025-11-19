@@ -70,9 +70,18 @@ export function AuthProvider({ children }) {
         // Si no hay perfil o hay error de RLS, usar valores por defecto
         // No lanzar error - simplemente no establecer perfil
         if (error.message.includes('infinite recursion')) {
-          console.error('Error de políticas RLS en Supabase. Revisa las políticas de la tabla profiles.');
+          console.error('[AuthProvider] Error de políticas RLS en Supabase:', {
+            error: error.message,
+            code: error.code,
+            userId,
+          });
         } else {
-          console.warn('No se encontró perfil para el usuario:', error.message);
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[AuthProvider] No se encontró perfil para el usuario:', {
+              userId,
+              error: error.message,
+            });
+          }
         }
         setProfile(null);
         fetchingProfileRef.current = false;
@@ -84,7 +93,11 @@ export function AuthProvider({ children }) {
       fetchingProfileRef.current = false;
     } catch (err) {
       // Error no crítico - usar valores por defecto
-      console.error('Error obteniendo perfil:', err);
+      console.error('[AuthProvider] Error obteniendo perfil:', {
+        error: err?.message || err,
+        code: err?.code,
+        userId,
+      });
       setProfile(null);
       fetchingProfileRef.current = false;
     }
@@ -128,7 +141,9 @@ export function AuthProvider({ children }) {
             setLoading(false);
             if (session.user.id) {
               fetchProfile(session.user.id).catch(err => {
-                console.error('Error obteniendo perfil después de refresh:', err);
+                if (process.env.NODE_ENV === 'development') {
+                  console.error('[AuthProvider] Error obteniendo perfil después de refresh:', err);
+                }
               });
             }
           } else {
@@ -160,7 +175,9 @@ export function AuthProvider({ children }) {
       // Obtener perfil en background (no bloquear)
       if (session?.user?.id) {
         fetchProfile(session.user.id).catch(err => {
-          console.error('Error obteniendo perfil en onAuthStateChange:', err);
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[AuthProvider] Error obteniendo perfil en onAuthStateChange:', err);
+          }
         });
       } else {
         setProfile(null);
@@ -219,7 +236,9 @@ export function AuthProvider({ children }) {
           setUser(session.user);
           if (session.user.id) {
             fetchProfile(session.user.id).catch(err => {
-              console.error('Error obteniendo perfil en verificación periódica:', err);
+              if (process.env.NODE_ENV === 'development') {
+                console.error('[AuthProvider] Error obteniendo perfil en verificación periódica:', err);
+              }
             });
           }
         }
@@ -261,7 +280,9 @@ export function AuthProvider({ children }) {
       if (data.user.id) {
         // Llamar a fetchProfile directamente (está en el scope del componente)
         fetchProfile(data.user.id).catch(err => {
-          console.error('Error obteniendo perfil después del login:', err);
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[AuthProvider] Error obteniendo perfil después del login:', err);
+          }
         });
       }
     }

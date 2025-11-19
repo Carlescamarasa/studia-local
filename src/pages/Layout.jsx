@@ -295,7 +295,9 @@ function LayoutContent() {
   const userRole = getEffectiveRole({ appRole, currentUser: effectiveUser });
   
   // Debug: verificar el rol calculado
-  console.log('[Layout] Rol efectivo:', userRole, 'EffectiveUser:', effectiveUser?.rolPersonalizado, 'AppRole:', appRole);
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Layout] Rol efectivo:', userRole, 'EffectiveUser:', effectiveUser?.rolPersonalizado, 'AppRole:', appRole);
+  }
   
   // Mapeo de URLs a los roles que tienen acceso
   const pagePermissions = {

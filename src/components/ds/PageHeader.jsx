@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { componentStyles } from "@/design/componentStyles";
 import { Menu, X, Info } from "lucide-react";
 import { useSidebar } from "@/components/ui/SidebarState";
@@ -26,7 +26,26 @@ export default function PageHeader({
   showMenuButton = true
 }) {
   const { abierto, toggleSidebar } = useSidebar();
-  const [filtersExpanded, setFiltersExpanded] = useState(true);
+  const [filtersExpanded, setFiltersExpanded] = useState(false); // Por defecto oculto
+  const [highlightButton, setHighlightButton] = useState(false);
+  
+  // Highlight del botón de filtros al cargar la página (solo una vez por sesión)
+  useEffect(() => {
+    // Verificar si ya se mostró el highlight en esta sesión
+    const highlightShown = sessionStorage.getItem('pageHeaderFiltersHighlightShown');
+    
+    if (!highlightShown && filters) {
+      // Mostrar highlight solo si no se ha mostrado antes en esta sesión
+      setHighlightButton(true);
+      sessionStorage.setItem('pageHeaderFiltersHighlightShown', 'true');
+      
+      const timer = setTimeout(() => {
+        setHighlightButton(false);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [filters]);
   
   // Icono siempre en estilo plain (color de marca, sin sombreado, sin bordes)
   const iconClass = "w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 text-[var(--color-primary)]";
@@ -62,11 +81,19 @@ export default function PageHeader({
                 variant="outline"
                 size="sm"
                 onClick={() => setFiltersExpanded(!filtersExpanded)}
-                className={`${componentStyles.buttons.outline} flex items-center justify-center gap-1.5 text-xs sm:text-sm h-11 w-11 sm:h-9 sm:w-auto sm:min-w-0 min-h-[44px] min-w-[44px] px-0 sm:px-3 py-0 sm:py-2 touch-manipulation shrink-0`}
+                className={`${componentStyles.buttons.outline} flex items-center justify-center gap-1.5 text-xs sm:text-sm h-11 w-11 sm:h-9 sm:w-auto sm:min-w-0 min-h-[44px] min-w-[44px] px-0 sm:px-3 py-0 sm:py-2 touch-manipulation shrink-0 transition-all duration-300 ${
+                  highlightButton 
+                    ? 'ring-2 ring-[var(--color-primary)] ring-offset-2 bg-[var(--color-primary-soft)] scale-105 shadow-lg animate-pulse' 
+                    : ''
+                }`}
                 aria-label={filtersExpanded ? "Ocultar filtros" : "Mostrar filtros"}
                 aria-expanded={filtersExpanded}
               >
-                <Info className="w-5 h-5 sm:w-4 sm:h-4" />
+                <Info className={`w-5 h-5 sm:w-4 sm:h-4 transition-all duration-300 ${
+                  highlightButton 
+                    ? 'text-[var(--color-primary)] scale-125' 
+                    : ''
+                }`} />
                 {filtersExpanded ? (
                   <span className="hidden sm:inline ml-0.5">Ocultar</span>
                 ) : (

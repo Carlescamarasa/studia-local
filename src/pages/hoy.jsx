@@ -266,7 +266,9 @@ function HoyPageContent() {
       
       return tieneSemanaValida;
     } catch (error) {
-      console.warn('Error calculando offset de semana:', error, a);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[hoy.jsx] Error calculando offset de semana:', error, a);
+      }
       return false;
     }
   });
@@ -290,7 +292,9 @@ function HoyPageContent() {
         });
       }
     } catch (error) {
-      console.warn('Error calculando semanaDelPlan:', error, asignacionActiva);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[hoy.jsx] Error calculando semanaDelPlan:', error, asignacionActiva);
+      }
       semanaDelPlan = null;
     }
   } else {
@@ -719,7 +723,11 @@ function HoyPageContent() {
       });
       setRegistroSesionId(nuevoRegistro.id);
     } catch (error) {
-      console.error("Error creando registro:", error);
+      console.error('[hoy.jsx] Error creando registro de sesión:', {
+        error: error?.message || error,
+        code: error?.code,
+        asignacionId: asignacionActiva?.id,
+      });
     }
 
     const timestampInicio = Date.now();
@@ -1030,7 +1038,9 @@ function HoyPageContent() {
               const registroExistente = await localDataClient.entities.RegistroSesion.get(registroSesionId);
               
               if (!registroExistente) {
-                console.warn('[hoy.jsx] El registro de sesión no existe, no se puede actualizar:', registroSesionId);
+                if (process.env.NODE_ENV === 'development') {
+                  console.warn('[hoy.jsx] El registro de sesión no existe, no se puede actualizar:', registroSesionId);
+                }
                 return;
               }
               
@@ -1040,26 +1050,19 @@ function HoyPageContent() {
                 console.log('[hoy.jsx] Registro de sesión actualizado correctamente');
               }
             } catch (error) {
-              console.error("Error guardando feedback:", error);
-              if (error?.message) {
-                console.error("Mensaje de error:", error.message);
-              }
-              if (error?.code) {
-                console.error("Código de error:", error.code);
-              }
-              if (error?.details) {
-                console.error("Detalles:", error.details);
-              }
-              if (error?.hint) {
-                console.error("Hint:", error.hint);
-              }
-              // Mostrar el error completo para debugging
-              if (process.env.NODE_ENV === 'development') {
-                console.error("Error completo:", JSON.stringify(error, null, 2));
-              }
+              console.error('[hoy.jsx] Error guardando feedback:', {
+                error: error?.message || error,
+                code: error?.code,
+                details: error?.details,
+                hint: error?.hint,
+                registroSesionId,
+                ...(process.env.NODE_ENV === 'development' && { fullError: error }),
+              });
             }
           } else {
-            console.warn('[hoy.jsx] No hay registroSesionId, no se puede guardar el feedback');
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('[hoy.jsx] No hay registroSesionId, no se puede guardar el feedback');
+            }
           }
         }}
       />

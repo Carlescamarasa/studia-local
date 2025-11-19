@@ -144,17 +144,19 @@ function AgendaPageContent() {
         }
         return resultado;
       } catch (error) {
-        console.error('[agenda.jsx] Error al crear feedback:', error);
-        console.error('[agenda.jsx] Detalles del error:', {
+        console.error('[agenda.jsx] Error al crear feedback:', {
+          error: error?.message || error,
           code: error?.code,
-          message: error?.message,
           status: error?.status,
           details: error?.details,
+          data,
         });
         
         // Si es error 409, buscar el feedback existente directamente en la BD
         if (error?.code === '23505' || error?.message?.includes('duplicate') || error?.status === 409) {
-          console.log('[agenda.jsx] Error 409 detectado, buscando feedback existente...');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[agenda.jsx] Error 409 detectado, buscando feedback existente...');
+          }
           // Buscar el feedback existente directamente en la base de datos
           try {
             const feedbacksExistentes = await localDataClient.entities.FeedbackSemanal.filter({
@@ -165,14 +167,21 @@ function AgendaPageContent() {
             
             if (feedbacksExistentes && feedbacksExistentes.length > 0) {
               const feedbackExistente = feedbacksExistentes[0];
-              console.log('[agenda.jsx] Feedback existente encontrado, actualizando:', feedbackExistente.id);
+              if (process.env.NODE_ENV === 'development') {
+                console.log('[agenda.jsx] Feedback existente encontrado, actualizando:', feedbackExistente.id);
+              }
               // Actualizar el feedback existente
               return await localDataClient.entities.FeedbackSemanal.update(feedbackExistente.id, data);
             } else {
-              console.warn('[agenda.jsx] Error 409 pero no se encontró feedback en BD');
+              if (process.env.NODE_ENV === 'development') {
+                console.warn('[agenda.jsx] Error 409 pero no se encontró feedback en BD');
+              }
             }
           } catch (searchError) {
-            console.error('[agenda.jsx] Error buscando feedback existente:', searchError);
+            console.error('[agenda.jsx] Error buscando feedback existente:', {
+              error: searchError?.message || searchError,
+              code: searchError?.code,
+            });
           }
         }
         // Si no es 409 o no se encontró, relanzar el error
@@ -185,7 +194,11 @@ function AgendaPageContent() {
       setFeedbackDrawer(null);
     },
     onError: (error) => {
-      console.error('[agenda.jsx] Error final guardando feedback:', error);
+      console.error('[agenda.jsx] Error final guardando feedback:', {
+        error: error?.message || error,
+        code: error?.code,
+        status: error?.status,
+      });
       let errorMsg = '❌ Error al guardar feedback. Inténtalo de nuevo.';
       
       // Mensajes específicos según el tipo de error
@@ -215,12 +228,12 @@ function AgendaPageContent() {
         }
         return resultado;
       } catch (error) {
-        console.error('[agenda.jsx] Error al actualizar feedback:', error);
-        console.error('[agenda.jsx] Detalles del error:', {
+        console.error('[agenda.jsx] Error al actualizar feedback:', {
+          error: error?.message || error,
           code: error?.code,
-          message: error?.message,
           status: error?.status,
           details: error?.details,
+          id,
         });
         throw error;
       }
@@ -231,7 +244,11 @@ function AgendaPageContent() {
       setFeedbackDrawer(null);
     },
     onError: (error) => {
-      console.error('[agenda.jsx] Error final actualizando feedback:', error);
+      console.error('[agenda.jsx] Error final actualizando feedback:', {
+        error: error?.message || error,
+        code: error?.code,
+        status: error?.status,
+      });
       let errorMsg = '❌ Error al actualizar feedback. Inténtalo de nuevo.';
       
       // Mensajes específicos según el tipo de error
@@ -420,7 +437,9 @@ function AgendaPageContent() {
           }
         }
       } catch (error) {
-        console.warn('[agenda.jsx] Error buscando feedback en BD:', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[agenda.jsx] Error buscando feedback en BD:', error);
+        }
         // Continuar con el flujo normal si falla la búsqueda
       }
     }

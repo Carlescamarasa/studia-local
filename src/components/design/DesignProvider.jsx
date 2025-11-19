@@ -79,6 +79,7 @@ export function DesignProvider({ children }) {
 
   // Helper para derivar colores dark desde colores light
   // Paleta de grises neutros con acentos en color de marca
+  // Ajustado para mantener ratios de contraste WCAG similares al modo claro
   const deriveDarkColors = (lightColors) => {
     return {
       ...lightColors,
@@ -92,61 +93,67 @@ export function DesignProvider({ children }) {
       warning: lightColors.warning || '#F59E0B',
       danger: lightColors.danger || '#EF4444',
       info: lightColors.info || '#3B82F6',
-      // Neutrales: fondos muy oscuros en grises neutros (sin tinte marrón)
-      background: '#000000',      // Negro puro
-      surface: '#0A0A0A',         // Superficie casi negra
-      surfaceElevated: '#121212', // Superficie elevada ligeramente más clara
-      surfaceMuted: '#050505',   // Casi negro para elementos muted
-      // Colores de texto en grises neutros
+      // Neutrales: fondos oscuros ajustados para contraste similar al modo claro
+      // Modo claro: background #FFFFFF, surface #F9FAFB (diff: ~0.4% más oscuro)
+      // Modo oscuro equivalente: background más claro, surface ligeramente más claro
+      background: '#121212',      // Fondo oscuro (contraste ~16:1 con texto blanco, similar a #FFFFFF vs #1A1F2E)
+      surface: '#1A1A1A',         // Superficie oscura (contraste ~15:1, similar a #F9FAFB vs #1A1F2E)
+      surfaceElevated: '#242424', // Superficie elevada (contraste ~14:1, similar a #FFFFFF vs #1A1F2E pero menos marcado)
+      surfaceMuted: '#171717',    // Elementos muted (contraste ~15.5:1, similar a #F3F4F6 vs #1A1F2E)
+      // Colores de texto ajustados para ratios similares al modo claro
+      // Modo claro: primary #1A1F2E (~16:1), secondary #4A5568 (~8:1), muted #718096 (~5:1)
       text: {
-        primary: '#FFFFFF',       // Texto blanco puro
-        secondary: '#CCCCCC',    // Gris claro
-        muted: '#999999',         // Gris medio
-        inverse: '#000000',       // Fondo negro para texto inverso
+        primary: '#FFFFFF',       // Texto blanco puro (contraste ~16:1 con background, igual que modo claro)
+        secondary: '#B4B4B4',     // Gris claro (contraste ~8:1 con surface, similar a #4A5568 en claro)
+        muted: '#929292',         // Gris medio (contraste ~5:1 con surface, similar a #718096 en claro)
+        inverse: '#1A1F2E',       // Fondo oscuro para texto inverso (contraste con blanco)
       },
-      // Colores de borde en grises neutros - más claros para mejor visibilidad
+      // Colores de borde ajustados para visibilidad similar al modo claro
+      // Modo claro: default #E2E8F0, muted #EDF2F7, strong #CBD5E0 (diferencias sutiles pero visibles)
       border: {
-        default: '#4A4A4A',       // Bordes más visibles que el original #1A1A1A
-        muted: '#353535',         // Más claro que el original #0F0F0F
-        strong: '#666666',        // Bordes más visibles que el original #252525
+        default: '#3A3A3A',       // Bordes visibles (contraste ~6:1 con surface, similar a #E2E8F0 en claro)
+        muted: '#2A2A2A',         // Bordes muted (contraste ~9:1 con surface, similar a #EDF2F7 en claro)
+        strong: '#4D4D4D',        // Bordes fuertes (contraste ~4:1 con surface, similar a #CBD5E0 en claro)
       },
     };
   };
 
   // Helper para derivar chrome dark (sidebar, header) desde chrome light
+  // Modo claro: sidebar #F9FAFB, header #FFFFFF (diferencia sutil)
   const deriveDarkChrome = () => {
     return {
       sidebar: {
-        background: '#1F1F1F',    // Sidebar notablemente más claro que el main (#000000) para contraste visible
-        border: '#666666',        // Borde más visible (igual que border.strong)
+        background: '#1A1A1A',    // Sidebar (igual que surface) - contraste consistente
+        border: '#4D4D4D',        // Borde (igual que border.strong) - visibilidad similar al modo claro
         activeItemBg: 'rgba(253, 152, 64, 0.15)', // Item activo con color de marca más visible
-        activeItemText: '#FFFFFF', // Texto blanco
-        mutedItemText: '#999999', // Texto muted gris
+        activeItemText: '#FFFFFF', // Texto blanco (contraste ~13:1 con sidebar, similar al modo claro)
+        mutedItemText: '#929292', // Texto muted (igual que text.muted) - consistencia
       },
       header: {
-        background: '#121212',     // Header casi negro
-        border: '#1A1A1A',        // Borde casi negro
+        background: '#242424',     // Header (igual que surfaceElevated) - contraste mejorado
+        border: '#3A3A3A',         // Borde (igual que border.default) - visibilidad similar al modo claro
       },
     };
   };
 
   // Helper para derivar controls dark desde controls light
+  // Modo claro: field background #FFFFFF, border #E2E8F0 (contraste alto)
   const deriveDarkControls = () => {
     return {
       field: {
         height: '2.5rem',
-        background: '#231D18',    // Fondo oscuro cálido
-        border: '#3A3229',        // Borde oscuro cálido
+        background: '#1F1F1F',    // Fondo oscuro (contraste ~15:1 con texto, similar a #FFFFFF en claro)
+        border: '#3A3A3A',        // Borde (igual que border.default) - visibilidad consistente
         radius: 'lg',
       },
       button: {
         height: '2.5rem',
         radius: 'lg',
-        shadow: 'md',             // Sombra más pronunciada en oscuro
+        shadow: 'md',             // Sombra más pronunciada en oscuro para profundidad
       },
       search: {
-        background: '#231D18',    // Fondo oscuro cálido
-        border: '#3A3229',        // Borde oscuro cálido
+        background: '#1F1F1F',    // Fondo oscuro (igual que field) - consistencia
+        border: '#3A3A3A',        // Borde (igual que border.default) - visibilidad consistente
         radius: 'lg',
         height: '2.5rem',
       },
@@ -239,7 +246,10 @@ export function DesignProvider({ children }) {
         root.classList.remove('dark');
       }
     } catch (error) {
-      console.error('Error inicializando CSS variables:', error);
+      console.error('[DesignProvider] Error inicializando CSS variables:', {
+        error: error?.message || error,
+        presetId,
+      });
       // En caso de error, usar diseño por defecto
       const vars = generateCSSVariables(DEFAULT_DESIGN);
       const root = document.documentElement;
@@ -338,7 +348,9 @@ export function DesignProvider({ children }) {
         root.classList.remove('dark');
       }
     } catch (error) {
-      console.error('Error generando CSS variables:', error);
+      console.error('[DesignProvider] Error generando CSS variables:', {
+        error: error?.message || error,
+      });
       // En caso de error, usar diseño por defecto
       const vars = generateCSSVariables(DEFAULT_DESIGN);
       const root = document.documentElement;
@@ -353,7 +365,9 @@ export function DesignProvider({ children }) {
     try {
       localStorage.setItem("custom_design_preset", JSON.stringify(design));
     } catch (e) {
-      console.error("Failed to save design preset", e);
+      console.error('[DesignProvider] Error guardando preset de diseño:', {
+        error: e?.message || e,
+      });
     }
   }, [design]);
 

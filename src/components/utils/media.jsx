@@ -251,11 +251,13 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
       'https://example.com/unknown-link',
     ];
 
-    console.group('🔍 Media Resolution Tests');
-    tests.forEach(url => {
-      const result = resolveMedia(url);
-      console.log(`${url}\n→`, result);
-    });
-    console.groupEnd();
+    if (process.env.NODE_ENV === 'development') {
+      console.group('🔍 Media Resolution Tests');
+      tests.forEach(url => {
+        const result = resolveMedia(url);
+        console.log(`${url}\n→`, result);
+      });
+      console.groupEnd();
+    }
   };
 }

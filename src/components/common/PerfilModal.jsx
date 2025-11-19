@@ -305,7 +305,10 @@ export default function PerfilModal({
       setIsEditingPhone(false);
       toast.success('Teléfono guardado correctamente');
     } catch (error) {
-      console.error('Error al guardar teléfono:', error);
+      console.error('[PerfilModal] Error al guardar teléfono:', {
+        error: error?.message || error,
+        code: error?.code,
+      });
       toast.error(`Error al guardar el teléfono: ${error.message || 'Error desconocido'}`);
     }
   };
@@ -601,7 +604,9 @@ export default function PerfilModal({
                                   </a>
                                 );
                               } catch (error) {
-                                console.error('Error al generar link de WhatsApp:', error);
+                                if (process.env.NODE_ENV === 'development') {
+                                  console.error('[PerfilModal] Error al generar link de WhatsApp:', error);
+                                }
                                 return null;
                               }
                             })()}

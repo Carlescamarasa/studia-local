@@ -48,7 +48,10 @@ export default function LocalPage() {
         window.location.reload();
       }, 2000);
     } catch (error) {
-      console.error('Error regenerando datos:', error);
+      console.error('[local.jsx] Error regenerando datos:', {
+        error: error?.message || error,
+        code: error?.code,
+      });
       toast.error(`❌ Error: ${error.message}`);
       setIsRegenerating(false);
     }
@@ -60,7 +63,10 @@ export default function LocalPage() {
       printValidationReport();
       toast.success('✅ Validación completada. Revisa la consola para ver el reporte.');
     } catch (error) {
-      console.error('Error validando datos:', error);
+      console.error('[local.jsx] Error validando datos:', {
+        error: error?.message || error,
+        code: error?.code,
+      });
       toast.error(`❌ Error: ${error.message}`);
     } finally {
       setIsValidating(false);
@@ -83,7 +89,10 @@ export default function LocalPage() {
         window.location.reload();
       }, 2000);
     } catch (error) {
-      console.error('Error reparando datos:', error);
+      console.error('[local.jsx] Error reparando datos:', {
+        error: error?.message || error,
+        code: error?.code,
+      });
       toast.error(`❌ Error: ${error.message}`);
       setIsRepairing(false);
     }

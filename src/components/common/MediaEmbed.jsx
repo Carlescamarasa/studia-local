@@ -67,7 +67,9 @@ export default function MediaEmbed({ url, className = '', open = false }) {
             allow="autoplay"
             aria-label="Reproductor de SoundCloud"
             onError={(e) => {
-              console.warn('Error cargando SoundCloud embed:', e);
+              if (process.env.NODE_ENV === 'development') {
+                console.warn('[MediaEmbed] Error cargando SoundCloud embed:', e);
+              }
             }}
           />
           {/* Fallback: enlace directo si el iframe falla */}

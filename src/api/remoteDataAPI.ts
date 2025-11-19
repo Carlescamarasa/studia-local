@@ -443,7 +443,12 @@ export function createRemoteDataAPI(): AppDataAPI {
         );
         
         if (error) {
-          console.error('❌ Error al leer profiles:', error);
+          console.error('[remoteDataAPI] Error al leer profiles:', {
+            error: error?.message || error,
+            code: error?.code,
+            status: error?.status,
+            details: error?.details,
+          });
           throw error;
         }
         
@@ -661,7 +666,12 @@ export function createRemoteDataAPI(): AppDataAPI {
         );
         
         if (error) {
-          console.error('❌ Error al actualizar usuario:', error);
+          console.error('[remoteDataAPI] Error al actualizar usuario:', {
+            error: error?.message || error,
+            code: error?.code,
+            status: error?.status,
+            id,
+          });
           throw error;
         }
         
@@ -879,7 +889,12 @@ export function createRemoteDataAPI(): AppDataAPI {
           .single();
         
         if (error) {
-          console.error('[remoteDataAPI] Error al actualizar bloque:', error);
+          console.error('[remoteDataAPI] Error al actualizar bloque:', {
+            error: error?.message || error,
+            code: error?.code,
+            status: error?.status,
+            id,
+          });
           throw error;
         }
         
@@ -1163,7 +1178,12 @@ export function createRemoteDataAPI(): AppDataAPI {
           .single();
         
         if (error) {
-          console.error('Error de Supabase al crear asignación:', error);
+          console.error('[remoteDataAPI] Error al crear asignación:', {
+            error: error?.message || error,
+            code: error?.code,
+            status: error?.status,
+            details: error?.details,
+          });
           throw error;
         }
         
@@ -1275,22 +1295,28 @@ export function createRemoteDataAPI(): AppDataAPI {
           .single();
         
         if (error) {
-          console.error('[remoteDataAPI] Error al actualizar asignación:', error);
+          const errorContext = {
+            error: error?.message || error,
+            code: error?.code,
+            status: error?.status,
+            details: error?.details,
+            id,
+          };
+          
+          console.error('[remoteDataAPI] Error al actualizar asignación:', errorContext);
+          
           // Mejorar mensajes de error específicos
           if (error.code === 'PGRST204' || error.code === '406') {
             const errorMsg = 'Error 406 (Not Acceptable): El servidor rechazó la actualización. Verifica que los campos enviados sean válidos y modificables.';
-            console.error('[remoteDataAPI]', errorMsg);
             throw new Error(errorMsg);
           }
           if (error.code === 'PGRST116') {
             // Error: no se encontró la fila o no se pudo devolver
             const errorMsg = 'Error: No se pudo actualizar la asignación. Verifica que el ID sea válido y que tengas permisos para actualizarla.';
-            console.error('[remoteDataAPI]', errorMsg);
             throw new Error(errorMsg);
           }
           if (error.code === 'PGRST301' || error.code === '23503') {
             const errorMsg = 'Error de integridad referencial: Verifica que las referencias (alumnoId, profesorId, piezaId, planId) existan en la base de datos.';
-            console.error('[remoteDataAPI]', errorMsg);
             throw new Error(errorMsg);
           }
           throw error;
