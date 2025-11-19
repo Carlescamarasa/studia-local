@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { isAuthError } from '@/lib/authHelpers';
 
 const AuthContext = createContext(undefined);
 
@@ -34,6 +35,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const fetchingProfileRef = useRef(false);
   const currentUserIdRef = useRef(null);
+  const sessionCheckIntervalRef = useRef(null);
   
   // Calcular appRole basándose en el email del usuario
   const appRole = useMemo(() => {
@@ -109,6 +111,38 @@ export function AuthProvider({ children }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
       
+      // Manejar eventos específicos de expiración
+      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        if (event === 'SIGNED_OUT') {
+          // Sesión cerrada explícitamente o expirada
+          setUser(null);
+          setProfile(null);
+          currentUserIdRef.current = null;
+          fetchingProfileRef.current = false;
+          setLoading(false);
+          return;
+        } else if (event === 'TOKEN_REFRESHED') {
+          // Token refrescado - verificar que la sesión sigue válida
+          if (session?.user) {
+            setUser(session.user);
+            setLoading(false);
+            if (session.user.id) {
+              fetchProfile(session.user.id).catch(err => {
+                console.error('Error obteniendo perfil después de refresh:', err);
+              });
+            }
+          } else {
+            // Token refrescado pero no hay sesión válida - limpiar
+            setUser(null);
+            setProfile(null);
+            currentUserIdRef.current = null;
+            fetchingProfileRef.current = false;
+            setLoading(false);
+          }
+          return;
+        }
+      }
+      
       // Si no hay sesión (sesión expirada o usuario cerrado sesión), limpiar estado
       if (!session) {
         setUser(null);
@@ -135,11 +169,78 @@ export function AuthProvider({ children }) {
       }
     });
 
+    // Escuchar eventos de error de autenticación desde remoteDataAPI
+    const handleAuthErrorEvent = async (event) => {
+      if (!isMounted) return;
+      const error = event.detail?.error;
+      if (error && isAuthError(error)) {
+        // Forzar cierre de sesión cuando se detecta error de autenticación
+        setUser(null);
+        setProfile(null);
+        currentUserIdRef.current = null;
+        fetchingProfileRef.current = false;
+        setLoading(false);
+        try {
+          await supabase.auth.signOut();
+        } catch (signOutError) {
+          // Ignorar errores al cerrar sesión
+        }
+      }
+    };
+
+    window.addEventListener('auth-error', handleAuthErrorEvent);
+
+    // Verificación periódica de sesión (cada 5 minutos)
+    sessionCheckIntervalRef.current = setInterval(async () => {
+      if (!isMounted) return;
+      
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error && isAuthError(error)) {
+          // Sesión expirada - limpiar estado
+          setUser(null);
+          setProfile(null);
+          currentUserIdRef.current = null;
+          fetchingProfileRef.current = false;
+          setLoading(false);
+          return;
+        }
+        
+        // Si no hay sesión pero tenemos usuario en estado, limpiar
+        if (!session && user) {
+          setUser(null);
+          setProfile(null);
+          currentUserIdRef.current = null;
+          fetchingProfileRef.current = false;
+          setLoading(false);
+        } else if (session?.user && (!user || user.id !== session.user.id)) {
+          // Si hay sesión pero el usuario cambió, actualizar
+          setUser(session.user);
+          if (session.user.id) {
+            fetchProfile(session.user.id).catch(err => {
+              console.error('Error obteniendo perfil en verificación periódica:', err);
+            });
+          }
+        }
+      } catch (err) {
+        // Error al verificar sesión - no hacer nada para no interrumpir la experiencia
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[AuthProvider] Error en verificación periódica de sesión:', err);
+        }
+      }
+    }, 5 * 60 * 1000); // 5 minutos
+
     return () => {
       isMounted = false;
       subscription.unsubscribe();
+      window.removeEventListener('auth-error', handleAuthErrorEvent);
+      if (sessionCheckIntervalRef.current) {
+        clearInterval(sessionCheckIntervalRef.current);
+        sessionCheckIntervalRef.current = null;
+      }
     };
-  }, []);
+  }, [user]);
 
   const signIn = useCallback(async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -188,10 +289,65 @@ export function AuthProvider({ children }) {
     }
     
     // Limpiar perfil al cerrar sesión (siempre, incluso si falló el signOut)
+    setUser(null);
     setProfile(null);
     fetchingProfileRef.current = false;
     currentUserIdRef.current = null;
   }, []);
+
+  // Función para verificar manualmente la sesión
+  const checkSession = useCallback(async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error && isAuthError(error)) {
+        // Sesión expirada - limpiar estado
+        setUser(null);
+        setProfile(null);
+        currentUserIdRef.current = null;
+        fetchingProfileRef.current = false;
+        setLoading(false);
+        return false;
+      }
+      
+      if (!session) {
+        // No hay sesión - limpiar si tenemos usuario en estado
+        if (user) {
+          setUser(null);
+          setProfile(null);
+          currentUserIdRef.current = null;
+          fetchingProfileRef.current = false;
+          setLoading(false);
+        }
+        return false;
+      }
+      
+      // Hay sesión válida - actualizar estado si es necesario
+      if (!user || user.id !== session.user.id) {
+        setUser(session.user);
+        if (session.user.id) {
+          await fetchProfile(session.user.id);
+        }
+      }
+      
+      return true;
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[AuthProvider] Error al verificar sesión:', err);
+      }
+      return false;
+    }
+  }, [user, fetchProfile]);
+
+  // Función para manejar errores de autenticación
+  const handleAuthError = useCallback(async (error) => {
+    if (!isAuthError(error)) {
+      return;
+    }
+    
+    // Forzar cierre de sesión
+    await signOut();
+  }, [signOut]);
 
   // Usar useMemo para estabilizar el valor del contexto
   const value = useMemo(() => ({
@@ -201,7 +357,9 @@ export function AuthProvider({ children }) {
     loading,
     signIn,
     signOut,
-  }), [user, profile, appRole, loading, signIn, signOut]);
+    checkSession,
+    handleAuthError,
+  }), [user, profile, appRole, loading, signIn, signOut, checkSession, handleAuthError]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

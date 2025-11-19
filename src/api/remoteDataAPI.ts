@@ -7,6 +7,7 @@
 
 import type { AppDataAPI } from './appDataAPI';
 import { supabase } from '@/lib/supabaseClient';
+import { isAuthError } from '@/lib/authHelpers';
 import type {
   StudiaUser,
   Pieza,
@@ -351,6 +352,53 @@ function normalizeSupabaseUser(user: any, email?: string): any {
 }
 
 /**
+ * Wrapper para interceptar errores de autenticación en llamadas a Supabase
+ * Detecta errores 401/403 y dispara un evento personalizado para que AuthProvider pueda reaccionar
+ */
+async function withAuthErrorHandling<T>(
+  promise: Promise<{ data: T | null; error: any }>
+): Promise<{ data: T | null; error: any }> {
+  try {
+    const result = await promise;
+    
+    // Si hay error y es de autenticación, disparar evento
+    if (result.error && isAuthError(result.error)) {
+      // Disparar evento personalizado para que AuthProvider lo escuche
+      window.dispatchEvent(new CustomEvent('auth-error', { 
+        detail: { error: result.error } 
+      }));
+    }
+    
+    return result;
+  } catch (error: any) {
+    // Si es un error de autenticación, disparar evento
+    if (isAuthError(error)) {
+      window.dispatchEvent(new CustomEvent('auth-error', { 
+        detail: { error } 
+      }));
+    }
+    throw error;
+  }
+}
+
+/**
+ * Wrapper para operaciones que pueden lanzar errores directamente
+ */
+async function wrapSupabaseCall<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error: any) {
+    if (isAuthError(error)) {
+      // Disparar evento personalizado para que AuthProvider lo escuche
+      window.dispatchEvent(new CustomEvent('auth-error', { 
+        detail: { error } 
+      }));
+    }
+    throw error;
+  }
+}
+
+/**
  * Obtiene emails de usuarios desde auth.users usando Admin API o función SQL
  * Por ahora, retornamos un mapa vacío ya que no tenemos acceso directo a auth.users
  * desde el cliente. Los emails se obtendrán del usuario autenticado cuando coincidan.
@@ -369,7 +417,7 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
   // Para obtener emails de todos los usuarios, se requiere una función SQL
   // o usar el Admin API con permisos service_role
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
     if (user && user.id && userIds.includes(user.id)) {
       emailMap.set(user.id, user.email || '');
     }
@@ -388,9 +436,11 @@ export function createRemoteDataAPI(): AppDataAPI {
     usuarios: {
       list: async () => {
         // Obtener perfiles desde Supabase - INCLUIR EXPLÍCITAMENTE el campo role
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at');
+        const { data, error } = await withAuthErrorHandling(
+          supabase
+            .from('profiles')
+            .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at')
+        );
         
         if (error) {
           console.error('❌ Error al leer profiles:', error);
@@ -454,11 +504,13 @@ export function createRemoteDataAPI(): AppDataAPI {
         });
       },
       get: async (id: string) => {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', id)
-          .single();
+        const { data, error } = await withAuthErrorHandling(
+          supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', id)
+            .single()
+        );
         
         if (error) {
           if (error.code === 'PGRST116') return null; // No encontrado
@@ -478,7 +530,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         // Intentar obtener email del usuario autenticado si coincide
         let email: string | undefined = undefined;
         try {
-          const { data: { user } } = await supabase.auth.getUser();
+          const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
           if (user && user.id === id) {
             email = user.email || undefined;
           }
@@ -511,14 +563,14 @@ export function createRemoteDataAPI(): AppDataAPI {
           query = query.limit(limit);
         }
         
-        const { data, error } = await query;
+        const { data, error } = await withAuthErrorHandling(query);
         if (error) throw error;
         
         // Obtener email e ID del usuario autenticado si existe
         let currentUserEmail: string | null = null;
         let currentUserId: string | null = null;
         try {
-          const { data: { user } } = await supabase.auth.getUser();
+          const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
           currentUserEmail = user?.email || null;
           currentUserId = user?.id || null;
         } catch (e) {
@@ -557,11 +609,13 @@ export function createRemoteDataAPI(): AppDataAPI {
       },
       create: async (data) => {
         const snakeData = camelToSnake(data);
-        const { data: result, error } = await supabase
-          .from('profiles')
-          .insert(snakeData)
-          .select()
-          .single();
+        const { data: result, error } = await withAuthErrorHandling(
+          supabase
+            .from('profiles')
+            .insert(snakeData)
+            .select()
+            .single()
+        );
         
         if (error) throw error;
         
@@ -597,12 +651,14 @@ export function createRemoteDataAPI(): AppDataAPI {
         // mediaLinks no se guarda en profiles (no existe la columna en Supabase)
         // Se mantiene solo para compatibilidad local
         
-        const { data, error } = await supabase
-          .from('profiles')
-          .update(supabaseUpdates)
-          .eq('id', id)
-          .select()
-          .single();
+        const { data, error } = await withAuthErrorHandling(
+          supabase
+            .from('profiles')
+            .update(supabaseUpdates)
+            .eq('id', id)
+            .select()
+            .single()
+        );
         
         if (error) {
           console.error('❌ Error al actualizar usuario:', error);
@@ -623,7 +679,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         let email: string | undefined = updates.email;
         if (!email) {
           try {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
             if (user && user.id === id) {
               email = user.email || undefined;
             }
@@ -646,10 +702,12 @@ export function createRemoteDataAPI(): AppDataAPI {
         return normalized;
       },
       delete: async (id: string) => {
-        const { error } = await supabase
-          .from('profiles')
-          .delete()
-          .eq('id', id);
+        const { error } = await withAuthErrorHandling(
+          supabase
+            .from('profiles')
+            .delete()
+            .eq('id', id)
+        );
         
         if (error) throw error;
         return { success: true };

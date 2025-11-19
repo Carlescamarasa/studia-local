@@ -10,6 +10,7 @@ import {
   Link as LinkIcon,
   ExternalLink
 } from 'lucide-react';
+import AudioPlayer from './AudioPlayer';
 
 /**
  * Componente que renderiza un medio embebido según su tipo
@@ -98,17 +99,7 @@ export default function MediaEmbed({ url, className = '', open = false }) {
 
     case MediaKind.AUDIO:
       return (
-        <div className={`w-full bg-[var(--color-surface-muted)] rounded-lg p-4 ${className}`}>
-          <audio
-            controls
-            src={media.embedUrl}
-            className="w-full"
-            preload="metadata"
-            aria-label="Reproductor de audio"
-          >
-            Tu navegador no soporta el elemento audio.
-          </audio>
-        </div>
+        <AudioPlayer url={media.embedUrl || media.originalUrl} className={className} />
       );
 
     case MediaKind.VIDEO:

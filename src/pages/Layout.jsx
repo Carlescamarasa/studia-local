@@ -31,6 +31,7 @@ import { useLocalData } from "@/local-data/LocalDataProvider";
 import logoLTS from "@/assets/Logo_LTS.png";
 import RoleBootstrap from "@/components/auth/RoleBootstrap";
 import { useAuth } from "@/auth/AuthProvider";
+import { isAuthError } from "@/lib/authHelpers";
 import { SidebarProvider, useSidebar } from "@/components/ui/SidebarState";
 import {
   Tooltip,
@@ -89,7 +90,7 @@ function LayoutContent() {
   const navigate = useNavigate();
   const { abierto, toggleSidebar, closeSidebar } = useSidebar();
   const { usuarios } = useLocalData();
-  const { signOut, user, loading: authLoading } = useAuth();
+  const { signOut, user, loading: authLoading, checkSession, handleAuthError } = useAuth();
 
   const [pointerStart, setPointerStart] = useState({ x: 0, y: 0, id: null });
   const [isMobile, setIsMobile] = useState(false);
@@ -248,6 +249,39 @@ function LayoutContent() {
       navigate('/login', { replace: true });
     }
   }, [user, authLoading, location.pathname, navigate]);
+
+  // Verificación proactiva de sesión usando checkSession
+  useEffect(() => {
+    // Solo verificar si hay usuario (si no hay usuario, RequireAuth ya maneja la redirección)
+    if (!user || authLoading || !checkSession) {
+      return;
+    }
+
+    // Verificar sesión periódicamente (cada 2 minutos) como respaldo adicional
+    const sessionCheckInterval = setInterval(async () => {
+      try {
+        const isValid = await checkSession();
+        if (!isValid && location.pathname !== '/login') {
+          // Sesión inválida - redirigir
+          navigate('/login', { replace: true });
+        }
+      } catch (error) {
+        // Si hay error de autenticación, manejarlo
+        if (error && isAuthError(error)) {
+          if (handleAuthError) {
+            await handleAuthError(error);
+          }
+          if (location.pathname !== '/login') {
+            navigate('/login', { replace: true });
+          }
+        }
+      }
+    }, 2 * 60 * 1000); // 2 minutos
+
+    return () => {
+      clearInterval(sessionCheckInterval);
+    };
+  }, [user, authLoading, location.pathname, navigate, checkSession, handleAuthError]);
 
   const onMenuItemClick = () => {
     if (isMobile) closeSidebar();
