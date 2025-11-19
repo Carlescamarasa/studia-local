@@ -61,8 +61,25 @@ export default function MediaEmbed({ url, className = '', open = false }) {
             src={media.embedUrl}
             title={media.title}
             height="166"
+            scrolling="no"
+            frameBorder="no"
+            allow="autoplay"
             aria-label="Reproductor de SoundCloud"
+            onError={(e) => {
+              console.warn('Error cargando SoundCloud embed:', e);
+            }}
           />
+          {/* Fallback: enlace directo si el iframe falla */}
+          <div className="mt-2 text-center">
+            <a
+              href={media.originalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:text-blue-700 underline"
+            >
+              Abrir en SoundCloud
+            </a>
+          </div>
         </div>
       );
 

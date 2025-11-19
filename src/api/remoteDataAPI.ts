@@ -185,6 +185,57 @@ function generateId(prefix: string = 'item'): string {
 }
 
 /**
+ * Resuelve el plan para una asignación usando la arquitectura híbrida:
+ * - Si plan_adaptado existe → usar plan_adaptado (snapshot adaptado)
+ * - Si no, y plan_id existe → buscar en planesList o cargar desde BD (referencia)
+ * - Si no, y plan existe (legacy) → usar plan (compatibilidad)
+ */
+async function resolvePlanForAsignacion(
+  asignacion: any, 
+  planesList?: Plan[]
+): Promise<Plan | null> {
+  // Prioridad 1: plan_adaptado (snapshot adaptado)
+  if (asignacion.planAdaptado) {
+    return asignacion.planAdaptado;
+  }
+  
+  // Prioridad 2: plan_id (referencia a plantilla)
+  if (asignacion.planId) {
+    // Si tenemos la lista de planes, buscar ahí primero
+    if (planesList) {
+      const plan = planesList.find(p => p.id === asignacion.planId);
+      if (plan) return plan;
+    }
+    
+    // Si no está en la lista, cargar desde BD
+    try {
+      const { data, error } = await supabase
+        .from('planes')
+        .select('*')
+        .eq('id', asignacion.planId)
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') return null;
+        throw error;
+      }
+      
+      return snakeToCamel<Plan>(data);
+    } catch (error) {
+      console.warn('[resolvePlanForAsignacion] Error al cargar plan por ID:', error);
+      return null;
+    }
+  }
+  
+  // Prioridad 3: plan (legacy, compatibilidad)
+  if (asignacion.plan) {
+    return asignacion.plan;
+  }
+  
+  return null;
+}
+
+/**
  * Helper para serializar campos JSON específicos antes de enviar a Supabase
  */
 function serializeJsonFields(data: any, jsonFields: string[]): any {
@@ -890,12 +941,46 @@ export function createRemoteDataAPI(): AppDataAPI {
         
         const { data, error } = await query;
         if (error) throw error;
-        // Deserializar campos JSON después de leer
-        return (data || []).map((a: any) => {
+        
+        // Cargar todos los planes necesarios de una vez para eficiencia
+        const asignacionesParsed = (data || []).map((a: any) => {
           const parsed = snakeToCamel<Asignacion>(a);
-          const normalized = normalizeAsignacionISO(parsed);
-          return deserializeJsonFields(normalized, ['plan', 'piezaSnapshot']);
+          return normalizeAsignacionISO(parsed);
         });
+        
+        // Obtener todos los planIds únicos que necesitamos cargar
+        const planIdsNecesarios = new Set<string>();
+        asignacionesParsed.forEach((a: any) => {
+          if (a.planId && !a.planAdaptado && !a.plan) {
+            planIdsNecesarios.add(a.planId);
+          }
+        });
+        
+        // Cargar todos los planes necesarios
+        let planesList: Plan[] = [];
+        if (planIdsNecesarios.size > 0) {
+          const { data: planesData, error: planesError } = await supabase
+            .from('planes')
+            .select('*')
+            .in('id', Array.from(planIdsNecesarios));
+          
+          if (!planesError && planesData) {
+            planesList = planesData.map((p: any) => snakeToCamel<Plan>(p));
+          }
+        }
+        
+        // Resolver planes para cada asignación
+        const asignacionesResueltas = await Promise.all(
+          asignacionesParsed.map(async (a: any) => {
+            const plan = await resolvePlanForAsignacion(a, planesList);
+            return {
+              ...deserializeJsonFields(a, ['planAdaptado', 'piezaSnapshot']),
+              plan: plan || a.plan || null, // Asegurar que siempre hay un plan
+            };
+          })
+        );
+        
+        return asignacionesResueltas;
       },
       get: async (id: string) => {
         const { data, error } = await supabase
@@ -908,10 +993,19 @@ export function createRemoteDataAPI(): AppDataAPI {
           if (error.code === 'PGRST116') return null;
           throw error;
         }
+        
         // Deserializar campos JSON después de leer
         const parsed = snakeToCamel<Asignacion>(data);
         const normalized = normalizeAsignacionISO(parsed);
-        return deserializeJsonFields(normalized, ['plan', 'piezaSnapshot']);
+        const deserialized = deserializeJsonFields(normalized, ['planAdaptado', 'piezaSnapshot']);
+        
+        // Resolver el plan
+        const plan = await resolvePlanForAsignacion(deserialized);
+        
+        return {
+          ...deserialized,
+          plan: plan || deserialized.plan || null,
+        };
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
         let query = supabase.from('asignaciones').select('*');
@@ -927,21 +1021,57 @@ export function createRemoteDataAPI(): AppDataAPI {
         
         const { data, error } = await query;
         if (error) throw error;
-        // Deserializar campos JSON después de leer
-        return (data || []).map((a: any) => {
+        
+        // Cargar todos los planes necesarios de una vez para eficiencia
+        const asignacionesParsed = (data || []).map((a: any) => {
           const parsed = snakeToCamel<Asignacion>(a);
-          const normalized = normalizeAsignacionISO(parsed);
-          return deserializeJsonFields(normalized, ['plan', 'piezaSnapshot']);
+          return normalizeAsignacionISO(parsed);
         });
+        
+        // Obtener todos los planIds únicos que necesitamos cargar
+        const planIdsNecesarios = new Set<string>();
+        asignacionesParsed.forEach((a: any) => {
+          if (a.planId && !a.planAdaptado && !a.plan) {
+            planIdsNecesarios.add(a.planId);
+          }
+        });
+        
+        // Cargar todos los planes necesarios
+        let planesList: Plan[] = [];
+        if (planIdsNecesarios.size > 0) {
+          const { data: planesData, error: planesError } = await supabase
+            .from('planes')
+            .select('*')
+            .in('id', Array.from(planIdsNecesarios));
+          
+          if (!planesError && planesData) {
+            planesList = planesData.map((p: any) => snakeToCamel<Plan>(p));
+          }
+        }
+        
+        // Resolver planes para cada asignación
+        const asignacionesResueltas = await Promise.all(
+          asignacionesParsed.map(async (a: any) => {
+            const plan = await resolvePlanForAsignacion(a, planesList);
+            return {
+              ...deserializeJsonFields(a, ['planAdaptado', 'piezaSnapshot']),
+              plan: plan || a.plan || null,
+            };
+          })
+        );
+        
+        return asignacionesResueltas;
       },
       create: async (data) => {
-        // Para campos JSONB, Supabase acepta objetos directamente, pero necesitamos
-        // convertirlos a snake_case sin serializar a string primero
-        // Extraer campos JSON antes de camelToSnake para manejarlos por separado
-        const planValue = data.plan;
+        // Arquitectura híbrida: soportar planId (referencia) o plan/planAdaptado (snapshot)
+        const planIdValue = data.planId;
+        const planValue = data.plan || data.planAdaptado; // plan es legacy, planAdaptado es nuevo
         const piezaSnapshotValue = data.piezaSnapshot;
+        
         const dataWithoutJson = { ...data };
         delete dataWithoutJson.plan;
+        delete dataWithoutJson.planAdaptado;
+        delete dataWithoutJson.planId;
         delete dataWithoutJson.piezaSnapshot;
         
         const snakeData = camelToSnake({
@@ -949,12 +1079,23 @@ export function createRemoteDataAPI(): AppDataAPI {
           id: data.id || generateId('asignacion'),
         });
         
-        // Agregar campos JSONB directamente como objetos (Supabase los maneja automáticamente)
-        if (planValue) {
-          snakeData.plan = planValue; // Mantener como objeto, Supabase lo serializa internamente
+        // Lógica híbrida:
+        // - Si planId existe: usar referencia (plan_id = planId, plan_adaptado = NULL)
+        // - Si plan/planAdaptado existe pero no planId: usar snapshot (plan_adaptado = plan, plan_id = NULL)
+        // - Si ambos existen: priorizar planId (referencia), planAdaptado como backup
+        if (planIdValue) {
+          // Usar referencia
+          snakeData.plan_id = planIdValue;
+          snakeData.plan_adaptado = null;
+        } else if (planValue) {
+          // Usar snapshot
+          snakeData.plan_adaptado = planValue;
+          snakeData.plan_id = null;
         }
+        // Si no hay ninguno, el constraint de la BD fallará (correcto)
+        
         if (piezaSnapshotValue) {
-          snakeData.pieza_snapshot = piezaSnapshotValue; // Convertir nombre a snake_case
+          snakeData.pieza_snapshot = piezaSnapshotValue;
         }
         
         const { data: result, error } = await supabase
@@ -968,32 +1109,45 @@ export function createRemoteDataAPI(): AppDataAPI {
           throw error;
         }
         
-        // Deserializar campos JSON después de leer (por si acaso vienen como strings)
+        // Deserializar y resolver el plan
         const parsed = snakeToCamel<Asignacion>(result);
         const normalized = normalizeAsignacionISO(parsed);
-        return deserializeJsonFields(normalized, ['plan', 'piezaSnapshot']);
+        const deserialized = deserializeJsonFields(normalized, ['planAdaptado', 'piezaSnapshot']);
+        
+        // Resolver el plan para retornarlo
+        const plan = await resolvePlanForAsignacion(deserialized);
+        
+        return {
+          ...deserialized,
+          plan: plan || deserialized.plan || null,
+        };
       },
       update: async (id: string, updates: any) => {
-        // Validación: plan NUNCA debe actualizarse directamente en updates parciales
-        // Solo se actualiza en create completo o si cambia piezaId (que regenera plan implícitamente)
-        if (updates.plan !== undefined) {
-          const errorMsg = 'No se puede actualizar el campo "plan" directamente en una actualización parcial. Este campo solo se actualiza al crear una asignación completa o cuando se cambia la pieza (piezaId), lo que regenera el plan automáticamente. Si necesitas cambiar el plan, crea una nueva asignación.';
-          console.warn('[remoteDataAPI]', errorMsg);
-          // Eliminar el campo plan sin lanzar error, solo mostrar advertencia
+        // Arquitectura híbrida: permitir actualizar planAdaptado o planId
+        // Manejar campo legacy 'plan' para compatibilidad
+        if (updates.plan !== undefined && updates.planAdaptado === undefined) {
+          // Si se envía 'plan' (legacy), convertirlo a planAdaptado
+          updates.planAdaptado = updates.plan;
           delete updates.plan;
         }
         
-        // Extraer campos JSON antes de camelToSnake
+        // Extraer campos especiales antes de camelToSnake
+        const planIdValue = updates.planId;
+        const planAdaptadoValue = updates.planAdaptado;
         const piezaSnapshotValue = updates.piezaSnapshot;
+        
         const updatesWithoutJson = { ...updates };
+        delete updatesWithoutJson.planId;
+        delete updatesWithoutJson.planAdaptado;
+        delete updatesWithoutJson.plan; // Legacy
         delete updatesWithoutJson.piezaSnapshot;
         
-        // Campos permitidos en update: notas, foco, estado, semana_inicio_iso, pieza_id, pieza_snapshot
-        // Validar que solo se incluyan campos modificables
+        // Campos permitidos en update
         const camposPermitidos = new Set([
           'notas', 'foco', 'estado', 'semanaInicioISO', 'semana_inicio_iso',
           'piezaId', 'pieza_id', 'piezaSnapshot', 'pieza_snapshot',
           'profesorId', 'profesor_id', 'alumnoId', 'alumno_id',
+          'planId', 'plan_id', 'planAdaptado', 'plan_adaptado',
         ]);
         
         const camposActualizados = Object.keys(updatesWithoutJson);
@@ -1004,27 +1158,53 @@ export function createRemoteDataAPI(): AppDataAPI {
         });
         
         if (camposNoPermitidos.length > 0) {
-          const errorMsg = `Campos no permitidos en actualización de asignación: ${camposNoPermitidos.join(', ')}. Solo se pueden actualizar: notas, foco, estado, semanaInicioISO, piezaId (y piezaSnapshot si piezaId cambia).`;
+          const errorMsg = `Campos no permitidos en actualización de asignación: ${camposNoPermitidos.join(', ')}. Solo se pueden actualizar: notas, foco, estado, semanaInicioISO, piezaId, planId, planAdaptado (y piezaSnapshot si piezaId cambia).`;
           console.warn('[remoteDataAPI]', errorMsg);
           if (process.env.NODE_ENV === 'development') {
             console.warn('[remoteDataAPI] Campos eliminados del update:', camposNoPermitidos);
           }
-          // No lanzar error, solo eliminar campos no permitidos
           camposNoPermitidos.forEach(campo => delete updatesWithoutJson[campo]);
         }
         
         const snakeUpdates = camelToSnake(updatesWithoutJson);
         
-        // piezaSnapshot solo debe incluirse si piezaId cambió (lo cual se maneja en asignacion-detalle.jsx)
-        // Aquí solo lo incluimos si está presente en updates
+        // Manejar planId y planAdaptado
+        // Si se actualiza planAdaptado: establecer plan_id = NULL (ya no usa referencia)
+        // Si se actualiza planId: establecer plan_adaptado = NULL (vuelve a usar referencia)
+        // IMPORTANTE: No establecer ambos a null al mismo tiempo (violaría el constraint)
+        if (planAdaptadoValue !== undefined) {
+          snakeUpdates.plan_adaptado = planAdaptadoValue;
+          // Solo establecer plan_id a null si realmente estamos actualizando plan_adaptado
+          // No tocar plan_id si no se está actualizando explícitamente
+          if (planIdValue === undefined) {
+            snakeUpdates.plan_id = null; // Ya no usa referencia
+          }
+        }
+        
+        if (planIdValue !== undefined) {
+          snakeUpdates.plan_id = planIdValue;
+          // Solo establecer plan_adaptado a null si realmente estamos actualizando planId
+          // No tocar plan_adaptado si no se está actualizando explícitamente
+          if (planAdaptadoValue === undefined) {
+            snakeUpdates.plan_adaptado = null; // Vuelve a usar referencia
+          }
+        }
+        
         if (piezaSnapshotValue !== undefined) {
           snakeUpdates.pieza_snapshot = piezaSnapshotValue;
+        }
+        
+        // Validar que no esté vacío
+        if (Object.keys(snakeUpdates).length === 0) {
+          throw new Error('No se pueden actualizar asignaciones con un objeto vacío. Debe incluir al menos un campo válido.');
         }
         
         if (process.env.NODE_ENV === 'development') {
           console.log('[remoteDataAPI] Actualizando asignación:', {
             id,
             camposActualizados: Object.keys(snakeUpdates),
+            incluyePlanId: planIdValue !== undefined,
+            incluyePlanAdaptado: planAdaptadoValue !== undefined,
             incluyePiezaSnapshot: piezaSnapshotValue !== undefined,
           });
         }
@@ -1040,22 +1220,36 @@ export function createRemoteDataAPI(): AppDataAPI {
           console.error('[remoteDataAPI] Error al actualizar asignación:', error);
           // Mejorar mensajes de error específicos
           if (error.code === 'PGRST204' || error.code === '406') {
-            const errorMsg = 'Error 406 (Not Acceptable): El servidor rechazó la actualización. Verifica que los campos enviados sean válidos y modificables. El campo "plan" no puede actualizarse directamente.';
+            const errorMsg = 'Error 406 (Not Acceptable): El servidor rechazó la actualización. Verifica que los campos enviados sean válidos y modificables.';
+            console.error('[remoteDataAPI]', errorMsg);
+            throw new Error(errorMsg);
+          }
+          if (error.code === 'PGRST116') {
+            // Error: no se encontró la fila o no se pudo devolver
+            const errorMsg = 'Error: No se pudo actualizar la asignación. Verifica que el ID sea válido y que tengas permisos para actualizarla.';
             console.error('[remoteDataAPI]', errorMsg);
             throw new Error(errorMsg);
           }
           if (error.code === 'PGRST301' || error.code === '23503') {
-            const errorMsg = 'Error de integridad referencial: Verifica que las referencias (alumnoId, profesorId, piezaId) existan en la base de datos.';
+            const errorMsg = 'Error de integridad referencial: Verifica que las referencias (alumnoId, profesorId, piezaId, planId) existan en la base de datos.';
             console.error('[remoteDataAPI]', errorMsg);
             throw new Error(errorMsg);
           }
           throw error;
         }
         
-        // Deserializar campos JSON después de leer
+        // Deserializar y resolver el plan
         const parsed = snakeToCamel<Asignacion>(data);
         const normalized = normalizeAsignacionISO(parsed);
-        return deserializeJsonFields(normalized, ['plan', 'piezaSnapshot']);
+        const deserialized = deserializeJsonFields(normalized, ['planAdaptado', 'piezaSnapshot']);
+        
+        // Resolver el plan
+        const plan = await resolvePlanForAsignacion(deserialized);
+        
+        return {
+          ...deserialized,
+          plan: plan || deserialized.plan || null,
+        };
       },
       delete: async (id: string) => {
         const { error } = await supabase

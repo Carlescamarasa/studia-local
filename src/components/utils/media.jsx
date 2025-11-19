@@ -89,9 +89,24 @@ export function resolveMedia(urlString) {
 
   // SoundCloud
   if (SOUNDCLOUD_PATTERN.test(url)) {
+    // Limpiar parámetros de tracking de la URL para evitar problemas
+    let cleanUrl = url;
+    try {
+      const urlObj = new URL(url);
+      // Eliminar parámetros de tracking comunes
+      urlObj.searchParams.delete('utm_source');
+      urlObj.searchParams.delete('utm_medium');
+      urlObj.searchParams.delete('utm_campaign');
+      urlObj.searchParams.delete('utm_content');
+      cleanUrl = urlObj.toString();
+    } catch (e) {
+      // Si falla el parsing, usar la URL original
+      cleanUrl = url;
+    }
+    
     return {
       kind: MediaKind.SOUNDCLOUD,
-      embedUrl: `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`,
+      embedUrl: `https://w.soundcloud.com/player/?url=${encodeURIComponent(cleanUrl)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true`,
       originalUrl: url,
       title: 'SoundCloud Audio',
     };

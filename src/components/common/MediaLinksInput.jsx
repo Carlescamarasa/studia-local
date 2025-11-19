@@ -70,6 +70,17 @@ function usePageTitle(url) {
 
     let cancelled = false;
 
+    // Para SoundCloud, YouTube, Vimeo: no intentar obtener título (no es necesario)
+    // El embed funciona sin título y evita problemas de CORS
+    if (url.includes('soundcloud.com') || 
+        url.includes('youtube.com') || 
+        url.includes('youtu.be') || 
+        url.includes('vimeo.com')) {
+      setTitle(null);
+      setIsLoading(false);
+      return;
+    }
+
     // Para Google Drive, intentar extraer el ID y usar un nombre más descriptivo
     if (url.includes('drive.google.com')) {
       const driveId = extractGoogleDriveId(url);
@@ -135,9 +146,9 @@ function usePageTitle(url) {
     setIsLoading(true);
     setTitle(null);
     
-    // Intentar obtener el título usando un proxy CORS
+    // Intentar obtener el título usando un proxy CORS (solo para URLs que no son de servicios conocidos)
     // Usamos allorigins.win como proxy público (gratuito, sin API key)
-    // Para YouTube y otros servicios, si falla simplemente no mostramos título
+    // Si falla, simplemente no mostramos título (no es crítico)
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
     
     fetchWithTimeout(proxyUrl, {}, 6000)
@@ -175,17 +186,16 @@ function usePageTitle(url) {
           }
         }
       })
-      .catch(() => {
-        // Silenciar errores - ya tenemos un fallback para Google Drive
-        // y para otras URLs simplemente no mostramos título
-        // No loggear errores de timeout, CORS, QUIC, 408, etc.
+      .catch((error) => {
+        // Silenciar completamente los errores de CORS, timeout, etc.
+        // No loggear ni mostrar errores - simplemente no mostrar título
         if (!cancelled) {
-        setTitle(null);
+          setTitle(null);
         }
       })
       .finally(() => {
         if (!cancelled) {
-        setIsLoading(false);
+          setIsLoading(false);
         }
       });
 

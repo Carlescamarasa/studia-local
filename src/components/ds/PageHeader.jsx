@@ -51,7 +51,7 @@ export default function PageHeader({
               </button>
             )}
             {Icon && (
-              <Icon className={iconClass} />
+                <Icon className={iconClass} />
             )}
             {title && (
               <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl flex-1`}>{title}</h1>

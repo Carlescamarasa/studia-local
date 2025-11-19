@@ -37,10 +37,13 @@ CREATE TABLE IF NOT EXISTS asignaciones (
   estado TEXT NOT NULL DEFAULT 'borrador' CHECK (estado IN ('borrador', 'publicada', 'archivada')),
   foco TEXT NOT NULL DEFAULT 'GEN' CHECK (foco IN ('GEN', 'LIG', 'RIT', 'ART', 'S&A')),
   notas TEXT,
-  plan JSONB NOT NULL,
+  plan_id TEXT,
+  plan_adaptado JSONB,
+  plan JSONB, -- Campo legacy, será eliminado después de la migración
   pieza_snapshot JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT check_plan_reference_or_snapshot CHECK (plan_id IS NOT NULL OR plan_adaptado IS NOT NULL OR plan IS NOT NULL)
 );
 
 -- ============================================================================
@@ -62,6 +65,9 @@ CREATE INDEX IF NOT EXISTS idx_asignaciones_semana_inicio_iso ON asignaciones(se
 -- Índice para búsquedas por estado
 CREATE INDEX IF NOT EXISTS idx_asignaciones_estado ON asignaciones(estado);
 
+-- Índice para búsquedas por plan_id (referencia a plantilla)
+CREATE INDEX IF NOT EXISTS idx_asignaciones_plan_id ON asignaciones(plan_id);
+
 -- Índice compuesto para búsquedas comunes (alumno + semana)
 CREATE INDEX IF NOT EXISTS idx_asignaciones_alumno_semana ON asignaciones(alumno_id, semana_inicio_iso);
 
@@ -78,6 +84,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger para actualizar updated_at en cada UPDATE
+-- Eliminar trigger si existe antes de crearlo
+DROP TRIGGER IF EXISTS update_asignaciones_updated_at ON asignaciones;
 CREATE TRIGGER update_asignaciones_updated_at
   BEFORE UPDATE ON asignaciones
   FOR EACH ROW
@@ -89,6 +97,13 @@ CREATE TRIGGER update_asignaciones_updated_at
 
 -- Habilitar RLS
 ALTER TABLE asignaciones ENABLE ROW LEVEL SECURITY;
+
+-- Eliminar políticas existentes antes de crearlas (para permitir re-ejecución)
+DROP POLICY IF EXISTS "Students can read own asignaciones" ON asignaciones;
+DROP POLICY IF EXISTS "Teachers can read students asignaciones" ON asignaciones;
+DROP POLICY IF EXISTS "Teachers and admins can create asignaciones" ON asignaciones;
+DROP POLICY IF EXISTS "Creators and admins can update asignaciones" ON asignaciones;
+DROP POLICY IF EXISTS "Creators and admins can delete asignaciones" ON asignaciones;
 
 -- Política: Los estudiantes pueden leer sus propias asignaciones
 CREATE POLICY "Students can read own asignaciones"
@@ -168,7 +183,9 @@ COMMENT ON COLUMN asignaciones.semana_inicio_iso IS 'Fecha de inicio de la seman
 COMMENT ON COLUMN asignaciones.estado IS 'Estado de la asignación: borrador, publicada, archivada';
 COMMENT ON COLUMN asignaciones.foco IS 'Foco de la asignación: GEN, LIG, RIT, ART, S&A';
 COMMENT ON COLUMN asignaciones.notas IS 'Notas adicionales de la asignación';
-COMMENT ON COLUMN asignaciones.plan IS 'Snapshot completo del plan embebido como JSONB';
+COMMENT ON COLUMN asignaciones.plan_id IS 'ID del plan plantilla (referencia). Si es NULL, se usa plan_adaptado';
+COMMENT ON COLUMN asignaciones.plan_adaptado IS 'Snapshot del plan adaptado (JSONB). Si es NULL, se usa plan_id para cargar desde planes';
+COMMENT ON COLUMN asignaciones.plan IS 'Campo legacy (será eliminado después de la migración). Usar plan_adaptado o plan_id';
 COMMENT ON COLUMN asignaciones.pieza_snapshot IS 'Snapshot completo de la pieza embebido como JSONB';
 COMMENT ON COLUMN asignaciones.created_at IS 'Fecha de creación de la asignación';
 COMMENT ON COLUMN asignaciones.updated_at IS 'Fecha de última actualización de la asignación';

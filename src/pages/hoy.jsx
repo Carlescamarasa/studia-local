@@ -40,6 +40,8 @@ import { useSidebar } from "@/components/ui/SidebarState";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 import MediaEmbed from "../components/common/MediaEmbed";
+import MediaIconButton from "../components/common/MediaIconButton";
+import { resolveMedia, MediaKind } from "../components/utils/media";
 
 import RequireRole from "@/components/auth/RequireRole";
 
@@ -81,6 +83,7 @@ function HoyPageContent() {
   const [sesionFinalizada, setSesionFinalizada] = useState(false);
   const [datosFinal, setDatosFinal] = useState(null);
   const [mediaFullscreen, setMediaFullscreen] = useState(null);
+  const [mediaModal, setMediaModal] = useState(null); // Para el popup de materiales
 
   // Estado para la posición del timer arrastrable
   const [timerPosition, setTimerPosition] = useState(() => {
@@ -1424,12 +1427,29 @@ function HoyPageContent() {
                     <div key={idx} className={`border rounded-lg p-3 bg-[var(--color-accent)]/10 space-y-2`}>
                       <h3 className={`${componentStyles.typography.cardTitle} text-[var(--color-accent)]`}>{elemento.nombre}</h3>
 
-                      {/* Mostrar mediaLinks si existen */}
+                      {/* Mostrar mediaLinks como iconos (excepto audio que va embedido) */}
                       {elemento.mediaLinks && elemento.mediaLinks.length > 0 && (
-                        <div className="space-y-3">
-                          {elemento.mediaLinks.map((url, urlIdx) => (
-                            <MediaEmbed key={urlIdx} url={url} className="w-full" />
-                          ))}
+                        <div className="flex flex-wrap gap-2">
+                          {elemento.mediaLinks.map((url, urlIdx) => {
+                            const media = resolveMedia(url);
+                            // Audio: embedido directamente
+                            if (media.kind === MediaKind.AUDIO) {
+                              return (
+                                <div key={urlIdx} className="w-full">
+                                  <MediaEmbed url={url} className="w-full" />
+                                </div>
+                              );
+                            }
+                            // Resto: iconos clickeables
+                            return (
+                              <MediaIconButton
+                                key={urlIdx}
+                                url={url}
+                                onOpen={(url) => setMediaModal(url)}
+                                className="flex-shrink-0"
+                              />
+                            );
+                          })}
                         </div>
                       )}
 
@@ -1489,12 +1509,29 @@ function HoyPageContent() {
                   ))
                 ) : (
                   <>
-                    {/* Mostrar mediaLinks si existen */}
+                    {/* Mostrar mediaLinks como iconos (excepto audio que va embedido) */}
                     {ejercicioActual.mediaLinks && ejercicioActual.mediaLinks.length > 0 && (
-                      <div className="space-y-3">
-                        {ejercicioActual.mediaLinks.map((url, urlIdx) => (
-                          <MediaEmbed key={urlIdx} url={url} className="w-full" />
-                        ))}
+                      <div className="flex flex-wrap gap-2">
+                        {ejercicioActual.mediaLinks.map((url, urlIdx) => {
+                          const media = resolveMedia(url);
+                          // Audio: embedido directamente
+                          if (media.kind === MediaKind.AUDIO) {
+                            return (
+                              <div key={urlIdx} className="w-full">
+                                <MediaEmbed url={url} className="w-full" />
+                              </div>
+                            );
+                          }
+                          // Resto: iconos clickeables
+                          return (
+                            <MediaIconButton
+                              key={urlIdx}
+                              url={url}
+                              onOpen={(url) => setMediaModal(url)}
+                              className="flex-shrink-0"
+                            />
+                          );
+                        })}
                       </div>
                     )}
 
@@ -1735,6 +1772,33 @@ function HoyPageContent() {
               )}
             </div>
           </>
+        )}
+
+        {/* Modal para materiales (popup grande) */}
+        {mediaModal && (
+          <Dialog open={!!mediaModal} onOpenChange={(open) => !open && setMediaModal(null)}>
+            <DialogContent className="max-w-6xl max-h-[90vh] w-full p-0 overflow-hidden">
+              <DialogHeader className="px-6 pt-6 pb-4 border-b">
+                <div className="flex items-center justify-between">
+                  <DialogTitle className="text-lg font-semibold">
+                    Material
+                  </DialogTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMediaModal(null)}
+                    className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-[var(--btn-radius)] touch-manipulation"
+                    aria-label="Cerrar"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+              </DialogHeader>
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+                <MediaEmbed url={mediaModal} className="w-full" />
+              </div>
+            </DialogContent>
+          </Dialog>
         )}
 
         {/* Panel de itinerario - Dialog central mediano */}

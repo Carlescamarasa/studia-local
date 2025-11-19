@@ -475,7 +475,7 @@ function AdaptarAsignacionPageContent() {
 
   const guardarMutation = useMutation({
     mutationFn: async (updatedPlan) => {
-      return localDataClient.entities.Asignacion.update(asignacionId, { plan: updatedPlan });
+      return localDataClient.entities.Asignacion.update(asignacionId, { planAdaptado: updatedPlan });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignacion', asignacionId] });
@@ -487,7 +487,7 @@ function AdaptarAsignacionPageContent() {
     mutationFn: async () => {
       return localDataClient.entities.Asignacion.update(asignacionId, {
         estado: 'publicada',
-        plan: planData
+        planAdaptado: planData
       });
     },
     onSuccess: () => {
