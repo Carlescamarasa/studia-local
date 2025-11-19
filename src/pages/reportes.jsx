@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Bug, Search, Eye, CheckCircle, Clock, XCircle, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import RequireRole from '@/components/auth/RequireRole';
@@ -367,7 +367,7 @@ function ReportesPageContent() {
 
 export default function ReportesPage() {
   return (
-    <RequireRole allowedRoles={['ADMIN']}>
+    <RequireRole anyOf={['ADMIN']}>
       <ReportesPageContent />
     </RequireRole>
   );

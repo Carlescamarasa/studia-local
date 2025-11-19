@@ -23,7 +23,7 @@ export default function RequireRole({ children, anyOf = [] }) {
   
   // Debug: verificar qué valores se están pasando
   if (process.env.NODE_ENV === 'development') {
-    console.log('[RequireRole] appRole:', appRole, 'effectiveUser:', effectiveUser?.rolPersonalizado, 'effectiveRole:', effectiveRole);
+  console.log('[RequireRole] appRole:', appRole, 'effectiveUser:', effectiveUser?.rolPersonalizado, 'effectiveRole:', effectiveRole);
   }
 
   // Si tiene acceso, renderizar children

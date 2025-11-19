@@ -438,7 +438,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         // Obtener perfiles desde Supabase - INCLUIR EXPLÍCITAMENTE el campo role
         const { data, error } = await withAuthErrorHandling(
           supabase
-            .from('profiles')
+          .from('profiles')
             .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at')
         );
         
@@ -511,9 +511,9 @@ export function createRemoteDataAPI(): AppDataAPI {
       get: async (id: string) => {
         const { data, error } = await withAuthErrorHandling(
           supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', id)
+          .from('profiles')
+          .select('*')
+          .eq('id', id)
             .single()
         );
         
@@ -616,9 +616,9 @@ export function createRemoteDataAPI(): AppDataAPI {
         const snakeData = camelToSnake(data);
         const { data: result, error } = await withAuthErrorHandling(
           supabase
-            .from('profiles')
-            .insert(snakeData)
-            .select()
+          .from('profiles')
+          .insert(snakeData)
+          .select()
             .single()
         );
         
@@ -658,10 +658,10 @@ export function createRemoteDataAPI(): AppDataAPI {
         
         const { data, error } = await withAuthErrorHandling(
           supabase
-            .from('profiles')
-            .update(supabaseUpdates)
-            .eq('id', id)
-            .select()
+          .from('profiles')
+          .update(supabaseUpdates)
+          .eq('id', id)
+          .select()
             .single()
         );
         
@@ -714,8 +714,8 @@ export function createRemoteDataAPI(): AppDataAPI {
       delete: async (id: string) => {
         const { error } = await withAuthErrorHandling(
           supabase
-            .from('profiles')
-            .delete()
+          .from('profiles')
+          .delete()
             .eq('id', id)
         );
         

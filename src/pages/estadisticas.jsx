@@ -207,7 +207,7 @@ function EstadisticasPageContent() {
     queryKey: ['feedbacksSemanal'],
     queryFn: () => {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[estadisticas.jsx] Consultando tabla feedbacks_semanal (NO registros_sesion)');
+      console.log('[estadisticas.jsx] Consultando tabla feedbacks_semanal (NO registros_sesion)');
       }
       return localDataClient.entities.FeedbackSemanal.list('-created_at');
     },
@@ -711,16 +711,16 @@ function EstadisticasPageContent() {
     
     // Logs exhaustivos para diagnóstico
     if (process.env.NODE_ENV === 'development') {
-      console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Inicio del filtrado:', {
-        totalFeedbacksSemanal: feedbacksSemanal.length,
-        feedbacksConNotaProfesor: feedbacksSemanal.filter(f => f.notaProfesor).length,
-        alumnosSeleccionados: alumnosSeleccionados,
-        alumnosSeleccionadosLength: alumnosSeleccionados.length,
-        periodoInicio,
-        periodoFin,
-        isAdmin,
-        isProf,
-      });
+    console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Inicio del filtrado:', {
+      totalFeedbacksSemanal: feedbacksSemanal.length,
+      feedbacksConNotaProfesor: feedbacksSemanal.filter(f => f.notaProfesor).length,
+      alumnosSeleccionados: alumnosSeleccionados,
+      alumnosSeleccionadosLength: alumnosSeleccionados.length,
+      periodoInicio,
+      periodoFin,
+      isAdmin,
+      isProf,
+    });
     }
     
     // Para ADMIN: mostrar TODOS los feedbacks si no hay filtros explícitos
@@ -732,11 +732,11 @@ function EstadisticasPageContent() {
       const antes = resultado.length;
       resultado = resultado.filter(f => alumnosSeleccionados.includes(f.alumnoId));
       if (process.env.NODE_ENV === 'development') {
-        console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Filtro por estudiantes (explícito):', {
-          antes,
-          despues: resultado.length,
-          alumnosSeleccionados: alumnosSeleccionados.length,
-        });
+      console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Filtro por estudiantes (explícito):', {
+        antes,
+        despues: resultado.length,
+        alumnosSeleccionados: alumnosSeleccionados.length,
+      });
       }
     }
     
@@ -745,11 +745,11 @@ function EstadisticasPageContent() {
       const antes = resultado.length;
       resultado = resultado.filter(f => profesoresSeleccionados.includes(f.profesorId));
       if (process.env.NODE_ENV === 'development') {
-        console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Filtro por profesores (explícito):', {
-          antes,
-          despues: resultado.length,
-          profesoresSeleccionados: profesoresSeleccionados.length,
-        });
+      console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Filtro por profesores (explícito):', {
+        antes,
+        despues: resultado.length,
+        profesoresSeleccionados: profesoresSeleccionados.length,
+      });
       }
     }
     
@@ -790,13 +790,13 @@ function EstadisticasPageContent() {
       // Aplicar el filtro de período (sin ignorar si no hay resultados)
       resultado = resultadoConFiltroPeriodo;
       if (process.env.NODE_ENV === 'development') {
-        console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Filtro por período aplicado:', {
-          antes,
-          despues: resultado.length,
-          periodoInicio,
-          periodoFin,
-          feedbacksSinFecha: resultado.filter(f => !f.semanaInicioISO).length,
-        });
+      console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Filtro por período aplicado:', {
+        antes,
+        despues: resultado.length,
+        periodoInicio,
+        periodoFin,
+        feedbacksSinFecha: resultado.filter(f => !f.semanaInicioISO).length,
+      });
       }
     }
     
@@ -811,21 +811,21 @@ function EstadisticasPageContent() {
     });
     
     if (process.env.NODE_ENV === 'development') {
-      console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Resultado final:', {
-        total: resultado.length,
-        conNotaProfesor: resultado.filter(f => f.notaProfesor).length,
-        sinNotaProfesor: resultado.filter(f => !f.notaProfesor).length,
-        conSemanaInicioISO: resultado.filter(f => f.semanaInicioISO).length,
-        sinSemanaInicioISO: resultado.filter(f => !f.semanaInicioISO).length,
-        primeros3: resultado.slice(0, 3).map(f => ({
-          id: f.id?.substring(0, 20),
-          tieneNotaProfesor: !!f.notaProfesor,
-          notaProfesorPreview: f.notaProfesor?.substring(0, 50) || null,
-          alumnoId: f.alumnoId?.substring(0, 20),
-          profesorId: f.profesorId?.substring(0, 20),
-          semanaInicioISO: f.semanaInicioISO,
-        })),
-      });
+    console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Resultado final:', {
+      total: resultado.length,
+      conNotaProfesor: resultado.filter(f => f.notaProfesor).length,
+      sinNotaProfesor: resultado.filter(f => !f.notaProfesor).length,
+      conSemanaInicioISO: resultado.filter(f => f.semanaInicioISO).length,
+      sinSemanaInicioISO: resultado.filter(f => !f.semanaInicioISO).length,
+      primeros3: resultado.slice(0, 3).map(f => ({
+        id: f.id?.substring(0, 20),
+        tieneNotaProfesor: !!f.notaProfesor,
+        notaProfesorPreview: f.notaProfesor?.substring(0, 50) || null,
+        alumnoId: f.alumnoId?.substring(0, 20),
+        profesorId: f.profesorId?.substring(0, 20),
+        semanaInicioISO: f.semanaInicioISO,
+      })),
+    });
     }
     
     return resultado;

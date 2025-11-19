@@ -47,8 +47,8 @@ export async function createErrorReport(data: CreateReportData): Promise<ErrorRe
       context: data.context,
       status: 'nuevo'
     })
-    .select()
-    .single();
+      .select()
+      .single();
 
   if (error) {
     console.error('[errorReportsAPI] Error creando reporte:', {
@@ -69,24 +69,24 @@ export async function listErrorReports(filters?: {
   category?: string;
   userId?: string;
 }): Promise<ErrorReport[]> {
-  let query = supabase
-    .from('error_reports')
-    .select('*')
-    .order('created_at', { ascending: false });
+    let query = supabase
+      .from('error_reports')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  if (filters?.status) {
-    query = query.eq('status', filters.status);
-  }
-  if (filters?.category) {
-    query = query.eq('category', filters.category);
-  }
-  if (filters?.userId) {
-    query = query.eq('user_id', filters.userId);
-  }
+    if (filters?.status) {
+      query = query.eq('status', filters.status);
+    }
+    if (filters?.category) {
+      query = query.eq('category', filters.category);
+    }
+    if (filters?.userId) {
+      query = query.eq('user_id', filters.userId);
+    }
 
-  const { data, error } = await query;
+    const { data, error } = await query;
 
-  if (error) {
+    if (error) {
     console.error('[errorReportsAPI] Error listando reportes:', {
       error: error?.message || error,
       code: error?.code,
@@ -101,13 +101,13 @@ export async function listErrorReports(filters?: {
  * Obtener un reporte por ID
  */
 export async function getErrorReport(id: string): Promise<ErrorReport | null> {
-  const { data, error } = await supabase
-    .from('error_reports')
-    .select('*')
-    .eq('id', id)
-    .single();
+    const { data, error } = await supabase
+      .from('error_reports')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-  if (error) {
+    if (error) {
     if (error.code === 'PGRST116') return null; // No encontrado
     console.error('[errorReportsAPI] Error obteniendo reporte:', {
       error: error?.message || error,
@@ -133,7 +133,7 @@ export async function updateErrorReport(
   }
   if (updates.adminNotes !== undefined) {
     updateData.admin_notes = updates.adminNotes;
-  }
+    }
   if (updates.resolvedBy !== undefined) {
     updateData.resolved_by = updates.resolvedBy;
     if (updates.resolvedBy && updates.status === 'resuelto') {
@@ -141,22 +141,22 @@ export async function updateErrorReport(
     } else if (!updates.resolvedBy) {
       updateData.resolved_at = null;
     }
-  }
+    }
 
-  const { data, error } = await supabase
-    .from('error_reports')
-    .update(updateData)
-    .eq('id', id)
-    .select()
-    .single();
+    const { data, error } = await supabase
+      .from('error_reports')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
 
-  if (error) {
+    if (error) {
     console.error('[errorReportsAPI] Error actualizando reporte:', {
       error: error?.message || error,
       code: error?.code,
     });
-    throw error;
-  }
+      throw error;
+    }
 
   return mapToErrorReport(data);
 }
@@ -165,18 +165,18 @@ export async function updateErrorReport(
  * Mapear datos de Supabase (snake_case) a ErrorReport (camelCase)
  */
 function mapToErrorReport(data: any): ErrorReport {
-  return {
-    id: data.id,
-    userId: data.user_id,
-    category: data.category,
-    description: data.description,
-    screenshotUrl: data.screenshot_url,
-    context: data.context,
-    status: data.status,
-    adminNotes: data.admin_notes,
-    resolvedBy: data.resolved_by,
-    resolvedAt: data.resolved_at,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-  };
+    return {
+      id: data.id,
+      userId: data.user_id,
+      category: data.category,
+      description: data.description,
+      screenshotUrl: data.screenshot_url,
+      context: data.context,
+      status: data.status,
+      adminNotes: data.admin_notes,
+      resolvedBy: data.resolved_by,
+      resolvedAt: data.resolved_at,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    };
 }

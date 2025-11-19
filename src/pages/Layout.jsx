@@ -300,7 +300,7 @@ function LayoutContent() {
   
   // Debug: verificar el rol calculado
   if (process.env.NODE_ENV === 'development') {
-    console.log('[Layout] Rol efectivo:', userRole, 'EffectiveUser:', effectiveUser?.rolPersonalizado, 'AppRole:', appRole);
+  console.log('[Layout] Rol efectivo:', userRole, 'EffectiveUser:', effectiveUser?.rolPersonalizado, 'AppRole:', appRole);
   }
   
   // Mapeo de URLs a los roles que tienen acceso

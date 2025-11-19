@@ -1039,7 +1039,7 @@ function HoyPageContent() {
               
               if (!registroExistente) {
                 if (process.env.NODE_ENV === 'development') {
-                  console.warn('[hoy.jsx] El registro de sesión no existe, no se puede actualizar:', registroSesionId);
+                console.warn('[hoy.jsx] El registro de sesión no existe, no se puede actualizar:', registroSesionId);
                 }
                 return;
               }
@@ -1061,7 +1061,7 @@ function HoyPageContent() {
             }
           } else {
             if (process.env.NODE_ENV === 'development') {
-              console.warn('[hoy.jsx] No hay registroSesionId, no se puede guardar el feedback');
+            console.warn('[hoy.jsx] No hay registroSesionId, no se puede guardar el feedback');
             }
           }
         }}

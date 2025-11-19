@@ -252,12 +252,12 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     ];
 
     if (process.env.NODE_ENV === 'development') {
-      console.group('🔍 Media Resolution Tests');
-      tests.forEach(url => {
-        const result = resolveMedia(url);
-        console.log(`${url}\n→`, result);
-      });
-      console.groupEnd();
+    console.group('🔍 Media Resolution Tests');
+    tests.forEach(url => {
+      const result = resolveMedia(url);
+      console.log(`${url}\n→`, result);
+    });
+    console.groupEnd();
     }
   };
 }

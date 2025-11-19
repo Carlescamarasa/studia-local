@@ -21,18 +21,18 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <DesignProvider>
-          <AuthProvider>
-            <LocalDataProvider>
-              <DataProvider>
-                <AppRouter />
-                <Toaster />
-              </DataProvider>
-            </LocalDataProvider>
-          </AuthProvider>
-        </DesignProvider>
-      </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <DesignProvider>
+        <AuthProvider>
+          <LocalDataProvider>
+            <DataProvider>
+              <AppRouter />
+              <Toaster />
+            </DataProvider>
+          </LocalDataProvider>
+        </AuthProvider>
+      </DesignProvider>
+    </QueryClientProvider>
     </ErrorBoundary>
   );
 }

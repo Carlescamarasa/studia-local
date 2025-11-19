@@ -155,7 +155,7 @@ function AgendaPageContent() {
         // Si es error 409, buscar el feedback existente directamente en la BD
         if (error?.code === '23505' || error?.message?.includes('duplicate') || error?.status === 409) {
           if (process.env.NODE_ENV === 'development') {
-            console.log('[agenda.jsx] Error 409 detectado, buscando feedback existente...');
+          console.log('[agenda.jsx] Error 409 detectado, buscando feedback existente...');
           }
           // Buscar el feedback existente directamente en la base de datos
           try {
@@ -168,13 +168,13 @@ function AgendaPageContent() {
             if (feedbacksExistentes && feedbacksExistentes.length > 0) {
               const feedbackExistente = feedbacksExistentes[0];
               if (process.env.NODE_ENV === 'development') {
-                console.log('[agenda.jsx] Feedback existente encontrado, actualizando:', feedbackExistente.id);
+              console.log('[agenda.jsx] Feedback existente encontrado, actualizando:', feedbackExistente.id);
               }
               // Actualizar el feedback existente
               return await localDataClient.entities.FeedbackSemanal.update(feedbackExistente.id, data);
             } else {
               if (process.env.NODE_ENV === 'development') {
-                console.warn('[agenda.jsx] Error 409 pero no se encontró feedback en BD');
+              console.warn('[agenda.jsx] Error 409 pero no se encontró feedback en BD');
               }
             }
           } catch (searchError) {
@@ -438,7 +438,7 @@ function AgendaPageContent() {
         }
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
-          console.warn('[agenda.jsx] Error buscando feedback en BD:', error);
+        console.warn('[agenda.jsx] Error buscando feedback en BD:', error);
         }
         // Continuar con el flujo normal si falla la búsqueda
       }
