@@ -75,11 +75,19 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger para actualizar updated_at
-DROP TRIGGER IF EXISTS trigger_update_error_reports_updated_at ON error_reports;
-CREATE TRIGGER trigger_update_error_reports_updated_at
-  BEFORE UPDATE ON error_reports
-  FOR EACH ROW
-  EXECUTE FUNCTION update_error_reports_updated_at();
+-- Nota: Si el trigger ya existe, este comando fallará silenciosamente
+-- pero no es destructivo. Si necesitas recrearlo, elimínalo manualmente primero.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'trigger_update_error_reports_updated_at'
+  ) THEN
+    CREATE TRIGGER trigger_update_error_reports_updated_at
+      BEFORE UPDATE ON error_reports
+      FOR EACH ROW
+      EXECUTE FUNCTION update_error_reports_updated_at();
+  END IF;
+END $$;
 
 -- ============================================================================
 -- Políticas RLS (Row Level Security)
@@ -104,7 +112,6 @@ CREATE POLICY "Users can view their own reports"
 
 -- Política: Solo los administradores pueden ver todos los reportes
 -- (Esta política se aplica automáticamente si el usuario tiene rol ADMIN)
--- Nota: Necesitarás ajustar esto según tu sistema de roles
 CREATE POLICY "Admins can view all reports"
   ON error_reports
   FOR SELECT
@@ -113,7 +120,7 @@ CREATE POLICY "Admins can view all reports"
     EXISTS (
       SELECT 1 FROM profiles
       WHERE profiles.id = auth.uid()
-      AND profiles.rol_personalizado = 'ADMIN'
+      AND profiles.role = 'ADMIN'
     )
   );
 
@@ -126,14 +133,14 @@ CREATE POLICY "Admins can update reports"
     EXISTS (
       SELECT 1 FROM profiles
       WHERE profiles.id = auth.uid()
-      AND profiles.rol_personalizado = 'ADMIN'
+      AND profiles.role = 'ADMIN'
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM profiles
       WHERE profiles.id = auth.uid()
-      AND profiles.rol_personalizado = 'ADMIN'
+      AND profiles.role = 'ADMIN'
     )
   );
 
