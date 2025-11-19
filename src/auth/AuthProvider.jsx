@@ -170,7 +170,7 @@ export function AuthProvider({ children }) {
 
   const signOut = useCallback(async () => {
     try {
-      const { error } = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
       // Si el error es que no hay sesión (403, AuthSessionMissingError), es válido continuar
       // ya que el objetivo es cerrar sesión y si no hay sesión, ya estamos en el estado deseado
       if (error && error.message !== 'Auth session missing!' && error.message !== 'JWT expired') {
@@ -183,7 +183,7 @@ export function AuthProvider({ children }) {
         // Continuar con la limpieza aunque falló el signOut
       } else {
         // Otros errores pueden ser importantes, relanzarlos
-        throw error;
+      throw error;
       }
     }
     

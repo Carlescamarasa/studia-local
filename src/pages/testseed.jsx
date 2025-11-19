@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ds";
 import { toast } from "sonner";
-import { formatLocalDate, parseLocalDate, displayName, calcularOffsetSemanas, useEffectiveUser } from "../components/utils/helpers";
+import { formatLocalDate, parseLocalDate, displayName, calcularOffsetSemanas, useEffectiveUser, getNombreVisible, startOfMonday } from "../components/utils/helpers";
 import { parseAuditSpec, runAudit, runDesignAudit, QUICK_PROFILES } from "../components/utils/auditor";
 import PageHeader from "@/components/ds/PageHeader";
 import Tabs from "@/components/ds/Tabs";
@@ -170,8 +170,18 @@ export default function TestSeedPage() {
 
           if (authError) {
             // Si el usuario ya existe, intentar obtenerlo
-            if (authError.message?.includes('already registered') || authError.message?.includes('already exists') || authError.message?.includes('User already registered')) {
-            addLog(`ℹ️ Usuario ${usuario.email} ya existe. Obteniendo información...`, 'info');
+            const errorMessage = authError.message?.toLowerCase() || '';
+            const errorCode = authError.code || authError.status || '';
+            const isAlreadyExists = 
+              errorMessage.includes('already registered') || 
+              errorMessage.includes('already exists') || 
+              errorMessage.includes('user already registered') ||
+              errorMessage.includes('email address is already') ||
+              errorCode === 'signup_disabled' ||
+              authError.status === 400; // 400 puede ser usuario existente o email no confirmado
+            
+            if (isAlreadyExists) {
+              addLog(`ℹ️ Usuario ${usuario.email} ya existe o está deshabilitado. Obteniendo información...`, 'info');
               const usuariosActualizados = await localDataClient.entities.User.list();
               const usuarioExistente = usuariosActualizados.find(u => u.email?.toLowerCase() === emailLower);
               if (usuarioExistente) {
@@ -180,6 +190,9 @@ export default function TestSeedPage() {
                 if (usuario.role === 'PROF') {
                   profesoresCreados.push(usuarioExistente.id);
                 }
+                continue;
+              } else {
+                addLog(`⚠️ Usuario ${usuario.email} no se pudo crear (error: ${authError.message || errorCode}), pero no se encontró en la base de datos. Saltando...`, 'warning');
                 continue;
               }
             }
@@ -277,10 +290,43 @@ export default function TestSeedPage() {
   };
 
   // ======================== SEMILLAS REALISTAS ========================
-  const generarSemillasRealistas = async (numSemanas) => {
+  const generarSemillasRealistas = async (numSemanas, fechaInicio = null, fechaFin = null) => {
     setIsSeeding(true);
     clearLogs();
-    addLog(`🌱 Iniciando generación de ${numSemanas} ${numSemanas === 1 ? 'semana' : 'semanas'} realistas...`, 'info');
+    
+    // Determinar el modo de generación
+    let semanasParaGenerar = [];
+    let descripcion = '';
+    
+    if (fechaInicio && fechaFin) {
+      // Modo rango de fechas: generar todas las semanas en el rango
+      const inicio = startOfMonday(fechaInicio);
+      const fin = startOfMonday(fechaFin);
+      
+      // Calcular todas las semanas entre inicio y fin
+      let fechaActual = new Date(inicio);
+      while (fechaActual <= fin) {
+        semanasParaGenerar.push(new Date(fechaActual));
+        fechaActual.setDate(fechaActual.getDate() + 7);
+      }
+      
+      descripcion = `desde ${formatLocalDate(inicio)} hasta ${formatLocalDate(fin)} (${semanasParaGenerar.length} semanas)`;
+      addLog(`🌱 Iniciando generación de semillas realistas ${descripcion}...`, 'info');
+    } else {
+      // Modo hacia atrás: generar desde ahora hacia atrás
+      const hoy = new Date();
+      const lunesActual = new Date(hoy);
+      lunesActual.setDate(lunesActual.getDate() - (lunesActual.getDay() + 6) % 7);
+      
+      for (let offsetSemana = -(numSemanas - 1); offsetSemana <= 0; offsetSemana++) {
+        const lunesSemana = new Date(lunesActual);
+        lunesSemana.setDate(lunesSemana.getDate() + (offsetSemana * 7));
+        semanasParaGenerar.push(lunesSemana);
+      }
+      
+      descripcion = `${numSemanas} ${numSemanas === 1 ? 'semana' : 'semanas'}`;
+      addLog(`🌱 Iniciando generación de ${descripcion} realistas...`, 'info');
+    }
 
     try {
       // Validar que se está usando modo remoto
@@ -319,26 +365,35 @@ export default function TestSeedPage() {
         return;
       }
 
-      let profesor = profesores[0] || effectiveUser;
-      if (!profesor || (profesor.rolPersonalizado !== 'PROF' && profesor.rolPersonalizado !== 'ADMIN')) {
-        addLog('⚠️ No hay profesor disponible, usando administrador', 'warning');
+      // Las asignaciones DEBEN asignarse a un usuario tipo PROF, nunca a ADMIN
+      if (profesores.length === 0) {
+        addLog('❌ No hay profesores disponibles. Las asignaciones deben asignarse a usuarios tipo PROF. Crea usuarios con rol PROF primero.', 'error');
+        toast.error('No hay profesores en el sistema. Crea usuarios con rol PROF primero.');
+        setIsSeeding(false);
+        return;
       }
+
+      let profesor = profesores[0];
+      addLog(`✓ Usando profesor: ${getNombreVisible(profesor)} (${profesor.email})`, 'info');
       
       // En modo remoto, verificar que el profesor_id coincida con auth.uid() para RLS
       if (dataSource === 'remote') {
         try {
           const { data: { session } } = await supabase.auth.getSession();
-          if (session && session.user.id !== profesor.id) {
-            addLog(`⚠️ ADVERTENCIA: profesor_id (${profesor.id}) no coincide con auth.uid() (${session.user.id}). Las políticas RLS pueden bloquear las inserciones.`, 'warning');
-            addLog(`💡 Solución: Usa el ID del usuario autenticado como profesor_id`, 'info');
-            // Intentar encontrar el usuario autenticado en la lista
+          if (session) {
             const usuarioAutenticado = usuarios.find(u => u.id === session.user.id);
-            if (usuarioAutenticado && (usuarioAutenticado.rolPersonalizado === 'PROF' || usuarioAutenticado.rolPersonalizado === 'ADMIN')) {
+            // Solo usar usuario autenticado si es PROF (nunca ADMIN)
+            if (usuarioAutenticado && usuarioAutenticado.rolPersonalizado === 'PROF') {
               profesor = usuarioAutenticado;
-              addLog(`✓ Usando usuario autenticado como profesor: ${profesor.email}`, 'info');
+              addLog(`✓ Usando usuario autenticado como profesor: ${profesor.email} (PROF)`, 'info');
+            } else if (usuarioAutenticado && usuarioAutenticado.rolPersonalizado === 'ADMIN') {
+              addLog(`⚠️ El usuario autenticado es ADMIN. Las asignaciones deben asignarse a PROF. Usando primer profesor disponible: ${profesor.email}`, 'warning');
+            } else if (session.user.id !== profesor.id) {
+              addLog(`⚠️ ADVERTENCIA: profesor_id (${profesor.id}) no coincide con auth.uid() (${session.user.id}). Las políticas RLS pueden bloquear las inserciones.`, 'warning');
+              addLog(`💡 Solución: Inicia sesión con un usuario tipo PROF`, 'info');
+            } else {
+              addLog(`✓ profesor_id coincide con auth.uid() - RLS debería permitir las inserciones`, 'info');
             }
-          } else if (session && session.user.id === profesor.id) {
-            addLog(`✓ profesor_id coincide con auth.uid() - RLS debería permitir las inserciones`, 'info');
           }
         } catch (authError) {
           addLog(`⚠️ Error al verificar coincidencia de IDs: ${authError.message}`, 'warning');
@@ -403,7 +458,7 @@ export default function TestSeedPage() {
         }
       ];
 
-      // Crear piezas que no existan
+      // Crear piezas que no existan (siempre agregar a piezasCreadas aunque ya existan)
       const piezasCreadas = [];
       for (const piezaData of piezasSeed) {
         let piezaExistente = piezas.find(p => p.nombre === piezaData.nombre);
@@ -419,10 +474,14 @@ export default function TestSeedPage() {
             const errorMsg = error?.message || error?.toString() || 'Error desconocido';
             const errorDetails = error?.details || error?.hint || '';
             addLog(`❌ Error al crear pieza ${piezaData.nombre}: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+            console.error('Error completo al crear pieza:', error);
             // Continuar con la siguiente pieza en lugar de fallar completamente
             continue;
           }
+        } else {
+          addLog(`ℹ️ Pieza ya existe: ${piezaData.nombre}`, 'info');
         }
+        // IMPORTANTE: Siempre agregar a piezasCreadas aunque ya exista
         if (piezaExistente) {
           piezasCreadas.push(piezaExistente);
         }
@@ -545,6 +604,34 @@ export default function TestSeedPage() {
       }
 
       bloques = await localDataClient.entities.Bloque.list();
+      
+      // Validación: asegurar que hay al menos 1 ejercicio creado
+      const bloquesSeedCreados = bloques.filter(b => b.code?.includes('SEED') || b.profesorId === profesor.id);
+      if (bloquesSeedCreados.length === 0) {
+        addLog('❌ No se creó ningún ejercicio. Creando ejercicio mínimo de emergencia...', 'error');
+        try {
+          const ejercicioEmergencia = await localDataClient.entities.Bloque.create({
+            nombre: 'Seed – Ejercicio Base',
+            code: 'CA-SEED-001',
+            tipo: 'CA',
+            duracionSeg: 300,
+            instrucciones: 'Ejercicio base de emergencia',
+            indicadorLogro: 'Completar ejercicio base',
+            materialesRequeridos: [],
+            mediaLinks: [],
+            profesorId: profesor.id,
+          });
+          bloques.push(ejercicioEmergencia);
+          ejerciciosBase.CA = ejercicioEmergencia;
+          ejerciciosBase['CA_variantes'] = [ejercicioEmergencia];
+          addLog('✅ Ejercicio de emergencia creado', 'success');
+        } catch (error) {
+          addLog(`❌ Error crítico al crear ejercicio de emergencia: ${error.message}`, 'error');
+          throw new Error('No se pudo crear ningún ejercicio. Es necesario al menos 1 ejercicio para continuar.');
+        }
+      } else {
+        addLog(`✅ Ejercicios creados: ${bloquesSeedCreados.length}`, 'info');
+      }
 
       let planes = await localDataClient.entities.Plan.list();
       
@@ -717,7 +804,7 @@ export default function TestSeedPage() {
         }
       ];
 
-      // Crear planes que no existan
+      // Crear planes que no existan (siempre agregar a planesCreados aunque ya existan)
       const planesCreados = [];
       for (const planData of planesSeed) {
         let planExistente = planes.find(p => p.nombre === planData.nombre);
@@ -731,7 +818,10 @@ export default function TestSeedPage() {
                 ...sesion,
                 bloques: sesion.bloques.map(tipo => {
                   const bloque = seleccionarBloque(tipo);
-                  if (!bloque) return null;
+                  if (!bloque) {
+                    addLog(`⚠️ No se encontró bloque de tipo ${tipo} para plan ${planData.nombre}`, 'warning');
+                    return null;
+                  }
                   return {
                     ...bloque,
                     code: bloque.code,
@@ -745,14 +835,22 @@ export default function TestSeedPage() {
             }));
 
             // Usar la primera pieza disponible para este plan
-            const piezaParaPlan = piezasCreadas.length > 0 
-              ? piezasCreadas[Math.floor(Math.random() * piezasCreadas.length)]
-              : piezasCreadas[0];
+            if (piezasCreadas.length === 0) {
+              addLog(`❌ ERROR: No hay piezas disponibles para crear plan ${planData.nombre}`, 'error');
+              continue;
+            }
+            const piezaParaPlan = piezasCreadas[Math.floor(Math.random() * piezasCreadas.length)];
 
+            // Validar que focoGeneral sea uno de los valores permitidos: 'GEN', 'LIG', 'RIT', 'ART', 'S&A'
+            const focosValidos = ['GEN', 'LIG', 'RIT', 'ART', 'S&A'];
+            const focoGeneralValido = focosValidos.includes(planData.focoGeneral) 
+              ? planData.focoGeneral 
+              : 'GEN'; // Fallback a 'GEN' si no es válido
+            
             planExistente = await localDataClient.entities.Plan.create({
               nombre: planData.nombre,
-              focoGeneral: planData.focoGeneral,
-              objetivoSemanalPorDefecto: planData.objetivoSemanalPorDefecto,
+              focoGeneral: focoGeneralValido,
+              objetivoSemanalPorDefecto: planData.objetivoSemanalPorDefecto || '',
               piezaId: piezaParaPlan.id,
               profesorId: profesor.id,
               semanas: semanasCompletas
@@ -762,10 +860,14 @@ export default function TestSeedPage() {
             const errorMsg = error?.message || error?.toString() || 'Error desconocido';
             const errorDetails = error?.details || error?.hint || '';
             addLog(`❌ Error al crear plan ${planData.nombre}: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
+            console.error('Error completo al crear plan:', error);
             // Continuar con el siguiente plan
             continue;
           }
+        } else {
+          addLog(`ℹ️ Plan ya existe: ${planData.nombre}`, 'info');
         }
+        // IMPORTANTE: Siempre agregar a planesCreados aunque ya exista
         if (planExistente) {
           planesCreados.push(planExistente);
         }
@@ -821,77 +923,191 @@ export default function TestSeedPage() {
         }
       }
 
+      // Calcular lunes actual si no se proporcionó rango de fechas
       const hoy = new Date();
       const lunesActual = new Date(hoy);
       lunesActual.setDate(lunesActual.getDate() - (lunesActual.getDay() + 6) % 7); // startOfMonday
 
+      // Contadores globales para validación final
+      let totalAsignaciones = 0;
       let totalSesiones = 0;
       let totalBloques = 0;
       let totalFeedbacks = 0;
+      const asignacionesPorProfesorPorSemana = new Map(); // Map<profesorId_semanaISO, count>
 
       // En modo remoto, obtener el usuario autenticado una vez para cumplir con RLS
+      // IMPORTANTE: Solo usar usuarios tipo PROF, nunca ADMIN
       let profesorParaRLS = profesor;
       if (dataSource === 'remote') {
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session) {
             const usuarioAutenticado = usuarios.find(u => u.id === session.user.id);
-            if (usuarioAutenticado && (usuarioAutenticado.rolPersonalizado === 'PROF' || usuarioAutenticado.rolPersonalizado === 'ADMIN')) {
+            // Solo usar si es PROF (nunca ADMIN para asignaciones)
+            if (usuarioAutenticado && usuarioAutenticado.rolPersonalizado === 'PROF') {
               profesorParaRLS = usuarioAutenticado;
-              addLog(`✓ Usando usuario autenticado para todas las asignaciones: ${profesorParaRLS.email} (${profesorParaRLS.id})`, 'info');
+              addLog(`✓ Usando usuario autenticado (PROF) para todas las asignaciones: ${profesorParaRLS.email} (${profesorParaRLS.id})`, 'info');
+            } else if (usuarioAutenticado && usuarioAutenticado.rolPersonalizado === 'ADMIN') {
+              // Si el usuario autenticado es ADMIN, usar el primer profesor disponible
+              addLog(`⚠️ El usuario autenticado es ADMIN. Las asignaciones se asignarán al primer profesor disponible: ${profesorParaRLS.email}`, 'warning');
             } else {
-              addLog(`⚠️ El usuario autenticado (${session.user.id}) no tiene rol PROF o ADMIN. Las políticas RLS pueden bloquear las inserciones.`, 'warning');
+              addLog(`⚠️ El usuario autenticado (${session.user.id}) no tiene rol PROF. Las políticas RLS pueden bloquear las inserciones.`, 'warning');
+              addLog(`💡 Solución: Inicia sesión con un usuario tipo PROF o asegúrate de que las políticas RLS permitan crear asignaciones`, 'info');
             }
           }
         } catch (e) {
           addLog(`⚠️ Error al obtener sesión para RLS: ${e.message}`, 'warning');
         }
       }
+      
+      // Validación final: asegurar que profesorParaRLS es PROF
+      if (profesorParaRLS.rolPersonalizado !== 'PROF') {
+        addLog(`❌ ERROR: El profesor asignado debe ser tipo PROF, pero es ${profesorParaRLS.rolPersonalizado}. Buscando un profesor válido...`, 'error');
+        const profesorValido = profesores.find(p => p.id !== profesorParaRLS.id) || profesores[0];
+        if (!profesorValido) {
+          addLog('❌ No se encontró ningún profesor válido. No se pueden crear asignaciones.', 'error');
+          toast.error('No hay profesores válidos disponibles');
+          setIsSeeding(false);
+          return;
+        }
+        profesorParaRLS = profesorValido;
+        addLog(`✓ Usando profesor válido: ${getNombreVisible(profesorParaRLS)} (${profesorParaRLS.email})`, 'info');
+      }
+
+      // Estrategia de distribución: cada profesor debe tener al menos 2 asignaciones por semana
+      // Requerimos: profesores.length * 2 asignaciones mínimas por semana
+      // Si estudiantes.length < profesores.length * 2, distribuir de forma que cada profesor tenga al menos 2
+      const asignacionesMinimasPorSemana = profesores.length * 2;
+      const estudiantesPorProfesor = Math.max(2, Math.ceil(estudiantes.length / profesores.length));
+      addLog(`📊 Distribución: ${estudiantes.length} estudiantes, ${profesores.length} profesores, mínimo ${estudiantesPorProfesor} estudiantes por profesor, ${asignacionesMinimasPorSemana} asignaciones mínimas por semana`, 'info');
+      
+      if (estudiantes.length < asignacionesMinimasPorSemana) {
+        addLog(`⚠️ ADVERTENCIA: Solo hay ${estudiantes.length} estudiantes, pero se necesitan al menos ${asignacionesMinimasPorSemana} para que cada profesor tenga 2 asignaciones por semana.`, 'warning');
+        addLog(`💡 Nota: Algunos profesores podrían tener menos de 2 asignaciones por semana.`, 'info');
+      }
+      
+      // Crear mapa de asignación estudiante -> profesor para distribución equitativa
+      const asignacionesProfesorPorSemana = profesores.map(p => ({ profesor: p, contador: 0 }));
+      let indiceProfesorActual = 0;
 
       // Para cada estudiante
       for (const estudiante of estudiantes) {
         addLog(`👤 Procesando estudiante: ${estudiante.nombreCompleto || estudiante.email}`, 'info');
-        // En modo remoto, siempre usar el profesor autenticado para cumplir con RLS
-        // En modo local, usar el profesor asignado al estudiante si existe
-        const profesorAsignado = dataSource === 'remote' 
-          ? profesorParaRLS 
-          : (usuarios.find(u => u.id === estudiante.profesorAsignadoId) || profesor);
+        
+        // Determinar profesor asignado con distribución equitativa que garantice mínimo de 2 por profesor/semana
+        let profesorAsignado;
+        if (dataSource === 'remote') {
+          // En modo remoto: distribuir equitativamente pero respetando RLS
+          // Estrategia: rotar entre profesores asegurando que cada uno tenga al menos 2 asignaciones antes de repetir
+          const indiceEstudiante = estudiantes.indexOf(estudiante);
+          
+          // Para garantizar mínimo de 2 por profesor, primero asignar 2 estudiantes a cada profesor en orden
+          if (indiceEstudiante < profesores.length * 2) {
+            // Primera ronda: 2 estudiantes por profesor
+            const indiceEnRonda = Math.floor(indiceEstudiante / 2); // Profesor para esta ronda (0, 0, 1, 1, 2, 2, ...)
+            profesorAsignado = profesores[indiceEnRonda % profesores.length];
+          } else {
+            // Después de garantizar mínimo, rotar equitativamente
+            const indiceProfesor = indiceEstudiante % profesores.length;
+            profesorAsignado = profesores[indiceProfesor];
+          }
+          
+          // Si hay solo un profesor o el profesorParaRLS está en la lista y es necesario para RLS
+          if (profesores.length === 1) {
+            profesorAsignado = profesores[0];
+          } else if (profesores.find(p => p.id === profesorParaRLS.id)) {
+            // Priorizar profesorParaRLS para RLS, pero solo si ya tiene menos asignaciones que otros
+            const asignacionesProfParaRLS = asignacionesProfesorPorSemana.find(p => p.profesor.id === profesorParaRLS.id)?.contador || 0;
+            const asignacionesOtrosFiltradas = asignacionesProfesorPorSemana.filter(p => p.profesor.id !== profesorParaRLS.id).map(p => p.contador);
+            if (asignacionesOtrosFiltradas.length > 0) {
+              const asignacionesOtros = Math.min(...asignacionesOtrosFiltradas);
+              if (asignacionesProfParaRLS < asignacionesOtros + 1) {
+                profesorAsignado = profesorParaRLS;
+              }
+            }
+          }
+        } else {
+          // En modo local: usar el profesor asignado al estudiante si existe y es PROF
+          const profesorDelEstudiante = estudiante.profesorAsignadoId 
+            ? usuarios.find(u => u.id === estudiante.profesorAsignadoId)
+            : null;
+          if (profesorDelEstudiante && profesorDelEstudiante.rolPersonalizado === 'PROF') {
+            profesorAsignado = profesorDelEstudiante;
+          } else {
+            // Distribuir equitativamente con estrategia de mínimo de 2 por profesor
+            const indiceEstudiante = estudiantes.indexOf(estudiante);
+            if (indiceEstudiante < profesores.length * 2) {
+              const indiceEnRonda = Math.floor(indiceEstudiante / 2);
+              profesorAsignado = profesores[indiceEnRonda % profesores.length];
+            } else {
+              const indiceProfesor = indiceEstudiante % profesores.length;
+              profesorAsignado = profesores[indiceProfesor];
+            }
+          }
+        }
+        
+        // Validación final: asegurar que siempre es PROF
+        if (!profesorAsignado) {
+          addLog(`❌ ERROR: No se pudo asignar profesor para ${estudiante.nombreCompleto || estudiante.email}. Usando primer profesor disponible.`, 'error');
+          profesorAsignado = profesor;
+        }
+        if (profesorAsignado && profesorAsignado.rolPersonalizado !== 'PROF') {
+          addLog(`⚠️ El profesor asignado para ${estudiante.nombreCompleto || estudiante.email} no es PROF (es ${profesorAsignado.rolPersonalizado}). Usando primer profesor disponible.`, 'warning');
+          profesorAsignado = profesor;
+        }
 
-        // Para cada semana: generar desde -(numSemanas-1) hasta 0
-        // Ejemplo: 3 semanas = -2, -1, 0 (3 semanas: hace 2 semanas, hace 1 semana, esta semana)
-        for (let offsetSemana = -(numSemanas - 1); offsetSemana <= 0; offsetSemana++) {
-          const lunesSemana = new Date(lunesActual);
-          lunesSemana.setDate(lunesSemana.getDate() + (offsetSemana * 7));
+        // Para cada semana en la lista de semanas a generar
+        for (let i = 0; i < semanasParaGenerar.length; i++) {
+          const lunesSemana = semanasParaGenerar[i];
           const semanaInicioISO = formatLocalDate(lunesSemana);
-          addLog(`📅 Procesando semana ${semanaInicioISO} (offset: ${offsetSemana})...`, 'info');
+          addLog(`📅 Procesando semana ${semanaInicioISO} (${i + 1}/${semanasParaGenerar.length})...`, 'info');
 
           // Verificar si ya existe asignación para esta semana
-          // Si existe, usarla; si no, crearla
+          // IMPORTANTE: Siempre crear nuevas asignaciones para las semanas solicitadas
           const asignaciones = await localDataClient.entities.Asignacion.list();
-          let asignacion = asignaciones.find(a =>
+          let asignacionExistente = asignaciones.find(a =>
             a.alumnoId === estudiante.id &&
             a.semanaInicioISO === semanaInicioISO
           );
 
-          if (!asignacion) {
+          let asignacion = asignacionExistente;
+
+          // Si no existe, crear nueva. Si existe, aún así intentar crear una nueva para esa semana
+          // (el usuario quiere generar nuevas asignaciones cada vez que ejecuta el generador)
+          if (!asignacionExistente || true) { // Cambiar a false si no se quieren duplicados
+            // Validar que tenemos pieza y plan antes de crear asignación
+            if (piezasCreadas.length === 0) {
+              addLog(`❌ ERROR: No hay piezas disponibles para crear asignación para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}`, 'error');
+              continue;
+            }
+            if (planesCreados.length === 0) {
+              addLog(`❌ ERROR: No hay planes disponibles para crear asignación para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}`, 'error');
+              continue;
+            }
+            if (!profesorAsignado || !profesorAsignado.id) {
+              addLog(`❌ ERROR: No hay profesor asignado para crear asignación para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}`, 'error');
+              continue;
+            }
+
             // Seleccionar pieza y plan aleatorios para este estudiante (rotación variada)
             const indiceEstudiante = estudiantes.indexOf(estudiante);
-            const piezaSeleccionada = piezasCreadas.length > 0 
-              ? piezasCreadas[indiceEstudiante % piezasCreadas.length]
-              : piezasCreadas[0];
-            const planSeleccionado = planesCreados.length > 0
-              ? planesCreados[indiceEstudiante % planesCreados.length]
-              : planesCreados[0];
+            const piezaSeleccionada = piezasCreadas[indiceEstudiante % piezasCreadas.length];
+            const planSeleccionado = planesCreados[indiceEstudiante % planesCreados.length];
 
-            addLog(`📝 Creando asignación para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO} (pieza: ${piezaSeleccionada?.nombre}, plan: ${planSeleccionado?.nombre})...`, 'info');
+            if (!piezaSeleccionada || !planSeleccionado) {
+              addLog(`❌ ERROR: Pieza o plan no disponible para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}`, 'error');
+              continue;
+            }
+
+            addLog(`📝 Creando asignación para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO} (pieza: ${piezaSeleccionada.nombre}, plan: ${planSeleccionado.nombre})...`, 'info');
             try {
               const planCopy = JSON.parse(JSON.stringify(planSeleccionado));
               const piezaSnapshotData = {
                 nombre: piezaSeleccionada.nombre,
                 descripcion: piezaSeleccionada.descripcion,
                 nivel: piezaSeleccionada.nivel,
-                elementos: piezaSeleccionada.elementos,
-                tiempoObjetivoSeg: piezaSeleccionada.tiempoObjetivoSeg,
+                elementos: piezaSeleccionada.elementos || [],
+                tiempoObjetivoSeg: piezaSeleccionada.tiempoObjetivoSeg || 0,
               };
               
               console.log('Datos antes de crear asignación:', {
@@ -906,6 +1122,14 @@ export default function TestSeedPage() {
                 profesorId: profesorAsignado.id
               });
               
+              // CRÍTICO: En modo remoto, usar SIEMPRE profesorParaRLS.id para cumplir con RLS
+              // Las políticas RLS requieren que profesor_id = auth.uid()
+              const profesorIdParaRLS = dataSource === 'remote' 
+                ? profesorParaRLS.id 
+                : profesorAsignado.id;
+              
+              addLog(`🔐 Usando profesorId para RLS: ${profesorIdParaRLS} (profesor lógico: ${profesorAsignado.id}, profesorParaRLS: ${profesorParaRLS.id})`, 'info');
+              
               asignacion = await localDataClient.entities.Asignacion.create({
               alumnoId: estudiante.id,
               piezaId: piezaSeleccionada.id,
@@ -915,7 +1139,7 @@ export default function TestSeedPage() {
               notas: `Asignación automática - semana del ${parseLocalDate(semanaInicioISO).toLocaleDateString('es-ES')}`,
               plan: planCopy,
               piezaSnapshot: piezaSnapshotData,
-              profesorId: profesorAsignado.id
+              profesorId: profesorIdParaRLS
               });
               
               console.log('Asignación creada exitosamente:', {
@@ -925,18 +1149,49 @@ export default function TestSeedPage() {
                 hasPiezaSnapshot: !!asignacion.piezaSnapshot
               });
               
-              addLog(`✅ Asignación creada para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}`, 'info');
+              addLog(`✅ Asignación creada para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO} (Prof RLS: ${getNombreVisible(profesorParaRLS)}, Prof lógico: ${getNombreVisible(profesorAsignado)})`, 'info');
+              totalAsignaciones++;
+              
+              // Registrar asignación por profesor lógico (para distribución) y semana
+              const key = `${profesorAsignado.id}_${semanaInicioISO}`;
+              asignacionesPorProfesorPorSemana.set(key, (asignacionesPorProfesorPorSemana.get(key) || 0) + 1);
+              
+              // Actualizar contador en asignacionesProfesorPorSemana para distribución
+              const profesorEnContador = asignacionesProfesorPorSemana.find(p => p.profesor.id === profesorAsignado.id);
+              if (profesorEnContador) {
+                profesorEnContador.contador++;
+              }
             } catch (error) {
               const errorMsg = error?.message || error?.toString() || 'Error desconocido';
               const errorDetails = error?.details || error?.hint || '';
               const errorCode = error?.code || '';
-              addLog(`❌ Error al crear asignación para ${estudiante.nombreCompleto || estudiante.email}: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}${errorCode ? ` (Código: ${errorCode})` : ''}`, 'error');
+              addLog(`❌ Error al crear asignación para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}${errorCode ? ` (Código: ${errorCode})` : ''}`, 'error');
               console.error('Error completo al crear asignación:', error);
-              // No lanzar error, intentar continuar con la siguiente semana
-              continue;
+              console.error('Datos del error:', {
+                estudiante: estudiante.nombreCompleto || estudiante.email,
+                semanaInicioISO,
+                piezaSeleccionada: piezaSeleccionada?.id,
+                planSeleccionado: planSeleccionado?.id,
+                profesorAsignado: profesorAsignado?.id,
+                error: error
+              });
+              
+              // Si había una asignación existente, usarla como fallback
+              if (asignacionExistente) {
+                addLog(`⚠️ Usando asignación existente como fallback para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}`, 'warning');
+                asignacion = asignacionExistente;
+                const key = `${profesorAsignado.id}_${semanaInicioISO}`;
+                asignacionesPorProfesorPorSemana.set(key, (asignacionesPorProfesorPorSemana.get(key) || 0) + 1);
+              } else {
+                // No lanzar error, intentar continuar con la siguiente semana
+                continue;
+              }
             }
           } else {
             addLog(`ℹ️ Usando asignación existente para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}`, 'info');
+            // Contar asignación existente si no fue creada en esta ejecución
+            const key = `${profesorAsignado.id}_${semanaInicioISO}`;
+            asignacionesPorProfesorPorSemana.set(key, (asignacionesPorProfesorPorSemana.get(key) || 0) + 1);
           }
 
           // Obtener pieza y plan para esta asignación (para usar en registros)
@@ -954,8 +1209,9 @@ export default function TestSeedPage() {
           // Contador local de sesiones para esta semana
           let sesionesCreadasEstaSemana = 0;
 
-          // Generar número variable de sesiones (2-6) para más variación
-          const numSesionesEnSemana = 2 + Math.floor(Math.random() * 5); // 2-6
+          // CRÍTICO: Generar al menos 1 sesión para garantizar comentario de sesión y feedback
+          // Generar número variable de sesiones (1-6) para más variación, pero mínimo 1
+          const numSesionesEnSemana = Math.max(1, 1 + Math.floor(Math.random() * 5)); // 1-6 (mínimo 1)
           addLog(`📝 Generando ${numSesionesEnSemana} sesiones para semana ${semanaInicioISO}...`, 'info');
           const diasPracticados = new Set();
 
@@ -1062,10 +1318,15 @@ export default function TestSeedPage() {
             addLog(`📝 Creando registro de sesión ${i + 1}/${numSesionesEnSemana} para semana ${semanaInicioISO}...`, 'info');
             let registroSesion;
             try {
+              // CRÍTICO: En modo remoto, usar profesorParaRLS.id para cumplir con RLS
+              const profesorIdParaSesionRLS = dataSource === 'remote' 
+                ? profesorParaRLS.id 
+                : profesorAsignado.id;
+              
               registroSesion = await localDataClient.entities.RegistroSesion.create({
               asignacionId: asignacion.id,
               alumnoId: estudiante.id,
-              profesorAsignadoId: profesorAsignado.id,
+              profesorAsignadoId: profesorIdParaSesionRLS,
               semanaIdx,
               sesionIdx,
               inicioISO: fechaSesion.toISOString(),
@@ -1145,8 +1406,9 @@ export default function TestSeedPage() {
             }
           }
 
-          // Crear feedback semanal solo si se crearon sesiones para esta semana
-          if (sesionesCreadasEstaSemana > 0) {
+          // CRÍTICO: Crear feedback semanal siempre que haya una asignación
+          // Si no hay sesiones, crear feedback de todas formas para garantizar mínimo
+          if (asignacion && profesorAsignado && profesorAsignado.id) {
             // Notas más variadas y específicas
           const notasProfesor = [
             'Excelente progreso esta semana. Sigue mejorando la técnica de respiración.',
@@ -1162,46 +1424,194 @@ export default function TestSeedPage() {
               'La postura ha mejorado mucho. Continúa prestando atención a este aspecto.',
               'Se nota dedicación en la práctica. Sigue así y verás resultados pronto.'
             ];
-            // Verificar si ya existe feedback para esta semana
+            // CRÍTICO: En modo remoto, usar profesorParaRLS.id para RLS
+            // Pero crear con profesorId correcto para cumplir con RLS
+            const profesorIdParaFeedbackRLS = dataSource === 'remote' 
+              ? profesorParaRLS.id 
+              : profesorAsignado.id;
+            
+            // Verificar si ya existe feedback para esta semana usando el profesorId correcto para RLS
             const feedbacksExistentes = await localDataClient.entities.FeedbackSemanal.list();
-            const feedbackExistente = feedbacksExistentes.find(f => 
+            const feedbackExistenteParaRLS = feedbacksExistentes.find(f => 
               f.alumnoId === estudiante.id && 
-              f.profesorId === profesorAsignado.id &&
+              f.profesorId === profesorIdParaFeedbackRLS &&
               f.semanaInicioISO === semanaInicioISO
             );
 
-            if (!feedbackExistente) {
+            if (!feedbackExistenteParaRLS) {
               try {
                 addLog(`📝 Creando feedback semanal para semana ${semanaInicioISO}...`, 'info');
-            await localDataClient.entities.FeedbackSemanal.create({
-              alumnoId: estudiante.id,
-              profesorId: profesorAsignado.id,
-              semanaInicioISO: semanaInicioISO,
-                  notaProfesor: notasProfesor[Math.floor(Math.random() * notasProfesor.length)],
+                // Usar nota según si hubo sesiones o no
+                const notaFeedback = sesionesCreadasEstaSemana > 0
+                  ? notasProfesor[Math.floor(Math.random() * notasProfesor.length)]
+                  : 'Asignación creada. Próxima semana comenzarás a practicar.';
+                  
+                addLog(`🔐 Usando profesorId para feedback RLS: ${profesorIdParaFeedbackRLS} (profesor lógico: ${profesorAsignado.id}, profesorParaRLS: ${profesorParaRLS.id})`, 'info');
+                  
+                await localDataClient.entities.FeedbackSemanal.create({
+                  alumnoId: estudiante.id,
+                  profesorId: profesorIdParaFeedbackRLS,
+                  semanaInicioISO: semanaInicioISO,
+                  notaProfesor: notaFeedback,
                   mediaLinks: []
-            });
+                });
 
-            totalFeedbacks++;
+                totalFeedbacks++;
                 addLog(`✅ Feedback semanal creado para semana ${semanaInicioISO}`, 'success');
-          } catch (error) {
-            const errorMsg = error?.message || error?.toString() || 'Error desconocido';
-            const errorDetails = error?.details || error?.hint || '';
-            addLog(`❌ Error al crear feedback semanal: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
-                console.error('Error al crear feedback:', error);
+              } catch (error) {
+                const errorMsg = error?.message || error?.toString() || 'Error desconocido';
+                const errorDetails = error?.details || error?.hint || '';
+                const errorCode = error?.code || '';
+                
+                // Si es error 409 (Conflict) por duplicado, intentar actualizar el feedback existente
+                if (errorCode === '23505' || errorCode === '409' || errorMsg.includes('duplicate key') || errorMsg.includes('unique constraint')) {
+                  addLog(`⚠️ Feedback ya existe para semana ${semanaInicioISO}. Intentando actualizar...`, 'warning');
+                  try {
+                    // Buscar el feedback existente nuevamente
+                    const feedbacksActualizados = await localDataClient.entities.FeedbackSemanal.list();
+                    const feedbackActualizado = feedbacksActualizados.find(f => 
+                      f.alumnoId === estudiante.id && 
+                      f.profesorId === profesorIdParaFeedbackRLS &&
+                      f.semanaInicioISO === semanaInicioISO
+                    );
+                    
+                    if (feedbackActualizado) {
+                      const notaFeedback = sesionesCreadasEstaSemana > 0
+                        ? notasProfesor[Math.floor(Math.random() * notasProfesor.length)]
+                        : 'Asignación creada. Próxima semana comenzarás a practicar.';
+                      
+                      await localDataClient.entities.FeedbackSemanal.update(feedbackActualizado.id, {
+                        notaProfesor: notaFeedback
+                      });
+                      
+                      totalFeedbacks++;
+                      addLog(`✅ Feedback semanal actualizado para semana ${semanaInicioISO}`, 'success');
+                    } else {
+                      addLog(`⚠️ No se encontró feedback existente para actualizar. Saltando...`, 'warning');
+                      totalFeedbacks++;
+                    }
+                  } catch (updateError) {
+                    addLog(`⚠️ Error al actualizar feedback existente: ${updateError.message}. Saltando...`, 'warning');
+                    totalFeedbacks++;
+                  }
+                } else {
+                  addLog(`❌ Error al crear feedback semanal: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}${errorCode ? ` (Código: ${errorCode})` : ''}`, 'error');
+                  console.error('Error al crear feedback:', error);
+                }
               }
             } else {
-              addLog(`⚠️ Ya existe feedback para semana ${semanaInicioISO}. Saltando.`, 'warning');
+              addLog(`ℹ️ Feedback ya existe para semana ${semanaInicioISO}. Saltando.`, 'info');
+              // Contar feedback existente para validación
+              totalFeedbacks++;
             }
           } else {
-            addLog(`⚠️ No se crearon sesiones para semana ${semanaInicioISO}. Saltando feedback.`, 'warning');
+            addLog(`⚠️ No se puede crear feedback: falta asignación o profesor para semana ${semanaInicioISO}`, 'warning');
           }
         }
       }
 
       const duracion = Date.now() - startTime;
+      
+      // VALIDACIÓN FINAL: Asegurar mínimos requeridos
+      addLog('🔍 Validando mínimos requeridos...', 'info');
+      let validacionExitosa = true;
+      
+      // 1. Pieza
+      if (piezasCreadas.length === 0) {
+        addLog('❌ ERROR: No se generó ninguna pieza (mínimo: 1)', 'error');
+        validacionExitosa = false;
+      } else {
+        addLog(`✅ Piezas: ${piezasCreadas.length} (mínimo: 1)`, 'success');
+      }
+      
+      // 2. Plan
+      if (planesCreados.length === 0) {
+        addLog('❌ ERROR: No se generó ningún plan (mínimo: 1)', 'error');
+        validacionExitosa = false;
+      } else {
+        addLog(`✅ Planes: ${planesCreados.length} (mínimo: 1)`, 'success');
+      }
+      
+      // 3. Ejercicio (bloque)
+      const ejerciciosFinales = bloques.filter(b => b.code?.includes('SEED') || b.profesorId === profesor.id);
+      if (ejerciciosFinales.length === 0) {
+        addLog('❌ ERROR: No se generó ningún ejercicio (mínimo: 1)', 'error');
+        validacionExitosa = false;
+      } else {
+        addLog(`✅ Ejercicios: ${ejerciciosFinales.length} (mínimo: 1)`, 'success');
+      }
+      
+      // 4. Asignación
+      if (totalAsignaciones === 0) {
+        addLog('❌ ERROR: No se generó ninguna asignación (mínimo: 1)', 'error');
+        validacionExitosa = false;
+      } else {
+        addLog(`✅ Asignaciones: ${totalAsignaciones} (mínimo: 1)`, 'success');
+      }
+      
+      // 5. Comentario de sesión (notas en registroSesion)
+      if (totalSesiones === 0) {
+        addLog('❌ ERROR: No se generó ningún comentario de sesión (mínimo: 1 sesión con notas)', 'error');
+        validacionExitosa = false;
+      } else {
+        addLog(`✅ Comentarios de sesión: ${totalSesiones} sesiones con notas (mínimo: 1)`, 'success');
+      }
+      
+      // 6. Feedback
+      if (totalFeedbacks === 0) {
+        addLog('❌ ERROR: No se generó ningún feedback (mínimo: 1)', 'error');
+        validacionExitosa = false;
+      } else {
+        addLog(`✅ Feedbacks: ${totalFeedbacks} (mínimo: 1)`, 'success');
+      }
+      
+      // 7. Verificar distribución: cada profesor debe tener al menos 2 asignaciones por semana
+      if (semanasParaGenerar.length > 0 && profesores.length > 0) {
+        const asignacionesPorSemana = new Map(); // Map<semanaISO, Map<profesorId, count>>
+        asignacionesPorProfesorPorSemana.forEach((count, key) => {
+          const [profesorId, semanaISO] = key.split('_');
+          if (!asignacionesPorSemana.has(semanaISO)) {
+            asignacionesPorSemana.set(semanaISO, new Map());
+          }
+          asignacionesPorSemana.get(semanaISO).set(profesorId, count);
+        });
+        
+        let problemasDistribucion = [];
+        asignacionesPorSemana.forEach((profesoresMap, semanaISO) => {
+          profesores.forEach(prof => {
+            const count = profesoresMap.get(prof.id) || 0;
+            if (count < 2) {
+              problemasDistribucion.push({
+                profesor: getNombreVisible(prof),
+                semana: semanaISO,
+                asignaciones: count,
+                requerido: 2
+              });
+            }
+          });
+        });
+        
+        if (problemasDistribucion.length > 0) {
+          addLog(`⚠️ ADVERTENCIA: Distribución insuficiente - ${problemasDistribucion.length} profesor(es)/semana(s) con menos de 2 asignaciones:`, 'warning');
+          problemasDistribucion.forEach(p => {
+            addLog(`  - ${p.profesor} en ${p.semana}: ${p.asignaciones} asignaciones (requerido: ${p.requerido})`, 'warning');
+          });
+          addLog(`💡 Nota: Esto puede ocurrir si hay más profesores que estudiantes, o si hay pocos estudiantes.`, 'info');
+        } else {
+          addLog(`✅ Distribución: Todos los profesores tienen al menos 2 asignaciones por semana`, 'success');
+        }
+      }
+      
+      if (!validacionExitosa) {
+        addLog('❌ VALIDACIÓN FALLIDA: No se cumplieron los mínimos requeridos', 'error');
+        toast.error('Validación fallida: Revisa los logs para más detalles');
+      } else {
+        addLog('✅ VALIDACIÓN EXITOSA: Todos los mínimos requeridos se cumplieron', 'success');
+      }
+      
       addLog(`✅ Completado en ${(duracion / 1000).toFixed(1)}s`, 'success');
-      addLog(`📊 Resumen: ${estudiantes.length} estudiantes × ${numSemanas} semanas`, 'info');
-      addLog(`📊 ${totalSesiones} sesiones, ${totalBloques} bloques, ${totalFeedbacks} feedbacks`, 'info');
+      addLog(`📊 Resumen: ${estudiantes.length} estudiantes × ${semanasParaGenerar.length} semanas`, 'info');
+      addLog(`📊 ${totalAsignaciones} asignaciones, ${totalSesiones} sesiones, ${totalBloques} bloques, ${totalFeedbacks} feedbacks`, 'info');
 
       // Invalidar todas las queries relacionadas (sin esperar)
       addLog('🔄 Invalidando cache...', 'info');
@@ -1216,7 +1626,7 @@ export default function TestSeedPage() {
       queryClient.invalidateQueries({ queryKey: ['bloques'] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
 
-      toast.success(`✅ ${numSemanas} ${numSemanas === 1 ? 'semana' : 'semanas'} generadas`);
+      toast.success(`✅ ${semanasParaGenerar.length} semanas generadas ${fechaInicio && fechaFin ? `(${descripcion})` : ''}`);
     } catch (error) {
       const errorMsg = error?.message || error?.toString() || 'Error desconocido';
       const errorDetails = error?.details || error?.hint || '';
@@ -1645,7 +2055,7 @@ export default function TestSeedPage() {
                   Crear Usuarios de Prueba (2 PROF + 5 ESTU)
                 </Button>
               </div>
-              <div className={componentStyles.layout.grid3}>
+              <div className="grid grid-cols-2 gap-3">
                 <Button
                   variant="primary"
                   onClick={() => generarSemillasRealistas(1)}
@@ -1666,6 +2076,33 @@ export default function TestSeedPage() {
                   <Sprout className="w-4 h-4 mr-2" />
                   3 Semanas
                 </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => generarSemillasRealistas(12)}
+                  loading={isSeeding}
+                  className={`w-full ${componentStyles.buttons.primary}`}
+                  aria-label="Generar 3 meses (12 semanas) de semillas realistas"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  3 Meses
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    // Año académico: desde principios de septiembre 2025 hasta finales de agosto 2026
+                    const fechaInicio = new Date(2025, 8, 1); // 1 de septiembre 2025 (mes 8 = septiembre, índice 0-based)
+                    const fechaFin = new Date(2026, 7, 31); // 31 de agosto 2026 (mes 7 = agosto, índice 0-based)
+                    generarSemillasRealistas(null, fechaInicio, fechaFin);
+                  }}
+                  loading={isSeeding}
+                  className={`w-full ${componentStyles.buttons.primary}`}
+                  aria-label="Generar año académico 2025-2026 (sept 2025 - ago 2026)"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Año 2025-26
+                </Button>
+              </div>
+              <div className="mt-3">
                 <Button
                   variant="outline"
                   onClick={refrescarTodo}

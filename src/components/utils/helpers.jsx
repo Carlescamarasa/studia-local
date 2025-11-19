@@ -351,3 +351,62 @@ export function useEffectiveUser() {
   // En modo local, usar currentUser directamente
   return currentUser;
 }
+
+/**
+ * Resuelve el ID de usuario actual de la BD usando estrategia prioritaria:
+ * 1. Buscar por ID (UUID en Supabase, string en local) - PRIORITARIO
+ * 2. En modo local: fallback a email si ID no coincide
+ * 
+ * En modo Supabase: effectiveUser.id DEBE ser UUID de auth.users = profiles.id
+ * En modo local: IDs pueden ser strings diferentes, usar email como fallback
+ * 
+ * @param {Object} effectiveUser - Usuario de useEffectiveUser()
+ * @param {Array} usuarios - Lista de usuarios de User.list()
+ * @returns {string|null} - ID del usuario en la BD, o null si no se puede resolver
+ */
+export function resolveUserIdActual(effectiveUser, usuarios = []) {
+  if (!effectiveUser?.id) return null;
+  
+  // Estrategia 1: Buscar por ID directamente (prioritario)
+  // En modo Supabase, effectiveUser.id es UUID de auth.users = profiles.id
+  // En modo local, puede ser string, pero debe coincidir si existe
+  const usuarioActual = usuarios.find(u => u.id === effectiveUser.id);
+  if (usuarioActual) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[resolveUserIdActual] Usuario encontrado por ID:', effectiveUser.id);
+    }
+    return usuarioActual.id;
+  }
+  
+  // Estrategia 2: Si no se encuentra y tenemos email, buscar por email
+  // (En modo Supabase, email solo disponible para usuario autenticado)
+  // (En modo local, email puede estar disponible para todos)
+  if (effectiveUser.email) {
+    const normalizedEmail = effectiveUser.email.toLowerCase().trim();
+    const usuarioPorEmail = usuarios.find(u => 
+      u.email && u.email.toLowerCase().trim() === normalizedEmail
+    );
+    if (usuarioPorEmail) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[resolveUserIdActual] Usuario encontrado por email:', normalizedEmail, 'ID:', usuarioPorEmail.id);
+      }
+      return usuarioPorEmail.id;
+    }
+  }
+  
+  // Si no se encuentra por ID ni email, puede ser:
+  // 1. Modo Supabase: problema de sincronización entre auth.users y profiles (NO debería pasar)
+  // 2. Modo local: usuario sintético o usuario no sincronizado
+  if (process.env.NODE_ENV === 'development') {
+    const warningMsg = `Usuario no encontrado en la base de datos. Esto puede indicar un problema de sincronización entre auth.users y profiles. Verifica que el usuario existe en ambas tablas. Usando effectiveUser.id directamente: ${effectiveUser.id}`;
+    console.warn('[resolveUserIdActual]', warningMsg);
+    console.warn('[resolveUserIdActual] Total usuarios en lista:', usuarios.length);
+    console.warn('[resolveUserIdActual] IDs disponibles:', usuarios.map(u => u.id).slice(0, 5));
+    console.warn('[resolveUserIdActual] Email del usuario efectivo:', effectiveUser.email);
+  }
+  
+  // Fallback: usar effectiveUser.id directamente
+  // En modo Supabase, esto DEBE ser el UUID correcto
+  // En modo local, puede ser necesario usar este ID
+  return effectiveUser.id;
+}

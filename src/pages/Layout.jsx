@@ -312,7 +312,7 @@ function LayoutContent() {
           console.log('[Layout] No hay sesión activa al cerrar sesión, continuando con limpieza...');
         }
       } else {
-        console.error("Error al cerrar sesión:", error);
+      console.error("Error al cerrar sesión:", error);
       }
     }
     
@@ -326,7 +326,7 @@ function LayoutContent() {
     }
     
     // Redirigir a login siempre
-    navigate("/login", { replace: true });
+      navigate("/login", { replace: true });
   };
 
   const [perfilModalOpen, setPerfilModalOpen] = useState(false);

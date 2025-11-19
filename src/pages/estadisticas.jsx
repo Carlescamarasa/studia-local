@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
 import { Input } from "@/components/ui/input";
 import DateRangePicker from "@/components/ui/DateRangePicker";
 import { Badge } from "@/components/ds";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, Legend, BarChart, Bar } from 'recharts';
 import {
   Activity, Clock, Calendar, Star, Smile, BarChart3, TrendingUp,
   MessageSquare, Eye, RefreshCw, Dumbbell, List, PieChart, CalendarDays, Calendar as CalendarIcon,
@@ -14,7 +15,7 @@ import {
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { displayName, useEffectiveUser } from "../components/utils/helpers";
+import { displayName, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
 import MultiSelect from "../components/ui/MultiSelect";
 import MediaLinksBadges from "../components/common/MediaLinksBadges";
 import MediaViewer from "../components/common/MediaViewer";
@@ -158,17 +159,11 @@ function EstadisticasPageContent() {
     queryFn: () => localDataClient.entities.User.list(),
   });
 
-  // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
-  // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD
-  const usuarioActual = usuarios.find(u => {
-    if (effectiveUser?.email && u.email) {
-      return u.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim();
-    }
-    return u.id === effectiveUser?.id;
-  }) || effectiveUser;
-
-  // Usar el ID del usuario de la base de datos, no el de Supabase Auth
-  const userIdActual = usuarioActual?.id || effectiveUser?.id;
+  // Resolver ID de usuario actual de la BD (UUID en Supabase, string en local)
+  // Usar useMemo para recalcular cuando usuarios cambie
+  const userIdActual = useMemo(() => {
+    return resolveUserIdActual(effectiveUser, usuarios);
+  }, [effectiveUser, usuarios]);
 
   const { data: asignacionesProf = [] } = useQuery({
     queryKey: ['asignacionesProf', userIdActual],
@@ -368,15 +363,33 @@ function EstadisticasPageContent() {
     return semanasSet.size;
   };
 
+  // Calcular número total de semanas en el período (prorateado)
+  const calcularSemanasPeriodo = useMemo(() => {
+    if (!periodoInicio || !periodoFin) return 0;
+    const inicio = parseLocalDate(periodoInicio);
+    const fin = parseLocalDate(periodoFin);
+    
+    // Calcular diferencia en días entre inicio y fin (inclusive)
+    const diffMs = fin.getTime() - inicio.getTime();
+    const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1; // +1 para incluir el día final
+    
+    // Convertir días a semanas (prorateado)
+    // Si hay 7 días o menos = 1 semana, 8-14 días = 2 semanas, etc.
+    const semanasTotales = diffDias > 0 ? Math.ceil(diffDias / 7) : 0;
+    
+    return semanasTotales;
+  }, [periodoInicio, periodoFin]);
+
   const calcularCalidadPromedio = (registrosFiltrados) => {
     const conCalificacion = registrosFiltrados.filter(r => {
       const cal = safeNumber(r.calificacion);
       return cal > 0 && cal <= 4; // Solo calificaciones válidas (1-4)
     });
-    if (conCalificacion.length === 0) return 0;
+    if (conCalificacion.length === 0) return '0.0';
     const suma = conCalificacion.reduce((acc, r) => acc + safeNumber(r.calificacion), 0);
     const promedio = suma / conCalificacion.length;
-    return safeNumber(promedio).toFixed(1);
+    // Mantener 1 decimal sin redondear primero (usar toFixed directamente sobre el promedio)
+    return promedio.toFixed(1);
   };
 
   const registrosFiltrados = useMemo(() => {
@@ -404,8 +417,16 @@ function EstadisticasPageContent() {
       if (alumnosSeleccionados.length > 0) {
         alumnosSeleccionados.forEach(id => targetAlumnoIds.add(id));
       } else if (profesoresSeleccionados.length > 0) {
+        // Filtrar estudiantes que tienen asignaciones con los profesores seleccionados
+        const estudiantesConAsignaciones = asignaciones
+          .filter(a => profesoresSeleccionados.includes(a.profesorId))
+          .map(a => a.alumnoId);
+        
+        estudiantesConAsignaciones.forEach(id => targetAlumnoIds.add(id));
+        
+        // También incluir estudiantes que tienen profesorAsignadoId (compatibilidad con usuarios que tienen esta propiedad)
         usuarios
-          .filter(u => u.rolPersonalizado === 'ESTU' && profesoresSeleccionados.includes(u.profesorAsignadoId))
+          .filter(u => u.rolPersonalizado === 'ESTU' && u.profesorAsignadoId && profesoresSeleccionados.includes(u.profesorAsignadoId))
           .map(u => u.id)
           .forEach(id => targetAlumnoIds.add(id));
       } else if (isProf && estudiantesDelProfesor.length > 0) {
@@ -445,7 +466,7 @@ function EstadisticasPageContent() {
     }
 
     return filtered;
-  }, [registros, effectiveUser, periodoInicio, periodoFin, isEstu, profesoresSeleccionados, alumnosSeleccionados, focosSeleccionados, usuarios, isProf, estudiantesDelProfesor]);
+  }, [registros, effectiveUser, periodoInicio, periodoFin, isEstu, profesoresSeleccionados, alumnosSeleccionados, focosSeleccionados, usuarios, isProf, estudiantesDelProfesor, asignaciones]);
 
   // Evitar duplicados de sesiones (por id) antes de agregar estadísticas
   const registrosFiltradosUnicos = useMemo(() => {
@@ -484,14 +505,29 @@ function EstadisticasPageContent() {
     const numSesiones = registrosFiltradosUnicos.length;
     const tiempoPromedioPorSesion = numSesiones > 0 ? tiempoTotal / numSesiones : 0;
 
+    // Calcular media semanal de sesiones (prorateado al período en días)
+    // Ejemplo: 1 día con 1 sesión = 7 sesiones/semana
+    // Ejemplo: 2 días (domingo-lunes) con 1 sesión = 3.5 sesiones/semana
+    let mediaSemanalSesiones = 0;
+    if (periodoInicio && periodoFin) {
+      const inicio = parseLocalDate(periodoInicio);
+      const fin = parseLocalDate(periodoFin);
+      const diffMs = fin.getTime() - inicio.getTime();
+      const numDias = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1); // +1 para incluir el día final
+      // Prorratear a la semana: (sesiones / días) * 7
+      mediaSemanalSesiones = numDias > 0 ? (numSesiones / numDias) * 7 : 0;
+    }
+
     return {
       tiempoTotal,
       racha,
       calidadPromedio,
       semanasDistintas,
       tiempoPromedioPorSesion,
+      semanasPeriodo: calcularSemanasPeriodo,
+      mediaSemanalSesiones,
     };
-  }, [registrosFiltradosUnicos, isEstu, effectiveUser]);
+  }, [registrosFiltradosUnicos, isEstu, effectiveUser, calcularSemanasPeriodo, periodoInicio, periodoFin]);
 
   const tiposBloques = useMemo(() => {
     const agrupado = {};
@@ -561,7 +597,7 @@ function EstadisticasPageContent() {
         return {
           fecha: item.fecha,
           tiempo: safeNumber(item.tiempo),
-          satisfaccion: satisfaccion ? safeNumber(satisfaccion) : null,
+          satisfaccion: satisfaccion ? Number(satisfaccion.toFixed(1)) : null,
           completados: safeNumber(item.completados),
           omitidos: safeNumber(item.omitidos),
         };
@@ -656,7 +692,7 @@ function EstadisticasPageContent() {
       
       return true;
     }).sort((a, b) => b.semanaInicioISO.localeCompare(a.semanaInicioISO));
-  }, [feedbacksSemanal, effectiveUser, periodoInicio, periodoFin, isEstu]);
+  }, [feedbacksSemanal, userIdActual, periodoInicio, periodoFin, isEstu]);
 
   const tipoLabels = {
     CA: 'Calentamiento A',
@@ -676,6 +712,17 @@ function EstadisticasPageContent() {
     FM: componentStyles.status.badgeDefault,
     VC: componentStyles.status.badgeDefault,
     AD: componentStyles.status.badgeDefault,
+  };
+
+  // Colores para el piechart de tipos de bloques
+  const tipoChartColors = {
+    CA: '#3b82f6', // blue-500
+    CB: '#60a5fa', // blue-400
+    TC: '#8b5cf6', // purple-500
+    TM: '#10b981', // green-500
+    FM: '#ec4899', // pink-500
+    VC: '#06b6d4', // cyan-500
+    AD: '#94a3b8', // slate-400
   };
 
   const focoLabels = {
@@ -784,15 +831,22 @@ function EstadisticasPageContent() {
                   variant="outline" 
                   size="sm"
                   onClick={async () => {
-                    // Invalidar todas las queries relacionadas con estadísticas
-                    await Promise.all([
-                      queryClient.invalidateQueries({ queryKey: ['users'] }),
-                      queryClient.invalidateQueries({ queryKey: ['asignacionesProf'] }),
-                      queryClient.invalidateQueries({ queryKey: ['registrosSesion'] }),
-                      queryClient.invalidateQueries({ queryKey: ['registrosBloques'] }),
-                      queryClient.invalidateQueries({ queryKey: ['asignaciones'] }),
-                      queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] }),
-                    ]);
+                    try {
+                      // Invalidar todas las queries relacionadas con estadísticas
+                      // Usar exact: false para invalidar todas las variantes con parámetros
+                      await Promise.all([
+                        queryClient.invalidateQueries({ queryKey: ['users'] }),
+                        queryClient.invalidateQueries({ queryKey: ['asignacionesProf'], exact: false }),
+                        queryClient.invalidateQueries({ queryKey: ['registrosSesion'] }),
+                        queryClient.invalidateQueries({ queryKey: ['registrosBloques'] }),
+                        queryClient.invalidateQueries({ queryKey: ['asignaciones'] }),
+                        queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] }),
+                      ]);
+                      toast.success('✅ Datos actualizados');
+                    } catch (error) {
+                      console.error('Error al actualizar datos:', error);
+                      toast.error('❌ Error al actualizar datos');
+                    }
                   }}
                   className={`${componentStyles.buttons.outline} h-8 sm:h-9 w-full sm:w-auto text-xs sm:text-sm`}
                 >
@@ -825,43 +879,106 @@ function EstadisticasPageContent() {
 
         {tabActiva === 'resumen' && (
           <div className="space-y-6">
-            {/* KPIs */}
-            <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 md:gap-6">
-              <div className="text-center min-w-[80px] sm:min-w-[100px]">
+            {/* KPIs - Grid compacto 1-2-2-2-2-2-2-1 sin Cards */}
+            <div className="grid grid-cols-[1fr_2fr_2fr_2fr_2fr_2fr_2fr_1fr] gap-2 sm:gap-3 md:gap-4 items-center justify-items-center px-2 py-3 border-b border-[var(--color-border-default)]">
+              {/* Columna vacía izquierda (1fr) */}
+              <div></div>
+              
+              {/* Tiempo total (2fr) */}
+              <div className="text-center w-full">
                 <Clock className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">
                   {formatDuracionHM(kpis.tiempoTotal)}
                 </p>
                 <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Tiempo total</p>
               </div>
 
-              <div className="text-center min-w-[80px] sm:min-w-[100px]">
+              {/* Promedio/sesión (2fr) */}
+              <div className="text-center w-full">
                 <Timer className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">
                   {formatDuracionHM(kpis.tiempoPromedioPorSesion)}
                 </p>
                 <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Promedio/sesión</p>
               </div>
 
-              <div className="text-center min-w-[80px] sm:min-w-[100px]">
+              {/* Valoración (2fr) */}
+              <div className="text-center w-full">
                 <Smile className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">
                   {kpis.calidadPromedio}/4
                 </p>
                 <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Valoración</p>
               </div>
 
-              <div className="text-center min-w-[80px] sm:min-w-[100px]">
+              {/* Racha (2fr) */}
+              <div className="text-center w-full">
                 <Star className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.racha.actual}</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.racha.actual}</p>
                 <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Racha</p>
                 <p className="text-[10px] sm:text-xs text-[var(--color-text-muted)] mt-0.5">Máx: {kpis.racha.maxima}</p>
               </div>
 
-              <div className="text-center min-w-[80px] sm:min-w-[100px]">
+              {/* Semanas practicadas (2fr) */}
+              <div className="text-center w-full">
                 <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.semanasDistintas}</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.semanasDistintas}</p>
                 <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Semanas practicadas</p>
+              </div>
+
+              {/* Semanas totales período (2fr) */}
+              <div className="text-center w-full">
+                <CalendarDays className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.semanasPeriodo}</p>
+                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Semanas totales</p>
+              </div>
+
+              {/* Media semanal sesiones (2fr) */}
+              <div className="text-center w-full">
+                <Activity className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">
+                  {kpis.mediaSemanalSesiones.toFixed(1)}
+                </p>
+                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Sesiones/semana</p>
+              </div>
+
+              {/* Columna vacía derecha (1fr) */}
+              <div></div>
+            </div>
+            
+            {/* Responsive: mobile stack */}
+            <div className="sm:hidden space-y-3">
+              <div className="text-center py-2">
+                <Clock className="w-4 h-4 mx-auto mb-1 text-[var(--color-text-secondary)]" />
+                <p className="text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">
+                  {formatDuracionHM(kpis.tiempoTotal)}
+                </p>
+                <p className="text-xs text-[var(--color-text-secondary)]">Tiempo total</p>
+              </div>
+              <div className="text-center py-2">
+                <Timer className="w-4 h-4 mx-auto mb-1 text-[var(--color-text-secondary)]" />
+                <p className="text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">
+                  {formatDuracionHM(kpis.tiempoPromedioPorSesion)}
+                </p>
+                <p className="text-xs text-[var(--color-text-secondary)]">Promedio/sesión</p>
+              </div>
+              <div className="text-center py-2">
+                <Smile className="w-4 h-4 mx-auto mb-1 text-[var(--color-text-secondary)]" />
+                <p className="text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">
+                  {kpis.calidadPromedio}/4
+                </p>
+                <p className="text-xs text-[var(--color-text-secondary)]">Valoración</p>
+              </div>
+              <div className="text-center py-2">
+                <Star className="w-4 h-4 mx-auto mb-1 text-[var(--color-text-secondary)]" />
+                <p className="text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.racha.actual}</p>
+                <p className="text-xs text-[var(--color-text-secondary)]">Racha</p>
+                <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">Máx: {kpis.racha.maxima}</p>
+              </div>
+              <div className="text-center py-2">
+                <Calendar className="w-4 h-4 mx-auto mb-1 text-[var(--color-text-secondary)]" />
+                <p className="text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.semanasDistintas}</p>
+                <p className="text-xs text-[var(--color-text-secondary)]">Semanas practicadas</p>
               </div>
             </div>
 
@@ -1229,8 +1346,11 @@ function EstadisticasPageContent() {
                             </div>
                             <div className="bg-[var(--color-surface-muted)] rounded-full h-2 overflow-hidden">
                               <div 
-                                className="bg-[var(--color-primary)] h-full transition-all"
-                                style={{ width: `${porcentaje}%` }}
+                                  className="h-full transition-all"
+                                  style={{ 
+                                    width: `${porcentaje}%`,
+                                    backgroundColor: tipoChartColors[tipo.tipo] || tipoChartColors.AD
+                                  }}
                               />
                             </div>
                           </div>
@@ -1312,6 +1432,9 @@ function EstadisticasPageContent() {
         )}
 
         {tabActiva === 'historial' && (
+          <>
+            {isEstu ? (
+              // Para estudiantes: mostrar historial de sesiones
           <Card className={componentStyles.components.cardBase}>
             <CardHeader>
               <CardTitle className="text-base md:text-lg">Historial de Sesiones ({registrosFiltradosUnicos.length})</CardTitle>
@@ -1333,11 +1456,6 @@ function EstadisticasPageContent() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <h3 className="font-semibold text-sm md:text-base truncate">{registro.sesionNombre}</h3>
-                                {!isEstu && (
-                                  <Badge variant="outline" className="rounded-full text-xs">
-                                    {displayName(alumno)}
-                                  </Badge>
-                                )}
                               </div>
                               <p className="text-xs md:text-sm text-[var(--color-text-secondary)] truncate">
                                 {registro.piezaNombre} • {registro.planNombre}
@@ -1371,16 +1489,12 @@ function EstadisticasPageContent() {
               )}
             </CardContent>
           </Card>
-        )}
-
-        {tabActiva === 'feedback' && (
+            ) : (
+              // Para profesores/admins: mostrar autoevaluación del estudiante (filtros, distribución, comentarios)
           <Card className={componentStyles.components.cardBase}>
             <CardHeader>
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <CardTitle className="text-base md:text-lg">
-                  {isEstu ? 'Feedback del Profesor' : 'Autoevaluación del Estudiante'}
-                </CardTitle>
-                {!isEstu && (
+                    <CardTitle className="text-base md:text-lg">Autoevaluación del Estudiante</CardTitle>
                   <div className="flex gap-2 flex-wrap">
                     {[1, 2, 3, 4].map(val => (
                       <Button
@@ -1404,54 +1518,14 @@ function EstadisticasPageContent() {
                       <MessageSquare className="w-4 h-4" />
                     </Button>
                   </div>
-                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {isEstu ? (
-                <div className="space-y-3">
-                  {feedbackProfesor.length === 0 ? (
-                    <div className="text-center py-12">
-                    <MessageSquare className={componentStyles.components.emptyStateIcon} />
-                    <p className={componentStyles.components.emptyStateText}>No hay feedback del profesor en este periodo</p>
-                    </div>
-                  ) : (
-                    feedbackProfesor.map(f => {
-                      const profesor = usuarios.find(u => u.id === f.profesorId);
-                      return (
-                        <Card key={f.id} className={`${componentStyles.containers.cardBase} border-[var(--color-info)] bg-[var(--color-info)]/10 hover:shadow-md transition-shadow`}>
-                          <CardContent className="pt-4">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Badge className={componentStyles.status.badgeInfo}>
-                                  Semana {parseLocalDate(f.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                                </Badge>
-                                <span className="text-xs text-[var(--color-text-secondary)]">
-                                  {displayName(profesor)}
-                                </span>
-                              </div>
-                              {f.notaProfesor && (
-                                <p className="text-sm text-[var(--color-text-primary)] italic border-l-2 border-[var(--color-info)] pl-3 break-words">
-                                  "{f.notaProfesor}"
-                                </p>
-                              )}
-                              <MediaLinksBadges 
-                                mediaLinks={f.mediaLinks}
-                                onMediaClick={(media) => setViewingMedia(media)}
-                              />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })
-                  )}
-                </div>
-              ) : (
-                <>
-                  <div className={componentStyles.layout.grid4}>
+                  {/* Grid compacto en una línea sin Cards */}
+                  <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4 items-center justify-items-center px-2 py-3 border-b border-[var(--color-border-default)]">
                     {[1, 2, 3, 4].map(nivel => (
-                      <div key={nivel} className={`text-center p-2 md:p-3 ${componentStyles.containers.panelBase} hover:shadow-sm transition-shadow`}>
-                        <p className="text-xl md:text-2xl font-bold text-[var(--color-text-primary)]">{feedbackAlumno.distribucion[nivel]}</p>
+                      <div key={nivel} className="text-center w-full">
+                        <p className="text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">{feedbackAlumno.distribucion[nivel]}</p>
                         <p className="text-xs text-[var(--color-text-secondary)]">Nivel {nivel}</p>
                         <p className="text-xs text-[var(--color-text-secondary)]">
                           {registrosFiltradosUnicos.length > 0 
@@ -1509,10 +1583,64 @@ function EstadisticasPageContent() {
                       })
                     )}
                   </div>
+                </CardContent>
+              </Card>
+            )}
                 </>
               )}
+
+        {tabActiva === 'feedback' && (
+          // Solo visible para estudiantes: mostrar lista de semanas con feedback del profesor
+          isEstu ? (
+            <Card className={componentStyles.components.cardBase}>
+              <CardHeader>
+                <CardTitle className="text-base md:text-lg">Feedback del Profesor ({feedbackProfesor.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {feedbackProfesor.length === 0 ? (
+                  <div className="text-center py-12">
+                    <MessageSquare className={componentStyles.components.emptyStateIcon} />
+                    <p className={componentStyles.components.emptyStateText}>No hay feedback del profesor en este periodo</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {feedbackProfesor.map(f => {
+                      const profesor = usuarios.find(u => u.id === f.profesorId);
+                      return (
+                        <Card key={f.id} className={`${componentStyles.containers.cardBase} border-[var(--color-info)] bg-[var(--color-info)]/10 hover:shadow-md transition-shadow`}>
+                          <CardContent className="pt-4">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge className={componentStyles.status.badgeInfo}>
+                                  Semana {parseLocalDate(f.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                                </Badge>
+                                {profesor && (
+                                  <span className="text-xs text-[var(--color-text-secondary)]">
+                                    {displayName(profesor)}
+                                  </span>
+                                )}
+                              </div>
+                              {f.notaProfesor && (
+                                <p className="text-sm text-[var(--color-text-primary)] italic border-l-2 border-[var(--color-info)] pl-3 break-words">
+                                  "{f.notaProfesor}"
+                                </p>
+                              )}
+                              {f.mediaLinks && f.mediaLinks.length > 0 && (
+                                <MediaLinksBadges 
+                                  mediaLinks={f.mediaLinks}
+                                  onMediaClick={(media) => setViewingMedia(media)}
+                                />
+                              )}
+                            </div>
             </CardContent>
           </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : null
         )}
       </div>
 

@@ -269,11 +269,11 @@ function SemanaPageContent() {
                 {/* Feedback del profesor de esta semana */}
                 {feedbackSemana && (
                   (feedbackSemana.notaProfesor || (feedbackSemana.mediaLinks && feedbackSemana.mediaLinks.length > 0)) && (
-                    <div className={"flex items-start gap-2 py-1 " + componentStyles.components.toneRowFeedback}>
-                      <MessageSquare className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
-                      <div className="min-w-0 flex-1">
+                  <div className={"flex items-start gap-2 py-1 " + componentStyles.components.toneRowFeedback}>
+                    <MessageSquare className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
+                    <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
+                      <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
                           {(() => {
                             const prof = usuarios.find(u => u.id === feedbackSemana.profesorId);
                             if (prof) {
@@ -287,9 +287,9 @@ function SemanaPageContent() {
                           })()}
                         </div>
                         {feedbackSemana.notaProfesor && (
-                          <p className="text-sm text-[var(--color-text-primary)] italic mt-0.5 break-words">
-                            "{feedbackSemana.notaProfesor}"
-                          </p>
+                      <p className="text-sm text-[var(--color-text-primary)] italic mt-0.5 break-words">
+                        "{feedbackSemana.notaProfesor}"
+                      </p>
                         )}
                         {feedbackSemana.mediaLinks && feedbackSemana.mediaLinks.length > 0 && (
                           <div className={feedbackSemana.notaProfesor ? "mt-2" : "mt-0.5"}>

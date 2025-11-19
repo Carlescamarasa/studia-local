@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Filter, Check } from "lucide-react";
 
 export default function MultiSelect({ label, items, value = [], onChange }) {
@@ -58,28 +58,42 @@ export default function MultiSelect({ label, items, value = [], onChange }) {
             data-gramm="false"
             data-form-type="other"
           />
-          <CommandEmpty>Sin resultados</CommandEmpty>
-          <CommandGroup className="max-h-64 overflow-auto">
-            {items.map((item) => {
-              const isSelected = value.includes(item.value);
-              return (
-                <CommandItem
-                  key={item.value}
-                  onSelect={() => toggleItem(item.value)}
-                  className="cursor-pointer"
-                >
-                  <div className="flex items-center gap-2 flex-1">
-                    <div className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
-                      isSelected ? 'bg-[var(--color-accent)] border-[var(--color-accent)]' : 'border-[var(--color-border-default)]'
-                    }`}>
-                      {isSelected && <Check className="w-3 h-3 text-white" />}
-                    </div>
-                    <span className="truncate">{item.label}</span>
-                  </div>
-                </CommandItem>
-              );
-            })}
-          </CommandGroup>
+          <CommandList>
+            <CommandEmpty>Sin resultados</CommandEmpty>
+            <CommandGroup className="max-h-64 overflow-auto">
+              {items.length === 0 ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  Sin opciones disponibles
+                </div>
+              ) : (
+                items.map((item) => {
+                  const isSelected = value.includes(item.value);
+                  // cmdk requiere que el value sea un string
+                  const itemValue = String(item.value);
+                  return (
+                    <CommandItem
+                      key={item.value}
+                      value={itemValue}
+                      onSelect={(selectedValue) => {
+                        // selectedValue viene como string de cmdk, pero necesitamos el valor original
+                        toggleItem(item.value);
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2 flex-1">
+                        <div className={`w-4 h-4 border-2 rounded flex items-center justify-center shrink-0 ${
+                          isSelected ? 'bg-[var(--color-accent)] border-[var(--color-accent)]' : 'border-[var(--color-border-default)]'
+                        }`}>
+                          {isSelected && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                        <span className="truncate">{item.label}</span>
+                      </div>
+                    </CommandItem>
+                  );
+                })
+              )}
+            </CommandGroup>
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>

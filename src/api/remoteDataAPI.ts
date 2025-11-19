@@ -941,21 +941,61 @@ export function createRemoteDataAPI(): AppDataAPI {
         return deserializeJsonFields(normalized, ['plan', 'piezaSnapshot']);
       },
       update: async (id: string, updates: any) => {
+        // Validación: plan NUNCA debe actualizarse directamente en updates parciales
+        // Solo se actualiza en create completo o si cambia piezaId (que regenera plan implícitamente)
+        if (updates.plan !== undefined) {
+          const errorMsg = 'No se puede actualizar el campo "plan" directamente en una actualización parcial. Este campo solo se actualiza al crear una asignación completa o cuando se cambia la pieza (piezaId), lo que regenera el plan automáticamente. Si necesitas cambiar el plan, crea una nueva asignación.';
+          console.warn('[remoteDataAPI]', errorMsg);
+          if (process.env.NODE_ENV === 'development') {
+            throw new Error(errorMsg);
+          }
+          delete updates.plan;
+        }
+        
         // Extraer campos JSON antes de camelToSnake
-        const planValue = updates.plan;
         const piezaSnapshotValue = updates.piezaSnapshot;
         const updatesWithoutJson = { ...updates };
-        delete updatesWithoutJson.plan;
         delete updatesWithoutJson.piezaSnapshot;
+        
+        // Campos permitidos en update: notas, foco, estado, semana_inicio_iso, pieza_id, pieza_snapshot
+        // Validar que solo se incluyan campos modificables
+        const camposPermitidos = new Set([
+          'notas', 'foco', 'estado', 'semanaInicioISO', 'semana_inicio_iso',
+          'piezaId', 'pieza_id', 'piezaSnapshot', 'pieza_snapshot',
+          'profesorId', 'profesor_id', 'alumnoId', 'alumno_id',
+        ]);
+        
+        const camposActualizados = Object.keys(updatesWithoutJson);
+        const camposNoPermitidos = camposActualizados.filter(campo => {
+          const campoCamel = camelToSnake({ [campo]: '' });
+          const campoSnake = Object.keys(campoCamel)[0];
+          return !camposPermitidos.has(campo) && !camposPermitidos.has(campoSnake);
+        });
+        
+        if (camposNoPermitidos.length > 0) {
+          const errorMsg = `Campos no permitidos en actualización de asignación: ${camposNoPermitidos.join(', ')}. Solo se pueden actualizar: notas, foco, estado, semanaInicioISO, piezaId (y piezaSnapshot si piezaId cambia).`;
+          console.warn('[remoteDataAPI]', errorMsg);
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[remoteDataAPI] Campos eliminados del update:', camposNoPermitidos);
+          }
+          // No lanzar error, solo eliminar campos no permitidos
+          camposNoPermitidos.forEach(campo => delete updatesWithoutJson[campo]);
+        }
         
         const snakeUpdates = camelToSnake(updatesWithoutJson);
         
-        // Agregar campos JSONB directamente como objetos
-        if (planValue !== undefined) {
-          snakeUpdates.plan = planValue;
-        }
+        // piezaSnapshot solo debe incluirse si piezaId cambió (lo cual se maneja en asignacion-detalle.jsx)
+        // Aquí solo lo incluimos si está presente en updates
         if (piezaSnapshotValue !== undefined) {
           snakeUpdates.pieza_snapshot = piezaSnapshotValue;
+        }
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[remoteDataAPI] Actualizando asignación:', {
+            id,
+            camposActualizados: Object.keys(snakeUpdates),
+            incluyePiezaSnapshot: piezaSnapshotValue !== undefined,
+          });
         }
         
         const { data, error } = await supabase
@@ -965,7 +1005,21 @@ export function createRemoteDataAPI(): AppDataAPI {
           .select()
           .single();
         
-        if (error) throw error;
+        if (error) {
+          console.error('[remoteDataAPI] Error al actualizar asignación:', error);
+          // Mejorar mensajes de error específicos
+          if (error.code === 'PGRST204' || error.code === '406') {
+            const errorMsg = 'Error 406 (Not Acceptable): El servidor rechazó la actualización. Verifica que los campos enviados sean válidos y modificables. El campo "plan" no puede actualizarse directamente.';
+            console.error('[remoteDataAPI]', errorMsg);
+            throw new Error(errorMsg);
+          }
+          if (error.code === 'PGRST301' || error.code === '23503') {
+            const errorMsg = 'Error de integridad referencial: Verifica que las referencias (alumnoId, profesorId, piezaId) existan en la base de datos.';
+            console.error('[remoteDataAPI]', errorMsg);
+            throw new Error(errorMsg);
+          }
+          throw error;
+        }
         
         // Deserializar campos JSON después de leer
         const parsed = snakeToCamel<Asignacion>(data);

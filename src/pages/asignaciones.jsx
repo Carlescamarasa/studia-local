@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
@@ -15,8 +15,9 @@ import { toast } from "sonner";
 import RequireRole from "@/components/auth/RequireRole";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import FormularioRapido from "@/components/asignaciones/FormularioRapido";
-import { getNombreVisible, formatLocalDate, parseLocalDate, useEffectiveUser } from "../components/utils/helpers";
+import { getNombreVisible, formatLocalDate, parseLocalDate, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import MultiSelect from "@/components/ui/MultiSelect";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 
@@ -33,11 +34,12 @@ function AsignacionesPageContent() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('all');
+  const [profesoresFilter, setProfesoresFilter] = useState([]);
   const [showForm, setShowForm] = useState(false);
 
   const effectiveUser = useEffectiveUser();
 
-  const { data: asignaciones = [] } = useQuery({
+  const { data: asignacionesRaw = [] } = useQuery({
     queryKey: ['asignaciones'],
     queryFn: () => localDataClient.entities.Asignacion.list('-created_at'),
   });
@@ -46,6 +48,15 @@ function AsignacionesPageContent() {
     queryKey: ['users'],
     queryFn: () => localDataClient.entities.User.list(),
   });
+
+  // Resolver ID de usuario actual de la BD (UUID en Supabase, string en local)
+  // Usar useMemo para recalcular cuando usuarios cambie
+  const userIdActual = useMemo(() => {
+    return resolveUserIdActual(effectiveUser, usuarios);
+  }, [effectiveUser, usuarios]);
+
+  const asignaciones = useMemo(() => asignacionesRaw, [asignacionesRaw]);
+
 
   const cerrarMutation = useMutation({
     mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'cerrada' }),
@@ -82,7 +93,7 @@ function AsignacionesPageContent() {
         notas: asignacion.notas,
         plan: JSON.parse(JSON.stringify(asignacion.plan)),
         piezaSnapshot: JSON.parse(JSON.stringify(asignacion.piezaSnapshot)),
-        profesorId: effectiveUser.id,
+        profesorId: userIdActual || effectiveUser.id,
       };
       return localDataClient.entities.Asignacion.create(newData);
     },
@@ -101,11 +112,13 @@ function AsignacionesPageContent() {
   });
 
   const exportarCSV = () => {
-    const headers = ['Estudiante', 'Pieza', 'Plan', 'Inicio', 'Estado', 'Semanas'];
-    const rows = asignacionesFiltradas.map(a => {
+    const headers = ['Estudiante', 'Profesor', 'Pieza', 'Plan', 'Inicio', 'Estado', 'Semanas'];
+    const rows = asignacionesFinales.map(a => {
       const alumno = usuarios.find(u => u.id === a.alumnoId);
+      const profesor = usuarios.find(u => u.id === a.profesorId);
       return [
         getNombreVisible(alumno),
+        getNombreVisible(profesor),
         a.piezaSnapshot?.nombre || '',
         a.plan?.nombre || '',
         a.semanaInicioISO,
@@ -124,25 +137,86 @@ function AsignacionesPageContent() {
     URL.revokeObjectURL(url);
   };
 
-  let asignacionesFiltradas = asignaciones;
+  // Todos los profesores pueden ver todas las asignaciones (no se filtra por profesor)
+  // Solo se filtran por estado y búsqueda
+  const asignacionesFiltradas = useMemo(() => {
+    return asignaciones;
+  }, [asignaciones]);
 
-  if (effectiveUser?.rolPersonalizado === 'PROF') {
-    asignacionesFiltradas = asignacionesFiltradas.filter(a => a.profesorId === effectiveUser.id);
-  }
-
-  if (estadoFilter !== 'all') {
-    asignacionesFiltradas = asignacionesFiltradas.filter(a => a.estado === estadoFilter);
-  }
-
-  if (searchTerm) {
-    const term = searchTerm.toLowerCase();
-    asignacionesFiltradas = asignacionesFiltradas.filter(a => {
-      const alumno = usuarios.find(u => u.id === a.alumnoId);
-      const nombreAlumno = getNombreVisible(alumno).toLowerCase();
-      const pieza = (a.piezaSnapshot?.nombre || '').toLowerCase();
-      return nombreAlumno.includes(term) || pieza.includes(term);
+  // Obtener lista de profesores únicos de las asignaciones
+  // Estrategia: obtener profesores de dos fuentes:
+  // 1. IDs únicos de profesores en las asignaciones
+  // 2. Todos los usuarios con rol PROF en la lista de usuarios
+  // Esto asegura que siempre haya profesores disponibles incluso si hay desincronización de IDs
+  const profesoresDisponibles = useMemo(() => {
+    // Obtener IDs únicos de profesores en asignaciones
+    const profesorIdsEnAsignaciones = [...new Set(asignacionesFiltradas.map(a => a.profesorId).filter(Boolean))];
+    
+    // Obtener todos los profesores de la lista de usuarios
+    const todosLosProfesores = usuarios.filter(u => u.rolPersonalizado === 'PROF');
+    
+    // Crear un Set con todos los IDs únicos (de asignaciones + usuarios PROF)
+    const todosLosIds = new Set([
+      ...profesorIdsEnAsignaciones,
+      ...todosLosProfesores.map(p => p.id).filter(Boolean)
+    ]);
+    
+    // Mapear cada ID a un objeto { value, label }
+    const profesoresMap = new Map();
+    
+    todosLosIds.forEach(id => {
+      // Buscar el usuario en la lista
+      const profesor = usuarios.find(u => u.id === id);
+      if (profesor) {
+        profesoresMap.set(id, {
+          value: id,
+          label: getNombreVisible(profesor),
+        });
+      }
     });
-  }
+    
+    // Convertir a array y ordenar alfabéticamente
+    const profesores = Array.from(profesoresMap.values())
+      .sort((a, b) => a.label.localeCompare(b.label));
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[asignaciones.jsx] Profesores disponibles:', {
+        totalAsignaciones: asignacionesFiltradas.length,
+        profesorIdsEnAsignaciones,
+        totalProfesoresEnBD: todosLosProfesores.length,
+        profesoresEnBD: todosLosProfesores.map(p => ({ id: p.id, nombre: getNombreVisible(p) })),
+        totalProfesoresDisponibles: profesores.length,
+        profesores: profesores.map(p => ({ id: p.value, nombre: p.label })),
+      });
+    }
+    
+    return profesores;
+  }, [asignacionesFiltradas, usuarios]);
+
+  // Aplicar filtros adicionales (estado, búsqueda y profesores)
+  const asignacionesFinales = useMemo(() => {
+    let resultado = asignacionesFiltradas;
+
+    if (estadoFilter !== 'all') {
+      resultado = resultado.filter(a => a.estado === estadoFilter);
+    }
+
+    if (profesoresFilter.length > 0) {
+      resultado = resultado.filter(a => profesoresFilter.includes(a.profesorId));
+    }
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      resultado = resultado.filter(a => {
+        const alumno = usuarios.find(u => u.id === a.alumnoId);
+        const nombreAlumno = getNombreVisible(alumno).toLowerCase();
+        const pieza = (a.piezaSnapshot?.nombre || '').toLowerCase();
+        return nombreAlumno.includes(term) || pieza.includes(term);
+      });
+    }
+
+    return resultado;
+  }, [asignacionesFiltradas, estadoFilter, profesoresFilter, searchTerm, usuarios]);
 
   const estadoLabels = {
     borrador: 'Borrador',
@@ -168,6 +242,21 @@ function AsignacionesPageContent() {
           <div>
             <p className="font-medium text-sm">{getNombreVisible(alumno)}</p>
           <p className="text-xs text-ui/80">{alumno?.email}</p>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'profesor',
+      label: 'Profesor',
+      render: (a) => {
+        const profesor = usuarios.find(u => u.id === a.profesorId);
+        return (
+          <div>
+            <p className="font-medium text-sm">{getNombreVisible(profesor)}</p>
+            {profesor?.email && (
+              <p className="text-xs text-ui/80">{profesor.email}</p>
+            )}
           </div>
         );
       },
@@ -258,6 +347,13 @@ function AsignacionesPageContent() {
                 <SelectItem value="cerrada">Cerradas</SelectItem>
               </SelectContent>
             </Select>
+
+            <MultiSelect
+              label={profesoresFilter.length === 0 ? "Profesor (TODOS)" : "Profesor"}
+              items={profesoresDisponibles}
+              value={profesoresFilter}
+              onChange={setProfesoresFilter}
+            />
           </>
         }
         actions={
@@ -280,14 +376,14 @@ function AsignacionesPageContent() {
         <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
             <CardTitle className="text-lg">
-              {asignacionesFiltradas.length} asignaciones
+              {asignacionesFinales.length} asignaciones
               {estadoFilter !== 'all' && ` (${estadoLabels[estadoFilter]})`}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <UnifiedTable
               columns={columns}
-              data={asignacionesFiltradas}
+              data={asignacionesFinales}
               getRowActions={(a) => {
                 const actions = [
                   {

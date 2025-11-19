@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
@@ -15,7 +15,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { displayName, calcularLunesSemanaISO, calcularOffsetSemanas, useEffectiveUser } from "../components/utils/helpers";
+import { displayName, calcularLunesSemanaISO, calcularOffsetSemanas, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
 import WeekNavigator from "../components/common/WeekNavigator";
 import MediaLinksInput from "../components/common/MediaLinksInput";
 import MediaLinksBadges from "../components/common/MediaLinksBadges";
@@ -84,43 +84,52 @@ function AgendaPageContent() {
     queryFn: () => localDataClient.entities.User.list(),
   });
 
-  // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
-  // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD
-  const usuarioActual = usuarios.find(u => {
-    if (effectiveUser?.email && u.email) {
-      return u.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim();
-    }
-    return u.id === effectiveUser?.id;
-  }) || effectiveUser;
-
-  // Usar el ID del usuario de la base de datos, no el de Supabase Auth
-  const userIdActual = usuarioActual?.id || effectiveUser?.id;
-
   const { data: asignacionesRaw = [] } = useQuery({
     queryKey: ['asignaciones'],
     queryFn: () => localDataClient.entities.Asignacion.list(),
   });
 
-  // Filtrar y validar asignaciones
-  const asignaciones = asignacionesRaw.filter(a => {
-    // Validar que tiene alumnoId válido
-    if (!a.alumnoId) return false;
-    const alumno = usuarios.find(u => u.id === a.alumnoId);
-    if (!alumno) return false;
-    
-    // Validar que tiene plan y semanas
-    if (!a.plan || !Array.isArray(a.plan.semanas) || a.plan.semanas.length === 0) return false;
-    
-    // Validar que tiene semanaInicioISO válida
-    if (!a.semanaInicioISO || typeof a.semanaInicioISO !== 'string') return false;
-    
-    return true;
-  });
-
-  const { data: feedbacksSemanal = [] } = useQuery({
+  const { data: feedbacksSemanalRaw = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
     queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_at'),
   });
+
+  // Resolver ID de usuario actual de la BD (UUID en Supabase, string en local)
+  // Usar useMemo para recalcular cuando usuarios cambie
+  const userIdActual = useMemo(() => {
+    return resolveUserIdActual(effectiveUser, usuarios);
+  }, [effectiveUser, usuarios]);
+
+  // Filtrar y validar asignaciones
+  const asignaciones = useMemo(() => {
+    return asignacionesRaw.filter(a => {
+      // Validar que tiene alumnoId válido
+      if (!a.alumnoId) return false;
+      const alumno = usuarios.find(u => u.id === a.alumnoId);
+      if (!alumno) return false;
+      
+      // Validar que tiene plan y semanas
+      if (!a.plan || !Array.isArray(a.plan.semanas) || a.plan.semanas.length === 0) return false;
+      
+      // Validar que tiene semanaInicioISO válida
+      if (!a.semanaInicioISO || typeof a.semanaInicioISO !== 'string') return false;
+      
+      return true;
+    });
+  }, [asignacionesRaw, usuarios]);
+
+  const feedbacksSemanal = useMemo(() => feedbacksSemanalRaw, [feedbacksSemanalRaw]);
+
+  // Logs de depuración (después de declarar feedbacksSemanal)
+  if (process.env.NODE_ENV === 'development' && feedbacksSemanal.length > 0) {
+    console.log('[agenda.jsx] Resolución de usuario:', {
+      effectiveUserId: effectiveUser?.id,
+      userIdActual,
+      totalFeedbacks: feedbacksSemanal.length,
+      feedbacksPorProfesor: feedbacksSemanal.filter(f => f.profesorId === userIdActual).length,
+      esProfesorOAdmin: effectiveUser?.rolPersonalizado === 'PROF' || effectiveUser?.rolPersonalizado === 'ADMIN',
+    });
+  }
 
   const crearFeedbackMutation = useMutation({
     mutationFn: async (data) => {
@@ -177,7 +186,20 @@ function AgendaPageContent() {
     },
     onError: (error) => {
       console.error('[agenda.jsx] Error final guardando feedback:', error);
-      toast.error('❌ Error al guardar feedback. Inténtalo de nuevo.');
+      let errorMsg = '❌ Error al guardar feedback. Inténtalo de nuevo.';
+      
+      // Mensajes específicos según el tipo de error
+      if (error?.code === '23505' || error?.message?.includes('duplicate') || error?.status === 409) {
+        errorMsg = '⚠️ Ya existe un feedback para este alumno y semana. Se intentará actualizar automáticamente.';
+      } else if (error?.code === 'PGRST204' || error?.code === '23503') {
+        errorMsg = '❌ Error de integridad: Verifica que el alumno y profesor existan en la base de datos.';
+      } else if (error?.code === '42501' || error?.status === 403) {
+        errorMsg = '❌ Error de permisos: No tienes permisos para crear feedback. Verifica tu rol de usuario.';
+      } else if (error?.message) {
+        errorMsg = `❌ Error: ${error.message}`;
+      }
+      
+      toast.error(errorMsg);
     },
   });
 
@@ -210,7 +232,18 @@ function AgendaPageContent() {
     },
     onError: (error) => {
       console.error('[agenda.jsx] Error final actualizando feedback:', error);
-      toast.error('❌ Error al actualizar feedback. Inténtalo de nuevo.');
+      let errorMsg = '❌ Error al actualizar feedback. Inténtalo de nuevo.';
+      
+      // Mensajes específicos según el tipo de error
+      if (error?.code === 'PGRST204' || error?.code === '23503') {
+        errorMsg = '❌ Error de integridad: Verifica que el alumno y profesor existan en la base de datos.';
+      } else if (error?.code === '42501' || error?.status === 403) {
+        errorMsg = '❌ Error de permisos: No tienes permisos para actualizar feedback. Verifica tu rol de usuario.';
+      } else if (error?.message) {
+        errorMsg = `❌ Error: ${error.message}`;
+      }
+      
+      toast.error(errorMsg);
     },
   });
 
@@ -421,36 +454,66 @@ function AgendaPageContent() {
   };
 
   // Preparar datos para la tabla
-  const tableData = estudiantesFiltrados.map(alumno => {
-    const asignacionActiva = asignaciones.find(a => {
-      if (a.alumnoId !== alumno.id) return false;
-      if (a.estado !== 'publicada' && a.estado !== 'en_curso') return false;
-      const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
-      return offset >= 0 && offset < (a.plan?.semanas?.length || 0);
+  // Usar useMemo para recalcular cuando userIdActual, feedbacksSemanal o asignaciones cambien
+  const tableData = useMemo(() => {
+    return estudiantesFiltrados.map(alumno => {
+      const asignacionActiva = asignaciones.find(a => {
+        if (a.alumnoId !== alumno.id) return false;
+        if (a.estado !== 'publicada' && a.estado !== 'en_curso') return false;
+        const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
+        return offset >= 0 && offset < (a.plan?.semanas?.length || 0);
+      });
+
+      // Buscar TODOS los feedbacks para este alumno/semana (puede haber múltiples de diferentes profesores)
+      // Mostraremos el más reciente o el del profesor actual si existe
+      const feedbacksAlumno = feedbacksSemanal.filter(f => 
+        f.alumnoId === alumno.id && f.semanaInicioISO === semanaActualISO
+      );
+      
+      // Logs de depuración
+      if (process.env.NODE_ENV === 'development' && feedbacksAlumno.length > 0) {
+        console.log('[agenda.jsx] Feedbacks encontrados para alumno/semana:', {
+          alumnoId: alumno.id,
+          alumnoNombre: displayName(alumno),
+          semanaActualISO,
+          totalFeedbacks: feedbacksAlumno.length,
+          feedbacks: feedbacksAlumno.map(f => ({
+            id: f.id,
+            profesorId: f.profesorId,
+            profesorNombre: displayName(usuarios.find(u => u.id === f.profesorId)),
+            coincideConUsuarioActual: f.profesorId === userIdActual,
+          })),
+          userIdActual,
+        });
+      }
+      
+      // Si hay múltiples, preferir el del profesor actual, sino el más reciente
+      const feedback = feedbacksAlumno.find(f => f.profesorId === userIdActual) || feedbacksAlumno[0];
+      
+      if (process.env.NODE_ENV === 'development' && feedbacksAlumno.length > 0) {
+        console.log('[agenda.jsx] Feedback seleccionado para row:', {
+          alumnoId: alumno.id,
+          feedbackId: feedback?.id,
+          feedbackProfesorId: feedback?.profesorId,
+          feedbackProfesorNombre: displayName(usuarios.find(u => u.id === feedback?.profesorId)),
+        });
+      }
+
+      const semanaIdx = asignacionActiva ? 
+        calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO) : 0;
+      
+      const semana = asignacionActiva?.plan?.semanas?.[semanaIdx];
+
+      return {
+        id: alumno.id,
+        alumno,
+        asignacionActiva,
+        semana,
+        semanaIdx,
+        feedback,
+      };
     });
-
-    // Buscar TODOS los feedbacks para este alumno/semana (puede haber múltiples de diferentes profesores)
-    // Mostraremos el más reciente o el del profesor actual si existe
-    const feedbacksAlumno = feedbacksSemanal.filter(f => 
-      f.alumnoId === alumno.id && f.semanaInicioISO === semanaActualISO
-    );
-    // Si hay múltiples, preferir el del profesor actual, sino el más reciente
-    const feedback = feedbacksAlumno.find(f => f.profesorId === userIdActual) || feedbacksAlumno[0];
-
-    const semanaIdx = asignacionActiva ? 
-      calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO) : 0;
-    
-    const semana = asignacionActiva?.plan?.semanas?.[semanaIdx];
-
-    return {
-      id: alumno.id,
-      alumno,
-      asignacionActiva,
-      semana,
-      semanaIdx,
-      feedback,
-    };
-  });
+  }, [estudiantesFiltrados, asignaciones, feedbacksSemanal, semanaActualISO, userIdActual, usuarios]);
 
   // Definir columnas de la tabla
   const columns = [

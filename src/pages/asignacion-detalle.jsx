@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 // Updated Card, Badge, Alert paths from @/components/ui to @/components/ds
@@ -21,7 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 // Preserving all helper functions and components used in the original file
-import { getNombreVisible, formatLocalDate, parseLocalDate, startOfMonday, useEffectiveUser } from "../components/utils/helpers";
+import { getNombreVisible, formatLocalDate, parseLocalDate, startOfMonday, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
 import { calcularTiempoSesion } from "../components/study/sessionSequence";
 import SessionContentView from "../components/study/SessionContentView";
 import PageHeader from "@/components/ds/PageHeader";
@@ -54,6 +54,11 @@ export default function AsignacionDetallePage() {
     queryKey: ['users'],
     queryFn: () => localDataClient.entities.User.list(),
   });
+
+  // Resolver ID de usuario actual de la BD
+  const userIdActual = useMemo(() => {
+    return resolveUserIdActual(effectiveUser, usuarios);
+  }, [effectiveUser, usuarios]);
 
   const { data: piezas = [] } = useQuery({
     queryKey: ['piezas'],
@@ -98,6 +103,23 @@ export default function AsignacionDetallePage() {
       toast.success('✅ Cambios guardados');
       setShowEditDrawer(false);
     },
+    onError: (error) => {
+      console.error('[asignacion-detalle.jsx] Error al actualizar asignación:', error);
+      let errorMsg = '❌ Error al guardar cambios. Inténtalo de nuevo.';
+      
+      // Mensajes específicos según el tipo de error
+      if (error?.code === 'PGRST204' || error?.code === '406') {
+        errorMsg = '❌ Error 406: El servidor rechazó la actualización. El campo "plan" no puede actualizarse directamente. Solo se pueden actualizar: notas, foco, estado, semanaInicioISO y piezaId.';
+      } else if (error?.code === 'PGRST301' || error?.code === '23503') {
+        errorMsg = '❌ Error de integridad: Verifica que la pieza (piezaId) exista en la base de datos.';
+      } else if (error?.code === '42501' || error?.status === 403) {
+        errorMsg = '❌ Error de permisos: No tienes permisos para actualizar esta asignación. Verifica tu rol de usuario.';
+      } else if (error?.message) {
+        errorMsg = `❌ Error: ${error.message}`;
+      }
+      
+      toast.error(errorMsg);
+    },
   });
 
   const calcularLunesSemanaISO = (fecha) => {
@@ -118,6 +140,34 @@ export default function AsignacionDetallePage() {
     }
   }, [editData?.fechaSeleccionada]);
 
+  // Verificar si el usuario puede editar el profesor asignado
+  const puedeEditarProfesor = useMemo(() => {
+    if (!asignacion || !effectiveUser) return false;
+    const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
+    if (isAdmin) return true;
+    
+    // Si es profesor, solo puede editar si es su asignación
+    const isProf = effectiveUser?.rolPersonalizado === 'PROF';
+    if (isProf) {
+      // Verificar si el profesorId de la asignación coincide con el ID del usuario actual
+      // (considerando posibles desincronizaciones entre auth y BD)
+      return asignacion.profesorId === userIdActual || asignacion.profesorId === effectiveUser?.id;
+    }
+    
+    return false;
+  }, [asignacion, effectiveUser, userIdActual]);
+
+  // Obtener lista de profesores disponibles
+  const profesoresDisponibles = useMemo(() => {
+    return usuarios
+      .filter(u => u.rolPersonalizado === 'PROF')
+      .map(p => ({
+        value: p.id,
+        label: getNombreVisible(p),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [usuarios]);
+
   const handleEditarInformacion = () => {
     if (!asignacion) return;
     // Usar semanaInicioISO si existe, sino usar la fecha actual
@@ -133,6 +183,7 @@ export default function AsignacionDetallePage() {
       semanaInicioISO: fechaInicial,
       foco: asignacion.foco || 'GEN',
       notas: asignacion.notas || '',
+      profesorId: asignacion.profesorId || null,
     });
     setShowEditDrawer(true);
   };
@@ -182,12 +233,39 @@ export default function AsignacionDetallePage() {
       return;
     }
 
+    // Validar foco: solo valores permitidos
+    const focoPermitidos = ['GEN', 'LIG', 'RIT', 'ART', 'S&A'];
+    const foco = editData.foco || 'GEN';
+    if (!focoPermitidos.includes(foco)) {
+      toast.error(`❌ Valor de foco no válido. Debe ser uno de: ${focoPermitidos.join(', ')}`);
+      return;
+    }
+
+    // Validar notas: string o null (no puede ser undefined)
+    const notas = editData.notas && editData.notas.trim() !== '' 
+      ? editData.notas.trim() 
+      : null;
+
     const dataToSave = {
       piezaId: editData.piezaId,
       semanaInicioISO: semanaInicioISO,
-      foco: editData.foco || 'GEN',
-      notas: editData.notas || null,
+      foco: foco,
+      notas: notas, // null si está vacío
     };
+
+    // Incluir profesorId solo si el usuario tiene permisos para cambiarlo
+    if (puedeEditarProfesor && editData.profesorId !== undefined) {
+      // Validar que el profesorId existe en la lista de profesores
+      const profesorExiste = profesoresDisponibles.some(p => p.value === editData.profesorId);
+      if (!profesorExiste && editData.profesorId !== null) {
+        toast.error('❌ El profesor seleccionado no es válido');
+        return;
+      }
+      dataToSave.profesorId = editData.profesorId || null;
+    }
+
+    // Campos permitidos en update: notas, foco, estado, semanaInicioISO, piezaId, piezaSnapshot (solo si piezaId cambió), profesorId (solo si tiene permisos)
+    // Campos PROHIBIDOS en update: plan (solo se actualiza en create completo)
 
     console.log('Guardando asignación con datos:', dataToSave);
     editarMutation.mutate(dataToSave);
@@ -439,6 +517,26 @@ export default function AsignacionDetallePage() {
                   </div>
                 </div>
               )}
+
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[var(--color-primary-soft)] border border-[var(--color-primary)]/20 flex items-center justify-center shrink-0">
+                  <User className="w-5 h-5 text-[var(--color-primary)]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wide">Profesor</p>
+                  {(() => {
+                    const profesor = usuarios.find(u => u.id === asignacion.profesorId);
+                    return profesor ? (
+                      <>
+                        <p className="text-base md:text-lg font-semibold text-[var(--color-text-primary)] mb-0.5">{getNombreVisible(profesor)}</p>
+                        {profesor.email && <p className="text-xs text-[var(--color-text-secondary)]">{profesor.email}</p>}
+                      </>
+                    ) : (
+                      <p className="text-base md:text-lg font-semibold text-[var(--color-text-secondary)]">No asignado</p>
+                    );
+                  })()}
+                </div>
+              </div>
             </div>
 
             {asignacion.notas && (
@@ -676,6 +774,43 @@ export default function AsignacionDetallePage() {
                     className={`${componentStyles.controls.inputDefault} resize-none`}
                   />
                 </div>
+
+                {puedeEditarProfesor && (
+                  <div>
+                    <Label htmlFor="profesor" className="text-sm font-medium text-[var(--color-text-primary)]">Profesor asignado</Label>
+                    <Select 
+                      value={editData.profesorId || ''} 
+                      onValueChange={(v) => setEditData({ ...editData, profesorId: v || null })}
+                      modal={false}
+                    >
+                      <SelectTrigger id="profesor" className={`w-full ${componentStyles.controls.selectDefault}`}>
+                        <SelectValue placeholder="Selecciona un profesor" />
+                      </SelectTrigger>
+                      <SelectContent 
+                        position="popper" 
+                        side="bottom" 
+                        align="start" 
+                        sideOffset={4}
+                        className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                      >
+                        {profesoresDisponibles.length === 0 ? (
+                          <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay profesores disponibles</div>
+                        ) : (
+                          profesoresDisponibles.map((profesor) => (
+                            <SelectItem key={profesor.value} value={profesor.value}>
+                              {profesor.label}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {effectiveUser?.rolPersonalizado === 'PROF' && (
+                      <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+                        Solo puedes cambiar el profesor de tus propias asignaciones.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">

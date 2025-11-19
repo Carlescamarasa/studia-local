@@ -22,9 +22,10 @@ import {
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { displayName, calcularLunesSemanaISO, formatLocalDate, parseLocalDate, formatDurationMinutes, useEffectiveUser } from "../components/utils/helpers";
+import { displayName, calcularLunesSemanaISO, formatLocalDate, parseLocalDate, formatDurationMinutes, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import MediaLinksInput from "../components/common/MediaLinksInput";
+import MediaLinksBadges from "../components/common/MediaLinksBadges";
 import MediaPreviewModal from "../components/common/MediaPreviewModal";
 import RequireRole from "@/components/auth/RequireRole";
 import PageHeader from "@/components/ds/PageHeader";
@@ -66,17 +67,11 @@ function EstudiantesPageContent() {
     queryFn: () => localDataClient.entities.User.list(),
   });
 
-  // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
-  // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD
-  const usuarioActual = usuarios.find(u => {
-    if (effectiveUser?.email && u.email) {
-      return u.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim();
-    }
-    return u.id === effectiveUser?.id;
-  }) || effectiveUser;
-
-  // Usar el ID del usuario de la base de datos, no el de Supabase Auth
-  const userIdActual = usuarioActual?.id || effectiveUser?.id;
+  // Resolver ID de usuario actual de la BD (UUID en Supabase, string en local)
+  // Usar useMemo para recalcular cuando usuarios cambie
+  const userIdActual = useMemo(() => {
+    return resolveUserIdActual(effectiveUser, usuarios);
+  }, [effectiveUser, usuarios]);
 
   const { data: asignaciones = [], isLoading: loadingAsignaciones } = useQuery({
     queryKey: ['asignacionesProfesor', userIdActual],
@@ -205,18 +200,21 @@ function EstudiantesPageContent() {
     return { minutosReales, calidadMedia, sesionesRealizadas: registrosAlumno.length };
   };
 
-  const handleAbrirFeedback = (alumno) => {
+  const handleAbrirFeedback = (alumno, feedbackExistenteParam = null) => {
     setSelectedAlumno(alumno);
     const hoy = formatLocalDate(new Date());
     const semanaActual = calcularLunesSemanaISO(hoy);
 
-    // Buscar primero el feedback del profesor actual, sino cualquier feedback de ese alumno/semana
-    const feedbackExistente = feedbacksExistentes.find(
-      f => f.alumnoId === alumno.id &&
-           f.profesorId === userIdActual &&
-           f.semanaInicioISO === semanaActual
-    ) || feedbacksExistentes.find(
-      f => f.alumnoId === alumno.id && f.semanaInicioISO === semanaActual
+    // Si se pasa feedbackExistenteParam, usarlo directamente; sino buscar
+    const feedbackExistente = feedbackExistenteParam || (
+      // Buscar primero el feedback del profesor actual, sino cualquier feedback de ese alumno/semana
+      feedbacksExistentes.find(
+        f => f.alumnoId === alumno.id &&
+             f.profesorId === userIdActual &&
+             f.semanaInicioISO === semanaActual
+      ) || feedbacksExistentes.find(
+        f => f.alumnoId === alumno.id && f.semanaInicioISO === semanaActual
+      )
     );
 
     setFeedbackData({
@@ -283,10 +281,20 @@ function EstudiantesPageContent() {
   }, [showFeedbackDrawer]);
 
   const semanaActual = calcularLunesSemanaISO(formatLocalDate(new Date()));
-  const estadisticasAlumnos = filteredEstudiantes.map(alumno => {
-    const stats = calcularEstadisticasSemana(alumno.id, semanaActual);
-    return { ...alumno, ...stats };
-  });
+  const estadisticasAlumnos = useMemo(() => {
+    return filteredEstudiantes.map(alumno => {
+      const stats = calcularEstadisticasSemana(alumno.id, semanaActual);
+      
+      // Buscar TODOS los feedbacks para este alumno/semana (puede haber múltiples de diferentes profesores)
+      const feedbacksAlumno = feedbacksExistentes.filter(f => 
+        f.alumnoId === alumno.id && f.semanaInicioISO === semanaActual
+      );
+      // Si hay múltiples, preferir el del profesor actual, sino el más reciente
+      const feedback = feedbacksAlumno.find(f => f.profesorId === userIdActual) || feedbacksAlumno[0];
+      
+      return { ...alumno, ...stats, feedback };
+    });
+  }, [filteredEstudiantes, semanaActual, feedbacksExistentes, userIdActual]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -393,7 +401,75 @@ function EstudiantesPageContent() {
                       </div>
                     ),
                     sortValue: (e) => parseFloat(e.calidadMedia)
-                  }
+                  },
+                  ...(isAdminOrProf ? [{
+                    key: 'feedback',
+                    label: 'Feedback',
+                    sortable: false,
+                    render: (alumnoRow) => {
+                      if (!alumnoRow.feedback) {
+                        return (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(evt) => {
+                              evt.stopPropagation();
+                              handleAbrirFeedback(alumnoRow);
+                            }}
+                            className={`${componentStyles.buttons.outline}`}
+                          >
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                            Dar feedback
+                          </Button>
+                        );
+                      }
+                      const profesor = usuarios.find(u => u.id === alumnoRow.feedback.profesorId);
+                      return (
+                        <div className={"flex items-start gap-2 py-1 " + componentStyles.components.toneRowFeedback}>
+                          <MessageSquare className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
+                              {profesor && (
+                                <span className="text-xs text-[var(--color-text-secondary)]">
+                                  • {displayName(profesor)}
+                                </span>
+                              )}
+                            </div>
+                            {alumnoRow.feedback.notaProfesor && (
+                              <p className="text-sm text-[var(--color-text-primary)] italic mt-0.5 break-words">
+                                "{alumnoRow.feedback.notaProfesor}"
+                              </p>
+                            )}
+                            {alumnoRow.feedback.mediaLinks && alumnoRow.feedback.mediaLinks.length > 0 && (
+                              <div className="mt-2">
+                                <MediaLinksBadges
+                                  mediaLinks={alumnoRow.feedback.mediaLinks}
+                                  onMediaClick={(idx) => handlePreviewMedia(idx, alumnoRow.feedback.mediaLinks)}
+                                  compact={true}
+                                  maxDisplay={3}
+                                />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-1 shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(evt) => {
+                                evt.stopPropagation();
+                                handleAbrirFeedback(alumnoRow, alumnoRow.feedback);
+                              }}
+                              className={`h-8 ${componentStyles.buttons.ghost}`}
+                              aria-label="Editar feedback"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    },
+                  }] : [])
                 ]}
                 data={estadisticasAlumnos}
                 getRowActions={(alumno) => {

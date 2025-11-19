@@ -180,12 +180,12 @@ function usePageTitle(url) {
         // y para otras URLs simplemente no mostramos título
         // No loggear errores de timeout, CORS, QUIC, 408, etc.
         if (!cancelled) {
-          setTitle(null);
+        setTitle(null);
         }
       })
       .finally(() => {
         if (!cancelled) {
-          setIsLoading(false);
+        setIsLoading(false);
         }
       });
 
