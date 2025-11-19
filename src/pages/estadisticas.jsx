@@ -671,6 +671,7 @@ function EstadisticasPageContent() {
     return { distribucion, comentarios };
   }, [registrosFiltradosUnicos]);
 
+  // Feedbacks del profesor para estudiantes
   const feedbackProfesor = useMemo(() => {
     if (!isEstu) return [];
     
@@ -693,6 +694,44 @@ function EstadisticasPageContent() {
       return true;
     }).sort((a, b) => b.semanaInicioISO.localeCompare(a.semanaInicioISO));
   }, [feedbacksSemanal, userIdActual, periodoInicio, periodoFin, isEstu]);
+
+  // Feedbacks para profesores y admins: mostrar feedbacks de estudiantes seleccionados (o todos si no hay filtro)
+  const feedbacksParaProfAdmin = useMemo(() => {
+    if (isEstu) return [];
+    
+    // Si hay estudiantes seleccionados, filtrar por ellos; si no, mostrar todos
+    const estudiantesIdsFiltro = alumnosSeleccionados.length > 0 
+      ? alumnosSeleccionados 
+      : estudiantes.map(e => e.id);
+    
+    return feedbacksSemanal.filter(f => {
+      // Filtrar por estudiantes seleccionados
+      if (!estudiantesIdsFiltro.includes(f.alumnoId)) return false;
+      
+      // Filtrar por período
+      if (!f.semanaInicioISO) return false;
+      
+      const feedbackDate = parseLocalDate(f.semanaInicioISO);
+      
+      if (periodoInicio) {
+        const inicioDate = parseLocalDate(periodoInicio);
+        if (feedbackDate < inicioDate) return false;
+      }
+      
+      if (periodoFin) {
+        const finDate = parseLocalDate(periodoFin);
+        if (feedbackDate > finDate) return false;
+      }
+      
+      return true;
+    }).sort((a, b) => {
+      // Ordenar primero por alumno, luego por fecha descendente
+      if (a.alumnoId !== b.alumnoId) {
+        return a.alumnoId.localeCompare(b.alumnoId);
+      }
+      return b.semanaInicioISO.localeCompare(a.semanaInicioISO);
+    });
+  }, [feedbacksSemanal, alumnosSeleccionados, estudiantes, periodoInicio, periodoFin, isEstu]);
 
   const tipoLabels = {
     CA: 'Calentamiento A',
@@ -1590,14 +1629,19 @@ function EstadisticasPageContent() {
               )}
 
         {tabActiva === 'feedback' && (
-          // Solo visible para estudiantes: mostrar lista de semanas con feedback del profesor
-          isEstu ? (
-            <Card className={componentStyles.components.cardBase}>
-              <CardHeader>
-                <CardTitle className="text-base md:text-lg">Feedback del Profesor ({feedbackProfesor.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {feedbackProfesor.length === 0 ? (
+          <Card className={componentStyles.components.cardBase}>
+            <CardHeader>
+              <CardTitle className="text-base md:text-lg">
+                {isEstu 
+                  ? `Feedback del Profesor (${feedbackProfesor.length})`
+                  : `Feedbacks de Estudiantes (${feedbacksParaProfAdmin.length})`
+                }
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isEstu ? (
+                // Vista para estudiantes: mostrar feedbacks del profesor
+                feedbackProfesor.length === 0 ? (
                   <div className="text-center py-12">
                     <MessageSquare className={componentStyles.components.emptyStateIcon} />
                     <p className={componentStyles.components.emptyStateText}>No hay feedback del profesor en este periodo</p>
@@ -1632,15 +1676,69 @@ function EstadisticasPageContent() {
                                 />
                               )}
                             </div>
-            </CardContent>
-          </Card>
+                          </CardContent>
+                        </Card>
                       );
                     })}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : null
+                )
+              ) : (
+                // Vista para profesores y admins: mostrar feedbacks de estudiantes
+                feedbacksParaProfAdmin.length === 0 ? (
+                  <div className="text-center py-12">
+                    <MessageSquare className={componentStyles.components.emptyStateIcon} />
+                    <p className={componentStyles.components.emptyStateText}>
+                      {alumnosSeleccionados.length > 0 
+                        ? 'No hay feedbacks para los estudiantes seleccionados en este periodo'
+                        : 'No hay feedbacks en este periodo'
+                      }
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {feedbacksParaProfAdmin.map(f => {
+                      const profesor = usuarios.find(u => u.id === f.profesorId);
+                      const alumno = usuarios.find(u => u.id === f.alumnoId);
+                      return (
+                        <Card key={f.id} className={`${componentStyles.containers.cardBase} border-[var(--color-info)] bg-[var(--color-info)]/10 hover:shadow-md transition-shadow`}>
+                          <CardContent className="pt-4">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge className={componentStyles.status.badgeInfo}>
+                                  Semana {parseLocalDate(f.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                                </Badge>
+                                {alumno && (
+                                  <Badge className={componentStyles.status.badgeDefault}>
+                                    {displayName(alumno)}
+                                  </Badge>
+                                )}
+                                {profesor && (
+                                  <span className="text-xs text-[var(--color-text-secondary)]">
+                                    Por: {displayName(profesor)}
+                                  </span>
+                                )}
+                              </div>
+                              {f.notaProfesor && (
+                                <p className="text-sm text-[var(--color-text-primary)] italic border-l-2 border-[var(--color-info)] pl-3 break-words">
+                                  "{f.notaProfesor}"
+                                </p>
+                              )}
+                              {f.mediaLinks && f.mediaLinks.length > 0 && (
+                                <MediaLinksBadges 
+                                  mediaLinks={f.mediaLinks}
+                                  onMediaClick={(media) => setViewingMedia(media)}
+                                />
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )
+              )}
+            </CardContent>
+          </Card>
         )}
       </div>
 
