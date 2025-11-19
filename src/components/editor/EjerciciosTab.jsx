@@ -177,6 +177,33 @@ export default function EjerciciosTab() {
                 }
               ]}
               data={ejerciciosFiltrados}
+              selectable={true}
+              bulkActions={[
+                {
+                  id: 'duplicate',
+                  label: 'Duplicar',
+                  icon: Copy,
+                  onClick: (ids) => {
+                    const ejerciciosParaDuplicar = ejerciciosFiltrados.filter(e => ids.includes(e.id));
+                    ejerciciosParaDuplicar.forEach(e => handleDuplicar(e));
+                  },
+                },
+                {
+                  id: 'delete',
+                  label: 'Eliminar',
+                  icon: Trash2,
+                  onClick: (ids) => {
+                    if (window.confirm(`¿Eliminar ${ids.length} ejercicio${ids.length > 1 ? 's' : ''}?`)) {
+                      ids.forEach(id => {
+                        const ejercicio = ejerciciosFiltrados.find(e => e.id === id);
+                        if (ejercicio) {
+                          deleteMutation.mutate(ejercicio.id);
+                        }
+                      });
+                    }
+                  },
+                },
+              ]}
               getRowActions={(e) => [ // Changed 'actions' to 'getRowActions' and updated structure
                 { id: 'edit', label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => handleEditar(e) },
                 { id: 'duplicate', label: 'Duplicar', icon: <Copy className="w-4 h-4" />, onClick: () => handleDuplicar(e) },

@@ -192,12 +192,12 @@ export default function UnifiedTable({
           </div>
 
           {selectable && selectedItems.size > 0 && bulkActions && (
-            <div className="sticky bottom-0 bg-background border-t border-[var(--color-border-default)] shadow-card p-4 mt-4 app-card">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-ui">
-                  {selectedItems.size} seleccionados
+            <div className="sticky bottom-0 bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-lg p-4 mt-4 rounded-lg backdrop-blur-sm">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                  {selectedItems.size} {selectedItems.size === 1 ? 'elemento seleccionado' : 'elementos seleccionados'}
                 </span>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {bulkActions.map((action, idx) => (
                     <Button
                       key={idx}
@@ -207,9 +207,9 @@ export default function UnifiedTable({
                         action.onClick(Array.from(selectedItems));
                         setSelectedItems(new Set());
                       }}
-                      className="btn-secondary h-9"
+                      className="h-9 text-xs"
                     >
-                      <action.icon className="w-4 h-4 mr-2" />
+                      {action.icon && <action.icon className="w-4 h-4 mr-2" />}
                       {action.label}
                     </Button>
                   ))}
@@ -281,10 +281,10 @@ export default function UnifiedTable({
           </div>
 
           {selectable && selectedItems.size > 0 && bulkActions && (
-            <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-[var(--color-border-default)] shadow-card p-4 z-20 app-panel">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-ui">
-                  {selectedItems.size} seleccionados
+            <div className="fixed bottom-0 left-0 right-0 bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-lg p-4 z-20 backdrop-blur-sm">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 max-w-7xl mx-auto">
+                <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                  {selectedItems.size} {selectedItems.size === 1 ? 'elemento seleccionado' : 'elementos seleccionados'}
                 </span>
                 <div className="flex gap-2 flex-wrap">
                   {bulkActions.map((action, idx) => (
@@ -296,9 +296,9 @@ export default function UnifiedTable({
                         action.onClick(Array.from(selectedItems));
                         setSelectedItems(new Set());
                       }}
-                      className="btn-secondary h-9"
+                      className="h-9 text-xs"
                     >
-                      <action.icon className="w-4 h-4 mr-2" />
+                      {action.icon && <action.icon className="w-4 h-4 mr-2" />}
                       {action.label}
                     </Button>
                   ))}

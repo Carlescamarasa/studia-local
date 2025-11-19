@@ -148,6 +148,33 @@ export default function PlanesTab() {
                 { key: 'semanas', label: 'Semanas', sortable: true, render: (p) => <span className="text-sm text-[var(--color-text-secondary)]">{p.semanas?.length || 0}</span>, sortValue: (p) => p.semanas?.length || 0 }
               ]}
               data={filteredPlanes}
+              selectable={true}
+              bulkActions={[
+                {
+                  id: 'duplicate',
+                  label: 'Duplicar',
+                  icon: Copy,
+                  onClick: (ids) => {
+                    const planesParaDuplicar = filteredPlanes.filter(p => ids.includes(p.id));
+                    planesParaDuplicar.forEach(p => handleDuplicate(p));
+                  },
+                },
+                {
+                  id: 'delete',
+                  label: 'Eliminar',
+                  icon: Trash2,
+                  onClick: (ids) => {
+                    if (window.confirm(`¿Eliminar ${ids.length} plan${ids.length > 1 ? 'es' : ''}?`)) {
+                      ids.forEach(id => {
+                        const plan = filteredPlanes.find(p => p.id === id);
+                        if (plan) {
+                          deleteMutation.mutate(plan.id);
+                        }
+                      });
+                    }
+                  },
+                },
+              ]}
               getRowActions={(p) => [ // Changed from 'actions' to 'getRowActions' and updated structure
                 { id: 'edit', label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => handleEdit(p) },
                 { id: 'duplicate', label: 'Duplicar', icon: <Copy className="w-4 h-4" />, onClick: () => handleDuplicate(p) },

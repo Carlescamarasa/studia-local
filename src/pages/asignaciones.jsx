@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ds";
 import { Input } from "@/components/ui/input";
 import {
-  Target, Eye, Edit, Copy, Trash2, FileDown, Search, X, Plus, RotateCcw, XCircle, User
+  Target, Eye, Edit, Copy, Trash2, FileDown, Search, X, Plus, RotateCcw, XCircle, User, Users
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -20,6 +20,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import MultiSelect from "@/components/ui/MultiSelect";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 export default function AsignacionesPage() {
   return (
@@ -36,6 +45,13 @@ function AsignacionesPageContent() {
   const [estadoFilter, setEstadoFilter] = useState('all');
   const [profesoresFilter, setProfesoresFilter] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [showAsignarProfesorDialog, setShowAsignarProfesorDialog] = useState(false);
+  const [showAsignarEstudianteDialog, setShowAsignarEstudianteDialog] = useState(false);
+  const [asignacionParaAsignar, setAsignacionParaAsignar] = useState(null);
+  const [idsParaAsignar, setIdsParaAsignar] = useState(null);
+  const [tipoAsignacion, setTipoAsignacion] = useState(null); // 'profesor' o 'estudiante'
+  const [profesorSeleccionado, setProfesorSeleccionado] = useState('');
+  const [estudianteSeleccionado, setEstudianteSeleccionado] = useState('');
 
   const effectiveUser = useEffectiveUser();
 
@@ -110,6 +126,132 @@ function AsignacionesPageContent() {
       toast.success('✅ Asignación eliminada');
     },
   });
+
+  const eliminarBulkMutation = useMutation({
+    mutationFn: async (ids) => {
+      await Promise.all(ids.map(id => localDataClient.entities.Asignacion.delete(id)));
+    },
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
+      toast.success(`✅ ${ids.length} asignación${ids.length > 1 ? 'es' : ''} eliminada${ids.length > 1 ? 's' : ''}`);
+    },
+  });
+
+  const cerrarBulkMutation = useMutation({
+    mutationFn: async (ids) => {
+      await Promise.all(ids.map(id => localDataClient.entities.Asignacion.update(id, { estado: 'cerrada' })));
+    },
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
+      toast.success(`✅ ${ids.length} asignación${ids.length > 1 ? 'es' : ''} cerrada${ids.length > 1 ? 's' : ''}`);
+    },
+  });
+
+  const duplicarBulkMutation = useMutation({
+    mutationFn: async (ids) => {
+      const asignacionesParaDuplicar = asignacionesFinales.filter(a => ids.includes(a.id));
+      await Promise.all(asignacionesParaDuplicar.map(a => {
+        const newData = {
+          alumnoId: a.alumnoId,
+          piezaId: a.piezaId,
+          semanaInicioISO: formatLocalDate(new Date()),
+          estado: 'borrador',
+          foco: a.foco,
+          notas: a.notas,
+          plan: JSON.parse(JSON.stringify(a.plan)),
+          piezaSnapshot: JSON.parse(JSON.stringify(a.piezaSnapshot)),
+          profesorId: userIdActual || effectiveUser.id,
+        };
+        return localDataClient.entities.Asignacion.create(newData);
+      }));
+    },
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
+      toast.success(`✅ ${ids.length} asignación${ids.length > 1 ? 'es' : ''} duplicada${ids.length > 1 ? 's' : ''}`);
+    },
+  });
+
+  const asignarProfesorMutation = useMutation({
+    mutationFn: async ({ id, profesorId }) => {
+      return localDataClient.entities.Asignacion.update(id, { profesorId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
+      toast.success('✅ Profesor asignado correctamente');
+      setShowAsignarProfesorDialog(false);
+      setAsignacionParaAsignar(null);
+      setIdsParaAsignar(null);
+      setProfesorSeleccionado('');
+    },
+  });
+
+  const asignarProfesorBulkMutation = useMutation({
+    mutationFn: async ({ ids, profesorId }) => {
+      await Promise.all(ids.map(id => localDataClient.entities.Asignacion.update(id, { profesorId })));
+    },
+    onSuccess: (_, { ids }) => {
+      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
+      toast.success(`✅ ${ids.length} asignación${ids.length > 1 ? 'es' : ''} asignada${ids.length > 1 ? 's' : ''} al profesor`);
+      setShowAsignarProfesorDialog(false);
+      setAsignacionParaAsignar(null);
+      setIdsParaAsignar(null);
+      setProfesorSeleccionado('');
+    },
+  });
+
+  const asignarEstudianteMutation = useMutation({
+    mutationFn: async ({ id, alumnoId }) => {
+      return localDataClient.entities.Asignacion.update(id, { alumnoId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
+      toast.success('✅ Estudiante asignado correctamente');
+      setShowAsignarEstudianteDialog(false);
+      setAsignacionParaAsignar(null);
+      setIdsParaAsignar(null);
+      setEstudianteSeleccionado('');
+    },
+  });
+
+  const asignarEstudianteBulkMutation = useMutation({
+    mutationFn: async ({ ids, alumnoId }) => {
+      await Promise.all(ids.map(id => localDataClient.entities.Asignacion.update(id, { alumnoId })));
+    },
+    onSuccess: (_, { ids }) => {
+      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
+      toast.success(`✅ ${ids.length} asignación${ids.length > 1 ? 'es' : ''} asignada${ids.length > 1 ? 's' : ''} al estudiante`);
+      setShowAsignarEstudianteDialog(false);
+      setAsignacionParaAsignar(null);
+      setIdsParaAsignar(null);
+      setEstudianteSeleccionado('');
+    },
+  });
+
+  const handleAsignarProfesor = () => {
+    if (!profesorSeleccionado) {
+      toast.error('❌ Debes seleccionar un profesor');
+      return;
+    }
+
+    if (idsParaAsignar) {
+      asignarProfesorBulkMutation.mutate({ ids: idsParaAsignar, profesorId: profesorSeleccionado });
+    } else if (asignacionParaAsignar) {
+      asignarProfesorMutation.mutate({ id: asignacionParaAsignar, profesorId: profesorSeleccionado });
+    }
+  };
+
+  const handleAsignarEstudiante = () => {
+    if (!estudianteSeleccionado) {
+      toast.error('❌ Debes seleccionar un estudiante');
+      return;
+    }
+
+    if (idsParaAsignar) {
+      asignarEstudianteBulkMutation.mutate({ ids: idsParaAsignar, alumnoId: estudianteSeleccionado });
+    } else if (asignacionParaAsignar) {
+      asignarEstudianteMutation.mutate({ id: asignacionParaAsignar, alumnoId: estudianteSeleccionado });
+    }
+  };
 
   const exportarCSV = () => {
     const headers = ['Estudiante', 'Profesor', 'Pieza', 'Plan', 'Inicio', 'Estado', 'Semanas'];
@@ -192,6 +334,17 @@ function AsignacionesPageContent() {
     
     return profesores;
   }, [asignacionesFiltradas, usuarios]);
+
+  // Obtener lista de estudiantes disponibles
+  const estudiantesDisponibles = useMemo(() => {
+    const estudiantes = usuarios.filter(u => u.rolPersonalizado === 'ESTU');
+    return estudiantes
+      .map(e => ({
+        value: e.id,
+        label: getNombreVisible(e),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [usuarios]);
 
   // Aplicar filtros adicionales (estado, búsqueda y profesores)
   const asignacionesFinales = useMemo(() => {
@@ -384,6 +537,94 @@ function AsignacionesPageContent() {
             <UnifiedTable
               columns={columns}
               data={asignacionesFinales}
+              selectable={true}
+              bulkActions={[
+                {
+                  id: 'assign-profesor',
+                  label: 'Cambiar profesor',
+                  icon: User,
+                  onClick: (ids) => {
+                    setIdsParaAsignar(ids);
+                    setAsignacionParaAsignar(null);
+                    setTipoAsignacion('profesor');
+                    setProfesorSeleccionado('');
+                    setShowAsignarProfesorDialog(true);
+                  },
+                },
+                {
+                  id: 'assign-estudiante',
+                  label: 'Cambiar estudiante',
+                  icon: Users,
+                  onClick: (ids) => {
+                    setIdsParaAsignar(ids);
+                    setAsignacionParaAsignar(null);
+                    setTipoAsignacion('estudiante');
+                    setEstudianteSeleccionado('');
+                    setShowAsignarEstudianteDialog(true);
+                  },
+                },
+                {
+                  id: 'duplicate',
+                  label: 'Duplicar',
+                  icon: Copy,
+                  onClick: (ids) => {
+                    if (window.confirm(`¿Duplicar ${ids.length} asignación${ids.length > 1 ? 'es' : ''} como borradores?`)) {
+                      duplicarBulkMutation.mutate(ids);
+                    }
+                  },
+                },
+                {
+                  id: 'close',
+                  label: 'Cerrar',
+                  icon: XCircle,
+                  onClick: (ids) => {
+                    if (window.confirm(`¿Cerrar ${ids.length} asignación${ids.length > 1 ? 'es' : ''}?`)) {
+                      cerrarBulkMutation.mutate(ids);
+                    }
+                  },
+                },
+                {
+                  id: 'delete',
+                  label: 'Eliminar',
+                  icon: Trash2,
+                  onClick: (ids) => {
+                    if (window.confirm(`¿Eliminar permanentemente ${ids.length} asignación${ids.length > 1 ? 'es' : ''}?`)) {
+                      eliminarBulkMutation.mutate(ids);
+                    }
+                  },
+                },
+                {
+                  id: 'export',
+                  label: 'Exportar CSV',
+                  icon: FileDown,
+                  onClick: (ids) => {
+                    const asignacionesSeleccionadas = asignacionesFinales.filter(a => ids.includes(a.id));
+                    const headers = ['Estudiante', 'Profesor', 'Pieza', 'Plan', 'Inicio', 'Estado', 'Semanas'];
+                    const rows = asignacionesSeleccionadas.map(a => {
+                      const alumno = usuarios.find(u => u.id === a.alumnoId);
+                      const profesor = usuarios.find(u => u.id === a.profesorId);
+                      return [
+                        getNombreVisible(alumno),
+                        getNombreVisible(profesor),
+                        a.piezaSnapshot?.nombre || '',
+                        a.plan?.nombre || '',
+                        a.semanaInicioISO,
+                        a.estado,
+                        a.plan?.semanas?.length || 0,
+                      ];
+                    });
+                    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `asignaciones_${new Date().toISOString().split('T')[0]}.csv`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    toast.success(`✅ ${ids.length} asignación${ids.length > 1 ? 'es' : ''} exportada${ids.length > 1 ? 's' : ''}`);
+                  },
+                },
+              ]}
               getRowActions={(a) => {
                 const actions = [
                   {
@@ -395,6 +636,30 @@ function AsignacionesPageContent() {
                     id: 'edit',
                     label: 'Adaptar plan',
                     onClick: () => navigate(createPageUrl(`adaptar-asignacion?id=${a.id}`)),
+                  },
+                  {
+                    id: 'assign-profesor',
+                    label: 'Cambiar profesor',
+                    icon: <User className="w-4 h-4" />,
+                    onClick: () => {
+                      setAsignacionParaAsignar(a.id);
+                      setIdsParaAsignar(null);
+                      setTipoAsignacion('profesor');
+                      setProfesorSeleccionado(a.profesorId || '');
+                      setShowAsignarProfesorDialog(true);
+                    },
+                  },
+                  {
+                    id: 'assign-estudiante',
+                    label: 'Cambiar estudiante',
+                    icon: <Users className="w-4 h-4" />,
+                    onClick: () => {
+                      setAsignacionParaAsignar(a.id);
+                      setIdsParaAsignar(null);
+                      setTipoAsignacion('estudiante');
+                      setEstudianteSeleccionado(a.alumnoId || '');
+                      setShowAsignarEstudianteDialog(true);
+                    },
                   },
                 ];
 
@@ -462,6 +727,108 @@ function AsignacionesPageContent() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={showAsignarProfesorDialog} onOpenChange={setShowAsignarProfesorDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {idsParaAsignar ? `Cambiar profesor de ${idsParaAsignar.length} asignación${idsParaAsignar.length > 1 ? 'es' : ''}` : 'Cambiar profesor'}
+            </DialogTitle>
+            <DialogDescription>
+              Selecciona el profesor al que quieres asignar {idsParaAsignar ? 'estas asignaciones' : 'esta asignación'}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="profesor-select">Profesor</Label>
+              <Select value={profesorSeleccionado} onValueChange={setProfesorSeleccionado}>
+                <SelectTrigger id="profesor-select" className={`w-full ${componentStyles.controls.selectDefault}`}>
+                  <SelectValue placeholder="Selecciona un profesor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {profesoresDisponibles.map((profesor) => (
+                    <SelectItem key={profesor.value} value={profesor.value}>
+                      {profesor.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAsignarProfesorDialog(false);
+                setAsignacionParaAsignar(null);
+                setIdsParaAsignar(null);
+                setProfesorSeleccionado('');
+              }}
+              className={componentStyles.buttons.outline}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleAsignarProfesor}
+              disabled={asignarProfesorMutation.isPending || asignarProfesorBulkMutation.isPending || !profesorSeleccionado}
+              className={componentStyles.buttons.primary}
+            >
+              {asignarProfesorMutation.isPending || asignarProfesorBulkMutation.isPending ? 'Asignando...' : 'Cambiar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAsignarEstudianteDialog} onOpenChange={setShowAsignarEstudianteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {idsParaAsignar ? `Cambiar estudiante de ${idsParaAsignar.length} asignación${idsParaAsignar.length > 1 ? 'es' : ''}` : 'Cambiar estudiante'}
+            </DialogTitle>
+            <DialogDescription>
+              Selecciona el estudiante al que quieres asignar {idsParaAsignar ? 'estas asignaciones' : 'esta asignación'}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="estudiante-select">Estudiante</Label>
+              <Select value={estudianteSeleccionado} onValueChange={setEstudianteSeleccionado}>
+                <SelectTrigger id="estudiante-select" className={`w-full ${componentStyles.controls.selectDefault}`}>
+                  <SelectValue placeholder="Selecciona un estudiante" />
+                </SelectTrigger>
+                <SelectContent>
+                  {estudiantesDisponibles.map((estudiante) => (
+                    <SelectItem key={estudiante.value} value={estudiante.value}>
+                      {estudiante.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAsignarEstudianteDialog(false);
+                setAsignacionParaAsignar(null);
+                setIdsParaAsignar(null);
+                setEstudianteSeleccionado('');
+              }}
+              className={componentStyles.buttons.outline}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleAsignarEstudiante}
+              disabled={asignarEstudianteMutation.isPending || asignarEstudianteBulkMutation.isPending || !estudianteSeleccionado}
+              className={componentStyles.buttons.primary}
+            >
+              {asignarEstudianteMutation.isPending || asignarEstudianteBulkMutation.isPending ? 'Asignando...' : 'Cambiar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

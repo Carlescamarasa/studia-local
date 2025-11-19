@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Users, Search, X, FileDown } from "lucide-react";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import RequireRole from "@/components/auth/RequireRole";
@@ -242,6 +243,36 @@ function UsuariosPageContent() {
             <UnifiedTable
               columns={columns}
               data={usuariosFiltrados}
+              selectable={true}
+              bulkActions={[
+                {
+                  id: 'export',
+                  label: 'Exportar CSV',
+                  icon: FileDown,
+                  onClick: (ids) => {
+                    const usuariosSeleccionados = usuariosFiltrados.filter(u => ids.includes(u.id));
+                    const headers = ['Nombre', 'Email', 'Rol', 'Profesor Asignado'];
+                    const rows = usuariosSeleccionados.map(u => {
+                      const profe = usuarios.find(p => p.id === u.profesorAsignadoId);
+                      return [
+                        getNombreVisible(u),
+                        u.email,
+                        roleLabels[u.rolPersonalizado] || 'Estudiante',
+                        profe ? getNombreVisible(profe) : '',
+                      ];
+                    });
+                    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `usuarios_${new Date().toISOString().split('T')[0]}.csv`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    toast.success(`✅ ${ids.length} usuario${ids.length > 1 ? 's' : ''} exportado${ids.length > 1 ? 's' : ''}`);
+                  },
+                },
+              ]}
               getRowActions={(u) => [
                 {
                   id: 'edit',

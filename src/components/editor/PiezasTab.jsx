@@ -154,6 +154,33 @@ export default function PiezasTab() {
                 { key: 'tiempo', label: 'Tiempo', sortable: true, render: (p) => <span className="text-sm text-[var(--color-text-secondary)]">{Math.floor((p.tiempoObjetivoSeg || 0) / 60)} min</span>, sortValue: (p) => p.tiempoObjetivoSeg || 0 }
               ]}
               data={filteredPiezas}
+              selectable={true}
+              bulkActions={[
+                {
+                  id: 'duplicate',
+                  label: 'Duplicar',
+                  icon: Copy,
+                  onClick: (ids) => {
+                    const piezasParaDuplicar = filteredPiezas.filter(p => ids.includes(p.id));
+                    piezasParaDuplicar.forEach(p => handleDuplicate(p));
+                  },
+                },
+                {
+                  id: 'delete',
+                  label: 'Eliminar',
+                  icon: Trash2,
+                  onClick: (ids) => {
+                    if (window.confirm(`¿Eliminar ${ids.length} pieza${ids.length > 1 ? 's' : ''}?`)) {
+                      ids.forEach(id => {
+                        const pieza = filteredPiezas.find(p => p.id === id);
+                        if (pieza) {
+                          deleteMutation.mutate(pieza.id);
+                        }
+                      });
+                    }
+                  },
+                },
+              ]}
               getRowActions={(p) => [ // Changed from 'actions' to 'getRowActions'
                 { id: 'edit', label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => handleEdit(p) },
                 { id: 'duplicate', label: 'Duplicar', icon: <Copy className="w-4 h-4" />, onClick: () => handleDuplicate(p) },

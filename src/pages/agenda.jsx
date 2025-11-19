@@ -801,6 +801,20 @@ function AgendaPageContent() {
           <UnifiedTable
             columns={columns}
             data={tableData}
+            selectable={true}
+            bulkActions={[
+              {
+                id: 'feedback',
+                label: 'Dar feedback',
+                icon: MessageSquare,
+                onClick: (ids) => {
+                  const primerEstudiante = tableData.find(row => ids.includes(row.id));
+                  if (primerEstudiante) {
+                    abrirFeedbackDrawer(primerEstudiante.alumno);
+                  }
+                },
+              },
+            ]}
             getRowActions={(row) => {
               const actions = [];
               if (row.asignacionActiva) {

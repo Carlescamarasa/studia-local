@@ -44,10 +44,8 @@ import { componentStyles } from "@/design/componentStyles";
 import { Outlet } from "react-router-dom";
 import { displayName, getEffectiveRole, useEffectiveUser } from "@/components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import RequireRole from "@/components/auth/RequireRole";
-import { DesignPageContent } from "@/pages/design.jsx";
 import PerfilModal from "@/components/common/PerfilModal";
+import { useDesign } from "@/components/design/DesignProvider";
 
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
@@ -96,7 +94,7 @@ function LayoutContent() {
   const [isMobile, setIsMobile] = useState(false);
   const toggleLockRef = useRef(0);
   const headerToggleButtonRef = useRef(null);
-  const [showDesignModal, setShowDesignModal] = useState(false);
+  const { design, setDesignPartial } = useDesign();
 
   const appName = getAppName();
 
@@ -177,22 +175,17 @@ function LayoutContent() {
         e.preventDefault();
         safeToggle();
       }
-      // Abrir panel de diseño en modal (solo ADMIN): Ctrl/⌘ + Shift + D
-      if (isAdmin && (e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "d" || e.key === "D")) {
+      // Cambiar entre modo light y dark: Ctrl/⌘ + Shift + D (todos los roles)
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "d" || e.key === "D")) {
         e.preventDefault();
-        setShowDesignModal((v) => !v);
+        const currentTheme = design?.theme || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        setDesignPartial('theme', newTheme);
       }
     };
     window.addEventListener("keydown", handleKey, { capture: true, passive: false });
     return () => window.removeEventListener("keydown", handleKey, { capture: true });
-  }, [isAdmin]);
-
-  // Cerrar modal si deja de ser ADMIN por cualquier motivo
-  useEffect(() => {
-    if (!isAdmin && showDesignModal) {
-      setShowDesignModal(false);
-    }
-  }, [isAdmin, showDesignModal]);
+  }, [design, setDesignPartial]);
 
   /* Gestos: swipe desde borde para abrir; swipe izq para cerrar */
   useEffect(() => {
@@ -583,38 +576,6 @@ function LayoutContent() {
           </footer>
         </main>
       </div>
-      {/* Modal de Panel de Diseño - accesible con Ctrl/⌘+Shift+D */}
-      {isAdmin && showDesignModal && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/40 z-[80]"
-            onClick={() => setShowDesignModal(false)}
-          />
-          <div className="fixed inset-0 z-[90] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
-            <div
-              className="bg-card w-full max-w-5xl max-h-[90vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-8"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="px-4 py-3 border-b border-[var(--color-border-default)] bg-card rounded-t-2xl flex items-center justify-between">
-                <div>
-                  <div className="text-[var(--color-text-primary)] font-semibold">Panel de Diseño (modal)</div>
-                  <div className="sr-only">Ajusta tokens visuales en tiempo real sin tocar código</div>
-                </div>
-                <Button variant="ghost" size="icon" onClick={() => setShowDesignModal(false)} className={`text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}>
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                <RequireRole anyOf={['ADMIN']}>
-                  <div className="p-4">
-                    <DesignPageContent embedded />
-                  </div>
-                </RequireRole>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
       <PerfilModal 
         open={perfilModalOpen} 
         onOpenChange={setPerfilModalOpen}
