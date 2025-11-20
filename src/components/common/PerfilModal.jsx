@@ -419,15 +419,36 @@ export default function PerfilModal({
       }
     }
 
+    // Preparar datos para guardar
+    // Solo incluir profesorAsignadoId si realmente ha cambiado o si es necesario actualizarlo
     const dataToSave = {
       nombreCompleto: editedData.nombreCompleto,
       rolPersonalizado: editedData.rolPersonalizado,
-      profesorAsignadoId: editedData.profesorAsignadoId || null,
       nivel: editedData.nivel || null,
       telefono: telefonoFinal,
       // mediaLinks no se incluye al guardar (la columna no existe en Supabase profiles)
       // Se mantiene solo en el estado local para mostrar el componente MediaLinksInput
     };
+    
+    // Solo incluir profesorAsignadoId si realmente ha cambiado
+    // Esto evita intentar actualizar con IDs inválidos cuando solo se actualiza el nombre
+    if (profesorAsignadoChanged && isEstudiante) {
+      const profesorId = editedData.profesorAsignadoId;
+      if (profesorId) {
+        // Verificar que sea un UUID válido antes de incluir
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(String(profesorId).trim())) {
+          dataToSave.profesorAsignadoId = profesorId;
+        } else {
+          // Si no es UUID válido, rechazar el cambio
+          setSaveResult({ success: false, message: '❌ El ID del profesor asignado no es válido. Debe ser un UUID válido.' });
+          toast.error('El ID del profesor asignado no es válido. Debe ser un UUID válido.');
+          return;
+        }
+      } else {
+        dataToSave.profesorAsignadoId = null;
+      }
+    }
 
     updateUserMutation.mutate(dataToSave);
   };

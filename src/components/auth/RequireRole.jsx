@@ -20,11 +20,6 @@ export default function RequireRole({ children, anyOf = [] }) {
 
   // Usar la función unificada para obtener el rol efectivo
   const effectiveRole = getEffectiveRole({ appRole, currentUser: effectiveUser });
-  
-  // Debug: verificar qué valores se están pasando
-  if (process.env.NODE_ENV === 'development') {
-  console.log('[RequireRole] appRole:', appRole, 'effectiveUser:', effectiveUser?.rolPersonalizado, 'effectiveRole:', effectiveRole);
-  }
 
   // Si tiene acceso, renderizar children
   if (anyOf.includes(effectiveRole)) {

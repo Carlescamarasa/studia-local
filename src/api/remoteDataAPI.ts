@@ -647,12 +647,12 @@ export function createRemoteDataAPI(): AppDataAPI {
         
         // Mapear profesorAsignadoId → profesor_asignado_id
         // IMPORTANTE: En Supabase, profesor_asignado_id debe ser un UUID válido
-        // Si viene un ID de MongoDB (24 caracteres), necesitamos resolverlo
+        // Solo actualizar si viene explícitamente definido (undefined significa no cambiar)
         if (updates.profesorAsignadoId !== undefined) {
           if (updates.profesorAsignadoId === null || updates.profesorAsignadoId === '') {
             supabaseUpdates.profesor_asignado_id = null;
           } else {
-            const profesorId = String(updates.profesorAsignadoId);
+            const profesorId = String(updates.profesorAsignadoId).trim();
             // Validar si es un UUID válido (formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
             
@@ -660,43 +660,9 @@ export function createRemoteDataAPI(): AppDataAPI {
               // Es un UUID válido, usar directamente
               supabaseUpdates.profesor_asignado_id = profesorId;
             } else {
-              // No es un UUID válido - probablemente es un ID de MongoDB
-              // Intentar resolver el UUID buscando el usuario en la base de datos
-              try {
-                // Buscar el usuario en profiles solo por ID (profiles no tiene columna email)
-                const { data: usuarios, error: searchError } = await withAuthErrorHandling(
-                  supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('id', profesorId)
-                    .limit(1)
-                );
-                
-                if (searchError) {
-                  console.warn('[remoteDataAPI] Error al buscar profesor:', searchError);
-                  throw new Error(`No se pudo buscar el profesor: ${searchError.message}`);
-                }
-                
-                const profesor = usuarios && usuarios.length > 0 ? usuarios[0] : null;
-                
-                if (profesor && profesor.id) {
-                  // Verificar que el ID resuelto es un UUID válido
-                  if (uuidRegex.test(profesor.id)) {
-                    supabaseUpdates.profesor_asignado_id = profesor.id;
-                  } else {
-                    console.warn('[remoteDataAPI] El profesor encontrado no tiene un UUID válido:', profesor.id);
-                    // Si el profesor encontrado tampoco tiene UUID, no podemos guardarlo
-                    throw new Error(`El ID del profesor asignado no es válido. Se esperaba un UUID pero se recibió: ${profesorId}`);
-                  }
-                } else {
-                  // Si no se encuentra por ID directo, el ID de MongoDB no se puede convertir
-                  // En este caso, rechazar el valor ya que no hay forma de resolverlo
-                  throw new Error(`No se encontró un profesor con ID: ${profesorId}. El ID debe ser un UUID válido de Supabase.`);
-                }
-              } catch (error) {
-                console.error('[remoteDataAPI] Error al resolver profesorAsignadoId:', error);
-                throw new Error(`Error al validar el profesor asignado: ${error instanceof Error ? error.message : String(error)}`);
-              }
+              // No es un UUID válido - rechazar directamente sin intentar resolver
+              // Esto previene errores cuando se intenta usar IDs de MongoDB
+              throw new Error(`El ID del profesor asignado debe ser un UUID válido. Se recibió: ${profesorId}`);
             }
           }
         }

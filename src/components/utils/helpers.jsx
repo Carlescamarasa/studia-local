@@ -258,17 +258,11 @@ export function getEffectiveRole(options = {}) {
   // Priorizar appRole (modo Supabase) sobre currentUser (modo local)
   // En modo Supabase: usar appRole
   if (appRole) {
-    if (process.env.NODE_ENV === 'development' && false) { // Desactivado para reducir logs
-      console.log('[getEffectiveRole] Usando appRole:', appRole, 'effectiveUser:', currentUser?.rolPersonalizado);
-    }
     return appRole;
   }
   
   // En modo local puro (sin Supabase): usar currentUser
   if (currentUser?.rolPersonalizado) {
-    if (process.env.NODE_ENV === 'development' && false) { // Desactivado para reducir logs
-      console.log('[getEffectiveRole] Usando effectiveUser (modo local):', currentUser.rolPersonalizado);
-    }
     return currentUser.rolPersonalizado;
   }
   
@@ -277,9 +271,6 @@ export function getEffectiveRole(options = {}) {
     try {
       const localUser = getCurrentUser();
       if (localUser?.rolPersonalizado) {
-        if (process.env.NODE_ENV === 'development' && false) { // Desactivado para reducir logs
-          console.log('[getEffectiveRole] Usando getCurrentUser() fallback:', localUser.rolPersonalizado);
-        }
         return localUser.rolPersonalizado;
       }
     } catch (e) {
@@ -288,9 +279,6 @@ export function getEffectiveRole(options = {}) {
   }
   
   // Fallback final
-  if (process.env.NODE_ENV === 'development' && false) { // Desactivado para reducir logs
-    console.log('[getEffectiveRole] Usando fallback ESTU');
-  }
   return "ESTU";
 }
 
@@ -380,9 +368,6 @@ export function resolveUserIdActual(effectiveUser, usuarios = []) {
   // En modo local, puede ser string, pero debe coincidir si existe
   const usuarioActual = usuarios.find(u => u.id === effectiveUser.id);
   if (usuarioActual) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[resolveUserIdActual] Usuario encontrado por ID:', effectiveUser.id);
-    }
     return usuarioActual.id;
   }
   
@@ -395,22 +380,8 @@ export function resolveUserIdActual(effectiveUser, usuarios = []) {
       u.email && u.email.toLowerCase().trim() === normalizedEmail
     );
     if (usuarioPorEmail) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[resolveUserIdActual] Usuario encontrado por email:', normalizedEmail, 'ID:', usuarioPorEmail.id);
-      }
       return usuarioPorEmail.id;
     }
-  }
-  
-  // Si no se encuentra por ID ni email, puede ser:
-  // 1. Modo Supabase: problema de sincronización entre auth.users y profiles (NO debería pasar)
-  // 2. Modo local: usuario sintético o usuario no sincronizado
-  if (process.env.NODE_ENV === 'development') {
-    const warningMsg = `Usuario no encontrado en la base de datos. Esto puede indicar un problema de sincronización entre auth.users y profiles. Verifica que el usuario existe en ambas tablas. Usando effectiveUser.id directamente: ${effectiveUser.id}`;
-    console.warn('[resolveUserIdActual]', warningMsg);
-    console.warn('[resolveUserIdActual] Total usuarios en lista:', usuarios.length);
-    console.warn('[resolveUserIdActual] IDs disponibles:', usuarios.map(u => u.id).slice(0, 5));
-    console.warn('[resolveUserIdActual] Email del usuario efectivo:', effectiveUser.email);
   }
   
   // Fallback: usar effectiveUser.id directamente
