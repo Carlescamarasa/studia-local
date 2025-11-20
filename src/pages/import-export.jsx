@@ -466,7 +466,7 @@ export default function ImportExportPage() {
         <Card className="max-w-md rounded-2xl border-[var(--color-border-default)] shadow-sm">
           <CardContent className="pt-6 text-center text-[var(--color-text-primary)]">
             <Shield className="w-16 h-16 mx-auto mb-4 text-[var(--color-danger)]" />
-            <h2 className="text-2xl font-bold text-[var(--color-text-primary)] mb-2">Acceso Restringido</h2>
+            <h2 className="text-2xl font-bold text-[var(--color-text-primary)] mb-2 font-headings">Acceso Restringido</h2>
             <p className="text-[var(--color-text-secondary)]">Solo los administradores pueden acceder a esta página.</p>
           </CardContent>
         </Card>
@@ -503,7 +503,7 @@ export default function ImportExportPage() {
               {activeTab === 'exportar' && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 flex items-center gap-2 font-headings">
                       <Music className="w-5 h-5 text-[var(--color-primary)]" />
                       Plantillas (JSON)
                     </h2>
@@ -589,7 +589,7 @@ export default function ImportExportPage() {
                   </div>
 
                   <div>
-                    <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 flex items-center gap-2 font-headings">
                       <FileDown className="w-5 h-5 text-[var(--color-primary)]" />
                       Datos y Estadísticas (CSV)
                     </h2>
@@ -772,7 +772,7 @@ export default function ImportExportPage() {
               {activeTab === 'importar' && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 flex items-center gap-2 font-headings">
                       <Upload className="w-5 h-5 text-[var(--color-primary)]" />
                       Plantillas (JSON)
                     </h2>

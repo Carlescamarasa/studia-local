@@ -10,6 +10,7 @@ export interface ErrorReport {
   category: string;
   description: string;
   screenshotUrl: string | null;
+  audioUrl: string | null;
   context: any;
   status: 'nuevo' | 'en_revision' | 'resuelto';
   adminNotes: string | null;

@@ -339,7 +339,7 @@ export default function AsignacionDetallePage() {
           <CardContent className="pt-6 text-center space-y-4">
             <Shield className={`w-16 h-16 mx-auto ${componentStyles.empty.emptyIcon} text-[var(--color-danger)]`} />
             <div>
-              <h2 className="text-lg md:text-xl font-semibold text-[var(--color-text-primary)] mb-2">Asignación No Encontrada</h2>
+              <h2 className="text-lg md:text-xl font-semibold text-[var(--color-text-primary)] mb-2 font-headings">Asignación No Encontrada</h2>
               <p className="text-sm md:text-base text-[var(--color-text-primary)]">No tienes acceso a esta asignación o no existe.</p>
               <Button onClick={() => navigate(-1)} className={`mt-4 ${componentStyles.buttons.primary}`}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -665,7 +665,7 @@ export default function AsignacionDetallePage() {
                   <div className="flex items-center gap-3">
                     <Edit className="w-6 h-6 text-[var(--color-text-primary)]" />
                     <div>
-                      <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Editar Asignación</h2>
+                      <h2 className="text-xl font-bold text-[var(--color-text-primary)] font-headings">Editar Asignación</h2>
                     </div>
                   </div>
                   <Button variant="ghost" size="icon" onClick={() => setShowEditDrawer(false)} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-xl touch-manipulation" aria-label="Cerrar modal">

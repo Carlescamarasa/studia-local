@@ -2036,7 +2036,7 @@ function EstadisticasPageContent() {
                   <div className="flex items-center gap-3">
                     <MessageSquare className="w-6 h-6 text-[var(--color-text-primary)]" />
                     <div>
-                      <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
+                      <h2 className="text-xl font-bold text-[var(--color-text-primary)] font-headings">
                         Editar Feedback
                       </h2>
                     </div>

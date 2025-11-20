@@ -469,7 +469,7 @@ function LayoutContent() {
                 />
               </div>
               <div>
-                <h2 className="font-bold text-[var(--color-text-primary)] text-lg">{appName}</h2>
+                <h2 className="font-bold text-[var(--color-text-primary)] text-lg font-headings">{appName}</h2>
                 <p className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide font-medium">
                   {ROLE_LABEL[userRole] || "Estudiante"}
                 </p>

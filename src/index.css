@@ -662,3 +662,24 @@ button:focus-visible {
     }
   }
 }
+
+/* Animación pulse-1s: parpadeo por exactamente 1 segundo */
+@keyframes pulse-1s {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-1s {
+  animation: pulse-1s 1s ease-in-out;
+}
+.animate-pulse-1s {
+  animation: pulse-1s 1s ease-in-out;
+}
+
+

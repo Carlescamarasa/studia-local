@@ -2232,7 +2232,7 @@ export default function TestSeedPage() {
               <div className="space-y-4">
                 {Object.entries(linkAudit).map(([rol, data]) => (
                   <div key={rol} className="app-panel p-4">
-                    <h3 className="font-bold text-lg text-[var(--color-text-primary)] mb-3">{rol}</h3>
+                    <h3 className="font-bold text-lg text-[var(--color-text-primary)] mb-3 font-headings">{rol}</h3>
                     <div className="space-y-2">
                       <div>
                         <p className="text-sm font-semibold text-[var(--color-text-primary)]">Páginas en menú:</p>

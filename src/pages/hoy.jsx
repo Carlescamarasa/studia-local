@@ -2101,7 +2101,7 @@ function HoyPageContent() {
               {/* Información de la semana - siempre visible */}
               <div className="mb-3">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <h2 className={`text-base font-bold text-[var(--color-text-primary)]`}>{semanaDelPlan.nombre}</h2>
+                  <h2 className={`text-base font-bold text-[var(--color-text-primary)] font-headings`}>{semanaDelPlan.nombre}</h2>
                   <Badge className={focoColors[semanaDelPlan.foco]}>
                     {focoLabels[semanaDelPlan.foco]}
                   </Badge>

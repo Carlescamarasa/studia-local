@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Camera, X, Loader2 } from 'lucide-react';
+import { Camera, X, Loader2, Mic, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import { componentStyles } from '@/design/componentStyles';
@@ -56,6 +56,14 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   const [isCapturing, setIsCapturing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const screenshotPreviewRef = useRef(null);
+  
+  // Estados para grabación de voz
+  const [audioRecording, setAudioRecording] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recordingTimerRef = useRef(null);
 
   // Capturar logs recientes de la consola
   const captureConsoleLogs = () => {
@@ -98,11 +106,50 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   const handleCaptureScreenshot = async () => {
     setIsCapturing(true);
     try {
-      const canvas = await html2canvas(document.body, {
+      // Cerrar temporalmente el modal antes de capturar
+      const wasOpen = open;
+      if (wasOpen) {
+        onOpenChange(false);
+        // Esperar a que el modal se cierre completamente
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      // Encontrar el contenedor principal (el main o el body)
+      const mainContent = document.querySelector('main') || document.body;
+      
+      // Capturar sin el modal visible
+      const canvas = await html2canvas(mainContent, {
         useCORS: true,
         logging: false,
         scale: 0.5, // Reducir tamaño para mejor rendimiento
+        backgroundColor: null,
+        ignoreElements: (element) => {
+          // Excluir cualquier overlay o modal restante
+          const zIndex = parseInt(window.getComputedStyle(element).zIndex);
+          const isHighZIndex = zIndex >= 50;
+          const isFixedOverlay = element.classList.contains('fixed') && 
+                                 element.classList.contains('inset-0') && 
+                                 isHighZIndex;
+          
+          // Excluir cualquier elemento con atributos de Radix Dialog
+          const hasRadixDialogAttr = element.hasAttribute('data-radix-dialog-overlay') ||
+                                     element.hasAttribute('data-radix-dialog-content') ||
+                                     element.hasAttribute('data-radix-portal');
+          
+          // Excluir elementos dentro de portales o modales
+          const isInModal = element.closest('[data-radix-dialog-overlay]') !== null ||
+                            element.closest('[data-radix-dialog-content]') !== null ||
+                            element.closest('[data-radix-portal]') !== null;
+          
+          return isFixedOverlay || hasRadixDialogAttr || isInModal;
+        }
       });
+      
+      // Reabrir el modal si estaba abierto
+      if (wasOpen) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        onOpenChange(true);
+      }
       
       canvas.toBlob((blob) => {
         if (blob) {
@@ -115,6 +162,10 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       console.error('[ReportErrorModal] Error capturando pantalla:', error);
       toast.error('Error al capturar la pantalla');
       setIsCapturing(false);
+      // Asegurarse de que el modal se reabra en caso de error
+      if (open) {
+        onOpenChange(true);
+      }
     }
   };
 
@@ -145,6 +196,105 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
     }
   };
 
+  // Subir audio a Supabase Storage
+  const uploadAudio = async (blob) => {
+    if (!blob || !user) return null;
+
+    try {
+      const fileName = `audio_${Date.now()}_${user.id}.webm`;
+      const { data, error } = await supabase.storage
+        .from('error-reports')
+        .upload(fileName, blob, {
+          contentType: 'audio/webm',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      // Obtener URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('error-reports')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('[ReportErrorModal] Error subiendo audio:', error);
+      return null;
+    }
+  };
+
+  // Iniciar grabación de voz
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const url = URL.createObjectURL(audioBlob);
+        setAudioRecording({ blob: audioBlob, url });
+        setRecordingTime(0);
+        
+        // Detener el stream
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+
+      // Timer para mostrar el tiempo de grabación
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+
+      toast.success('Grabación iniciada');
+    } catch (error) {
+      console.error('[ReportErrorModal] Error iniciando grabación:', error);
+      toast.error('Error al acceder al micrófono. Verifica los permisos.');
+    }
+  };
+
+  // Detener grabación de voz
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+
+      toast.success('Grabación finalizada');
+    }
+  };
+
+  // Formatear tiempo de grabación
+  const formatRecordingTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Limpiar grabación
+  const handleRemoveAudio = () => {
+    setAudioRecording(null);
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    setRecordingTime(0);
+  };
+
   // Enviar reporte
   const handleSubmit = async () => {
     if (!category || !description.trim()) {
@@ -161,6 +311,12 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         screenshotUrl = await uploadScreenshot(screenshot.blob);
       }
 
+      // Subir audio si existe
+      let audioUrl = null;
+      if (audioRecording?.blob) {
+        audioUrl = await uploadAudio(audioRecording.blob);
+      }
+
       // Capturar contexto (usar la función memoizada)
       const context = captureContext();
 
@@ -170,6 +326,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         category: category,
         description: description.trim(),
         screenshotUrl: screenshotUrl,
+        audioUrl: audioUrl,
         context: context,
       });
 
@@ -179,6 +336,8 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       setCategory('');
       setDescription('');
       setScreenshot(null);
+      setAudioRecording(null);
+      setRecordingTime(0);
       onOpenChange(false);
     } catch (error) {
       console.error('[ReportErrorModal] Error enviando reporte:', {
@@ -208,8 +367,20 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       setCategory('');
       setDescription('');
       setScreenshot(null);
+      setAudioRecording(null);
+      setRecordingTime(0);
+      setIsRecording(false);
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+      // Detener grabación si está activa
+      if (mediaRecorderRef.current && isRecording) {
+        mediaRecorderRef.current.stop();
+        mediaRecorderRef.current.stream?.getTracks().forEach(track => track.stop());
+      }
     }
-  }, [open, initialError, initialCategory]);
+  }, [open, initialError, initialCategory, isRecording]);
 
   // Escuchar eventos para abrir modal
   useEffect(() => {
@@ -315,6 +486,56 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
                   alt="Vista previa de captura"
                   className="max-w-full h-auto rounded"
                 />
+              </div>
+            )}
+          </div>
+
+          {/* Nota de voz */}
+          <div className="space-y-2">
+            <Label>Nota de voz (opcional)</Label>
+            <div className="flex gap-2">
+              {!isRecording && !audioRecording ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleStartRecording}
+                  disabled={isSubmitting}
+                  className={`${componentStyles.buttons.outline} gap-2`}
+                >
+                  <Mic className="w-4 h-4" />
+                  Grabar nota de voz
+                </Button>
+              ) : isRecording ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleStopRecording}
+                  className={`${componentStyles.buttons.outline} gap-2 ${isRecording ? 'bg-[var(--color-danger)]/10 border-[var(--color-danger)] text-[var(--color-danger)]' : ''}`}
+                >
+                  <Square className="w-4 h-4 fill-current" />
+                  Detener grabación ({formatRecordingTime(recordingTime)})
+                </Button>
+              ) : null}
+              {audioRecording && (
+                <>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleRemoveAudio}
+                    className="gap-2"
+                  >
+                    <X className="w-4 h-4" />
+                    Eliminar
+                  </Button>
+                </>
+              )}
+            </div>
+            
+            {audioRecording && (
+              <div className="mt-2 border rounded-lg p-2 bg-[var(--color-surface-muted)]">
+                <audio controls src={audioRecording.url} className="w-full">
+                  Tu navegador no soporta el elemento audio.
+                </audio>
               </div>
             )}
           </div>
