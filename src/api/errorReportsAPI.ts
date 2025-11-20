@@ -206,6 +206,42 @@ export async function updateMultipleErrorReports(
 }
 
 /**
+ * Eliminar un reporte (solo para admins)
+ */
+export async function deleteErrorReport(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('error_reports')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('[errorReportsAPI] Error eliminando reporte:', {
+      error: error?.message || error,
+      code: error?.code,
+    });
+    throw error;
+  }
+}
+
+/**
+ * Eliminar múltiples reportes (solo para admins)
+ */
+export async function deleteMultipleErrorReports(ids: string[]): Promise<void> {
+  const { error } = await supabase
+    .from('error_reports')
+    .delete()
+    .in('id', ids);
+
+  if (error) {
+    console.error('[errorReportsAPI] Error eliminando múltiples reportes:', {
+      error: error?.message || error,
+      code: error?.code,
+    });
+    throw error;
+  }
+}
+
+/**
  * Mapear datos de Supabase (snake_case) a ErrorReport (camelCase)
  */
 function mapToErrorReport(data: any): ErrorReport {

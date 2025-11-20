@@ -105,10 +105,15 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   // Capturar pantalla
   const handleCaptureScreenshot = async () => {
     setIsCapturing(true);
+    // Preservar estado actual antes de cerrar
+    const preservedCategory = category;
+    const preservedAudio = audioRecording;
+    
     try {
       // Cerrar temporalmente el modal antes de capturar
       const wasOpen = open;
       if (wasOpen) {
+        isTemporaryCloseRef.current = true;
         onOpenChange(false);
         // Esperar a que el modal se cierre completamente
         await new Promise(resolve => setTimeout(resolve, 200));
@@ -149,6 +154,9 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       if (wasOpen) {
         await new Promise(resolve => setTimeout(resolve, 100));
         onOpenChange(true);
+        // Restaurar estado preservado
+        setCategory(preservedCategory);
+        setAudioRecording(preservedAudio);
       }
       
       canvas.toBlob((blob) => {
@@ -165,6 +173,9 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       // Asegurarse de que el modal se reabra en caso de error
       if (open) {
         onOpenChange(true);
+        // Restaurar estado preservado
+        setCategory(preservedCategory);
+        setAudioRecording(preservedAudio);
       }
     }
   };
@@ -350,9 +361,18 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
     }
   };
 
+  // Ref para rastrear si el cierre es temporal (para captura) o definitivo
+  const isTemporaryCloseRef = useRef(false);
+
   // Limpiar y establecer valores iniciales cuando se abre/cierra el modal
   useEffect(() => {
     if (open) {
+      // Si es una reapertura después de un cierre temporal, no resetear
+      if (isTemporaryCloseRef.current) {
+        isTemporaryCloseRef.current = false;
+        return;
+      }
+      
       // Al abrir, establecer valores desde props o eventos
       if (initialError) {
         setCategory(initialCategory || 'algo_no_funciona');
@@ -363,21 +383,23 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         setCategory('');
       }
     } else {
-      // Al cerrar, limpiar todo
-      setCategory('');
-      setDescription('');
-      setScreenshot(null);
-      setAudioRecording(null);
-      setRecordingTime(0);
-      setIsRecording(false);
-      if (recordingTimerRef.current) {
-        clearInterval(recordingTimerRef.current);
-        recordingTimerRef.current = null;
-      }
-      // Detener grabación si está activa
-      if (mediaRecorderRef.current && isRecording) {
-        mediaRecorderRef.current.stop();
-        mediaRecorderRef.current.stream?.getTracks().forEach(track => track.stop());
+      // Solo limpiar si no es un cierre temporal
+      if (!isTemporaryCloseRef.current) {
+        setCategory('');
+        setDescription('');
+        setScreenshot(null);
+        setAudioRecording(null);
+        setRecordingTime(0);
+        setIsRecording(false);
+        if (recordingTimerRef.current) {
+          clearInterval(recordingTimerRef.current);
+          recordingTimerRef.current = null;
+        }
+        // Detener grabación si está activa
+        if (mediaRecorderRef.current && isRecording) {
+          mediaRecorderRef.current.stop();
+          mediaRecorderRef.current.stream?.getTracks().forEach(track => track.stop());
+        }
       }
     }
   }, [open, initialError, initialCategory, isRecording]);
@@ -397,6 +419,40 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
     window.addEventListener('open-error-report', handleOpenReport);
     return () => window.removeEventListener('open-error-report', handleOpenReport);
   }, []);
+
+  // Bloquear todos los hotkeys cuando el modal está abierto
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e) => {
+      // Permitir Escape para cerrar el modal
+      if (e.key === 'Escape') {
+        return;
+      }
+      
+      // Permitir teclas dentro de inputs, textareas y selects
+      const target = e.target;
+      if (target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable
+      )) {
+        return;
+      }
+
+      // Bloquear todos los demás hotkeys
+      e.stopPropagation();
+      e.preventDefault();
+    };
+
+    // Usar capture phase para interceptar antes que otros handlers
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, { capture: true });
+    };
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

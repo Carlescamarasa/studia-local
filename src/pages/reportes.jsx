@@ -7,13 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Bug, Search, Eye, CheckCircle, Clock, XCircle, Image as ImageIcon, CheckSquare } from 'lucide-react';
+import { Bug, Search, Eye, CheckCircle, Clock, XCircle, Image as ImageIcon, CheckSquare, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import RequireRole from '@/components/auth/RequireRole';
 import UnifiedTable from '@/components/tables/UnifiedTable';
 import PageHeader from '@/components/ds/PageHeader';
 import { componentStyles } from '@/design/componentStyles';
-import { listErrorReports, updateErrorReport, updateMultipleErrorReports } from '@/api/errorReportsAPI';
+import { listErrorReports, updateErrorReport, updateMultipleErrorReports, deleteErrorReport, deleteMultipleErrorReports } from '@/api/errorReportsAPI';
 import { useAuth } from '@/auth/AuthProvider';
 import AudioPlayer from '@/components/common/AudioPlayer';
 
@@ -114,6 +114,38 @@ function ReportesPageContent() {
         code: error?.code,
       });
       toast.error('Error al actualizar los reportes');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => deleteErrorReport(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['error-reports'] });
+      toast.success('Reporte eliminado correctamente');
+      setIsDetailModalOpen(false);
+      setSelectedReport(null);
+    },
+    onError: (error) => {
+      console.error('[ReportesPage] Error eliminando reporte:', {
+        error: error?.message || error,
+        code: error?.code,
+      });
+      toast.error('Error al eliminar el reporte');
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (ids) => deleteMultipleErrorReports(ids),
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['error-reports'] });
+      toast.success(`${ids.length} reporte(s) eliminado(s) correctamente`);
+    },
+    onError: (error) => {
+      console.error('[ReportesPage] Error eliminando reportes:', {
+        error: error?.message || error,
+        code: error?.code,
+      });
+      toast.error('Error al eliminar los reportes');
     },
   });
 
@@ -232,15 +264,31 @@ function ReportesPageContent() {
       key: 'actions',
       label: 'Acciones',
       render: (r) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleViewReport(r)}
-          className="gap-2"
-        >
-          <Eye className="w-4 h-4" />
-          Ver
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleViewReport(r)}
+            className="gap-2"
+          >
+            <Eye className="w-4 h-4" />
+            Ver
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (window.confirm('¿Estás seguro de que quieres eliminar este reporte?')) {
+                deleteMutation.mutate(r.id);
+              }
+            }}
+            className="gap-2 text-[var(--color-danger)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10"
+            disabled={deleteMutation.isPending}
+          >
+            <Trash2 className="w-4 h-4" />
+            Eliminar
+          </Button>
+        </div>
       ),
     },
   ];
@@ -253,10 +301,11 @@ function ReportesPageContent() {
         icon={Bug}
       />
 
-      <Card className={componentStyles.containers.cardBase}>
+      <Card className="bg-[var(--color-surface)]">
         <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
+          <div className="flex flex-col gap-4">
+            {/* Búsqueda */}
+            <div className="w-full">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-ui/60" />
                 <Input
@@ -267,64 +316,73 @@ function ReportesPageContent() {
                 />
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant={statusFilter === 'active' ? 'default' : 'outline'}
-                onClick={() => setStatusFilter('active')}
-                size="sm"
-                className={statusFilter === 'active' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
-              >
-                Activos
-              </Button>
-              <Button
-                variant={statusFilter === 'nuevo' ? 'default' : 'outline'}
-                onClick={() => setStatusFilter('nuevo')}
-                size="sm"
-                className={statusFilter === 'nuevo' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
-              >
-                Nuevo
-              </Button>
-              <Button
-                variant={statusFilter === 'en_revision' ? 'default' : 'outline'}
-                onClick={() => setStatusFilter('en_revision')}
-                size="sm"
-                className={statusFilter === 'en_revision' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
-              >
-                En proceso
-              </Button>
-              <Button
-                variant={statusFilter === 'resuelto' ? 'default' : 'outline'}
-                onClick={() => setStatusFilter('resuelto')}
-                size="sm"
-                className={statusFilter === 'resuelto' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
-              >
-                Resuelto
-              </Button>
-              <Button
-                variant={statusFilter === 'all' ? 'default' : 'outline'}
-                onClick={() => setStatusFilter('all')}
-                size="sm"
-                className={statusFilter === 'all' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
-              >
-                Todos
-              </Button>
+            
+            {/* Filtros de estado y categoría */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Botones de estado */}
+              <div className="flex flex-wrap gap-2 flex-1">
+                <Button
+                  variant={statusFilter === 'active' ? 'default' : 'outline'}
+                  onClick={() => setStatusFilter('active')}
+                  size="sm"
+                  className={statusFilter === 'active' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
+                >
+                  Activos
+                </Button>
+                <Button
+                  variant={statusFilter === 'nuevo' ? 'default' : 'outline'}
+                  onClick={() => setStatusFilter('nuevo')}
+                  size="sm"
+                  className={statusFilter === 'nuevo' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
+                >
+                  Nuevo
+                </Button>
+                <Button
+                  variant={statusFilter === 'en_revision' ? 'default' : 'outline'}
+                  onClick={() => setStatusFilter('en_revision')}
+                  size="sm"
+                  className={statusFilter === 'en_revision' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
+                >
+                  En proceso
+                </Button>
+                <Button
+                  variant={statusFilter === 'resuelto' ? 'default' : 'outline'}
+                  onClick={() => setStatusFilter('resuelto')}
+                  size="sm"
+                  className={statusFilter === 'resuelto' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
+                >
+                  Resuelto
+                </Button>
+                <Button
+                  variant={statusFilter === 'all' ? 'default' : 'outline'}
+                  onClick={() => setStatusFilter('all')}
+                  size="sm"
+                  className={statusFilter === 'all' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
+                >
+                  Todos
+                </Button>
+              </div>
+              
+              {/* Select de categoría */}
+              <div className="w-full sm:w-auto sm:min-w-[180px]">
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las categorías</SelectItem>
+                    {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Categoría" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las categorías</SelectItem>
-                {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </CardContent>
       </Card>
 
-      <Card className={componentStyles.containers.cardBase}>
+      <Card className="bg-[var(--color-surface)]">
         <CardContent className="pt-6">
           {isLoading ? (
             <div className="text-center py-8 text-ui/60">Cargando reportes...</div>
@@ -351,6 +409,16 @@ function ReportesPageContent() {
                   label: 'Marcar como resuelto',
                   icon: CheckCircle,
                   onClick: handleBulkUpdateStatus('resuelto'),
+                },
+                {
+                  label: 'Eliminar',
+                  icon: Trash2,
+                  onClick: (selectedIds) => {
+                    if (window.confirm(`¿Estás seguro de que quieres eliminar ${selectedIds.length} reporte(s)?`)) {
+                      bulkDeleteMutation.mutate(selectedIds);
+                    }
+                  },
+                  variant: 'danger',
                 },
               ]}
             />
