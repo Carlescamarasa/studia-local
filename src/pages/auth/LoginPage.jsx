@@ -334,21 +334,6 @@ export default function LoginPage() {
                     />
                   </div>
 
-                  {/* Enlace "Olvidé mi contraseña" */}
-                  <div className="flex justify-end mt-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowForgotPassword(true);
-                        setResetEmail(email); // Pre-llenar con el email del login
-                      }}
-                      className="text-sm text-ui/60 hover:text-ui font-medium transition-colors"
-                      disabled={isLoading}
-                    >
-                      ¿Olvidaste tu contraseña?
-                    </button>
-                  </div>
-
                   {/* Checkbox Recordar inicio de sesión */}
                   <div className="flex items-center space-x-2 mt-4">
                     <Checkbox
@@ -375,6 +360,21 @@ export default function LoginPage() {
                     <LogIn className="w-5 h-5 mr-2" />
                     Iniciar sesión
                   </Button>
+
+                  {/* Enlace "Olvidé mi contraseña" */}
+                  <div className="flex justify-center mt-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForgotPassword(true);
+                        setResetEmail(email); // Pre-llenar con el email del login
+                      }}
+                      className="text-sm text-ui/60 hover:text-ui font-medium transition-colors"
+                      disabled={isLoading}
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  </div>
                 </form>
               </>
             ) : (
