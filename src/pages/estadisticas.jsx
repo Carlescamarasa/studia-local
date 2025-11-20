@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import TablePagination from "@/components/common/TablePagination";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -29,6 +30,7 @@ import { componentStyles } from "@/design/componentStyles";
 import { designSystem } from "@/design/designSystem";
 import PageHeader from "@/components/ds/PageHeader";
 import { useIsMobile } from "@/hooks/use-mobile";
+import ModalSesion from "@/components/calendario/ModalSesion";
 
 const pad2 = (n) => String(n).padStart(2, "0");
 const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
@@ -151,6 +153,8 @@ function EstadisticasPageContent() {
   const [searchEjercicio, setSearchEjercicio] = useState('');
   const [viewingMedia, setViewingMedia] = useState(null);
   const [feedbackDrawer, setFeedbackDrawer] = useState(null);
+  const [modalSesionOpen, setModalSesionOpen] = useState(false);
+  const [registroSesionSeleccionado, setRegistroSesionSeleccionado] = useState(null);
 
   const effectiveUser = useEffectiveUser();
 
@@ -167,7 +171,11 @@ function EstadisticasPageContent() {
   // Resolver ID de usuario actual de la BD (UUID en Supabase, string en local)
   // Usar useMemo para recalcular cuando usuarios cambie
   const userIdActual = useMemo(() => {
-    return resolveUserIdActual(effectiveUser, usuarios);
+    const resolved = resolveUserIdActual(effectiveUser, usuarios);
+    console.log('[DEBUG] userIdActual resuelto:', resolved, 'typeof:', typeof resolved);
+    console.log('[DEBUG] effectiveUser:', effectiveUser);
+    console.log('[DEBUG] usuarios disponibles:', usuarios.map(u => ({ id: u.id, email: u.email, rol: u.rolPersonalizado })));
+    return resolved;
   }, [effectiveUser, usuarios]);
 
   const { data: asignacionesProf = [] } = useQuery({
@@ -205,11 +213,11 @@ function EstadisticasPageContent() {
 
   const { data: feedbacksSemanal = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
-    queryFn: () => {
+    queryFn: async () => {
       if (process.env.NODE_ENV === 'development') {
-      console.log('[estadisticas.jsx] Consultando tabla feedbacks_semanal (NO registros_sesion)');
+        console.log('[estadisticas.jsx] Consultando tabla feedbacks_semanal (NO registros_sesion)');
       }
-      return localDataClient.entities.FeedbackSemanal.list('-created_at');
+      return await localDataClient.entities.FeedbackSemanal.list('-created_at');
     },
   });
 
@@ -681,28 +689,57 @@ function EstadisticasPageContent() {
     return { distribucion, comentarios };
   }, [registrosFiltradosUnicos]);
 
+  const [feedbackPageSize, setFeedbackPageSize] = useState(10);
+  const [feedbackCurrentPage, setFeedbackCurrentPage] = useState(1);
+
   // Feedbacks del profesor para estudiantes
   const feedbackProfesor = useMemo(() => {
+    console.log('[DEBUG feedbackProfesor] isEstu:', isEstu, 'userIdActual:', userIdActual, 'feedbacksSemanal:', feedbacksSemanal.length);
     if (!isEstu) return [];
     
-    return feedbacksSemanal.filter(f => {
-      if (f.alumnoId !== userIdActual) return false;
-      if (!f.semanaInicioISO) return false;
+    const filtrados = feedbacksSemanal.filter(f => {
+      console.log('[DEBUG] Comparando feedback:', {
+        feedbackId: f.id,
+        alumnoId: f.alumnoId,
+        userIdActual: userIdActual,
+        match: f.alumnoId === userIdActual,
+        semanaInicioISO: f.semanaInicioISO,
+        periodoInicio: periodoInicio,
+        periodoFin: periodoFin
+      });
+      
+      if (f.alumnoId !== userIdActual) {
+        console.log('[DEBUG] Filtrado por alumnoId diferente:', f.alumnoId, 'vs', userIdActual);
+        return false;
+      }
+      if (!f.semanaInicioISO) {
+        console.log('[DEBUG] Filtrado por falta de semanaInicioISO');
+        return false;
+      }
       
       const feedbackDate = parseLocalDate(f.semanaInicioISO);
       
       if (periodoInicio) {
         const inicioDate = parseLocalDate(periodoInicio);
-        if (feedbackDate < inicioDate) return false;
+        if (feedbackDate < inicioDate) {
+          console.log('[DEBUG] Filtrado por fecha anterior al periodo inicio:', feedbackDate, '<', inicioDate);
+          return false;
+        }
       }
       
       if (periodoFin) {
         const finDate = parseLocalDate(periodoFin);
-        if (feedbackDate > finDate) return false;
+        if (feedbackDate > finDate) {
+          console.log('[DEBUG] Filtrado por fecha posterior al periodo fin:', feedbackDate, '>', finDate);
+          return false;
+        }
       }
       
       return true;
-    }).sort((a, b) => b.semanaInicioISO.localeCompare(a.semanaInicioISO));
+    });
+    
+    console.log('[DEBUG feedbackProfesor] Resultado filtrado:', filtrados.length, filtrados);
+    return filtrados.sort((a, b) => b.semanaInicioISO.localeCompare(a.semanaInicioISO));
   }, [feedbacksSemanal, userIdActual, periodoInicio, periodoFin, isEstu]);
 
   // Feedbacks para profesores y admins: ADMIN y PROF ven TODOS los feedbacks
@@ -935,6 +972,26 @@ function EstadisticasPageContent() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [feedbackDrawer, actualizarFeedbackMutation]);
 
+  // Atajo de teclado nav-1 (ArrowLeft) para volver
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // No procesar si hay un modal o drawer abierto
+      if (modalSesionOpen || feedbackDrawer || viewingMedia) return;
+      
+      // No procesar si está en un input o textarea
+      if (e.target.matches('input, textarea, select')) return;
+      
+      // ArrowLeft para volver
+      if (e.key === 'ArrowLeft' && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        navigate(-1);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate, modalSesionOpen, feedbackDrawer, viewingMedia]);
+
   const tipoLabels = {
     CA: 'Calentamiento A',
     CB: 'Calentamiento B',
@@ -1123,71 +1180,65 @@ function EstadisticasPageContent() {
 
         {tabActiva === 'resumen' && (
           <div className="space-y-6">
-            {/* KPIs - Grid compacto 1-2-2-2-2-2-2-1 sin Cards */}
-            <div className="grid grid-cols-[1fr_2fr_2fr_2fr_2fr_2fr_2fr_1fr] gap-2 sm:gap-3 md:gap-4 items-center justify-items-center px-2 py-3 border-b border-[var(--color-border-default)]">
-              {/* Columna vacía izquierda (1fr) */}
-              <div></div>
-              
-              {/* Tiempo total (2fr) */}
-              <div className="text-center w-full">
+            {/* KPIs - Grid responsive */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4 md:gap-6 px-2 py-4 sm:py-6 border-b border-[var(--color-border-default)]">
+              {/* Tiempo total */}
+              <div className="text-center">
                 <Clock className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">
                   {formatDuracionHM(kpis.tiempoTotal)}
                 </p>
                 <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Tiempo total</p>
               </div>
 
-              {/* Promedio/sesión (2fr) */}
-              <div className="text-center w-full">
+              {/* Promedio/sesión */}
+              <div className="text-center">
                 <Timer className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">
                   {formatDuracionHM(kpis.tiempoPromedioPorSesion)}
                 </p>
                 <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Promedio/sesión</p>
               </div>
 
-              {/* Valoración (2fr) */}
-              <div className="text-center w-full">
+              {/* Valoración */}
+              <div className="text-center">
                 <Smile className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">
                   {kpis.calidadPromedio}/4
                 </p>
                 <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Valoración</p>
               </div>
 
-              {/* Racha (2fr) */}
-              <div className="text-center w-full">
+              {/* Racha */}
+              <div className="text-center">
                 <Star className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.racha.actual}</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.racha.actual}</p>
                 <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Racha</p>
                 <p className="text-[10px] sm:text-xs text-[var(--color-text-muted)] mt-0.5">Máx: {kpis.racha.maxima}</p>
               </div>
 
-              {/* Semanas practicadas (2fr) */}
-              <div className="text-center w-full">
+              {/* Semanas practicadas */}
+              <div className="text-center">
                 <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.semanasDistintas}</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.semanasDistintas}</p>
                 <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Semanas practicadas</p>
               </div>
 
-              {/* Semanas totales período (2fr) */}
-              <div className="text-center w-full">
+              {/* Semanas totales período */}
+              <div className="text-center">
                 <CalendarDays className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.semanasPeriodo}</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.semanasPeriodo}</p>
                 <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Semanas totales</p>
               </div>
 
-              {/* Media semanal sesiones (2fr) */}
-              <div className="text-center w-full">
+              {/* Media semanal sesiones */}
+              <div className="text-center">
                 <Activity className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-0.5">
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">
                   {kpis.mediaSemanalSesiones.toFixed(1)}
                 </p>
                 <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Sesiones/semana</p>
               </div>
-
-              {/* Columna vacía derecha (1fr) */}
-              <div></div>
             </div>
             
             {/* Responsive: mobile stack */}
@@ -1694,7 +1745,14 @@ function EstadisticasPageContent() {
                   {registrosFiltradosUnicos.slice(0, 50).map((registro) => {
                     const alumno = usuarios.find(u => u.id === registro.alumnoId);
                     return (
-                      <Card key={registro.id} className={`${componentStyles.containers.panelBase} hover:shadow-md transition-shadow`}>
+                      <Card 
+                        key={registro.id} 
+                        className={`${componentStyles.containers.panelBase} hover:shadow-md transition-shadow cursor-pointer`}
+                        onClick={() => {
+                          setRegistroSesionSeleccionado(registro);
+                          setModalSesionOpen(true);
+                        }}
+                      >
                         <CardContent className="pt-4">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
@@ -1852,70 +1910,73 @@ function EstadisticasPageContent() {
                     <p className={componentStyles.components.emptyStateText}>No hay feedback del profesor en este periodo</p>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    {feedbackProfesor.map(f => {
-                      const profesor = usuarios.find(u => u.id === f.profesorId);
-                      const puedeEditar = isAdmin || f.profesorId === userIdActual;
-                      const fechaSemana = f.semanaInicioISO ? parseLocalDate(f.semanaInicioISO) : null;
-                      const fechaFormateada = fechaSemana ? fechaSemana.toLocaleDateString('es-ES', { 
-                        weekday: 'short',
-                        day: 'numeric', 
-                        month: 'short', 
-                        year: 'numeric' 
-                      }) : 'N/A';
-                      
-                      return (
-                        <div key={f.id} className="p-3 border border-[var(--color-border-default)] rounded relative">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm text-[var(--color-text-primary)] break-words mb-2">
-                                {f.notaProfesor || '(Sin nota)'}
-                              </p>
-                              {f.mediaLinks && f.mediaLinks.length > 0 && (
-                                <div className="mb-2">
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="border-b border-[var(--color-border-default)]">
+                            <th className="text-left p-2 text-xs font-semibold text-[var(--color-text-secondary)]">Profesor</th>
+                            <th className="text-left p-2 text-xs font-semibold text-[var(--color-text-secondary)]">Fecha del Feedback</th>
+                            <th className="text-left p-2 text-xs font-semibold text-[var(--color-text-secondary)]">Contenido</th>
+                            <th className="text-left p-2 text-xs font-semibold text-[var(--color-text-secondary)]">MediaLinks</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(() => {
+                            const startIndex = (feedbackCurrentPage - 1) * feedbackPageSize;
+                            const endIndex = startIndex + feedbackPageSize;
+                            return feedbackProfesor.slice(startIndex, endIndex);
+                          })().map(f => {
+                          const profesor = usuarios.find(u => u.id === f.profesorId);
+                          const puedeEditar = isAdmin || f.profesorId === userIdActual;
+                          const fechaSemana = f.semanaInicioISO ? parseLocalDate(f.semanaInicioISO) : null;
+                          const fechaFormateada = fechaSemana ? fechaSemana.toLocaleDateString('es-ES', { 
+                            weekday: 'short',
+                            day: 'numeric', 
+                            month: 'short', 
+                            year: 'numeric' 
+                          }) : 'N/A';
+                          
+                          return (
+                            <tr key={f.id} className="border-b border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]">
+                              <td className="p-3 text-sm text-[var(--color-text-primary)]">
+                                {profesor ? displayName(profesor) : f.profesorId || 'N/A'}
+                              </td>
+                              <td className="p-3 text-sm text-[var(--color-text-secondary)]">
+                                {fechaFormateada}
+                              </td>
+                              <td className="p-3 text-sm text-[var(--color-text-primary)] max-w-md">
+                                <p className="break-words whitespace-pre-wrap">
+                                  {f.notaProfesor || '(Sin nota)'}
+                                </p>
+                              </td>
+                              <td className="p-3">
+                                {f.mediaLinks && f.mediaLinks.length > 0 ? (
                                   <MediaLinksBadges 
                                     mediaLinks={f.mediaLinks}
                                     onMediaClick={(index) => handleMediaClick(f.mediaLinks, index)}
                                   />
-                                </div>
-                              )}
-                              <div className="text-xs text-[var(--color-text-secondary)] space-y-1">
-                                <div><strong>Profesor:</strong> {profesor ? displayName(profesor) : f.profesorId || 'N/A'}</div>
-                                <div><strong>Semana:</strong> {fechaFormateada}</div>
-                                {(f.created_at || f.createdAt) && (
-                                  <div><strong>Creado:</strong> {
-                                    (() => {
-                                      const createdDate = f.created_at || f.createdAt;
-                                      const date = typeof createdDate === 'string' 
-                                        ? parseLocalDate(createdDate.split('T')[0]) 
-                                        : new Date(createdDate);
-                                      return date.toLocaleDateString('es-ES', {
-                                        weekday: 'short',
-                                        day: 'numeric',
-                                        month: 'short',
-                                        year: 'numeric'
-                                      });
-                                    })()
-                                  }</div>
+                                ) : (
+                                  <span className="text-xs text-[var(--color-text-muted)]">-</span>
                                 )}
-                              </div>
-                            </div>
-                            {puedeEditar && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => abrirEditarFeedback(f)}
-                                className="h-8 w-8 p-0 shrink-0"
-                                aria-label="Editar feedback"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                    </div>
+                    <TablePagination
+                      data={feedbackProfesor}
+                      pageSize={feedbackPageSize}
+                      currentPage={feedbackCurrentPage}
+                      onPageChange={setFeedbackCurrentPage}
+                      onPageSizeChange={(newSize) => {
+                        setFeedbackPageSize(newSize);
+                        setFeedbackCurrentPage(1);
+                      }}
+                    />
+                  </>
                 )
               ) : (
                 // Vista para profesores y admins: lista simple de feedbacks
@@ -2102,6 +2163,13 @@ function EstadisticasPageContent() {
           </div>
         </>
       )}
+
+      <ModalSesion
+        open={modalSesionOpen}
+        onOpenChange={setModalSesionOpen}
+        registroSesion={registroSesionSeleccionado}
+        usuarios={usuarios}
+      />
     </div>
   );
 }

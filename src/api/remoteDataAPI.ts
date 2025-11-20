@@ -92,7 +92,7 @@ function normalizeISOFields<T>(obj: any): T {
 }
 
 /**
- * Normaliza campos ISO en objetos Asignacion
+ * Normaliza campos ISO en objetos Asignacion y FeedbackSemanal
  * Convierte semanaInicioIso → semanaInicioISO
  */
 function normalizeAsignacionISO<T>(obj: any): T {
@@ -1616,7 +1616,10 @@ export function createRemoteDataAPI(): AppDataAPI {
         
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((f: any) => snakeToCamel<FeedbackSemanal>(f));
+        return (data || []).map((f: any) => {
+          const parsed = snakeToCamel<FeedbackSemanal>(f);
+          return normalizeAsignacionISO<FeedbackSemanal>(parsed);
+        });
       },
       get: async (id: string) => {
         const { data, error } = await supabase
@@ -1629,7 +1632,8 @@ export function createRemoteDataAPI(): AppDataAPI {
           if (error.code === 'PGRST116') return null;
           throw error;
         }
-        return snakeToCamel<FeedbackSemanal>(data);
+        const parsed = snakeToCamel<FeedbackSemanal>(data);
+        return normalizeAsignacionISO<FeedbackSemanal>(parsed);
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
         let query = supabase.from('feedbacks_semanal').select('*');
@@ -1645,7 +1649,10 @@ export function createRemoteDataAPI(): AppDataAPI {
         
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((f: any) => snakeToCamel<FeedbackSemanal>(f));
+        return (data || []).map((f: any) => {
+          const parsed = snakeToCamel<FeedbackSemanal>(f);
+          return normalizeAsignacionISO<FeedbackSemanal>(parsed);
+        });
       },
       create: async (data) => {
         const snakeData = camelToSnake({
@@ -1659,7 +1666,8 @@ export function createRemoteDataAPI(): AppDataAPI {
           .single();
         
         if (error) throw error;
-        return snakeToCamel<FeedbackSemanal>(result);
+        const parsed = snakeToCamel<FeedbackSemanal>(result);
+        return normalizeAsignacionISO<FeedbackSemanal>(parsed);
       },
       update: async (id: string, updates: any) => {
         const snakeUpdates = camelToSnake(updates);
@@ -1671,7 +1679,8 @@ export function createRemoteDataAPI(): AppDataAPI {
           .single();
         
         if (error) throw error;
-        return snakeToCamel<FeedbackSemanal>(data);
+        const parsed = snakeToCamel<FeedbackSemanal>(data);
+        return normalizeAsignacionISO<FeedbackSemanal>(parsed);
       },
       delete: async (id: string) => {
         const { error } = await supabase

@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ds";
 import { ChevronUp, ChevronDown, FileText } from "lucide-react";
 import RowActionsMenu from "@/components/common/RowActionsMenu";
+import TablePagination from "@/components/common/TablePagination";
 import { componentStyles } from "@/design/componentStyles";
 
 export default function UnifiedTable({
@@ -17,11 +18,15 @@ export default function UnifiedTable({
   keyField = "id",
   selectable = false,
   emptyMessage = "No hay datos disponibles",
-  emptyIcon: EmptyIcon = FileText
+  emptyIcon: EmptyIcon = FileText,
+  paginated = true,
+  defaultPageSize = 10
 }) {
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
   const [selectedItems, setSelectedItems] = useState(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(defaultPageSize);
 
   const handleSort = (columnKey) => {
     if (!columnKey) return;
@@ -34,7 +39,7 @@ export default function UnifiedTable({
     }
   };
 
-  const sortedData = React.useMemo(() => {
+  const sortedData = useMemo(() => {
     if (!sortColumn) return data;
 
     return [...data].sort((a, b) => {
@@ -52,6 +57,8 @@ export default function UnifiedTable({
       return sortDirection === 'asc' ? comparison : -comparison;
     });
   }, [data, sortColumn, sortDirection, columns]);
+
+  const displayData = paginated ? sortedData : sortedData;
 
   const toggleSelection = (itemKey) => {
     const newSelected = new Set(selectedItems);
@@ -140,7 +147,7 @@ export default function UnifiedTable({
                 </TableRow>
               </TableHeader>
               <TableBody zebra>
-                {sortedData.map((item) => {
+                {displayData.map((item) => {
                   const actions = getRowActions ? getRowActions(item) : (rowActions ? rowActions(item) : []);
                   const isSelected = selectedItems.has(item[keyField]);
                   
@@ -191,6 +198,19 @@ export default function UnifiedTable({
             </Table>
           </div>
 
+          {paginated && (
+            <TablePagination
+              data={sortedData}
+              pageSize={pageSize}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              }}
+            />
+          )}
+
           {selectable && selectedItems.size > 0 && bulkActions && (
             <div className="sticky bottom-0 bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-lg p-4 mt-4 rounded-lg backdrop-blur-sm">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -221,7 +241,7 @@ export default function UnifiedTable({
       ) : (
         <>
           <div className="space-y-2 sm:space-y-3">
-            {sortedData.map((item) => {
+            {displayData.map((item) => {
               const actions = getRowActions ? getRowActions(item) : (rowActions ? rowActions(item) : []);
               const isSelected = selectedItems.has(item[keyField]);
               
@@ -279,6 +299,19 @@ export default function UnifiedTable({
               );
             })}
           </div>
+
+          {paginated && (
+            <TablePagination
+              data={sortedData}
+              pageSize={pageSize}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              }}
+            />
+          )}
 
           {selectable && selectedItems.size > 0 && bulkActions && (
             <div className="fixed bottom-0 left-0 right-0 bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-lg p-4 z-20 backdrop-blur-sm">
