@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useLocation } from 'react-router-dom';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogOverlay, DialogPortal } from '@/components/ui/dialog';
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Camera, X, Loader2, Mic, Square } from 'lucide-react';
+import { Camera, X, Loader2, Mic, Square, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import { componentStyles } from '@/design/componentStyles';
 import { supabase } from '@/lib/supabaseClient';
 import { createErrorReport } from '@/api/errorReportsAPI';
+import ScreenshotEditor from './ScreenshotEditor';
 
 const CATEGORIES = [
   {
@@ -64,6 +66,8 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const recordingTimerRef = useRef(null);
+  
+  const [isEditing, setIsEditing] = useState(false);
 
   // Capturar logs recientes de la consola
   const captureConsoleLogs = () => {
@@ -420,25 +424,40 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
     return () => window.removeEventListener('open-error-report', handleOpenReport);
   }, []);
 
-  // Bloquear todos los hotkeys cuando el modal está abierto
   useEffect(() => {
     if (!open) {
-      // Emitir evento cuando el modal se cierra
       window.dispatchEvent(new CustomEvent('report-modal-closed'));
-      return;
+      
+      const cleanup = () => {
+        const body = document.body;
+        if (body.style.pointerEvents === 'none') {
+          body.style.pointerEvents = '';
+        }
+        if (body.style.cursor === 'none') {
+          body.style.cursor = '';
+        }
+        const lockedCount = parseInt(body.getAttribute('data-scroll-locked') || '0');
+        if (lockedCount > 0) {
+          if (lockedCount <= 1) {
+            body.removeAttribute('data-scroll-locked');
+          } else {
+            body.setAttribute('data-scroll-locked', String(lockedCount - 1));
+          }
+        }
+      };
+      
+      setTimeout(cleanup, 50);
+      setTimeout(cleanup, 200);
+      return cleanup;
     }
 
-    // Emitir evento cuando el modal se abre
     window.dispatchEvent(new CustomEvent('report-modal-opened'));
 
     const handleKeyDown = (e) => {
-      // Permitir Escape para cerrar el modal
       if (e.key === 'Escape') {
-        // No bloquear Escape, pero asegurarse de que el modal se cierre
         return;
       }
       
-      // Permitir teclas dentro de inputs, textareas y selects
       const target = e.target;
       if (target && (
         target.tagName === 'INPUT' ||
@@ -449,24 +468,45 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         return;
       }
 
-      // Bloquear todos los demás hotkeys de forma agresiva
       e.stopImmediatePropagation();
       e.stopPropagation();
       e.preventDefault();
     };
 
-    // Usar capture phase con alta prioridad para interceptar antes que otros handlers
     window.addEventListener('keydown', handleKeyDown, { capture: true, passive: false });
     
     return () => {
       window.removeEventListener('keydown', handleKeyDown, { capture: true });
       window.dispatchEvent(new CustomEvent('report-modal-closed'));
+      
+      const cleanup = () => {
+        const body = document.body;
+        if (body.style.pointerEvents === 'none') {
+          body.style.pointerEvents = '';
+        }
+        if (body.style.cursor === 'none') {
+          body.style.cursor = '';
+        }
+        const lockedCount = parseInt(body.getAttribute('data-scroll-locked') || '0');
+        if (lockedCount > 0) {
+          if (lockedCount <= 1) {
+            body.removeAttribute('data-scroll-locked');
+          } else {
+            body.setAttribute('data-scroll-locked', String(lockedCount - 1));
+          }
+        }
+      };
+      
+      setTimeout(cleanup, 50);
+      setTimeout(cleanup, 200);
     };
   }, [open]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg" className="max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange} modal={true}>
+      <DialogPortal>
+        <DialogOverlay className="!z-[9997]" />
+        <DialogPrimitive.Content className={`fixed left-[50%] top-[50%] !z-[9998] grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.16)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-[var(--radius-modal)] max-w-2xl max-h-[90vh] overflow-y-auto ${componentStyles.modal.sizeLg}`}>
         <DialogHeader>
           <DialogTitle>Reportar problema o sugerencia</DialogTitle>
           <DialogDescription>
@@ -482,7 +522,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
               <SelectTrigger id="category">
                 <SelectValue placeholder="Selecciona una categoría" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="!z-[9999]">
                 {CATEGORIES.map((cat) => (
                   <SelectItem key={cat.value} value={cat.value}>
                     <div>
@@ -531,7 +571,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
                   </>
                 )}
               </Button>
-              {screenshot && (
+              {screenshot && !isEditing && (
                 <Button
                   type="button"
                   variant="ghost"
@@ -544,13 +584,40 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
               )}
             </div>
             
-            {screenshot && (
+            {screenshot && !isEditing && (
               <div className="mt-2 border rounded-lg p-2 bg-[var(--color-surface-muted)]">
                 <img
                   ref={screenshotPreviewRef}
                   src={screenshot.url}
                   alt="Vista previa de captura"
                   className="max-w-full h-auto rounded"
+                />
+                <div className="mt-2 flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsEditing(true)}
+                    className={`${componentStyles.buttons.outline} gap-2`}
+                  >
+                    <Pencil className="w-4 h-4" />
+                    Editar captura
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {isEditing && screenshot && (
+              <div className="mt-2">
+                <ScreenshotEditor
+                  imageUrl={screenshot.url}
+                  onSave={(edited) => {
+                    if (screenshot.blob) {
+                      URL.revokeObjectURL(screenshot.url);
+                    }
+                    setScreenshot(edited);
+                    setIsEditing(false);
+                  }}
+                  onCancel={() => setIsEditing(false)}
                 />
               </div>
             )}
@@ -631,7 +698,12 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
             )}
           </Button>
         </DialogFooter>
-      </DialogContent>
+        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+          <X className="h-5 w-5" />
+          <span className="sr-only">Close</span>
+        </DialogPrimitive.Close>
+      </DialogPrimitive.Content>
+      </DialogPortal>
     </Dialog>
   );
 }
