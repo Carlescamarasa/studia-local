@@ -6,13 +6,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ds";
+import { Button } from "@/components/ds/Button";
 import { getNombreVisible } from "@/components/utils/helpers";
 import { formatearHora, formatearFechaEvento } from "./utils";
 import MediaLinksBadges from "../common/MediaLinksBadges";
 import { componentStyles } from "@/design/componentStyles";
-import { Clock, User, Calendar, CheckCircle, XCircle, PlayCircle, Star, BookOpen } from "lucide-react";
+import { Clock, User, Calendar, CheckCircle, XCircle, PlayCircle, Star, BookOpen, Trash2 } from "lucide-react";
 
-export default function ModalSesion({ open, onOpenChange, registroSesion, usuarios }) {
+export default function ModalSesion({ open, onOpenChange, registroSesion, usuarios, userIdActual, userRole, onDelete }) {
   if (!registroSesion) return null;
 
   const alumno = usuarios.find(u => u.id === registroSesion.alumnoId);
@@ -30,6 +31,21 @@ export default function ModalSesion({ open, onOpenChange, registroSesion, usuari
     if (calInt === 3) return componentStyles.status.badgeInfo;
     if (calInt === 4) return componentStyles.status.badgeSuccess;
     return componentStyles.status.badgeDefault;
+  };
+
+  const isAdmin = userRole === 'ADMIN';
+  const isProf = userRole === 'PROF';
+  const isEstu = userRole === 'ESTU';
+  
+  // Permisos: ADMIN puede eliminar todo, PROF/ESTU solo sus propias sesiones
+  const canDelete = isAdmin || (isProf && registroSesion.alumnoId === userIdActual) || (isEstu && registroSesion.alumnoId === userIdActual);
+
+  const handleDelete = () => {
+    if (window.confirm('¿Eliminar esta sesión de estudio? Esta acción no se puede deshacer.')) {
+      if (onDelete) {
+        onDelete(registroSesion.id);
+      }
+    }
   };
 
   return (
@@ -153,6 +169,21 @@ export default function ModalSesion({ open, onOpenChange, registroSesion, usuari
                 compact={true}
                 maxDisplay={5}
               />
+            </div>
+          )}
+
+          {/* Acciones */}
+          {canDelete && onDelete && (
+            <div className="flex justify-end pt-2 border-t border-[var(--color-border-default)]">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDelete}
+                className="text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)]"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Eliminar sesión
+              </Button>
             </div>
           )}
         </div>

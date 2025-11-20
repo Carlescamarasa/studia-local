@@ -11,10 +11,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import FormField from '@/components/ds/FormField';
-import { UserPlus, Mail, Send } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 import { useCreateUser } from '../hooks/useCreateUser';
 import { validateEmail, isEmpty } from '../utils/validation';
 import { componentStyles } from '@/design/componentStyles';
@@ -25,7 +24,6 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }) {
   const [fullName, setFullName] = useState('');
   const [nivel, setNivel] = useState('');
   const [profesorAsignadoId, setProfesorAsignadoId] = useState('');
-  const [sendInvitation, setSendInvitation] = useState(false);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
 
@@ -47,7 +45,6 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }) {
       setFullName('');
       setNivel('');
       setProfesorAsignadoId('');
-      setSendInvitation(false);
       setErrors({});
       setTouched({});
     }
@@ -107,15 +104,16 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }) {
     }
 
     try {
+      // Siempre enviar invitación (sendInvitation: true)
       const result = await createUser({
         email: email.trim(),
         full_name: fullName.trim(),
         nivel: nivel || null,
         profesor_asignado_id: profesorAsignadoId || null,
-        sendInvitation,
+        sendInvitation: true, // Siempre true - solo modo invitación
       });
 
-      toast.success(result.message || 'Usuario creado correctamente');
+      toast.success(result.message || 'Usuario creado e invitación enviada correctamente');
       
       if (onSuccess) {
         onSuccess(result.user);
@@ -134,12 +132,10 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5" />
-            {sendInvitation ? 'Enviar invitación' : 'Crear usuario'}
+            Crear usuario
           </DialogTitle>
           <DialogDescription>
-            {sendInvitation
-              ? 'Envía una invitación por email. El usuario completará su registro al hacer clic en el enlace.'
-              : 'Crea un usuario directamente. Se enviará un email para establecer la contraseña.'}
+            Crea un nuevo usuario y envía una invitación por email para que establezca su contraseña.
           </DialogDescription>
         </DialogHeader>
 
@@ -203,7 +199,7 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }) {
             </Select>
           </FormField>
 
-          {/* Campo Profesor Asignado (solo para admin) */}
+          {/* Campo Profesor Asignado */}
           {profesores.length > 0 && (
             <FormField
               label="Profesor asignado"
@@ -229,26 +225,6 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }) {
             </FormField>
           )}
 
-          {/* Toggle entre crear directamente o enviar invitación */}
-          <div className="flex items-center justify-between p-3 rounded-md bg-[var(--color-surface-muted)]">
-            <div className="flex-1">
-              <Label className="text-sm font-medium">Modo de creación</Label>
-              <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-                {sendInvitation
-                  ? 'El usuario recibirá un email de invitación'
-                  : 'Se crea el usuario y se envía email de reset de contraseña'}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSendInvitation(!sendInvitation)}
-              className="ml-4 px-3 py-1.5 text-sm rounded-md border border-[var(--color-border-default)] hover:bg-[var(--color-surface)] transition-colors"
-              disabled={isLoading}
-            >
-              {sendInvitation ? 'Invitación' : 'Directo'}
-            </button>
-          </div>
-
           <DialogFooter>
             <Button
               type="button"
@@ -262,19 +238,10 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }) {
               type="submit"
               className={componentStyles.buttons.primary}
               loading={isLoading}
-              loadingText={sendInvitation ? 'Enviando...' : 'Creando...'}
+              loadingText="Creando..."
             >
-              {sendInvitation ? (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Enviar invitación
-                </>
-              ) : (
-                <>
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Crear usuario
-                </>
-              )}
+              <UserPlus className="w-4 h-4 mr-2" />
+              Crear usuario
             </Button>
           </DialogFooter>
         </form>
@@ -282,4 +249,3 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }) {
     </Dialog>
   );
 }
-

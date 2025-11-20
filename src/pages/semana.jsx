@@ -42,6 +42,7 @@ function SemanaPageContent() {
   });
   const [expandedSessions, setExpandedSessions] = useState(new Set());
   const [viewingMedia, setViewingMedia] = useState(null);
+  const [tipoFeedbackSemana, setTipoFeedbackSemana] = useState('todos'); // 'todos' | 'profesor' | 'sesiones'
   const queryClient = useQueryClient();
 
   const effectiveUser = useEffectiveUser();
@@ -114,14 +115,18 @@ function SemanaPageContent() {
       });
   }, [registrosSesion, userIdActual]);
 
-  // Combinar feedbacks y registros, ordenados por fecha
+  // Combinar feedbacks y registros, ordenados por fecha, filtrando solo semana actual
   const itemsCombinados = useMemo(() => {
     const items = [];
+    const lunesSemana = parseLocalDate(semanaActualISO);
+    const domingoSemana = new Date(lunesSemana);
+    domingoSemana.setDate(domingoSemana.getDate() + 6);
+    domingoSemana.setHours(23, 59, 59, 999);
     
-    // Agregar feedbacks
+    // Agregar feedbacks (solo de la semana actual)
     feedbacksProfesor.forEach(feedback => {
       const fechaFeedback = feedback.semanaInicioISO ? parseLocalDate(feedback.semanaInicioISO) : null;
-      if (fechaFeedback) {
+      if (fechaFeedback && fechaFeedback >= lunesSemana && fechaFeedback <= domingoSemana) {
         items.push({
           tipo: 'feedback',
           fecha: fechaFeedback,
@@ -131,22 +136,36 @@ function SemanaPageContent() {
       }
     });
     
-    // Agregar registros de sesión
+    // Agregar registros de sesión (solo de la semana actual)
     registrosSesionesAlumno.forEach(registro => {
       if (registro.inicioISO) {
         const fechaRegistro = parseLocalDate(registro.inicioISO.split('T')[0]);
-        items.push({
-          tipo: 'registro',
-          fecha: fechaRegistro,
-          fechaISO: registro.inicioISO,
-          data: registro,
-        });
+        if (fechaRegistro >= lunesSemana && fechaRegistro <= domingoSemana) {
+          items.push({
+            tipo: 'registro',
+            fecha: fechaRegistro,
+            fechaISO: registro.inicioISO,
+            data: registro,
+          });
+        }
       }
     });
     
     // Ordenar por fecha descendente (más reciente primero)
     return items.sort((a, b) => b.fecha - a.fecha);
-  }, [feedbacksProfesor, registrosSesionesAlumno]);
+  }, [feedbacksProfesor, registrosSesionesAlumno, semanaActualISO]);
+
+  // Filtrar items según el tipo seleccionado
+  const itemsFiltrados = useMemo(() => {
+    if (tipoFeedbackSemana === 'todos') {
+      return itemsCombinados;
+    } else if (tipoFeedbackSemana === 'profesor') {
+      return itemsCombinados.filter(item => item.tipo === 'feedback');
+    } else if (tipoFeedbackSemana === 'sesiones') {
+      return itemsCombinados.filter(item => item.tipo === 'registro');
+    }
+    return itemsCombinados;
+  }, [itemsCombinados, tipoFeedbackSemana]);
 
   const handlePreviewMedia = (index, mediaLinks) => {
     if (!mediaLinks || !Array.isArray(mediaLinks) || mediaLinks.length === 0) return;
@@ -299,46 +318,6 @@ function SemanaPageContent() {
                   </div>
                 </div>
 
-                {/* Feedback del profesor de esta semana */}
-                {feedbacksProfesor.find(f => f.semanaInicioISO === semanaActualISO) && (() => {
-                  const feedbackSemana = feedbacksProfesor.find(f => f.semanaInicioISO === semanaActualISO);
-                  return (feedbackSemana && (feedbackSemana.notaProfesor || (feedbackSemana.mediaLinks && feedbackSemana.mediaLinks.length > 0))) && (
-                    <div className={"flex items-start gap-2 py-1 " + componentStyles.components.toneRowFeedback}>
-                      <MessageSquare className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
-                          {(() => {
-                            const prof = usuarios.find(u => u.id === feedbackSemana.profesorId);
-                            if (prof) {
-                              return (
-                                <span className="text-xs text-[var(--color-text-secondary)]">
-                                  • {displayName(prof)}
-                                </span>
-                              );
-                            }
-                            return null;
-                          })()}
-                        </div>
-                        {feedbackSemana.notaProfesor && (
-                          <p className="text-sm text-[var(--color-text-primary)] italic mt-0.5 break-words">
-                            "{feedbackSemana.notaProfesor}"
-                          </p>
-                        )}
-                        {feedbackSemana.mediaLinks && feedbackSemana.mediaLinks.length > 0 && (
-                          <div className={feedbackSemana.notaProfesor ? "mt-2" : "mt-0.5"}>
-                            <MediaLinksBadges
-                              mediaLinks={feedbackSemana.mediaLinks}
-                              onMediaClick={(idx) => handlePreviewMedia(idx, feedbackSemana.mediaLinks)}
-                              compact={true}
-                              maxDisplay={3}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })()}
               </div>
 
 
@@ -437,20 +416,48 @@ function SemanaPageContent() {
 
               {/* Feedback y Registros de Semana Actual - Combinados por fecha */}
               <div className="pt-4 border-t border-[var(--color-border-default)]">
-                <h3 className={`${componentStyles.typography.sectionTitle} mb-4`}>
-                  Semana Actual
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className={componentStyles.typography.sectionTitle}>
+                    Semana Actual
+                  </h3>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={tipoFeedbackSemana === 'todos' ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setTipoFeedbackSemana('todos')}
+                      className="text-xs"
+                    >
+                      Todos
+                    </Button>
+                    <Button
+                      variant={tipoFeedbackSemana === 'profesor' ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setTipoFeedbackSemana('profesor')}
+                      className="text-xs"
+                    >
+                      Feedback Profesor
+                    </Button>
+                    <Button
+                      variant={tipoFeedbackSemana === 'sesiones' ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setTipoFeedbackSemana('sesiones')}
+                      className="text-xs"
+                    >
+                      Registro Sesiones
+                    </Button>
+                  </div>
+                </div>
 
-                {itemsCombinados.length === 0 ? (
+                {itemsFiltrados.length === 0 ? (
                   <div className="text-center py-8">
                     <MessageSquare className={`w-12 h-12 mx-auto mb-3 ${componentStyles.empty.emptyIcon} text-[var(--color-text-secondary)]`} />
                     <p className={componentStyles.empty.emptyText}>
-                      No hay feedbacks ni registros de sesiones
+                      No hay {tipoFeedbackSemana === 'todos' ? 'feedbacks ni registros de sesiones' : tipoFeedbackSemana === 'profesor' ? 'feedbacks del profesor' : 'registros de sesiones'} esta semana
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {itemsCombinados.map((item) => {
+                    {itemsFiltrados.map((item) => {
                       if (item.tipo === 'feedback') {
                         const feedback = item.data;
                         const prof = usuarios.find(u => u.id === feedback.profesorId);

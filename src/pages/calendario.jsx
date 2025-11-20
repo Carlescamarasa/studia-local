@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
 import PageHeader from "@/components/ds/PageHeader";
@@ -12,17 +12,21 @@ import VistaMes from "../components/calendario/VistaMes";
 import VistaLista from "../components/calendario/VistaLista";
 import ModalSesion from "../components/calendario/ModalSesion";
 import ModalFeedback from "../components/calendario/ModalFeedback";
+import ModalAsignacion from "../components/calendario/ModalAsignacion";
 import ModalCrearEvento from "../components/calendario/ModalCrearEvento";
 import { componentStyles } from "@/design/componentStyles";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 function CalendarioPageContent() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [vista, setVista] = useState('semana'); // 'semana' | 'mes' | 'lista'
   const [fechaActual, setFechaActual] = useState(new Date());
   const [eventoSeleccionado, setEventoSeleccionado] = useState(null);
   const [tipoEventoSeleccionado, setTipoEventoSeleccionado] = useState(null); // 'sesion' | 'feedback' | 'asignacion' | 'evento'
   const [filtroTipoGlobal, setFiltroTipoGlobal] = useState('all'); // Filtro global para todas las vistas
+  const [feedbackEditando, setFeedbackEditando] = useState(null);
 
   const effectiveUser = useEffectiveUser();
 
@@ -110,13 +114,8 @@ function CalendarioPageContent() {
   }, [registrosSesion, feedbacksSemanal, asignaciones, eventos, userRole, userIdActual, isEstu, isProf]);
 
   const handleEventoClick = (evento, tipo) => {
-    if (tipo === 'asignacion') {
-      // Navegar a detalle de asignación
-      navigate(`/asignacion-detalle?id=${evento.id}`);
-    } else {
-      setEventoSeleccionado(evento);
-      setTipoEventoSeleccionado(tipo);
-    }
+    setEventoSeleccionado(evento);
+    setTipoEventoSeleccionado(tipo);
   };
 
   const handleCrearEvento = () => {
@@ -128,7 +127,70 @@ function CalendarioPageContent() {
     if (!open) {
       setEventoSeleccionado(null);
       setTipoEventoSeleccionado(null);
+      setFeedbackEditando(null);
     }
+  };
+
+  // Mutaciones para eliminar
+  const deleteSesionMutation = useMutation({
+    mutationFn: async (id) => {
+      return await localDataClient.entities.RegistroSesion.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['registrosSesion'] });
+      toast.success('✅ Sesión eliminada');
+      handleCerrarModal(false);
+    },
+    onError: () => {
+      toast.error('❌ Error al eliminar sesión');
+    },
+  });
+
+  const deleteFeedbackMutation = useMutation({
+    mutationFn: async (id) => {
+      return await localDataClient.entities.FeedbackSemanal.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] });
+      toast.success('✅ Feedback eliminado');
+      handleCerrarModal(false);
+    },
+    onError: () => {
+      toast.error('❌ Error al eliminar feedback');
+    },
+  });
+
+  const deleteAsignacionMutation = useMutation({
+    mutationFn: async (id) => {
+      return await localDataClient.entities.Asignacion.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
+      toast.success('✅ Asignación eliminada');
+      handleCerrarModal(false);
+    },
+    onError: () => {
+      toast.error('❌ Error al eliminar asignación');
+    },
+  });
+
+  const handleEditFeedback = (feedback) => {
+    setFeedbackEditando(feedback);
+    // Aquí se podría abrir un drawer de edición similar a agenda.jsx
+    // Por ahora, navegamos a la página de estadísticas donde se puede editar
+    navigate(`/estadisticas`);
+  };
+
+  const handleDeleteSesion = (id) => {
+    deleteSesionMutation.mutate(id);
+  };
+
+  const handleDeleteFeedback = (id) => {
+    deleteFeedbackMutation.mutate(id);
+  };
+
+  const handleDeleteAsignacion = (id) => {
+    deleteAsignacionMutation.mutate(id);
   };
 
   return (
@@ -257,6 +319,9 @@ function CalendarioPageContent() {
           onOpenChange={handleCerrarModal}
           registroSesion={eventoSeleccionado}
           usuarios={usuarios}
+          userIdActual={userIdActual}
+          userRole={userRole}
+          onDelete={handleDeleteSesion}
         />
       )}
       {tipoEventoSeleccionado === 'feedback' && eventoSeleccionado && (
@@ -265,6 +330,21 @@ function CalendarioPageContent() {
           onOpenChange={handleCerrarModal}
           feedback={eventoSeleccionado}
           usuarios={usuarios}
+          userIdActual={userIdActual}
+          userRole={userRole}
+          onEdit={handleEditFeedback}
+          onDelete={handleDeleteFeedback}
+        />
+      )}
+      {tipoEventoSeleccionado === 'asignacion' && eventoSeleccionado && (
+        <ModalAsignacion
+          open={!!eventoSeleccionado}
+          onOpenChange={handleCerrarModal}
+          asignacion={eventoSeleccionado}
+          usuarios={usuarios}
+          userIdActual={userIdActual}
+          userRole={userRole}
+          onDelete={handleDeleteAsignacion}
         />
       )}
       {tipoEventoSeleccionado === 'evento' && (
