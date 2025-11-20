@@ -16,8 +16,20 @@ import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 import PerfilModal from "@/components/common/PerfilModal";
 import { CreateUserModal } from "@/pages/auth/components/CreateUserModal";
+import FormField from "@/components/ds/FormField";
+import { InviteUserModal } from "@/pages/auth/components/InviteUserModal";
 import { useUserActions } from "@/pages/auth/hooks/useUserActions";
-import { Mail, KeyRound, UserPlus as UserPlusIcon } from "lucide-react";
+import { Mail, KeyRound, UserPlus as UserPlusIcon, User, Target, Send } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 function UsuariosPageContent() {
   const navigate = useNavigate();
@@ -30,6 +42,10 @@ function UsuariosPageContent() {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
   const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
+  const [isInviteUserModalOpen, setIsInviteUserModalOpen] = useState(false);
+  const [isAssignProfesorDialogOpen, setIsAssignProfesorDialogOpen] = useState(false);
+  const [userForAssignProfesor, setUserForAssignProfesor] = useState(null);
+  const [profesorSeleccionado, setProfesorSeleccionado] = useState('');
 
   const effectiveUser = useEffectiveUser();
   const { sendMagicLink, sendResetPassword, resendInvitation, isLoading: isActionLoading } = useUserActions();
@@ -54,6 +70,39 @@ function UsuariosPageContent() {
     // Invalidar queries para refrescar la lista
     queryClient.invalidateQueries({ queryKey: ['users'] });
     queryClient.invalidateQueries({ queryKey: ['profesores'] });
+  };
+
+  // Mutation para asignar profesor
+  const assignProfesorMutation = useMutation({
+    mutationFn: async ({ userId, profesorId }) => {
+      return localDataClient.entities.User.update(userId, {
+        profesorAsignadoId: profesorId || null,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Profesor asignado correctamente');
+      setIsAssignProfesorDialogOpen(false);
+      setUserForAssignProfesor(null);
+      setProfesorSeleccionado('');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al asignar profesor');
+    },
+  });
+
+  const handleAssignProfesor = () => {
+    if (!profesorSeleccionado) {
+      toast.error('Debes seleccionar un profesor');
+      return;
+    }
+
+    if (userForAssignProfesor) {
+      assignProfesorMutation.mutate({
+        userId: userForAssignProfesor.id,
+        profesorId: profesorSeleccionado === 'none' ? null : profesorSeleccionado,
+      });
+    }
   };
 
   const exportarCSV = () => {
@@ -168,13 +217,23 @@ function UsuariosPageContent() {
         title="Usuarios"
         subtitle="Gestiona usuarios del sistema"
         actions={
-          <Button
-            onClick={() => setIsCreateUserModalOpen(true)}
-            className={componentStyles.buttons.primary}
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Crear usuario
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setIsInviteUserModalOpen(true)}
+              variant="outline"
+              className={componentStyles.buttons.secondary}
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Invitar usuario
+            </Button>
+            <Button
+              onClick={() => setIsCreateUserModalOpen(true)}
+              className={componentStyles.buttons.primary}
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Crear usuario
+            </Button>
+          </div>
         }
         filters={
           <div className="flex gap-3 flex-wrap">
@@ -309,18 +368,6 @@ function UsuariosPageContent() {
                 if (u.email) {
                   actions.push(
                     {
-                      id: 'magic_link',
-                      label: 'Enviar enlace mágico',
-                      icon: Mail,
-                      onClick: async () => {
-                        try {
-                          await sendMagicLink(u.id, u.email);
-                        } catch (error) {
-                          // Error ya manejado en el hook
-                        }
-                      },
-                    },
-                    {
                       id: 'reset_password',
                       label: 'Enviar recuperación de contraseña',
                       icon: KeyRound,
@@ -331,24 +378,44 @@ function UsuariosPageContent() {
                           // Error ya manejado en el hook
                         }
                       },
-                    }
-                  );
-
-                  // Solo mostrar reenviar invitación para estudiantes no confirmados
-                  if (u.rolPersonalizado === 'ESTU') {
-                    actions.push({
-                      id: 'resend_invitation',
-                      label: 'Reenviar invitación',
-                      icon: UserPlusIcon,
+                    },
+                    {
+                      id: 'magic_link',
+                      label: 'Enviar enlace mágico (excepcional)',
+                      icon: Mail,
                       onClick: async () => {
                         try {
-                          await resendInvitation(u.id, u.email);
+                          await sendMagicLink(u.id, u.email);
                         } catch (error) {
                           // Error ya manejado en el hook
                         }
                       },
-                    });
-                  }
+                    }
+                  );
+                }
+
+                // Acciones para estudiantes
+                if (u.rolPersonalizado === 'ESTU') {
+                  actions.push(
+                    {
+                      id: 'assign_profesor',
+                      label: 'Asignar a profesor',
+                      icon: User,
+                      onClick: () => {
+                        setUserForAssignProfesor(u);
+                        setProfesorSeleccionado(u.profesorAsignadoId || '');
+                        setIsAssignProfesorDialogOpen(true);
+                      },
+                    },
+                    {
+                      id: 'create_asignacion',
+                      label: 'Crear asignación',
+                      icon: Target,
+                      onClick: () => {
+                        navigate(createPageUrl(`asignaciones?estudianteId=${u.id}`));
+                      },
+                    }
+                  );
                 }
 
                 return actions;
@@ -380,6 +447,62 @@ function UsuariosPageContent() {
         onOpenChange={setIsCreateUserModalOpen}
         onSuccess={handleUserCreated}
       />
+
+      <InviteUserModal
+        open={isInviteUserModalOpen}
+        onOpenChange={setIsInviteUserModalOpen}
+        onSuccess={handleUserCreated}
+      />
+
+      {/* Dialog para asignar profesor */}
+      <Dialog open={isAssignProfesorDialogOpen} onOpenChange={setIsAssignProfesorDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Asignar profesor</DialogTitle>
+            <DialogDescription>
+              Selecciona un profesor para {userForAssignProfesor ? (getNombreVisible(userForAssignProfesor) || userForAssignProfesor.email) : 'este estudiante'}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <FormField label="Profesor">
+              <Select
+                value={profesorSeleccionado || undefined}
+                onValueChange={(value) => setProfesorSeleccionado(value === 'none' ? '' : value)}
+                disabled={assignProfesorMutation.isPending}
+              >
+                <SelectTrigger className={componentStyles.controls.selectDefault}>
+                  <SelectValue placeholder="Seleccionar profesor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin asignar</SelectItem>
+                  {profesores.map(prof => (
+                    <SelectItem key={prof.id} value={prof.id}>
+                      {getNombreVisible(prof)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsAssignProfesorDialogOpen(false)}
+              disabled={assignProfesorMutation.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleAssignProfesor}
+              className={componentStyles.buttons.primary}
+              loading={assignProfesorMutation.isPending}
+            >
+              Asignar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

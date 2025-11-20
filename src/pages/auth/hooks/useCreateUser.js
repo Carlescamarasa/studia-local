@@ -40,7 +40,6 @@ export function useCreateUser() {
           full_name: userData.full_name.trim(),
           nivel: userData.nivel || null,
           profesor_asignado_id: userData.profesor_asignado_id || null,
-          sendInvitation: userData.sendInvitation || false,
         }),
       });
 

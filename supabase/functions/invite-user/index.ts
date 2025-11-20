@@ -1,4 +1,5 @@
-// Edge Function para crear usuarios usando Admin API
+// Edge Function para enviar invitación a usuario (sin crear usuario)
+// El usuario se creará cuando complete el formulario de registro
 // Esta función debe ser llamada solo por usuarios autenticados con rol ADMIN
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -60,19 +61,19 @@ serve(async (req) => {
 
     if (profileError || !profile || profile.role !== 'ADMIN') {
       return new Response(
-        JSON.stringify({ error: 'No tienes permisos para crear usuarios' }),
+        JSON.stringify({ error: 'No tienes permisos para enviar invitaciones' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Parsear el body de la petición
     const body = await req.json();
-    const { email, full_name, nivel, profesor_asignado_id } = body;
+    const { email, alias } = body;
 
     // Validar campos requeridos
-    if (!email || !full_name) {
+    if (!email) {
       return new Response(
-        JSON.stringify({ error: 'Email y nombre completo son requeridos' }),
+        JSON.stringify({ error: 'Email requerido' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -85,91 +86,46 @@ serve(async (req) => {
       },
     });
 
-    let authUser;
-    let authError;
-
-    // Obtener la URL base para redirectTo (página de reset password)
-    const redirectUrl = `${new URL(supabaseUrl).origin}/reset-password`;
-
-    // Siempre usar modo invitación: inviteUserByEmail() crea el usuario Y envía el email automáticamente
-    // El email será una invitación para que el usuario establezca su contraseña
-    const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
-      data: {
-        full_name,
-        role: 'ESTU',
-      },
-      redirectTo: redirectUrl,
-    });
-
-    authUser = data?.user;
-    authError = error;
-
-    if (authError) {
-      // Si el usuario ya existe, intentar obtenerlo
-      if (authError.message?.includes('already registered') || authError.message?.includes('already exists')) {
-        const { data: existingUser } = await adminClient.auth.admin.getUserByEmail(email);
-        if (existingUser?.user) {
-          authUser = existingUser.user;
-          authError = null;
-          // Reenviar invitación al usuario existente
-          await adminClient.auth.admin.generateLink({
-            type: 'invite',
-            email: email,
-            options: {
-              redirectTo: redirectUrl,
-            },
-          });
-        }
-      }
-    }
-
-    if (authError) {
+    // Verificar si el usuario ya existe
+    const { data: existingUser } = await adminClient.auth.admin.getUserByEmail(email);
+    
+    if (existingUser?.user) {
       return new Response(
-        JSON.stringify({ error: authError.message || 'Error al crear usuario' }),
+        JSON.stringify({ error: 'Ya existe un usuario con este email' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (!authUser) {
+    // Obtener la URL base para redirectTo (página de registro/sign-up)
+    const redirectUrl = `${new URL(supabaseUrl).origin}/sign-up?email=${encodeURIComponent(email)}${alias ? `&alias=${encodeURIComponent(alias)}` : ''}`;
+
+    // Enviar email de invitación usando signInWithOtp (magic link)
+    // Esto enviará un email con un enlace que el usuario puede usar para registrarse
+    const { error: inviteError } = await adminClient.auth.signInWithOtp({
+      email: email,
+      options: {
+        emailRedirectTo: redirectUrl,
+        // Incluir el alias en los datos del email si está disponible
+        data: alias ? { alias } : undefined,
+      },
+    });
+
+    if (inviteError) {
       return new Response(
-        JSON.stringify({ error: 'No se pudo crear el usuario' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: inviteError.message || 'Error al enviar invitación' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-    }
-
-    // Actualizar el perfil con nivel y profesor asignado
-    const profileUpdates: any = {
-      full_name,
-      nivel: nivel || null,
-      profesor_asignado_id: profesor_asignado_id || null,
-    };
-
-    const { error: updateError } = await adminClient
-      .from('profiles')
-      .update(profileUpdates)
-      .eq('id', authUser.id);
-
-    if (updateError) {
-      console.error('Error al actualizar perfil:', updateError);
-      // No fallar si el perfil ya existe (el trigger lo creó)
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        user: {
-          id: authUser.id,
-          email: authUser.email,
-          full_name,
-          nivel,
-          profesor_asignado_id,
-        },
-        message: 'Usuario creado e invitación enviada correctamente. El usuario recibirá un email para establecer su contraseña.',
+        message: 'Invitación enviada correctamente. El usuario recibirá un email para completar su registro.',
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error en create-user:', error);
+    console.error('Error en invite-user:', error);
     return new Response(
       JSON.stringify({ error: error.message || 'Error interno del servidor' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
