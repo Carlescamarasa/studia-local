@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery } from "@tanstack/react-query";
@@ -84,6 +83,7 @@ function HoyPageContent() {
   const [datosFinal, setDatosFinal] = useState(null);
   const [mediaFullscreen, setMediaFullscreen] = useState(null);
   const [mediaModal, setMediaModal] = useState(null); // Para el popup de materiales
+  const [reportModalAbierto, setReportModalAbierto] = useState(false);
 
   // Estado para la posición del timer arrastrable
   const [timerPosition, setTimerPosition] = useState(() => {
@@ -624,7 +624,7 @@ function HoyPageContent() {
 
   // Pausar/reanudar cronómetro cuando se abren/cierran modales
   useEffect(() => {
-    const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || mostrarAyuda || mediaFullscreen;
+    const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || mostrarAyuda || mediaFullscreen || reportModalAbierto;
     
     if (hayModalAbierto && cronometroActivo && !cronometroPausadoPorModal) {
       // Pausar el cronómetro
@@ -643,7 +643,7 @@ function HoyPageContent() {
       setCronometroActiva(true);
       setCronometroPausadoPorModal(false);
     }
-  }, [mostrarModalCancelar, mostrarItinerario, mostrarAyuda, mediaFullscreen, cronometroActivo, cronometroPausadoPorModal, sesionActiva, sesionFinalizada, timestampInicio]);
+  }, [mostrarModalCancelar, mostrarItinerario, mostrarAyuda, mediaFullscreen, reportModalAbierto, cronometroActivo, cronometroPausadoPorModal, sesionActiva, sesionFinalizada, timestampInicio]);
 
   const empezarSesion = async (sesion, sesionIdxProp) => {
     // Actualizar bloques con mediaLinks actuales de la base de datos
@@ -858,7 +858,7 @@ function HoyPageContent() {
 
     const handleKeyDown = (e) => {
       // No procesar si hay un modal abierto (excepto para cerrar modales)
-      const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || mostrarAyuda || mediaFullscreen;
+      const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || mostrarAyuda || mediaFullscreen || reportModalAbierto;
       
       // Permitir Escape siempre para cerrar modales
       if (e.key === 'Escape') {
@@ -871,6 +871,9 @@ function HoyPageContent() {
           setMostrarAyuda(false);
         } else if (mostrarModalCancelar) {
           setMostrarModalCancelar(false);
+        } else if (sesionActiva && !sesionFinalizada) {
+          // Si no hay modales abiertos y hay sesión activa, abrir modal de cancelar
+          setMostrarModalCancelar(true);
         }
         return;
       }
@@ -923,7 +926,7 @@ function HoyPageContent() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown, true);
     };
-  }, [sesionActiva, sesionFinalizada, indiceActual, mediaFullscreen, mostrarItinerario, mostrarAyuda, mostrarModalCancelar, togglePlayPausa, completarYAvanzar, omitirYAvanzar, handleAnterior]);
+  }, [sesionActiva, sesionFinalizada, indiceActual, mediaFullscreen, mostrarItinerario, mostrarAyuda, mostrarModalCancelar, togglePlayPausa, completarYAvanzar, omitirYAvanzar, handleAnterior, reportModalAbierto]);
 
   const handleCancelar = () => {
     setMostrarModalCancelar(true);
@@ -1058,6 +1061,9 @@ function HoyPageContent() {
                 registroSesionId,
                 ...(process.env.NODE_ENV === 'development' && { fullError: error }),
               });
+              // Mostrar error al usuario
+              toast.error('Error al guardar el feedback. Inténtalo de nuevo.');
+              throw error; // Re-lanzar para que ResumenFinal pueda manejarlo
             }
           } else {
             if (process.env.NODE_ENV === 'development') {
@@ -2249,3 +2255,17 @@ function HoyPageContent() {
     </div>
   );
 }
+
+// Escuchar eventos del modal de reportes
+useEffect(() => {
+  const handleReportModalOpened = () => setReportModalAbierto(true);
+  const handleReportModalClosed = () => setReportModalAbierto(false);
+  
+  window.addEventListener('report-modal-opened', handleReportModalOpened);
+  window.addEventListener('report-modal-closed', handleReportModalClosed);
+  
+  return () => {
+    window.removeEventListener('report-modal-opened', handleReportModalOpened);
+    window.removeEventListener('report-modal-closed', handleReportModalClosed);
+  };
+}, []);

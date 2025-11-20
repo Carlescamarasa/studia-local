@@ -54,16 +54,18 @@ export default function ResumenFinal({
   
   const pendientes = totalEjercicios - completados.size - omitidos.size;
   
-  const handleGuardarFeedback = () => {
+  const handleGuardarFeedback = async () => {
     if (onCalidadNotas) {
-      onCalidadNotas(calidad, notas, mediaLinks);
+      // Llamar a onCalidadNotas y esperar a que termine
+      await onCalidadNotas(calidad, notas, mediaLinks);
     }
     
     setGuardado(true);
     
+    // Esperar un poco más para asegurar que el guardado se complete
     setTimeout(() => {
       onGuardarYSalir();
-    }, 1000);
+    }, 1500);
   };
 
   const handlePreview = (index) => {
@@ -76,11 +78,13 @@ export default function ResumenFinal({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent size="lg" className="max-h-[90vh] overflow-y-auto">
           <DialogHeader className="text-center">
-            <div className="icon-tile mx-auto mb-2 sm:mb-3 bg-[var(--color-success)]/10 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--color-success)]" />
+            <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
+              <div className="icon-tile mx-auto mb-2 sm:mb-3 bg-[var(--color-success)]/10 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--color-success)]" />
+              </div>
+              <DialogTitle className={`text-lg sm:text-xl ${componentStyles.typography.pageTitle} text-center`}>¡Sesión Completada!</DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm mt-0.5 sm:mt-1 text-center">{sesion.nombre}</DialogDescription>
             </div>
-            <DialogTitle className={`text-lg sm:text-xl ${componentStyles.typography.pageTitle}`}>¡Sesión Completada!</DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm mt-0.5 sm:mt-1">{sesion.nombre}</DialogDescription>
           </DialogHeader>
           
           <div className="pt-3 sm:pt-4 space-y-3 sm:space-y-4">
@@ -128,7 +132,11 @@ export default function ResumenFinal({
               </div>
               
               <div>
+                <label htmlFor="notas-practica" className={`block text-sm font-medium text-[var(--color-text-primary)] mb-1.5 ${componentStyles.forms.label}`}>
+                  Notas sobre la práctica (opcional)
+                </label>
                 <Textarea
+                  id="notas-practica"
                   value={notas}
                   onChange={(e) => setNotas(e.target.value)}
                   placeholder="¿Qué te ha gustado? ¿Retos a futuro? ¿Cómo piensas superarlos?"
