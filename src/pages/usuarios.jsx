@@ -16,6 +16,8 @@ import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 import PerfilModal from "@/components/common/PerfilModal";
 import { CreateUserModal } from "@/pages/auth/components/CreateUserModal";
+import { useUserActions } from "@/pages/auth/hooks/useUserActions";
+import { Mail, KeyRound, UserPlus as UserPlusIcon } from "lucide-react";
 
 function UsuariosPageContent() {
   const navigate = useNavigate();
@@ -30,6 +32,7 @@ function UsuariosPageContent() {
   const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
 
   const effectiveUser = useEffectiveUser();
+  const { sendMagicLink, sendResetPassword, resendInvitation, isLoading: isActionLoading } = useUserActions();
 
   const { data: usuarios = [], isLoading } = useQuery({
     queryKey: ['users'],
@@ -291,16 +294,66 @@ function UsuariosPageContent() {
                   },
                 },
               ]}
-              getRowActions={(u) => [
-                {
-                  id: 'edit',
-                  label: 'Editar perfil',
-                  onClick: () => {
-                    setSelectedUserId(u.id);
-                    setIsPerfilModalOpen(true);
+              getRowActions={(u) => {
+                const actions = [
+                  {
+                    id: 'edit',
+                    label: 'Editar perfil',
+                    onClick: () => {
+                      setSelectedUserId(u.id);
+                      setIsPerfilModalOpen(true);
+                    },
                   },
-                },
-              ]}
+                ];
+
+                // Añadir acciones de email solo para usuarios con email
+                if (u.email) {
+                  actions.push(
+                    {
+                      id: 'magic_link',
+                      label: 'Enviar enlace mágico',
+                      icon: Mail,
+                      onClick: async () => {
+                        try {
+                          await sendMagicLink(u.id, u.email);
+                        } catch (error) {
+                          // Error ya manejado en el hook
+                        }
+                      },
+                    },
+                    {
+                      id: 'reset_password',
+                      label: 'Enviar recuperación de contraseña',
+                      icon: KeyRound,
+                      onClick: async () => {
+                        try {
+                          await sendResetPassword(u.id, u.email);
+                        } catch (error) {
+                          // Error ya manejado en el hook
+                        }
+                      },
+                    }
+                  );
+
+                  // Solo mostrar reenviar invitación para estudiantes no confirmados
+                  if (u.rolPersonalizado === 'ESTU') {
+                    actions.push({
+                      id: 'resend_invitation',
+                      label: 'Reenviar invitación',
+                      icon: UserPlusIcon,
+                      onClick: async () => {
+                        try {
+                          await resendInvitation(u.id, u.email);
+                        } catch (error) {
+                          // Error ya manejado en el hook
+                        }
+                      },
+                    });
+                  }
+                }
+
+                return actions;
+              }}
               onRowClick={(u) => {
                 setSelectedUserId(u.id);
                 setIsPerfilModalOpen(true);

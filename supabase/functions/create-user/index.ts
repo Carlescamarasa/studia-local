@@ -87,44 +87,43 @@ serve(async (req) => {
 
     let authUser;
     let authError;
-    let inviteLink = null;
+
+    // Obtener la URL base para redirectTo
+    const redirectUrl = `${new URL(supabaseUrl).origin}/reset-password`;
 
     if (sendInvitation) {
-      // Crear usuario sin contraseña para invitación
-      // Generar contraseña temporal aleatoria (no se usará, solo para cumplir requisito)
-      const tempPassword = `Temp${Math.random().toString(36).slice(-12)}!${Math.floor(Math.random() * 100)}`;
-
-      const { data, error } = await adminClient.auth.admin.createUser({
-        email,
-        password: tempPassword,
-        email_confirm: false, // No confirmar, esperar a que el usuario complete el registro
-        user_metadata: {
+      // MODO INVITACIÓN: inviteUserByEmail() crea el usuario Y envía el email automáticamente
+      const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
+        data: {
           full_name,
           role: 'ESTU',
         },
+        redirectTo: redirectUrl,
       });
 
       authUser = data?.user;
       authError = error;
 
-      // Si se creó correctamente, generar link de invitación
-      if (authUser && !authError) {
-        const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
-          type: 'invite',
-          email: email,
-          options: {
-            redirectTo: `${new URL(supabaseUrl).origin}/reset-password`,
-          },
-        });
-
-        if (linkError) {
-          console.error('Error al generar link de invitación:', linkError);
-        } else {
-          inviteLink = linkData?.properties?.action_link;
+      if (authError) {
+        // Si el usuario ya existe, intentar obtenerlo
+        if (authError.message?.includes('already registered') || authError.message?.includes('already exists')) {
+          const { data: existingUser } = await adminClient.auth.admin.getUserByEmail(email);
+          if (existingUser?.user) {
+            authUser = existingUser.user;
+            authError = null;
+            // Reenviar invitación al usuario existente
+            await adminClient.auth.admin.generateLink({
+              type: 'invite',
+              email: email,
+              options: {
+                redirectTo: redirectUrl,
+              },
+            });
+          }
         }
       }
     } else {
-      // Crear usuario directamente con contraseña temporal
+      // MODO CREACIÓN DIRECTA: crear usuario y luego enviar email de recovery
       // Generar contraseña temporal aleatoria
       const tempPassword = `Temp${Math.random().toString(36).slice(-12)}!${Math.floor(Math.random() * 100)}`;
 
@@ -141,18 +140,16 @@ serve(async (req) => {
       authUser = data?.user;
       authError = error;
 
-      // Si se creó correctamente, generar link de reset de contraseña
+      // Si se creó correctamente, enviar email de recovery (esto SÍ envía el email)
       if (authUser && !authError) {
-        const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
-          type: 'recovery',
-          email: email,
-          options: {
-            redirectTo: `${new URL(supabaseUrl).origin}/reset-password`,
-          },
+        // Usar el cliente normal con service role para resetPasswordForEmail (envía email automáticamente)
+        const { error: resetError } = await adminClient.auth.resetPasswordForEmail(email, {
+          redirectTo: redirectUrl,
         });
 
-        if (linkError) {
-          console.error('Error al generar link de recuperación:', linkError);
+        if (resetError) {
+          console.error('Error al enviar email de recovery:', resetError);
+          // No fallar si hay error en el envío del email, el usuario ya está creado
         }
       }
     }
