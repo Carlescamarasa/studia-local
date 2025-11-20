@@ -49,10 +49,13 @@ function normalizeUser(user) {
     nombreCompleto = `Usuario ${user.id || 'Nuevo'}`;
   }
   
+  // Asegurar que full_name tenga valor - priorizar el existente, luego nombreCompleto generado
+  const finalFullName = (user.full_name && user.full_name.trim()) || (nombreCompleto && nombreCompleto.trim()) || '';
+  
   return {
     ...user,
     nombreCompleto: nombreCompleto,
-    full_name: user.full_name || nombreCompleto,
+    full_name: finalFullName, // full_name es la fuente de verdad
   };
 }
 

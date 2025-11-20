@@ -349,13 +349,41 @@ function normalizeSupabaseUser(user: any, email?: string): any {
     }
   }
   
+  // Asegurar que full_name siempre tenga un valor si nombreCompleto está disponible
+  // full_name es la fuente de verdad, pero si no existe en la BD, usar nombreCompleto generado
+  let finalFullName = (fullName && fullName.trim()) || (nombreCompleto && nombreCompleto.trim()) || '';
+  
+  // Si aún está vacío y hay email, usar email como último recurso para full_name
+  if (!finalFullName && email) {
+    const emailStr = String(email);
+    if (emailStr.includes('@')) {
+      const parteLocal = emailStr.split('@')[0];
+      const isLikelyId = /^[a-f0-9]{24}$/i.test(parteLocal) || /^u_[a-z0-9_]+$/i.test(parteLocal);
+      if (parteLocal && !isLikelyId) {
+        finalFullName = parteLocal
+          .replace(/[._+-]/g, ' ')
+          .replace(/\b\w/g, l => l.toUpperCase())
+          .trim() || emailStr;
+      } else {
+        finalFullName = emailStr;
+      }
+    } else {
+      finalFullName = emailStr;
+    }
+  }
+  
+  // Si nombreCompleto está vacío pero finalFullName tiene valor, sincronizar
+  if (!nombreCompleto && finalFullName) {
+    nombreCompleto = finalFullName;
+  }
+  
   // Retornar usuario normalizado con todos los campos necesarios
   return {
     ...user,
     // Campos mapeados
     rolPersonalizado: rolPersonalizado,
     nombreCompleto: nombreCompleto,
-    full_name: fullName || nombreCompleto, // Mantener full_name
+    full_name: finalFullName, // full_name es la fuente de verdad - usar valor de BD o fallback
     // Email: usar el proporcionado o el que ya está en el usuario
     email: email || user.email || '',
     // Profesor asignado - asegurar que esté en camelCase y sea UUID válido
@@ -647,7 +675,10 @@ export function createRemoteDataAPI(): AppDataAPI {
         const supabaseUpdates: any = {};
         
         // Mapear nombreCompleto → full_name
-        if (updates.nombreCompleto !== undefined) {
+        // También aceptar full_name directamente para sincronización explícita
+        if (updates.full_name !== undefined) {
+          supabaseUpdates.full_name = updates.full_name;
+        } else if (updates.nombreCompleto !== undefined) {
           supabaseUpdates.full_name = updates.nombreCompleto;
         }
         

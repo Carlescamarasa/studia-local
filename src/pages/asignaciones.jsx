@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import RequireRole from "@/components/auth/RequireRole";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import FormularioRapido from "@/components/asignaciones/FormularioRapido";
-import { getNombreVisible, formatLocalDate, parseLocalDate, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
+import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MultiSelect from "@/components/ui/MultiSelect";
 import PageHeader from "@/components/ds/PageHeader";
@@ -391,10 +391,14 @@ function AsignacionesPageContent() {
       label: 'Estudiante',
       render: (a) => {
         const alumno = usuarios.find(u => u.id === a.alumnoId);
+        // Si no se encuentra el usuario, intentar obtener nombre por ID usando displayNameById
+        const nombreAlumno = alumno 
+          ? getNombreVisible(alumno) 
+          : (a.alumnoId ? displayNameById(a.alumnoId) : 'Sin nombre');
         return (
           <div>
-            <p className="font-medium text-sm">{getNombreVisible(alumno)}</p>
-          <p className="text-xs text-ui/80">{alumno?.email}</p>
+            <p className="font-medium text-sm">{nombreAlumno}</p>
+            <p className="text-xs text-ui/80">{alumno?.email || ''}</p>
           </div>
         );
       },

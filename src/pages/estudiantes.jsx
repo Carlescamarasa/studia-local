@@ -104,7 +104,7 @@ function EstudiantesPageContent() {
       label: 'Estudiante',
       render: (u) => (
         <div>
-          <p className="font-medium text-sm">{u.nombreCompleto || (u.full_name && !u.full_name.includes('@') ? u.full_name : null) || u.email}</p>
+          <p className="font-medium text-sm">{getNombreVisible(u)}</p>
           <p className="text-xs text-ui/80">{u.email}</p>
         </div>
       ),

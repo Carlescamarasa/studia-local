@@ -425,10 +425,12 @@ export const localDataClient = {
           } else {
             nombreCompleto = `Usuario ${u.id || 'Nuevo'}`;
           }
+          // Asegurar que full_name tenga valor si no existe
+          const finalFullName = (u.full_name && u.full_name.trim()) || (nombreCompleto && nombreCompleto.trim()) || '';
           return {
             ...u,
             nombreCompleto: nombreCompleto,
-            full_name: u.full_name || nombreCompleto,
+            full_name: finalFullName, // full_name es la fuente de verdad
           };
         });
       },

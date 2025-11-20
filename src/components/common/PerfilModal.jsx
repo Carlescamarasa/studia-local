@@ -14,7 +14,7 @@ import {
   Save, AlertCircle, Sun, Moon, Monitor, X, MessageCircle, Search
 } from "lucide-react";
 import { toast } from "sonner";
-import { displayName, useEffectiveUser } from "../utils/helpers";
+import { displayName, displayNameById, useEffectiveUser } from "../utils/helpers";
 import MediaLinksInput from "./MediaLinksInput";
 import { LoadingSpinner } from "@/components/ds";
 import { componentStyles } from "@/design/componentStyles";
@@ -124,8 +124,27 @@ export default function PerfilModal({
   });
 
   const getNombreCompleto = (user) => {
-    if (!user) return '';
-    return displayName(user);
+    if (!user) return 'Sin asignar';
+    const nombre = displayName(user);
+    // Si displayName devuelve "Sin nombre" o está vacío, intentar usar email como fallback
+    if (!nombre || nombre === 'Sin nombre' || nombre.trim() === '') {
+      if (user.email) {
+        const emailStr = String(user.email);
+        if (emailStr.includes('@')) {
+          const parteLocal = emailStr.split('@')[0];
+          const isLikelyId = /^[a-f0-9]{24}$/i.test(parteLocal) || /^u_[a-z0-9_]+$/i.test(parteLocal);
+          if (parteLocal && !isLikelyId) {
+            return parteLocal
+              .replace(/[._+-]/g, ' ')
+              .replace(/\b\w/g, l => l.toUpperCase())
+              .trim() || emailStr;
+          }
+        }
+        return emailStr;
+      }
+      return 'Sin asignar';
+    }
+    return nombre;
   };
 
   // Filtrar usuarios con rol PROF o ADMIN para el selector de profesores
@@ -237,11 +256,15 @@ export default function PerfilModal({
       setPhoneCountryCode(extractedCode);
       setIsEditingPhone(false); // Resetear modo edición al cargar usuario
       
+      // Asegurar que profesorAsignadoId se carga correctamente desde targetUser
+      // Puede venir como profesorAsignadoId o profesor_asignado_id
+      const profesorAsignadoIdValue = targetUser.profesorAsignadoId || targetUser.profesor_asignado_id || null;
+      
       setEditedData({
-        nombreCompleto: targetUser.nombreCompleto || getNombreCompleto(targetUser),
+        nombreCompleto: targetUser.full_name || targetUser.nombreCompleto || getNombreCompleto(targetUser),
         email: targetUser.email || '',
         rolPersonalizado: targetUser.rolPersonalizado || 'ESTU',
-        profesorAsignadoId: targetUser.profesorAsignadoId || null,
+        profesorAsignadoId: profesorAsignadoIdValue,
         nivel: targetUser.nivel || null,
         telefono: normalizedPhone,
         mediaLinks: targetUser.mediaLinks || [],
@@ -430,8 +453,10 @@ export default function PerfilModal({
 
     // Preparar datos para guardar
     // Solo incluir profesorAsignadoId si realmente ha cambiado o si es necesario actualizarlo
+    // IMPORTANTE: full_name es la fuente de verdad en profiles
     const dataToSave = {
       nombreCompleto: editedData.nombreCompleto,
+      full_name: editedData.nombreCompleto, // Sincronizar con full_name en profiles
       rolPersonalizado: editedData.rolPersonalizado,
       nivel: editedData.nivel || null,
       telefono: telefonoFinal,
@@ -622,10 +647,35 @@ export default function PerfilModal({
                               {editedData.profesorAsignadoId ? (() => {
                                 // Normalizar IDs para comparación (pueden venir como string o UUID)
                                 const profesorIdNormalizado = String(editedData.profesorAsignadoId).trim();
-                                const prof = profesores.find(p => {
+                                
+                                if (!profesorIdNormalizado || profesorIdNormalizado === 'null' || profesorIdNormalizado === 'undefined') {
+                                  return "Sin asignar";
+                                }
+                                
+                                // Primero buscar en profesores
+                                let prof = profesores.find(p => {
+                                  if (!p || !p.id) return false;
                                   const profIdNormalizado = String(p.id).trim();
                                   return profIdNormalizado === profesorIdNormalizado;
                                 });
+                                
+                                // Si no se encuentra en profesores, buscar en allUsers
+                                if (!prof && allUsers && Array.isArray(allUsers)) {
+                                  prof = allUsers.find(p => {
+                                    if (!p || !p.id) return false;
+                                    const profIdNormalizado = String(p.id).trim();
+                                    return profIdNormalizado === profesorIdNormalizado;
+                                  });
+                                }
+                                
+                                // Si aún no se encuentra, intentar obtener por ID usando displayNameById como último recurso
+                                if (!prof) {
+                                  const nombrePorId = displayNameById(profesorIdNormalizado);
+                                  if (nombrePorId && nombrePorId !== 'Sin nombre') {
+                                    return nombrePorId;
+                                  }
+                                }
+                                
                                 return prof ? getNombreCompleto(prof) : "Sin asignar";
                               })() : "Sin asignar"}
                             </SelectValue>
@@ -647,10 +697,35 @@ export default function PerfilModal({
                           value={editedData.profesorAsignadoId ? (() => {
                             // Normalizar IDs para comparación
                             const profesorIdNormalizado = String(editedData.profesorAsignadoId).trim();
-                            const prof = profesores.find(p => {
+                            
+                            if (!profesorIdNormalizado || profesorIdNormalizado === 'null' || profesorIdNormalizado === 'undefined') {
+                              return 'Sin asignar';
+                            }
+                            
+                            // Primero buscar en profesores
+                            let prof = profesores.find(p => {
+                              if (!p || !p.id) return false;
                               const profIdNormalizado = String(p.id).trim();
                               return profIdNormalizado === profesorIdNormalizado;
                             });
+                            
+                            // Si no se encuentra en profesores, buscar en allUsers
+                            if (!prof && allUsers && Array.isArray(allUsers)) {
+                              prof = allUsers.find(p => {
+                                if (!p || !p.id) return false;
+                                const profIdNormalizado = String(p.id).trim();
+                                return profIdNormalizado === profesorIdNormalizado;
+                              });
+                            }
+                            
+                            // Si aún no se encuentra, intentar obtener por ID usando displayNameById como último recurso
+                            if (!prof) {
+                              const nombrePorId = displayNameById(profesorIdNormalizado);
+                              if (nombrePorId && nombrePorId !== 'Sin nombre') {
+                                return nombrePorId;
+                              }
+                            }
+                            
                             return prof ? getNombreCompleto(prof) : 'Sin asignar';
                           })() : 'Sin asignar'}
                           disabled

@@ -5,8 +5,8 @@ import { useLocalData } from "@/local-data/LocalDataProvider";
 
 /**
  * Obtiene el nombre visible de un usuario según la jerarquía:
- * 1. nombreCompleto (campo personalizado)
- * 2. full_name (nombre completo del sistema, fallback)
+ * 1. full_name (fuente de verdad en profiles)
+ * 2. nombreCompleto (campo derivado, fallback)
  * 3. first_name + last_name
  * 4. name
  * 5. email (parte local antes de @)
@@ -15,14 +15,14 @@ import { useLocalData } from "@/local-data/LocalDataProvider";
 export function displayName(u) {
   if (!u) return 'Sin nombre';
   
-  // Prioridad 1: nombreCompleto (campo personalizado)
-  if (u.nombreCompleto && u.nombreCompleto.trim()) {
-    return u.nombreCompleto.trim();
-  }
-  
-  // Prioridad 2: full_name del sistema (fallback)
+  // Prioridad 1: full_name (fuente de verdad en profiles)
   if (u.full_name && u.full_name.trim()) {
     return u.full_name.trim();
+  }
+  
+  // Prioridad 2: nombreCompleto (campo derivado, fallback)
+  if (u.nombreCompleto && u.nombreCompleto.trim()) {
+    return u.nombreCompleto.trim();
   }
   
   // Prioridad 3: first_name + last_name

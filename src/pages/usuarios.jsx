@@ -129,8 +129,7 @@ function UsuariosPageContent() {
       label: 'Usuario',
       render: (u) => (
         <div>
-          {/* Priorizar nombreCompleto sobre full_name (que puede ser email en la BD) */}
-          <p className="font-medium text-sm">{u.nombreCompleto || (u.full_name && !u.full_name.includes('@') ? u.full_name : null) || u.email}</p>
+          <p className="font-medium text-sm">{getNombreVisible(u)}</p>
           <p className="text-xs text-ui/80">{u.email}</p>
         </div>
       ),
