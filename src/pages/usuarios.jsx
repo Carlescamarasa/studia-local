@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Users, Search, X, FileDown } from "lucide-react";
+import { Users, Search, X, FileDown, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 import PerfilModal from "@/components/common/PerfilModal";
+import { CreateUserModal } from "@/pages/auth/components/CreateUserModal";
 
 function UsuariosPageContent() {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ function UsuariosPageContent() {
   const [profesorAsignadoFilter, setProfesorAsignadoFilter] = useState('all');
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
+  const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
 
   const effectiveUser = useEffectiveUser();
 
@@ -43,6 +45,13 @@ function UsuariosPageContent() {
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ['users'] });
   }, [queryClient]);
+
+  // Handler para cuando se crea un usuario exitosamente
+  const handleUserCreated = () => {
+    // Invalidar queries para refrescar la lista
+    queryClient.invalidateQueries({ queryKey: ['users'] });
+    queryClient.invalidateQueries({ queryKey: ['profesores'] });
+  };
 
   const exportarCSV = () => {
     const headers = ['Nombre', 'Email', 'Rol', 'Profesor Asignado'];
@@ -156,6 +165,15 @@ function UsuariosPageContent() {
         icon={Users}
         title="Usuarios"
         subtitle="Gestiona usuarios del sistema"
+        actions={
+          <Button
+            onClick={() => setIsCreateUserModalOpen(true)}
+            className={componentStyles.buttons.primary}
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Crear usuario
+          </Button>
+        }
         filters={
           <div className="flex gap-3 flex-wrap">
             <div className="relative flex-1 min-w-[200px]">
@@ -303,6 +321,12 @@ function UsuariosPageContent() {
           }
         }}
         userId={selectedUserId}
+      />
+
+      <CreateUserModal
+        open={isCreateUserModalOpen}
+        onOpenChange={setIsCreateUserModalOpen}
+        onSuccess={handleUserCreated}
       />
     </div>
   );
