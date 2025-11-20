@@ -9,7 +9,7 @@ import EventoImportante from "./EventoImportante";
 import { agruparEventosPorDia, startOfMonday, endOfSunday, formatLocalDate } from "./utils";
 import { componentStyles } from "@/design/componentStyles";
 
-export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios }) {
+export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipo = 'all' }) {
   const lunesSemana = useMemo(() => {
     return startOfMonday(fechaActual);
   }, [fechaActual]);
@@ -29,8 +29,14 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
   }, [lunesSemana]);
 
   const eventosPorDia = useMemo(() => {
-    return agruparEventosPorDia(eventos, lunesSemana, domingoSemana);
-  }, [eventos, lunesSemana, domingoSemana]);
+    const eventosFiltrados = {
+      sesiones: filtroTipo === 'all' || filtroTipo === 'sesion' ? eventos.sesiones : [],
+      feedbacks: filtroTipo === 'all' || filtroTipo === 'feedback' ? eventos.feedbacks : [],
+      asignaciones: filtroTipo === 'all' || filtroTipo === 'asignacion' ? eventos.asignaciones : [],
+      eventosImportantes: filtroTipo === 'all' || filtroTipo === 'evento' ? eventos.eventosImportantes : [],
+    };
+    return agruparEventosPorDia(eventosFiltrados, lunesSemana, domingoSemana);
+  }, [eventos, lunesSemana, domingoSemana, filtroTipo]);
 
   const navegarSemana = (direccion) => {
     const nuevaFecha = new Date(lunesSemana);
@@ -90,6 +96,21 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
                   {dia.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })}
                 </div>
                 <div className="space-y-1">
+                  {eventosDia.eventos.map(evento => (
+                    <EventoImportante
+                      key={evento.id}
+                      evento={evento}
+                      onClick={() => onEventoClick(evento, 'evento')}
+                    />
+                  ))}
+                  {eventosDia.asignaciones.map(asignacion => (
+                    <EventoAsignacion
+                      key={asignacion.id}
+                      asignacion={asignacion}
+                      usuarios={usuarios}
+                      onClick={() => onEventoClick(asignacion, 'asignacion')}
+                    />
+                  ))}
                   {eventosDia.sesiones.map(sesion => (
                     <EventoSesion
                       key={sesion.id}
@@ -104,21 +125,6 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
                       feedback={feedback}
                       usuarios={usuarios}
                       onClick={() => onEventoClick(feedback, 'feedback')}
-                    />
-                  ))}
-                  {eventosDia.asignaciones.map(asignacion => (
-                    <EventoAsignacion
-                      key={asignacion.id}
-                      asignacion={asignacion}
-                      usuarios={usuarios}
-                      onClick={() => onEventoClick(asignacion, 'asignacion')}
-                    />
-                  ))}
-                  {eventosDia.eventos.map(evento => (
-                    <EventoImportante
-                      key={evento.id}
-                      evento={evento}
-                      onClick={() => onEventoClick(evento, 'evento')}
                     />
                   ))}
                   {totalEventos === 0 && (

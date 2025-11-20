@@ -691,6 +691,14 @@ function EstadisticasPageContent() {
 
   const [feedbackPageSize, setFeedbackPageSize] = useState(10);
   const [feedbackCurrentPage, setFeedbackCurrentPage] = useState(1);
+  const [evolucionPageSize, setEvolucionPageSize] = useState(10);
+  const [evolucionCurrentPage, setEvolucionCurrentPage] = useState(1);
+  const [topEjerciciosPageSize, setTopEjerciciosPageSize] = useState(10);
+  const [topEjerciciosCurrentPage, setTopEjerciciosCurrentPage] = useState(1);
+  const [historialPageSize, setHistorialPageSize] = useState(10);
+  const [historialCurrentPage, setHistorialCurrentPage] = useState(1);
+  const [historialCalificacionFilter, setHistorialCalificacionFilter] = useState('all');
+  const [historialSoloConNotas, setHistorialSoloConNotas] = useState(false);
 
   // Feedbacks del profesor para estudiantes
   const feedbackProfesor = useMemo(() => {
@@ -1688,13 +1696,20 @@ function EstadisticasPageContent() {
                   <p className={componentStyles.components.emptyStateText}>No hay ejercicios registrados</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {topEjerciciosFiltrados.slice(0, 20).map((ejercicio, idx) => (
+                <>
+                  <div className="space-y-2">
+                    {(() => {
+                      const startIndex = (topEjerciciosCurrentPage - 1) * topEjerciciosPageSize;
+                      const endIndex = startIndex + topEjerciciosPageSize;
+                      return topEjerciciosFiltrados.slice(startIndex, endIndex);
+                    })().map((ejercicio, idx) => {
+                      const globalIdx = (topEjerciciosCurrentPage - 1) * topEjerciciosPageSize + idx;
+                      return (
                     <Card key={idx} className={`${componentStyles.containers.panelBase} hover:shadow-md transition-shadow`}>
                       <CardContent className="pt-3 pb-3">
                         <div className="flex items-center gap-2 flex-wrap">
                           <Badge className="rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] font-bold w-8 h-8 flex items-center justify-center shrink-0">
-                            {idx + 1}
+                            {globalIdx + 1}
                           </Badge>
                           <Badge className={`rounded-full ${tipoColors[ejercicio.tipo]} shrink-0`}>
                             {ejercicio.tipo}
@@ -1719,8 +1734,20 @@ function EstadisticasPageContent() {
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
+                      );
+                    })}
+                  </div>
+                  <TablePagination
+                    data={topEjerciciosFiltrados}
+                    pageSize={topEjerciciosPageSize}
+                    currentPage={topEjerciciosCurrentPage}
+                    onPageChange={setTopEjerciciosCurrentPage}
+                    onPageSizeChange={(newSize) => {
+                      setTopEjerciciosPageSize(newSize);
+                      setTopEjerciciosCurrentPage(1);
+                    }}
+                  />
+                </>
               )}
             </CardContent>
           </Card>
@@ -1732,17 +1759,57 @@ function EstadisticasPageContent() {
               // Para estudiantes: mostrar historial de sesiones
           <Card className={componentStyles.components.cardBase}>
             <CardHeader>
-              <CardTitle className="text-base md:text-lg">Historial de Sesiones ({registrosFiltradosUnicos.length})</CardTitle>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <CardTitle className="text-base md:text-lg">Historial de Sesiones ({registrosFiltradosUnicos.length})</CardTitle>
+                <div className="flex gap-2 flex-wrap">
+                  {[1, 2, 3, 4].map(val => (
+                    <Button
+                      key={val}
+                      variant={historialCalificacionFilter == val ? "primary" : "outline"}
+                      size="sm"
+                      onClick={() => setHistorialCalificacionFilter(historialCalificacionFilter == val ? 'all' : String(val))}
+                      className="h-8 w-8 p-0 rounded-xl focus-brand"
+                      aria-label={`Filtrar por calificación ${val}`}
+                    >
+                      {val}
+                    </Button>
+                  ))}
+                  <Button
+                    variant={historialSoloConNotas ? "primary" : "outline"}
+                    size="sm"
+                    onClick={() => setHistorialSoloConNotas(!historialSoloConNotas)}
+                    className="h-8 rounded-xl focus-brand"
+                    aria-label={historialSoloConNotas ? 'Mostrar todos' : 'Solo con notas'}
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              {registrosFiltradosUnicos.length === 0 ? (
-                <div className="text-center py-12">
-                  <Activity className={componentStyles.components.emptyStateIcon} />
-                  <p className={componentStyles.components.emptyStateText}>No hay datos en el periodo seleccionado</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {registrosFiltradosUnicos.slice(0, 50).map((registro) => {
+              {(() => {
+                const historialFiltrado = registrosFiltradosUnicos.filter(r => {
+                  if (historialCalificacionFilter !== 'all') {
+                    const cal = safeNumber(r.calificacion);
+                    const calInt = Math.round(cal);
+                    if (calInt != parseInt(historialCalificacionFilter)) return false;
+                  }
+                  if (historialSoloConNotas && !r.notas) return false;
+                  return true;
+                });
+                return historialFiltrado.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Activity className={componentStyles.components.emptyStateIcon} />
+                    <p className={componentStyles.components.emptyStateText}>No hay datos en el periodo seleccionado</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-3">
+                      {(() => {
+                        const startIndex = (historialCurrentPage - 1) * historialPageSize;
+                        const endIndex = startIndex + historialPageSize;
+                        return historialFiltrado.slice(startIndex, endIndex);
+                      })().map((registro) => {
                     const alumno = usuarios.find(u => u.id === registro.alumnoId);
                     return (
                       <Card 
@@ -1785,10 +1852,22 @@ function EstadisticasPageContent() {
                           </div>
                         </CardContent>
                       </Card>
-                    );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                    </div>
+                    <TablePagination
+                      data={historialFiltrado}
+                      pageSize={historialPageSize}
+                      currentPage={historialCurrentPage}
+                      onPageChange={setHistorialCurrentPage}
+                      onPageSizeChange={(newSize) => {
+                        setHistorialPageSize(newSize);
+                        setHistorialCurrentPage(1);
+                      }}
+                    />
+                  </>
+                );
+              })()}
             </CardContent>
           </Card>
             ) : (

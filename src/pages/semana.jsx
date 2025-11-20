@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ds/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ds";
 import { Badge } from "@/components/ds";
@@ -9,7 +9,7 @@ import {
   Music, Calendar, Target, PlayCircle, MessageSquare,
   Layers,
   ChevronLeft, ChevronRight, ChevronDown, Home, Clock, CheckCircle2,
-  Star
+  Star, Trash2, BookOpen
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -42,7 +42,7 @@ function SemanaPageContent() {
   });
   const [expandedSessions, setExpandedSessions] = useState(new Set());
   const [viewingMedia, setViewingMedia] = useState(null);
-  const [tipoFeedback, setTipoFeedback] = useState('todos'); // 'todos', 'profesor', 'sesiones'
+  const queryClient = useQueryClient();
 
   const effectiveUser = useEffectiveUser();
 
@@ -114,14 +114,39 @@ function SemanaPageContent() {
       });
   }, [registrosSesion, userIdActual]);
 
-  // Filtrar según el tipo seleccionado
-  const feedbacksMostrar = (tipoFeedback === 'todos' || tipoFeedback === 'profesor') 
-    ? feedbacksProfesor 
-    : [];
-
-  const registrosMostrar = (tipoFeedback === 'todos' || tipoFeedback === 'sesiones') 
-    ? registrosSesionesAlumno 
-    : [];
+  // Combinar feedbacks y registros, ordenados por fecha
+  const itemsCombinados = useMemo(() => {
+    const items = [];
+    
+    // Agregar feedbacks
+    feedbacksProfesor.forEach(feedback => {
+      const fechaFeedback = feedback.semanaInicioISO ? parseLocalDate(feedback.semanaInicioISO) : null;
+      if (fechaFeedback) {
+        items.push({
+          tipo: 'feedback',
+          fecha: fechaFeedback,
+          fechaISO: feedback.semanaInicioISO,
+          data: feedback,
+        });
+      }
+    });
+    
+    // Agregar registros de sesión
+    registrosSesionesAlumno.forEach(registro => {
+      if (registro.inicioISO) {
+        const fechaRegistro = parseLocalDate(registro.inicioISO.split('T')[0]);
+        items.push({
+          tipo: 'registro',
+          fecha: fechaRegistro,
+          fechaISO: registro.inicioISO,
+          data: registro,
+        });
+      }
+    });
+    
+    // Ordenar por fecha descendente (más reciente primero)
+    return items.sort((a, b) => b.fecha - a.fecha);
+  }, [feedbacksProfesor, registrosSesionesAlumno]);
 
   const handlePreviewMedia = (index, mediaLinks) => {
     if (!mediaLinks || !Array.isArray(mediaLinks) || mediaLinks.length === 0) return;
@@ -138,6 +163,27 @@ function SemanaPageContent() {
     else if (urlLower.match(/\.pdf$/)) kind = 'pdf';
     
     setViewingMedia({ url, kind });
+  };
+
+  const deleteRegistroMutation = useMutation({
+    mutationFn: async (id) => {
+      return await localDataClient.entities.RegistroSesion.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['registrosSesion'] });
+    },
+  });
+
+  const handleDeleteRegistro = async (registro) => {
+    if (!window.confirm('¿Eliminar esta sesión de estudio? Esta acción no se puede deshacer.')) {
+      return;
+    }
+    try {
+      await deleteRegistroMutation.mutateAsync(registro.id);
+    } catch (error) {
+      console.error('Error al eliminar sesión:', error);
+      alert('Error al eliminar la sesión. Por favor, inténtalo de nuevo.');
+    }
   };
 
   const cambiarSemana = (direccion) => {
@@ -295,59 +341,6 @@ function SemanaPageContent() {
                 })()}
               </div>
 
-              {/* Feedbacks del profesor - Historial */}
-              {feedbacksProfesor.filter(f => {
-                if (!f.semanaInicioISO) return false;
-                const feedbackDate = parseLocalDate(f.semanaInicioISO);
-                const semanaActualDate = parseLocalDate(semanaActualISO);
-                return feedbackDate < semanaActualDate;
-              }).length > 0 && (
-                <div className="border-t border-[var(--color-border-default)] pt-4">
-                  <h3 className={`${componentStyles.typography.sectionTitle} mb-4`}>
-                    Feedbacks del profesor - Historial
-                  </h3>
-                  <div className="space-y-2">
-                    {feedbacksProfesor.filter(f => {
-                      if (!f.semanaInicioISO) return false;
-                      const feedbackDate = parseLocalDate(f.semanaInicioISO);
-                      const semanaActualDate = parseLocalDate(semanaActualISO);
-                      return feedbackDate < semanaActualDate;
-                    }).map((feedback) => {
-                      const prof = usuarios.find(u => u.id === feedback.profesorId);
-                      const fechaFeedback = parseLocalDate(feedback.semanaInicioISO);
-                      const fechaFormateada = fechaFeedback.toLocaleDateString('es-ES', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      });
-
-                      return (
-                        <div key={feedback.id} className="flex items-start gap-2 py-2 px-3 border-b border-[var(--color-border-default)] last:border-0 hover:bg-[var(--color-surface-muted)]/30 transition-colors">
-                          <MessageSquare className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                              <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
-                              {prof && (
-                                <span className="text-xs text-[var(--color-text-secondary)]">
-                                  • {displayName(prof)}
-                                </span>
-                              )}
-                              <span className="text-xs text-[var(--color-text-secondary)]">
-                                • Semana del {fechaFormateada}
-                              </span>
-                            </div>
-                            {feedback.notaProfesor && (
-                              <p className="text-sm text-[var(--color-text-primary)] italic break-words">
-                                "{feedback.notaProfesor}"
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
 
               {/* Separador */}
               <div className="border-t border-[var(--color-border-default)] pt-4">
@@ -442,157 +435,115 @@ function SemanaPageContent() {
                 </Button>
               </div>
 
-              {/* Feedback y Registros de Semana Actual */}
+              {/* Feedback y Registros de Semana Actual - Combinados por fecha */}
               <div className="pt-4 border-t border-[var(--color-border-default)]">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className={componentStyles.typography.sectionTitle}>
-                    Semana Actual
-                  </h3>
-                  {/* Botones de filtro */}
-                  <div className="flex gap-2">
-                    <Button
-                      variant={tipoFeedback === 'todos' ? 'primary' : 'outline'}
-                      size="sm"
-                      onClick={() => setTipoFeedback('todos')}
-                      className="text-xs"
-                    >
-                      Todos
-                    </Button>
-                    <Button
-                      variant={tipoFeedback === 'profesor' ? 'primary' : 'outline'}
-                      size="sm"
-                      onClick={() => setTipoFeedback('profesor')}
-                      className="text-xs"
-                    >
-                      Feedback Profesor
-                    </Button>
-                    <Button
-                      variant={tipoFeedback === 'sesiones' ? 'primary' : 'outline'}
-                      size="sm"
-                      onClick={() => setTipoFeedback('sesiones')}
-                      className="text-xs"
-                    >
-                      Registro Sesiones
-                    </Button>
+                <h3 className={`${componentStyles.typography.sectionTitle} mb-4`}>
+                  Semana Actual
+                </h3>
+
+                {itemsCombinados.length === 0 ? (
+                  <div className="text-center py-8">
+                    <MessageSquare className={`w-12 h-12 mx-auto mb-3 ${componentStyles.empty.emptyIcon} text-[var(--color-text-secondary)]`} />
+                    <p className={componentStyles.empty.emptyText}>
+                      No hay feedbacks ni registros de sesiones
+                    </p>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-2">
+                    {itemsCombinados.map((item) => {
+                      if (item.tipo === 'feedback') {
+                        const feedback = item.data;
+                        const prof = usuarios.find(u => u.id === feedback.profesorId);
+                        const fechaFormateada = item.fecha.toLocaleDateString('es-ES', { 
+                          day: 'numeric', 
+                          month: 'short', 
+                          year: 'numeric' 
+                        });
 
-                {/* Feedbacks del profesor */}
-                {(tipoFeedback === 'todos' || tipoFeedback === 'profesor') && feedbacksMostrar.length > 0 && (
-                  <div className="space-y-2 mb-4">
-                    {feedbacksMostrar.map((feedback) => {
-                      const prof = usuarios.find(u => u.id === feedback.profesorId);
-                      const fechaFeedback = feedback.semanaInicioISO ? parseLocalDate(feedback.semanaInicioISO) : null;
-                      const fechaFormateada = fechaFeedback ? fechaFeedback.toLocaleDateString('es-ES', { 
-                        day: 'numeric', 
-                        month: 'short', 
-                        year: 'numeric' 
-                      }) : 'Sin fecha';
-
-                      return (
-                        <div key={feedback.id} className="flex items-start gap-2 py-2 px-3 border-l-4 border-l-[var(--color-info)] bg-[var(--color-info)]/5 hover:bg-[var(--color-info)]/10 transition-colors">
-                          <MessageSquare className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                              <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
-                              {prof && (
+                        return (
+                          <div key={`feedback-${feedback.id}`} className="flex items-start gap-2 py-2 px-3 border-l-4 border-l-[var(--color-info)] bg-[var(--color-info)]/5 hover:bg-[var(--color-info)]/10 transition-colors">
+                            <MessageSquare className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
+                                {prof && (
+                                  <span className="text-xs text-[var(--color-text-secondary)]">
+                                    • {displayName(prof)}
+                                  </span>
+                                )}
                                 <span className="text-xs text-[var(--color-text-secondary)]">
-                                  • {displayName(prof)}
+                                  • Semana del {fechaFormateada}
                                 </span>
-                              )}
-                              <span className="text-xs text-[var(--color-text-secondary)]">
-                                • Semana del {fechaFormateada}
-                              </span>
-                            </div>
-                            {feedback.notaProfesor && (
-                              <p className="text-sm text-[var(--color-text-primary)] italic break-words">
-                                "{feedback.notaProfesor}"
-                              </p>
-                            )}
-                            {feedback.mediaLinks && feedback.mediaLinks.length > 0 && (
-                              <div className="mt-2">
-                                <MediaLinksBadges
-                                  mediaLinks={feedback.mediaLinks}
-                                  onMediaClick={(idx) => handlePreviewMedia(idx, feedback.mediaLinks)}
-                                  compact={true}
-                                  maxDisplay={3}
-                                />
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Registros de sesiones */}
-                {(tipoFeedback === 'todos' || tipoFeedback === 'sesiones') && (
-                  <>
-                    {registrosMostrar.length === 0 ? (
-                      <div className="text-center py-8">
-                        <MessageSquare className={`w-12 h-12 mx-auto mb-3 ${componentStyles.empty.emptyIcon} text-[var(--color-text-secondary)]`} />
-                        <p className={componentStyles.empty.emptyText}>
-                          No hay registros de sesiones
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {registrosMostrar.map((registro) => {
-                      const fecha = new Date(registro.inicioISO);
-                      const fechaFormateada = fecha.toLocaleDateString('es-ES', {
-                        day: 'numeric',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      });
-
-                      // Determinar color del badge según calificación
-                      const getCalificacionBadge = (cal) => {
-                        if (!cal || cal <= 0) return null;
-                        const calInt = Math.round(cal);
-                        if (calInt === 1) return componentStyles.status.badgeDanger;
-                        if (calInt === 2) return componentStyles.status.badgeWarning;
-                        if (calInt === 3) return componentStyles.status.badgeInfo;
-                        if (calInt === 4) return componentStyles.status.badgeSuccess;
-                        return componentStyles.status.badgeDefault;
-                      };
-
-                      return (
-                        <Card key={registro.id} className={`${componentStyles.containers.panelBase} hover:shadow-md transition-shadow`}>
-                          <CardContent className="pt-3 pb-3">
-                            <div className="space-y-2">
-                              {/* Header: Sesión y fecha */}
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <p className={`${componentStyles.typography.cardTitle} font-semibold truncate`}>
-                                    {registro.sesionNombre || 'Sesión sin nombre'}
-                                  </p>
-                                  <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-                                    {fechaFormateada}
-                                    {registro.piezaNombre && ` • ${registro.piezaNombre}`}
-                                  </p>
+                              {feedback.notaProfesor && (
+                                <p className="text-sm text-[var(--color-text-primary)] italic break-words">
+                                  "{feedback.notaProfesor}"
+                                </p>
+                              )}
+                              {feedback.mediaLinks && feedback.mediaLinks.length > 0 && (
+                                <div className="mt-2">
+                                  <MediaLinksBadges
+                                    mediaLinks={feedback.mediaLinks}
+                                    onMediaClick={(idx) => handlePreviewMedia(idx, feedback.mediaLinks)}
+                                    compact={true}
+                                    maxDisplay={3}
+                                  />
                                 </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      } else {
+                        const registro = item.data;
+                        const fecha = new Date(registro.inicioISO);
+                        const fechaFormateada = fecha.toLocaleDateString('es-ES', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        });
+
+                        const getCalificacionBadge = (cal) => {
+                          if (!cal || cal <= 0) return null;
+                          const calInt = Math.round(cal);
+                          if (calInt === 1) return componentStyles.status.badgeDanger;
+                          if (calInt === 2) return componentStyles.status.badgeWarning;
+                          if (calInt === 3) return componentStyles.status.badgeInfo;
+                          if (calInt === 4) return componentStyles.status.badgeSuccess;
+                          return componentStyles.status.badgeDefault;
+                        };
+
+                        return (
+                          <div key={`registro-${registro.id}`} className="flex items-start gap-2 py-2 px-3 border-l-4 border-l-[var(--color-success)] bg-[var(--color-success)]/5 hover:bg-[var(--color-success)]/10 transition-colors relative group">
+                            <BookOpen className="w-4 h-4 text-[var(--color-success)] mt-0.5 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <p className="text-xs text-[var(--color-text-secondary)] font-medium">Sesión de estudio</p>
+                                <span className="text-xs text-[var(--color-text-secondary)]">
+                                  • {fechaFormateada}
+                                </span>
+                                {registro.piezaNombre && (
+                                  <span className="text-xs text-[var(--color-text-secondary)]">
+                                    • {registro.piezaNombre}
+                                  </span>
+                                )}
                                 {registro.calificacion && registro.calificacion > 0 && (
-                                  <Badge className={`${getCalificacionBadge(registro.calificacion)} shrink-0`}>
+                                  <Badge className={`${getCalificacionBadge(registro.calificacion)} shrink-0 ml-auto`}>
                                     <Star className="w-3 h-3 mr-1 fill-current" />
                                     {Math.round(registro.calificacion)}/4
                                   </Badge>
                                 )}
                               </div>
-
-                              {/* Comentario */}
+                              <p className="text-sm text-[var(--color-text-primary)] font-semibold mb-1">
+                                {registro.sesionNombre || 'Sesión sin nombre'}
+                              </p>
                               {registro.notas && registro.notas.trim() && (
-                                <div className="pt-2 border-t border-[var(--color-border-default)]">
-                                  <p className="text-sm text-[var(--color-text-primary)] italic whitespace-pre-wrap break-words">
-                                    "{registro.notas.trim()}"
-                                  </p>
-                                </div>
+                                <p className="text-sm text-[var(--color-text-primary)] italic break-words mb-2">
+                                  "{registro.notas.trim()}"
+                                </p>
                               )}
-
-                              {/* Multimedia */}
                               {registro.mediaLinks && Array.isArray(registro.mediaLinks) && registro.mediaLinks.length > 0 && (
-                                <div className={`pt-2 ${registro.notas ? '' : 'border-t border-[var(--color-border-default)]'}`}>
+                                <div className="mt-2">
                                   <MediaLinksBadges
                                     mediaLinks={registro.mediaLinks}
                                     onMediaClick={(idx) => handlePreviewMedia(idx, registro.mediaLinks)}
@@ -602,13 +553,21 @@ function SemanaPageContent() {
                                 </div>
                               )}
                             </div>
-                          </CardContent>
-                        </Card>
-                      );
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteRegistro(registro)}
+                              disabled={deleteRegistroMutation.isPending}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 h-8 w-8 p-0 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)]"
+                              aria-label="Eliminar sesión"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        );
+                      }
                     })}
-                      </div>
-                    )}
-                  </>
+                  </div>
                 )}
               </div>
             </CardContent>

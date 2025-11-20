@@ -22,6 +22,7 @@ function CalendarioPageContent() {
   const [fechaActual, setFechaActual] = useState(new Date());
   const [eventoSeleccionado, setEventoSeleccionado] = useState(null);
   const [tipoEventoSeleccionado, setTipoEventoSeleccionado] = useState(null); // 'sesion' | 'feedback' | 'asignacion' | 'evento'
+  const [filtroTipoGlobal, setFiltroTipoGlobal] = useState('all'); // Filtro global para todas las vistas
 
   const effectiveUser = useEffectiveUser();
 
@@ -177,6 +178,45 @@ function CalendarioPageContent() {
       />
 
       <div className={componentStyles.layout.page}>
+        {/* Filtro global por tipo */}
+        <div className="mb-4 flex gap-2 flex-wrap">
+          <Button
+            variant={filtroTipoGlobal === 'all' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setFiltroTipoGlobal('all')}
+          >
+            Todos
+          </Button>
+          <Button
+            variant={filtroTipoGlobal === 'evento' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setFiltroTipoGlobal('evento')}
+          >
+            Eventos
+          </Button>
+          <Button
+            variant={filtroTipoGlobal === 'asignacion' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setFiltroTipoGlobal('asignacion')}
+          >
+            Asignaciones
+          </Button>
+          <Button
+            variant={filtroTipoGlobal === 'sesion' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setFiltroTipoGlobal('sesion')}
+          >
+            Sesiones
+          </Button>
+          <Button
+            variant={filtroTipoGlobal === 'feedback' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setFiltroTipoGlobal('feedback')}
+          >
+            Feedbacks
+          </Button>
+        </div>
+
         {vista === 'semana' && (
           <VistaSemana
             fechaActual={fechaActual}
@@ -184,6 +224,7 @@ function CalendarioPageContent() {
             eventos={eventosFiltrados}
             onEventoClick={handleEventoClick}
             usuarios={usuarios}
+            filtroTipo={filtroTipoGlobal}
           />
         )}
         {vista === 'mes' && (
@@ -193,6 +234,7 @@ function CalendarioPageContent() {
             eventos={eventosFiltrados}
             onEventoClick={handleEventoClick}
             usuarios={usuarios}
+            filtroTipo={filtroTipoGlobal}
           />
         )}
         {vista === 'lista' && (
@@ -202,6 +244,8 @@ function CalendarioPageContent() {
             eventos={eventosFiltrados}
             onEventoClick={handleEventoClick}
             usuarios={usuarios}
+            filtroTipoGlobal={filtroTipoGlobal}
+            setFiltroTipoGlobal={setFiltroTipoGlobal}
           />
         )}
       </div>

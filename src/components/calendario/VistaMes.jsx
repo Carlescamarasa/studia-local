@@ -9,7 +9,7 @@ import EventoImportante from "./EventoImportante";
 import { agruparEventosPorDia, startOfMonday, formatLocalDate, parseLocalDate } from "./utils";
 import { componentStyles } from "@/design/componentStyles";
 
-export default function VistaMes({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios }) {
+export default function VistaMes({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipo = 'all' }) {
   const primerDiaMes = useMemo(() => {
     return new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1);
   }, [fechaActual]);
@@ -43,8 +43,14 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
   }, [primerLunes, ultimoDomingo]);
 
   const eventosPorDia = useMemo(() => {
-    return agruparEventosPorDia(eventos, primerLunes, ultimoDomingo);
-  }, [eventos, primerLunes, ultimoDomingo]);
+    const eventosFiltrados = {
+      sesiones: filtroTipo === 'all' || filtroTipo === 'sesion' ? eventos.sesiones : [],
+      feedbacks: filtroTipo === 'all' || filtroTipo === 'feedback' ? eventos.feedbacks : [],
+      asignaciones: filtroTipo === 'all' || filtroTipo === 'asignacion' ? eventos.asignaciones : [],
+      eventosImportantes: filtroTipo === 'all' || filtroTipo === 'evento' ? eventos.eventosImportantes : [],
+    };
+    return agruparEventosPorDia(eventosFiltrados, primerLunes, ultimoDomingo);
+  }, [eventos, primerLunes, ultimoDomingo, filtroTipo]);
 
   const navegarMes = (direccion) => {
     const nuevaFecha = new Date(fechaActual);
@@ -114,6 +120,21 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
                   {dia.getDate()}
                 </div>
                 <div className="space-y-0.5">
+                  {eventosDia.eventos.slice(0, 1).map(evento => (
+                    <EventoImportante
+                      key={evento.id}
+                      evento={evento}
+                      onClick={() => onEventoClick(evento, 'evento')}
+                    />
+                  ))}
+                  {eventosDia.asignaciones.slice(0, 1).map(asignacion => (
+                    <EventoAsignacion
+                      key={asignacion.id}
+                      asignacion={asignacion}
+                      usuarios={usuarios}
+                      onClick={() => onEventoClick(asignacion, 'asignacion')}
+                    />
+                  ))}
                   {eventosDia.sesiones.slice(0, 2).map(sesion => (
                     <EventoSesion
                       key={sesion.id}
@@ -128,21 +149,6 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
                       feedback={feedback}
                       usuarios={usuarios}
                       onClick={() => onEventoClick(feedback, 'feedback')}
-                    />
-                  ))}
-                  {eventosDia.asignaciones.slice(0, 1).map(asignacion => (
-                    <EventoAsignacion
-                      key={asignacion.id}
-                      asignacion={asignacion}
-                      usuarios={usuarios}
-                      onClick={() => onEventoClick(asignacion, 'asignacion')}
-                    />
-                  ))}
-                  {eventosDia.eventos.slice(0, 1).map(evento => (
-                    <EventoImportante
-                      key={evento.id}
-                      evento={evento}
-                      onClick={() => onEventoClick(evento, 'evento')}
                     />
                   ))}
                   {totalEventos > 3 && (

@@ -3,78 +3,117 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, X } from "lucide-react";
+import { Search, X, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import EventoSesion from "./EventoSesion";
 import EventoFeedback from "./EventoFeedback";
 import EventoAsignacion from "./EventoAsignacion";
 import EventoImportante from "./EventoImportante";
-import { formatLocalDate, parseLocalDate, formatearFechaEvento } from "./utils";
+import { formatLocalDate, parseLocalDate, formatearFechaEvento, startOfMonday } from "./utils";
 import { componentStyles } from "@/design/componentStyles";
 
-export default function VistaLista({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios }) {
-  const [filtroTipo, setFiltroTipo] = useState('all');
+export default function VistaLista({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipoGlobal, setFiltroTipoGlobal }) {
   const [busqueda, setBusqueda] = useState('');
+  const filtroTipo = filtroTipoGlobal || 'all';
+
+  // Calcular rango de fechas: hoy hasta hoy+7 días (basado en fechaActual)
+  const hoy = useMemo(() => {
+    const h = new Date();
+    h.setHours(0, 0, 0, 0);
+    return h;
+  }, []);
+  
+  const fechaFin = useMemo(() => {
+    const fin = new Date(hoy);
+    fin.setDate(fin.getDate() + 7);
+    return fin;
+  }, [hoy]);
+
+  const hoyISO = formatLocalDate(hoy);
+  const fechaFinISO = formatLocalDate(fechaFin);
 
   // Combinar todos los eventos en una lista plana con fecha
   const eventosLista = useMemo(() => {
     const lista = [];
 
-    // Agregar sesiones
+    // Agregar eventos importantes (prioridad 1)
+    eventos.eventosImportantes.forEach(evento => {
+      const fechaEvento = parseLocalDate(evento.fechaInicio);
+      if (fechaEvento >= hoy && fechaEvento <= fechaFin) {
+        lista.push({
+          tipo: 'evento',
+          evento: evento,
+          fecha: evento.fechaInicio,
+          fechaISO: evento.fechaInicio,
+          prioridad: 1,
+        });
+      }
+    });
+
+    // Agregar asignaciones (prioridad 2)
+    eventos.asignaciones.forEach(asignacion => {
+      if (asignacion.semanaInicioISO) {
+        const fechaAsignacion = parseLocalDate(asignacion.semanaInicioISO);
+        if (fechaAsignacion >= hoy && fechaAsignacion <= fechaFin) {
+          lista.push({
+            tipo: 'asignacion',
+            evento: asignacion,
+            fecha: asignacion.semanaInicioISO,
+            fechaISO: asignacion.semanaInicioISO,
+            prioridad: 2,
+          });
+        }
+      }
+    });
+
+    // Agregar sesiones (prioridad 3)
     eventos.sesiones.forEach(sesion => {
       if (sesion.inicioISO) {
         const fecha = sesion.inicioISO.split('T')[0];
-        lista.push({
-          tipo: 'sesion',
-          evento: sesion,
-          fecha: fecha,
-          fechaISO: sesion.inicioISO,
-        });
+        const fechaSesion = parseLocalDate(fecha);
+        if (fechaSesion >= hoy && fechaSesion <= fechaFin) {
+          lista.push({
+            tipo: 'sesion',
+            evento: sesion,
+            fecha: fecha,
+            fechaISO: sesion.inicioISO,
+            prioridad: 3,
+          });
+        }
       }
     });
 
-    // Agregar feedbacks (usar semanaInicioISO)
+    // Agregar feedbacks (prioridad 4)
     eventos.feedbacks.forEach(feedback => {
       if (feedback.semanaInicioISO) {
-        lista.push({
-          tipo: 'feedback',
-          evento: feedback,
-          fecha: feedback.semanaInicioISO,
-          fechaISO: feedback.semanaInicioISO,
-        });
+        const fechaFeedback = parseLocalDate(feedback.semanaInicioISO);
+        if (fechaFeedback >= hoy && fechaFeedback <= fechaFin) {
+          lista.push({
+            tipo: 'feedback',
+            evento: feedback,
+            fecha: feedback.semanaInicioISO,
+            fechaISO: feedback.semanaInicioISO,
+            prioridad: 4,
+          });
+        }
       }
     });
 
-    // Agregar asignaciones (usar semanaInicioISO)
-    eventos.asignaciones.forEach(asignacion => {
-      if (asignacion.semanaInicioISO) {
-        lista.push({
-          tipo: 'asignacion',
-          evento: asignacion,
-          fecha: asignacion.semanaInicioISO,
-          fechaISO: asignacion.semanaInicioISO,
-        });
-      }
-    });
-
-    // Agregar eventos importantes
-    eventos.eventosImportantes.forEach(evento => {
-      lista.push({
-        tipo: 'evento',
-        evento: evento,
-        fecha: evento.fechaInicio,
-        fechaISO: evento.fechaInicio,
-      });
-    });
-
-    // Ordenar por fecha descendente
+    // Ordenar: primero por fecha, luego por prioridad (evento > asignación > sesión > feedback)
     lista.sort((a, b) => {
       const fechaA = parseLocalDate(a.fecha);
       const fechaB = parseLocalDate(b.fecha);
-      return fechaB - fechaA;
+      
+      // Si es la misma fecha, ordenar por prioridad
+      if (fechaA.getTime() === fechaB.getTime()) {
+        return a.prioridad - b.prioridad;
+      }
+      
+      // Ordenar por fecha ascendente (más antiguo primero)
+      return fechaA - fechaB;
     });
 
     return lista;
-  }, [eventos]);
+  }, [eventos, hoy, fechaFin]);
 
   // Filtrar eventos
   const eventosFiltrados = useMemo(() => {
@@ -125,17 +164,71 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
   }, [eventosFiltrados]);
 
   const fechasOrdenadas = useMemo(() => {
-    return Object.keys(eventosPorFecha).sort((a, b) => {
+    const fechas = Object.keys(eventosPorFecha).sort((a, b) => {
       const fechaA = parseLocalDate(a);
       const fechaB = parseLocalDate(b);
-      return fechaB - fechaA;
+      return fechaA - fechaB; // Ascendente (hoy primero)
     });
-  }, [eventosPorFecha]);
+    
+    // Asegurar que hoy esté primero
+    const hoyIndex = fechas.indexOf(hoyISO);
+    if (hoyIndex > 0) {
+      fechas.splice(hoyIndex, 1);
+      fechas.unshift(hoyISO);
+    } else if (hoyIndex === -1 && fechas.length > 0) {
+      // Si hoy no está en la lista pero hay eventos, poner hoy al inicio si hay eventos futuros
+      const primeraFecha = parseLocalDate(fechas[0]);
+      if (primeraFecha >= hoy) {
+        fechas.unshift(hoyISO);
+      }
+    }
+    
+    return fechas;
+  }, [eventosPorFecha, hoyISO]);
+
+  const navegarFechas = (direccion) => {
+    const nuevaFecha = new Date(fechaActual);
+    nuevaFecha.setDate(nuevaFecha.getDate() + (direccion * 7));
+    onFechaChange(nuevaFecha);
+  };
+
+  const irHoy = () => {
+    onFechaChange(new Date());
+  };
 
   return (
     <Card className={componentStyles.containers.cardBase}>
       <CardHeader>
-        <CardTitle className="text-lg">Lista de Eventos</CardTitle>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <CardTitle className="text-lg">Lista de Eventos</CardTitle>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navegarFechas(-1)}
+              className="h-8"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={irHoy}
+              className="h-8"
+            >
+              <Calendar className="w-4 h-4 mr-1" />
+              Hoy
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navegarFechas(1)}
+              className="h-8"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Filtros */}
@@ -158,16 +251,16 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
               </button>
             )}
           </div>
-          <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+          <Select value={filtroTipo} onValueChange={setFiltroTipoGlobal}>
             <SelectTrigger className={`w-40 ${componentStyles.controls.selectDefault}`}>
               <SelectValue placeholder="Tipo" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="evento">Eventos</SelectItem>
+              <SelectItem value="asignacion">Asignaciones</SelectItem>
               <SelectItem value="sesion">Sesiones</SelectItem>
               <SelectItem value="feedback">Feedbacks</SelectItem>
-              <SelectItem value="asignacion">Asignaciones</SelectItem>
-              <SelectItem value="evento">Eventos</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -189,8 +282,23 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
                     {fechaFormateada}
                   </h3>
                   <div className="space-y-2 pl-4">
-                    {eventosFecha.map((item, idx) => (
+                    {eventosFecha
+                      .sort((a, b) => a.prioridad - b.prioridad)
+                      .map((item, idx) => (
                       <div key={`${item.tipo}-${item.evento.id}-${idx}`}>
+                        {item.tipo === 'evento' && (
+                          <EventoImportante
+                            evento={item.evento}
+                            onClick={() => onEventoClick(item.evento, 'evento')}
+                          />
+                        )}
+                        {item.tipo === 'asignacion' && (
+                          <EventoAsignacion
+                            asignacion={item.evento}
+                            usuarios={usuarios}
+                            onClick={() => onEventoClick(item.evento, 'asignacion')}
+                          />
+                        )}
                         {item.tipo === 'sesion' && (
                           <EventoSesion
                             sesion={item.evento}
@@ -203,19 +311,6 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
                             feedback={item.evento}
                             usuarios={usuarios}
                             onClick={() => onEventoClick(item.evento, 'feedback')}
-                          />
-                        )}
-                        {item.tipo === 'asignacion' && (
-                          <EventoAsignacion
-                            asignacion={item.evento}
-                            usuarios={usuarios}
-                            onClick={() => onEventoClick(item.evento, 'asignacion')}
-                          />
-                        )}
-                        {item.tipo === 'evento' && (
-                          <EventoImportante
-                            evento={item.evento}
-                            onClick={() => onEventoClick(item.evento, 'evento')}
                           />
                         )}
                       </div>
