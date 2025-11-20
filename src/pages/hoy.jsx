@@ -131,17 +131,6 @@ function HoyPageContent() {
   // Usar el ID del usuario de la base de datos, no el de Supabase Auth
   const userIdActual = alumnoActual?.id || effectiveUser?.id;
 
-  // Log de usuarios cargados en desarrollo
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[hoy.jsx] Usuarios y usuario actual:');
-    console.log('  - Total usuarios:', usuarios.length);
-    console.log('  - effectiveUser ID (Supabase):', effectiveUser?.id);
-    console.log('  - effectiveUser email:', effectiveUser?.email);
-    console.log('  - userIdActual (BD):', userIdActual);
-    console.log('  - alumnoActual encontrado:', !!alumnoActual);
-    console.log('  - alumnoActual ID:', alumnoActual?.id);
-    console.log('  - Usuarios disponibles:', usuarios.map(u => `ID: ${u.id}, Email: ${u.email || 'N/A'}, Nombre: ${u.nombre || u.displayName || 'N/A'}`));
-  }
 
   const { data: asignacionesRaw = [] } = useQuery({
     queryKey: ['asignaciones'],
@@ -153,19 +142,6 @@ function HoyPageContent() {
     queryKey: ['bloques'],
     queryFn: async () => {
       const bloques = await localDataClient.entities.Bloque.list();
-      // Debug: Verificar bloque específico
-      if (process.env.NODE_ENV === 'development') {
-        const bloqueRespiración = bloques.find(b => b.code === 'CA-SEED-003');
-        if (bloqueRespiración) {
-          console.log('[hoy.jsx] Bloque CA-SEED-003 en BD:', {
-            nombre: bloqueRespiración.nombre,
-            code: bloqueRespiración.code,
-            tieneMediaLinks: !!bloqueRespiración.mediaLinks,
-            mediaLinks: bloqueRespiración.mediaLinks,
-            todasLasPropiedades: Object.keys(bloqueRespiración)
-          });
-        }
-      }
       return bloques;
     },
   });
@@ -174,31 +150,13 @@ function HoyPageContent() {
   const asignaciones = asignacionesRaw.filter(a => {
     // Validar que tiene alumnoId válido
     if (!a.alumnoId) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[hoy.jsx] Asignación filtrada: sin alumnoId', a.id);
-      }
       return false;
     }
     const alumno = usuarios.find(u => u.id === a.alumnoId);
     if (!alumno) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[hoy.jsx] Asignación filtrada: alumno no encontrado');
-        console.log('  - Asignación ID:', a.id);
-        console.log('  - alumnoId en asignación:', a.alumnoId);
-        console.log('  - userIdActual:', userIdActual);
-        console.log('  - ¿Es usuario actual?', a.alumnoId === userIdActual);
-        console.log('  - Estado:', a.estado);
-        console.log('  - Tiene plan:', !!a.plan);
-        console.log('  - Semanas disponibles:', a.plan?.semanas?.length);
-        console.log('  - semanaInicioISO:', a.semanaInicioISO);
-        console.log('  - IDs de usuarios disponibles:', usuarios.map(u => u.id));
-      }
       // Si es el usuario actual pero no está en la lista de usuarios, permitir la asignación
       // Esto puede pasar si los usuarios aún no se han cargado completamente
       if (a.alumnoId === userIdActual) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[hoy.jsx] Asignación del usuario actual permitida aunque no esté en lista de usuarios');
-        }
         // Continuar con la validación del plan y semanas
       } else {
         return false;
@@ -207,41 +165,17 @@ function HoyPageContent() {
     
     // Validar que tiene plan y semanas
     if (!a.plan || !Array.isArray(a.plan.semanas) || a.plan.semanas.length === 0) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[hoy.jsx] Asignación filtrada: sin plan o semanas válidas', {
-          asignacionId: a.id,
-          tienePlan: !!a.plan,
-          tieneSemanas: Array.isArray(a.plan?.semanas),
-          semanasLength: a.plan?.semanas?.length
-        });
-      }
       return false;
     }
     
     // Validar que tiene semanaInicioISO válida
     if (!a.semanaInicioISO || typeof a.semanaInicioISO !== 'string') {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[hoy.jsx] Asignación filtrada: sin semanaInicioISO válida', {
-          asignacionId: a.id,
-          semanaInicioISO: a.semanaInicioISO,
-          tipo: typeof a.semanaInicioISO
-        });
-      }
       return false;
     }
     
     return true;
   });
 
-  // Log de resumen del filtrado
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[hoy.jsx] Resumen de asignaciones:');
-    console.log('  - Total raw:', asignacionesRaw.length);
-    console.log('  - Total filtradas:', asignaciones.length);
-    console.log('  - Asignaciones raw:', asignacionesRaw.map(a => 
-      `ID: ${a.id}, alumnoId: ${a.alumnoId}, estado: ${a.estado}, tienePlan: ${!!a.plan}, semanas: ${a.plan?.semanas?.length || 0}, inicio: ${a.semanaInicioISO || 'N/A'}`
-    ));
-  }
 
   const asignacionActiva = asignaciones.find(a => {
     if (a.alumnoId !== userIdActual) return false;
@@ -249,26 +183,8 @@ function HoyPageContent() {
     try {
       const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
       const tieneSemanaValida = offset >= 0 && offset < (a.plan?.semanas?.length || 0);
-      
-      // Log de depuración en desarrollo
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[hoy.jsx] Evaluando asignación:', {
-          id: a.id,
-          alumnoId: a.alumnoId,
-          estado: a.estado,
-          semanaInicioISO: a.semanaInicioISO,
-          semanaActualISO,
-          offset,
-          semanasLength: a.plan?.semanas?.length,
-          tieneSemanaValida
-        });
-      }
-      
       return tieneSemanaValida;
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('[hoy.jsx] Error calculando offset de semana:', error, a);
-      }
       return false;
     }
   });
@@ -281,46 +197,8 @@ function HoyPageContent() {
     try {
       semanaIdx = calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO);
       semanaDelPlan = asignacionActiva.plan?.semanas?.[semanaIdx] || null;
-      
-      // Log de depuración en desarrollo
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[hoy.jsx] Asignación activa encontrada:', {
-          asignacionId: asignacionActiva.id,
-          semanaIdx,
-          semanaDelPlan: semanaDelPlan ? { nombre: semanaDelPlan.nombre, foco: semanaDelPlan.foco } : null,
-          semanasDisponibles: asignacionActiva.plan?.semanas?.length
-        });
-      }
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('[hoy.jsx] Error calculando semanaDelPlan:', error, asignacionActiva);
-      }
       semanaDelPlan = null;
-    }
-  } else {
-    // Log de depuración en desarrollo
-    if (process.env.NODE_ENV === 'development') {
-      const asignacionesDelUsuario = asignaciones.filter(a => a.alumnoId === userIdActual);
-      console.log('[hoy.jsx] No se encontró asignación activa:');
-      console.log('  - userIdActual:', userIdActual);
-      console.log('  - Total asignaciones (después de filtrado):', asignaciones.length);
-      console.log('  - Asignaciones del usuario:', asignacionesDelUsuario.length);
-      if (asignacionesDelUsuario.length > 0) {
-        console.log('  - Detalles de asignaciones del usuario:');
-        asignacionesDelUsuario.forEach(a => {
-          let offset = null;
-          try {
-            offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
-          } catch (e) {
-            // Ignorar errores en el cálculo
-          }
-          const offsetValido = offset !== null && offset >= 0 && offset < (a.plan?.semanas?.length || 0);
-          console.log(`    * ID: ${a.id}, Estado: ${a.estado}, Offset: ${offset}, Válido: ${offsetValido}, Semanas disponibles: ${a.plan?.semanas?.length || 0}`);
-        });
-      }
-      console.log('  - Todas las asignaciones filtradas:', asignaciones.map(a => 
-        `ID: ${a.id}, alumnoId: ${a.alumnoId}, estado: ${a.estado}, inicio: ${a.semanaInicioISO || 'N/A'}`
-      ));
     }
   }
 
@@ -667,15 +545,6 @@ function HoyPageContent() {
         // Buscar el bloque actual en la base de datos por código
         const bloqueActual = bloquesActuales.find(b => b.code === bloqueSnapshot.code);
         if (bloqueActual) {
-          // Debug: Log para verificar mediaLinks
-          if (process.env.NODE_ENV === 'development' && bloqueSnapshot.code === 'CA-SEED-003') {
-            console.log('[hoy.jsx] Actualizando bloque CA-SEED-003:', {
-              bloqueSnapshot_mediaLinks: bloqueSnapshot.mediaLinks,
-              bloqueActual_mediaLinks: bloqueActual.mediaLinks,
-              bloqueActual_completo: bloqueActual
-            });
-          }
-          
           // Actualizar con mediaLinks y otras propiedades actualizadas
           // Priorizar mediaLinks del bloque actual si existe y no está vacío
           const mediaLinksFinal = (bloqueActual.mediaLinks && bloqueActual.mediaLinks.length > 0) 
@@ -737,11 +606,7 @@ function HoyPageContent() {
       });
       setRegistroSesionId(nuevoRegistro.id);
     } catch (error) {
-      console.error('[hoy.jsx] Error creando registro de sesión:', {
-        error: error?.message || error,
-        code: error?.code,
-        asignacionId: asignacionActiva?.id,
-      });
+      // Error silencioso - el usuario puede continuar sin registro
     }
 
     const timestampInicio = Date.now();
@@ -1044,44 +909,18 @@ function HoyPageContent() {
                 finalizada: true,
               };
               
-              if (process.env.NODE_ENV === 'development') {
-                console.log('[hoy.jsx] Actualizando registro de sesión:', {
-                  registroSesionId,
-                  updateData,
-                });
-              }
-              
               // Verificar que el registro existe antes de actualizar
               const registroExistente = await localDataClient.entities.RegistroSesion.get(registroSesionId);
               
               if (!registroExistente) {
-                if (process.env.NODE_ENV === 'development') {
-                console.warn('[hoy.jsx] El registro de sesión no existe, no se puede actualizar:', registroSesionId);
-                }
                 return;
               }
               
               await localDataClient.entities.RegistroSesion.update(registroSesionId, updateData);
-              
-              if (process.env.NODE_ENV === 'development') {
-                console.log('[hoy.jsx] Registro de sesión actualizado correctamente');
-              }
             } catch (error) {
-              console.error('[hoy.jsx] Error guardando feedback:', {
-                error: error?.message || error,
-                code: error?.code,
-                details: error?.details,
-                hint: error?.hint,
-                registroSesionId,
-                ...(process.env.NODE_ENV === 'development' && { fullError: error }),
-              });
               // Mostrar error al usuario
               toast.error('Error al guardar el feedback. Inténtalo de nuevo.');
               throw error; // Re-lanzar para que ResumenFinal pueda manejarlo
-            }
-          } else {
-            if (process.env.NODE_ENV === 'development') {
-            console.warn('[hoy.jsx] No hay registroSesionId, no se puede guardar el feedback');
             }
           }
         }}
@@ -1128,15 +967,6 @@ function HoyPageContent() {
 
     const ejercicioActual = listaEjecucion[indiceActual];
     
-    // Debug: Verificar mediaLinks del ejercicio actual
-    if (process.env.NODE_ENV === 'development' && ejercicioActual?.nombre?.includes('Respiración')) {
-      console.log('[hoy.jsx] Ejercicio actual (Respiración):', {
-        nombre: ejercicioActual.nombre,
-        code: ejercicioActual.code,
-        instrucciones: ejercicioActual.instrucciones,
-        tieneMedia: !!ejercicioActual.media,
-        media: ejercicioActual.media,
-        tieneMediaLinks: !!ejercicioActual.mediaLinks,
         mediaLinks: ejercicioActual.mediaLinks,
         todasLasPropiedades: Object.keys(ejercicioActual)
       });

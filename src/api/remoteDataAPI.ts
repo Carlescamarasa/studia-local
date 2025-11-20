@@ -659,12 +659,12 @@ export function createRemoteDataAPI(): AppDataAPI {
               // No es un UUID válido - probablemente es un ID de MongoDB
               // Intentar resolver el UUID buscando el usuario en la base de datos
               try {
-                // Buscar el usuario en profiles por ID o email
+                // Buscar el usuario en profiles solo por ID (profiles no tiene columna email)
                 const { data: usuarios, error: searchError } = await withAuthErrorHandling(
                   supabase
                     .from('profiles')
-                    .select('id, email')
-                    .or(`id.eq.${profesorId},email.eq.${profesorId}`)
+                    .select('id')
+                    .eq('id', profesorId)
                     .limit(1)
                 );
                 
@@ -685,7 +685,9 @@ export function createRemoteDataAPI(): AppDataAPI {
                     throw new Error(`El ID del profesor asignado no es válido. Se esperaba un UUID pero se recibió: ${profesorId}`);
                   }
                 } else {
-                  throw new Error(`No se encontró un profesor con ID o email: ${profesorId}`);
+                  // Si no se encuentra por ID directo, el ID de MongoDB no se puede convertir
+                  // En este caso, rechazar el valor ya que no hay forma de resolverlo
+                  throw new Error(`No se encontró un profesor con ID: ${profesorId}. El ID debe ser un UUID válido de Supabase.`);
                 }
               } catch (error) {
                 console.error('[remoteDataAPI] Error al resolver profesorAsignadoId:', error);
