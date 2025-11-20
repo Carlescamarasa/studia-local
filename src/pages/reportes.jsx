@@ -15,6 +15,7 @@ import PageHeader from '@/components/ds/PageHeader';
 import { componentStyles } from '@/design/componentStyles';
 import { listErrorReports, updateErrorReport } from '@/api/errorReportsAPI';
 import { useAuth } from '@/auth/AuthProvider';
+import AudioPlayer from '@/components/common/AudioPlayer';
 
 const CATEGORY_LABELS = {
   algo_no_funciona: 'Algo no funciona',
@@ -26,7 +27,7 @@ const CATEGORY_LABELS = {
 
 const STATUS_LABELS = {
   nuevo: 'Nuevo',
-  en_revision: 'En revisión',
+  en_revision: 'En proceso',
   resuelto: 'Resuelto',
 };
 
@@ -46,7 +47,8 @@ function ReportesPageContent() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  // Por defecto, excluir reportes resueltos
+  const [statusFilter, setStatusFilter] = useState('active');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedReport, setSelectedReport] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -54,10 +56,25 @@ function ReportesPageContent() {
 
   const { data: reports = [], isLoading } = useQuery({
     queryKey: ['error-reports', statusFilter, categoryFilter],
-    queryFn: () => listErrorReports({
-      status: statusFilter !== 'all' ? statusFilter : undefined,
-      category: categoryFilter !== 'all' ? categoryFilter : undefined,
-    }),
+    queryFn: () => {
+      // Si el filtro es 'active', excluir 'resuelto'
+      if (statusFilter === 'active') {
+        return listErrorReports({
+          category: categoryFilter !== 'all' ? categoryFilter : undefined,
+        }).then(reports => reports.filter(r => r.status !== 'resuelto'));
+      }
+      // Si es 'all', traer todos
+      if (statusFilter === 'all') {
+        return listErrorReports({
+          category: categoryFilter !== 'all' ? categoryFilter : undefined,
+        });
+      }
+      // Si es un estado específico, filtrar por ese estado
+      return listErrorReports({
+        status: statusFilter,
+        category: categoryFilter !== 'all' ? categoryFilter : undefined,
+      });
+    },
   });
 
   const updateMutation = useMutation({
@@ -151,6 +168,17 @@ function ReportesPageContent() {
       ),
     },
     {
+      key: 'audio',
+      label: 'Audio',
+      render: (r) => (
+        r.audioUrl ? (
+          <span className="text-xs text-[var(--color-primary)]">🎤</span>
+        ) : (
+          <span className="text-xs text-ui/60">-</span>
+        )
+      ),
+    },
+    {
       key: 'createdAt',
       label: 'Fecha',
       render: (r) => (
@@ -204,17 +232,48 @@ function ReportesPageContent() {
                 />
               </div>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los estados</SelectItem>
-                <SelectItem value="nuevo">Nuevo</SelectItem>
-                <SelectItem value="en_revision">En revisión</SelectItem>
-                <SelectItem value="resuelto">Resuelto</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Button
+                variant={statusFilter === 'active' ? 'default' : 'outline'}
+                onClick={() => setStatusFilter('active')}
+                size="sm"
+                className={statusFilter === 'active' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
+              >
+                Activos
+              </Button>
+              <Button
+                variant={statusFilter === 'nuevo' ? 'default' : 'outline'}
+                onClick={() => setStatusFilter('nuevo')}
+                size="sm"
+                className={statusFilter === 'nuevo' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
+              >
+                Nuevo
+              </Button>
+              <Button
+                variant={statusFilter === 'en_revision' ? 'default' : 'outline'}
+                onClick={() => setStatusFilter('en_revision')}
+                size="sm"
+                className={statusFilter === 'en_revision' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
+              >
+                En proceso
+              </Button>
+              <Button
+                variant={statusFilter === 'resuelto' ? 'default' : 'outline'}
+                onClick={() => setStatusFilter('resuelto')}
+                size="sm"
+                className={statusFilter === 'resuelto' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
+              >
+                Resuelto
+              </Button>
+              <Button
+                variant={statusFilter === 'all' ? 'default' : 'outline'}
+                onClick={() => setStatusFilter('all')}
+                size="sm"
+                className={statusFilter === 'all' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
+              >
+                Todos
+              </Button>
+            </div>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Categoría" />
@@ -305,6 +364,15 @@ function ReportesPageContent() {
                 </div>
               )}
 
+              {selectedReport.audioUrl && (
+                <div>
+                  <Label className="text-xs text-ui/60">Nota de voz</Label>
+                  <div className="mt-2">
+                    <AudioPlayer url={selectedReport.audioUrl} />
+                  </div>
+                </div>
+              )}
+
               {selectedReport.context && (
                 <div>
                   <Label className="text-xs text-ui/60">Información técnica</Label>
@@ -346,7 +414,7 @@ function ReportesPageContent() {
                   disabled={updateMutation.isPending || selectedReport.status === 'en_revision'}
                   className={componentStyles.buttons.outline}
                 >
-                  En revisión
+                  En proceso
                 </Button>
                 <Button
                   onClick={() => handleUpdateStatus('resuelto')}

@@ -25,6 +25,7 @@ export interface CreateReportData {
   category: string;
   description: string;
   screenshotUrl?: string | null;
+  audioUrl?: string | null;
   context: any;
 }
 
@@ -45,6 +46,7 @@ export async function createErrorReport(data: CreateReportData): Promise<ErrorRe
       category: data.category,
       description: data.description,
       screenshot_url: data.screenshotUrl || null,
+      audio_url: data.audioUrl || null,
       context: data.context,
       status: 'nuevo'
     })
@@ -172,6 +174,7 @@ function mapToErrorReport(data: any): ErrorReport {
       category: data.category,
       description: data.description,
       screenshotUrl: data.screenshot_url,
+      audioUrl: data.audio_url,
       context: data.context,
       status: data.status,
       adminNotes: data.admin_notes,
