@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import RequireRole from "@/components/auth/RequireRole";
 import UnifiedTable from "@/components/tables/UnifiedTable";
-import { getNombreVisible, useEffectiveUser } from "../components/utils/helpers";
+import { getNombreVisible, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
@@ -38,16 +38,49 @@ function EstudiantesPageContent() {
     cacheTime: 0,
   });
 
+  const { data: asignaciones = [] } = useQuery({
+    queryKey: ['asignaciones'],
+    queryFn: async () => {
+      const asignaciones = await localDataClient.entities.Asignacion.list();
+      return asignaciones;
+    },
+    staleTime: 0,
+    cacheTime: 0,
+  });
+
   // Invalidar query al montar el componente
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ['users'] });
+    queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
   }, [queryClient]);
 
-  // Filtrar solo estudiantes del profesor actual
-  const misEstudiantes = usuarios.filter(u => 
-    u.rolPersonalizado === 'ESTU' && 
-    u.profesorAsignadoId === effectiveUser?.id
-  );
+  // Resolver ID de usuario actual (puede ser UUID de Supabase o ID de BD)
+  const userIdActual = useMemo(() => {
+    return resolveUserIdActual(effectiveUser, usuarios);
+  }, [effectiveUser, usuarios]);
+
+  // Filtrar estudiantes del profesor actual
+  // Incluir estudiantes que tienen:
+  // 1. profesorAsignadoId === userIdActual
+  // 2. O que tienen asignaciones con profesorId === userIdActual
+  const misEstudiantes = useMemo(() => {
+    if (!userIdActual) return [];
+    
+    // Obtener IDs de estudiantes que tienen asignaciones con este profesor
+    const estudiantesIdsDeAsignaciones = new Set(
+      asignaciones
+        .filter(a => a.profesorId === userIdActual)
+        .map(a => a.alumnoId)
+    );
+    
+    // Filtrar estudiantes
+    return usuarios.filter(u => {
+      if (u.rolPersonalizado !== 'ESTU') return false;
+      
+      // Incluir si tiene profesorAsignadoId o si tiene asignaciones
+      return u.profesorAsignadoId === userIdActual || estudiantesIdsDeAsignaciones.has(u.id);
+    });
+  }, [usuarios, asignaciones, userIdActual]);
 
   // Aplicar filtros adicionales
   let estudiantesFiltrados = misEstudiantes;

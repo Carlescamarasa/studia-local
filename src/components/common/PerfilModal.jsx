@@ -227,9 +227,16 @@ export default function PerfilModal({
 
   const updateUserMutation = useMutation({
     mutationFn: async (data) => {
+      if (!targetUser?.id) {
+        throw new Error('No se puede actualizar: usuario no encontrado');
+      }
+      
       if (targetUser?.id === effectiveUser?.id) {
-        await localDataClient.auth.updateMe(data);
+        // Si estamos actualizando nuestro propio perfil, usar updateMe
+        // Pasar el ID del effectiveUser para que funcione en modo Supabase
+        await localDataClient.auth.updateMe(data, effectiveUser?.id || targetUser.id);
       } else {
+        // Actualizar perfil de otro usuario (solo admins)
         await localDataClient.entities.User.update(targetUser.id, data);
       }
     },
@@ -284,7 +291,9 @@ export default function PerfilModal({
       }
 
       if (targetUser.id === effectiveUser?.id) {
-        await localDataClient.auth.updateMe(dataToSave);
+        // Si estamos actualizando nuestro propio perfil, usar updateMe
+        // Pasar el ID del effectiveUser para que funcione en modo Supabase
+        await localDataClient.auth.updateMe(dataToSave, effectiveUser?.id || targetUser.id);
       } else {
         await localDataClient.entities.User.update(targetUser.id, dataToSave);
       }

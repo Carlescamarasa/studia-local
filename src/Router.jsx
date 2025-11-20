@@ -20,6 +20,7 @@ const Perfil = lazy(() => import("@/pages/perfil.jsx"));
 const ImportExport = lazy(() => import("@/pages/import-export.jsx"));
 const Estadisticas = lazy(() => import("@/pages/estadisticas.jsx"));
 const Estudiantes = lazy(() => import("@/pages/estudiantes.jsx"));
+const Calendario = lazy(() => import("@/pages/calendario.jsx"));
 const LocalPage = lazy(() => import("@/pages/local.jsx"));
 const Plantillas = lazy(() => import("@/pages/plantillas.jsx"));
 const Design = lazy(() => import("@/pages/design.jsx"));
@@ -75,6 +76,7 @@ export default function AppRouter() {
           <Route path="import-export" element={<ImportExport />} />
           <Route path="estadisticas" element={<Estadisticas />} />
           <Route path="estudiantes" element={<Estudiantes />} />
+          <Route path="calendario" element={<Calendario />} />
           <Route path="plantillas" element={<Plantillas />} />
           <Route path="design" element={<Design />} />
           <Route path="testseed" element={<Testseed />} />

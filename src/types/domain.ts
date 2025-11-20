@@ -292,3 +292,25 @@ export interface FeedbackSemanal {
 export type CreateFeedbackSemanalInput = Omit<FeedbackSemanal, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateFeedbackSemanalInput = Partial<Omit<FeedbackSemanal, 'id' | 'created_at'>> & { id: string };
 
+/**
+ * Evento del calendario
+ * 
+ * Representa un evento importante del calendario (encuentro, masterclass, colectiva, etc.)
+ * que puede ser creado por ADMIN o PROF y es visible para los roles especificados.
+ */
+export interface EventoCalendario {
+  id: string;
+  titulo: string;
+  descripcion?: string | null;
+  fechaInicio: string; // YYYY-MM-DD
+  fechaFin?: string | null; // YYYY-MM-DD (opcional, para eventos de varios días)
+  tipo: 'encuentro' | 'masterclass' | 'colectiva' | 'otro';
+  creadoPorId: string; // ID del usuario que creó el evento
+  visiblePara: UserRole[]; // Roles que pueden verlo
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreateEventoCalendarioInput = Omit<EventoCalendario, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateEventoCalendarioInput = Partial<Omit<EventoCalendario, 'id' | 'created_at'>> & { id: string };
+

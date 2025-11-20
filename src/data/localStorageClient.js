@@ -88,7 +88,7 @@ export function setEntity(name, items) {
   return saveToStorage(next);
 }
 
-function generateId(entityName) {
+export function generateId(entityName) {
   const prefix = (entityName || 'item').toString().toLowerCase();
   return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }

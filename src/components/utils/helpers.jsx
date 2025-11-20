@@ -258,13 +258,17 @@ export function getEffectiveRole(options = {}) {
   // Priorizar appRole (modo Supabase) sobre currentUser (modo local)
   // En modo Supabase: usar appRole
   if (appRole) {
-    console.log('[getEffectiveRole] Usando appRole:', appRole, 'effectiveUser:', currentUser?.rolPersonalizado);
+    if (process.env.NODE_ENV === 'development' && false) { // Desactivado para reducir logs
+      console.log('[getEffectiveRole] Usando appRole:', appRole, 'effectiveUser:', currentUser?.rolPersonalizado);
+    }
     return appRole;
   }
   
   // En modo local puro (sin Supabase): usar currentUser
   if (currentUser?.rolPersonalizado) {
-    console.log('[getEffectiveRole] Usando effectiveUser (modo local):', currentUser.rolPersonalizado);
+    if (process.env.NODE_ENV === 'development' && false) { // Desactivado para reducir logs
+      console.log('[getEffectiveRole] Usando effectiveUser (modo local):', currentUser.rolPersonalizado);
+    }
     return currentUser.rolPersonalizado;
   }
   
@@ -273,7 +277,9 @@ export function getEffectiveRole(options = {}) {
     try {
       const localUser = getCurrentUser();
       if (localUser?.rolPersonalizado) {
-        console.log('[getEffectiveRole] Usando getCurrentUser() fallback:', localUser.rolPersonalizado);
+        if (process.env.NODE_ENV === 'development' && false) { // Desactivado para reducir logs
+          console.log('[getEffectiveRole] Usando getCurrentUser() fallback:', localUser.rolPersonalizado);
+        }
         return localUser.rolPersonalizado;
       }
     } catch (e) {
@@ -282,7 +288,9 @@ export function getEffectiveRole(options = {}) {
   }
   
   // Fallback final
-  console.log('[getEffectiveRole] Usando fallback ESTU');
+  if (process.env.NODE_ENV === 'development' && false) { // Desactivado para reducir logs
+    console.log('[getEffectiveRole] Usando fallback ESTU');
+  }
   return "ESTU";
 }
 

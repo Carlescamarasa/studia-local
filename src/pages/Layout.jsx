@@ -61,6 +61,7 @@ const navigationByRole = {
     { title: "Asignaciones", url: "/asignaciones", icon: Target, group: "Planificador" },
     { title: "Plantillas", url: "/plantillas", icon: Edit3, group: "Planificador" },
     { title: "Agenda", url: "/agenda", icon: Calendar, group: "Vista" },
+    { title: "Calendario", url: "/calendario", icon: Calendar, group: "Vista" },
     { title: "Estadísticas", url: "/estadisticas", icon: Activity, group: "Vista" },
     { title: "Panel de Diseño", url: "/design", icon: Palette, group: "Admin" },
     { title: "Tests & Seeds", url: "/testseed", icon: Settings, group: "Admin" },
@@ -71,11 +72,13 @@ const navigationByRole = {
     { title: "Asignaciones", url: "/asignaciones", icon: Target, group: "Planificador" },
     { title: "Plantillas", url: "/plantillas", icon: Edit3, group: "Planificador" },
     { title: "Agenda", url: "/agenda", icon: Calendar, group: "Vista" },
+    { title: "Calendario", url: "/calendario", icon: Calendar, group: "Vista" },
     { title: "Estadísticas", url: "/estadisticas", icon: Activity, group: "Vista" },
   ],
   ESTU: [
     { title: "Estudiar Ahora", url: "/hoy", icon: PlayCircle, group: "Estudio" },
     { title: "Mi Semana", url: "/semana", icon: Calendar, group: "Estudio" },
+    { title: "Calendario", url: "/calendario", icon: Calendar, group: "Estudio" },
     { title: "Mis Estadísticas", url: "/estadisticas", icon: Activity, group: "Estudio" },
   ],
 };
@@ -320,10 +323,10 @@ function LayoutContent() {
     staleTime: 10000, // Considerar datos frescos por 10 segundos
   });
   
-  // Debug: verificar el rol calculado
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Layout] Rol efectivo:', userRole, 'EffectiveUser:', effectiveUser?.rolPersonalizado, 'AppRole:', appRole);
-  }
+  // Debug: verificar el rol calculado (desactivado para reducir logs)
+  // if (process.env.NODE_ENV === 'development') {
+  //   console.log('[Layout] Rol efectivo:', userRole, 'EffectiveUser:', effectiveUser?.rolPersonalizado, 'AppRole:', appRole);
+  // }
 
   if (isLoading) {
     return (
@@ -343,6 +346,7 @@ function LayoutContent() {
     '/asignaciones': ['PROF', 'ADMIN'],
     '/plantillas': ['PROF', 'ADMIN'],
     '/agenda': ['PROF', 'ADMIN'],
+    '/calendario': ['ESTU', 'PROF', 'ADMIN'],
     '/hoy': ['ESTU'],
     '/semana': ['ESTU'],
     '/estadisticas': ['ESTU', 'PROF', 'ADMIN'],

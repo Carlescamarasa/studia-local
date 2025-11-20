@@ -8,6 +8,7 @@ import { PlanesAPI } from '@/data/planesClient';
 import { RegistrosBloqueAPI } from '@/data/registrosBloqueClient';
 import { RegistrosSesionAPI } from '@/data/registrosSesionClient';
 import { UsuariosAPI } from '@/data/usuariosClient';
+import { EventosCalendarioAPI } from '@/data/eventosCalendarioClient';
 import { getStoredUserId, setStoredUserId, clearStoredUserId } from '@/data/authClient';
 import { createRemoteDataAPI } from './remoteDataAPI';
 
@@ -20,6 +21,7 @@ let localDataRef = {
   planes: [],
   registrosBloque: [],
   registrosSesion: [],
+  eventosCalendario: [],
   usuarios: localUsers,
   _loading: true,
 };
@@ -103,6 +105,7 @@ const entityToAPIKey = {
   'Plan': 'planes',
   'RegistroBloque': 'registrosBloque',
   'RegistroSesion': 'registrosSesion',
+  'EventoCalendario': 'eventosCalendario',
 };
 
 // Helper para crear entidades con métodos CRUD apoyadas en la capa de datos
@@ -300,27 +303,85 @@ export const localDataClient = {
       sessionStorage.clear();
       return { success: true };
     },
-    updateMe: async (data) => {
-      const currentUser = resolveCurrentUser();
-      if (!currentUser || !currentUser.id) {
+    updateMe: async (data, effectiveUserId = null) => {
+      // Intentar obtener usuario de forma local primero
+      let currentUser = resolveCurrentUser();
+      let userIdToUse = currentUser?.id;
+      
+      // Si se proporciona effectiveUserId, usarlo (útil en modo Supabase)
+      if (effectiveUserId && !userIdToUse) {
+        userIdToUse = effectiveUserId;
+        // Buscar el usuario en datos locales por ID
+        if (!localDataRef._loading) {
+          const foundUser = localDataRef.usuarios.find(u => u.id === effectiveUserId);
+          if (foundUser) {
+            currentUser = foundUser;
+          }
+        }
+      }
+      
+      // Si no hay usuario local pero estamos en modo Supabase, intentar obtener de Supabase
+      if (!currentUser || !userIdToUse) {
+        try {
+          const { supabase } = await import('@/lib/supabaseClient');
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            // Buscar usuario en datos locales por email
+            const normalizedEmail = session.user.email?.toLowerCase().trim();
+            if (normalizedEmail && !localDataRef._loading) {
+              const foundUser = localDataRef.usuarios.find(u => {
+                if (!u.email) return false;
+                return u.email.toLowerCase().trim() === normalizedEmail;
+              });
+              if (foundUser) {
+                currentUser = foundUser;
+                userIdToUse = foundUser.id;
+              } else {
+                // Si no se encuentra en local pero hay sesión de Supabase, usar el ID de Supabase
+                userIdToUse = session.user.id;
+              }
+            } else if (session.user.id) {
+              // Si no hay email pero hay ID, usar el ID de Supabase
+              userIdToUse = session.user.id;
+            }
+          }
+        } catch (e) {
+          // Si hay error importando supabase, continuar con el flujo normal
+        }
+      }
+      
+      if (!userIdToUse) {
         throw new Error('No hay usuario autenticado');
       }
       
       const api = getDataAPI();
       if (api && api.usuarios) {
         // Modo remote: usar API remota
-        return await api.usuarios.update(currentUser.id, data);
+        return await api.usuarios.update(userIdToUse, data);
       }
       
       // Modo local: usar código existente
-      const updated = { ...currentUser, ...data };
-      const index = localDataRef.usuarios.findIndex(u => u.id === currentUser.id);
-      if (index !== -1) {
-        localDataRef.usuarios[index] = updated;
-        // Persistir también en la capa de datos
-        await UsuariosAPI.updateUsuario(currentUser.id, data);
+      if (currentUser) {
+        const updated = { ...currentUser, ...data };
+        const index = localDataRef.usuarios.findIndex(u => u.id === userIdToUse);
+        if (index !== -1) {
+          localDataRef.usuarios[index] = updated;
+          // Persistir también en la capa de datos
+          await UsuariosAPI.updateUsuario(userIdToUse, data);
+        }
+        return updated;
+      } else {
+        // Si no tenemos currentUser pero tenemos userIdToUse, intentar actualizar directamente
+        const index = localDataRef.usuarios.findIndex(u => u.id === userIdToUse);
+        if (index !== -1) {
+          const existingUser = localDataRef.usuarios[index];
+          const updated = { ...existingUser, ...data };
+          localDataRef.usuarios[index] = updated;
+          await UsuariosAPI.updateUsuario(userIdToUse, data);
+          return updated;
+        }
+        throw new Error('No hay usuario autenticado');
       }
-      return updated;
     },
   },
   entities: {
@@ -473,6 +534,7 @@ export const localDataClient = {
     Plan: createEntityAPI('Plan', 'planes', () => PlanesAPI.getAllPlanes()),
     RegistroBloque: createEntityAPI('RegistroBloque', 'registrosBloque', () => RegistrosBloqueAPI.getAllRegistrosBloque()),
     RegistroSesion: createEntityAPI('RegistroSesion', 'registrosSesion', () => RegistrosSesionAPI.getAllRegistrosSesion()),
+    EventoCalendario: createEntityAPI('EventoCalendario', 'eventosCalendario', () => EventosCalendarioAPI.getAllEventosCalendario()),
   },
 };
 

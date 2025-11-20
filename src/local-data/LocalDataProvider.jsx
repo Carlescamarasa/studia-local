@@ -83,6 +83,7 @@ export function LocalDataProvider({ children }) {
     planes: [],
     registrosBloque: [],
     registrosSesion: [],
+    eventosCalendario: [],
     usuarios: localUsers,
     loading: true,
   });
@@ -110,6 +111,7 @@ export function LocalDataProvider({ children }) {
             planes: JSON.parse(localStorage.getItem('local_planes') || '[]'),
             registrosBloque: JSON.parse(localStorage.getItem('local_registrosBloque') || '[]'),
             registrosSesion: JSON.parse(localStorage.getItem('local_registrosSesion') || '[]'),
+            eventosCalendario: JSON.parse(localStorage.getItem('local_eventosCalendario') || '[]'),
             usuarios: localUsers,
           };
 
@@ -124,6 +126,7 @@ export function LocalDataProvider({ children }) {
             planes: [],
             registrosBloque: [],
             registrosSesion: [],
+            eventosCalendario: [],
             usuarios: localUsers,
           };
         }
@@ -145,6 +148,7 @@ export function LocalDataProvider({ children }) {
           planes: stored.planes || [],
           registrosBloque: stored.registrosBloque || [],
           registrosSesion: stored.registrosSesion || [],
+          eventosCalendario: stored.eventosCalendario || [],
           usuarios: normalizedUsuarios,
           loading: false,
         };

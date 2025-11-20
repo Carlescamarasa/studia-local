@@ -622,6 +622,20 @@ function HoyPageContent() {
     }
   }, [mostrarItinerario, sesionActiva]);
 
+  // Escuchar eventos del modal de reportes
+  useEffect(() => {
+    const handleReportModalOpened = () => setReportModalAbierto(true);
+    const handleReportModalClosed = () => setReportModalAbierto(false);
+    
+    window.addEventListener('report-modal-opened', handleReportModalOpened);
+    window.addEventListener('report-modal-closed', handleReportModalClosed);
+    
+    return () => {
+      window.removeEventListener('report-modal-opened', handleReportModalOpened);
+      window.removeEventListener('report-modal-closed', handleReportModalClosed);
+    };
+  }, []);
+
   // Pausar/reanudar cronómetro cuando se abren/cierran modales
   useEffect(() => {
     const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || mostrarAyuda || mediaFullscreen || reportModalAbierto;
@@ -2256,16 +2270,3 @@ function HoyPageContent() {
   );
 }
 
-// Escuchar eventos del modal de reportes
-useEffect(() => {
-  const handleReportModalOpened = () => setReportModalAbierto(true);
-  const handleReportModalClosed = () => setReportModalAbierto(false);
-  
-  window.addEventListener('report-modal-opened', handleReportModalOpened);
-  window.addEventListener('report-modal-closed', handleReportModalClosed);
-  
-  return () => {
-    window.removeEventListener('report-modal-opened', handleReportModalOpened);
-    window.removeEventListener('report-modal-closed', handleReportModalClosed);
-  };
-}, []);
