@@ -37,16 +37,88 @@ export default function LoginPage() {
     }
   }, []);
 
+  // Validar formato de email
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Obtener mensaje de error específico
+  const getErrorMessage = (error) => {
+    if (!error) return 'Error al iniciar sesión. Verifica tus credenciales.';
+    
+    const errorMessage = error.message?.toLowerCase() || '';
+    const errorCode = error.code || error.status || '';
+    
+    // Email inválido
+    if (errorMessage.includes('invalid email') || errorMessage.includes('email format')) {
+      return 'El formato del email no es válido. Por favor, verifica tu dirección de correo.';
+    }
+    
+    // Credenciales inválidas
+    if (errorMessage.includes('invalid login credentials') || 
+        errorMessage.includes('invalid credentials') ||
+        errorCode === 'invalid_credentials' ||
+        error.status === 400) {
+      return 'Email o contraseña incorrectos. Verifica tus credenciales e intenta de nuevo.';
+    }
+    
+    // Email no confirmado
+    if (errorMessage.includes('email not confirmed') || 
+        errorMessage.includes('email_not_confirmed')) {
+      return 'Por favor, confirma tu email antes de iniciar sesión. Revisa tu bandeja de entrada.';
+    }
+    
+    // Contraseña débil
+    if (errorMessage.includes('password') && errorMessage.includes('weak')) {
+      return 'La contraseña es demasiado débil. Por favor, usa una contraseña más segura.';
+    }
+    
+    // Usuario no encontrado
+    if (errorMessage.includes('user not found') || 
+        errorMessage.includes('no user found')) {
+      return 'No se encontró una cuenta con este email. Verifica tu dirección de correo.';
+    }
+    
+    // Error de red/conexión
+    if (errorMessage.includes('network') || 
+        errorMessage.includes('fetch') ||
+        errorMessage.includes('connection')) {
+      return 'Error de conexión. Por favor, verifica tu conexión a internet e intenta de nuevo.';
+    }
+    
+    // Error genérico
+    return error.message || 'Error al iniciar sesión. Verifica tus credenciales e intenta de nuevo.';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validar email
+    if (!email.trim()) {
+      toast.error('Por favor, introduce tu dirección de email.');
+      return;
+    }
+    
+    if (!validateEmail(email)) {
+      toast.error('El formato del email no es válido. Por favor, verifica tu dirección de correo.');
+      return;
+    }
+    
+    // Validar contraseña
+    if (!password.trim()) {
+      toast.error('Por favor, introduce tu contraseña.');
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
-      await signIn(email, password);
+      await signIn(email.trim(), password);
       
       // Guardar o eliminar email según el checkbox
       if (rememberMe) {
-        localStorage.setItem(REMEMBER_EMAIL_KEY, email);
+        localStorage.setItem(REMEMBER_EMAIL_KEY, email.trim());
         localStorage.setItem(REMEMBER_EMAIL_ENABLED_KEY, 'true');
       } else {
         localStorage.removeItem(REMEMBER_EMAIL_KEY);
@@ -58,7 +130,8 @@ export default function LoginPage() {
       navigate('/', { replace: true });
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
-      toast.error(error.message || 'Error al iniciar sesión. Verifica tus credenciales.');
+      const errorMessage = getErrorMessage(error);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -109,7 +182,7 @@ export default function LoginPage() {
           }}
         >
           <CardHeader className={componentStyles.auth.loginHeader}>
-            {/* Logo con efecto visual mejorado */}
+            {/* 1. Logo con efecto visual mejorado */}
             <div className={componentStyles.auth.loginLogoContainer}>
               <div 
                 className={componentStyles.auth.loginLogoWrapper}
@@ -133,7 +206,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Título y subtítulo */}
+            {/* 2. Título */}
             <div className={componentStyles.auth.loginTitleContainer}>
               <CardTitle 
                 className={`${componentStyles.typography.pageTitle} text-center`}
@@ -141,15 +214,17 @@ export default function LoginPage() {
               >
                 {appName}
               </CardTitle>
-              <p 
-                className={`${componentStyles.typography.pageSubtitle} text-center`}
-                style={{ color: 'var(--color-text-secondary)' }}
-              >
-                Inicia sesión para continuar
-              </p>
             </div>
 
-            {/* Indicador decorativo */}
+            {/* 3. Slogan */}
+            <p 
+              className={`${componentStyles.typography.pageSubtitle} text-center`}
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              Cuando quieras, porque puedes.
+            </p>
+
+            {/* 4. Separador decorativo */}
             <div className={componentStyles.auth.loginDivider}>
               <div 
                 className={componentStyles.auth.loginDividerLine}
@@ -164,6 +239,14 @@ export default function LoginPage() {
                 style={{ background: primaryColor }}
               />
             </div>
+
+            {/* 5. Mensaje de inicio de sesión */}
+            <p 
+              className="text-base sm:text-base md:text-base text-ui/80 leading-relaxed font-base text-center"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              Inicia sesión para continuar
+            </p>
           </CardHeader>
 
           <CardContent className="px-8 pb-8">
