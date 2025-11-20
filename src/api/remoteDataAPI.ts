@@ -334,6 +334,10 @@ function normalizeSupabaseUser(user: any, email?: string): any {
     nombreCompleto = `Usuario ${user.id || 'Nuevo'}`;
   }
 
+  // Obtener profesor_asignado_id - puede estar como profesorAsignadoId (después de snakeToCamel) 
+  // o como profesor_asignado_id (directo de Supabase)
+  const profesorAsignadoId = user.profesorAsignadoId || user.profesor_asignado_id || null;
+  
   // Retornar usuario normalizado con todos los campos necesarios
   return {
     ...user,
@@ -343,8 +347,8 @@ function normalizeSupabaseUser(user: any, email?: string): any {
     full_name: fullName || nombreCompleto, // Mantener full_name
     // Email: usar el proporcionado o el que ya está en el usuario
     email: email || user.email || '',
-    // Profesor asignado (ya está en camelCase como profesorAsignadoId)
-    profesorAsignadoId: user.profesorAsignadoId || null,
+    // Profesor asignado - asegurar que esté en camelCase
+    profesorAsignadoId: profesorAsignadoId,
     // Estado (mapear isActive a estado si es necesario)
     estado: user.isActive !== false ? 'activo' : 'inactivo',
     isActive: user.isActive !== false,

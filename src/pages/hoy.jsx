@@ -967,11 +967,6 @@ function HoyPageContent() {
 
     const ejercicioActual = listaEjecucion[indiceActual];
     
-        mediaLinks: ejercicioActual.mediaLinks,
-        todasLasPropiedades: Object.keys(ejercicioActual)
-      });
-    }
-    
     // Validar que ejercicioActual existe (doble validación)
     if (!ejercicioActual) {
       return (

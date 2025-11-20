@@ -120,10 +120,26 @@ export default function PerfilModal({
   };
 
   // Filtrar usuarios con rol PROF o ADMIN para el selector de profesores
+  // También incluir el profesor asignado si existe, aunque no esté en la lista filtrada
   const profesores = React.useMemo(() => {
     if (!allUsers || !Array.isArray(allUsers)) return [];
-    return allUsers.filter(u => u.rolPersonalizado === 'PROF' || u.rolPersonalizado === 'ADMIN');
-  }, [allUsers]);
+    const profesoresFiltrados = allUsers.filter(u => u.rolPersonalizado === 'PROF' || u.rolPersonalizado === 'ADMIN');
+    
+    // Si hay un profesor asignado que no está en la lista, añadirlo
+    if (targetUser?.profesorAsignadoId) {
+      const profesorAsignado = allUsers.find(u => {
+        const idNormalizado = String(u.id).trim();
+        const profesorIdNormalizado = String(targetUser.profesorAsignadoId).trim();
+        return idNormalizado === profesorIdNormalizado;
+      });
+      
+      if (profesorAsignado && !profesoresFiltrados.find(p => String(p.id).trim() === String(profesorAsignado.id).trim())) {
+        profesoresFiltrados.push(profesorAsignado);
+      }
+    }
+    
+    return profesoresFiltrados;
+  }, [allUsers, targetUser?.profesorAsignadoId]);
 
   // Extraer código de país del teléfono si existe
   const extractCountryCodeFromPhone = (phone) => {
@@ -360,7 +376,12 @@ export default function PerfilModal({
     const profesorAsignadoChanged = editedData.profesorAsignadoId !== (targetUser?.profesorAsignadoId || null);
     if (profesorAsignadoChanged && editedData.profesorAsignadoId) {
       // Verificar que el profesor asignado realmente tenga rol PROF o ADMIN
-      const profesor = profesores.find(p => p.id === editedData.profesorAsignadoId);
+      // Normalizar IDs para comparación
+      const profesorIdNormalizado = String(editedData.profesorAsignadoId).trim();
+      const profesor = profesores.find(p => {
+        const profIdNormalizado = String(p.id).trim();
+        return profIdNormalizado === profesorIdNormalizado;
+      });
       if (!profesor) {
         setSaveResult({ success: false, message: '❌ El profesor asignado debe tener rol de Profesor o Administrador' });
         toast.error('El profesor asignado debe tener rol de Profesor o Administrador');
@@ -569,7 +590,12 @@ export default function PerfilModal({
                           <SelectTrigger id="profesorAsignado" className={componentStyles.controls.selectDefault}>
                             <SelectValue placeholder="Sin asignar">
                               {editedData.profesorAsignadoId ? (() => {
-                                const prof = profesores.find(p => p.id === editedData.profesorAsignadoId);
+                                // Normalizar IDs para comparación (pueden venir como string o UUID)
+                                const profesorIdNormalizado = String(editedData.profesorAsignadoId).trim();
+                                const prof = profesores.find(p => {
+                                  const profIdNormalizado = String(p.id).trim();
+                                  return profIdNormalizado === profesorIdNormalizado;
+                                });
                                 return prof ? getNombreCompleto(prof) : "Sin asignar";
                               })() : "Sin asignar"}
                             </SelectValue>
@@ -589,7 +615,12 @@ export default function PerfilModal({
                         <Input
                           id="profesorAsignado"
                           value={editedData.profesorAsignadoId ? (() => {
-                            const prof = profesores.find(p => p.id === editedData.profesorAsignadoId);
+                            // Normalizar IDs para comparación
+                            const profesorIdNormalizado = String(editedData.profesorAsignadoId).trim();
+                            const prof = profesores.find(p => {
+                              const profIdNormalizado = String(p.id).trim();
+                              return profIdNormalizado === profesorIdNormalizado;
+                            });
                             return prof ? getNombreCompleto(prof) : 'Sin asignar';
                           })() : 'Sin asignar'}
                           disabled
