@@ -336,7 +336,18 @@ function normalizeSupabaseUser(user: any, email?: string): any {
 
   // Obtener profesor_asignado_id - puede estar como profesorAsignadoId (después de snakeToCamel) 
   // o como profesor_asignado_id (directo de Supabase)
-  const profesorAsignadoId = user.profesorAsignadoId || user.profesor_asignado_id || null;
+  let profesorAsignadoId = user.profesorAsignadoId || user.profesor_asignado_id || null;
+  
+  // Validar que profesorAsignadoId sea un UUID válido (en Supabase debe ser UUID)
+  // Si no es UUID válido, establecer como null para evitar errores
+  if (profesorAsignadoId) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(String(profesorAsignadoId).trim())) {
+      // Si no es un UUID válido (por ejemplo, es un ID de MongoDB), ignorarlo
+      // Esto puede pasar si hay datos locales mezclados con datos de Supabase
+      profesorAsignadoId = null;
+    }
+  }
   
   // Retornar usuario normalizado con todos los campos necesarios
   return {
@@ -347,7 +358,7 @@ function normalizeSupabaseUser(user: any, email?: string): any {
     full_name: fullName || nombreCompleto, // Mantener full_name
     // Email: usar el proporcionado o el que ya está en el usuario
     email: email || user.email || '',
-    // Profesor asignado - asegurar que esté en camelCase
+    // Profesor asignado - asegurar que esté en camelCase y sea UUID válido
     profesorAsignadoId: profesorAsignadoId,
     // Estado (mapear isActive a estado si es necesario)
     estado: user.isActive !== false ? 'activo' : 'inactivo',

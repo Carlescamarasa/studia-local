@@ -106,10 +106,19 @@ export default function PerfilModal({
     queryKey: ['targetUser', userId],
     queryFn: async () => {
       if (userId && effectiveUser?.rolPersonalizado === 'ADMIN') {
+        // Buscar usuario específico por ID
         const users = await localDataClient.entities.User.list();
         return users.find(u => u.id === userId);
       }
-      return effectiveUser;
+      // Para el usuario actual, intentar obtener desde la lista completa para asegurar datos actualizados
+      const users = await localDataClient.entities.User.list();
+      const userFromList = users.find(u => {
+        // Buscar por ID o email para asegurar que encontramos el usuario correcto
+        if (u.id === effectiveUser?.id) return true;
+        if (effectiveUser?.email && u.email && u.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim()) return true;
+        return false;
+      });
+      return userFromList || effectiveUser;
     },
     enabled: open,
   });
