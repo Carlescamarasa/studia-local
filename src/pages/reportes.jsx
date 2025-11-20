@@ -7,13 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Bug, Search, Eye, CheckCircle, Clock, XCircle, Image as ImageIcon } from 'lucide-react';
+import { Bug, Search, Eye, CheckCircle, Clock, XCircle, Image as ImageIcon, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import RequireRole from '@/components/auth/RequireRole';
 import UnifiedTable from '@/components/tables/UnifiedTable';
 import PageHeader from '@/components/ds/PageHeader';
 import { componentStyles } from '@/design/componentStyles';
-import { listErrorReports, updateErrorReport } from '@/api/errorReportsAPI';
+import { listErrorReports, updateErrorReport, updateMultipleErrorReports } from '@/api/errorReportsAPI';
 import { useAuth } from '@/auth/AuthProvider';
 import AudioPlayer from '@/components/common/AudioPlayer';
 
@@ -23,6 +23,14 @@ const CATEGORY_LABELS = {
   no_encuentro: 'No encuentro lo que busco',
   sugerencia: 'Me gustaría que hubiera...',
   otro: 'Otro',
+};
+
+const CATEGORY_VARIANTS = {
+  algo_no_funciona: 'danger',    // Error crítico - rojo
+  se_ve_mal: 'warning',          // Problema de diseño - amarillo
+  no_encuentro: 'info',          // Navegación - azul
+  sugerencia: 'success',         // Mejora positiva - verde
+  otro: 'outline',               // Genérico - outline
 };
 
 const STATUS_LABELS = {
@@ -94,6 +102,33 @@ function ReportesPageContent() {
     },
   });
 
+  const bulkUpdateMutation = useMutation({
+    mutationFn: ({ ids, updates }) => updateMultipleErrorReports(ids, updates),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['error-reports'] });
+      toast.success(`${variables.ids.length} reporte(s) actualizado(s) correctamente`);
+    },
+    onError: (error) => {
+      console.error('[ReportesPage] Error actualizando reportes:', {
+        error: error?.message || error,
+        code: error?.code,
+      });
+      toast.error('Error al actualizar los reportes');
+    },
+  });
+
+  const handleBulkUpdateStatus = (status) => {
+    return (selectedIds) => {
+      bulkUpdateMutation.mutate({
+        ids: selectedIds,
+        updates: {
+          status,
+          resolvedBy: status === 'resuelto' ? user?.id || null : null,
+        },
+      });
+    };
+  };
+
   const handleViewReport = (report) => {
     setSelectedReport(report);
     setAdminNotes(report.adminNotes || '');
@@ -129,7 +164,7 @@ function ReportesPageContent() {
       key: 'category',
       label: 'Categoría',
       render: (r) => (
-        <Badge variant="info">
+        <Badge variant={CATEGORY_VARIANTS[r.category] || 'outline'}>
           {CATEGORY_LABELS[r.category] || r.category}
         </Badge>
       ),
@@ -299,6 +334,25 @@ function ReportesPageContent() {
             <UnifiedTable
               data={reportsFiltrados}
               columns={columns}
+              selectable={true}
+              keyField="id"
+              bulkActions={[
+                {
+                  label: 'Marcar como nuevo',
+                  icon: XCircle,
+                  onClick: handleBulkUpdateStatus('nuevo'),
+                },
+                {
+                  label: 'Marcar como en proceso',
+                  icon: Clock,
+                  onClick: handleBulkUpdateStatus('en_revision'),
+                },
+                {
+                  label: 'Marcar como resuelto',
+                  icon: CheckCircle,
+                  onClick: handleBulkUpdateStatus('resuelto'),
+                },
+              ]}
             />
           )}
         </CardContent>

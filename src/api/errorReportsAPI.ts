@@ -165,6 +165,47 @@ export async function updateErrorReport(
 }
 
 /**
+ * Actualizar múltiples reportes (solo para admins)
+ */
+export async function updateMultipleErrorReports(
+  ids: string[],
+  updates: UpdateReportData
+): Promise<ErrorReport[]> {
+  const updateData: any = {};
+  
+  if (updates.status !== undefined) {
+    updateData.status = updates.status;
+  }
+  if (updates.adminNotes !== undefined) {
+    updateData.admin_notes = updates.adminNotes;
+  }
+  if (updates.resolvedBy !== undefined) {
+    updateData.resolved_by = updates.resolvedBy;
+    if (updates.resolvedBy && updates.status === 'resuelto') {
+      updateData.resolved_at = new Date().toISOString();
+    } else if (!updates.resolvedBy) {
+      updateData.resolved_at = null;
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('error_reports')
+    .update(updateData)
+    .in('id', ids)
+    .select();
+
+  if (error) {
+    console.error('[errorReportsAPI] Error actualizando múltiples reportes:', {
+      error: error?.message || error,
+      code: error?.code,
+    });
+    throw error;
+  }
+
+  return (data || []).map(mapToErrorReport);
+}
+
+/**
  * Mapear datos de Supabase (snake_case) a ErrorReport (camelCase)
  */
 function mapToErrorReport(data: any): ErrorReport {
