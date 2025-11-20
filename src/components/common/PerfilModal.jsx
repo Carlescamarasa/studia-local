@@ -102,7 +102,7 @@ export default function PerfilModal({
     enabled: open,
   });
 
-  const { data: targetUser, isLoading } = useQuery({
+  const { data: targetUser, isLoading, refetch: refetchTargetUser } = useQuery({
     queryKey: ['targetUser', userId],
     queryFn: async () => {
       if (userId && effectiveUser?.rolPersonalizado === 'ADMIN') {
@@ -234,17 +234,42 @@ export default function PerfilModal({
       if (targetUser?.id === effectiveUser?.id) {
         // Si estamos actualizando nuestro propio perfil, usar updateMe
         // Pasar el ID del effectiveUser para que funcione en modo Supabase
-        await localDataClient.auth.updateMe(data, effectiveUser?.id || targetUser.id);
+        const updated = await localDataClient.auth.updateMe(data, effectiveUser?.id || targetUser.id);
+        return updated; // Retornar el usuario actualizado
       } else {
         // Actualizar perfil de otro usuario (solo admins)
-        await localDataClient.entities.User.update(targetUser.id, data);
+        const updated = await localDataClient.entities.User.update(targetUser.id, data);
+        return updated; // Retornar el usuario actualizado
       }
     },
-    onSuccess: async () => {
+    onSuccess: async (updatedUser) => {
+      // Actualizar el cache directamente con el usuario actualizado
+      if (updatedUser) {
+        queryClient.setQueryData(['targetUser', userId], updatedUser);
+        
+        // Si estamos actualizando nuestro propio perfil, también actualizar la lista de usuarios
+        if (targetUser?.id === effectiveUser?.id) {
+          // Actualizar el usuario en la lista de usuarios
+          queryClient.setQueryData(['allUsers'], (oldData) => {
+            if (!oldData) return oldData;
+            return oldData.map(u => u.id === updatedUser.id ? updatedUser : u);
+          });
+          queryClient.setQueryData(['users'], (oldData) => {
+            if (!oldData) return oldData;
+            return oldData.map(u => u.id === updatedUser.id ? updatedUser : u);
+          });
+        }
+      }
+      
+      // Invalidar todas las queries relacionadas para forzar refetch
       await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      await queryClient.invalidateQueries({ queryKey: ['targetUser'] });
+      await queryClient.invalidateQueries({ queryKey: ['targetUser', userId] });
       await queryClient.invalidateQueries({ queryKey: ['users'] });
       await queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      
+      // Refetch explícito del targetUser para obtener los datos actualizados
+      await refetchTargetUser();
+      await queryClient.refetchQueries({ queryKey: ['allUsers'] });
       
       setSaveResult({ success: true, message: '✅ Usuario actualizado correctamente.' });
       toast.success('Perfil actualizado correctamente.');
