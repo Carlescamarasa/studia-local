@@ -28,6 +28,7 @@ const TestLoading = lazy(() => import("@/pages/test-loading.jsx"));
 const Layout = lazy(() => import("@/pages/Layout.jsx"));
 const QAVisualPage = lazy(() => import("@/pages/qa-visual.jsx"));
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage.jsx"));
+const ResetPasswordPage = lazy(() => import("@/pages/auth/ResetPasswordPage.jsx"));
 
 // Componente de carga
 const PageLoader = () => (
@@ -43,8 +44,9 @@ export default function AppRouter() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        {/* Ruta pública: login */}
+        {/* Rutas públicas */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         
         {/* Rutas protegidas: todas requieren autenticación */}
         <Route

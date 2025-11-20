@@ -370,6 +370,19 @@ export function AuthProvider({ children }) {
     await signOut();
   }, [signOut]);
 
+  // Función para recuperar contraseña
+  const resetPassword = useCallback(async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return true;
+  }, []);
+
   // Usar useMemo para estabilizar el valor del contexto
   const value = useMemo(() => ({
     user,
@@ -380,7 +393,8 @@ export function AuthProvider({ children }) {
     signOut,
     checkSession,
     handleAuthError,
-  }), [user, profile, appRole, loading, signIn, signOut, checkSession, handleAuthError]);
+    resetPassword,
+  }), [user, profile, appRole, loading, signIn, signOut, checkSession, handleAuthError, resetPassword]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ds';
 import { componentStyles } from '@/design/componentStyles';
 import { useDesign } from '@/components/design/DesignProvider';
 import { toast } from 'sonner';
-import { LogIn, Music } from 'lucide-react';
+import { LogIn, Music, Mail, ArrowLeft } from 'lucide-react';
 import logoLTS from '@/assets/Logo_LTS.png';
 import { getAppName } from '@/components/utils/appMeta';
 
@@ -21,7 +21,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
+  const { signIn, resetPassword } = useAuth();
   const navigate = useNavigate();
   const appName = getAppName();
   const { design } = useDesign();
@@ -134,6 +137,42 @@ export default function LoginPage() {
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    
+    if (!resetEmail.trim()) {
+      toast.error('Por favor, introduce tu dirección de email.');
+      return;
+    }
+    
+    if (!validateEmail(resetEmail)) {
+      toast.error('El formato del email no es válido.');
+      return;
+    }
+    
+    setIsResetting(true);
+    
+    try {
+      await resetPassword(resetEmail.trim());
+      toast.success('Se ha enviado un enlace de recuperación a tu email. Revisa tu bandeja de entrada.');
+      setShowForgotPassword(false);
+      setResetEmail('');
+    } catch (error) {
+      console.error('Error al enviar email de recuperación:', error);
+      const errorMessage = error.message?.toLowerCase() || '';
+      
+      if (errorMessage.includes('user not found')) {
+        toast.error('No se encontró una cuenta con este email.');
+      } else if (errorMessage.includes('email')) {
+        toast.error('Error al enviar el email. Verifica tu dirección de correo.');
+      } else {
+        toast.error('Error al enviar el email de recuperación. Intenta de nuevo más tarde.');
+      }
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -250,76 +289,150 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent className="px-8 pb-8">
-            <form onSubmit={handleSubmit} className={componentStyles.auth.loginForm}>
-              {/* Campo Email */}
-              <div className={componentStyles.form.field}>
-                <Label 
-                  htmlFor="email" 
-                  className={componentStyles.form.fieldLabel}
-                >
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="tu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  autoComplete="email"
-                  className={`${componentStyles.controls.inputDefault} w-full`}
-                />
-              </div>
+            {!showForgotPassword ? (
+              <>
+                <form onSubmit={handleSubmit} className={componentStyles.auth.loginForm}>
+                  {/* Campo Email */}
+                  <div className={componentStyles.form.field}>
+                    <Label 
+                      htmlFor="email" 
+                      className={componentStyles.form.fieldLabel}
+                    >
+                      Email
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="tu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      autoComplete="email"
+                      className={`${componentStyles.controls.inputDefault} w-full`}
+                    />
+                  </div>
 
-              {/* Campo Contraseña */}
-              <div className={componentStyles.form.field}>
-                <Label 
-                  htmlFor="password" 
-                  className={componentStyles.form.fieldLabel}
-                >
-                  Contraseña
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  autoComplete="current-password"
-                  className={`${componentStyles.controls.inputDefault} w-full`}
-                />
-              </div>
+                  {/* Campo Contraseña */}
+                  <div className={componentStyles.form.field}>
+                    <Label 
+                      htmlFor="password" 
+                      className={componentStyles.form.fieldLabel}
+                    >
+                      Contraseña
+                    </Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      autoComplete="current-password"
+                      className={`${componentStyles.controls.inputDefault} w-full`}
+                    />
+                  </div>
 
-              {/* Checkbox Recordar inicio de sesión */}
-              <div className="flex items-center space-x-2 mt-4">
-                <Checkbox
-                  id="rememberMe"
-                  checked={rememberMe}
-                  onCheckedChange={(checked) => setRememberMe(checked)}
-                  disabled={isLoading}
-                />
-                <Label
-                  htmlFor="rememberMe"
-                  className="cursor-pointer font-medium text-ui text-sm"
-                >
-                  Recordar inicio de sesión
-                </Label>
-              </div>
+                  {/* Enlace "Olvidé mi contraseña" */}
+                  <div className="flex justify-end mt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForgotPassword(true);
+                        setResetEmail(email); // Pre-llenar con el email del login
+                      }}
+                      className="text-sm text-ui/60 hover:text-ui font-medium transition-colors"
+                      disabled={isLoading}
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  </div>
 
-              {/* Botón de submit */}
-              <Button
-                type="submit"
-                className={`${componentStyles.buttons.primary} w-full mt-6`}
-                loading={isLoading}
-                loadingText="Iniciando sesión..."
-              >
-                <LogIn className="w-5 h-5 mr-2" />
-                Iniciar sesión
-              </Button>
-            </form>
+                  {/* Checkbox Recordar inicio de sesión */}
+                  <div className="flex items-center space-x-2 mt-4">
+                    <Checkbox
+                      id="rememberMe"
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(checked)}
+                      disabled={isLoading}
+                    />
+                    <Label
+                      htmlFor="rememberMe"
+                      className="cursor-pointer font-medium text-ui text-sm"
+                    >
+                      Recordar inicio de sesión
+                    </Label>
+                  </div>
+
+                  {/* Botón de submit */}
+                  <Button
+                    type="submit"
+                    className={`${componentStyles.buttons.primary} w-full mt-6`}
+                    loading={isLoading}
+                    loadingText="Iniciando sesión..."
+                  >
+                    <LogIn className="w-5 h-5 mr-2" />
+                    Iniciar sesión
+                  </Button>
+                </form>
+              </>
+            ) : (
+              <div className={componentStyles.auth.loginForm}>
+                <div className="mb-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setResetEmail('');
+                    }}
+                    className="flex items-center text-sm text-ui/60 hover:text-ui transition-colors mb-4"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Volver al inicio de sesión
+                  </button>
+                  
+                  <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--color-text-primary)' }}>
+                    Recuperar contraseña
+                  </h3>
+                  <p className="text-sm text-ui/60" style={{ color: 'var(--color-text-secondary)' }}>
+                    Introduce tu email y te enviaremos un enlace para restablecer tu contraseña.
+                  </p>
+                </div>
+
+                <form onSubmit={handleForgotPassword}>
+                  <div className={componentStyles.form.field}>
+                    <Label 
+                      htmlFor="resetEmail" 
+                      className={componentStyles.form.fieldLabel}
+                    >
+                      Email
+                    </Label>
+                    <Input
+                      id="resetEmail"
+                      type="email"
+                      placeholder="tu@email.com"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      required
+                      disabled={isResetting}
+                      autoComplete="email"
+                      className={`${componentStyles.controls.inputDefault} w-full`}
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className={`${componentStyles.buttons.primary} w-full mt-6`}
+                    loading={isResetting}
+                    loadingText="Enviando..."
+                  >
+                    <Mail className="w-5 h-5 mr-2" />
+                    Enviar enlace de recuperación
+                  </Button>
+                </form>
+              </div>
+            )}
 
             {/* Footer decorativo */}
             <div className={componentStyles.auth.loginFooter}>
