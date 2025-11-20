@@ -57,3 +57,4 @@ Asegúrate de tener configuradas en Supabase Dashboard:
 - **ADMIN**: Puede realizar acciones sobre cualquier usuario
 - **PROF**: Solo puede realizar acciones sobre sus estudiantes asignados (verificado por `profesor_asignado_id`)
 
+
