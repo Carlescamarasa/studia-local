@@ -422,11 +422,19 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
 
   // Bloquear todos los hotkeys cuando el modal está abierto
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      // Emitir evento cuando el modal se cierra
+      window.dispatchEvent(new CustomEvent('report-modal-closed'));
+      return;
+    }
+
+    // Emitir evento cuando el modal se abre
+    window.dispatchEvent(new CustomEvent('report-modal-opened'));
 
     const handleKeyDown = (e) => {
       // Permitir Escape para cerrar el modal
       if (e.key === 'Escape') {
+        // No bloquear Escape, pero asegurarse de que el modal se cierre
         return;
       }
       
@@ -441,16 +449,18 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         return;
       }
 
-      // Bloquear todos los demás hotkeys
+      // Bloquear todos los demás hotkeys de forma agresiva
+      e.stopImmediatePropagation();
       e.stopPropagation();
       e.preventDefault();
     };
 
-    // Usar capture phase para interceptar antes que otros handlers
-    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    // Usar capture phase con alta prioridad para interceptar antes que otros handlers
+    window.addEventListener('keydown', handleKeyDown, { capture: true, passive: false });
     
     return () => {
       window.removeEventListener('keydown', handleKeyDown, { capture: true });
+      window.dispatchEvent(new CustomEvent('report-modal-closed'));
     };
   }, [open]);
 
