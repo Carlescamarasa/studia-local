@@ -356,7 +356,9 @@ export default function PerfilModal({
       return;
     }
 
-    if (editedData.profesorAsignadoId) {
+    // Solo validar profesor asignado si realmente se está cambiando
+    const profesorAsignadoChanged = editedData.profesorAsignadoId !== (targetUser?.profesorAsignadoId || null);
+    if (profesorAsignadoChanged && editedData.profesorAsignadoId) {
       // Verificar que el profesor asignado realmente tenga rol PROF o ADMIN
       const profesor = profesores.find(p => p.id === editedData.profesorAsignadoId);
       if (!profesor) {

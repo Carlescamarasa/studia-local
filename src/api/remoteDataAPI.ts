@@ -675,6 +675,37 @@ export function createRemoteDataAPI(): AppDataAPI {
           throw error;
         }
         
+        // Sincronizar full_name con auth.users si se actualizó
+        if (updates.nombreCompleto !== undefined) {
+          try {
+            // Actualizar raw_user_meta_data en auth.users para mantener sincronización
+            // Esto requiere usar el Admin API o una función edge function
+            // Por ahora, intentamos actualizar usando updateUser si está disponible
+            const { data: { user: currentUser } } = await wrapSupabaseCall(() => supabase.auth.getUser());
+            if (currentUser && currentUser.id === id) {
+              // Solo podemos actualizar el usuario actual
+              // Para otros usuarios, necesitaríamos Admin API o una función edge
+              try {
+                await wrapSupabaseCall(() => supabase.auth.updateUser({
+                  data: { full_name: updates.nombreCompleto }
+                }));
+              } catch (authError) {
+                // Si falla, no es crítico - el nombre ya está en profiles
+                // Solo loguear en desarrollo
+                if (process.env.NODE_ENV === 'development') {
+                  console.warn('[remoteDataAPI] No se pudo sincronizar full_name con auth.users:', authError);
+                }
+              }
+            }
+          } catch (syncError) {
+            // No es crítico si falla la sincronización con auth.users
+            // El nombre principal está en profiles que es la fuente de verdad
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('[remoteDataAPI] Error al sincronizar con auth.users:', syncError);
+            }
+          }
+        }
+        
         // Preservar el campo 'role' ANTES de snakeToCamel
         const originalRole = data.role;
         
