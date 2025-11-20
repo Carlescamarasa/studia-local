@@ -555,13 +555,17 @@ export function createRemoteDataAPI(): AppDataAPI {
         const { data, error } = await withAuthErrorHandling(
           supabase
           .from('profiles')
-          .select('*')
+          .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at')
           .eq('id', id)
             .single()
         );
         
         if (error) {
           if (error.code === 'PGRST116') return null; // No encontrado
+          // Si es error 406 (Not Acceptable), probablemente es por RLS - devolver null en lugar de lanzar error
+          if (error.code === 'PGRST301' || error.status === 406) {
+            return null;
+          }
           throw error;
         }
         

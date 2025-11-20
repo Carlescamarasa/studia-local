@@ -123,6 +123,31 @@ export default function PerfilModal({
     enabled: open,
   });
 
+  // Cargar el profesor asignado directamente por ID si no está en allUsers
+  // Esto debe estar después de targetUser para evitar TDZ
+  const profesorAsignadoIdToLoad = targetUser?.profesorAsignadoId || targetUser?.profesor_asignado_id;
+  const { data: profesorAsignadoDirecto } = useQuery({
+    queryKey: ['profesorAsignado', profesorAsignadoIdToLoad],
+    queryFn: async () => {
+      if (!profesorAsignadoIdToLoad) return null;
+      try {
+        // Verificar si ya está en allUsers antes de hacer la query
+        const yaExiste = allUsers?.find(u => String(u.id).trim() === String(profesorAsignadoIdToLoad).trim());
+        if (yaExiste) return null; // Ya está cargado, no hacer query extra
+        
+        // Intentar cargar el profesor directamente
+        const profesor = await localDataClient.entities.User.get(profesorAsignadoIdToLoad);
+        return profesor;
+      } catch (e) {
+        // Si falla (probablemente por RLS), devolver null y usar displayNameById como fallback
+        // No lanzar error para que el componente no se rompa
+        return null;
+      }
+    },
+    enabled: !!profesorAsignadoIdToLoad && open && !!allUsers, // Solo cargar si allUsers ya está disponible
+    retry: false, // No reintentar si falla por RLS
+  });
+
   const getNombreCompleto = (user) => {
     if (!user) return 'Sin asignar';
     const nombre = displayName(user);
@@ -153,21 +178,33 @@ export default function PerfilModal({
     if (!allUsers || !Array.isArray(allUsers)) return [];
     const profesoresFiltrados = allUsers.filter(u => u.rolPersonalizado === 'PROF' || u.rolPersonalizado === 'ADMIN');
     
-    // Si hay un profesor asignado que no está en la lista, añadirlo
-    if (targetUser?.profesorAsignadoId) {
-      const profesorAsignado = allUsers.find(u => {
+    // Añadir el profesor asignado si existe (ya sea de allUsers o cargado directamente)
+    const profesorId = editedData?.profesorAsignadoId || targetUser?.profesorAsignadoId || targetUser?.profesor_asignado_id;
+    if (profesorId) {
+      const profesorIdNormalizado = String(profesorId).trim();
+      
+      // Buscar en allUsers primero
+      let profesorAsignado = allUsers.find(u => {
         const idNormalizado = String(u.id).trim();
-        const profesorIdNormalizado = String(targetUser.profesorAsignadoId).trim();
         return idNormalizado === profesorIdNormalizado;
       });
       
+      // Si no está en allUsers, usar el profesor cargado directamente
+      if (!profesorAsignado && profesorAsignadoDirecto) {
+        const profIdNormalizado = String(profesorAsignadoDirecto.id).trim();
+        if (profIdNormalizado === profesorIdNormalizado) {
+          profesorAsignado = profesorAsignadoDirecto;
+        }
+      }
+      
+      // Añadir a la lista si existe y no está ya en ella
       if (profesorAsignado && !profesoresFiltrados.find(p => String(p.id).trim() === String(profesorAsignado.id).trim())) {
         profesoresFiltrados.push(profesorAsignado);
       }
     }
     
     return profesoresFiltrados;
-  }, [allUsers, targetUser?.profesorAsignadoId]);
+  }, [allUsers, targetUser?.profesorAsignadoId, targetUser?.profesor_asignado_id, editedData?.profesorAsignadoId, profesorAsignadoDirecto]);
 
   // Extraer código de país del teléfono si existe
   const extractCountryCodeFromPhone = (phone) => {
@@ -259,7 +296,13 @@ export default function PerfilModal({
       // Asegurar que profesorAsignadoId se carga correctamente desde targetUser
       // Puede venir como profesorAsignadoId o profesor_asignado_id
       const profesorAsignadoIdValue = targetUser.profesorAsignadoId || targetUser.profesor_asignado_id || null;
-      
+      console.log('[PerfilModal] Cargando editedData:', {
+        targetUserProfesorAsignadoId: targetUser.profesorAsignadoId,
+        targetUserProfesor_asignado_id: targetUser.profesor_asignado_id,
+        profesorAsignadoIdValue,
+        allUsersLength: allUsers?.length,
+      });
+
       setEditedData({
         nombreCompleto: targetUser.full_name || targetUser.nombreCompleto || getNombreCompleto(targetUser),
         email: targetUser.email || '',
@@ -652,7 +695,7 @@ export default function PerfilModal({
                                   return "Sin asignar";
                                 }
                                 
-                                // Primero buscar en profesores
+                                // Primero buscar en profesores (que ya incluye el profesor cargado directamente)
                                 let prof = profesores.find(p => {
                                   if (!p || !p.id) return false;
                                   const profIdNormalizado = String(p.id).trim();
@@ -668,7 +711,15 @@ export default function PerfilModal({
                                   });
                                 }
                                 
-                                // Si aún no se encuentra, intentar obtener por ID usando displayNameById como último recurso
+                                // Si aún no se encuentra, usar el profesor cargado directamente
+                                if (!prof && profesorAsignadoDirecto) {
+                                  const profIdNormalizado = String(profesorAsignadoDirecto.id).trim();
+                                  if (profIdNormalizado === profesorIdNormalizado) {
+                                    prof = profesorAsignadoDirecto;
+                                  }
+                                }
+                                
+                                // Último recurso: usar displayNameById
                                 if (!prof) {
                                   const nombrePorId = displayNameById(profesorIdNormalizado);
                                   if (nombrePorId && nombrePorId !== 'Sin nombre') {
@@ -702,7 +753,7 @@ export default function PerfilModal({
                               return 'Sin asignar';
                             }
                             
-                            // Primero buscar en profesores
+                            // Primero buscar en profesores (que ya incluye el profesor cargado directamente)
                             let prof = profesores.find(p => {
                               if (!p || !p.id) return false;
                               const profIdNormalizado = String(p.id).trim();
@@ -718,7 +769,15 @@ export default function PerfilModal({
                               });
                             }
                             
-                            // Si aún no se encuentra, intentar obtener por ID usando displayNameById como último recurso
+                            // Si aún no se encuentra, usar el profesor cargado directamente
+                            if (!prof && profesorAsignadoDirecto) {
+                              const profIdNormalizado = String(profesorAsignadoDirecto.id).trim();
+                              if (profIdNormalizado === profesorIdNormalizado) {
+                                prof = profesorAsignadoDirecto;
+                              }
+                            }
+                            
+                            // Último recurso: usar displayNameById
                             if (!prof) {
                               const nombrePorId = displayNameById(profesorIdNormalizado);
                               if (nombrePorId && nombrePorId !== 'Sin nombre') {
