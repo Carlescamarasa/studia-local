@@ -186,7 +186,7 @@ export default function PageHeader({
                 onClick={() => setFiltersExpanded(!filtersExpanded)}
                 className={`${componentStyles.buttons.outline} flex items-center justify-center gap-1.5 text-xs sm:text-sm min-h-[48px] min-w-[48px] h-12 w-12 sm:h-9 sm:w-auto sm:min-w-0 px-3 sm:px-3 py-3 sm:py-2 touch-manipulation shrink-0 transition-all duration-300 -mr-1 relative z-10 ${
                   highlightButton 
-                    ? 'ring-2 ring-[var(--color-primary)] ring-offset-2 bg-[var(--color-primary-soft)] scale-105 shadow-lg animate-pulse-1s' 
+                    ? 'ring-1 ring-[var(--color-primary)]/30 bg-[var(--color-primary-soft)]/50 animate-pulse-1s' 
                     : ''
                 }`}
                 aria-label={filtersExpanded ? "Ocultar filtros" : "Mostrar filtros"}
@@ -195,7 +195,7 @@ export default function PageHeader({
               >
                 <Info className={`w-6 h-6 sm:w-4 sm:h-4 transition-all duration-300 pointer-events-none ${
                   highlightButton 
-                    ? 'text-[var(--color-primary)] scale-125' 
+                    ? 'text-[var(--color-primary)]' 
                     : ''
                 }`} />
                 {filtersExpanded ? (

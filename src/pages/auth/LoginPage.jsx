@@ -214,8 +214,7 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent className="px-8 pb-8">
-            {!showForgotPassword ? (
-              <>
+              {!showForgotPassword ? (
                 <LoginForm
                   onSubmit={handleLogin}
                   isLoading={isLoading}
@@ -223,23 +222,9 @@ export default function LoginPage() {
                   onRememberMeChange={(checked) => setRememberMe(checked)}
                   rateLimit={rateLimit}
                   initialEmail={savedEmail}
+                  onForgotPassword={() => setShowForgotPassword(true)}
                 />
-                
-                {/* Enlace "Olvidé mi contraseña" */}
-                {authConfig.features.forgotPassword && (
-                  <div className="flex justify-center mt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowForgotPassword(true)}
-                      className="text-sm text-ui/60 hover:text-ui font-medium transition-colors"
-                      disabled={isLoading || rateLimit.isLocked}
-                    >
-                      ¿Olvidaste tu contraseña?
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
+              ) : (
               <ForgotPasswordForm
                 onSubmit={handleForgotPassword}
                 isLoading={isResetting}

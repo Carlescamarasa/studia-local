@@ -205,7 +205,7 @@ const PRESET_STUDIA: DesignPreset = {
       },
     },
     brandHue: getBrandHue('#fd9840'),
-    theme: 'system', // Por defecto usar preferencia del sistema
+    theme: 'light', // Por defecto usar modo claro
   },
 };
 

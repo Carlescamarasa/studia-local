@@ -9,7 +9,7 @@ import { useLoginForm } from '../hooks/useLoginForm';
 import { authConfig } from '../config/authConfig';
 import { componentStyles } from '@/design/componentStyles';
 
-export function LoginForm({ onSubmit, isLoading, rememberMe, onRememberMeChange, rateLimit, initialEmail = '' }) {
+export function LoginForm({ onSubmit, isLoading, rememberMe, onRememberMeChange, rateLimit, initialEmail = '', onForgotPassword }) {
   const {
     email,
     password,
@@ -123,6 +123,20 @@ export function LoginForm({ onSubmit, isLoading, rememberMe, onRememberMeChange,
         <LogIn className="w-5 h-5 mr-2" />
         Iniciar sesión
       </Button>
+
+      {/* Enlace "Olvidé mi contraseña" */}
+      {onForgotPassword && authConfig.features.forgotPassword && (
+        <div className="flex justify-center mt-4">
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="text-sm text-ui/60 hover:text-ui font-medium transition-colors"
+            disabled={isLoading || rateLimit.isLocked}
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+        </div>
+      )}
     </form>
   );
 }

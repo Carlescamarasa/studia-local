@@ -676,10 +676,7 @@ button:focus-visible {
 }
 
 .animate-pulse-1s {
-  animation: pulse-1s 1s ease-in-out;
-}
-.animate-pulse-1s {
-  animation: pulse-1s 1s ease-in-out;
+  animation: pulse-1s 1s ease-in-out 1;
 }
 
 /* ============================================================================
