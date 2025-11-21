@@ -51,7 +51,7 @@ export default function EventoSesion({ sesion, usuarios, onClick }) {
               • {sesion.planNombre}
             </span>
           )}
-          {sesion.calificacion !== undefined && sesion.calificacion !== null && sesion.calificacion > 0 && (
+          {sesion.calificacion !== undefined && sesion.calificacion !== null && sesion.calificacion > 0 && !isNaN(sesion.calificacion) && (
             <Badge className={`${getCalificacionBadge(sesion.calificacion)} shrink-0 ml-auto`}>
               <Star className="w-3 h-3 mr-1 fill-current" />
               {Math.round(sesion.calificacion)}/4

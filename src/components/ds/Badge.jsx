@@ -24,12 +24,28 @@ export default function Badge({
     outline: "badge-outline"
   }[variant] || "badge-default";
 
+  // Validar children para evitar NaN, null, undefined
+  const safeChildren = React.useMemo(() => {
+    if (children === null || children === undefined) {
+      return '';
+    }
+    // Si es un número, verificar que no sea NaN
+    if (typeof children === 'number') {
+      return isNaN(children) ? '' : children;
+    }
+    // Si es un string que contiene NaN, reemplazarlo
+    if (typeof children === 'string' && children.includes('NaN')) {
+      return children.replace(/NaN/g, '');
+    }
+    return children;
+  }, [children]);
+
   return (
     <span
       className={cn("inline-flex items-center rounded-full text-xs px-2 py-0.5 font-medium", variantClasses, className)}
       {...props}
     >
-      {children}
+      {safeChildren}
     </span>
   );
 }

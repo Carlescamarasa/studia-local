@@ -537,7 +537,7 @@ function SemanaPageContent() {
                                 {registro.calificacion && registro.calificacion > 0 && (
                                   <Badge className={`${getCalificacionBadge(registro.calificacion)} shrink-0 ml-auto`}>
                                     <Star className="w-3 h-3 mr-1 fill-current" />
-                                    {Math.round(registro.calificacion)}/4
+                                    {isNaN(registro.calificacion) ? '0' : Math.round(registro.calificacion)}/4
                                   </Badge>
                                 )}
                               </div>

@@ -1587,7 +1587,7 @@ function EstadisticasPageContent() {
                     key: 'satisfaccion',
                     label: 'Valoración',
                     sortable: true,
-                    render: (item) => item.satisfaccion ? (
+                    render: (item) => item.satisfaccion && !isNaN(item.satisfaccion) ? (
                               <Badge className={componentStyles.status.badgeInfo}>
                                 ⭐ {item.satisfaccion}/4
                               </Badge>
@@ -1599,7 +1599,7 @@ function EstadisticasPageContent() {
                     key: 'completados',
                     label: 'Completados',
                     sortable: true,
-                    render: (item) => item.completados > 0 ? (
+                    render: (item) => item.completados > 0 && !isNaN(item.completados) ? (
                               <Badge className={componentStyles.status.badgeSuccess}>
                                 ✓ {item.completados}
                               </Badge>
@@ -1611,7 +1611,7 @@ function EstadisticasPageContent() {
                     key: 'omitidos',
                     label: 'Omitidos',
                     sortable: true,
-                    render: (item) => item.omitidos > 0 ? (
+                    render: (item) => item.omitidos > 0 && !isNaN(item.omitidos) ? (
                               <Badge className={componentStyles.status.badgeDanger}>
                                 ⏭ {item.omitidos}
                               </Badge>
@@ -1745,7 +1745,7 @@ function EstadisticasPageContent() {
                     sortable: true,
                     render: (item) => (
                             <Badge variant="outline" className={componentStyles.status.badgeInfo}>
-                        {item.sesionesCount} sesiones
+                        {isNaN(item.sesionesCount) ? 0 : item.sesionesCount} sesiones
                             </Badge>
                     ),
                   },
@@ -1868,7 +1868,7 @@ function EstadisticasPageContent() {
                                 <Badge variant="outline" className="rounded-full text-xs">
                                   Obj: {formatDuracionHM(registro.duracionObjetivoSeg)}
                                 </Badge>
-                                {registro.calificacion !== undefined && registro.calificacion !== null && (
+                                {registro.calificacion !== undefined && registro.calificacion !== null && !isNaN(registro.calificacion) && (
                                   <Badge className={componentStyles.status.badgeDefault}>
                                     {registro.calificacion}/4
                                   </Badge>
@@ -1966,7 +1966,7 @@ function EstadisticasPageContent() {
                                   <p className="text-xs text-[var(--color-text-secondary)] truncate">
                                     {r.piezaNombre} • {new Date(r.inicioISO).toLocaleDateString('es-ES')}
                                   </p>
-                                  {r.calificacion && (
+                                  {r.calificacion && !isNaN(r.calificacion) && (
                                     <Badge className={`rounded-full ${componentStyles.status.badgeDefault} text-xs mt-1`}>
                                       {r.calificacion}/4
                                     </Badge>

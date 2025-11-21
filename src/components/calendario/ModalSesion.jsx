@@ -145,7 +145,7 @@ export default function ModalSesion({ open, onOpenChange, registroSesion, usuari
                   <span className="text-xs text-[var(--color-text-secondary)] w-16 shrink-0">Calificación:</span>
                   <Badge className={`${getCalificacionBadge(registroSesion.calificacion)} shrink-0`}>
                     <Star className="w-3 h-3 mr-1 fill-current" />
-                    {Math.round(registroSesion.calificacion)}/4
+                    {isNaN(registroSesion.calificacion) ? '0' : Math.round(registroSesion.calificacion)}/4
                   </Badge>
                 </div>
               )}
