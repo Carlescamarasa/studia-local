@@ -354,7 +354,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       });
 
       console.log('[ReportErrorModal] Reporte creado exitosamente:', report.id);
-      
+
       toast.success('✅ Reporte enviado correctamente. ¡Gracias por tu ayuda!');
       
       // Notificar a ErrorBoundary si está esperando confirmación
@@ -500,9 +500,9 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       ];
 
       if (estudioHotkeys.includes(e.key)) {
-        e.stopImmediatePropagation();
-        e.stopPropagation();
-        e.preventDefault();
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+      e.preventDefault();
       }
     };
 

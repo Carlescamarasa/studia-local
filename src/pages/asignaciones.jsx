@@ -532,13 +532,9 @@ function AsignacionesPageContent() {
 
       <div className={`${componentStyles.layout.page} space-y-6`}>
         {showForm && (
-          <Card className={componentStyles.containers.cardBase}>
-            <CardContent className="pt-6 pb-6">
-              <FormularioRapido 
-                onClose={() => setShowForm(false)}
-              />
-            </CardContent>
-          </Card>
+          <FormularioRapido 
+            onClose={() => setShowForm(false)}
+          />
         )}
 
         <Card className={componentStyles.containers.cardBase}>

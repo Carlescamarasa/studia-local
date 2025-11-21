@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Save, Users, Music, BookOpen, Calendar, Settings, Target, ChevronRight, ChevronLeft, Plus, Check } from "lucide-react";
+import { X, Save, Users, Music, BookOpen, Calendar, Settings, Target, ChevronRight, ChevronLeft, Plus, Check, Loader2, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
@@ -20,6 +20,7 @@ import { displayName, formatLocalDate, parseLocalDate, startOfMonday, useEffecti
 import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
 import { supabase } from "@/lib/supabaseClient";
+import LoadingSpinner from "@/components/ds/LoadingSpinner";
 
 export default function FormularioRapido({ onClose }) {
   const queryClient = useQueryClient();
@@ -41,27 +42,63 @@ export default function FormularioRapido({ onClose }) {
   const effectiveUser = useEffectiveUser();
 
   // Obtener usuarios solo para la lista de profesores (no para estudiantes)
-  const { data: usuarios = [] } = useQuery({
+  const { data: usuarios = [], isLoading: isLoadingUsuarios, isError: isErrorUsuarios, error: errorUsuarios } = useQuery({
     queryKey: ['users'],
-    queryFn: () => localDataClient.entities.User.list(),
+    queryFn: async () => {
+      const result = await localDataClient.entities.User.list();
+      console.log('[FormularioRapido] Usuarios obtenidos de API:', result?.length || 0, result);
+      if (result && result.length > 0) {
+        console.log('[FormularioRapido] Primer usuario ejemplo:', result[0]);
+        console.log('[FormularioRapido] Campos del primer usuario:', Object.keys(result[0]));
+        console.log('[FormularioRapido] rolPersonalizado del primer usuario:', result[0].rolPersonalizado);
+        console.log('[FormularioRapido] role del primer usuario:', result[0].role);
+      }
+      return result;
+    },
+    retry: (failureCount, error) => {
+      // No reintentar si es AbortError
+      if (error?.name === 'AbortError') return false;
+      // Reintentar hasta 3 veces para otros errores
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 
   // Obtener profesores para el filtro
   const profesores = React.useMemo(() => {
-    return usuarios
-      .filter(u => u.rolPersonalizado === 'PROF' || u.rolPersonalizado === 'ADMIN')
-      .map(p => ({
-        value: p.id,
-        label: displayName(p),
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+    console.log('[FormularioRapido] usuarios recibidos:', usuarios.length, usuarios);
+    
+    // Verificar tanto rolPersonalizado como role (por si acaso no se normalizó correctamente)
+    const profesoresFiltrados = usuarios.filter(u => {
+      const rol = u.rolPersonalizado || u.role;
+      const esProfesor = rol === 'PROF' || rol === 'ADMIN';
+      if (!esProfesor) {
+        console.log('[FormularioRapido] Usuario descartado:', u.id, 'rol:', rol, 'usuario completo:', u);
+      }
+      return esProfesor;
+    });
+    
+    console.log('[FormularioRapido] profesores filtrados:', profesoresFiltrados.length, profesoresFiltrados);
+    
+    const profesoresMapeados = profesoresFiltrados.map(p => ({
+      value: p.id,
+      label: displayName(p),
+    }));
+    
+    console.log('[FormularioRapido] profesores mapeados antes de sort:', profesoresMapeados);
+    
+    return profesoresMapeados.sort((a, b) => a.label.localeCompare(b.label));
   }, [usuarios]);
 
   // Obtener información de estudiantes ya seleccionados para mostrarlos en los chips
   const selectedStudentsData = React.useMemo(() => {
     return formData.estudiantesIds
       .map(id => {
-        const usuario = usuarios.find(u => u.id === id && u.rolPersonalizado === 'ESTU');
+        const usuario = usuarios.find(u => {
+          const rol = u.rolPersonalizado || u.role;
+          return u.id === id && rol === 'ESTU';
+        });
         if (!usuario) return null;
         return {
           id: usuario.id,
@@ -72,15 +109,39 @@ export default function FormularioRapido({ onClose }) {
       .filter(Boolean);
   }, [formData.estudiantesIds, usuarios]);
 
-  const { data: piezas = [] } = useQuery({
+  const { data: piezas = [], isLoading: isLoadingPiezas, isError: isErrorPiezas, error: errorPiezas } = useQuery({
     queryKey: ['piezas'],
     queryFn: () => localDataClient.entities.Pieza.list(),
+    retry: (failureCount, error) => {
+      // No reintentar si es AbortError
+      if (error?.name === 'AbortError') return false;
+      // Reintentar hasta 3 veces para otros errores
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 
-  const { data: planes = [] } = useQuery({
+  const { data: planes = [], isLoading: isLoadingPlanes, isError: isErrorPlanes, error: errorPlanes } = useQuery({
     queryKey: ['planes'],
-    queryFn: () => localDataClient.entities.Plan.list(),
+    queryFn: async () => {
+      const result = await localDataClient.entities.Plan.list();
+      console.log('[FormularioRapido] Planes obtenidos de API:', result?.length || 0, result);
+      return result;
+    },
+    retry: (failureCount, error) => {
+      // No reintentar si es AbortError
+      if (error?.name === 'AbortError') return false;
+      // Reintentar hasta 3 veces para otros errores
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
+
+  // Estados de carga agregados
+  const isLoadingData = isLoadingUsuarios || isLoadingPiezas || isLoadingPlanes;
+  const hasDataError = isErrorUsuarios || isErrorPiezas || isErrorPlanes;
 
   const crearAsignacionesMutation = useMutation({
     mutationFn: async (data) => {
@@ -175,7 +236,16 @@ export default function FormularioRapido({ onClose }) {
       }
     },
     onError: (error) => {
-      toast.error(`❌ Error: ${error.message}`);
+      // Manejar errores de autenticación de Supabase
+      if (error?.message?.includes('no autenticado') || error?.message?.includes('sesión expirada') || error?.message?.includes('session_not_found')) {
+        toast.error('❌ Sesión expirada. Por favor, vuelve a iniciar sesión.');
+        setTimeout(() => {
+          onClose();
+          navigate('/auth/login');
+        }, 2000);
+      } else {
+        toast.error(`❌ Error: ${error.message}`);
+      }
     },
   });
 
@@ -197,10 +267,20 @@ export default function FormularioRapido({ onClose }) {
     }
   }, [formData.fechaSeleccionada]);
 
-  // Validar paso 1
-  const isStep1Valid = formData.estudiantesIds.length > 0 && formData.piezaId && formData.fechaSeleccionada;
+  // Validar paso 1 (incluyendo verificar que los datos estén disponibles)
+  const isStep1Valid = formData.estudiantesIds.length > 0 && formData.piezaId && formData.fechaSeleccionada && !isLoadingData && piezas.length > 0;
 
   const handleNext = () => {
+    if (isLoadingData) {
+      toast.error('Espera a que se carguen los datos...');
+      return;
+    }
+    
+    if (piezas.length === 0 && !isLoadingPiezas) {
+      toast.error('No hay piezas disponibles. Por favor, crea una pieza primero.');
+      return;
+    }
+
     if (!isStep1Valid) {
       if (formData.estudiantesIds.length === 0) {
         toast.error('Selecciona al menos un estudiante');
@@ -219,8 +299,18 @@ export default function FormularioRapido({ onClose }) {
   };
 
   const handleCrear = () => {
+    if (isLoadingData) {
+      toast.error('Espera a que se carguen los datos...');
+      return;
+    }
+
     if (!formData.planId) {
       toast.error('Selecciona un plan');
+      return;
+    }
+
+    if (planes.length === 0 && !isLoadingPlanes) {
+      toast.error('No hay planes disponibles. Por favor, crea un plan primero.');
       return;
     }
 
@@ -239,7 +329,7 @@ export default function FormularioRapido({ onClose }) {
         if (step === 1) {
           handleNext();
         } else {
-          handleCrear();
+        handleCrear();
         }
       }
     };
@@ -289,7 +379,7 @@ export default function FormularioRapido({ onClose }) {
             : 'bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]'
         }`}>
           {step > 2 ? <Check className="w-4 h-4" /> : '2'}
-        </div>
+                </div>
         <span className={`text-sm font-medium ${
           step >= 2 
             ? 'text-[var(--color-primary)]' 
@@ -297,84 +387,155 @@ export default function FormularioRapido({ onClose }) {
         }`}>
           Plan de trabajo
         </span>
-      </div>
-    </div>
+            </div>
+          </div>
   );
 
   // Paso 1: Selección de base
-  const Paso1 = () => (
-    <div className="space-y-6">
-      <div className={componentStyles.layout.grid2}>
+  const Paso1 = () => {
+    // Mostrar estado de carga si los datos no están listos
+    if (isLoadingData) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner size="lg" text="Cargando datos..." />
+        </div>
+      );
+    }
+
+    // Mostrar error si hay problemas cargando los datos
+    if (hasDataError) {
+      return (
+        <Alert className="border-[var(--color-danger)]/20 bg-[var(--color-danger)]/10">
+          <AlertCircle className="w-4 h-4 text-[var(--color-danger)]" />
+          <AlertDescription className="text-sm text-[var(--color-text-primary)]">
+            <strong className="text-[var(--color-danger)]">Error al cargar los datos:</strong>
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              {isErrorUsuarios && <li>No se pudieron cargar los usuarios: {errorUsuarios?.message || 'Error desconocido'}</li>}
+              {isErrorPiezas && <li>No se pudieron cargar las piezas: {errorPiezas?.message || 'Error desconocido'}</li>}
+              {isErrorPlanes && <li>No se pudieron cargar los planes: {errorPlanes?.message || 'Error desconocido'}</li>}
+            </ul>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                queryClient.invalidateQueries({ queryKey: ['users'] });
+                queryClient.invalidateQueries({ queryKey: ['piezas'] });
+                queryClient.invalidateQueries({ queryKey: ['planes'] });
+              }}
+              className="mt-3"
+            >
+              Reintentar
+            </Button>
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+            <div className={componentStyles.layout.grid2}>
         {/* Estudiante(s) */}
-        <Card className="app-panel">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-[var(--color-primary)]" />
+              <Card className="app-panel">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-[var(--color-primary)]" />
               <CardTitle className="text-base text-[var(--color-text-primary)]">Estudiante(s) *</CardTitle>
-            </div>
-          </CardHeader>
+                  </div>
+                </CardHeader>
           <CardContent className="space-y-3">
             <div>
               <Label htmlFor="filtro-profesor" className="text-sm text-[var(--color-text-primary)]">
                 Filtrar por profesor
               </Label>
-              <Select value={filtroProfesor} onValueChange={setFiltroProfesor}>
-                <SelectTrigger id="filtro-profesor" className={`w-full mt-1 ${componentStyles.controls.selectDefault}`}>
-                  <SelectValue placeholder="Todos los profesores" />
-                </SelectTrigger>
-                <SelectContent className="!z-[200]">
-                  <SelectItem value="all">Todos los profesores</SelectItem>
-                  {profesores.map((prof) => (
-                    <SelectItem key={prof.value} value={prof.value}>
-                      {prof.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isLoadingUsuarios ? (
+                <div className="flex items-center gap-2 p-2 text-sm text-[var(--color-text-secondary)]">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Cargando profesores...
+                </div>
+              ) : (
+                <Select value={filtroProfesor} onValueChange={setFiltroProfesor} modal={false} disabled={isErrorUsuarios}>
+                  <SelectTrigger id="filtro-profesor" className={`w-full mt-1 ${componentStyles.controls.selectDefault}`}>
+                    <SelectValue placeholder={isErrorUsuarios ? "Error al cargar profesores" : "Todos los profesores"} />
+                  </SelectTrigger>
+                  <SelectContent 
+                    position="popper" 
+                    side="bottom" 
+                    align="start" 
+                    sideOffset={4}
+                    className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                  >
+                    <SelectItem value="all">Todos los profesores</SelectItem>
+                    {(() => {
+                      console.log('[FormularioRapido] Renderizando SelectContent de profesores, cantidad:', profesores.length, profesores);
+                      return profesores.map((prof) => (
+                        <SelectItem key={prof.value} value={prof.value}>
+                          {prof.label}
+                        </SelectItem>
+                      ));
+                    })()}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
-            <StudentSearchBarAsync
-              value={formData.estudiantesIds}
-              onChange={(vals) => {
-                setFormData({ ...formData, estudiantesIds: vals });
-              }}
-              placeholder="Buscar estudiante por nombre..."
-              profesorFilter={filtroProfesor !== 'all' ? filtroProfesor : null}
-              selectedStudents={selectedStudentsData}
-            />
-            <p className="text-xs text-[var(--color-text-secondary)]">
-              {formData.estudiantesIds.length > 0 ? `${formData.estudiantesIds.length} seleccionado(s)` : 'Ninguno seleccionado'}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Fecha de inicio */}
-        <Card className="app-panel">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-[var(--color-primary)]" />
-              <CardTitle className="text-base text-[var(--color-text-primary)]">Fecha de inicio *</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Input
-              type="date"
-              value={formData.fechaSeleccionada}
-              onChange={(e) => setFormData({ ...formData, fechaSeleccionada: e.target.value })}
-              className={componentStyles.controls.inputDefault}
-            />
-            {formData.fechaSeleccionada && formData.semanaInicioISO && (
-              <Alert className="border-[var(--color-info)]/20 bg-[var(--color-info)]/10 app-panel">
+            {isLoadingUsuarios ? (
+              <div className="flex items-center gap-2 p-2 text-sm text-[var(--color-text-secondary)]">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Cargando estudiantes...
+              </div>
+            ) : isErrorUsuarios ? (
+              <Alert className="border-[var(--color-danger)]/20 bg-[var(--color-danger)]/10">
+                <AlertCircle className="w-4 h-4 text-[var(--color-danger)]" />
                 <AlertDescription className="text-xs text-[var(--color-text-primary)]">
-                  <strong className="text-[var(--color-info)]">Elegido:</strong> {parseLocalDate(formData.fechaSeleccionada).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-                  <br />
-                  <strong className="text-[var(--color-info)]">Semana ISO:</strong> Lunes {parseLocalDate(formData.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })} - Domingo {parseLocalDate(getDomingoSemana(formData.semanaInicioISO)).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
+                  Error al cargar estudiantes: {errorUsuarios?.message || 'Error desconocido'}
                 </AlertDescription>
               </Alert>
+            ) : (
+              <>
+                <StudentSearchBarAsync
+                  value={formData.estudiantesIds}
+                  onChange={(vals) => {
+                    setFormData({ ...formData, estudiantesIds: vals });
+                  }}
+                  placeholder="Buscar estudiante por nombre..."
+                  profesorFilter={filtroProfesor !== 'all' ? filtroProfesor : null}
+                  selectedStudents={selectedStudentsData}
+                />
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  {formData.estudiantesIds.length > 0 ? `${formData.estudiantesIds.length} seleccionado(s)` : 'Ninguno seleccionado'}
+                </p>
+              </>
             )}
-          </CardContent>
-        </Card>
-      </div>
+                </CardContent>
+              </Card>
+
+        {/* Fecha de inicio */}
+              <Card className="app-panel">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-[var(--color-primary)]" />
+              <CardTitle className="text-base text-[var(--color-text-primary)]">Fecha de inicio *</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Input
+                    type="date"
+                    value={formData.fechaSeleccionada}
+                    onChange={(e) => setFormData({ ...formData, fechaSeleccionada: e.target.value })}
+                    className={componentStyles.controls.inputDefault}
+                  />
+                  {formData.fechaSeleccionada && formData.semanaInicioISO && (
+                    <Alert className="border-[var(--color-info)]/20 bg-[var(--color-info)]/10 app-panel">
+                      <AlertDescription className="text-xs text-[var(--color-text-primary)]">
+                        <strong className="text-[var(--color-info)]">Elegido:</strong> {parseLocalDate(formData.fechaSeleccionada).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        <br />
+                        <strong className="text-[var(--color-info)]">Semana ISO:</strong> Lunes {parseLocalDate(formData.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })} - Domingo {parseLocalDate(getDomingoSemana(formData.semanaInicioISO)).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
       {/* Pieza */}
       <Card className="app-panel">
@@ -399,25 +560,55 @@ export default function FormularioRapido({ onClose }) {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Select 
-            value={formData.piezaId} 
-            onValueChange={(v) => setFormData({ ...formData, piezaId: v })}
-          >
-            <SelectTrigger id="pieza" className={`w-full ${componentStyles.controls.selectDefault}`}>
-              <SelectValue placeholder="Selecciona una pieza..." />
-            </SelectTrigger>
-            <SelectContent className="z-[200]">
-              {piezas.length === 0 ? (
-                <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay piezas</div>
-              ) : (
-                piezas.map((pieza) => (
-                  <SelectItem key={pieza.id} value={pieza.id}>
-                    {pieza.nombre}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
+          {isLoadingPiezas ? (
+            <div className="flex items-center gap-2 p-2 text-sm text-[var(--color-text-secondary)]">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Cargando piezas...
+            </div>
+          ) : isErrorPiezas ? (
+            <Alert className="border-[var(--color-danger)]/20 bg-[var(--color-danger)]/10">
+              <AlertCircle className="w-4 h-4 text-[var(--color-danger)]" />
+              <AlertDescription className="text-xs text-[var(--color-text-primary)]">
+                Error al cargar piezas: {errorPiezas?.message || 'Error desconocido'}
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Select 
+              value={formData.piezaId} 
+              onValueChange={(v) => {
+                console.log('[FormularioRapido] Select Pieza onValueChange:', v);
+                setFormData({ ...formData, piezaId: v });
+              }}
+              onOpenChange={(open) => {
+                console.log('[FormularioRapido] Select Pieza onOpenChange:', open);
+              }}
+              modal={false}
+              disabled={piezas.length === 0}
+            >
+              <SelectTrigger id="pieza" className={`w-full ${componentStyles.controls.selectDefault}`}>
+                <SelectValue placeholder={piezas.length === 0 ? "No hay piezas disponibles" : "Selecciona una pieza..."} />
+              </SelectTrigger>
+              <SelectContent 
+                position="popper" 
+                side="bottom" 
+                align="start" 
+                sideOffset={4}
+                className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+              >
+                {(() => {
+                  console.log('[FormularioRapido] Renderizando SelectContent de piezas, cantidad:', piezas.length, piezas);
+                  if (piezas.length === 0) {
+                    return <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay piezas disponibles</div>;
+                  }
+                  return piezas.map((pieza) => (
+                    <SelectItem key={pieza.id} value={pieza.id}>
+                      {pieza.nombre}
+                    </SelectItem>
+                  ));
+                })()}
+              </SelectContent>
+            </Select>
+          )}
           
           {piezaSeleccionada && (
             <div className="mt-2 p-3 bg-[var(--color-surface-muted)] rounded-lg border border-[var(--color-border-default)]">
@@ -430,8 +621,9 @@ export default function FormularioRapido({ onClose }) {
           )}
         </CardContent>
       </Card>
-    </div>
-  );
+      </div>
+    );
+  };
 
   // Paso 2: Plan de trabajo
   const Paso2 = () => (
@@ -459,25 +651,49 @@ export default function FormularioRapido({ onClose }) {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Select 
-            value={formData.planId} 
-            onValueChange={(v) => setFormData({ ...formData, planId: v })}
-          >
-            <SelectTrigger id="plan" className={`w-full ${componentStyles.controls.selectDefault}`}>
-              <SelectValue placeholder="Selecciona un plan..." />
-            </SelectTrigger>
-            <SelectContent className="z-[200]">
-              {planes.length === 0 ? (
-                <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay planes</div>
-              ) : (
-                planes.map((plan) => (
-                  <SelectItem key={plan.id} value={plan.id}>
-                    {plan.nombre}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
+          {isLoadingPlanes ? (
+            <div className="flex items-center gap-2 p-2 text-sm text-[var(--color-text-secondary)]">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Cargando planes...
+            </div>
+          ) : isErrorPlanes ? (
+            <Alert className="border-[var(--color-danger)]/20 bg-[var(--color-danger)]/10">
+              <AlertCircle className="w-4 h-4 text-[var(--color-danger)]" />
+              <AlertDescription className="text-xs text-[var(--color-text-primary)]">
+                Error al cargar planes: {errorPlanes?.message || 'Error desconocido'}
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Select 
+              value={formData.planId} 
+              onValueChange={(v) => setFormData({ ...formData, planId: v })}
+              modal={false}
+              disabled={planes.length === 0}
+            >
+              <SelectTrigger id="plan" className={`w-full ${componentStyles.controls.selectDefault}`}>
+                <SelectValue placeholder={planes.length === 0 ? "No hay planes disponibles" : "Selecciona un plan..."} />
+              </SelectTrigger>
+              <SelectContent 
+                position="popper" 
+                side="bottom" 
+                align="start" 
+                sideOffset={4}
+                className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+              >
+                {(() => {
+                  console.log('[FormularioRapido] Renderizando SelectContent de planes, cantidad:', planes.length, planes);
+                  if (planes.length === 0) {
+                    return <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay planes disponibles</div>;
+                  }
+                  return planes.map((plan) => (
+                    <SelectItem key={plan.id} value={plan.id}>
+                      {plan.nombre}
+                    </SelectItem>
+                  ));
+                })()}
+              </SelectContent>
+            </Select>
+          )}
           
           {planSeleccionado && (
             <div className="mt-2 p-3 bg-[var(--color-surface-muted)] rounded-lg border border-[var(--color-border-default)]">
@@ -495,28 +711,35 @@ export default function FormularioRapido({ onClose }) {
 
       {/* Notas y Foco */}
       <div className={componentStyles.layout.grid2}>
-        <Card className="app-panel">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Settings className="w-5 h-5 text-[var(--color-primary)]" />
+            <Card className="app-panel">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                    <Settings className="w-5 h-5 text-[var(--color-primary)]" />
               <CardTitle className="text-base text-[var(--color-text-primary)]">Foco</CardTitle>
-            </div>
-          </CardHeader>
+                </div>
+              </CardHeader>
           <CardContent>
             <Select 
               value={formData.foco} 
               onValueChange={(v) => setFormData({ ...formData, foco: v })}
+              modal={false}
             >
               <SelectTrigger id="foco" className={`w-full ${componentStyles.controls.selectDefault}`}>
                 <SelectValue placeholder="Selecciona foco..." />
               </SelectTrigger>
-              <SelectContent className="z-[200]">
+              <SelectContent 
+                position="popper" 
+                side="bottom" 
+                align="start" 
+                sideOffset={4}
+                className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+              >
                 {Object.entries(focoLabels).map(([key, label]) => (
                   <SelectItem key={key} value={key}>{label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-[var(--color-text-secondary)] mt-1">Por defecto: General</p>
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-1">Por defecto: General</p>
           </CardContent>
         </Card>
 
@@ -525,20 +748,20 @@ export default function FormularioRapido({ onClose }) {
             <div className="flex items-center gap-2">
               <Target className="w-5 h-5 text-[var(--color-primary)]" />
               <CardTitle className="text-base text-[var(--color-text-primary)]">Notas del estudiante</CardTitle>
-            </div>
+                </div>
           </CardHeader>
           <CardContent>
-            <Textarea
-              id="notas"
-              value={formData.notas}
-              onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
+                  <Textarea
+                    id="notas"
+                    value={formData.notas}
+                    onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
               placeholder="Instrucciones o comentarios... (opcional)"
               rows={4}
-              className={componentStyles.controls.inputDefault}
-            />
+                    className={componentStyles.controls.inputDefault}
+                  />
           </CardContent>
         </Card>
-      </div>
+                </div>
 
       {/* Opciones */}
       <Card className="app-panel">
@@ -550,67 +773,80 @@ export default function FormularioRapido({ onClose }) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between p-3 border border-[var(--color-border-default)] app-panel hover:bg-muted hover:shadow-sm transition-all rounded-lg">
-            <div className="flex-1">
-              <Label htmlFor="publicar" className="font-medium text-[var(--color-text-primary)]">Publicar ahora</Label>
-              <p className="text-xs text-[var(--color-text-secondary)]">Si está desactivado, se guardará como borrador</p>
-            </div>
-            <Switch
-              id="publicar"
-              checked={formData.publicarAhora}
-              onCheckedChange={(checked) => setFormData({ ...formData, publicarAhora: checked, adaptarPlanAhora: false })}
-            />
-          </div>
+                  <div className="flex-1">
+                    <Label htmlFor="publicar" className="font-medium text-[var(--color-text-primary)]">Publicar ahora</Label>
+                    <p className="text-xs text-[var(--color-text-secondary)]">Si está desactivado, se guardará como borrador</p>
+                  </div>
+                  <Switch
+                    id="publicar"
+                    checked={formData.publicarAhora}
+                    onCheckedChange={(checked) => setFormData({ ...formData, publicarAhora: checked, adaptarPlanAhora: false })}
+                  />
+                </div>
 
           <div className={`flex items-center justify-between p-3 border border-[var(--color-border-default)] app-panel bg-[var(--color-info)]/10 rounded-lg ${
             formData.estudiantesIds.length > 1 ? 'opacity-60' : ''
           }`}>
-            <div className="flex-1">
-              <Label htmlFor="adaptar" className="font-medium text-[var(--color-text-primary)]">Adaptar plan ahora (recomendado)</Label>
-              <p className="text-xs text-[var(--color-text-secondary)]">Crear en borrador y abrir editor para adaptar el plan</p>
-            </div>
-            <Switch
-              id="adaptar"
-              checked={formData.adaptarPlanAhora}
-              onCheckedChange={(checked) => setFormData({ ...formData, adaptarPlanAhora: checked, publicarAhora: false })}
-              disabled={formData.estudiantesIds.length > 1}
-            />
-          </div>
+                  <div className="flex-1">
+                    <Label htmlFor="adaptar" className="font-medium text-[var(--color-text-primary)]">Adaptar plan ahora (recomendado)</Label>
+                    <p className="text-xs text-[var(--color-text-secondary)]">Crear en borrador y abrir editor para adaptar el plan</p>
+                  </div>
+                  <Switch
+                    id="adaptar"
+                    checked={formData.adaptarPlanAhora}
+                    onCheckedChange={(checked) => setFormData({ ...formData, adaptarPlanAhora: checked, publicarAhora: false })}
+                    disabled={formData.estudiantesIds.length > 1}
+                  />
+                </div>
           
-          {formData.estudiantesIds.length > 1 && (
-            <p className="text-xs text-[var(--color-warning)]">
+                {formData.estudiantesIds.length > 1 && (
+                  <p className="text-xs text-[var(--color-warning)]">
               ⚠️ Solo puedes adaptar el plan si seleccionas un único estudiante
-            </p>
-          )}
-        </CardContent>
-      </Card>
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
       {/* Resumen */}
       {isStep1Valid && formData.planId && (
-        <Alert className="border-[var(--color-primary)]/20 bg-[var(--color-primary-soft)] app-panel">
-          <AlertDescription className="text-sm text-[var(--color-text-primary)]">
-            <strong className="text-[var(--color-primary)]">Resumen:</strong>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>{formData.estudiantesIds.length} estudiante(s)</li>
-              <li>Pieza: {piezaSeleccionada?.nombre}</li>
-              <li>Plan: {planSeleccionado?.nombre} ({planSeleccionado?.semanas?.length || 0} semanas)</li>
-              <li>Inicio: {formData.semanaInicioISO && parseLocalDate(formData.semanaInicioISO).toLocaleDateString('es-ES')}</li>
-              <li>Foco: {focoLabels[formData.foco]}</li>
+              <Alert className="border-[var(--color-primary)]/20 bg-[var(--color-primary-soft)] app-panel">
+                <AlertDescription className="text-sm text-[var(--color-text-primary)]">
+                  <strong className="text-[var(--color-primary)]">Resumen:</strong>
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>{formData.estudiantesIds.length} estudiante(s)</li>
+                    <li>Pieza: {piezaSeleccionada?.nombre}</li>
+                    <li>Plan: {planSeleccionado?.nombre} ({planSeleccionado?.semanas?.length || 0} semanas)</li>
+                    <li>Inicio: {formData.semanaInicioISO && parseLocalDate(formData.semanaInicioISO).toLocaleDateString('es-ES')}</li>
+                    <li>Foco: {focoLabels[formData.foco]}</li>
               <li>Estado: {formData.adaptarPlanAhora ? 'Borrador (adaptar)' : (formData.publicarAhora ? 'Publicada' : 'Borrador')}</li>
-            </ul>
-          </AlertDescription>
-        </Alert>
-      )}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
     </div>
   );
 
   const modalContent = (
     <>
-      <div className="fixed inset-0 bg-black/40 z-[80]" onClick={onClose} />
+      <div 
+        className="fixed inset-0 bg-black/40 z-[80]"
+        onClick={(e) => {
+          // No cerrar si el clic es en un Select o en su contenido
+          const target = e.target;
+          if (target.closest('[data-radix-select-content]') || 
+              target.closest('[data-radix-select-viewport]') ||
+              target.closest('[data-radix-select-item]')) {
+            return;
+          }
+          onClose();
+        }}
+      />
       
       <div className="fixed inset-0 z-[90] flex items-center justify-center pointer-events-none p-4 overflow-y-auto" role="dialog" aria-modal="true">
         <div 
-          className="bg-[var(--color-surface-elevated)] w-full max-w-3xl max-h-[92vh] shadow-card rounded-[var(--radius-modal)] flex flex-col pointer-events-auto my-8 relative"
+          className="bg-[var(--color-surface-elevated)] w-full max-w-3xl max-h-[92vh] shadow-card rounded-[var(--radius-modal)] flex flex-col pointer-events-auto my-8"
           onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-[var(--radius-modal)] px-6 py-4">
@@ -626,7 +862,7 @@ export default function FormularioRapido({ onClose }) {
                 <X className="w-5 h-5" />
               </Button>
             </div>
-            
+
             {/* Stepper */}
             <div className="mt-4">
               <Stepper />
@@ -643,16 +879,25 @@ export default function FormularioRapido({ onClose }) {
             <div className="flex gap-3 mb-2">
               {step === 1 ? (
                 <>
-                  <Button variant="outline" onClick={onClose} className={`flex-1 ${componentStyles.buttons.outline}`}>
-                    Cancelar
-                  </Button>
+              <Button variant="outline" onClick={onClose} className={`flex-1 ${componentStyles.buttons.outline}`}>
+                Cancelar
+              </Button>
                   <Button
                     onClick={handleNext}
-                    disabled={!isStep1Valid}
+                    disabled={!isStep1Valid || isLoadingData || piezas.length === 0}
                     className={`flex-1 ${componentStyles.buttons.primary}`}
                   >
-                    Siguiente
-                    <ChevronRight className="w-4 h-4 ml-2" />
+                    {isLoadingData ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Cargando...
+                      </>
+                    ) : (
+                      <>
+                        Siguiente
+                        <ChevronRight className="w-4 h-4 ml-2" />
+                      </>
+                    )}
                   </Button>
                 </>
               ) : (
@@ -661,13 +906,13 @@ export default function FormularioRapido({ onClose }) {
                     <ChevronLeft className="w-4 h-4 mr-2" />
                     Anterior
                   </Button>
-                  <Button
-                    onClick={handleCrear}
-                    loading={crearAsignacionesMutation.isPending}
+                <Button
+                  onClick={handleCrear}
+                  loading={crearAsignacionesMutation.isPending}
                     loadingText={formData.adaptarPlanAhora ? "Creando..." : formData.publicarAhora ? "Publicando..." : "Guardando..."}
                     disabled={!formData.planId || crearAsignacionesMutation.isPending}
-                    className={`flex-1 ${componentStyles.buttons.primary}`}
-                  >
+                  className={`flex-1 ${componentStyles.buttons.primary}`}
+                >
                     {formData.adaptarPlanAhora ? (
                       <>
                         Crear y adaptar
@@ -680,11 +925,11 @@ export default function FormularioRapido({ onClose }) {
                       </>
                     ) : (
                       <>
-                        <Save className="w-4 h-4 mr-2" />
-                        Guardar borrador
+                  <Save className="w-4 h-4 mr-2" />
+                  Guardar borrador
                       </>
                     )}
-                  </Button>
+                </Button>
                 </>
               )}
             </div>
