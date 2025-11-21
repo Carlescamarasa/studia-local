@@ -604,7 +604,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         return normalized;
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
-        let query = supabase.from('profiles').select('*');
+        let query = supabase.from('profiles').select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at');
         
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);

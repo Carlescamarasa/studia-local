@@ -8,8 +8,10 @@ import EventoAsignacion from "./EventoAsignacion";
 import EventoImportante from "./EventoImportante";
 import { agruparEventosPorDia, startOfMonday, endOfSunday, formatLocalDate } from "./utils";
 import { componentStyles } from "@/design/componentStyles";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipo = 'all' }) {
+  const isMobile = useIsMobile();
   const lunesSemana = useMemo(() => {
     return startOfMonday(fechaActual);
   }, [fechaActual]);
@@ -52,32 +54,34 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
 
   return (
     <Card className={componentStyles.containers.cardBase}>
-      <CardContent className="p-4">
+      <CardContent className={`${isMobile ? 'p-2' : 'p-4'}`}>
         {/* Navegación */}
-        <div className="flex items-center justify-between mb-4">
-          <Button variant="outline" size="sm" onClick={() => navegarSemana(-1)}>
+        <div className={`flex items-center justify-between ${isMobile ? 'mb-2' : 'mb-4'}`}>
+          <Button variant="outline" size="sm" onClick={() => navegarSemana(-1)} className="rounded-xl focus-brand">
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <div className="text-center">
-            <h3 className="font-semibold text-base">
+            <h3 className={`font-semibold ${isMobile ? 'text-sm' : 'text-base'}`}>
               {lunesSemana.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
             </h3>
-            <p className="text-sm text-ui/60">
-              {lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — {domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-            </p>
+            {!isMobile && (
+              <p className="text-sm text-ui/60">
+                {lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — {domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+              </p>
+            )}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={irHoy}>
+            <Button variant="outline" size="sm" onClick={irHoy} className="rounded-xl focus-brand">
               Hoy
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navegarSemana(1)}>
+            <Button variant="outline" size="sm" onClick={() => navegarSemana(1)} className="rounded-xl focus-brand">
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
         {/* Grid de días */}
-        <div className="grid grid-cols-7 gap-2">
+        <div className={`grid grid-cols-7 ${isMobile ? 'gap-1' : 'gap-2'}`}>
           {diasSemana.map((dia, idx) => {
             const fechaISO = formatLocalDate(dia);
             const eventosDia = eventosPorDia[fechaISO] || { sesiones: [], feedbacks: [], asignaciones: [], eventos: [] };
@@ -88,14 +92,14 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
             return (
               <div
                 key={idx}
-                className={`border rounded-lg p-2 min-h-[200px] ${
+                className={`border rounded-lg ${isMobile ? 'p-1 min-h-[80px]' : 'p-2 min-h-[200px]'} ${
                   esHoy ? 'bg-primary/5 border-primary' : 'bg-background border-border-default'
                 }`}
               >
-                <div className={`text-sm font-medium mb-2 ${esHoy ? 'text-primary' : 'text-ui'}`}>
-                  {dia.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })}
+                <div className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium ${isMobile ? 'mb-1' : 'mb-2'} ${esHoy ? 'text-primary' : 'text-ui'}`}>
+                  {isMobile ? dia.toLocaleDateString('es-ES', { weekday: 'narrow', day: 'numeric' }) : dia.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })}
                 </div>
-                <div className="space-y-1">
+                <div className={`${isMobile ? 'space-y-0.5' : 'space-y-1'}`}>
                   {eventosDia.eventos.map(evento => (
                     <EventoImportante
                       key={evento.id}
@@ -128,8 +132,8 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
                     />
                   ))}
                   {totalEventos === 0 && (
-                    <div className="text-xs text-ui/40 text-center py-4">
-                      Sin eventos
+                    <div className={`text-xs text-ui/40 text-center ${isMobile ? 'py-2' : 'py-4'}`}>
+                      {!isMobile && 'Sin eventos'}
                     </div>
                   )}
                 </div>

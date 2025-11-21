@@ -31,6 +31,7 @@ import { designSystem } from "@/design/designSystem";
 import PageHeader from "@/components/ds/PageHeader";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ModalSesion from "@/components/calendario/ModalSesion";
+import UnifiedTable from "@/components/tables/UnifiedTable";
 
 const pad2 = (n) => String(n).padStart(2, "0");
 const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
@@ -1093,7 +1094,7 @@ function EstadisticasPageContent() {
                         variant={rangoPreset === p.key ? "primary" : "outline"}
                         size="sm"
                         onClick={() => aplicarPreset(p.key)}
-                        className={`text-xs h-8 sm:h-9 rounded-[var(--btn-radius,0.25rem)] ${componentStyles.buttons.outline}`}
+                        className="text-xs h-8 sm:h-9 rounded-xl focus-brand"
                         aria-label={`Preset ${p.label}`}
                       >
                         {p.label}
@@ -1246,42 +1247,6 @@ function EstadisticasPageContent() {
                   {kpis.mediaSemanalSesiones.toFixed(1)}
                 </p>
                 <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Sesiones/semana</p>
-              </div>
-            </div>
-            
-            {/* Responsive: mobile stack */}
-            <div className="sm:hidden space-y-3">
-              <div className="text-center py-2">
-                <Clock className="w-4 h-4 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">
-                  {formatDuracionHM(kpis.tiempoTotal)}
-                </p>
-                <p className="text-xs text-[var(--color-text-secondary)]">Tiempo total</p>
-              </div>
-              <div className="text-center py-2">
-                <Timer className="w-4 h-4 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">
-                  {formatDuracionHM(kpis.tiempoPromedioPorSesion)}
-                </p>
-                <p className="text-xs text-[var(--color-text-secondary)]">Promedio/sesión</p>
-              </div>
-              <div className="text-center py-2">
-                <Smile className="w-4 h-4 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">
-                  {kpis.calidadPromedio}/4
-                </p>
-                <p className="text-xs text-[var(--color-text-secondary)]">Valoración</p>
-              </div>
-              <div className="text-center py-2">
-                <Star className="w-4 h-4 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.racha.actual}</p>
-                <p className="text-xs text-[var(--color-text-secondary)]">Racha</p>
-                <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">Máx: {kpis.racha.maxima}</p>
-              </div>
-              <div className="text-center py-2">
-                <Calendar className="w-4 h-4 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                <p className="text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">{kpis.semanasDistintas}</p>
-                <p className="text-xs text-[var(--color-text-secondary)]">Semanas practicadas</p>
               </div>
             </div>
 
@@ -1574,46 +1539,94 @@ function EstadisticasPageContent() {
               <CardTitle className="text-base md:text-lg">Evolución por Día/Semana/Mes</CardTitle>
             </CardHeader>
             <CardContent>
-              {datosLinea.length === 0 ? (
-                <div className="text-center py-12">
-                  <TrendingUp className="w-16 h-16 mx-auto mb-4 icon-empty" />
-                  <p className="text-[var(--color-text-secondary)]">No hay datos</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {datosLinea.map((item, idx) => (
-                    <Card key={idx} className={`${componentStyles.containers.panelBase} hover:shadow-md transition-shadow`}>
-                      <CardContent className="pt-3 pb-3">
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <span className="text-sm font-medium">{item.fecha}</span>
-                          <div className="flex gap-2 flex-wrap">
-                            {item.tiempo > 0 && (
-                              <Badge className={`rounded-full ${componentStyles.status.badgeDefault} text-xs`}>
-                                {item.tiempo} min
-                              </Badge>
-                            )}
-                            {item.satisfaccion && (
-                              <Badge className={componentStyles.status.badgeInfo}>
-                                ⭐ {item.satisfaccion}/4
-                              </Badge>
-                            )}
-                            {item.completados > 0 && (
-                              <Badge className={componentStyles.status.badgeSuccess}>
-                                ✓ {item.completados}
-                              </Badge>
-                            )}
-                            {item.omitidos > 0 && (
-                              <Badge className={componentStyles.status.badgeDanger}>
-                                ⏭ {item.omitidos}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
+              <UnifiedTable
+                columns={[
+                  {
+                    key: 'fecha',
+                    label: 'Fecha',
+                    sortable: true,
+                    sortValue: (item) => {
+                      if (granularidad === 'dia') {
+                        return parseLocalDate(item.fecha).getTime();
+                      } else if (granularidad === 'semana') {
+                        return parseLocalDate(item.fecha).getTime();
+                      } else {
+                        const [y, m] = item.fecha.split('-');
+                        return new Date(Number(y), Number(m) - 1, 1).getTime();
+                      }
+                    },
+                    render: (item) => {
+                      let fechaFormateada = item.fecha;
+                      if (granularidad === 'dia') {
+                        const d = parseLocalDate(item.fecha);
+                        fechaFormateada = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+                      } else if (granularidad === 'semana') {
+                        const d = parseLocalDate(item.fecha);
+                        fechaFormateada = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+                      } else {
+                        const [y, m] = item.fecha.split('-');
+                        const d = new Date(Number(y), Number(m) - 1, 1);
+                        fechaFormateada = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+                      }
+                      return <span className="text-sm font-medium">{fechaFormateada}</span>;
+                    },
+                  },
+                  {
+                    key: 'tiempo',
+                    label: 'Tiempo',
+                    sortable: true,
+                    render: (item) => item.tiempo > 0 ? (
+                      <Badge className={`rounded-full ${componentStyles.status.badgeDefault} text-xs`}>
+                        {item.tiempo.toFixed(1)} min
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-[var(--color-text-muted)]">-</span>
+                    ),
+                  },
+                  {
+                    key: 'satisfaccion',
+                    label: 'Valoración',
+                    sortable: true,
+                    render: (item) => item.satisfaccion ? (
+                      <Badge className={componentStyles.status.badgeInfo}>
+                        ⭐ {item.satisfaccion}/4
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-[var(--color-text-muted)]">-</span>
+                    ),
+                  },
+                  {
+                    key: 'completados',
+                    label: 'Completados',
+                    sortable: true,
+                    render: (item) => item.completados > 0 ? (
+                      <Badge className={componentStyles.status.badgeSuccess}>
+                        ✓ {item.completados}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-[var(--color-text-muted)]">0</span>
+                    ),
+                  },
+                  {
+                    key: 'omitidos',
+                    label: 'Omitidos',
+                    sortable: true,
+                    render: (item) => item.omitidos > 0 ? (
+                      <Badge className={componentStyles.status.badgeDanger}>
+                        ⏭ {item.omitidos}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-[var(--color-text-muted)]">0</span>
+                    ),
+                  },
+                ]}
+                data={datosLinea}
+                keyField="fecha"
+                paginated={true}
+                defaultPageSize={10}
+                emptyMessage="No hay datos"
+                emptyIcon={TrendingUp}
+              />
             </CardContent>
           </Card>
         )}
@@ -1690,65 +1703,84 @@ function EstadisticasPageContent() {
               </div>
             </CardHeader>
             <CardContent>
-              {topEjerciciosFiltrados.length === 0 ? (
-                <div className="text-center py-12">
-                  <FileText className={componentStyles.components.emptyStateIcon} />
-                  <p className={componentStyles.components.emptyStateText}>No hay ejercicios registrados</p>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-2">
-                    {(() => {
-                      const startIndex = (topEjerciciosCurrentPage - 1) * topEjerciciosPageSize;
-                      const endIndex = startIndex + topEjerciciosPageSize;
-                      return topEjerciciosFiltrados.slice(startIndex, endIndex);
-                    })().map((ejercicio, idx) => {
-                      const globalIdx = (topEjerciciosCurrentPage - 1) * topEjerciciosPageSize + idx;
+              <UnifiedTable
+                columns={[
+                  {
+                    key: 'ranking',
+                    label: '#',
+                    sortable: false,
+                    render: (item, index) => {
+                      const globalIdx = (topEjerciciosCurrentPage - 1) * topEjerciciosPageSize + index;
                       return (
-                    <Card key={idx} className={`${componentStyles.containers.panelBase} hover:shadow-md transition-shadow`}>
-                      <CardContent className="pt-3 pb-3">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge className="rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] font-bold w-8 h-8 flex items-center justify-center shrink-0">
-                            {globalIdx + 1}
-                          </Badge>
-                          <Badge className={`rounded-full ${tipoColors[ejercicio.tipo]} shrink-0`}>
-                            {ejercicio.tipo}
-                          </Badge>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">{ejercicio.nombre}</p>
-                            <p className="text-xs text-[var(--color-text-secondary)]">{ejercicio.code}</p>
-                          </div>
-                          <div className="flex gap-2 flex-wrap shrink-0">
-                            <Badge variant="outline" className={componentStyles.status.badgeInfo}>
-                              {ejercicio.sesionesCount} sesiones
-                            </Badge>
-                            <Badge variant="outline" className={componentStyles.status.badgeDefault}>
-                              {formatDuracionHM(ejercicio.tiempoTotal)}
-                            </Badge>
-                            {ejercicio.ultimaPractica && (
-                              <Badge variant="outline" className="rounded-full text-xs bg-[var(--color-surface-muted)]">
-                                {new Date(ejercicio.ultimaPractica).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        <Badge className="rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] font-bold w-8 h-8 flex items-center justify-center shrink-0">
+                          {globalIdx + 1}
+                        </Badge>
                       );
-                    })}
-                  </div>
-                  <TablePagination
-                    data={topEjerciciosFiltrados}
-                    pageSize={topEjerciciosPageSize}
-                    currentPage={topEjerciciosCurrentPage}
-                    onPageChange={setTopEjerciciosCurrentPage}
-                    onPageSizeChange={(newSize) => {
-                      setTopEjerciciosPageSize(newSize);
-                      setTopEjerciciosCurrentPage(1);
-                    }}
-                  />
-                </>
-              )}
+                    },
+                  },
+                  {
+                    key: 'tipo',
+                    label: 'Tipo',
+                    sortable: true,
+                    render: (item) => (
+                      <Badge className={`rounded-full ${tipoColors[item.tipo]} shrink-0`}>
+                        {item.tipo}
+                      </Badge>
+                    ),
+                  },
+                  {
+                    key: 'nombre',
+                    label: 'Nombre',
+                    sortable: true,
+                    render: (item) => (
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{item.nombre}</p>
+                        <p className="text-xs text-[var(--color-text-secondary)]">{item.code}</p>
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'sesionesCount',
+                    label: 'Sesiones',
+                    sortable: true,
+                    render: (item) => (
+                      <Badge variant="outline" className={componentStyles.status.badgeInfo}>
+                        {item.sesionesCount} sesiones
+                      </Badge>
+                    ),
+                  },
+                  {
+                    key: 'tiempoTotal',
+                    label: 'Tiempo Total',
+                    sortable: true,
+                    sortValue: (item) => item.tiempoTotal,
+                    render: (item) => (
+                      <Badge variant="outline" className={componentStyles.status.badgeDefault}>
+                        {formatDuracionHM(item.tiempoTotal)}
+                      </Badge>
+                    ),
+                  },
+                  {
+                    key: 'ultimaPractica',
+                    label: 'Última Práctica',
+                    sortable: true,
+                    sortValue: (item) => item.ultimaPractica ? new Date(item.ultimaPractica).getTime() : 0,
+                    render: (item) => item.ultimaPractica ? (
+                      <Badge variant="outline" className="rounded-full text-xs bg-[var(--color-surface-muted)]">
+                        {new Date(item.ultimaPractica).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-[var(--color-text-muted)]">-</span>
+                    ),
+                  },
+                ]}
+                data={topEjerciciosFiltrados}
+                keyField="code"
+                paginated={true}
+                defaultPageSize={10}
+                emptyMessage="No hay ejercicios registrados"
+                emptyIcon={FileText}
+              />
             </CardContent>
           </Card>
         )}

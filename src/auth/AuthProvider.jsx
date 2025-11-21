@@ -36,6 +36,7 @@ export function AuthProvider({ children }) {
   const fetchingProfileRef = useRef(false);
   const currentUserIdRef = useRef(null);
   const sessionCheckIntervalRef = useRef(null);
+  const recursionErrorRef = useRef(false);
   
   // Calcular appRole basándose en el email del usuario
   const appRole = useMemo(() => {
@@ -62,7 +63,7 @@ export function AuthProvider({ children }) {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at')
         .eq('id', userId)
         .single();
 
@@ -132,6 +133,7 @@ export function AuthProvider({ children }) {
           setProfile(null);
           currentUserIdRef.current = null;
           fetchingProfileRef.current = false;
+          recursionErrorRef.current = false; // Resetear flag al cerrar sesión
           setLoading(false);
           return;
         } else if (event === 'TOKEN_REFRESHED') {
@@ -164,6 +166,7 @@ export function AuthProvider({ children }) {
         setProfile(null);
         currentUserIdRef.current = null;
         fetchingProfileRef.current = false;
+        recursionErrorRef.current = false; // Resetear flag al cerrar sesión
         setLoading(false);
         return;
       }
@@ -196,6 +199,7 @@ export function AuthProvider({ children }) {
         setProfile(null);
         currentUserIdRef.current = null;
         fetchingProfileRef.current = false;
+        recursionErrorRef.current = false;
         setLoading(false);
         try {
           await supabase.auth.signOut();
@@ -207,9 +211,14 @@ export function AuthProvider({ children }) {
 
     window.addEventListener('auth-error', handleAuthErrorEvent);
 
-    // Verificación periódica de sesión (cada 5 minutos)
+    // Verificación periódica de sesión (cada 5 minutos) - SOLO si no hay error de recursión
     sessionCheckIntervalRef.current = setInterval(async () => {
       if (!isMounted) return;
+      
+      // No verificar si hay un error de recursión activo
+      if (recursionErrorRef.current) {
+        return;
+      }
       
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -220,6 +229,7 @@ export function AuthProvider({ children }) {
           setProfile(null);
           currentUserIdRef.current = null;
           fetchingProfileRef.current = false;
+          recursionErrorRef.current = false;
           setLoading(false);
           return;
         }
@@ -230,11 +240,12 @@ export function AuthProvider({ children }) {
           setProfile(null);
           currentUserIdRef.current = null;
           fetchingProfileRef.current = false;
+          recursionErrorRef.current = false;
           setLoading(false);
         } else if (session?.user && (!user || user.id !== session.user.id)) {
           // Si hay sesión pero el usuario cambió, actualizar
           setUser(session.user);
-          if (session.user.id) {
+          if (session.user.id && !recursionErrorRef.current) {
             fetchProfile(session.user.id).catch(err => {
               if (process.env.NODE_ENV === 'development') {
                 console.error('[AuthProvider] Error obteniendo perfil en verificación periódica:', err);

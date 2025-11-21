@@ -205,6 +205,7 @@ function CalendarioPageContent() {
               variant={vista === 'semana' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setVista('semana')}
+              className={vista === 'semana' ? "rounded-xl focus-brand" : "rounded-xl focus-brand"}
             >
               <Grid3x3 className="w-4 h-4 mr-2" />
               Semana
@@ -213,6 +214,7 @@ function CalendarioPageContent() {
               variant={vista === 'mes' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setVista('mes')}
+              className={vista === 'mes' ? "rounded-xl focus-brand" : "rounded-xl focus-brand"}
             >
               <Calendar className="w-4 h-4 mr-2" />
               Mes
@@ -221,6 +223,7 @@ function CalendarioPageContent() {
               variant={vista === 'lista' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setVista('lista')}
+              className={vista === 'lista' ? "rounded-xl focus-brand" : "rounded-xl focus-brand"}
             >
               <List className="w-4 h-4 mr-2" />
               Lista
@@ -246,6 +249,7 @@ function CalendarioPageContent() {
             variant={filtroTipoGlobal === 'all' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setFiltroTipoGlobal('all')}
+            className="rounded-xl focus-brand"
           >
             Todos
           </Button>
@@ -253,6 +257,7 @@ function CalendarioPageContent() {
             variant={filtroTipoGlobal === 'evento' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setFiltroTipoGlobal('evento')}
+            className="rounded-xl focus-brand"
           >
             Eventos
           </Button>
@@ -260,6 +265,7 @@ function CalendarioPageContent() {
             variant={filtroTipoGlobal === 'asignacion' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setFiltroTipoGlobal('asignacion')}
+            className="rounded-xl focus-brand"
           >
             Asignaciones
           </Button>
@@ -267,6 +273,7 @@ function CalendarioPageContent() {
             variant={filtroTipoGlobal === 'sesion' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setFiltroTipoGlobal('sesion')}
+            className="rounded-xl focus-brand"
           >
             Sesiones
           </Button>
@@ -274,6 +281,7 @@ function CalendarioPageContent() {
             variant={filtroTipoGlobal === 'feedback' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setFiltroTipoGlobal('feedback')}
+            className="rounded-xl focus-brand"
           >
             Feedbacks
           </Button>

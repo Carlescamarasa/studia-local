@@ -152,22 +152,39 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
 
   // Agrupar por fecha
   const eventosPorFecha = useMemo(() => {
+    if (!eventosFiltrados || eventosFiltrados.length === 0) {
+      return {};
+    }
     const agrupados = {};
     eventosFiltrados.forEach(item => {
-      const fecha = item.fecha;
-      if (!agrupados[fecha]) {
-        agrupados[fecha] = [];
+      if (item && item.fecha) {
+        const fecha = item.fecha;
+        if (!agrupados[fecha]) {
+          agrupados[fecha] = [];
+        }
+        agrupados[fecha].push(item);
       }
-      agrupados[fecha].push(item);
     });
     return agrupados;
   }, [eventosFiltrados]);
 
   const fechasOrdenadas = useMemo(() => {
-    const fechas = Object.keys(eventosPorFecha).sort((a, b) => {
-      const fechaA = parseLocalDate(a);
-      const fechaB = parseLocalDate(b);
-      return fechaA - fechaB; // Ascendente (hoy primero)
+    if (!eventosPorFecha || typeof eventosPorFecha !== 'object') {
+      return [];
+    }
+    const fechas = Object.keys(eventosPorFecha);
+    if (fechas.length === 0) {
+      return [];
+    }
+    const fechasOrdenadas = fechas.sort((a, b) => {
+      try {
+        const fechaA = parseLocalDate(a);
+        const fechaB = parseLocalDate(b);
+        return fechaA - fechaB; // Ascendente (hoy primero)
+      } catch (e) {
+        console.error('[VistaLista] Error ordenando fechas:', e);
+        return 0;
+      }
     });
     
     // Asegurar que hoy esté primero
@@ -183,8 +200,8 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
       }
     }
     
-    return fechas;
-  }, [eventosPorFecha, hoyISO]);
+    return fechasOrdenadas;
+  }, [eventosPorFecha, hoyISO, hoy]);
 
   const navegarFechas = (direccion) => {
     const nuevaFecha = new Date(fechaActual);

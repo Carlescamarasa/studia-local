@@ -10,8 +10,10 @@ class ErrorBoundary extends React.Component {
     this.state = { 
       hasError: false, 
       error: null,
-      errorInfo: null 
+      errorInfo: null,
+      reportSent: false
     };
+    this.handleReportSent = this.handleReportSent.bind(this);
   }
 
   static getDerivedStateFromError(error) {
@@ -30,8 +32,21 @@ class ErrorBoundary extends React.Component {
     }
   }
 
+  componentDidMount() {
+    // Escuchar cuando se envía el reporte exitosamente
+    window.addEventListener('error-report-sent', this.handleReportSent);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('error-report-sent', this.handleReportSent);
+  }
+
+  handleReportSent() {
+    this.setState({ reportSent: true });
+  }
+
   handleReset = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
+    this.setState({ hasError: false, error: null, errorInfo: null, reportSent: false });
     window.location.reload();
   };
 
@@ -47,10 +62,12 @@ class ErrorBoundary extends React.Component {
               
               <div>
                 <h2 className={`${componentStyles.typography.sectionTitle} mb-2`}>
-                  Algo salió mal
+                  {this.state.reportSent ? 'Reporte enviado correctamente' : 'Algo salió mal'}
                 </h2>
                 <p className={componentStyles.typography.bodyText}>
-                  La aplicación encontró un error inesperado. Por favor, reporta este problema para que podamos solucionarlo.
+                  {this.state.reportSent 
+                    ? '✅ Gracias por reportar el problema. Hemos recibido tu reporte y lo revisaremos pronto.'
+                    : 'La aplicación encontró un error inesperado. Por favor, reporta este problema para que podamos solucionarlo.'}
                 </p>
               </div>
 

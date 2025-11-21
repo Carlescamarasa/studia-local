@@ -8,8 +8,10 @@ import EventoAsignacion from "./EventoAsignacion";
 import EventoImportante from "./EventoImportante";
 import { agruparEventosPorDia, startOfMonday, formatLocalDate, parseLocalDate } from "./utils";
 import { componentStyles } from "@/design/componentStyles";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function VistaMes({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipo = 'all' }) {
+  const isMobile = useIsMobile();
   const primerDiaMes = useMemo(() => {
     return new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1);
   }, [fechaActual]);
@@ -70,33 +72,33 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
 
   return (
     <Card className={componentStyles.containers.cardBase}>
-      <CardContent className="p-4">
+      <CardContent className={`${isMobile ? 'p-1.5' : 'p-4'}`}>
         {/* Navegación */}
-        <div className="flex items-center justify-between mb-4">
-          <Button variant="outline" size="sm" onClick={() => navegarMes(-1)}>
+        <div className={`flex items-center justify-between ${isMobile ? 'mb-2' : 'mb-4'}`}>
+          <Button variant="outline" size="sm" onClick={() => navegarMes(-1)} className="rounded-xl focus-brand">
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <div className="text-center">
-            <h3 className="font-semibold text-base">
+            <h3 className={`font-semibold ${isMobile ? 'text-sm' : 'text-base'}`}>
               {fechaActual.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
             </h3>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={irHoy}>
+            <Button variant="outline" size="sm" onClick={irHoy} className="rounded-xl focus-brand">
               Hoy
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navegarMes(1)}>
+            <Button variant="outline" size="sm" onClick={() => navegarMes(1)} className="rounded-xl focus-brand">
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
         {/* Grid de calendario */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className={`grid grid-cols-7 ${isMobile ? 'gap-0.5' : 'gap-1'}`}>
           {/* Encabezados de días */}
           {nombresDias.map(dia => (
-            <div key={dia} className="text-center text-xs font-medium text-ui/60 p-2">
-              {dia}
+            <div key={dia} className={`text-center ${isMobile ? 'text-[10px] p-1' : 'text-xs p-2'} font-medium text-ui/60`}>
+              {isMobile ? dia.substring(0, 1) : dia}
             </div>
           ))}
 
@@ -112,14 +114,14 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
             return (
               <div
                 key={idx}
-                className={`border rounded-lg p-1 min-h-[100px] ${
+                className={`border rounded ${isMobile ? 'p-0.5 min-h-[60px]' : 'p-1 min-h-[100px]'} ${
                   esHoy ? 'bg-primary/5 border-primary' : 'bg-background border-border-default'
                 } ${esOtroMes ? 'opacity-40' : ''}`}
               >
-                <div className={`text-xs font-medium mb-1 ${esHoy ? 'text-primary' : 'text-ui'}`}>
+                <div className={`${isMobile ? 'text-[10px] mb-0.5' : 'text-xs mb-1'} font-medium ${esHoy ? 'text-primary' : 'text-ui'}`}>
                   {dia.getDate()}
                 </div>
-                <div className="space-y-0.5">
+                <div className={`${isMobile ? 'space-y-0' : 'space-y-0.5'}`}>
                   {eventosDia.eventos.slice(0, 1).map(evento => (
                     <EventoImportante
                       key={evento.id}

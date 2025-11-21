@@ -347,6 +347,9 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
 
       toast.success('✅ Reporte enviado correctamente. ¡Gracias por tu ayuda!');
       
+      // Notificar a ErrorBoundary si está esperando confirmación
+      window.dispatchEvent(new CustomEvent('error-report-sent'));
+      
       // Limpiar formulario
       setCategory('');
       setDescription('');
