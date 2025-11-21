@@ -10,8 +10,10 @@ import EventoAsignacion from "./EventoAsignacion";
 import EventoImportante from "./EventoImportante";
 import { formatLocalDate, parseLocalDate, formatearFechaEvento, startOfMonday } from "./utils";
 import { componentStyles } from "@/design/componentStyles";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function VistaLista({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipoGlobal, setFiltroTipoGlobal }) {
+  const isMobile = useIsMobile();
   const [busqueda, setBusqueda] = useState('');
   const filtroTipo = filtroTipoGlobal || 'all';
 
@@ -213,41 +215,41 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
     onFechaChange(new Date());
   };
 
-  return (
-    <Card className={componentStyles.containers.cardBase}>
-      <CardHeader>
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <CardTitle className="text-lg">Lista de Eventos</CardTitle>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navegarFechas(-1)}
-              className="h-8"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={irHoy}
-              className="h-8"
-            >
-              <Calendar className="w-4 h-4 mr-1" />
-              Hoy
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navegarFechas(1)}
-              className="h-8"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+  const headerContent = (
+    <div className={`flex items-center justify-between flex-wrap gap-3 ${isMobile ? 'mb-2 px-0' : ''}`}>
+      <h2 className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>Lista de Eventos</h2>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navegarFechas(-1)}
+          className="h-8"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={irHoy}
+          className="h-8"
+        >
+          <Calendar className="w-4 h-4 mr-1" />
+          Hoy
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navegarFechas(1)}
+          className="h-8"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+
+  const bodyContent = (
+    <div className={`${isMobile ? 'space-y-3 px-0' : 'space-y-4'}`}>
         {/* Filtros */}
         <div className="flex gap-3 flex-wrap">
           <div className="relative flex-1 min-w-[200px]">
@@ -346,6 +348,55 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
             })
           )}
         </div>
+      </div>
+    </div>
+  );
+
+  // En mobile, sin Card wrapper para máximo espacio
+  if (isMobile) {
+    return (
+      <>
+        {headerContent}
+        {bodyContent}
+      </>
+    );
+  }
+
+  // En desktop, con Card
+  return (
+    <Card className={componentStyles.containers.cardBase}>
+      <CardHeader>
+        <CardTitle className="text-lg">Lista de Eventos</CardTitle>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navegarFechas(-1)}
+            className="h-8"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={irHoy}
+            className="h-8"
+          >
+            <Calendar className="w-4 h-4 mr-1" />
+            Hoy
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navegarFechas(1)}
+            className="h-8"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {bodyContent}
       </CardContent>
     </Card>
   );

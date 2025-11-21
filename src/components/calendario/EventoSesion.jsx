@@ -1,39 +1,84 @@
 import React from "react";
-import { PlayCircle, MessageSquare, Link as LinkIcon, Clock } from "lucide-react";
+import { BookOpen, Clock, Star } from "lucide-react";
 import { getNombreVisible } from "@/components/utils/helpers";
-import { formatearHora, obtenerColorEvento } from "./utils";
+import { formatearFechaEvento } from "./utils";
+import { Badge } from "@/components/ds";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function EventoSesion({ sesion, usuarios, onClick }) {
   const alumno = usuarios.find(u => u.id === sesion.alumnoId);
-  const hora = sesion.inicioISO ? formatearHora(sesion.inicioISO) : '';
-  const duracionMin = Math.floor(sesion.duracionRealSeg / 60);
+  const fecha = sesion.inicioISO ? new Date(sesion.inicioISO) : null;
+  const fechaFormateada = fecha ? fecha.toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  }) : '';
+  const duracionMin = Math.floor((sesion.duracionRealSeg || 0) / 60);
+  const duracionObjetivoMin = Math.floor((sesion.duracionObjetivoSeg || 0) / 60);
   
-  // Verificar si hay feedback relacionado (por semana y alumno)
-  // Esto se puede mejorar consultando feedbacksSemanal
-  const tieneFeedback = false; // TODO: verificar si hay feedback para esta sesión
-  const tieneMedia = false; // TODO: verificar si hay mediaLinks en la sesión
-
-  const colores = obtenerColorEvento('sesion');
+  const getCalificacionBadge = (cal) => {
+    if (!cal || cal <= 0) return null;
+    const calInt = Math.round(cal);
+    if (calInt === 1) return componentStyles.status.badgeDanger;
+    if (calInt === 2) return componentStyles.status.badgeWarning;
+    if (calInt === 3) return componentStyles.status.badgeInfo;
+    if (calInt === 4) return componentStyles.status.badgeSuccess;
+    return componentStyles.status.badgeDefault;
+  };
 
   return (
     <div
       onClick={onClick}
-      className={`${colores.bg} ${colores.border} border rounded p-1.5 text-xs cursor-pointer hover:opacity-80 transition-opacity`}
+      className="flex items-start gap-2 py-2 px-3 border-l-4 border-l-[var(--color-success)] bg-[var(--color-success)]/5 hover:bg-[var(--color-success)]/10 transition-colors relative group cursor-pointer"
     >
-      <div className="flex items-center gap-1 mb-1">
-        <PlayCircle className={`w-3 h-3 ${colores.icon}`} />
-        <span className={`font-medium ${colores.text}`}>
-          {sesion.sesionNombre || 'Sesión'}
-        </span>
-      </div>
-      <div className={`${colores.text} mb-1 text-[10px]`}>
-        {getNombreVisible(alumno)} • {hora}
-      </div>
-      <div className="flex items-center gap-1">
-        {tieneFeedback && <MessageSquare className={`w-3 h-3 ${colores.icon}`} />}
-        {tieneMedia && <LinkIcon className={`w-3 h-3 ${colores.icon}`} />}
-        <Clock className={`w-3 h-3 ${colores.icon}`} />
-        <span className={colores.icon}>{duracionMin}min</span>
+      <BookOpen className="w-4 h-4 text-[var(--color-success)] mt-0.5 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap mb-1">
+          <p className="text-xs text-[var(--color-text-secondary)] font-medium">Sesión de estudio</p>
+          {fechaFormateada && (
+            <span className="text-xs text-[var(--color-text-secondary)]">
+              • {fechaFormateada}
+            </span>
+          )}
+          {sesion.piezaNombre && (
+            <span className="text-xs text-[var(--color-text-secondary)]">
+              • {sesion.piezaNombre}
+            </span>
+          )}
+          {sesion.planNombre && (
+            <span className="text-xs text-[var(--color-text-secondary)]">
+              • {sesion.planNombre}
+            </span>
+          )}
+          {sesion.calificacion !== undefined && sesion.calificacion !== null && sesion.calificacion > 0 && (
+            <Badge className={`${getCalificacionBadge(sesion.calificacion)} shrink-0 ml-auto`}>
+              <Star className="w-3 h-3 mr-1 fill-current" />
+              {Math.round(sesion.calificacion)}/4
+            </Badge>
+          )}
+        </div>
+        <p className="text-sm text-[var(--color-text-primary)] font-semibold mb-1">
+          {sesion.sesionNombre || 'Sesión sin nombre'}
+        </p>
+        <div className="flex items-center gap-2 flex-wrap mb-1">
+          {duracionMin > 0 && (
+            <span className="text-xs text-[var(--color-text-secondary)] flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {duracionMin} min
+            </span>
+          )}
+          {duracionObjetivoMin > 0 && (
+            <span className="text-xs text-[var(--color-text-secondary)]">
+              Obj: {duracionObjetivoMin} min
+            </span>
+          )}
+        </div>
+        {sesion.notas && sesion.notas.trim() && (
+          <p className="text-sm text-[var(--color-text-primary)] italic break-words">
+            "{sesion.notas.trim()}"
+          </p>
+        )}
       </div>
     </div>
   );

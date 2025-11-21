@@ -72,11 +72,10 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
 
   const nombresDias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
-  return (
-    <Card className={componentStyles.containers.cardBase}>
-      <CardContent className={`${isMobile ? 'p-1' : 'p-4'}`}>
-        {/* Navegación */}
-        <div className={`flex items-center justify-between ${isMobile ? 'mb-1' : 'mb-4'}`}>
+  const contenido = (
+    <>
+      {/* Navegación */}
+      <div className={`flex items-center justify-between ${isMobile ? 'mb-0.5 px-0' : 'mb-4'}`}>
           <Button variant="outline" size="sm" onClick={() => navegarMes(-1)} className={`rounded-xl focus-brand ${isMobile ? 'h-7 w-7 p-0' : ''}`}>
             <ChevronLeft className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
           </Button>
@@ -100,10 +99,10 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
         </div>
 
         {/* Grid de calendario */}
-        <div className={`grid grid-cols-7 ${isMobile ? 'gap-0.5' : 'gap-1'}`}>
+        <div className={`grid grid-cols-7 ${isMobile ? 'gap-0' : 'gap-1'}`}>
           {/* Encabezados de días */}
           {nombresDias.map(dia => (
-            <div key={dia} className={`text-center ${isMobile ? 'text-[9px] p-0.5' : 'text-xs p-2'} font-medium text-ui/60`}>
+            <div key={dia} className={`text-center ${isMobile ? 'text-[8px] py-0.5' : 'text-xs p-2'} font-medium text-ui/60`}>
               {isMobile ? dia.substring(0, 1) : dia}
             </div>
           ))}
@@ -123,11 +122,11 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
                 <div
                   key={idx}
                   onClick={() => totalEventos > 0 && setDiaSeleccionado(fechaISO)}
-                  className={`border rounded ${isMobile ? 'p-0.5 min-h-[32px]' : 'p-1 min-h-[40px]'} flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                  className={`border rounded ${isMobile ? 'p-0 min-h-[28px]' : 'p-1 min-h-[40px]'} flex flex-col items-center justify-center cursor-pointer transition-colors ${
                     esHoy ? 'bg-primary/5 border-primary' : 'bg-background border-border-default'
                   } ${esOtroMes ? 'opacity-40' : ''} ${totalEventos > 0 ? 'hover:bg-primary/10 active:bg-primary/15' : ''}`}
                 >
-                  <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} font-medium ${esHoy ? 'text-primary' : 'text-ui'}`}>
+                  <div className={`${isMobile ? 'text-[9px] leading-tight' : 'text-xs'} font-medium ${esHoy ? 'text-primary' : 'text-ui'}`}>
                     {dia.getDate()}
                   </div>
                   {totalEventos > 0 && (
@@ -206,7 +205,6 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
             );
           })}
         </div>
-      </CardContent>
 
       {/* Modal de eventos del día (solo mobile) */}
       {isMobile && diaSeleccionado && (
@@ -283,6 +281,20 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
           </DialogContent>
         </Dialog>
       )}
+    </>
+  );
+
+  // En mobile, sin Card wrapper para máximo espacio
+  if (isMobile) {
+    return contenido;
+  }
+
+  // En desktop, con Card
+  return (
+    <Card className={componentStyles.containers.cardBase}>
+      <CardContent className="p-4">
+        {contenido}
+      </CardContent>
     </Card>
   );
 }

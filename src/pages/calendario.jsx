@@ -23,7 +23,14 @@ function CalendarioPageContent() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [vista, setVista] = useState('semana'); // 'semana' | 'mes' | 'lista'
+  const [vista, setVista] = useState(() => isMobile ? 'lista' : 'semana'); // 'semana' | 'mes' | 'lista'
+  
+  // Asegurar que la vista por defecto sea 'lista' en mobile cuando cambie isMobile
+  React.useEffect(() => {
+    if (isMobile && vista === 'semana') {
+      setVista('lista');
+    }
+  }, [isMobile, vista]);
   const [fechaActual, setFechaActual] = useState(new Date());
   const [eventoSeleccionado, setEventoSeleccionado] = useState(null);
   const [tipoEventoSeleccionado, setTipoEventoSeleccionado] = useState(null); // 'sesion' | 'feedback' | 'asignacion' | 'evento'

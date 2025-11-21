@@ -394,6 +394,7 @@ function ReportesPageContent() {
               columns={columns}
               selectable={true}
               keyField="id"
+              onRowClick={(report) => handleViewReport(report)}
               bulkActions={[
                 {
                   label: 'Marcar como nuevo',

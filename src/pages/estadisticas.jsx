@@ -1266,14 +1266,14 @@ function EstadisticasPageContent() {
                 />
               </div>
 
-              <Card className={componentStyles.components.cardBase}>
-                <CardHeader className="p-1.5 sm:p-2 md:p-3">
+              <Card className={`${componentStyles.components.cardBase} ${isMobile ? '!p-0' : ''}`}>
+                <CardHeader className={`${isMobile ? 'px-1 pt-1 pb-0.5' : 'p-1.5'} sm:p-2 md:p-3`}>
                   <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
                     <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primary)]" />
                     Tiempo de Estudio
                   </CardTitle>
                 </CardHeader>
-              <CardContent className="p-1.5 sm:p-2 md:p-3">
+              <CardContent className={`${isMobile ? 'px-1 pb-1' : 'p-1.5'} sm:p-2 md:p-3`}>
                 {datosLinea.length === 0 ? (
                   <div className="text-center py-8 sm:py-12">
                     <TrendingUp className={componentStyles.components.emptyStateIcon} />
@@ -1355,14 +1355,14 @@ function EstadisticasPageContent() {
               </CardContent>
             </Card>
 
-            <Card className={componentStyles.components.cardBase}>
-              <CardHeader className="p-1.5 sm:p-2 md:p-3">
+            <Card className={`${componentStyles.components.cardBase} ${isMobile ? '!p-0' : ''}`}>
+              <CardHeader className={`${isMobile ? 'px-1 pt-1 pb-0.5' : 'p-1.5'} sm:p-2 md:p-3`}>
                 <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
                   <Smile className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-info)]" />
                   Autoevaluación (1-4)
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-1.5 sm:p-2 md:p-3">
+              <CardContent className={`${isMobile ? 'px-1 pb-1' : 'p-1.5'} sm:p-2 md:p-3`}>
                 {datosLinea.filter(d => d.satisfaccion !== null).length === 0 ? (
                   <div className="text-center py-8 sm:py-12">
                     <Smile className={componentStyles.components.emptyStateIcon} />
@@ -1439,14 +1439,14 @@ function EstadisticasPageContent() {
               </CardContent>
             </Card>
 
-            <Card className={componentStyles.components.cardBase}>
-              <CardHeader className="p-1.5 sm:p-2 md:p-3">
+            <Card className={`${componentStyles.components.cardBase} ${isMobile ? '!p-0' : ''}`}>
+              <CardHeader className={`${isMobile ? 'px-1 pt-1 pb-0.5' : 'p-1.5'} sm:p-2 md:p-3`}>
                 <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
                   <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primary)]" />
                   Ejercicios: Completados vs Omitidos
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-1.5 sm:p-2 md:p-3">
+              <CardContent className={`${isMobile ? 'px-1 pb-1' : 'p-1.5'} sm:p-2 md:p-3`}>
                 {datosLinea.length === 0 ? (
                   <div className="text-center py-8 sm:py-12">
                     <Layers className={componentStyles.components.emptyStateIcon} />
