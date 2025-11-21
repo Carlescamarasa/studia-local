@@ -129,8 +129,18 @@ function ReportesPageContent() {
       console.error('[ReportesPage] Error eliminando reporte:', {
         error: error?.message || error,
         code: error?.code,
+        status: error?.status,
+        details: error?.details,
       });
-      toast.error('Error al eliminar el reporte');
+      
+      // Mensajes de error más descriptivos
+      if (error?.code === '42501' || error?.message?.includes('row-level security')) {
+        toast.error('❌ Error de permisos: No tienes permiso para eliminar reportes. Verifica que seas administrador.');
+      } else if (error?.code === 'PGRST301' || error?.message?.includes('permission denied')) {
+        toast.error('❌ Permiso denegado: No tienes permisos para realizar esta acción.');
+      } else {
+        toast.error(`❌ Error al eliminar el reporte: ${error?.message || 'Error desconocido'}`);
+      }
     },
   });
 
@@ -144,8 +154,18 @@ function ReportesPageContent() {
       console.error('[ReportesPage] Error eliminando reportes:', {
         error: error?.message || error,
         code: error?.code,
+        status: error?.status,
+        details: error?.details,
       });
-      toast.error('Error al eliminar los reportes');
+      
+      // Mensajes de error más descriptivos
+      if (error?.code === '42501' || error?.message?.includes('row-level security')) {
+        toast.error('❌ Error de permisos: No tienes permiso para eliminar reportes. Verifica que seas administrador.');
+      } else if (error?.code === 'PGRST301' || error?.message?.includes('permission denied')) {
+        toast.error('❌ Permiso denegado: No tienes permisos para realizar esta acción.');
+      } else {
+        toast.error(`❌ Error al eliminar los reportes: ${error?.message || 'Error desconocido'}`);
+      }
     },
   });
 
@@ -513,12 +533,14 @@ function ReportesPageContent() {
                 <div>
                   <Label className="text-xs text-ui/60">Información técnica</Label>
                   <details className="mt-2">
-                    <summary className="cursor-pointer text-sm text-[var(--color-primary)] hover:underline">
+                    <summary className="cursor-pointer text-sm font-medium text-[var(--color-text-primary)] hover:text-[var(--color-primary)] transition-colors">
                       Ver detalles técnicos
                     </summary>
-                    <pre className="mt-2 text-xs bg-[var(--color-surface-muted)] p-3 rounded-lg overflow-auto max-h-40">
-                      {JSON.stringify(selectedReport.context, null, 2)}
-                    </pre>
+                    <div className="mt-2 max-h-[300px] overflow-y-auto">
+                      <pre className="text-xs bg-[var(--color-surface-muted)] p-3 rounded-lg whitespace-pre-wrap break-words">
+                        {JSON.stringify(selectedReport.context, null, 2)}
+                      </pre>
+                    </div>
                   </details>
                 </div>
               )}

@@ -980,7 +980,7 @@ function EstadisticasPageContent() {
               { value: 'progreso', label: 'Progreso', icon: TrendingUp },
               { value: 'tipos', label: 'Tipos', icon: PieChart },
               { value: 'top', label: 'Top', icon: Star },
-              { value: 'autoevaluaciones', label: 'Autoevaluaciones', icon: List },
+              { value: 'autoevaluaciones', label: 'Sesiones', icon: List },
               { value: 'feedback', label: 'Feedback', icon: MessageSquare },
             ]}
           />

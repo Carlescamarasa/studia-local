@@ -545,7 +545,7 @@ function AsignacionesPageContent() {
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold">
-                {asignacionesFinales.length} asignación{asignacionesFinales.length !== 1 ? 'es' : ''}
+                {asignacionesFinales.length} asignacion{asignacionesFinales.length !== 1 ? 'es' : ''}
                 {estadoFilter !== 'all' && (
                   <span className="ml-2 text-sm font-normal text-[var(--color-text-secondary)]">
                     ({estadoLabels[estadoFilter]})

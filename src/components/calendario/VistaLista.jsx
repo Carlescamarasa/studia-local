@@ -17,21 +17,25 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
   const [busqueda, setBusqueda] = useState('');
   const filtroTipo = filtroTipoGlobal || 'all';
 
-  // Calcular rango de fechas: hoy hasta hoy+7 días (basado en fechaActual)
+  // Calcular rango de fechas basado en fechaActual (semana actual)
+  const lunesSemana = useMemo(() => {
+    return startOfMonday(fechaActual);
+  }, [fechaActual]);
+  
+  const domingoSemana = useMemo(() => {
+    const domingo = new Date(lunesSemana);
+    domingo.setDate(lunesSemana.getDate() + 6);
+    domingo.setHours(23, 59, 59, 999);
+    return domingo;
+  }, [lunesSemana]);
+
   const hoy = useMemo(() => {
     const h = new Date();
     h.setHours(0, 0, 0, 0);
     return h;
   }, []);
-  
-  const fechaFin = useMemo(() => {
-    const fin = new Date(hoy);
-    fin.setDate(fin.getDate() + 7);
-    return fin;
-  }, [hoy]);
 
   const hoyISO = formatLocalDate(hoy);
-  const fechaFinISO = formatLocalDate(fechaFin);
 
   // Combinar todos los eventos en una lista plana con fecha
   const eventosLista = useMemo(() => {
@@ -40,7 +44,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
     // Agregar eventos importantes (prioridad 1)
     eventos.eventosImportantes.forEach(evento => {
       const fechaEvento = parseLocalDate(evento.fechaInicio);
-      if (fechaEvento >= hoy && fechaEvento <= fechaFin) {
+      if (fechaEvento >= lunesSemana && fechaEvento <= domingoSemana) {
         lista.push({
           tipo: 'evento',
           evento: evento,
@@ -55,7 +59,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
     eventos.asignaciones.forEach(asignacion => {
       if (asignacion.semanaInicioISO) {
         const fechaAsignacion = parseLocalDate(asignacion.semanaInicioISO);
-        if (fechaAsignacion >= hoy && fechaAsignacion <= fechaFin) {
+        if (fechaAsignacion >= lunesSemana && fechaAsignacion <= domingoSemana) {
           lista.push({
             tipo: 'asignacion',
             evento: asignacion,
@@ -72,7 +76,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
       if (sesion.inicioISO) {
         const fecha = sesion.inicioISO.split('T')[0];
         const fechaSesion = parseLocalDate(fecha);
-        if (fechaSesion >= hoy && fechaSesion <= fechaFin) {
+        if (fechaSesion >= lunesSemana && fechaSesion <= domingoSemana) {
           lista.push({
             tipo: 'sesion',
             evento: sesion,
@@ -88,7 +92,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
     eventos.feedbacks.forEach(feedback => {
       if (feedback.semanaInicioISO) {
         const fechaFeedback = parseLocalDate(feedback.semanaInicioISO);
-        if (fechaFeedback >= hoy && fechaFeedback <= fechaFin) {
+        if (fechaFeedback >= lunesSemana && fechaFeedback <= domingoSemana) {
           lista.push({
             tipo: 'feedback',
             evento: feedback,
@@ -115,7 +119,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
     });
 
     return lista;
-  }, [eventos, hoy, fechaFin]);
+  }, [eventos, lunesSemana, domingoSemana]);
 
   // Filtrar eventos
   const eventosFiltrados = useMemo(() => {

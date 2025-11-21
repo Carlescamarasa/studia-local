@@ -144,6 +144,19 @@ CREATE POLICY "Admins can update reports"
     )
   );
 
+-- Política: Solo los administradores pueden eliminar reportes
+CREATE POLICY "Admins can delete reports"
+  ON error_reports
+  FOR DELETE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.role = 'ADMIN'
+    )
+  );
+
 -- ============================================================================
 -- Storage Bucket para Screenshots
 -- ============================================================================

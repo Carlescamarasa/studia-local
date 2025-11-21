@@ -115,7 +115,7 @@ export default function AutoevaluacionesTab({ registros, usuarios }) {
           <div className="flex items-center justify-between flex-wrap gap-3">
             <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
               <List className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primary)]" />
-              Autoevaluaciones
+              Sesiones
             </CardTitle>
             <div className="flex items-center gap-3 flex-wrap">
               <Select value={calificacionFilter} onValueChange={setCalificacionFilter}>
