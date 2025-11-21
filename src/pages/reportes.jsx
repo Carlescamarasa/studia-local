@@ -249,15 +249,22 @@ function ReportesPageContent() {
       key: 'createdAt',
       label: 'Fecha',
       render: (r) => (
-        <span className="text-xs text-ui/80">
-          {new Date(r.createdAt).toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </span>
+        <div className="flex flex-col gap-0.5">
+          {r.createdByName && (
+            <span className="text-xs text-[var(--color-text-secondary)]">
+              {r.createdByName}
+            </span>
+          )}
+          <span className="text-xs text-ui/80">
+            {new Date(r.createdAt).toLocaleDateString('es-ES', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </span>
+        </div>
       ),
     },
     {
@@ -450,6 +457,12 @@ function ReportesPageContent() {
                       {STATUS_LABELS[selectedReport.status]}
                     </Badge>
                   </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-ui/60">Creado por</Label>
+                  <p className="text-sm font-medium">
+                    {selectedReport.createdByName || 'Usuario desconocido'}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-xs text-ui/60">Fecha de creación</Label>

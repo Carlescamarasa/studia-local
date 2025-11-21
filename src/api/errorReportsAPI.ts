@@ -7,6 +7,8 @@ import { supabase } from '@/lib/supabaseClient';
 export interface ErrorReport {
   id: string;
   userId: string | null;
+  createdBy: string | null;
+  createdByName: string | null; // full_name del autor desde profiles
   category: string;
   description: string;
   screenshotUrl: string | null;
@@ -39,10 +41,15 @@ export interface UpdateReportData {
  * Crear un nuevo reporte de error
  */
 export async function createErrorReport(data: CreateReportData): Promise<ErrorReport> {
+  // Obtener el usuario autenticado para created_by
+  const { data: { user } } = await supabase.auth.getUser();
+  const createdBy = user?.id || null;
+
   const { data: report, error } = await supabase
     .from('error_reports')
     .insert({
       user_id: data.userId,
+      created_by: createdBy, // Usar auth.uid() automáticamente
       category: data.category,
       description: data.description,
       screenshot_url: data.screenshotUrl || null,
@@ -50,7 +57,12 @@ export async function createErrorReport(data: CreateReportData): Promise<ErrorRe
       context: data.context,
       status: 'nuevo'
     })
-      .select()
+      .select(`
+        *,
+        created_by_profile:created_by (
+          full_name
+        )
+      `)
       .single();
 
   if (error) {
@@ -97,7 +109,22 @@ export async function listErrorReports(filters?: {
     throw error;
   }
 
-  return (data || []).map(mapToErrorReport);
+  // Obtener nombres de los autores
+  const reportsWithNames = await Promise.all(
+    (data || []).map(async (report) => {
+      if (report.created_by) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', report.created_by)
+          .single();
+        return { ...report, created_by_profile: profile ? { full_name: profile.full_name } : null };
+      }
+      return { ...report, created_by_profile: null };
+    })
+  );
+
+  return reportsWithNames.map(mapToErrorReport);
 }
 
 /**
@@ -119,7 +146,18 @@ export async function getErrorReport(id: string): Promise<ErrorReport | null> {
     throw error;
   }
 
-  return mapToErrorReport(data);
+  // Obtener nombre del autor si existe
+  let reportWithName = { ...data, created_by_profile: null };
+  if (data?.created_by) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', data.created_by)
+      .single();
+    reportWithName.created_by_profile = profile ? { full_name: profile.full_name } : null;
+  }
+
+  return mapToErrorReport(reportWithName);
 }
 
 /**
@@ -245,9 +283,14 @@ export async function deleteMultipleErrorReports(ids: string[]): Promise<void> {
  * Mapear datos de Supabase (snake_case) a ErrorReport (camelCase)
  */
 function mapToErrorReport(data: any): ErrorReport {
+    // Extraer full_name del JOIN con profiles
+    const createdByName = data.created_by_profile?.full_name || null;
+    
     return {
       id: data.id,
       userId: data.user_id,
+      createdBy: data.created_by,
+      createdByName: createdByName,
       category: data.category,
       description: data.description,
       screenshotUrl: data.screenshot_url,
