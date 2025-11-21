@@ -203,20 +203,22 @@ function CalendarioPageContent() {
         subtitle="Visualiza sesiones, feedbacks, asignaciones y eventos importantes"
         actions={
           <div className="flex gap-2">
-            <Button
-              variant={vista === 'semana' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setVista('semana')}
-              className={vista === 'semana' ? "rounded-xl focus-brand" : "rounded-xl focus-brand"}
-            >
-              <Grid3x3 className="w-4 h-4 mr-2" />
-              Semana
-            </Button>
+            {!isMobile && (
+              <Button
+                variant={vista === 'semana' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setVista('semana')}
+                className="rounded-xl focus-brand"
+              >
+                <Grid3x3 className="w-4 h-4 mr-2" />
+                Semana
+              </Button>
+            )}
             <Button
               variant={vista === 'mes' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setVista('mes')}
-              className={vista === 'mes' ? "rounded-xl focus-brand" : "rounded-xl focus-brand"}
+              className="rounded-xl focus-brand"
             >
               <Calendar className="w-4 h-4 mr-2" />
               Mes
@@ -225,7 +227,7 @@ function CalendarioPageContent() {
               variant={vista === 'lista' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setVista('lista')}
-              className={vista === 'lista' ? "rounded-xl focus-brand" : "rounded-xl focus-brand"}
+              className="rounded-xl focus-brand"
             >
               <List className="w-4 h-4 mr-2" />
               Lista

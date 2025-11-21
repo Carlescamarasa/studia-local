@@ -74,23 +74,27 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
 
   return (
     <Card className={componentStyles.containers.cardBase}>
-      <CardContent className={`${isMobile ? 'p-1.5' : 'p-4'}`}>
+      <CardContent className={`${isMobile ? 'p-1' : 'p-4'}`}>
         {/* Navegación */}
-        <div className={`flex items-center justify-between ${isMobile ? 'mb-2' : 'mb-4'}`}>
-          <Button variant="outline" size="sm" onClick={() => navegarMes(-1)} className="rounded-xl focus-brand">
-            <ChevronLeft className="w-4 h-4" />
+        <div className={`flex items-center justify-between ${isMobile ? 'mb-1' : 'mb-4'}`}>
+          <Button variant="outline" size="sm" onClick={() => navegarMes(-1)} className={`rounded-xl focus-brand ${isMobile ? 'h-7 w-7 p-0' : ''}`}>
+            <ChevronLeft className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
           </Button>
           <div className="text-center">
-            <h3 className={`font-semibold ${isMobile ? 'text-sm' : 'text-base'}`}>
-              {fechaActual.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+            <h3 className={`font-semibold ${isMobile ? 'text-xs' : 'text-base'}`}>
+              {isMobile 
+                ? fechaActual.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })
+                : fechaActual.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
             </h3>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={irHoy} className="rounded-xl focus-brand">
-              Hoy
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navegarMes(1)} className="rounded-xl focus-brand">
-              <ChevronRight className="w-4 h-4" />
+          <div className="flex gap-1">
+            {!isMobile && (
+              <Button variant="outline" size="sm" onClick={irHoy} className="rounded-xl focus-brand">
+                Hoy
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => navegarMes(1)} className={`rounded-xl focus-brand ${isMobile ? 'h-7 w-7 p-0' : ''}`}>
+              <ChevronRight className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
             </Button>
           </div>
         </div>
@@ -99,7 +103,7 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
         <div className={`grid grid-cols-7 ${isMobile ? 'gap-0.5' : 'gap-1'}`}>
           {/* Encabezados de días */}
           {nombresDias.map(dia => (
-            <div key={dia} className={`text-center ${isMobile ? 'text-[10px] p-1' : 'text-xs p-2'} font-medium text-ui/60`}>
+            <div key={dia} className={`text-center ${isMobile ? 'text-[9px] p-0.5' : 'text-xs p-2'} font-medium text-ui/60`}>
               {isMobile ? dia.substring(0, 1) : dia}
             </div>
           ))}
@@ -119,29 +123,29 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
                 <div
                   key={idx}
                   onClick={() => totalEventos > 0 && setDiaSeleccionado(fechaISO)}
-                  className={`border rounded p-1 min-h-[40px] flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                  className={`border rounded ${isMobile ? 'p-0.5 min-h-[32px]' : 'p-1 min-h-[40px]'} flex flex-col items-center justify-center cursor-pointer transition-colors ${
                     esHoy ? 'bg-primary/5 border-primary' : 'bg-background border-border-default'
-                  } ${esOtroMes ? 'opacity-40' : ''} ${totalEventos > 0 ? 'hover:bg-primary/10' : ''}`}
+                  } ${esOtroMes ? 'opacity-40' : ''} ${totalEventos > 0 ? 'hover:bg-primary/10 active:bg-primary/15' : ''}`}
                 >
-                  <div className={`text-xs font-medium ${esHoy ? 'text-primary' : 'text-ui'}`}>
+                  <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} font-medium ${esHoy ? 'text-primary' : 'text-ui'}`}>
                     {dia.getDate()}
                   </div>
                   {totalEventos > 0 && (
-                    <div className="flex gap-0.5 mt-0.5 justify-center flex-wrap">
+                    <div className={`flex gap-0.5 ${isMobile ? 'mt-0' : 'mt-0.5'} justify-center flex-wrap`}>
                       {eventosDia.eventos.length > 0 && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)]" />
+                        <div className={`${isMobile ? 'w-1 h-1' : 'w-1.5 h-1.5'} rounded-full bg-[var(--color-primary)]`} />
                       )}
                       {eventosDia.asignaciones.length > 0 && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-info)]" />
+                        <div className={`${isMobile ? 'w-1 h-1' : 'w-1.5 h-1.5'} rounded-full bg-[var(--color-info)]`} />
                       )}
                       {eventosDia.sesiones.length > 0 && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)]" />
+                        <div className={`${isMobile ? 'w-1 h-1' : 'w-1.5 h-1.5'} rounded-full bg-[var(--color-success)]`} />
                       )}
                       {eventosDia.feedbacks.length > 0 && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-warning)]" />
+                        <div className={`${isMobile ? 'w-1 h-1' : 'w-1.5 h-1.5'} rounded-full bg-[var(--color-warning)]`} />
                       )}
                       {totalEventos > 4 && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-text-muted)]" />
+                        <div className={`${isMobile ? 'w-1 h-1' : 'w-1.5 h-1.5'} rounded-full bg-[var(--color-text-muted)]`} />
                       )}
                     </div>
                   )}
@@ -209,16 +213,8 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
         <Dialog open={!!diaSeleccionado} onOpenChange={(open) => !open && setDiaSeleccionado(null)}>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader className="pb-2">
-              <DialogTitle className="text-base flex items-center justify-between">
-                <span>{formatearFechaEvento(diaSeleccionado)}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setDiaSeleccionado(null)}
-                  className="h-8 w-8 rounded-xl"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+              <DialogTitle className="text-base">
+                {formatearFechaEvento(diaSeleccionado)}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-2 mt-4">
