@@ -32,89 +32,18 @@ import PageHeader from "@/components/ds/PageHeader";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ModalSesion from "@/components/calendario/ModalSesion";
 import UnifiedTable from "@/components/tables/UnifiedTable";
-
-const pad2 = (n) => String(n).padStart(2, "0");
-const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-const parseLocalDate = (s) => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
-const startOfMonday = (date) => {
-  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const dow = d.getDay();
-  const diff = dow === 0 ? -6 : 1 - dow;
-  d.setDate(d.getDate() + diff);
-  return d;
-};
-
-/**
- * Normaliza un número, reemplazando valores inválidos por 0
- * Maneja Infinity, NaN, valores negativos y valores absurdamente grandes
- */
-function safeNumber(n) {
-  if (n === null || n === undefined) return 0;
-  if (typeof n !== 'number') {
-    const parsed = parseFloat(n);
-    if (isNaN(parsed) || !isFinite(parsed)) return 0;
-    n = parsed;
-  }
-  if (!isFinite(n)) return 0;
-  if (n < 0) return 0;
-  // Limitar valores absurdamente grandes (más de 12 horas en segundos)
-  if (n > 43200) {
-    // Si parece estar en milisegundos, convertir
-    if (n > 43200000) {
-      return Math.floor(n / 1000);
-    }
-    return 43200; // Máximo 12 horas
-  }
-  return Math.round(n);
-}
-
-// Helper para validar y corregir duración (detecta si está en milisegundos en lugar de segundos)
-const validarDuracion = (duracionSeg) => {
-  return safeNumber(duracionSeg);
-};
-
-// Normaliza valores agregados (sin límite superior de 12h)
-const normalizeAggregate = (n) => {
-  if (n === null || n === undefined) return 0;
-  if (typeof n !== 'number') {
-    const parsed = parseFloat(n);
-    if (isNaN(parsed) || !isFinite(parsed)) return 0;
-    n = parsed;
-  }
-  if (!isFinite(n)) return 0;
-  if (n < 0) return 0;
-  return Math.round(n);
-};
-
-// Formatea una duración en segundos a "H h M min" o "D d H h M min" si >= 24h
-const formatDuracionHM = (duracionSeg) => {
-  const totalSeg = normalizeAggregate(duracionSeg);
-  const horas = Math.floor(totalSeg / 3600);
-  const minutos = Math.floor((totalSeg % 3600) / 60);
-  
-  // Si las horas son >= 24, mostrar formato con días
-  if (horas >= 24) {
-    const dias = Math.floor(horas / 24);
-    const horasRestantes = horas % 24;
-    if (dias > 0 && horasRestantes > 0 && minutos > 0) {
-      return `${dias} d ${horasRestantes} h ${minutos} min`;
-    }
-    if (dias > 0 && horasRestantes > 0) {
-      return `${dias} d ${horasRestantes} h`;
-    }
-    if (dias > 0 && minutos > 0) {
-      return `${dias} d ${minutos} min`;
-    }
-    if (dias > 0) {
-      return `${dias} d`;
-    }
-  }
-  
-  // Formato normal para < 24h
-  if (horas > 0 && minutos > 0) return `${horas} h ${minutos} min`;
-  if (horas > 0) return `${horas} h`;
-  return `${minutos} min`;
-};
+// Componentes modulares de estadísticas
+import ResumenTab from "@/components/estadisticas/ResumenTab";
+import ProgresoTab from "@/components/estadisticas/ProgresoTab";
+import TiposBloquesTab from "@/components/estadisticas/TiposBloquesTab";
+import TopEjerciciosTab from "@/components/estadisticas/TopEjerciciosTab";
+import AutoevaluacionesTab from "@/components/estadisticas/AutoevaluacionesTab";
+import FeedbackTab from "@/components/estadisticas/FeedbackTab";
+import HeatmapActividad from "@/components/estadisticas/HeatmapActividad";
+import ProgresoPorPieza from "@/components/estadisticas/ProgresoPorPieza";
+import ComparativaEstudiantes from "@/components/estadisticas/ComparativaEstudiantes";
+import { useEstadisticas, safeNumber } from "@/components/estadisticas/hooks/useEstadisticas";
+import { formatDuracionHM, formatLocalDate, parseLocalDate, startOfMonday } from "@/components/estadisticas/utils";
 
 function EstadisticasPageContent() {
   const navigate = useNavigate();
@@ -510,157 +439,27 @@ function EstadisticasPageContent() {
       }));
   }, [bloques, registrosFiltradosUnicos]);
 
-  const kpis = useMemo(() => {
-    // Validar y corregir duraciones antes de calcular
-    const tiempoTotal = registrosFiltradosUnicos.reduce((sum, r) => {
-      const duracion = validarDuracion(r.duracionRealSeg);
-      return sum + duracion;
-    }, 0);
-    const racha = calcularRacha(registrosFiltradosUnicos, isEstu ? userIdActual : null);
-    const calidadPromedio = calcularCalidadPromedio(registrosFiltradosUnicos);
-    const semanasDistintas = calcularSemanasDistintas(registrosFiltradosUnicos);
-    
-    // Calcular promedio de tiempo por sesión
-    const numSesiones = registrosFiltradosUnicos.length;
-    const tiempoPromedioPorSesion = numSesiones > 0 ? tiempoTotal / numSesiones : 0;
+  // Usar hook para cálculos de estadísticas
+  const estadisticas = useEstadisticas({
+    registrosFiltradosUnicos,
+    bloquesFiltrados,
+    periodoInicio,
+    periodoFin,
+    granularidad,
+    isEstu,
+    userIdActual,
+  });
 
-    // Calcular media semanal de sesiones (prorateado al período en días)
-    // Ejemplo: 1 día con 1 sesión = 7 sesiones/semana
-    // Ejemplo: 2 días (domingo-lunes) con 1 sesión = 3.5 sesiones/semana
-    let mediaSemanalSesiones = 0;
-    if (periodoInicio && periodoFin) {
-      const inicio = parseLocalDate(periodoInicio);
-      const fin = parseLocalDate(periodoFin);
-      const diffMs = fin.getTime() - inicio.getTime();
-      const numDias = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1); // +1 para incluir el día final
-      // Prorratear a la semana: (sesiones / días) * 7
-      mediaSemanalSesiones = numDias > 0 ? (numSesiones / numDias) * 7 : 0;
-    }
-
-    return {
-      tiempoTotal,
-      racha,
-      calidadPromedio,
-      semanasDistintas,
-      tiempoPromedioPorSesion,
-      semanasPeriodo: calcularSemanasPeriodo,
-      mediaSemanalSesiones,
-    };
-  }, [registrosFiltradosUnicos, isEstu, effectiveUser, calcularSemanasPeriodo, periodoInicio, periodoFin]);
-
-  const tiposBloques = useMemo(() => {
-    const agrupado = {};
-    bloquesFiltrados.forEach(b => {
-      if (!agrupado[b.tipo]) {
-        agrupado[b.tipo] = { tipo: b.tipo, tiempoReal: 0, count: 0 };
-      }
-      const duracion = validarDuracion(b.duracionRealSeg);
-      agrupado[b.tipo].tiempoReal += duracion;
-      agrupado[b.tipo].count += 1;
-    });
-    return Object.values(agrupado).map(t => ({
-      ...t,
-      tiempoReal: safeNumber(t.tiempoReal),
-      tiempoMedio: t.count > 0 ? safeNumber(t.tiempoReal / t.count) : 0,
-    }));
-  }, [bloquesFiltrados]);
-
-  const datosLinea = useMemo(() => {
-    const agrupado = {};
-    
-    registrosFiltradosUnicos.forEach(r => {
-      if (!r.inicioISO) return;
-      
-      const fecha = new Date(r.inicioISO);
-      const fechaLocal = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
-      let clave;
-      
-      if (granularidad === 'dia') {
-        clave = formatLocalDate(fechaLocal);
-      } else if (granularidad === 'semana') {
-        const lunes = startOfMonday(fechaLocal);
-        clave = formatLocalDate(lunes);
-      } else {
-        clave = `${fechaLocal.getFullYear()}-${pad2(fechaLocal.getMonth() + 1)}`;
-      }
-      
-      if (!agrupado[clave]) {
-        agrupado[clave] = { 
-          fecha: clave, 
-          tiempo: 0, 
-          valoraciones: [], 
-          count: 0,
-          completados: 0,
-          omitidos: 0,
-        };
-      }
-      
-      const duracion = validarDuracion(r.duracionRealSeg);
-      agrupado[clave].tiempo += duracion / 60;
-      agrupado[clave].completados += r.bloquesCompletados || 0;
-      agrupado[clave].omitidos += r.bloquesOmitidos || 0;
-      
-      if (r.calificacion !== undefined && r.calificacion !== null) {
-        agrupado[clave].valoraciones.push(r.calificacion);
-      }
-      agrupado[clave].count++;
-    });
-    
-    return Object.values(agrupado)
-      .map(item => {
-        let satisfaccion = null;
-        if (item.valoraciones.length > 0) {
-          satisfaccion = item.valoraciones.reduce((sum, v) => sum + v, 0) / item.valoraciones.length;
-        }
-
-        return {
-          fecha: item.fecha,
-          tiempo: safeNumber(item.tiempo),
-          satisfaccion: satisfaccion ? Number(satisfaccion.toFixed(1)) : null,
-          completados: safeNumber(item.completados),
-          omitidos: safeNumber(item.omitidos),
-        };
-      })
-      .sort((a, b) => a.fecha.localeCompare(b.fecha));
-  }, [registrosFiltradosUnicos, granularidad]);
-
-  const topEjercicios = useMemo(() => {
-    const ejerciciosMap = {};
-    
-    bloquesFiltrados.forEach(b => {
-      const key = `${b.code}_${b.nombre}_${b.tipo}`;
-      if (!ejerciciosMap[key]) {
-        ejerciciosMap[key] = {
-          code: b.code,
-          nombre: b.nombre,
-          tipo: b.tipo,
-          tiempoTotal: 0,
-          sesiones: new Set(),
-          ultimaPractica: null,
-        };
-      }
-      
-      const duracion = validarDuracion(b.duracionRealSeg);
-      ejerciciosMap[key].tiempoTotal += duracion;
-      if (b.registroSesionId) {
-        ejerciciosMap[key].sesiones.add(b.registroSesionId);
-      }
-      if (b.inicioISO) {
-        const fechaActual = new Date(b.inicioISO);
-        if (!ejerciciosMap[key].ultimaPractica || fechaActual > new Date(ejerciciosMap[key].ultimaPractica)) {
-          ejerciciosMap[key].ultimaPractica = b.inicioISO;
-        }
-      }
-    });
-
-    return Object.values(ejerciciosMap)
-      .map(e => ({
-        ...e,
-        tiempoTotal: safeNumber(e.tiempoTotal),
-        sesionesCount: e.sesiones.size,
-      }))
-      .sort((a, b) => b.tiempoTotal - a.tiempoTotal);
-  }, [bloquesFiltrados]);
+  const { 
+    kpis, 
+    datosLinea, 
+    tiposBloques, 
+    topEjercicios,
+    progresoPorPieza,
+    heatmapData,
+    tiempoRealVsObjetivo,
+    diasSinPractica,
+  } = estadisticas;
 
   const topEjerciciosFiltrados = topEjercicios.filter(e => {
     if (searchEjercicio) {
@@ -1178,16 +977,138 @@ function EstadisticasPageContent() {
             onChange={setTabActiva}
             items={[
               { value: 'resumen', label: 'Resumen', icon: BarChart3 },
-              { value: 'evolucion', label: 'Evolución', icon: TrendingUp },
+              { value: 'progreso', label: 'Progreso', icon: TrendingUp },
               { value: 'tipos', label: 'Tipos', icon: PieChart },
               { value: 'top', label: 'Top', icon: Star },
-              { value: 'historial', label: 'Historial', icon: List },
+              { value: 'autoevaluaciones', label: 'Autoevaluaciones', icon: List },
               { value: 'feedback', label: 'Feedback', icon: MessageSquare },
             ]}
           />
         </div>
 
         {tabActiva === 'resumen' && (
+          <ResumenTab
+            kpis={kpis}
+            datosLinea={datosLinea}
+            granularidad={granularidad}
+            onGranularidadChange={setGranularidad}
+          />
+        )}
+
+        {tabActiva === 'progreso' && (
+          <>
+            <ProgresoTab
+              datosLinea={datosLinea}
+              granularidad={granularidad}
+              onGranularidadChange={setGranularidad}
+              tiempoRealVsObjetivo={tiempoRealVsObjetivo}
+              kpis={kpis}
+            />
+            <HeatmapActividad
+              data={heatmapData}
+              periodoInicio={periodoInicio}
+              periodoFin={periodoFin}
+            />
+            {progresoPorPieza.length > 0 && (
+              <ProgresoPorPieza progresoPorPieza={progresoPorPieza} />
+            )}
+          </>
+        )}
+
+        {tabActiva === 'tipos' && (
+          <TiposBloquesTab tiposBloques={tiposBloques} />
+        )}
+
+        {tabActiva === 'top' && (
+          <TopEjerciciosTab topEjercicios={topEjercicios} />
+        )}
+
+        {tabActiva === 'autoevaluaciones' && (
+          <AutoevaluacionesTab
+            registros={registrosFiltradosUnicos}
+            usuarios={usuarios}
+          />
+        )}
+
+        {tabActiva === 'feedback' && (
+          <FeedbackTab
+            feedbacks={isEstu ? feedbackProfesor : feedbacksParaProfAdmin}
+            isEstu={isEstu}
+            onEditFeedback={(f) => setFeedbackDrawer(f)}
+          />
+        )}
+
+        {/* Vista comparativa de estudiantes (solo PROF/ADMIN) */}
+        {!isEstu && (tabActiva === 'resumen' || tabActiva === 'progreso') && alumnosSeleccionados.length > 1 && (
+          <ComparativaEstudiantes
+            estudiantes={useMemo(() => {
+              // Calcular métricas por estudiante
+              const estudiantesMap = new Map();
+              
+              alumnosSeleccionados.forEach(alumnoId => {
+                const registrosEstudiante = registrosFiltradosUnicos.filter(r => r.alumnoId === alumnoId);
+                const bloquesEstudiante = bloquesFiltrados.filter(b => {
+                  const registro = registrosFiltradosUnicos.find(r => r.id === b.registroSesionId);
+                  return registro && registro.alumnoId === alumnoId;
+                });
+                
+                // Calcular KPIs manualmente para cada estudiante
+                const tiempoTotal = registrosEstudiante.reduce((sum, r) => {
+                  const duracion = safeNumber(r.duracionRealSeg);
+                  return sum + (duracion > 0 && duracion <= 43200 ? duracion : 0);
+                }, 0);
+                
+                const numSesiones = registrosEstudiante.length;
+                const tiempoPromedioPorSesion = numSesiones > 0 ? tiempoTotal / numSesiones : 0;
+                
+                let mediaSemanalSesiones = 0;
+                if (periodoInicio && periodoFin) {
+                  const inicio = parseLocalDate(periodoInicio);
+                  const fin = parseLocalDate(periodoFin);
+                  const diffMs = fin.getTime() - inicio.getTime();
+                  const numDias = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1);
+                  mediaSemanalSesiones = numDias > 0 ? (numSesiones / numDias) * 7 : 0;
+                }
+                
+                const conCalificacion = registrosEstudiante.filter(r => {
+                  const cal = safeNumber(r.calificacion);
+                  return cal > 0 && cal <= 4;
+                });
+                const calidadPromedio = conCalificacion.length > 0
+                  ? (conCalificacion.reduce((acc, r) => acc + safeNumber(r.calificacion), 0) / conCalificacion.length).toFixed(1)
+                  : '0.0';
+                
+                const totalCompletados = registrosEstudiante.reduce((sum, r) => 
+                  sum + safeNumber(r.bloquesCompletados), 0
+                );
+                const totalOmitidos = registrosEstudiante.reduce((sum, r) => 
+                  sum + safeNumber(r.bloquesOmitidos), 0
+                );
+                const ratioCompletado = (totalCompletados + totalOmitidos) > 0
+                  ? ((totalCompletados / (totalCompletados + totalOmitidos)) * 100).toFixed(1)
+                  : 0;
+                
+                const racha = calcularRacha(registrosEstudiante, null);
+                
+                estudiantesMap.set(alumnoId, {
+                  id: alumnoId,
+                  tiempoTotal,
+                  sesiones: numSesiones,
+                  sesionesPorSemana: mediaSemanalSesiones,
+                  calificacionPromedio,
+                  ratioCompletado,
+                  racha: racha.actual,
+                });
+              });
+              
+              return Array.from(estudiantesMap.values());
+            }, [alumnosSeleccionados, registrosFiltradosUnicos, bloquesFiltrados, periodoInicio, periodoFin])}
+            usuarios={usuarios}
+          />
+        )}
+
+        {/* Código antiguo removido - ahora usando componentes modulares arriba */}
+        {false && (
           <div className="space-y-6">
             {/* KPIs - Grid responsive */}
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4 md:gap-6 px-2 py-4 sm:py-6 border-b border-[var(--color-border-default)]">
@@ -1533,476 +1454,10 @@ function EstadisticasPageContent() {
           </div>
         )}
 
-        {tabActiva === 'evolucion' && (
-          <Card className={componentStyles.components.cardBase}>
-            <CardHeader>
-              <CardTitle className="text-base md:text-lg">Evolución por Día/Semana/Mes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <UnifiedTable
-                columns={[
-                  {
-                    key: 'fecha',
-                    label: 'Fecha',
-                    sortable: true,
-                    sortValue: (item) => {
-                      if (granularidad === 'dia') {
-                        return parseLocalDate(item.fecha).getTime();
-                      } else if (granularidad === 'semana') {
-                        return parseLocalDate(item.fecha).getTime();
-                      } else {
-                        const [y, m] = item.fecha.split('-');
-                        return new Date(Number(y), Number(m) - 1, 1).getTime();
-                      }
-                    },
-                    render: (item) => {
-                      let fechaFormateada = item.fecha;
-                      if (granularidad === 'dia') {
-                        const d = parseLocalDate(item.fecha);
-                        fechaFormateada = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
-                      } else if (granularidad === 'semana') {
-                        const d = parseLocalDate(item.fecha);
-                        fechaFormateada = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
-                      } else {
-                        const [y, m] = item.fecha.split('-');
-                        const d = new Date(Number(y), Number(m) - 1, 1);
-                        fechaFormateada = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-                      }
-                      return <span className="text-sm font-medium">{fechaFormateada}</span>;
-                    },
-                  },
-                  {
-                    key: 'tiempo',
-                    label: 'Tiempo',
-                    sortable: true,
-                    render: (item) => item.tiempo > 0 ? (
-                              <Badge className={`rounded-full ${componentStyles.status.badgeDefault} text-xs`}>
-                        {item.tiempo.toFixed(1)} min
-                              </Badge>
-                    ) : (
-                      <span className="text-xs text-[var(--color-text-muted)]">-</span>
-                    ),
-                  },
-                  {
-                    key: 'satisfaccion',
-                    label: 'Valoración',
-                    sortable: true,
-                    render: (item) => item.satisfaccion && !isNaN(item.satisfaccion) ? (
-                              <Badge className={componentStyles.status.badgeInfo}>
-                                ⭐ {item.satisfaccion}/4
-                              </Badge>
-                    ) : (
-                      <span className="text-xs text-[var(--color-text-muted)]">-</span>
-                    ),
-                  },
-                  {
-                    key: 'completados',
-                    label: 'Completados',
-                    sortable: true,
-                    render: (item) => item.completados > 0 && !isNaN(item.completados) ? (
-                              <Badge className={componentStyles.status.badgeSuccess}>
-                                ✓ {item.completados}
-                              </Badge>
-                    ) : (
-                      <span className="text-xs text-[var(--color-text-muted)]">0</span>
-                    ),
-                  },
-                  {
-                    key: 'omitidos',
-                    label: 'Omitidos',
-                    sortable: true,
-                    render: (item) => item.omitidos > 0 && !isNaN(item.omitidos) ? (
-                              <Badge className={componentStyles.status.badgeDanger}>
-                                ⏭ {item.omitidos}
-                              </Badge>
-                    ) : (
-                      <span className="text-xs text-[var(--color-text-muted)]">0</span>
-                    ),
-                  },
-                ]}
-                data={datosLinea}
-                keyField="fecha"
-                paginated={true}
-                defaultPageSize={10}
-                emptyMessage="No hay datos"
-                emptyIcon={TrendingUp}
-              />
-            </CardContent>
-          </Card>
-        )}
+        {/* Secciones antiguas de tabs eliminadas - ahora usando componentes modulares arriba */}
 
-        {tabActiva === 'tipos' && (
-          <Card className={componentStyles.components.cardBase}>
-            <CardHeader>
-              <CardTitle className="text-base md:text-lg">Tiempo por Tipo de Bloque</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {tiposBloques.length === 0 ? (
-                <div className="text-center py-12">
-                  <BarChart3 className={componentStyles.components.emptyStateIcon} />
-                  <p className={componentStyles.components.emptyStateText}>No hay datos</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {tiposBloques.sort((a, b) => b.tiempoReal - a.tiempoReal).map((tipo) => {
-                    const minutos = safeNumber(Math.floor(tipo.tiempoReal / 60));
-                    const totalMinutos = safeNumber(tiposBloques.reduce((sum, t) => sum + safeNumber(t.tiempoReal), 0) / 60);
-                    const porcentaje = totalMinutos > 0 ? safeNumber((minutos / totalMinutos) * 100).toFixed(1) : 0;
-                    
-                    return (
-                      <div key={tipo.tipo} className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <Badge className={`rounded-full ${tipoColors[tipo.tipo]} min-w-[140px] flex items-center justify-center text-xs shrink-0`}>
-                            {tipoLabels[tipo.tipo]}
-                          </Badge>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium text-[var(--color-text-primary)]">{formatDuracionHM(tipo.tiempoReal)}</span>
-                              <span className="text-xs text-[var(--color-text-secondary)]">{porcentaje}%</span>
-                            </div>
-                            <div className="bg-[var(--color-surface-muted)] rounded-full h-2 overflow-hidden">
-                              <div 
-                                  className="h-full transition-all"
-                                  style={{ 
-                                    width: `${porcentaje}%`,
-                                    backgroundColor: tipoChartColors[tipo.tipo] || tipoChartColors.AD
-                                  }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex gap-3 text-xs text-[var(--color-text-secondary)]">
-                          <span>Bloques: {tipo.count}</span>
-                          <span>
-                            Promedio: {formatDuracionHM(safeNumber(tipo.tiempoMedio))}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {tabActiva === 'top' && (
-          <Card className={componentStyles.components.cardBase}>
-            <CardHeader>
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <CardTitle className="text-base md:text-lg">Top Ejercicios Practicados</CardTitle>
-                <div className="relative flex-1 md:flex-none md:w-64">
-                  <Input
-                    placeholder="Buscar ejercicio..."
-                    value={searchEjercicio}
-                    onChange={(e) => setSearchEjercicio(e.target.value)}
-                    className="h-9 rounded-xl border-[var(--color-border-default)] focus-brand text-sm"
-                    aria-label="Buscar ejercicio"
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <UnifiedTable
-                columns={[
-                  {
-                    key: 'ranking',
-                    label: '#',
-                    sortable: false,
-                    render: (item, index) => {
-                      const globalIdx = (topEjerciciosCurrentPage - 1) * topEjerciciosPageSize + index;
-                      return (
-                          <Badge className="rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] font-bold w-8 h-8 flex items-center justify-center shrink-0">
-                            {globalIdx + 1}
-                          </Badge>
-                      );
-                    },
-                  },
-                  {
-                    key: 'tipo',
-                    label: 'Tipo',
-                    sortable: true,
-                    render: (item) => (
-                      <Badge className={`rounded-full ${tipoColors[item.tipo]} shrink-0`}>
-                        {item.tipo}
-                          </Badge>
-                    ),
-                  },
-                  {
-                    key: 'nombre',
-                    label: 'Nombre',
-                    sortable: true,
-                    render: (item) => (
-                          <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{item.nombre}</p>
-                        <p className="text-xs text-[var(--color-text-secondary)]">{item.code}</p>
-                          </div>
-                    ),
-                  },
-                  {
-                    key: 'sesionesCount',
-                    label: 'Sesiones',
-                    sortable: true,
-                    render: (item) => (
-                            <Badge variant="outline" className={componentStyles.status.badgeInfo}>
-                        {isNaN(item.sesionesCount) ? 0 : item.sesionesCount} sesiones
-                            </Badge>
-                    ),
-                  },
-                  {
-                    key: 'tiempoTotal',
-                    label: 'Tiempo Total',
-                    sortable: true,
-                    sortValue: (item) => item.tiempoTotal,
-                    render: (item) => (
-                            <Badge variant="outline" className={componentStyles.status.badgeDefault}>
-                        {formatDuracionHM(item.tiempoTotal)}
-                            </Badge>
-                    ),
-                  },
-                  {
-                    key: 'ultimaPractica',
-                    label: 'Última Práctica',
-                    sortable: true,
-                    sortValue: (item) => item.ultimaPractica ? new Date(item.ultimaPractica).getTime() : 0,
-                    render: (item) => item.ultimaPractica ? (
-                              <Badge variant="outline" className="rounded-full text-xs bg-[var(--color-surface-muted)]">
-                        {new Date(item.ultimaPractica).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                              </Badge>
-                    ) : (
-                      <span className="text-xs text-[var(--color-text-muted)]">-</span>
-                    ),
-                  },
-                ]}
-                    data={topEjerciciosFiltrados}
-                keyField="code"
-                paginated={true}
-                defaultPageSize={10}
-                emptyMessage="No hay ejercicios registrados"
-                emptyIcon={FileText}
-                  />
-            </CardContent>
-          </Card>
-        )}
-
-        {tabActiva === 'historial' && (
-          <>
-            {isEstu ? (
-              // Para estudiantes: mostrar historial de sesiones
-          <Card className={componentStyles.components.cardBase}>
-            <CardHeader>
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <CardTitle className="text-base md:text-lg">Historial de Sesiones ({registrosFiltradosUnicos.length})</CardTitle>
-                <div className="flex gap-2 flex-wrap">
-                  {[1, 2, 3, 4].map(val => (
-                    <Button
-                      key={val}
-                      variant={historialCalificacionFilter == val ? "primary" : "outline"}
-                      size="sm"
-                      onClick={() => setHistorialCalificacionFilter(historialCalificacionFilter == val ? 'all' : String(val))}
-                      className="h-8 w-8 p-0 rounded-xl focus-brand"
-                      aria-label={`Filtrar por calificación ${val}`}
-                    >
-                      {val}
-                    </Button>
-                  ))}
-                  <Button
-                    variant={historialSoloConNotas ? "primary" : "outline"}
-                    size="sm"
-                    onClick={() => setHistorialSoloConNotas(!historialSoloConNotas)}
-                    className="h-8 rounded-xl focus-brand"
-                    aria-label={historialSoloConNotas ? 'Mostrar todos' : 'Solo con notas'}
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {(() => {
-                const historialFiltrado = registrosFiltradosUnicos.filter(r => {
-                  if (historialCalificacionFilter !== 'all') {
-                    const cal = safeNumber(r.calificacion);
-                    const calInt = Math.round(cal);
-                    if (calInt != parseInt(historialCalificacionFilter)) return false;
-                  }
-                  if (historialSoloConNotas && !r.notas) return false;
-                  return true;
-                });
-                return historialFiltrado.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Activity className={componentStyles.components.emptyStateIcon} />
-                    <p className={componentStyles.components.emptyStateText}>No hay datos en el periodo seleccionado</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="space-y-3">
-                      {(() => {
-                        const startIndex = (historialCurrentPage - 1) * historialPageSize;
-                        const endIndex = startIndex + historialPageSize;
-                        return historialFiltrado.slice(startIndex, endIndex);
-                      })().map((registro) => {
-                    const alumno = usuarios.find(u => u.id === registro.alumnoId);
-                    return (
-                      <Card 
-                        key={registro.id} 
-                        className={`${componentStyles.containers.panelBase} hover:shadow-md transition-shadow cursor-pointer`}
-                        onClick={() => {
-                          setRegistroSesionSeleccionado(registro);
-                          setModalSesionOpen(true);
-                        }}
-                      >
-                        <CardContent className="pt-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <h3 className="font-semibold text-sm md:text-base truncate">{registro.sesionNombre}</h3>
-                              </div>
-                              <p className="text-xs md:text-sm text-[var(--color-text-secondary)] truncate">
-                                {registro.piezaNombre} • {registro.planNombre}
-                              </p>
-                              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                <Badge variant="outline" className={componentStyles.status.badgeSuccess}>
-                                  {formatDuracionHM(registro.duracionRealSeg)}
-                                </Badge>
-                                <Badge variant="outline" className="rounded-full text-xs">
-                                  Obj: {formatDuracionHM(registro.duracionObjetivoSeg)}
-                                </Badge>
-                                {registro.calificacion !== undefined && registro.calificacion !== null && !isNaN(registro.calificacion) && (
-                                  <Badge className={componentStyles.status.badgeDefault}>
-                                    {registro.calificacion}/4
-                                  </Badge>
-                                )}
-                                <span className="text-xs text-[var(--color-text-secondary)]">
-                                  {registro.inicioISO ? new Date(registro.inicioISO).toLocaleDateString('es-ES') : '-'}
-                                </span>
-                              </div>
-                              {registro.notas && (
-                                <p className="text-sm text-[var(--color-text-primary)] mt-2 italic line-clamp-2">"{registro.notas}"</p>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                      );
-                    })}
-                    </div>
-                    <TablePagination
-                      data={historialFiltrado}
-                      pageSize={historialPageSize}
-                      currentPage={historialCurrentPage}
-                      onPageChange={setHistorialCurrentPage}
-                      onPageSizeChange={(newSize) => {
-                        setHistorialPageSize(newSize);
-                        setHistorialCurrentPage(1);
-                      }}
-                    />
-                  </>
-                );
-              })()}
-            </CardContent>
-          </Card>
-            ) : (
-              // Para profesores/admins: mostrar autoevaluación del estudiante (filtros, distribución, comentarios)
-          <Card className={componentStyles.components.cardBase}>
-            <CardHeader>
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                    <CardTitle className="text-base md:text-lg">Autoevaluación del Estudiante</CardTitle>
-                  <div className="flex gap-2 flex-wrap">
-                    {[1, 2, 3, 4].map(val => (
-                      <Button
-                        key={val}
-                        variant={calificacionFilter == val ? "primary" : "outline"}
-                        size="sm"
-                        onClick={() => setCalificacionFilter(calificacionFilter == val ? 'all' : String(val))}
-                        className="h-11 w-11 sm:h-8 sm:w-8 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand touch-manipulation"
-                        aria-label={`Filtrar por calificación ${val}`}
-                      >
-                        {val}
-                      </Button>
-                    ))}
-                    <Button
-                      variant={soloConNotas ? "primary" : "outline"}
-                      size="sm"
-                      onClick={() => setSoloConNotas(!soloConNotas)}
-                      className="h-8 rounded-xl focus-brand"
-                      aria-label={soloConNotas ? 'Mostrar todos' : 'Solo con notas'}
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                    </Button>
-                  </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                  {/* Grid compacto en una línea sin Cards */}
-                  <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4 items-center justify-items-center px-2 py-3 border-b border-[var(--color-border-default)]">
-                    {[1, 2, 3, 4].map(nivel => (
-                      <div key={nivel} className="text-center w-full">
-                        <p className="text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">{feedbackAlumno.distribucion[nivel]}</p>
-                        <p className="text-xs text-[var(--color-text-secondary)]">Nivel {nivel}</p>
-                        <p className="text-xs text-[var(--color-text-secondary)]">
-                          {registrosFiltradosUnicos.length > 0 
-                            ? ((feedbackAlumno.distribucion[nivel] / registrosFiltradosUnicos.length) * 100).toFixed(1)
-                            : 0}%
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="space-y-3 pt-4 border-t border-[var(--color-border-default)]">
-                    <h3 className="font-semibold text-sm">Comentarios del estudiante ({comentariosFiltrados.length})</h3>
-                    {comentariosFiltrados.length === 0 ? (
-                      <p className="text-sm text-[var(--color-text-secondary)] text-center py-6">No hay comentarios</p>
-                    ) : (
-                      comentariosFiltrados.slice(0, 20).map(r => {
-                        const alumno = usuarios.find(u => u.id === r.alumnoId);
-                        return (
-                          <Card key={r.id} className={`${componentStyles.containers.panelBase} hover:shadow-md transition-shadow`}>
-                            <CardContent className="pt-3 pb-3">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs text-[var(--color-text-secondary)] truncate">{displayName(alumno)}</p>
-                                  <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{r.sesionNombre}</p>
-                                  <p className="text-xs text-[var(--color-text-secondary)] truncate">
-                                    {r.piezaNombre} • {new Date(r.inicioISO).toLocaleDateString('es-ES')}
-                                  </p>
-                                  {r.calificacion && !isNaN(r.calificacion) && (
-                                    <Badge className={`rounded-full ${componentStyles.status.badgeDefault} text-xs mt-1`}>
-                                      {r.calificacion}/4
-                                    </Badge>
-                                  )}
-                                  {r.notas && (
-                                    <p className="text-sm text-[var(--color-text-primary)] mt-2 italic line-clamp-2">"{r.notas}"</p>
-                                  )}
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    const asign = asignaciones.find(a => a.id === r.asignacionId);
-                                    if (asign) {
-                                      navigate(createPageUrl(`asignacion-detalle?id=${asign.id}`));
-                                    }
-                                  }}
-                                  className="shrink-0 h-9 rounded-xl hover:bg-[var(--color-surface-muted)] focus-brand"
-                                  aria-label="Ver detalle de asignación"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-                </>
-              )}
-
-        {tabActiva === 'feedback' && (
+        {/* Sección antigua de feedback eliminada - ahora usando FeedbackTab arriba */}
+        {false && tabActiva === 'feedback' && (
           <Card className={componentStyles.components.cardBase}>
             <CardHeader>
               <CardTitle className="text-base md:text-lg">
