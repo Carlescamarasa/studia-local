@@ -160,11 +160,11 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
     const agrupados = {};
     eventosFiltrados.forEach(item => {
       if (item && item.fecha) {
-        const fecha = item.fecha;
-        if (!agrupados[fecha]) {
-          agrupados[fecha] = [];
-        }
-        agrupados[fecha].push(item);
+      const fecha = item.fecha;
+      if (!agrupados[fecha]) {
+        agrupados[fecha] = [];
+      }
+      agrupados[fecha].push(item);
       }
     });
     return agrupados;
@@ -180,9 +180,9 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
     }
     const fechasOrdenadas = fechas.sort((a, b) => {
       try {
-        const fechaA = parseLocalDate(a);
-        const fechaB = parseLocalDate(b);
-        return fechaA - fechaB; // Ascendente (hoy primero)
+      const fechaA = parseLocalDate(a);
+      const fechaB = parseLocalDate(b);
+      return fechaA - fechaB; // Ascendente (hoy primero)
       } catch (e) {
         console.error('[VistaLista] Error ordenando fechas:', e);
         return 0;
@@ -218,38 +218,38 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
   const headerContent = (
     <div className={`flex items-center justify-between flex-wrap gap-3 ${isMobile ? 'mb-2 px-0' : ''}`}>
       <h2 className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>Lista de Eventos</h2>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navegarFechas(-1)}
-          className="h-8"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={irHoy}
-          className="h-8"
-        >
-          <Calendar className="w-4 h-4 mr-1" />
-          Hoy
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navegarFechas(1)}
-          className="h-8"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-      </div>
-    </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navegarFechas(-1)}
+              className="h-8"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={irHoy}
+              className="h-8"
+            >
+              <Calendar className="w-4 h-4 mr-1" />
+              Hoy
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navegarFechas(1)}
+              className="h-8"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
   );
 
   const bodyContent = (
-    <div className={`${isMobile ? 'space-y-3 px-0' : 'space-y-4'}`}>
+    <>
         {/* Filtros */}
         <div className="flex gap-3 flex-wrap">
           <div className="relative flex-1 min-w-[200px]">
@@ -285,19 +285,19 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
         </div>
 
         {/* Lista de eventos */}
-        <div className="space-y-6">
+      <div className={`${isMobile ? 'space-y-6 px-0' : 'space-y-6'}`}>
           {fechasOrdenadas.length === 0 ? (
             <div className="text-center py-8 text-ui/60">
               No hay eventos para mostrar
             </div>
           ) : (
             fechasOrdenadas.map(fecha => {
-              const eventosFecha = eventosPorFecha[fecha] || [];
+            const eventosFecha = eventosPorFecha[fecha] || [];
               const fechaFormateada = formatearFechaEvento(fecha);
 
-              if (!eventosFecha || !Array.isArray(eventosFecha) || eventosFecha.length === 0) {
-                return null;
-              }
+            if (!eventosFecha || !Array.isArray(eventosFecha) || eventosFecha.length === 0) {
+              return null;
+            }
 
               return (
                 <div key={fecha} className="space-y-2">
@@ -306,11 +306,11 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
                   </h3>
                   <div className="space-y-2 pl-4">
                     {eventosFecha
-                      .sort((a, b) => {
-                        const prioridadA = a?.prioridad || 999;
-                        const prioridadB = b?.prioridad || 999;
-                        return prioridadA - prioridadB;
-                      })
+                    .sort((a, b) => {
+                      const prioridadA = a?.prioridad || 999;
+                      const prioridadB = b?.prioridad || 999;
+                      return prioridadA - prioridadB;
+                    })
                       .map((item, idx) => (
                       <div key={`${item.tipo}-${item.evento.id}-${idx}`}>
                         {item.tipo === 'evento' && (
@@ -348,8 +348,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
             })
           )}
         </div>
-      </div>
-    </div>
+    </>
   );
 
   // En mobile, sin Card wrapper para máximo espacio
@@ -357,7 +356,9 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
     return (
       <>
         {headerContent}
-        {bodyContent}
+        <div className="space-y-3 px-0">
+          {bodyContent}
+        </div>
       </>
     );
   }

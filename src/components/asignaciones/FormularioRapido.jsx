@@ -22,7 +22,7 @@ import { createPortal } from "react-dom";
 import { useLocalData } from "@/local-data/LocalDataProvider";
 import { componentStyles } from "@/design/componentStyles";
 
-export default function FormularioRapido({ onClose }) {
+export default function FormularioRapido({ onClose, profesorFilter = [] }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -40,11 +40,29 @@ export default function FormularioRapido({ onClose }) {
   const effectiveUser = useEffectiveUser();
   const { usuarios: usuariosLocal } = useLocalData();
 
-  // Fuente robusta: leer directamente de LocalDataProvider para evitar problemas de sincronización
-  const estudiantes = React.useMemo(
-    () => (usuariosLocal || []).filter(u => u.rolPersonalizado === 'ESTU'),
-    [usuariosLocal]
-  );
+  // Obtener asignaciones para filtrar estudiantes por profesor
+  const { data: asignacionesRaw = [] } = useQuery({
+    queryKey: ['asignaciones'],
+    queryFn: () => localDataClient.entities.Asignacion.list('-created_at'),
+  });
+
+  // Filtrar estudiantes: si hay filtro de profesor, solo mostrar estudiantes con asignaciones de ese profesor
+  const estudiantes = React.useMemo(() => {
+    let estudiantesBase = (usuariosLocal || []).filter(u => u.rolPersonalizado === 'ESTU');
+    
+    // Si hay filtro de profesor, filtrar estudiantes que tengan asignaciones con ese profesor
+    if (profesorFilter && profesorFilter.length > 0) {
+      const estudiantesConAsignaciones = asignacionesRaw
+        .filter(a => profesorFilter.includes(a.profesorId))
+        .map(a => a.alumnoId)
+        .filter(Boolean);
+      
+      const estudiantesIdsUnicos = [...new Set(estudiantesConAsignaciones)];
+      estudiantesBase = estudiantesBase.filter(e => estudiantesIdsUnicos.includes(e.id));
+    }
+    
+    return estudiantesBase;
+  }, [usuariosLocal, profesorFilter, asignacionesRaw]);
 
   const { data: piezas = [] } = useQuery({
     queryKey: ['piezas'],

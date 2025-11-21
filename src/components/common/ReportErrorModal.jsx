@@ -336,7 +336,15 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       const context = captureContext();
 
       // Crear reporte usando la API
-      await createErrorReport({
+      console.log('[ReportErrorModal] Enviando reporte...', {
+        userId: user?.id || null,
+        category,
+        description: description.trim(),
+        hasScreenshot: !!screenshotUrl,
+        hasAudio: !!audioUrl,
+      });
+      
+      const report = await createErrorReport({
         userId: user?.id || null,
         category: category,
         description: description.trim(),
@@ -345,6 +353,8 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         context: context,
       });
 
+      console.log('[ReportErrorModal] Reporte creado exitosamente:', report.id);
+      
       toast.success('✅ Reporte enviado correctamente. ¡Gracias por tu ayuda!');
       
       // Notificar a ErrorBoundary si está esperando confirmación
@@ -454,13 +464,19 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       return cleanup;
     }
 
+    // Disparar evento cuando se abre el modal
+    // Esto permite que hoy.jsx pause el cronómetro y desactive hotkeys
     window.dispatchEvent(new CustomEvent('report-modal-opened'));
 
+    // Listener para prevenir hotkeys del modo estudio (Space, Enter, 'n', etc.)
+    // pero permitir Escape y letras normales para inputs
     const handleKeyDown = (e) => {
+      // Permitir Escape siempre
       if (e.key === 'Escape') {
         return;
       }
       
+      // Permitir si está en un input, textarea, select o contenteditable
       const target = e.target;
       if (target && (
         target.tagName === 'INPUT' ||
@@ -471,16 +487,31 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         return;
       }
 
-      e.stopImmediatePropagation();
-      e.stopPropagation();
-      e.preventDefault();
+      // Bloquear hotkeys específicos del modo estudio: Space, Enter, 'n', 'N'
+      // Estos son los hotkeys que se usan en hoy.jsx para controlar la sesión
+      const estudioHotkeys = [
+        ' ', // Space
+        'Enter',
+        'n',
+        'N',
+        'i',
+        'I',
+        '?'
+      ];
+
+      if (estudioHotkeys.includes(e.key)) {
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        e.preventDefault();
+      }
     };
 
+    // Usar capture: true para interceptar antes de que llegue a hoy.jsx
+    // Usar capture: true para interceptar antes de que llegue a hoy.jsx
     window.addEventListener('keydown', handleKeyDown, { capture: true, passive: false });
     
     return () => {
       window.removeEventListener('keydown', handleKeyDown, { capture: true });
-      window.dispatchEvent(new CustomEvent('report-modal-closed'));
       
       const cleanup = () => {
         const body = document.body;

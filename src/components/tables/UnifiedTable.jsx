@@ -58,7 +58,14 @@ export default function UnifiedTable({
     });
   }, [data, sortColumn, sortDirection, columns]);
 
-  const displayData = paginated ? sortedData : sortedData;
+  // Calcular datos paginados
+  const displayData = useMemo(() => {
+    if (!paginated) return sortedData;
+    
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return sortedData.slice(startIndex, endIndex);
+  }, [sortedData, paginated, currentPage, pageSize]);
 
   const toggleSelection = (itemKey) => {
     const newSelected = new Set(selectedItems);

@@ -20,6 +20,7 @@ import ExerciseEditor from "./ExerciseEditor";
 import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "@/components/study/sessionSequence";
+import { useEffectiveUser } from "@/components/utils/helpers";
 
 // Componente Sortable para Sesión
 function SortableSesion({ 
@@ -483,6 +484,7 @@ function SortableSemana({
 
 export default function PlanEditor({ plan, onClose }) {
   const queryClient = useQueryClient();
+  const effectiveUser = useEffectiveUser();
   const [formData, setFormData] = useState({
     nombre: '',
     focoGeneral: '',
@@ -553,8 +555,19 @@ export default function PlanEditor({ plan, onClose }) {
       setSaveResult({ success: false, message: '❌ Debes seleccionar una pieza' });
       return;
     }
-    saveMutation.mutate(formData);
-  }, [formData, saveMutation]);
+    
+    // Añadir profesorId si no existe (solo para creación, no para edición)
+    const dataToSave = plan?.id 
+      ? formData 
+      : { ...formData, profesorId: effectiveUser?.id };
+    
+    if (!plan?.id && !effectiveUser?.id) {
+      setSaveResult({ success: false, message: '❌ No se pudo identificar el usuario. Por favor, recarga la página.' });
+      return;
+    }
+    
+    saveMutation.mutate(dataToSave);
+  }, [formData, plan?.id, effectiveUser?.id, saveMutation]);
 
   const addSemana = useCallback(() => {
     const newSemana = {

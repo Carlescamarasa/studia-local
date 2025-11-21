@@ -334,6 +334,8 @@ https://soundcloud.com/artist/track
 https://drive.google.com/file/d/ID/view?usp=sharing&format=mp3`}
           rows={4}
           className={`resize-none font-mono text-xs ${componentStyles.controls.inputDefault}`}
+          autoComplete="off"
+          data-form-type="other"
         />
         <div className="flex items-start gap-2 mt-1">
           <p className="text-xs text-[var(--color-text-secondary)] flex-1">

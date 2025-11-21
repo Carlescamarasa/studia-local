@@ -211,15 +211,15 @@ function CalendarioPageContent() {
         actions={
           <div className="flex gap-2">
             {!isMobile && (
-              <Button
-                variant={vista === 'semana' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setVista('semana')}
+            <Button
+              variant={vista === 'semana' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setVista('semana')}
                 className="rounded-xl focus-brand"
-              >
-                <Grid3x3 className="w-4 h-4 mr-2" />
-                Semana
-              </Button>
+            >
+              <Grid3x3 className="w-4 h-4 mr-2" />
+              Semana
+            </Button>
             )}
             <Button
               variant={vista === 'mes' ? 'default' : 'outline'}
@@ -311,14 +311,14 @@ function CalendarioPageContent() {
               setFiltroTipoGlobal={setFiltroTipoGlobal}
             />
           ) : (
-            <VistaSemana
-              fechaActual={fechaActual}
-              onFechaChange={setFechaActual}
-              eventos={eventosFiltrados}
-              onEventoClick={handleEventoClick}
-              usuarios={usuarios}
-              filtroTipo={filtroTipoGlobal}
-            />
+          <VistaSemana
+            fechaActual={fechaActual}
+            onFechaChange={setFechaActual}
+            eventos={eventosFiltrados}
+            onEventoClick={handleEventoClick}
+            usuarios={usuarios}
+            filtroTipo={filtroTipoGlobal}
+          />
           )
         )}
         {vista === 'mes' && (

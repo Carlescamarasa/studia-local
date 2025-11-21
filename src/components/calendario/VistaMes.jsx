@@ -74,7 +74,7 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
 
   const contenido = (
     <>
-      {/* Navegación */}
+        {/* Navegación */}
       <div className={`flex items-center justify-between ${isMobile ? 'mb-0.5 px-0' : 'mb-4'}`}>
           <Button variant="outline" size="sm" onClick={() => navegarMes(-1)} className={`rounded-xl focus-brand ${isMobile ? 'h-7 w-7 p-0' : ''}`}>
             <ChevronLeft className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
@@ -89,8 +89,8 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
           <div className="flex gap-1">
             {!isMobile && (
               <Button variant="outline" size="sm" onClick={irHoy} className="rounded-xl focus-brand">
-                Hoy
-              </Button>
+              Hoy
+            </Button>
             )}
             <Button variant="outline" size="sm" onClick={() => navegarMes(1)} className={`rounded-xl focus-brand ${isMobile ? 'h-7 w-7 p-0' : ''}`}>
               <ChevronRight className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />

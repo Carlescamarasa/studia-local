@@ -5,7 +5,10 @@ import { componentStyles } from '@/design/componentStyles';
 
 export default function ReportErrorButton() {
   const handleClick = () => {
-    window.dispatchEvent(new CustomEvent('open-error-report'));
+    console.log('[ReportErrorButton] Disparando evento open-error-report');
+    window.dispatchEvent(new CustomEvent('open-error-report', { 
+      detail: {} 
+    }));
   };
 
   return (

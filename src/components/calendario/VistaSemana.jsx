@@ -65,9 +65,9 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
               {lunesSemana.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
             </h3>
             {!isMobile && (
-              <p className="text-sm text-ui/60">
-                {lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — {domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-              </p>
+            <p className="text-sm text-ui/60">
+              {lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — {domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+            </p>
             )}
           </div>
           <div className="flex gap-2">

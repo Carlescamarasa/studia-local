@@ -521,27 +521,39 @@ function AsignacionesPageContent() {
         }
       />
 
-      <div className={`${componentStyles.layout.page} space-y-4`}>
+      <div className={`${componentStyles.layout.page} space-y-6`}>
         {showForm && (
           <Card className={componentStyles.containers.cardBase}>
-            <CardContent className="pt-6">
-              <FormularioRapido onClose={() => setShowForm(false)} />
+            <CardContent className="pt-6 pb-6">
+              <FormularioRapido 
+                onClose={() => setShowForm(false)}
+                profesorFilter={profesoresFilter}
+              />
             </CardContent>
           </Card>
         )}
 
         <Card className={componentStyles.containers.cardBase}>
-          <CardHeader>
-            <CardTitle className="text-lg">
-              {asignacionesFinales.length} asignaciones
-              {estadoFilter !== 'all' && ` (${estadoLabels[estadoFilter]})`}
-            </CardTitle>
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold">
+                {asignacionesFinales.length} asignación{asignacionesFinales.length !== 1 ? 'es' : ''}
+                {estadoFilter !== 'all' && (
+                  <span className="ml-2 text-sm font-normal text-[var(--color-text-secondary)]">
+                    ({estadoLabels[estadoFilter]})
+                  </span>
+                )}
+              </CardTitle>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0 pb-6">
             <UnifiedTable
               columns={columns}
               data={asignacionesFinales}
               selectable={true}
+              paginated={true}
+              defaultPageSize={10}
+              keyField="id"
               bulkActions={[
                 {
                   id: 'assign-profesor',

@@ -757,14 +757,19 @@ function HoyPageContent() {
         return;
       }
 
-      // Permitir 'I' para toggle del índice siempre (incluso cuando está abierto)
+      // Si el modal de reporte está abierto, no permitir ningún hotkey (excepto Escape)
+      if (reportModalAbierto) {
+        return;
+      }
+
+      // Permitir 'I' para toggle del índice siempre (incluso cuando está abierto, excepto con modal de reporte)
       if (e.key === 'i' || e.key === 'I') {
         e.preventDefault();
         setMostrarItinerario(prev => !prev);
         return;
       }
 
-      // Permitir '?' para toggle de ayuda siempre (incluso cuando está abierto)
+      // Permitir '?' para toggle de ayuda siempre (incluso cuando está abierto, excepto con modal de reporte)
       if (e.key === '?') {
         e.preventDefault();
         setMostrarAyuda(prev => !prev);

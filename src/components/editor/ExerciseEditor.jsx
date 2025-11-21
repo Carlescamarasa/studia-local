@@ -17,9 +17,11 @@ import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
 import MediaLinksInput from "@/components/common/MediaLinksInput";
 import { normalizeMediaLinks } from "@/components/utils/media";
+import { useEffectiveUser } from "@/components/utils/helpers";
 
 export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
   const queryClient = useQueryClient();
+  const effectiveUser = useEffectiveUser();
   const [formData, setFormData] = useState({
     nombre: '',
     code: '',
@@ -217,8 +219,17 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
         dataToSave.piezaRefId = null;
     }
     
+    // Añadir profesorId si no existe (solo para creación, no para edición)
+    if (!ejercicio?.id) {
+      dataToSave.profesorId = effectiveUser?.id;
+      if (!effectiveUser?.id) {
+        setSaveResult({ success: false, message: '❌ No se pudo identificar el usuario. Por favor, recarga la página.' });
+        return;
+      }
+    }
+    
     saveMutation.mutate(dataToSave);
-  }, [formData, selectedElementos, usandoPiezaSnapshot, piezaRefId, saveMutation]);
+  }, [formData, selectedElementos, usandoPiezaSnapshot, piezaRefId, ejercicio?.id, effectiveUser?.id, saveMutation]);
 
   const addMaterial = () => {
     if (nuevoMaterial.trim()) {

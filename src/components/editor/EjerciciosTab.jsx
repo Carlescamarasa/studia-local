@@ -12,9 +12,11 @@ import ExerciseEditor from "./ExerciseEditor";
 import { toast } from "sonner";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import { componentStyles } from "@/design/componentStyles";
+import { useEffectiveUser } from "@/components/utils/helpers";
 
 export default function EjerciciosTab() {
   const queryClient = useQueryClient();
+  const effectiveUser = useEffectiveUser();
   const [showEditor, setShowEditor] = useState(false);
   const [ejercicioActual, setEjercicioActual] = useState(null); // Keep original name 'ejercicioActual'
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,6 +45,7 @@ export default function EjerciciosTab() {
         ...ejercicio,
         nombre: `${ejercicio.nombre} (copia)`,
         code: newCode,
+        profesorId: effectiveUser?.id,
       };
       delete newData.id;
       delete newData.created_date;

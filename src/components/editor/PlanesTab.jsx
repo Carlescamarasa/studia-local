@@ -12,9 +12,11 @@ import PlanEditor from "./PlanEditor";
 import { toast } from "sonner";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import { componentStyles } from "@/design/componentStyles";
+import { useEffectiveUser } from "@/components/utils/helpers";
 
 export default function PlanesTab() {
   const queryClient = useQueryClient();
+  const effectiveUser = useEffectiveUser();
   const [searchTerm, setSearchTerm] = useState("");
   const [focoFilter, setFocoFilter] = useState('all');
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -38,6 +40,7 @@ export default function PlanesTab() {
       const copia = {
         ...plan,
         nombre: `${plan.nombre} (copia)`,
+        profesorId: effectiveUser?.id,
       };
       delete copia.id;
       delete copia.created_date;

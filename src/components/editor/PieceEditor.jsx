@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -17,10 +17,12 @@ import { componentStyles } from "@/design/componentStyles";
 import MediaLinksInput from "@/components/common/MediaLinksInput";
 import { normalizeMediaLinks } from "@/components/utils/media";
 import { useDataEntities } from "@/providers/DataProvider";
+import { useEffectiveUser } from "@/components/utils/helpers";
 
 export default function PieceEditor({ pieza, onClose }) {
   const queryClient = useQueryClient();
   const entities = useDataEntities();
+  const effectiveUser = useEffectiveUser();
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
@@ -62,30 +64,6 @@ export default function PieceEditor({ pieza, onClose }) {
     }
   }, [pieza]);
 
-  const handleSave = () => {
-    if (!formData.nombre.trim()) {
-      setSaveResult({ success: false, message: '❌ El nombre es obligatorio' });
-      return;
-    }
-    saveMutation.mutate(formData);
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === '.') {
-        e.preventDefault();
-        onClose();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        handleSave();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [formData, onClose, handleSave]); // Add handleSave to dependencies to prevent stale closure for handleSave
-
-
   const saveMutation = useMutation({
     mutationFn: async (data) => {
       if (pieza?.id) {
@@ -103,6 +81,39 @@ export default function PieceEditor({ pieza, onClose }) {
     },
   });
 
+  const handleSave = useCallback(() => {
+    if (!formData.nombre.trim()) {
+      setSaveResult({ success: false, message: '❌ El nombre es obligatorio' });
+      return;
+    }
+    
+    // Añadir profesorId si no existe (solo para creación, no para edición)
+    const dataToSave = pieza?.id 
+      ? formData 
+      : { ...formData, profesorId: effectiveUser?.id };
+    
+    if (!pieza?.id && !effectiveUser?.id) {
+      setSaveResult({ success: false, message: '❌ No se pudo identificar el usuario. Por favor, recarga la página.' });
+      return;
+    }
+    
+    saveMutation.mutate(dataToSave);
+  }, [formData, pieza?.id, effectiveUser?.id, saveMutation]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === '.') {
+        e.preventDefault();
+        onClose();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose, handleSave]);
 
   const addElemento = () => {
     setFormData({
@@ -117,7 +128,7 @@ export default function PieceEditor({ pieza, onClose }) {
     });
   };
 
-  const updateElemento = (index, field, value) => {
+  const updateElemento = useCallback((index, field, value) => {
     const newElementos = [...formData.elementos];
     if (field === 'nombre') {
       newElementos[index].nombre = value;
@@ -125,8 +136,8 @@ export default function PieceEditor({ pieza, onClose }) {
       // Normalizar y convertir a array de URLs
       newElementos[index].mediaLinks = normalizeMediaLinks(value);
     }
-    setFormData({ ...formData, elementos: newElementos });
-  };
+    setFormData(prev => ({ ...prev, elementos: newElementos }));
+  }, [formData.elementos]);
 
   const removeElemento = (index) => {
     setFormData({
@@ -195,8 +206,14 @@ export default function PieceEditor({ pieza, onClose }) {
                 <Input
                   id="nombre"
                   value={formData.nombre}
-                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                  onChange={(e) => {
+                    if (e?.target?.value !== undefined) {
+                      setFormData(prev => ({ ...prev, nombre: e.target.value }));
+                    }
+                  }}
                   placeholder="Ej: Sonata en Do Mayor"
+                  autoComplete="off"
+                  data-form-type="other"
                 />
               </div>
 
@@ -207,9 +224,15 @@ export default function PieceEditor({ pieza, onClose }) {
                 <Textarea
                   id="descripcion"
                   value={formData.descripcion}
-                  onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                  onChange={(e) => {
+                    if (e?.target?.value !== undefined) {
+                      setFormData(prev => ({ ...prev, descripcion: e.target.value }));
+                    }
+                  }}
                   placeholder="Descripción detallada de la pieza..."
                   rows={3}
+                  autoComplete="off"
+                  data-form-type="other"
                 />
               </div>
 
@@ -248,7 +271,13 @@ export default function PieceEditor({ pieza, onClose }) {
                     type="number"
                     min="0"
                     value={Math.floor(formData.tiempoObjetivoSeg / 60)}
-                    onChange={(e) => setFormData({ ...formData, tiempoObjetivoSeg: parseInt(e.target.value || 0) * 60 })}
+                    onChange={(e) => {
+                      if (e?.target?.value !== undefined) {
+                        setFormData(prev => ({ ...prev, tiempoObjetivoSeg: parseInt(e.target.value || 0) * 60 }));
+                      }
+                    }}
+                    autoComplete="off"
+                    data-form-type="other"
                   />
                 </div>
               </div>
@@ -299,8 +328,14 @@ export default function PieceEditor({ pieza, onClose }) {
                                           id={`elemento-nombre-${index}`}
                                           placeholder="Ej: Partitura, Audio guía, Video tutorial..."
                                           value={elemento.nombre}
-                                          onChange={(e) => updateElemento(index, 'nombre', e.target.value)}
+                                          onChange={(e) => {
+                                            if (e?.target?.value !== undefined) {
+                                              updateElemento(index, 'nombre', e.target.value);
+                                            }
+                                          }}
                                           className={`mt-1 ${componentStyles.controls.inputDefault}`}
+                                          autoComplete="off"
+                                          data-form-type="other"
                                         />
                                       </div>
                                       

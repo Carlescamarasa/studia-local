@@ -12,10 +12,12 @@ import { toast } from "sonner";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import { Badge } from "@/components/ds";
 import { componentStyles } from "@/design/componentStyles";
+import { useEffectiveUser } from "@/components/utils/helpers";
 
 export default function PiezasTab() {
   const queryClient = useQueryClient();
   const entities = useDataEntities();
+  const effectiveUser = useEffectiveUser();
   const [searchTerm, setSearchTerm] = useState("");
   const [nivelFilter, setNivelFilter] = useState('all');
   const [editingPieza, setEditingPieza] = useState(null);
@@ -39,6 +41,7 @@ export default function PiezasTab() {
       const copia = {
         ...pieza,
         nombre: `${pieza.nombre} (copia)`,
+        profesorId: effectiveUser?.id,
       };
       delete copia.id;
       delete copia.created_at;

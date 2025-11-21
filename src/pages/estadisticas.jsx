@@ -1576,9 +1576,9 @@ function EstadisticasPageContent() {
                     label: 'Tiempo',
                     sortable: true,
                     render: (item) => item.tiempo > 0 ? (
-                      <Badge className={`rounded-full ${componentStyles.status.badgeDefault} text-xs`}>
+                              <Badge className={`rounded-full ${componentStyles.status.badgeDefault} text-xs`}>
                         {item.tiempo.toFixed(1)} min
-                      </Badge>
+                              </Badge>
                     ) : (
                       <span className="text-xs text-[var(--color-text-muted)]">-</span>
                     ),
@@ -1588,9 +1588,9 @@ function EstadisticasPageContent() {
                     label: 'Valoración',
                     sortable: true,
                     render: (item) => item.satisfaccion ? (
-                      <Badge className={componentStyles.status.badgeInfo}>
-                        ⭐ {item.satisfaccion}/4
-                      </Badge>
+                              <Badge className={componentStyles.status.badgeInfo}>
+                                ⭐ {item.satisfaccion}/4
+                              </Badge>
                     ) : (
                       <span className="text-xs text-[var(--color-text-muted)]">-</span>
                     ),
@@ -1600,9 +1600,9 @@ function EstadisticasPageContent() {
                     label: 'Completados',
                     sortable: true,
                     render: (item) => item.completados > 0 ? (
-                      <Badge className={componentStyles.status.badgeSuccess}>
-                        ✓ {item.completados}
-                      </Badge>
+                              <Badge className={componentStyles.status.badgeSuccess}>
+                                ✓ {item.completados}
+                              </Badge>
                     ) : (
                       <span className="text-xs text-[var(--color-text-muted)]">0</span>
                     ),
@@ -1612,9 +1612,9 @@ function EstadisticasPageContent() {
                     label: 'Omitidos',
                     sortable: true,
                     render: (item) => item.omitidos > 0 ? (
-                      <Badge className={componentStyles.status.badgeDanger}>
-                        ⏭ {item.omitidos}
-                      </Badge>
+                              <Badge className={componentStyles.status.badgeDanger}>
+                                ⏭ {item.omitidos}
+                              </Badge>
                     ) : (
                       <span className="text-xs text-[var(--color-text-muted)]">0</span>
                     ),
@@ -1712,9 +1712,9 @@ function EstadisticasPageContent() {
                     render: (item, index) => {
                       const globalIdx = (topEjerciciosCurrentPage - 1) * topEjerciciosPageSize + index;
                       return (
-                        <Badge className="rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] font-bold w-8 h-8 flex items-center justify-center shrink-0">
-                          {globalIdx + 1}
-                        </Badge>
+                          <Badge className="rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] font-bold w-8 h-8 flex items-center justify-center shrink-0">
+                            {globalIdx + 1}
+                          </Badge>
                       );
                     },
                   },
@@ -1725,7 +1725,7 @@ function EstadisticasPageContent() {
                     render: (item) => (
                       <Badge className={`rounded-full ${tipoColors[item.tipo]} shrink-0`}>
                         {item.tipo}
-                      </Badge>
+                          </Badge>
                     ),
                   },
                   {
@@ -1733,10 +1733,10 @@ function EstadisticasPageContent() {
                     label: 'Nombre',
                     sortable: true,
                     render: (item) => (
-                      <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{item.nombre}</p>
                         <p className="text-xs text-[var(--color-text-secondary)]">{item.code}</p>
-                      </div>
+                          </div>
                     ),
                   },
                   {
@@ -1744,9 +1744,9 @@ function EstadisticasPageContent() {
                     label: 'Sesiones',
                     sortable: true,
                     render: (item) => (
-                      <Badge variant="outline" className={componentStyles.status.badgeInfo}>
+                            <Badge variant="outline" className={componentStyles.status.badgeInfo}>
                         {item.sesionesCount} sesiones
-                      </Badge>
+                            </Badge>
                     ),
                   },
                   {
@@ -1755,9 +1755,9 @@ function EstadisticasPageContent() {
                     sortable: true,
                     sortValue: (item) => item.tiempoTotal,
                     render: (item) => (
-                      <Badge variant="outline" className={componentStyles.status.badgeDefault}>
+                            <Badge variant="outline" className={componentStyles.status.badgeDefault}>
                         {formatDuracionHM(item.tiempoTotal)}
-                      </Badge>
+                            </Badge>
                     ),
                   },
                   {
@@ -1766,21 +1766,21 @@ function EstadisticasPageContent() {
                     sortable: true,
                     sortValue: (item) => item.ultimaPractica ? new Date(item.ultimaPractica).getTime() : 0,
                     render: (item) => item.ultimaPractica ? (
-                      <Badge variant="outline" className="rounded-full text-xs bg-[var(--color-surface-muted)]">
+                              <Badge variant="outline" className="rounded-full text-xs bg-[var(--color-surface-muted)]">
                         {new Date(item.ultimaPractica).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                      </Badge>
+                              </Badge>
                     ) : (
                       <span className="text-xs text-[var(--color-text-muted)]">-</span>
                     ),
                   },
                 ]}
-                data={topEjerciciosFiltrados}
+                    data={topEjerciciosFiltrados}
                 keyField="code"
                 paginated={true}
                 defaultPageSize={10}
                 emptyMessage="No hay ejercicios registrados"
                 emptyIcon={FileText}
-              />
+                  />
             </CardContent>
           </Card>
         )}

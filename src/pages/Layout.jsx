@@ -412,9 +412,11 @@ function LayoutContent() {
   // Escuchar eventos para abrir modal de reporte
   useEffect(() => {
     const handleOpenReport = (event) => {
+      console.log('[Layout] Evento open-error-report recibido:', event.detail);
       setReportModalError(event.detail?.error || null);
       setReportModalCategory(event.detail?.category || null);
       setReportModalOpen(true);
+      console.log('[Layout] Modal de reporte abierto');
     };
 
     window.addEventListener('open-error-report', handleOpenReport);
