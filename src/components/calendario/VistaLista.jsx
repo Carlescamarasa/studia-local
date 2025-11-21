@@ -290,8 +290,12 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
             </div>
           ) : (
             fechasOrdenadas.map(fecha => {
-              const eventosFecha = eventosPorFecha[fecha];
+              const eventosFecha = eventosPorFecha[fecha] || [];
               const fechaFormateada = formatearFechaEvento(fecha);
+
+              if (!eventosFecha || !Array.isArray(eventosFecha) || eventosFecha.length === 0) {
+                return null;
+              }
 
               return (
                 <div key={fecha} className="space-y-2">
@@ -300,7 +304,11 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
                   </h3>
                   <div className="space-y-2 pl-4">
                     {eventosFecha
-                      .sort((a, b) => a.prioridad - b.prioridad)
+                      .sort((a, b) => {
+                        const prioridadA = a?.prioridad || 999;
+                        const prioridadB = b?.prioridad || 999;
+                        return prioridadA - prioridadB;
+                      })
                       .map((item, idx) => (
                       <div key={`${item.tipo}-${item.evento.id}-${idx}`}>
                         {item.tipo === 'evento' && (

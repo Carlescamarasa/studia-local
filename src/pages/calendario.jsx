@@ -17,8 +17,10 @@ import ModalCrearEvento from "../components/calendario/ModalCrearEvento";
 import { componentStyles } from "@/design/componentStyles";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function CalendarioPageContent() {
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [vista, setVista] = useState('semana'); // 'semana' | 'mes' | 'lista'
@@ -288,14 +290,27 @@ function CalendarioPageContent() {
         </div>
 
         {vista === 'semana' && (
-          <VistaSemana
-            fechaActual={fechaActual}
-            onFechaChange={setFechaActual}
-            eventos={eventosFiltrados}
-            onEventoClick={handleEventoClick}
-            usuarios={usuarios}
-            filtroTipo={filtroTipoGlobal}
-          />
+          isMobile ? (
+            // En mobile, mostrar VistaLista directamente
+            <VistaLista
+              fechaActual={fechaActual}
+              onFechaChange={setFechaActual}
+              eventos={eventosFiltrados}
+              onEventoClick={handleEventoClick}
+              usuarios={usuarios}
+              filtroTipoGlobal={filtroTipoGlobal}
+              setFiltroTipoGlobal={setFiltroTipoGlobal}
+            />
+          ) : (
+            <VistaSemana
+              fechaActual={fechaActual}
+              onFechaChange={setFechaActual}
+              eventos={eventosFiltrados}
+              onEventoClick={handleEventoClick}
+              usuarios={usuarios}
+              filtroTipo={filtroTipoGlobal}
+            />
+          )
         )}
         {vista === 'mes' && (
           <VistaMes

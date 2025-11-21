@@ -1,17 +1,19 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import EventoSesion from "./EventoSesion";
 import EventoFeedback from "./EventoFeedback";
 import EventoAsignacion from "./EventoAsignacion";
 import EventoImportante from "./EventoImportante";
-import { agruparEventosPorDia, startOfMonday, formatLocalDate, parseLocalDate } from "./utils";
+import { agruparEventosPorDia, startOfMonday, formatLocalDate, parseLocalDate, formatearFechaEvento } from "./utils";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function VistaMes({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipo = 'all' }) {
   const isMobile = useIsMobile();
+  const [diaSeleccionado, setDiaSeleccionado] = useState(null);
   const primerDiaMes = useMemo(() => {
     return new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1);
   }, [fechaActual]);
@@ -111,17 +113,54 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
             const totalEventos = eventosDia.sesiones.length + eventosDia.feedbacks.length + 
                                 eventosDia.asignaciones.length + eventosDia.eventos.length;
 
+            if (isMobile) {
+              // Vista mobile: solo indicadores de puntos
+              return (
+                <div
+                  key={idx}
+                  onClick={() => totalEventos > 0 && setDiaSeleccionado(fechaISO)}
+                  className={`border rounded p-1 min-h-[40px] flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                    esHoy ? 'bg-primary/5 border-primary' : 'bg-background border-border-default'
+                  } ${esOtroMes ? 'opacity-40' : ''} ${totalEventos > 0 ? 'hover:bg-primary/10' : ''}`}
+                >
+                  <div className={`text-xs font-medium ${esHoy ? 'text-primary' : 'text-ui'}`}>
+                    {dia.getDate()}
+                  </div>
+                  {totalEventos > 0 && (
+                    <div className="flex gap-0.5 mt-0.5 justify-center flex-wrap">
+                      {eventosDia.eventos.length > 0 && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)]" />
+                      )}
+                      {eventosDia.asignaciones.length > 0 && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-info)]" />
+                      )}
+                      {eventosDia.sesiones.length > 0 && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)]" />
+                      )}
+                      {eventosDia.feedbacks.length > 0 && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-warning)]" />
+                      )}
+                      {totalEventos > 4 && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-text-muted)]" />
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            // Vista desktop: vista normal
             return (
               <div
                 key={idx}
-                className={`border rounded ${isMobile ? 'p-0.5 min-h-[60px]' : 'p-1 min-h-[100px]'} ${
+                className={`border rounded p-1 min-h-[100px] ${
                   esHoy ? 'bg-primary/5 border-primary' : 'bg-background border-border-default'
                 } ${esOtroMes ? 'opacity-40' : ''}`}
               >
-                <div className={`${isMobile ? 'text-[10px] mb-0.5' : 'text-xs mb-1'} font-medium ${esHoy ? 'text-primary' : 'text-ui'}`}>
+                <div className={`text-xs mb-1 font-medium ${esHoy ? 'text-primary' : 'text-ui'}`}>
                   {dia.getDate()}
                 </div>
-                <div className={`${isMobile ? 'space-y-0' : 'space-y-0.5'}`}>
+                <div className="space-y-0.5">
                   {eventosDia.eventos.slice(0, 1).map(evento => (
                     <EventoImportante
                       key={evento.id}
@@ -164,6 +203,90 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
           })}
         </div>
       </CardContent>
+
+      {/* Modal de eventos del día (solo mobile) */}
+      {isMobile && diaSeleccionado && (
+        <Dialog open={!!diaSeleccionado} onOpenChange={(open) => !open && setDiaSeleccionado(null)}>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="pb-2">
+              <DialogTitle className="text-base flex items-center justify-between">
+                <span>{formatearFechaEvento(diaSeleccionado)}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setDiaSeleccionado(null)}
+                  className="h-8 w-8 rounded-xl"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2 mt-4">
+              {(() => {
+                const eventosDia = eventosPorDia[diaSeleccionado] || { sesiones: [], feedbacks: [], asignaciones: [], eventos: [] };
+                const todosEventos = [
+                  ...eventosDia.eventos.map(e => ({ tipo: 'evento', evento: e, prioridad: 1 })),
+                  ...eventosDia.asignaciones.map(a => ({ tipo: 'asignacion', evento: a, prioridad: 2 })),
+                  ...eventosDia.sesiones.map(s => ({ tipo: 'sesion', evento: s, prioridad: 3 })),
+                  ...eventosDia.feedbacks.map(f => ({ tipo: 'feedback', evento: f, prioridad: 4 })),
+                ].sort((a, b) => a.prioridad - b.prioridad);
+
+                if (todosEventos.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-ui/60">
+                      No hay eventos este día
+                    </div>
+                  );
+                }
+
+                return todosEventos.map((item, idx) => (
+                  <div key={`${item.tipo}-${item.evento.id}-${idx}`}>
+                    {item.tipo === 'evento' && (
+                      <EventoImportante
+                        evento={item.evento}
+                        onClick={() => {
+                          onEventoClick(item.evento, 'evento');
+                          setDiaSeleccionado(null);
+                        }}
+                      />
+                    )}
+                    {item.tipo === 'asignacion' && (
+                      <EventoAsignacion
+                        asignacion={item.evento}
+                        usuarios={usuarios}
+                        onClick={() => {
+                          onEventoClick(item.evento, 'asignacion');
+                          setDiaSeleccionado(null);
+                        }}
+                      />
+                    )}
+                    {item.tipo === 'sesion' && (
+                      <EventoSesion
+                        sesion={item.evento}
+                        usuarios={usuarios}
+                        onClick={() => {
+                          onEventoClick(item.evento, 'sesion');
+                          setDiaSeleccionado(null);
+                        }}
+                      />
+                    )}
+                    {item.tipo === 'feedback' && (
+                      <EventoFeedback
+                        feedback={item.evento}
+                        usuarios={usuarios}
+                        onClick={() => {
+                          onEventoClick(item.evento, 'feedback');
+                          setDiaSeleccionado(null);
+                        }}
+                      />
+                    )}
+                  </div>
+                ));
+              })()}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </Card>
   );
 }
