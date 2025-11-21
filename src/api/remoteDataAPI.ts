@@ -1251,22 +1251,39 @@ export function createRemoteDataAPI(): AppDataAPI {
         });
         
         // Lógica híbrida:
-        // - Si planId existe: usar referencia (plan_id = planId, plan_adaptado = NULL)
-        // - Si plan/planAdaptado existe pero no planId: usar snapshot (plan_adaptado = plan, plan_id = NULL)
-        // - Si ambos existen: priorizar planId (referencia), planAdaptado como backup
-        if (planIdValue) {
-          // Usar referencia
+        // - Si planId existe: usar referencia (plan_id = planId, plan_adaptado = NULL, plan = NULL si no hay snapshot)
+        // - Si plan/planAdaptado existe: usar snapshot (plan_adaptado = plan, plan = plan para legacy)
+        // - Si ambos existen: usar planId como referencia pero también mantener plan como snapshot para compatibilidad
+        if (planIdValue && planValue) {
+          // Ambos existen: usar planId como referencia pero mantener plan como snapshot para compatibilidad legacy
+          snakeData.plan_id = planIdValue;
+          snakeData.plan_adaptado = planValue;
+          // Mantener compatibilidad con campo legacy: también asignar a plan si existe
+          snakeData.plan = planValue;
+        } else if (planIdValue) {
+          // Solo planId: usar referencia
           snakeData.plan_id = planIdValue;
           snakeData.plan_adaptado = null;
+          // Si la BD requiere plan NOT NULL, necesitamos un valor por defecto
+          // Por ahora, dejamos null y el constraint CHECK debería permitirlo
+          snakeData.plan = null;
         } else if (planValue) {
-          // Usar snapshot
+          // Solo snapshot: usar snapshot
           snakeData.plan_adaptado = planValue;
+          // Mantener compatibilidad con campo legacy: también asignar a plan
+          // Esto asegura que el constraint se cumpla si plan es NOT NULL
+          snakeData.plan = planValue;
           snakeData.plan_id = null;
+        } else {
+          // Si no hay ninguno, el constraint de la BD fallará (correcto)
+          throw new Error('Debe proporcionarse planId o plan/planAdaptado');
         }
-        // Si no hay ninguno, el constraint de la BD fallará (correcto)
         
         if (piezaSnapshotValue) {
           snakeData.pieza_snapshot = piezaSnapshotValue;
+        } else {
+          // pieza_snapshot es NOT NULL según el esquema
+          throw new Error('piezaSnapshot es requerido');
         }
         
         const { data: result, error } = await supabase

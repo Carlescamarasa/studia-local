@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { formatLocalDate, parseLocalDate, startOfMonday, displayName, useEffectiveUser } from "@/components/utils/helpers";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function CrearAsignacionWizard({ onClose }) {
   const queryClient = useQueryClient();
@@ -57,6 +58,31 @@ export default function CrearAsignacionWizard({ onClose }) {
 
   const crearAsignacionesMutation = useMutation({
     mutationFn: async (data) => {
+      // Obtener el usuario autenticado directamente de Supabase Auth
+      // Esto asegura que usamos auth.uid() que coincide con la política RLS
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !authUser) {
+        console.error('[CrearAsignacionWizard] Error obteniendo usuario autenticado:', authError);
+        throw new Error('Usuario no autenticado. Por favor, inicia sesión nuevamente.');
+      }
+
+      // Usar authUser.id (auth.uid()) como prioridad, fallback a effectiveUser?.id
+      const profesorId = authUser.id || effectiveUser?.id;
+      
+      if (!profesorId) {
+        throw new Error('No se pudo obtener el ID del profesor. Por favor, inicia sesión nuevamente.');
+      }
+
+      // Logging para depuración
+      console.log('[CrearAsignacionWizard] Creando asignación:', {
+        authUid: authUser.id,
+        effectiveUserId: effectiveUser?.id,
+        profesorId,
+        match: authUser.id === effectiveUser?.id,
+        estudiantesIds: data.estudiantesIds.length,
+      });
+
       const pieza = piezas.find(p => p.id === data.piezaId);
       const plan = planes.find(p => p.id === data.planId);
       
@@ -82,7 +108,7 @@ export default function CrearAsignacionWizard({ onClose }) {
         notas: data.notas || null,
         plan: planCopy,
         piezaSnapshot,
-        profesorId: effectiveUser?.id,
+        profesorId, // Usar el ID obtenido de auth.uid()
       }));
 
       const results = [];
@@ -91,8 +117,25 @@ export default function CrearAsignacionWizard({ onClose }) {
           const result = await localDataClient.entities.Asignacion.create(asignacion);
           results.push(result);
         } catch (error) {
+          console.error('[CrearAsignacionWizard] Error al crear asignación:', {
+            error: error?.message || error,
+            code: error?.code,
+            status: error?.status,
+            details: error?.details,
+            asignacion,
+          });
+          
           const alumno = estudiantes.find(e => e.id === asignacion.alumnoId);
-          toast.error(`❌ No se pudo crear la asignación para ${alumno?.full_name}`);
+          const errorMessage = error?.message || 'Error desconocido';
+          
+          // Mensajes de error más descriptivos
+          if (error?.code === '42501' || errorMessage.includes('row-level security')) {
+            toast.error(`❌ Error de permisos: No tienes permiso para crear esta asignación. Verifica que estés autenticado correctamente.`);
+          } else if (errorMessage.includes('CORS') || error?.status === null) {
+            toast.error(`❌ Error de CORS: Problema de conexión con el servidor. Verifica tu conexión y configuración de CORS en Supabase.`);
+          } else {
+            toast.error(`❌ No se pudo crear la asignación para ${alumno?.full_name || 'el estudiante'}: ${errorMessage}`);
+          }
         }
       }
       
