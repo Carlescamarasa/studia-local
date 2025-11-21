@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import RequireRole from "@/components/auth/RequireRole";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import FormularioRapido from "@/components/asignaciones/FormularioRapido";
+import StudentSearchBar from "@/components/asignaciones/StudentSearchBar";
 import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MultiSelect from "@/components/ui/MultiSelect";
@@ -60,6 +61,7 @@ function AsignacionesPageContent() {
     queryFn: () => localDataClient.entities.Asignacion.list('-created_at'),
   });
 
+  // Query para obtener TODOS los usuarios (necesarios para otras partes del componente)
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => localDataClient.entities.User.list(),
@@ -335,15 +337,22 @@ function AsignacionesPageContent() {
     return profesores;
   }, [asignacionesFiltradas, usuarios]);
 
-  // Obtener lista de estudiantes disponibles
+  // Obtener lista de estudiantes disponibles (TODOS los estudiantes para el modal de cambiar estudiante)
+  // Query: SELECT * FROM profiles WHERE role = 'ESTU'
   const estudiantesDisponibles = useMemo(() => {
     const estudiantes = usuarios.filter(u => u.rolPersonalizado === 'ESTU');
-    return estudiantes
+    const result = estudiantes
       .map(e => ({
         value: e.id,
-        label: getNombreVisible(e),
+        label: `${getNombreVisible(e)}${e.email ? ` (${e.email})` : ''}`.trim(),
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
+    
+    if (usuarios.length > 0) {
+      console.log('[Modal Cambiar Estudiante] SELECT * FROM profiles WHERE role = \'ESTU\' →', result.length, 'estudiantes');
+    }
+    
+    return result;
   }, [usuarios]);
 
   // Aplicar filtros adicionales (estado, búsqueda y profesores)
@@ -527,7 +536,6 @@ function AsignacionesPageContent() {
             <CardContent className="pt-6 pb-6">
               <FormularioRapido 
                 onClose={() => setShowForm(false)}
-                profesorFilter={profesoresFilter}
               />
             </CardContent>
           </Card>
@@ -808,18 +816,15 @@ function AsignacionesPageContent() {
           <div className="space-y-4 py-4">
             <div>
               <Label htmlFor="estudiante-select">Estudiante</Label>
-              <Select value={estudianteSeleccionado} onValueChange={setEstudianteSeleccionado}>
-                <SelectTrigger id="estudiante-select" className={`w-full ${componentStyles.controls.selectDefault}`}>
-                  <SelectValue placeholder="Selecciona un estudiante" />
-                </SelectTrigger>
-                <SelectContent>
-                  {estudiantesDisponibles.map((estudiante) => (
-                    <SelectItem key={estudiante.value} value={estudiante.value}>
-                      {estudiante.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <StudentSearchBar
+                items={estudiantesDisponibles}
+                value={estudianteSeleccionado ? [estudianteSeleccionado] : []}
+                onChange={(vals) => {
+                  console.log('[asignaciones.jsx] Modal cambiar estudiante - onChange:', { vals, selected: vals.length > 0 ? vals[0] : '' });
+                  setEstudianteSeleccionado(vals.length > 0 ? vals[0] : '');
+                }}
+                placeholder="Buscar estudiante por nombre..."
+              />
             </div>
           </div>
           <DialogFooter>

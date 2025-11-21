@@ -13,16 +13,15 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
-import StudentSearchBar from "@/components/asignaciones/StudentSearchBar";
+import StudentSearchBarAsync from "@/components/asignaciones/StudentSearchBarAsync";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { displayName, formatLocalDate, parseLocalDate, startOfMonday, useEffectiveUser } from "@/components/utils/helpers";
 import { createPortal } from "react-dom";
-import { useLocalData } from "@/local-data/LocalDataProvider";
 import { componentStyles } from "@/design/componentStyles";
 
-export default function FormularioRapido({ onClose, profesorFilter = [] }) {
+export default function FormularioRapido({ onClose }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -36,33 +35,41 @@ export default function FormularioRapido({ onClose, profesorFilter = [] }) {
     publicarAhora: false,
     adaptarPlanAhora: true,
   });
+  const [filtroProfesor, setFiltroProfesor] = useState('all');
 
   const effectiveUser = useEffectiveUser();
-  const { usuarios: usuariosLocal } = useLocalData();
 
-  // Obtener asignaciones para filtrar estudiantes por profesor
-  const { data: asignacionesRaw = [] } = useQuery({
-    queryKey: ['asignaciones'],
-    queryFn: () => localDataClient.entities.Asignacion.list('-created_at'),
+  // Obtener usuarios solo para la lista de profesores (no para estudiantes)
+  const { data: usuarios = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => localDataClient.entities.User.list(),
   });
 
-  // Filtrar estudiantes: si hay filtro de profesor, solo mostrar estudiantes con asignaciones de ese profesor
-  const estudiantes = React.useMemo(() => {
-    let estudiantesBase = (usuariosLocal || []).filter(u => u.rolPersonalizado === 'ESTU');
-    
-    // Si hay filtro de profesor, filtrar estudiantes que tengan asignaciones con ese profesor
-    if (profesorFilter && profesorFilter.length > 0) {
-      const estudiantesConAsignaciones = asignacionesRaw
-        .filter(a => profesorFilter.includes(a.profesorId))
-        .map(a => a.alumnoId)
-        .filter(Boolean);
-      
-      const estudiantesIdsUnicos = [...new Set(estudiantesConAsignaciones)];
-      estudiantesBase = estudiantesBase.filter(e => estudiantesIdsUnicos.includes(e.id));
-    }
-    
-    return estudiantesBase;
-  }, [usuariosLocal, profesorFilter, asignacionesRaw]);
+  // Obtener profesores para el filtro
+  const profesores = React.useMemo(() => {
+    return usuarios
+      .filter(u => u.rolPersonalizado === 'PROF' || u.rolPersonalizado === 'ADMIN')
+      .map(p => ({
+        value: p.id,
+        label: displayName(p),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [usuarios]);
+
+  // Obtener información de estudiantes ya seleccionados para mostrarlos en los chips
+  const selectedStudentsData = React.useMemo(() => {
+    return formData.estudiantesIds
+      .map(id => {
+        const usuario = usuarios.find(u => u.id === id && u.rolPersonalizado === 'ESTU');
+        if (!usuario) return null;
+        return {
+          id: usuario.id,
+          nombre: displayName(usuario),
+          email: usuario.email,
+        };
+      })
+      .filter(Boolean);
+  }, [formData.estudiantesIds, usuarios]);
 
   const { data: piezas = [] } = useQuery({
     queryKey: ['piezas'],
@@ -255,14 +262,36 @@ export default function FormularioRapido({ onClose, profesorFilter = [] }) {
                     <CardTitle className="text-base text-[var(--color-text-primary)]">Estudiante(s)</CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <StudentSearchBar
-                    items={estudiantes.map(e => ({
-                      value: e.id,
-                      label: `${displayName(e)} ${e.email ? `(${e.email})` : ''}`.trim()
-                    }))}
+                <CardContent className="space-y-3">
+                  {/* Filtro por profesor */}
+                  <div>
+                    <Label htmlFor="filtro-profesor" className="text-sm text-[var(--color-text-primary)]">
+                      Filtrar por profesor
+                    </Label>
+                    <Select value={filtroProfesor} onValueChange={setFiltroProfesor}>
+                      <SelectTrigger id="filtro-profesor" className={`w-full mt-1 ${componentStyles.controls.selectDefault}`}>
+                        <SelectValue placeholder="Todos los profesores" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos los profesores</SelectItem>
+                        {profesores.map((prof) => (
+                          <SelectItem key={prof.value} value={prof.value}>
+                            {prof.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Búsqueda y selección de estudiantes */}
+                  <StudentSearchBarAsync
                     value={formData.estudiantesIds}
-                    onChange={(vals) => setFormData({ ...formData, estudiantesIds: vals })}
+                    onChange={(vals) => {
+                      setFormData({ ...formData, estudiantesIds: vals });
+                    }}
+                    placeholder="Buscar estudiante por nombre..."
+                    profesorFilter={filtroProfesor !== 'all' ? filtroProfesor : null}
+                    selectedStudents={selectedStudentsData}
                   />
                   <p className="text-xs text-[var(--color-text-secondary)]">
                     {formData.estudiantesIds.length > 0 ? `${formData.estudiantesIds.length} seleccionado(s)` : 'Ninguno seleccionado'}
