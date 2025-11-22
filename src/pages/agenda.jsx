@@ -593,9 +593,54 @@ function AgendaPageContent() {
         }`}
       >
         {/* Cabecera: avatar + nombre + badges */}
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          {/* Izquierda: checkbox + avatar + nombre */}
-          <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex flex-col gap-2 md:gap-0">
+          {/* Desktop: todo en una línea */}
+          <div className="hidden md:flex md:items-center md:justify-between md:gap-4">
+            {/* Izquierda: checkbox + avatar + nombre */}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => toggleSelection(row.id)}
+                className="h-4 w-4 shrink-0"
+                aria-label={`Seleccionar ${displayName(row.alumno)}`}
+              />
+              <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center shrink-0">
+                <span className="text-[var(--color-text-primary)] font-semibold text-sm">
+                  {displayName(row.alumno).slice(0, 1).toUpperCase()}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-[var(--color-text-primary)] break-words">
+                  {displayName(row.alumno)}
+                </p>
+              </div>
+            </div>
+            {/* Derecha: badges + botón menú */}
+            <div className="flex items-center gap-3 shrink-0">
+              {row.asignacionActiva && row.semana && (
+                <div className="flex flex-wrap gap-2">
+                  {semanaActual && totalSemanas > 0 && (
+                    <Badge variant="outline" className="text-xs px-2 py-0.5">
+                      Semana {semanaActual} de {totalSemanas}
+                    </Badge>
+                  )}
+                  {planNombre && (
+                    <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                      {planNombre}
+                    </Badge>
+                  )}
+                </div>
+              )}
+              {actions.length > 0 && (
+                <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <RowActionsMenu actions={actions} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile: primera línea checkbox + avatar + nombre */}
+          <div className="flex md:hidden items-center gap-3">
             <Checkbox
               checked={isSelected}
               onCheckedChange={() => toggleSelection(row.id)}
@@ -608,120 +653,49 @@ function AgendaPageContent() {
               </span>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+              <p className="text-sm font-medium text-[var(--color-text-primary)] break-words">
                 {displayName(row.alumno)}
               </p>
             </div>
           </div>
-          {/* Derecha: badges de semana y plan */}
-          {row.asignacionActiva && row.semana && (
-            <div className="flex flex-wrap gap-2 shrink-0">
-              {semanaActual && totalSemanas > 0 && (
-                <Badge variant="outline" className="text-xs px-2 py-0.5">
-                  Semana {semanaActual} de {totalSemanas}
-                </Badge>
+          {/* Mobile: segunda línea badges + botón menú */}
+          {(row.asignacionActiva && row.semana) || actions.length > 0 ? (
+            <div className="flex md:hidden items-center justify-between gap-2">
+              {/* Badges de semana y plan */}
+              {row.asignacionActiva && row.semana && (
+                <div className="flex flex-wrap gap-2">
+                  {semanaActual && totalSemanas > 0 && (
+                    <Badge variant="outline" className="text-xs px-2 py-0.5">
+                      Semana {semanaActual} de {totalSemanas}
+                    </Badge>
+                  )}
+                  {planNombre && (
+                    <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                      {planNombre}
+                    </Badge>
+                  )}
+                </div>
               )}
-              {planNombre && (
-                <Badge variant="secondary" className="text-xs px-2 py-0.5">
-                  {planNombre}
-                </Badge>
+              {/* Botón de menú */}
+              {actions.length > 0 && (
+                <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <RowActionsMenu actions={actions} />
+                </div>
               )}
             </div>
-          )}
-          {/* Acciones */}
-          {actions.length > 0 && (
-            <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-              <RowActionsMenu actions={actions} />
-            </div>
-          )}
+          ) : null}
         </div>
 
         {/* Cuerpo: pieza + sesiones (izquierda) y feedback (derecha) */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          {/* Columna izquierda: pieza + semana del plan + sesiones */}
-          <div className="flex-1 min-w-[220px] space-y-2">
-            {/* Pieza y semana */}
-            {!row.asignacionActiva || !row.semana ? (
+        {!row.asignacionActiva || !row.semana ? (
+          /* Sin asignación: mensaje + botón feedback */
+          isProfesorOrAdmin && (
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-surface-muted)]/50 border border-[var(--color-border-default)] rounded-lg">
                 <Target className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />
                 <span className="text-sm text-[var(--color-text-secondary)]">Sin asignación esta semana</span>
               </div>
-            ) : (
-              <>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Music className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
-                    <p className="text-sm font-medium text-[var(--color-text-primary)] break-words">
-                      {row.asignacionActiva.piezaSnapshot?.nombre || '—'}
-                    </p>
-                  </div>
-                  {row.semana.nombre && (
-                    <p className="text-xs text-[var(--color-text-secondary)] ml-6">
-                      {row.semana.nombre}
-                    </p>
-                  )}
-                  {row.semana.objetivo && (
-                    <p className="text-xs text-[var(--color-text-secondary)] italic ml-6 break-words">
-                      "{row.semana.objetivo}"
-                    </p>
-                  )}
-                </div>
-                {/* Sesiones */}
-                {row.semana?.sesiones && row.semana.sesiones.length > 0 && (
-                  <div className="space-y-1.5">
-                    {row.semana.sesiones.map((sesion, sesionIdx) => {
-                      const sesionKey = `${row.alumno.id}-${row.semanaIdx}-${sesionIdx}`;
-                      const isExpanded = expandedSessions.has(sesionKey);
-                      const tiempo = calcularTiempoSesion(sesion);
-                      const mins = Math.floor(tiempo / 60);
-                      const tiempoTexto = mins > 0 ? `${mins} min` : null;
-                      const focoTexto = sesion.foco ? focoLabels[sesion.foco] : null;
-
-                      return (
-                        <div key={sesionIdx} className="space-y-1">
-                          <div
-                            className="flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors hover:bg-[var(--color-surface-muted)] cursor-pointer border border-[var(--color-border-default)]/50"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleSession(sesionKey);
-                            }}
-                          >
-                            <PlayCircle className="w-4 h-4 text-[var(--color-info)] shrink-0" />
-                            <div className="flex-1 min-w-0 flex items-center gap-2">
-                              <span className="text-sm text-[var(--color-text-primary)] break-words">
-                                {sesion.nombre}
-                              </span>
-                              {tiempoTexto && (
-                                <span className="text-xs text-[var(--color-text-secondary)]">
-                                  · {tiempoTexto}
-                                </span>
-                              )}
-                              {focoTexto && (
-                                <span className="text-xs text-[var(--color-text-secondary)]">
-                                  · {focoTexto}
-                                </span>
-                              )}
-                            </div>
-                            <ChevronRight className={`w-4 h-4 text-[var(--color-text-secondary)] shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                          </div>
-                          {isExpanded && (
-                            <div className="ml-6 mt-1 mb-2 border-l-2 border-[var(--color-info)]/40 pl-3" onClick={(e) => e.stopPropagation()}>
-                              <SessionContentView sesion={sesion} compact />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Columna derecha: feedback */}
-          {isProfesorOrAdmin && (
-            <div className="w-full md:w-[40%] min-w-[220px] space-y-2">
-              {!row.feedback ? (
+              {!row.feedback && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -729,36 +703,124 @@ function AgendaPageContent() {
                     e.stopPropagation();
                     abrirFeedbackDrawer(row.alumno);
                   }}
-                  className={`${componentStyles.buttons.outline}`}
+                  className={`w-full md:w-auto ${componentStyles.buttons.outline}`}
                 >
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Dar feedback
                 </Button>
-              ) : (
-                <div className="flex items-start gap-2">
-                  <MessageSquare className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
-                  <div className="min-w-0 flex-1">
+              )}
+            </div>
+          )
+        ) : (
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-6">
+            {/* Columna izquierda: pieza + semana del plan + sesiones (2/3 en desktop) */}
+            <div className="flex-1 md:flex-[2] space-y-2">
+              {/* Línea 1: icono música + nombre de la pieza */}
+              <div className="flex items-center gap-2">
+                <Music className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
+                <p className="text-sm font-medium text-[var(--color-text-primary)] break-words">
+                  {row.asignacionActiva.piezaSnapshot?.nombre || '—'}
+                </p>
+              </div>
+              {/* Línea 2: semana del plan (subtítulo) */}
+              {row.semana.nombre && (
+                <p className="text-xs text-[var(--color-text-secondary)] ml-6">
+                  {row.semana.nombre}
+                </p>
+              )}
+              {/* Línea 3: pills de sesiones */}
+              {row.semana?.sesiones && row.semana.sesiones.length > 0 && (
+                <div className="space-y-1.5 mt-2">
+                  {row.semana.sesiones.map((sesion, sesionIdx) => {
+                    const sesionKey = `${row.alumno.id}-${row.semanaIdx}-${sesionIdx}`;
+                    const isExpanded = expandedSessions.has(sesionKey);
+                    const tiempo = calcularTiempoSesion(sesion);
+                    const mins = Math.floor(tiempo / 60);
+                    const tiempoTexto = mins > 0 ? `${mins} min` : null;
+                    const focoTexto = sesion.foco ? focoLabels[sesion.foco] : null;
+
+                    return (
+                      <div key={sesionIdx} className="space-y-1">
+                        <div
+                          className="flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors hover:bg-[var(--color-surface-muted)] cursor-pointer border border-[var(--color-border-default)]/50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSession(sesionKey);
+                          }}
+                        >
+                          <PlayCircle className="w-4 h-4 text-[var(--color-info)] shrink-0" />
+                          <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+                            <span className="text-sm text-[var(--color-text-primary)] break-words">
+                              {sesion.nombre}
+                            </span>
+                            {tiempoTexto && (
+                              <span className="text-xs text-[var(--color-text-secondary)] whitespace-nowrap">
+                                · {tiempoTexto}
+                              </span>
+                            )}
+                            {focoTexto && (
+                              <span className="text-xs text-[var(--color-text-secondary)] whitespace-nowrap">
+                                · {focoTexto}
+                              </span>
+                            )}
+                          </div>
+                          <ChevronRight className={`w-4 h-4 text-[var(--color-text-secondary)] shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                        </div>
+                        {isExpanded && (
+                          <div className="ml-6 mt-1 mb-2 border-l-2 border-[var(--color-info)]/40 pl-3" onClick={(e) => e.stopPropagation()}>
+                            <SessionContentView sesion={sesion} compact />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Columna derecha: feedback (1/3 en desktop) */}
+            {isProfesorOrAdmin && (
+              <div className="w-full md:flex-1 md:min-w-[220px] space-y-2">
+                {!row.feedback ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      abrirFeedbackDrawer(row.alumno);
+                    }}
+                    className={`w-full md:w-auto ${componentStyles.buttons.outline}`}
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Dar feedback
+                  </Button>
+                ) : (
+                  <div className="space-y-2">
+                    {/* Título: Feedback del profesor · Nombre */}
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
+                      <MessageSquare className="w-4 h-4 text-[var(--color-info)] shrink-0" />
+                      <span className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</span>
                       {(() => {
                         const profesor = usuarios.find(u => u.id === row.feedback.profesorId);
                         if (profesor) {
                           return (
                             <span className="text-xs text-[var(--color-text-secondary)]">
-                              • {displayName(profesor)}
+                              · {displayName(profesor)}
                             </span>
                           );
                         }
                         return null;
                       })()}
                     </div>
+                    {/* Cita del feedback (máx 2-3 líneas con ellipsis) */}
                     {row.feedback.notaProfesor && (
-                      <p className="text-sm text-[var(--color-text-primary)] italic mt-0.5 break-words">
+                      <p className="text-sm text-[var(--color-text-primary)] italic line-clamp-3 break-words">
                         "{row.feedback.notaProfesor}"
                       </p>
                     )}
+                    {/* Media links (solo iconos) */}
                     {row.feedback.mediaLinks && row.feedback.mediaLinks.length > 0 && (
-                      <div className="mt-2">
+                      <div>
                         <MediaLinksBadges
                           mediaLinks={row.feedback.mediaLinks}
                           onMediaClick={(idx) => handlePreviewMedia(idx, row.feedback.mediaLinks)}
@@ -767,40 +829,41 @@ function AgendaPageContent() {
                         />
                       </div>
                     )}
+                    {/* Botones de acción */}
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          abrirFeedbackDrawer(row.alumno, row.feedback);
+                        }}
+                        className={`h-8 ${componentStyles.buttons.ghost}`}
+                        aria-label="Editar feedback"
+                      >
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm('¿Eliminar feedback?')) {
+                            eliminarFeedbackMutation.mutate(row.feedback.id);
+                          }
+                        }}
+                        className={`h-8 ${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle}`}
+                        aria-label="Eliminar feedback"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        abrirFeedbackDrawer(row.alumno, row.feedback);
-                      }}
-                      className={`h-8 ${componentStyles.buttons.ghost}`}
-                      aria-label="Editar feedback"
-                    >
-                      <Edit className="w-3 h-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (window.confirm('¿Eliminar feedback?')) {
-                          eliminarFeedbackMutation.mutate(row.feedback.id);
-                        }
-                      }}
-                      className={`h-8 ${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle}`}
-                      aria-label="Eliminar feedback"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   };
