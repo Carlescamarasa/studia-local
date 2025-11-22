@@ -348,7 +348,7 @@ function AsignacionesPageContent() {
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
     
-    if (usuarios.length > 0) {
+    if (process.env.NODE_ENV === 'development' && usuarios.length > 0) {
       console.log('[Modal Cambiar Estudiante] SELECT * FROM profiles WHERE role = \'ESTU\' →', result.length, 'estudiantes');
     }
     
@@ -816,7 +816,9 @@ function AsignacionesPageContent() {
                 items={estudiantesDisponibles}
                 value={estudianteSeleccionado ? [estudianteSeleccionado] : []}
                 onChange={(vals) => {
-                  console.log('[asignaciones.jsx] Modal cambiar estudiante - onChange:', { vals, selected: vals.length > 0 ? vals[0] : '' });
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('[asignaciones.jsx] Modal cambiar estudiante - onChange:', { vals, selected: vals.length > 0 ? vals[0] : '' });
+                  }
                   setEstudianteSeleccionado(vals.length > 0 ? vals[0] : '');
                 }}
                 placeholder="Buscar estudiante por nombre..."
