@@ -141,25 +141,37 @@ CREATE POLICY "Alumnos pueden actualizar sus propios tickets"
     auth.uid() = alumno_id
   );
 
--- Profesores pueden ver tickets donde son profesor_id
+-- Profesores pueden ver TODOS los tickets (no solo los asignados)
 DROP POLICY IF EXISTS "Profesores pueden ver tickets asignados" ON support_tickets;
-CREATE POLICY "Profesores pueden ver tickets asignados"
+CREATE POLICY "Profesores pueden ver todos los tickets"
   ON support_tickets
   FOR SELECT
   USING (
-    auth.uid() = profesor_id
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.role = 'PROF'
+    )
   );
 
--- Profesores pueden actualizar tickets asignados
+-- Profesores pueden actualizar cualquier ticket
 DROP POLICY IF EXISTS "Profesores pueden actualizar tickets asignados" ON support_tickets;
-CREATE POLICY "Profesores pueden actualizar tickets asignados"
+CREATE POLICY "Profesores pueden actualizar tickets"
   ON support_tickets
   FOR UPDATE
   USING (
-    auth.uid() = profesor_id
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.role = 'PROF'
+    )
   )
   WITH CHECK (
-    auth.uid() = profesor_id
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.role = 'PROF'
+    )
   );
 
 -- ADMIN puede ver todos los tickets
@@ -180,6 +192,7 @@ CREATE POLICY "ADMIN puede ver todos los tickets"
 -- ============================================================================
 
 -- Alumnos pueden ver mensajes de sus tickets
+DROP POLICY IF EXISTS "Alumnos pueden ver mensajes de sus tickets" ON support_mensajes;
 CREATE POLICY "Alumnos pueden ver mensajes de sus tickets"
   ON support_mensajes
   FOR SELECT
@@ -192,6 +205,7 @@ CREATE POLICY "Alumnos pueden ver mensajes de sus tickets"
   );
 
 -- Alumnos pueden crear mensajes en sus tickets
+DROP POLICY IF EXISTS "Alumnos pueden crear mensajes en sus tickets" ON support_mensajes;
 CREATE POLICY "Alumnos pueden crear mensajes en sus tickets"
   ON support_mensajes
   FOR INSERT
@@ -205,33 +219,36 @@ CREATE POLICY "Alumnos pueden crear mensajes en sus tickets"
     AND rol_autor = 'alumno'
   );
 
--- Profesores pueden ver mensajes de tickets asignados
-CREATE POLICY "Profesores pueden ver mensajes de tickets asignados"
+-- Profesores pueden ver mensajes de TODOS los tickets
+DROP POLICY IF EXISTS "Profesores pueden ver mensajes de tickets asignados" ON support_mensajes;
+CREATE POLICY "Profesores pueden ver mensajes de todos los tickets"
   ON support_mensajes
   FOR SELECT
   USING (
     EXISTS (
-      SELECT 1 FROM support_tickets
-      WHERE support_tickets.id = support_mensajes.ticket_id
-      AND support_tickets.profesor_id = auth.uid()
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.role = 'PROF'
     )
   );
 
--- Profesores pueden crear mensajes en tickets asignados
-CREATE POLICY "Profesores pueden crear mensajes en tickets asignados"
+-- Profesores pueden crear mensajes en cualquier ticket
+DROP POLICY IF EXISTS "Profesores pueden crear mensajes en tickets asignados" ON support_mensajes;
+CREATE POLICY "Profesores pueden crear mensajes en cualquier ticket"
   ON support_mensajes
   FOR INSERT
   WITH CHECK (
     EXISTS (
-      SELECT 1 FROM support_tickets
-      WHERE support_tickets.id = support_mensajes.ticket_id
-      AND support_tickets.profesor_id = auth.uid()
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.role = 'PROF'
     )
     AND autor_id = auth.uid()
     AND rol_autor = 'profesor'
   );
 
 -- ADMIN puede ver y crear mensajes en todos los tickets
+DROP POLICY IF EXISTS "ADMIN puede ver y crear mensajes en todos los tickets" ON support_mensajes;
 CREATE POLICY "ADMIN puede ver y crear mensajes en todos los tickets"
   ON support_mensajes
   FOR ALL
