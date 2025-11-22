@@ -310,9 +310,9 @@ export default function UnifiedTable({
                       )}
                       <div className="min-w-0 flex-1">
                         {primaryContent && (
-                          <p className="font-medium text-sm truncate">
+                          <div className="font-medium text-sm truncate">
                             {primaryContent}
-                          </p>
+                          </div>
                         )}
                       </div>
                     </div>
