@@ -66,19 +66,30 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
       }
     });
 
-    // Agregar asignaciones
+    // Agregar asignaciones (todas las semanas del plan que caen en el rango)
     eventos.asignaciones.forEach(asignacion => {
-      if (asignacion.semanaInicioISO) {
-        const fechaAsignacion = parseLocalDate(asignacion.semanaInicioISO);
-        if (fechaAsignacion >= lunesSemana && fechaAsignacion <= domingoSemana) {
-          lista.push({
-            tipo: 'asignacion',
-            evento: asignacion,
-            fecha: asignacion.semanaInicioISO,
-            fechaISO: asignacion.semanaInicioISO,
-            horaISO: `${asignacion.semanaInicioISO}T00:00:00`, // Sin hora específica
-            prioridad: 2,
-          });
+      if (asignacion.semanaInicioISO && asignacion.plan && Array.isArray(asignacion.plan.semanas)) {
+        const lunesAsignacion = startOfMonday(parseLocalDate(asignacion.semanaInicioISO));
+        const totalSemanas = Math.max(1, asignacion.plan.semanas.length);
+        const totalDias = totalSemanas * 7;
+        
+        // Generar eventos para cada día del plan que cae en el rango visible
+        for (let i = 0; i < totalDias; i++) {
+          const fecha = new Date(lunesAsignacion);
+          fecha.setDate(lunesAsignacion.getDate() + i);
+          const fechaISO = formatLocalDate(fecha);
+          
+          // Solo incluir si está en el rango visible
+          if (fecha >= lunesSemana && fecha <= domingoSemana) {
+            lista.push({
+              tipo: 'asignacion',
+              evento: asignacion,
+              fecha: fechaISO,
+              fechaISO: fechaISO,
+              horaISO: `${fechaISO}T00:00:00`, // Sin hora específica
+              prioridad: 2,
+            });
+          }
         }
       }
     });
@@ -354,6 +365,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
                             usuarios={usuarios}
                             onClick={() => onEventoClick(item.evento, 'asignacion')}
                             registrosSesion={registrosSesion}
+                            fechaEvento={item.fechaISO}
                           />
                         )}
                         {item.tipo === 'sesion' && (

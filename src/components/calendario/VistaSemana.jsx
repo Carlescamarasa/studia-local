@@ -121,7 +121,7 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
   };
 
   // Renderizar evento compacto para desktop/tablet (variante week)
-  const renderEventoCompacto = (evento, tipo) => {
+  const renderEventoCompacto = (evento, tipo, fechaDia = null) => {
     const props = { 
       usuarios, 
       onClick: () => onEventoClick(evento, tipo),
@@ -133,7 +133,7 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
       case 'feedback':
         return <EventoFeedback key={evento.id} feedback={evento} {...props} onMediaClick={handleMediaClick} />;
       case 'asignacion':
-        return <EventoAsignacion key={evento.id} asignacion={evento} {...props} registrosSesion={registrosSesion} />;
+        return <EventoAsignacion key={evento.id} asignacion={evento} {...props} registrosSesion={registrosSesion} fechaEvento={fechaDia} />;
       case 'evento':
         return <EventoImportante key={evento.id} evento={evento} onClick={props.onClick} variant="week" onMediaClick={handleMediaClick} />;
       default:
@@ -225,6 +225,7 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
                 onClick={() => onEventoClick(asignacion, 'asignacion')}
                 variant="week"
                 registrosSesion={registrosSesion}
+                fechaEvento={diaSeleccionado}
               />
             ))}
             {eventosDiaSeleccionado.sesiones.map(sesion => (
@@ -325,10 +326,10 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
                 
                 {/* Contenedor de eventos con scroll */}
                 <div className="space-y-1 max-h-[520px] overflow-y-auto pr-1">
-                  {eventosDia.eventos.map(evento => renderEventoCompacto(evento, 'evento'))}
-                  {eventosDia.asignaciones.map(asignacion => renderEventoCompacto(asignacion, 'asignacion'))}
-                  {eventosDia.sesiones.map(sesion => renderEventoCompacto(sesion, 'sesion'))}
-                  {eventosDia.feedbacks.map(feedback => renderEventoCompacto(feedback, 'feedback'))}
+                  {eventosDia.eventos.map(evento => renderEventoCompacto(evento, 'evento', fechaISO))}
+                  {eventosDia.asignaciones.map(asignacion => renderEventoCompacto(asignacion, 'asignacion', fechaISO))}
+                  {eventosDia.sesiones.map(sesion => renderEventoCompacto(sesion, 'sesion', fechaISO))}
+                  {eventosDia.feedbacks.map(feedback => renderEventoCompacto(feedback, 'feedback', fechaISO))}
                   {totalEventos === 0 && (
                     <div className="text-xs text-[var(--color-text-secondary)]/40 text-center py-4">
                       Sin eventos

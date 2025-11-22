@@ -87,11 +87,15 @@ export const agruparEventosPorDia = (eventos, fechaInicio, fechaFin) => {
     }
   });
 
-  // Agrupar asignaciones por semana (mostrar toda la semana)
+  // Agrupar asignaciones por todas las semanas del plan
   eventos.asignaciones.forEach(asignacion => {
-    if (asignacion.semanaInicioISO) {
+    if (asignacion.semanaInicioISO && asignacion.plan && Array.isArray(asignacion.plan.semanas)) {
       const lunesAsignacion = startOfMonday(parseLocalDate(asignacion.semanaInicioISO));
-      for (let i = 0; i < 7; i++) {
+      const totalSemanas = Math.max(1, asignacion.plan.semanas.length); // Mínimo 1 semana
+      const totalDias = totalSemanas * 7; // Total de días del plan
+      
+      // Generar eventos para todas las semanas del plan
+      for (let i = 0; i < totalDias; i++) {
         const fecha = new Date(lunesAsignacion);
         fecha.setDate(lunesAsignacion.getDate() + i);
         const fechaISO = formatLocalDate(fecha);
@@ -140,20 +144,65 @@ export const formatearHora = (isoString) => {
 };
 
 /**
- * Calcula el patrón de semanas de una asignación basado en el plan completo
- * Todas las semanas del plan se muestran como activas (●)
+ * Calcula el índice de semana actual dentro de una asignación
  * 
- * @param {Object} asignacion - La asignación con plan.semanas
- * @returns {string|null} - Patrón de semanas (ej: "● ● ●" o "● ○ ● ○") o null si no hay plan
+ * @param {Date|string} startDate - Fecha de inicio de la asignación (lunes de la primera semana)
+ * @param {number} totalWeeks - Número total de semanas del plan
+ * @param {Date|string} currentDate - Fecha del evento que se está pintando
+ * @returns {number} - Índice de semana (0-based), o -1 si está fuera del rango
  */
-export const calcularPatronSemanasAsignacion = (asignacion) => {
+export const getAsignacionWeekIndex = (startDate, totalWeeks, currentDate) => {
+  const start = startDate instanceof Date ? startDate : parseLocalDate(startDate);
+  const current = currentDate instanceof Date ? currentDate : parseLocalDate(currentDate);
+  
+  // Normalizar a inicio del día
+  const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const currentDay = new Date(current.getFullYear(), current.getMonth(), current.getDate());
+  
+  // Calcular diferencia en días
+  const diffTime = currentDay - startDay;
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  // Si está antes del inicio, retornar -1
+  if (diffDays < 0) return -1;
+  
+  // Calcular índice de semana (0-based)
+  // La semana empieza en lunes, así que dividimos por 7
+  const weekIndex = Math.floor(diffDays / 7);
+  
+  // Clamp entre 0 y totalWeeks - 1
+  if (weekIndex >= totalWeeks) return -1;
+  
+  return weekIndex;
+};
+
+/**
+ * Calcula el patrón de semanas de una asignación mostrando la semana actual
+ * 
+ * @param {Object} asignacion - La asignación con plan.semanas y semanaInicioISO
+ * @param {Date|string} currentDate - Fecha del evento que se está pintando (opcional, por defecto hoy)
+ * @returns {string|null} - Patrón de semanas (ej: "● ○ ○" o "○ ● ○") o null si no hay plan
+ */
+export const calcularPatronSemanasAsignacion = (asignacion, currentDate = null) => {
   if (!asignacion?.plan || !Array.isArray(asignacion.plan.semanas)) return null;
   const totalSemanas = asignacion.plan.semanas.length;
   if (totalSemanas === 0) return null;
+  if (!asignacion.semanaInicioISO) return null;
 
-  // Todas las semanas del plan están activas (●)
-  // El patrón representa el plan completo, no las semanas trabajadas
-  const patron = Array.from({ length: Math.min(totalSemanas, 8) }, () => '●');
+  // Si no se proporciona currentDate, usar la fecha de inicio (mostrar primera semana activa)
+  const fechaActual = currentDate || asignacion.semanaInicioISO;
+  
+  // Calcular índice de semana actual
+  const weekIndex = getAsignacionWeekIndex(asignacion.semanaInicioISO, totalSemanas, fechaActual);
+  
+  // Si está fuera del rango, no mostrar patrón
+  if (weekIndex < 0) return null;
+
+  // Generar patrón: ● para la semana actual, ○ para las demás
+  const patron = Array.from({ length: Math.min(totalSemanas, 8) }, (_, i) => 
+    i === weekIndex ? '●' : '○'
+  );
+  
   return patron.join(' ');
 };
 

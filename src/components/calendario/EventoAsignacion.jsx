@@ -5,7 +5,7 @@ import { getNombreVisible } from "@/components/utils/helpers";
 import { formatearFechaEvento, obtenerColorEvento, obtenerLabelEstadoAsignacion, calcularPatronSemanasAsignacion } from "./utils";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
 
-export default function EventoAsignacion({ asignacion, usuarios, onClick, variant = 'default', registrosSesion = [] }) {
+export default function EventoAsignacion({ asignacion, usuarios, onClick, variant = 'default', registrosSesion = [], fechaEvento = null }) {
   const alumno = usuarios.find(u => u.id === asignacion.alumnoId);
   const fechaSemana = asignacion.semanaInicioISO ? formatearFechaEvento(asignacion.semanaInicioISO) : '';
   const piezaNombre = asignacion.piezaSnapshot?.nombre || asignacion.piezaId || 'Pieza';
@@ -19,7 +19,10 @@ export default function EventoAsignacion({ asignacion, usuarios, onClick, varian
   };
 
   // Calcular patrón de semanas usando el helper reutilizable
-  const patronSemanas = calcularPatronSemanasAsignacion(asignacion);
+  // Si se proporciona fechaEvento, usar esa fecha para calcular la semana actual
+  // Si no, usar la fecha de inicio (comportamiento por defecto)
+  const fechaParaPatron = fechaEvento || asignacion.semanaInicioISO;
+  const patronSemanas = calcularPatronSemanasAsignacion(asignacion, fechaParaPatron);
 
   // Variante compacta para vista Semana
   if (variant === 'week') {

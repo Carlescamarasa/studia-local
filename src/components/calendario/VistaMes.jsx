@@ -135,6 +135,7 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
                           onEventoClick(item.evento, 'asignacion');
                           setDiaSeleccionado(null);
                         }}
+                        fechaEvento={diaSeleccionado}
                       />
                     )}
                     {item.tipo === 'sesion' && (
