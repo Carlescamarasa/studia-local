@@ -323,17 +323,6 @@ function AsignacionesPageContent() {
     const profesores = Array.from(profesoresMap.values())
       .sort((a, b) => a.label.localeCompare(b.label));
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[asignaciones.jsx] Profesores disponibles:', {
-        totalAsignaciones: asignacionesFiltradas.length,
-        profesorIdsEnAsignaciones,
-        totalProfesoresEnBD: todosLosProfesores.length,
-        profesoresEnBD: todosLosProfesores.map(p => ({ id: p.id, nombre: getNombreVisible(p) })),
-        totalProfesoresDisponibles: profesores.length,
-        profesores: profesores.map(p => ({ id: p.value, nombre: p.label })),
-      });
-  }
-    
     return profesores;
   }, [asignacionesFiltradas, usuarios]);
 
@@ -347,10 +336,6 @@ function AsignacionesPageContent() {
         label: `${getNombreVisible(e)}${e.email ? ` (${e.email})` : ''}`.trim(),
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
-    
-    if (process.env.NODE_ENV === 'development' && usuarios.length > 0) {
-      console.log('[Modal Cambiar Estudiante] SELECT * FROM profiles WHERE role = \'ESTU\' →', result.length, 'estudiantes');
-    }
     
     return result;
   }, [usuarios]);
@@ -816,9 +801,6 @@ function AsignacionesPageContent() {
                 items={estudiantesDisponibles}
                 value={estudianteSeleccionado ? [estudianteSeleccionado] : []}
                 onChange={(vals) => {
-                  if (process.env.NODE_ENV === 'development') {
-                    console.log('[asignaciones.jsx] Modal cambiar estudiante - onChange:', { vals, selected: vals.length > 0 ? vals[0] : '' });
-                  }
                   setEstudianteSeleccionado(vals.length > 0 ? vals[0] : '');
                 }}
                 placeholder="Buscar estudiante por nombre..."
