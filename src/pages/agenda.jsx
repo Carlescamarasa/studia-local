@@ -883,17 +883,17 @@ function AgendaPageContent() {
         return (
           <div className="flex items-center justify-between gap-3 min-w-0">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center shrink-0">
-                <span className="text-[var(--color-text-primary)] font-semibold text-sm">
-                  {displayName(row.alumno).slice(0, 1).toUpperCase()}
-                </span>
-              </div>
-              <div className="min-w-0 flex-1">
+          <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center shrink-0">
+            <span className="text-[var(--color-text-primary)] font-semibold text-sm">
+              {displayName(row.alumno).slice(0, 1).toUpperCase()}
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-[var(--color-text-primary)] break-words">
-                  {displayName(row.alumno)}
-                </p>
-              </div>
-            </div>
+              {displayName(row.alumno)}
+            </p>
+          </div>
+        </div>
             {row.asignacionActiva && row.semana && (
               <div className="flex items-center gap-2 shrink-0">
                 {semanaActual && totalSemanas > 0 && (
@@ -955,11 +955,11 @@ function AgendaPageContent() {
         }
         return (
           <div className="min-w-0">
-            {row.semana.objetivo && (
+              {row.semana.objetivo && (
               <p className="text-xs text-[var(--color-text-secondary)] break-words">
                 {row.semana.objetivo}
-              </p>
-            )}
+                </p>
+              )}
           </div>
         );
       },
@@ -985,18 +985,18 @@ function AgendaPageContent() {
 
               return (
                 <div key={sesionIdx} className="space-y-1">
-                  <div
+                <div
                     className="flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors hover:bg-[var(--color-surface-muted)] cursor-pointer border border-[var(--color-border-default)]/50"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleSession(sesionKey);
-                    }}
-                  >
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSession(sesionKey);
+                  }}
+                >
                     <PlayCircle className="w-4 h-4 text-[var(--color-info)] shrink-0" />
                     <div className="flex-1 min-w-0 flex items-center gap-2">
                       <span className="text-sm text-[var(--color-text-primary)] break-words">
-                        {sesion.nombre}
-                      </span>
+                          {sesion.nombre}
+                        </span>
                       {tiempoTexto && (
                         <span className="text-xs text-[var(--color-text-secondary)]">
                           · {tiempoTexto}
@@ -1009,12 +1009,12 @@ function AgendaPageContent() {
                       )}
                     </div>
                     <ChevronRight className={`w-4 h-4 text-[var(--color-text-secondary)] shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                  </div>
-                  {isExpanded && (
+                      </div>
+                      {isExpanded && (
                     <div className="ml-6 mt-1 mb-2 border-l-2 border-[var(--color-info)]/40 pl-3" onClick={(e) => e.stopPropagation()}>
-                      <SessionContentView sesion={sesion} compact />
-                    </div>
-                  )}
+                          <SessionContentView sesion={sesion} compact />
+                        </div>
+                      )}
                 </div>
               );
             })}
@@ -1185,7 +1185,7 @@ function AgendaPageContent() {
               {tableData.length > pageSize && (
                 <div className="mt-4">
                   <TablePagination
-                    data={tableData}
+            data={tableData}
                     pageSize={pageSize}
                     currentPage={currentPage}
                     onPageChange={setCurrentPage}
@@ -1209,9 +1209,9 @@ function AgendaPageContent() {
                       size="sm"
                       onClick={() => {
                         const primerEstudiante = tableData.find(row => selectedItems.has(row.id));
-                        if (primerEstudiante) {
-                          abrirFeedbackDrawer(primerEstudiante.alumno);
-                        }
+                  if (primerEstudiante) {
+                    abrirFeedbackDrawer(primerEstudiante.alumno);
+                  }
                         setSelectedItems(new Set());
                       }}
                       className="h-9 text-xs"
