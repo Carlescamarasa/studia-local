@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ds";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   User, ArrowLeft, Mail, Shield, Target, Music,
-  Save, Edit, AlertCircle, CheckCircle, Sun, Moon, Monitor
+  Save, Edit, AlertCircle, CheckCircle, Sun, Moon, Monitor, KeyRound
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -23,6 +23,7 @@ import PageHeader from "@/components/ds/PageHeader";
 import { LoadingSpinner } from "@/components/ds";
 import { componentStyles } from "@/design/componentStyles";
 import { useDesign } from "@/components/design/DesignProvider";
+import { sendPasswordResetAdmin } from "@/api/userAdmin";
 
 export default function PerfilPage() {
   const navigate = useNavigate();
@@ -423,15 +424,34 @@ export default function PerfilPage() {
                 <p className="text-[var(--color-text-primary)]">ID de usuario: <span className="font-mono text-[var(--color-text-secondary)]">{targetUser?.id}</span></p>
                 <p className="text-[var(--color-text-primary)]">Registrado: <span className="text-[var(--color-text-secondary)]">{targetUser?.created_date ? new Date(targetUser.created_date).toLocaleDateString('es-ES') : '-'}</span></p>
               </div>
-              <Button
-                onClick={handleSave}
-                loading={updateUserMutation.isPending}
-                loadingText="Guardando..."
-                className={componentStyles.buttons.primary}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Guardar Cambios
-              </Button>
+              <div className="flex gap-2">
+                {isEditingOwnProfile && targetUser?.email && (
+                  <Button
+                    onClick={async () => {
+                      try {
+                        await sendPasswordResetAdmin(targetUser.email);
+                        toast.success('Te hemos enviado un email para restablecer la contraseña');
+                      } catch (error) {
+                        toast.error(error.message || 'Error al enviar email de restablecimiento');
+                      }
+                    }}
+                    variant="outline"
+                    className={componentStyles.buttons.secondary}
+                  >
+                    <KeyRound className="w-4 h-4 mr-2" />
+                    Restablecer contraseña
+                  </Button>
+                )}
+                <Button
+                  onClick={handleSave}
+                  loading={updateUserMutation.isPending}
+                  loadingText="Guardando..."
+                  className={componentStyles.buttons.primary}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Guardar Cambios
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>

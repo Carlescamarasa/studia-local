@@ -22,10 +22,13 @@ export default function FormField({
   error,
   success,
   help,
+  helpText, // Nueva prop para ayudar con el warning de React
   children,
   className,
   ...props
 }) {
+  // Combinar help y helpText (helpText es el alias común usado en el proyecto)
+  const helpMessage = help || helpText;
   const labelClass = cn(
     componentStyles.forms.label,
     required && componentStyles.forms.labelRequired,
@@ -68,7 +71,7 @@ export default function FormField({
         id: fieldId,
         className: inputClassName,
         "aria-invalid": error ? "true" : undefined,
-        "aria-describedby": error || success || help ? `${fieldId}-message` : undefined,
+        "aria-describedby": error || success || helpMessage ? `${fieldId}-message` : undefined,
       });
     }
 
@@ -98,7 +101,7 @@ export default function FormField({
         </label>
       )}
       {enhancedChildren}
-      {(error || success || help) && (
+      {(error || success || helpMessage) && (
         <div 
           id={`${fieldId}-message`}
           className={
@@ -111,8 +114,8 @@ export default function FormField({
         >
           {error && <AlertCircle className={componentStyles.forms.errorIcon} />}
           {success && <CheckCircle2 className={componentStyles.forms.successIcon} />}
-          {help && <HelpCircle className={componentStyles.icons.sm} />}
-          <span>{error || success || help}</span>
+          {helpMessage && <HelpCircle className={componentStyles.icons.sm} />}
+          <span>{error || success || helpMessage}</span>
         </div>
       )}
     </div>

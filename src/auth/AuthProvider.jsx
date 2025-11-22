@@ -72,22 +72,57 @@ export function AuthProvider({ children }) {
         .single();
 
       if (error) {
+        // Separar errores de red de "no hay perfil"
+        const isNetworkError = error.message?.includes('NetworkError') || 
+                               error.message?.includes('fetch') ||
+                               error.name === 'TypeError' ||
+                               error.message?.includes('TypeError');
+        
+        if (isNetworkError) {
+          // Error de red: no tratar como "no hay perfil"
+          console.error('[AuthProvider] Error de red al cargar perfil:', {
+            userId,
+            error: error.message,
+            code: error.code,
+          });
+          setProfile(null);
+          fetchingProfileRef.current = false;
+          return;
+        }
+
         // Si no hay perfil o hay error de RLS, usar valores por defecto
-        // No lanzar error - simplemente no establecer perfil
         if (error.message.includes('infinite recursion')) {
           console.error('[AuthProvider] Error de políticas RLS en Supabase:', {
             error: error.message,
             code: error.code,
             userId,
           });
+        } else if (error.code === 'PGRST116') {
+          // No hay fila: realmente no existe perfil
+          console.warn('[AuthProvider] No se encontró perfil en la tabla profiles:', {
+            userId,
+          });
         } else {
+          // Otro tipo de error
           if (process.env.NODE_ENV === 'development') {
-            console.warn('[AuthProvider] No se encontró perfil para el usuario:', {
+            console.warn('[AuthProvider] Error al cargar perfil:', {
               userId,
               error: error.message,
+              code: error.code,
             });
           }
         }
+        setProfile(null);
+        fetchingProfileRef.current = false;
+        return;
+      }
+
+      // Si hay data, establecer perfil
+      if (!data) {
+        // Respuesta 200 pero sin datos
+        console.warn('[AuthProvider] No se encontró perfil en la tabla profiles (respuesta vacía):', {
+          userId,
+        });
         setProfile(null);
         fetchingProfileRef.current = false;
         return;
@@ -97,12 +132,37 @@ export function AuthProvider({ children }) {
       // Nota: appRole ahora se calcula desde el email, no desde profile.role
       fetchingProfileRef.current = false;
     } catch (err) {
-      // Error no crítico - usar valores por defecto
-      console.error('[AuthProvider] Error obteniendo perfil:', {
-        error: err?.message || err,
-        code: err?.code,
-        userId,
-      });
+      // Error de red o excepción no controlada
+      // Detectar errores de red de varias formas
+      const errorMessage = err?.message || err?.toString() || '';
+      const errorName = err?.name || '';
+      const isNetworkError = 
+        errorMessage.includes('NetworkError') || 
+        errorMessage.includes('fetch') ||
+        errorMessage.includes('Failed to fetch') ||
+        errorName === 'TypeError' ||
+        errorName === 'NetworkError' ||
+        (err instanceof TypeError && errorMessage.includes('fetch'));
+      
+      if (isNetworkError) {
+        // Error de red: registrar como warning en lugar de error para no saturar la consola
+        // Solo en desarrollo mostramos el error completo
+        if (import.meta.env.DEV) {
+          console.warn('[AuthProvider] Error de red al cargar perfil (se reintentará automáticamente):', {
+            userId,
+            error: errorMessage || errorName,
+          });
+        }
+        // No tratar como "no hay perfil"; el problema es de red
+        // Mantener profile como null pero permitir reintentos
+      } else {
+        // Otro tipo de error
+        console.error('[AuthProvider] Error obteniendo perfil:', {
+          error: errorMessage || err,
+          code: err?.code,
+          userId,
+        });
+      }
       setProfile(null);
       fetchingProfileRef.current = false;
     }

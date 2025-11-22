@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import { CreateUserModal } from "@/pages/auth/components/CreateUserModal";
 import FormField from "@/components/ds/FormField";
 import { InviteUserModal } from "@/pages/auth/components/InviteUserModal";
 import { useUserActions } from "@/pages/auth/hooks/useUserActions";
+import { inviteUserByEmail, sendPasswordResetAdmin } from "@/api/userAdmin";
 import { Mail, KeyRound, UserPlus as UserPlusIcon, User, Target, Send, Eye, BarChart3, Pause, Play, MoreVertical, Users as UsersIcon } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import {
@@ -140,12 +142,19 @@ function UsuariosPageContent() {
     },
   });
 
-  // Mutation para pausar/reanudar usuario
+  // Mutation para pausar/reanudar usuario usando RPC
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ userId, isActive }) => {
-      return localDataClient.entities.User.update(userId, {
-        isActive: isActive,
+      const { error } = await supabase.rpc('admin_set_profile_active', {
+        p_profile_id: userId,
+        p_is_active: isActive,
       });
+      
+      if (error) {
+        throw new Error(error.message || 'Error al cambiar estado del usuario');
+      }
+      
+      return { success: true };
     },
     onSuccess: (_, { isActive }) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -156,14 +165,30 @@ function UsuariosPageContent() {
     },
   });
 
-  // Mutation para pausar/reanudar usuarios (masivo)
+  // Mutation para pausar/reanudar usuarios (masivo) usando RPC
   const toggleActiveBulkMutation = useMutation({
     mutationFn: async ({ userIds, isActive }) => {
-      await Promise.all(userIds.map(userId => 
-        localDataClient.entities.User.update(userId, {
-          isActive: isActive,
-        })
-      ));
+      // Ejecutar todas las llamadas RPC en paralelo
+      const results = await Promise.all(
+        userIds.map(userId =>
+          supabase.rpc('admin_set_profile_active', {
+            p_profile_id: userId,
+            p_is_active: isActive,
+          })
+        )
+      );
+      
+      // Verificar si hubo algún error
+      const errors = results.filter(r => r.error);
+      if (errors.length > 0) {
+        throw new Error(
+          errors.length === userIds.length
+            ? errors[0].error.message || 'Error al cambiar estado de los usuarios'
+            : `${errors.length} de ${userIds.length} actualizaciones fallaron`
+        );
+      }
+      
+      return { success: true };
     },
     onSuccess: (_, { userIds, isActive }) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -189,15 +214,27 @@ function UsuariosPageContent() {
     },
   });
 
-  // Mutation para enviar reset password masivo
+  // Mutation para enviar reset password masivo usando helper
   const sendResetPasswordBulkMutation = useMutation({
-    mutationFn: async ({ userIds, emails }) => {
-      await Promise.all(emails.map((email, idx) => 
-        sendResetPassword(userIds[idx], email)
-      ));
+    mutationFn: async ({ emails }) => {
+      const results = await Promise.allSettled(
+        emails.map(email => sendPasswordResetAdmin(email))
+      );
+      
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+      
+      if (failed > 0) {
+        const errors = results
+          .filter(r => r.status === 'rejected')
+          .map(r => r.reason?.message || 'Error desconocido');
+        throw new Error(`${successful} enviados, ${failed} fallaron: ${errors.join(', ')}`);
+      }
+      
+      return { successful, total: emails.length };
     },
-    onSuccess: (_, { userIds }) => {
-      toast.success(`✅ Email de recuperación enviado a ${userIds.length} usuario${userIds.length > 1 ? 's' : ''}`);
+    onSuccess: (_, { emails }) => {
+      toast.success(`✅ Email de recuperación enviado a ${emails.length} usuario${emails.length > 1 ? 's' : ''}`);
     },
     onError: (error) => {
       toast.error(error.message || 'Error al enviar emails de recuperación');
@@ -313,13 +350,19 @@ function UsuariosPageContent() {
     {
       key: 'profesor',
       label: 'Profesor',
+      // rawValue: el nombre del profesor o null/undefined si no hay
+      // Esto se usa para filtrar campos vacíos en mobile
+      rawValue: (u) => {
+        if (!u.profesorAsignadoId) return null;
+        const profe = usuarios.find(p => p.id === u.profesorAsignadoId);
+        return profe ? getNombreVisible(profe) : null;
+      },
       render: (u) => {
+        if (!u.profesorAsignadoId) return null;
         const profe = usuarios.find(p => p.id === u.profesorAsignadoId);
         return profe ? (
           <p className="text-sm">{getNombreVisible(profe)}</p>
-        ) : (
-          <span className="text-xs text-ui/80">-</span>
-        );
+        ) : null;
       },
     },
     {
@@ -492,9 +535,8 @@ function UsuariosPageContent() {
                     const usuariosSeleccionados = usuariosFiltrados.filter(u => ids.includes(u.id));
                     const usuariosConEmail = usuariosSeleccionados.filter(u => u.email);
                     if (usuariosConEmail.length > 0) {
-                      const userIds = usuariosConEmail.map(u => u.id);
                       const emails = usuariosConEmail.map(u => u.email);
-                      sendResetPasswordBulkMutation.mutate({ userIds, emails });
+                      sendResetPasswordBulkMutation.mutate({ emails });
                     } else {
                       toast.error('Los usuarios seleccionados no tienen email');
                     }
@@ -576,14 +618,37 @@ function UsuariosPageContent() {
                 if (u.email) {
                   actions.push(
                     {
+                      id: 'invite',
+                      label: 'Enviar invitación',
+                      icon: <Send className="w-4 h-4" />,
+                      onClick: async () => {
+                        try {
+                          await inviteUserByEmail(u.email, { role: u.rolPersonalizado });
+                          // También enviar reset password
+                          try {
+                            await sendPasswordResetAdmin(u.email);
+                            toast.success('Se han enviado el email de bienvenida y el email para establecer contraseña');
+                          } catch (resetErr) {
+                            toast.warning(
+                              'La invitación se envió correctamente, pero no se pudo enviar el email de cambio de contraseña. ' +
+                              'Puedes reenviarlo desde las acciones del usuario.'
+                            );
+                          }
+                        } catch (error) {
+                          toast.error(error.message || 'Error al enviar invitación');
+                        }
+                      },
+                    },
+                    {
                       id: 'reset_password',
                       label: 'Enviar recuperación de contraseña',
                       icon: <KeyRound className="w-4 h-4" />,
                       onClick: async () => {
                         try {
-                          await sendResetPassword(u.id, u.email);
+                          await sendPasswordResetAdmin(u.email);
+                          toast.success('Email de recuperación enviado correctamente');
                         } catch (error) {
-                          // Error ya manejado en el hook
+                          toast.error(error.message || 'Error al enviar email de recuperación');
                         }
                       },
                     },

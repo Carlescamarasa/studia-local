@@ -14,7 +14,7 @@ import { Mail, Send } from 'lucide-react';
 import { validateEmail, isEmpty } from '../utils/validation';
 import { componentStyles } from '@/design/componentStyles';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabaseClient';
+import { inviteUserByEmail, sendPasswordResetAdmin } from '@/api/userAdmin';
 
 export function InviteUserModal({ open, onOpenChange, onSuccess }) {
   const [alias, setAlias] = useState('');
@@ -73,35 +73,34 @@ export function InviteUserModal({ open, onOpenChange, onSuccess }) {
 
     setIsLoading(true);
     try {
-      // Obtener el token de sesión actual
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        throw new Error('No hay sesión activa. Por favor, inicia sesión.');
-      }
-
-      // Llamar a la Edge Function para enviar invitación
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const response = await fetch(`${supabaseUrl}/functions/v1/invite-user`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          alias: alias.trim() || null, // Alias solo para el email, no se guarda
-        }),
+      // 1. Enviar invitación
+      await inviteUserByEmail(email.trim(), {
+        alias: alias.trim() || undefined,
       });
 
-      const result = await response.json();
+      // 2. Si la invitación fue exitosa, enviar también el email de reset password
+      let resetPasswordSent = false;
+      let resetPasswordError = null;
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Error al enviar invitación');
+      try {
+        await sendPasswordResetAdmin(email.trim());
+        resetPasswordSent = true;
+      } catch (resetErr) {
+        console.error('Error al enviar reset password:', resetErr);
+        resetPasswordError = resetErr;
       }
 
-      toast.success('Invitación enviada correctamente');
-      
+      // Mostrar mensaje según el resultado
+      if (resetPasswordSent) {
+        toast.success('Se han enviado el email de bienvenida y el email para establecer contraseña');
+      } else {
+        toast.warning(
+          'La invitación se envió correctamente, pero no se pudo enviar el email de cambio de contraseña. ' +
+          'Puedes reenviarlo desde las acciones del usuario.'
+        );
+        console.warn('Error al enviar reset password:', resetPasswordError);
+      }
+
       if (onSuccess) {
         onSuccess();
       }

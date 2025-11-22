@@ -9,6 +9,25 @@ import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
+/**
+ * Helper function to check if a raw value should be considered "empty"
+ * Used to filter out empty fields in mobile view to avoid showing "Label: -" or similar
+ * This function should be used on rawValue (the actual data), not on rendered ReactNodes
+ */
+function isEmptyRawValue(value) {
+  if (value === null || value === undefined) return true;
+  if (typeof value === 'number' && Number.isNaN(value)) return true;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return true; // string vacío
+    if (['-', '–', 'NaN', 'N/A', 'null', 'undefined'].includes(trimmed)) return true;
+  }
+  // Si es un ReactNode complejo (objeto, array), no debería llegar aquí
+  // Esta función se usa solo para valores primitivos del registro
+  if (typeof value === 'object' && value !== null) return false;
+  return false;
+}
+
 export default function UnifiedTable({
   columns,
   data,
@@ -225,28 +244,26 @@ export default function UnifiedTable({
           )}
 
           {selectable && selectedItems.size > 0 && bulkActions && (
-            <div className="sticky bottom-0 bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-lg p-4 mt-4 rounded-lg backdrop-blur-sm">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <span className="text-sm font-semibold text-[var(--color-text-primary)]">
-                  {selectedItems.size} {selectedItems.size === 1 ? 'elemento seleccionado' : 'elementos seleccionados'}
-                </span>
-                <div className="flex gap-2 flex-wrap">
-                  {bulkActions.map((action, idx) => (
-                    <Button
-                      key={idx}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        action.onClick(Array.from(selectedItems));
-                        setSelectedItems(new Set());
-                      }}
-                      className="h-9 text-xs"
-                    >
-                      {action.icon && <action.icon className="w-4 h-4 mr-2" />}
-                      {action.label}
-                    </Button>
-                  ))}
-                </div>
+            <div className="sticky bottom-0 left-0 right-0 border-t border-[var(--color-border-default)] bg-[var(--color-surface-default)]/95 backdrop-blur px-4 py-2 flex flex-wrap items-center justify-between gap-2 shadow-[0_-4px_12px_rgba(15,23,42,0.08)] z-20">
+              <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                {selectedItems.size} {selectedItems.size === 1 ? 'elemento seleccionado' : 'elementos seleccionados'}
+              </span>
+              <div className="flex gap-2 flex-wrap">
+                {bulkActions.map((action, idx) => (
+                  <Button
+                    key={idx}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      action.onClick(Array.from(selectedItems));
+                      setSelectedItems(new Set());
+                    }}
+                    className="h-9 text-xs"
+                  >
+                    {action.icon && <action.icon className="w-4 h-4 mr-2" />}
+                    {action.label}
+                  </Button>
+                ))}
               </div>
             </div>
           )}
@@ -277,11 +294,51 @@ export default function UnifiedTable({
                 : null;
               
               // Renderizar columnas de detalle
+              // IMPORTANTE: Separar rawValue (valor del registro) de displayValue (ReactNode renderizado)
+              // La decisión de "está vacío" se basa en rawValue, no en el ReactNode
               const detailContent = detailColumns.map((col) => {
                 const label = col.mobileLabel || col.label;
-                const value = col.render ? col.render(item) : item[col.key];
-                return { label, value, key: col.key };
-              }).filter(detail => detail.value != null && detail.value !== '');
+                
+                // Obtener rawValue: puede venir de col.rawValue (función o valor), o de item[col.key]
+                const rawValue = typeof col.rawValue === 'function' 
+                  ? col.rawValue(item) 
+                  : col.rawValue !== undefined 
+                    ? col.rawValue 
+                    : item[col.key];
+                
+                // Obtener displayValue: el ReactNode renderizado (si existe render) o el rawValue
+                const displayValue = typeof col.render === 'function'
+                  ? col.render(item)
+                  : rawValue;
+                
+                return { label, value: displayValue, rawValue, key: col.key };
+              }).filter(detail => {
+                // Si el render devuelve null o undefined, filtrar (no mostrar)
+                if (detail.value === null || detail.value === undefined) {
+                  return false;
+                }
+                
+                // Si es un ReactNode (objeto válido), mostrarlo siempre
+                // excepto si el rawValue está vacío Y no hay rawValue definido explícitamente
+                if (typeof detail.value === 'object' && detail.value !== null) {
+                  const isReactElement = React.isValidElement 
+                    ? React.isValidElement(detail.value) 
+                    : (detail.value && typeof detail.value === 'object' && '$$typeof' in detail.value);
+                  
+                  if (isReactElement) {
+                    // Si hay un rawValue definido y está vacío, filtrar
+                    // Si no hay rawValue definido (es un componente puro), mostrar siempre
+                    if (detail.rawValue !== undefined) {
+                      return !isEmptyRawValue(detail.rawValue);
+                    }
+                    return true; // Mantener ReactNodes sin rawValue definido
+                  }
+                }
+                
+                // Para valores primitivos, aplicar filtro de vacío basado en rawValue
+                // Si rawValue está vacío, no mostrar
+                return !isEmptyRawValue(detail.rawValue);
+              });
               
               return (
                 <div
@@ -351,28 +408,26 @@ export default function UnifiedTable({
           )}
 
           {selectable && selectedItems.size > 0 && bulkActions && (
-            <div className="fixed bottom-0 left-0 right-0 bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-lg p-4 z-20 backdrop-blur-sm">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 max-w-7xl mx-auto">
-                <span className="text-sm font-semibold text-[var(--color-text-primary)]">
-                  {selectedItems.size} {selectedItems.size === 1 ? 'elemento seleccionado' : 'elementos seleccionados'}
-                </span>
-                <div className="flex gap-2 flex-wrap">
-                  {bulkActions.map((action, idx) => (
-                    <Button
-                      key={idx}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        action.onClick(Array.from(selectedItems));
-                        setSelectedItems(new Set());
-                      }}
-                      className="h-9 text-xs"
-                    >
-                      {action.icon && <action.icon className="w-4 h-4 mr-2" />}
-                      {action.label}
-                    </Button>
-                  ))}
-                </div>
+            <div className="sticky bottom-0 left-0 right-0 border-t border-[var(--color-border-default)] bg-[var(--color-surface-default)]/95 backdrop-blur px-4 py-2 flex flex-wrap items-center justify-between gap-2 shadow-[0_-4px_12px_rgba(15,23,42,0.08)] z-20">
+              <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                {selectedItems.size} {selectedItems.size === 1 ? 'elemento seleccionado' : 'elementos seleccionados'}
+              </span>
+              <div className="flex gap-2 flex-wrap">
+                {bulkActions.map((action, idx) => (
+                  <Button
+                    key={idx}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      action.onClick(Array.from(selectedItems));
+                      setSelectedItems(new Set());
+                    }}
+                    className="h-9 text-xs"
+                  >
+                    {action.icon && <action.icon className="w-4 h-4 mr-2" />}
+                    {action.label}
+                  </Button>
+                ))}
               </div>
             </div>
           )}

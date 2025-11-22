@@ -104,19 +104,35 @@ serve(async (req) => {
       }
       targetUser = data.user;
     } else if (email) {
-      const { data, error } = await adminClient.auth.admin.getUserByEmail(email);
-      if (error || !data?.user) {
+      // No usar getUserByEmail (no existe en v2)
+      // Buscar en profiles por email o usar listUsers con filtro
+      const { data: profiles, error: profileError } = await adminClient
+        .from('profiles')
+        .select('id, email')
+        .eq('email', email)
+        .maybeSingle();
+      
+      if (profileError || !profiles) {
         return new Response(
           JSON.stringify({ error: 'Usuario no encontrado' }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      targetUser = data.user;
+      
+      // Obtener el usuario de auth por ID del perfil
+      const { data: userData, error: userError } = await adminClient.auth.admin.getUserById(profiles.id);
+      if (userError || !userData?.user) {
+        return new Response(
+          JSON.stringify({ error: 'Usuario no encontrado en auth' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      targetUser = userData.user;
     }
 
-    if (!targetUser) {
+    if (!targetUser || !targetUser.email) {
       return new Response(
-        JSON.stringify({ error: 'Usuario no encontrado' }),
+        JSON.stringify({ error: 'Usuario no encontrado o sin email' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
