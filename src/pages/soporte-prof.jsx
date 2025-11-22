@@ -219,7 +219,7 @@ function SoporteProfPageContent() {
       createMensajeMutation.mutate({
         ticketId: selectedTicketId,
         autorId: user.id,
-        rolAutor: 'profesor',
+        rolAutor: isAdmin ? 'admin' : 'profesor', // ADMIN usa 'admin', PROF usa 'profesor'
         texto: messageText.trim() || (videoFile ? 'Vídeo adjunto' : ''),
         mediaLinks,
       });
@@ -278,7 +278,8 @@ function SoporteProfPageContent() {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Filtros */}
-              <div className="space-y-2">
+              <div className="space-y-3">
+                {/* Búsqueda */}
                 <div className="relative">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-[var(--color-text-secondary)]" />
                   <Input
@@ -288,6 +289,7 @@ function SoporteProfPageContent() {
                     className={`pl-8 ${componentStyles.controls.inputDefault}`}
                   />
                 </div>
+                
                 {/* Filtro de profesor (solo visible para PROF, no ADMIN) */}
                 {!isAdmin && (
                   <div className="flex gap-2">
@@ -309,7 +311,9 @@ function SoporteProfPageContent() {
                     </Button>
                   </div>
                 )}
-                <div className="flex gap-2">
+                
+                {/* Filtros de estado */}
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant={estadoFilter === 'todos' ? 'default' : 'outline'}
                     size="sm"
@@ -443,37 +447,44 @@ function SoporteProfPageContent() {
                   <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
                     {mensajes.map((mensaje) => {
                       const isProfesor = mensaje.rolAutor === 'profesor';
-                      const isCurrentProfesor = isProfesor && mensaje.autorId === user?.id;
+                      const isAdminMsg = mensaje.rolAutor === 'admin';
+                      const isProfesorOrAdmin = isProfesor || isAdminMsg;
+                      const isCurrentUser = isProfesorOrAdmin && mensaje.autorId === user?.id;
                       const alumnoNombre = mensaje.rolAutor === 'alumno' ? mensaje._autorNombre || null : null;
-                      const profesorNombre = isProfesor && !isCurrentProfesor ? mensaje._autorNombre || null : null;
+                      const profesorNombre = isProfesor && !isCurrentUser ? mensaje._autorNombre || null : null;
+                      const adminNombre = isAdminMsg && !isCurrentUser ? mensaje._autorNombre || null : null;
                       
                       return (
                         <div
                           key={mensaje.id}
-                          className={`flex ${isProfesor ? 'justify-end' : 'justify-start'}`}
+                          className={`flex ${isProfesorOrAdmin ? 'justify-end' : 'justify-start'}`}
                         >
                           <div
                             className={`max-w-[75%] rounded-lg p-3 shadow-sm ${
-                              isProfesor
+                              isProfesorOrAdmin
                                 ? 'bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30'
                                 : 'bg-[var(--color-surface-muted)] border border-[var(--color-border-default)]'
                             }`}
                           >
                             <div className="flex items-center gap-2 mb-1.5">
                               <span className={`text-xs font-semibold ${
-                                isProfesor 
+                                isProfesorOrAdmin 
                                   ? 'text-[var(--color-primary)]' 
                                   : 'text-[var(--color-text-secondary)]'
                               }`}>
-                                {isCurrentProfesor 
+                                {isCurrentUser 
                                   ? 'Tú' 
-                                  : isProfesor 
-                                    ? profesorNombre 
-                                      ? `Profesor – ${profesorNombre}`
-                                      : 'Profesor'
-                                    : alumnoNombre 
-                                      ? `Alumno – ${alumnoNombre}`
-                                      : 'Alumno'}
+                                  : isAdminMsg
+                                    ? adminNombre 
+                                      ? `Admin – ${adminNombre}`
+                                      : 'Admin'
+                                    : isProfesor 
+                                      ? profesorNombre 
+                                        ? `Profesor – ${profesorNombre}`
+                                        : 'Profesor'
+                                      : alumnoNombre 
+                                        ? `Alumno – ${alumnoNombre}`
+                                        : 'Alumno'}
                               </span>
                               <span className="text-xs text-[var(--color-text-secondary)] opacity-70">
                                 {formatDate(mensaje.created_at)}

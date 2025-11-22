@@ -61,6 +61,7 @@ const navigationByRole = {
     { title: "Reportes", url: "/reportes", icon: Bug, group: "Admin" },
     { title: "Asignaciones", url: "/asignaciones", icon: Target, group: "Planificador" },
     { title: "Plantillas", url: "/plantillas", icon: Edit3, group: "Planificador" },
+    { title: "Tickets alumnos", url: "/soporte-prof", icon: MessageSquare, group: "Vista" },
     { title: "Agenda", url: "/agenda", icon: Calendar, group: "Vista" },
     { title: "Calendario", url: "/calendario", icon: Calendar, group: "Vista" },
     { title: "Estadísticas", url: "/estadisticas", icon: Activity, group: "Vista" },
