@@ -16,12 +16,31 @@ import {
 import { componentStyles } from '@/design/componentStyles';
 
 /**
+ * Normaliza media links: acepta strings u objetos con url/href/link
+ */
+function normalizeMediaLinks(rawLinks) {
+  if (!rawLinks || !Array.isArray(rawLinks)) return [];
+  return rawLinks
+    .map((raw) => {
+      if (typeof raw === 'string') return raw;
+      if (raw && typeof raw === 'object' && raw.url) return raw.url;
+      if (raw && typeof raw === 'object' && raw.href) return raw.href;
+      if (raw && typeof raw === 'object' && raw.link) return raw.link;
+      return '';
+    })
+    .filter((url) => typeof url === 'string' && url.length > 0);
+}
+
+/**
  * Modal con carrusel para previsualizar medios
  * Soporta navegación con teclado (flechas, Ctrl/⌘+. para cerrar)
  * Se ajusta al ancho disponible respetando el sidebar
  * Modo compacto para audio con control de velocidad
  */
 export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, onClose }) {
+  // Normalizar URLs al recibirlas
+  const normalizedUrls = normalizeMediaLinks(urls);
+  
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const { abierto } = useSidebar();
   const [isMobile, setIsMobile] = useState(false);
@@ -58,11 +77,11 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
       }
 
       // Flechas para navegación (solo si hay múltiples y NO es audio)
-      const currentUrl = urls[currentIndex] || '';
+      const currentUrl = normalizedUrls[currentIndex] || '';
       const media = resolveMedia(currentUrl);
       const isAudio = media.kind === 'audio';
 
-      if (!isAudio && urls.length > 1) {
+      if (!isAudio && normalizedUrls.length > 1) {
         if (e.key === 'ArrowLeft') {
           e.preventDefault();
           handlePrevious();
@@ -75,7 +94,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, currentIndex, urls.length]);
+  }, [open, currentIndex, normalizedUrls.length]);
 
   // Bloquear scroll del body
   useEffect(() => {
@@ -96,19 +115,19 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
     }
   }, [playbackRate, currentIndex]);
 
-  if (!urls || urls.length === 0 || !open) return null;
+  if (!normalizedUrls || normalizedUrls.length === 0 || !open) return null;
 
-  const currentUrl = urls[currentIndex] || '';
+  const currentUrl = normalizedUrls[currentIndex] || '';
   const media = resolveMedia(currentUrl);
-  const hasMultiple = urls.length > 1;
+  const hasMultiple = normalizedUrls.length > 1;
   const isAudio = media.kind === 'audio';
 
   const handlePrevious = () => {
-    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : urls.length - 1));
+    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : normalizedUrls.length - 1));
   };
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev < urls.length - 1 ? prev + 1 : 0));
+    setCurrentIndex((prev) => (prev < normalizedUrls.length - 1 ? prev + 1 : 0));
   };
 
   const handleOpenExternal = () => {
@@ -324,10 +343,10 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
             </div>
 
             {/* Indicadores (si hay múltiples) */}
-            {hasMultiple && urls.length <= 10 && (
+            {hasMultiple && normalizedUrls.length <= 10 && (
               <div className="px-4 lg:px-6 pb-4">
                 <div className="flex gap-2 justify-center flex-wrap">
-                  {urls.map((url, idx) => (
+                  {normalizedUrls.map((url, idx) => (
                     <button
                       key={idx}
                       onClick={() => setCurrentIndex(idx)}

@@ -15,7 +15,8 @@ import {
   X,
   AlertCircle,
   CheckCircle,
-  Clock
+  Clock,
+  User
 } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { toast } from "sonner";
@@ -283,6 +284,18 @@ function SoportePageContent() {
                         </h3>
                         {getEstadoBadge(ticket.estado)}
                       </div>
+                      {/* Mostrar nombre del profesor asignado en la lista */}
+                      {ticket._profesorNombre ? (
+                        <div className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] mb-1">
+                          <User className="w-3 h-3" />
+                          <span>Profesor asignado: {ticket._profesorNombre}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)]/70 mb-1 italic">
+                          <User className="w-3 h-3" />
+                          <span>Profesor asignado: Sin asignar</span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
                         <Clock className="w-3 h-3" />
                         {formatDate(ticket.updated_at)}
@@ -322,10 +335,14 @@ function SoportePageContent() {
                         <Badge variant="outline">{selectedTicket.tipo}</Badge>
                       )}
                     </div>
-                    {/* Mostrar nombre del profesor asignado */}
+                    {/* Mostrar nombre del profesor asignado en el detalle */}
                     {selectedTicket && (
                       <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                        Profesor asignado: {selectedTicket._profesorNombre || 'Sin asignar'}
+                        {selectedTicket._profesorNombre ? (
+                          <>Profesor asignado: <span className="font-medium">{selectedTicket._profesorNombre}</span></>
+                        ) : (
+                          <span className="italic">Profesor asignado: Sin asignar</span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -361,7 +378,9 @@ function SoportePageContent() {
                               }`}>
                                 {isAlumno 
                                   ? 'Tú' 
-                                  : `Profesor${mensaje._autorNombre ? ` – ${mensaje._autorNombre}` : ''}`}
+                                  : mensaje._autorNombre 
+                                    ? `Profesor – ${mensaje._autorNombre}`
+                                    : 'Profesor'}
                               </span>
                               <span className="text-xs text-[var(--color-text-secondary)] opacity-70">
                                 {formatDate(mensaje.created_at)}

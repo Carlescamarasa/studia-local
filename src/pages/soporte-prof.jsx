@@ -363,7 +363,7 @@ function SoporteProfPageContent() {
                       {/* Mostrar nombre del alumno siempre en la lista */}
                       <div className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] mb-1">
                         <User className="w-3 h-3" />
-                        {alumnoNames[ticket.alumnoId] || ticket._alumnoNombre || 'Alumno desconocido'}
+                        <span>Alumno: {alumnoNames[ticket.alumnoId] || ticket._alumnoNombre || 'Desconocido'}</span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
                         <Clock className="w-3 h-3" />
@@ -403,17 +403,18 @@ function SoporteProfPageContent() {
                         <Badge variant="outline">{selectedTicket.tipo}</Badge>
                       )}
                     </div>
-                    {/* Mostrar nombre del alumno siempre en el detalle */}
+                    {/* Mostrar información del alumno y profesor en el detalle */}
                     {selectedTicket && (
-                      <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                        Alumno: {alumnoNames[selectedTicket.alumnoId] || selectedTicket._alumnoNombre || 'Desconocido'}
-                      </div>
-                    )}
-                    {/* Mostrar profesor asignado si existe */}
-                    {selectedTicket && selectedTicket.profesorId && (
-                      <div className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                        Profesor asignado: {selectedTicket._profesorNombre || 'Sin nombre'}
-                      </div>
+                      <>
+                        <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                          Alumno: <span className="font-medium">{alumnoNames[selectedTicket.alumnoId] || selectedTicket._alumnoNombre || 'Desconocido'}</span>
+                        </div>
+                        {selectedTicket.profesorId && selectedTicket._profesorNombre && (
+                          <div className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                            Profesor: <span className="font-medium">{selectedTicket._profesorNombre}</span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                   {selectedTicket && selectedTicket.estado !== 'cerrado' && (
@@ -467,8 +468,12 @@ function SoporteProfPageContent() {
                                 {isCurrentProfesor 
                                   ? 'Tú' 
                                   : isProfesor 
-                                    ? `Profesor${profesorNombre ? ` – ${profesorNombre}` : ''}`
-                                    : `Alumno${alumnoNombre ? ` – ${alumnoNombre}` : ''}`}
+                                    ? profesorNombre 
+                                      ? `Profesor – ${profesorNombre}`
+                                      : 'Profesor'
+                                    : alumnoNombre 
+                                      ? `Alumno – ${alumnoNombre}`
+                                      : 'Alumno'}
                               </span>
                               <span className="text-xs text-[var(--color-text-secondary)] opacity-70">
                                 {formatDate(mensaje.created_at)}

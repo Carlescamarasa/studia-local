@@ -21,7 +21,7 @@ import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 import SessionContentView from "../components/study/SessionContentView";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
-import MediaViewer from "@/components/common/MediaViewer";
+import MediaPreviewModal from "@/components/common/MediaPreviewModal";
 
 // --- Helpers de fechas locales ---
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -41,7 +41,9 @@ function SemanaPageContent() {
     return calcularLunesSemanaISO(new Date());
   });
   const [expandedSessions, setExpandedSessions] = useState(new Set());
-  const [viewingMedia, setViewingMedia] = useState(null);
+  const [showMediaModal, setShowMediaModal] = useState(false);
+  const [selectedMediaLinks, setSelectedMediaLinks] = useState([]);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
   const [tipoFeedbackSemana, setTipoFeedbackSemana] = useState('todos'); // 'todos' | 'profesor' | 'sesiones'
   const queryClient = useQueryClient();
 
@@ -167,21 +169,33 @@ function SemanaPageContent() {
     return itemsCombinados;
   }, [itemsCombinados, tipoFeedbackSemana]);
 
+  // Normalizar media links: acepta strings u objetos con url
+  const normalizeMediaLinks = (rawLinks) => {
+    if (!rawLinks || !Array.isArray(rawLinks)) return [];
+    return rawLinks
+      .map((raw) => {
+        if (typeof raw === 'string') return raw;
+        if (raw && typeof raw === 'object' && raw.url) return raw.url;
+        if (raw && typeof raw === 'object' && raw.href) return raw.href;
+        if (raw && typeof raw === 'object' && raw.link) return raw.link;
+        return '';
+      })
+      .filter((url) => typeof url === 'string' && url.length > 0);
+  };
+
   const handlePreviewMedia = (index, mediaLinks) => {
     if (!mediaLinks || !Array.isArray(mediaLinks) || mediaLinks.length === 0) return;
-    const url = mediaLinks[index];
-    if (!url) return;
     
-    // Determinar tipo de media
-    const urlLower = url.toLowerCase();
-    let kind = 'link';
-    if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be')) kind = 'video';
-    else if (urlLower.match(/\.(jpg|jpeg|png|gif|webp)$/)) kind = 'image';
-    else if (urlLower.match(/\.(mp4|webm|ogg)$/)) kind = 'video';
-    else if (urlLower.match(/\.(mp3|wav|ogg|m4a)$/)) kind = 'audio';
-    else if (urlLower.match(/\.pdf$/)) kind = 'pdf';
+    // Normalizar media links
+    const normalizedLinks = normalizeMediaLinks(mediaLinks);
+    if (normalizedLinks.length === 0) return;
     
-    setViewingMedia({ url, kind });
+    // Asegurar que el índice esté dentro del rango
+    const safeIndex = Math.max(0, Math.min(index, normalizedLinks.length - 1));
+    
+    setSelectedMediaLinks(normalizedLinks);
+    setSelectedMediaIndex(safeIndex);
+    setShowMediaModal(true);
   };
 
   const deleteRegistroMutation = useMutation({
@@ -582,10 +596,17 @@ function SemanaPageContent() {
         )}
       </div>
 
-      {viewingMedia && (
-        <MediaViewer 
-          media={viewingMedia}
-          onClose={() => setViewingMedia(null)}
+      {/* Modal de preview de medios */}
+      {showMediaModal && selectedMediaLinks.length > 0 && (
+        <MediaPreviewModal
+          urls={selectedMediaLinks}
+          initialIndex={selectedMediaIndex || 0}
+          open={showMediaModal}
+          onClose={() => {
+            setShowMediaModal(false);
+            setSelectedMediaLinks([]);
+            setSelectedMediaIndex(0);
+          }}
         />
       )}
     </div>
