@@ -65,26 +65,32 @@ export function AuthProvider({ children }) {
     currentUserIdRef.current = userId;
 
     try {
-      const { data, error } = await supabase
+      // Petición específica a la tabla profiles
+      const profileQuery = supabase
         .from('profiles')
         .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at')
         .eq('id', userId)
         .single();
 
+      const { data, error } = await profileQuery;
+
       if (error) {
         // Separar errores de red de "no hay perfil"
+        // Solo considerar NetworkError si viene de esta petición específica a profiles
         const isNetworkError = error.message?.includes('NetworkError') || 
-                               error.message?.includes('fetch') ||
-                               error.name === 'TypeError' ||
-                               error.message?.includes('TypeError');
+                               (error.message?.includes('fetch') && !error.code) ||
+                               error.name === 'TypeError';
         
         if (isNetworkError) {
-          // Error de red: no tratar como "no hay perfil"
-          console.error('[AuthProvider] Error de red al cargar perfil:', {
-            userId,
-            error: error.message,
-            code: error.code,
-          });
+          // Error de red en la petición a profiles: registrar específicamente
+          if (import.meta.env.DEV) {
+            console.warn('[AuthProvider] Error de red al cargar perfil desde /profiles:', {
+              userId,
+              error: error.message,
+              code: error.code,
+              endpoint: 'profiles',
+            });
+          }
           setProfile(null);
           fetchingProfileRef.current = false;
           return;
@@ -132,35 +138,42 @@ export function AuthProvider({ children }) {
       // Nota: appRole ahora se calcula desde el email, no desde profile.role
       fetchingProfileRef.current = false;
     } catch (err) {
-      // Error de red o excepción no controlada
-      // Detectar errores de red de varias formas
+      // Error de red o excepción no controlada en la petición a profiles
+      // Detectar errores de red de varias formas, pero SOLO si vienen de esta petición
       const errorMessage = err?.message || err?.toString() || '';
       const errorName = err?.name || '';
+      
+      // Verificar que el error realmente viene de la petición a profiles
+      // Los errores de otras peticiones no deberían llegar aquí si se manejan bien
       const isNetworkError = 
-        errorMessage.includes('NetworkError') || 
-        errorMessage.includes('fetch') ||
-        errorMessage.includes('Failed to fetch') ||
-        errorName === 'TypeError' ||
-        errorName === 'NetworkError' ||
-        (err instanceof TypeError && errorMessage.includes('fetch'));
+        (errorMessage.includes('NetworkError') || 
+         errorMessage.includes('Failed to fetch') ||
+         (errorName === 'TypeError' && errorMessage.includes('fetch'))) &&
+        // Asegurar que no es un error de otra petición (por ejemplo, Edge Functions)
+        !errorMessage.includes('/functions/v1/');
       
       if (isNetworkError) {
-        // Error de red: registrar como warning en lugar de error para no saturar la consola
+        // Error de red específico de la petición a profiles
+        // Registrar como warning en lugar de error para no saturar la consola
         // Solo en desarrollo mostramos el error completo
         if (import.meta.env.DEV) {
-          console.warn('[AuthProvider] Error de red al cargar perfil (se reintentará automáticamente):', {
+          console.warn('[AuthProvider] Error de red al cargar perfil desde /profiles (se reintentará automáticamente):', {
             userId,
             error: errorMessage || errorName,
+            endpoint: 'profiles',
           });
         }
         // No tratar como "no hay perfil"; el problema es de red
         // Mantener profile como null pero permitir reintentos
       } else {
-        // Otro tipo de error
-        console.error('[AuthProvider] Error obteniendo perfil:', {
+        // Otro tipo de error o error que no es de network
+        console.error('[AuthProvider] Error obteniendo perfil desde /profiles:', {
           error: errorMessage || err,
           code: err?.code,
           userId,
+          endpoint: 'profiles',
+          // Si el error menciona otro endpoint, indicarlo
+          suspectedEndpoint: errorMessage.includes('/functions/') ? 'edge-function' : 'profiles',
         });
       }
       setProfile(null);
