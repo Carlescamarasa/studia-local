@@ -99,65 +99,65 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
   const renderEventosDelDia = () => {
     if (!eventosDiaSeleccionado) return null;
 
-    const todosEventos = [
+                const todosEventos = [
       ...eventosDiaSeleccionado.eventos.map(e => ({ tipo: 'evento', evento: e, prioridad: 1 })),
       ...eventosDiaSeleccionado.asignaciones.map(a => ({ tipo: 'asignacion', evento: a, prioridad: 2 })),
       ...eventosDiaSeleccionado.sesiones.map(s => ({ tipo: 'sesion', evento: s, prioridad: 3 })),
       ...eventosDiaSeleccionado.feedbacks.map(f => ({ tipo: 'feedback', evento: f, prioridad: 4 })),
-    ].sort((a, b) => a.prioridad - b.prioridad);
+                ].sort((a, b) => a.prioridad - b.prioridad);
 
-    if (todosEventos.length === 0) {
-      return (
+                if (todosEventos.length === 0) {
+                  return (
         <div className="text-center py-8 text-[var(--color-text-secondary)]">
-          No hay eventos este día
-        </div>
-      );
-    }
+                      No hay eventos este día
+                    </div>
+                  );
+                }
 
     return (
       <div className="space-y-2">
         {todosEventos.map((item, idx) => (
-          <div key={`${item.tipo}-${item.evento.id}-${idx}`}>
-            {item.tipo === 'evento' && (
-              <EventoImportante
-                evento={item.evento}
-                onClick={() => {
-                  onEventoClick(item.evento, 'evento');
-                  setDiaSeleccionado(null);
-                }}
-              />
-            )}
-            {item.tipo === 'asignacion' && (
-              <EventoAsignacion
-                asignacion={item.evento}
-                usuarios={usuarios}
-                onClick={() => {
-                  onEventoClick(item.evento, 'asignacion');
-                  setDiaSeleccionado(null);
-                }}
-              />
-            )}
-            {item.tipo === 'sesion' && (
-              <EventoSesion
-                sesion={item.evento}
-                usuarios={usuarios}
-                onClick={() => {
-                  onEventoClick(item.evento, 'sesion');
-                  setDiaSeleccionado(null);
-                }}
-              />
-            )}
-            {item.tipo === 'feedback' && (
-              <EventoFeedback
-                feedback={item.evento}
-                usuarios={usuarios}
-                onClick={() => {
-                  onEventoClick(item.evento, 'feedback');
-                  setDiaSeleccionado(null);
-                }}
-              />
-            )}
-          </div>
+                  <div key={`${item.tipo}-${item.evento.id}-${idx}`}>
+                    {item.tipo === 'evento' && (
+                      <EventoImportante
+                        evento={item.evento}
+                        onClick={() => {
+                          onEventoClick(item.evento, 'evento');
+                          setDiaSeleccionado(null);
+                        }}
+                      />
+                    )}
+                    {item.tipo === 'asignacion' && (
+                      <EventoAsignacion
+                        asignacion={item.evento}
+                        usuarios={usuarios}
+                        onClick={() => {
+                          onEventoClick(item.evento, 'asignacion');
+                          setDiaSeleccionado(null);
+                        }}
+                      />
+                    )}
+                    {item.tipo === 'sesion' && (
+                      <EventoSesion
+                        sesion={item.evento}
+                        usuarios={usuarios}
+                        onClick={() => {
+                          onEventoClick(item.evento, 'sesion');
+                          setDiaSeleccionado(null);
+                        }}
+                      />
+                    )}
+                    {item.tipo === 'feedback' && (
+                      <EventoFeedback
+                        feedback={item.evento}
+                        usuarios={usuarios}
+                        onClick={() => {
+                          onEventoClick(item.evento, 'feedback');
+                          setDiaSeleccionado(null);
+                        }}
+                      />
+                    )}
+                  </div>
         ))}
       </div>
     );

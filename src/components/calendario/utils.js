@@ -140,62 +140,80 @@ export const formatearHora = (isoString) => {
 };
 
 /**
- * Obtiene el color según el tipo de evento
+ * Calcula el patrón de semanas de una asignación basado en el plan completo
+ * Todas las semanas del plan se muestran como activas (●)
+ * 
+ * @param {Object} asignacion - La asignación con plan.semanas
+ * @returns {string|null} - Patrón de semanas (ej: "● ● ●" o "● ○ ● ○") o null si no hay plan
+ */
+export const calcularPatronSemanasAsignacion = (asignacion) => {
+  if (!asignacion?.plan || !Array.isArray(asignacion.plan.semanas)) return null;
+  const totalSemanas = asignacion.plan.semanas.length;
+  if (totalSemanas === 0) return null;
+
+  // Todas las semanas del plan están activas (●)
+  // El patrón representa el plan completo, no las semanas trabajadas
+  const patron = Array.from({ length: Math.min(totalSemanas, 8) }, () => '●');
+  return patron.join(' ');
+};
+
+/**
+ * Obtiene el color según el tipo de evento (compatible con modo claro/oscuro)
  */
 export const obtenerColorEvento = (tipo) => {
   const colores = {
     sesion: {
-      bg: 'bg-blue-50',
-      border: 'border-blue-200',
-      text: 'text-blue-900',
-      icon: 'text-blue-600',
+      bg: 'bg-emerald-500/8 dark:bg-emerald-500/10',
+      border: 'border-emerald-500/40 dark:border-emerald-500/50',
+      text: 'text-emerald-900 dark:text-emerald-100',
+      icon: 'text-emerald-600 dark:text-emerald-400',
     },
     feedback: {
-      bg: 'bg-green-50',
-      border: 'border-green-200',
-      text: 'text-green-900',
-      icon: 'text-green-600',
+      bg: 'bg-sky-500/8 dark:bg-sky-500/10',
+      border: 'border-sky-500/40 dark:border-sky-500/50',
+      text: 'text-sky-900 dark:text-sky-100',
+      icon: 'text-sky-600 dark:text-sky-400',
     },
     asignacion: {
-      bg: 'bg-purple-50',
-      border: 'border-purple-200',
-      text: 'text-purple-900',
-      icon: 'text-purple-600',
+      bg: 'bg-violet-500/8 dark:bg-violet-500/10',
+      border: 'border-violet-500/40 dark:border-violet-500/50',
+      text: 'text-violet-900 dark:text-violet-100',
+      icon: 'text-violet-600 dark:text-violet-400',
     },
     evento: {
-      bg: 'bg-orange-50',
-      border: 'border-orange-200',
-      text: 'text-orange-900',
-      icon: 'text-orange-600',
+      bg: 'bg-amber-500/10 dark:bg-amber-500/12',
+      border: 'border-amber-500/40 dark:border-amber-500/50',
+      text: 'text-amber-900 dark:text-amber-100',
+      icon: 'text-amber-600 dark:text-amber-400',
     },
   };
   return colores[tipo] || colores.evento;
 };
 
 /**
- * Obtiene el color según el tipo de evento importante
+ * Obtiene el color según el tipo de evento importante (compatible con modo claro/oscuro)
  */
 export const obtenerColorTipoEvento = (tipo) => {
   const colores = {
     encuentro: {
-      bg: 'bg-blue-50',
-      border: 'border-blue-200',
-      text: 'text-blue-900',
+      bg: 'bg-blue-500/8 dark:bg-blue-500/10',
+      border: 'border-blue-500/40 dark:border-blue-500/50',
+      text: 'text-blue-900 dark:text-blue-100',
     },
     masterclass: {
-      bg: 'bg-purple-50',
-      border: 'border-purple-200',
-      text: 'text-purple-900',
+      bg: 'bg-purple-500/8 dark:bg-purple-500/10',
+      border: 'border-purple-500/40 dark:border-purple-500/50',
+      text: 'text-purple-900 dark:text-purple-100',
     },
     colectiva: {
-      bg: 'bg-pink-50',
-      border: 'border-pink-200',
-      text: 'text-pink-900',
+      bg: 'bg-pink-500/8 dark:bg-pink-500/10',
+      border: 'border-pink-500/40 dark:border-pink-500/50',
+      text: 'text-pink-900 dark:text-pink-100',
     },
     otro: {
-      bg: 'bg-gray-50',
-      border: 'border-gray-200',
-      text: 'text-gray-900',
+      bg: 'bg-gray-500/8 dark:bg-gray-500/10',
+      border: 'border-gray-500/40 dark:border-gray-500/50',
+      text: 'text-gray-900 dark:text-gray-100',
     },
   };
   return colores[tipo] || colores.otro;

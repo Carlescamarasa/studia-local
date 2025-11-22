@@ -2,7 +2,8 @@ import React from "react";
 import { Calendar, User } from "lucide-react";
 import { Badge } from "@/components/ds";
 import { getNombreVisible } from "@/components/utils/helpers";
-import { formatearFechaEvento, obtenerColorEvento, obtenerLabelEstadoAsignacion } from "./utils";
+import { formatearFechaEvento, obtenerColorEvento, obtenerLabelEstadoAsignacion, calcularPatronSemanasAsignacion } from "./utils";
+import MediaLinksBadges from "@/components/common/MediaLinksBadges";
 
 export default function EventoAsignacion({ asignacion, usuarios, onClick, variant = 'default', registrosSesion = [] }) {
   const alumno = usuarios.find(u => u.id === asignacion.alumnoId);
@@ -17,79 +18,73 @@ export default function EventoAsignacion({ asignacion, usuarios, onClick, varian
     archivada: 'warning',
   };
 
-  // Calcular patrón de semanas para variante week
-  const calcularPatronSemanas = () => {
-    if (!asignacion.plan || !Array.isArray(asignacion.plan.semanas)) return null;
-    const totalSemanas = asignacion.plan.semanas.length;
-    if (totalSemanas === 0) return null;
-
-    // Calcular qué semanas tienen registros de sesión
-    const semanasConSesiones = new Set();
-    registrosSesion.forEach(registro => {
-      if (registro.asignacionId === asignacion.id && registro.semanaIdx !== undefined) {
-        semanasConSesiones.add(registro.semanaIdx);
-      }
-    });
-
-    // Generar patrón: • = semana activa/trabajada, ○ = otras semanas
-    const patron = [];
-    for (let i = 0; i < Math.min(totalSemanas, 8); i++) { // Máximo 8 semanas en el patrón
-      if (semanasConSesiones.has(i)) {
-        patron.push('•');
-      } else {
-        patron.push('○');
-      }
-    }
-    return patron.length > 0 ? patron.join(' ') : null;
-  };
+  // Calcular patrón de semanas usando el helper reutilizable
+  const patronSemanas = calcularPatronSemanasAsignacion(asignacion);
 
   // Variante compacta para vista Semana
   if (variant === 'week') {
-    const patronSemanas = calcularPatronSemanas();
+    const asignacionMediaLinks = asignacion.mediaLinks || asignacion.media_links || [];
 
     return (
       <div
         onClick={onClick}
         className={`${colores.bg} ${colores.border} border rounded p-1.5 text-xs cursor-pointer hover:opacity-80 transition-opacity`}
       >
-        {/* Línea 1: Nombre de la pieza */}
-        <p className={`font-medium ${colores.text} mb-1 line-clamp-1`}>
+        {/* Línea 1: Nombre de la pieza (texto principal, bold) */}
+        <p className="text-xs text-[var(--color-text-primary)] font-semibold mb-0.5 line-clamp-1">
           {piezaNombre}
         </p>
-        {/* Línea 2: Patrón de semanas */}
+        {/* Línea 2: Patrón de semanas (texto pequeño, muted) */}
         {patronSemanas && (
-          <p className={`${colores.text} text-[10px] font-mono`}>
+          <p className="text-[10px] text-[var(--color-text-secondary)] mb-1 font-mono">
             {patronSemanas}
           </p>
+        )}
+        {/* Media links (solo iconos, si existen) */}
+        {Array.isArray(asignacionMediaLinks) && asignacionMediaLinks.length > 0 && (
+          <div className="mt-1">
+            <MediaLinksBadges
+              mediaLinks={asignacionMediaLinks}
+              onMediaClick={(idx) => onClick?.(asignacion, 'asignacion', idx)}
+              compact={true}
+              maxDisplay={3}
+            />
+          </div>
         )}
       </div>
     );
   }
 
-  // Variante default (completa)
+  // Variante default (completa) - para Mes y Lista
+  const asignacionMediaLinks = asignacion.mediaLinks || asignacion.media_links || [];
+
   return (
     <div
       onClick={onClick}
       className={`${colores.bg} ${colores.border} border rounded p-1.5 text-xs cursor-pointer hover:opacity-80 transition-opacity`}
     >
-      <div className="flex items-center gap-1 mb-1">
-        <Calendar className={`w-3 h-3 ${colores.icon}`} />
-        <span className={`font-medium ${colores.text}`}>
-          {piezaNombre}
-        </span>
+      {/* Línea 1: Nombre de la pieza (texto principal) */}
+      <p className="text-xs text-[var(--color-text-primary)] font-semibold mb-0.5 line-clamp-1">
+        {piezaNombre}
+      </p>
+      {/* Línea 2: Subtítulo con "Asignación" y patrón semanal si existe */}
+      <div className="text-[10px] text-[var(--color-text-secondary)] mb-1">
+        <span>Asignación</span>
+        {patronSemanas && (
+          <span className="ml-2 font-mono">{patronSemanas}</span>
+        )}
       </div>
-      <div className={`${colores.text} mb-1 text-[10px] flex items-center gap-1`}>
-        <User className={`w-3 h-3 ${colores.icon}`} />
-        {getNombreVisible(alumno)}
-      </div>
-      <div className="flex items-center justify-between">
-        <span className={`${colores.text} text-[10px]`}>
-          {fechaSemana}
-        </span>
-        <Badge variant={estadoColors[asignacion.estado] || 'default'} className="text-[9px] px-1 py-0">
-          {obtenerLabelEstadoAsignacion(asignacion.estado)}
-        </Badge>
-      </div>
+      {/* Media links (solo iconos, si existen) */}
+      {Array.isArray(asignacionMediaLinks) && asignacionMediaLinks.length > 0 && (
+        <div className="mt-1">
+          <MediaLinksBadges
+            mediaLinks={asignacionMediaLinks}
+            onMediaClick={(idx) => onClick?.(asignacion, 'asignacion', idx)}
+            compact={true}
+            maxDisplay={3}
+          />
+        </div>
+      )}
     </div>
   );
 }

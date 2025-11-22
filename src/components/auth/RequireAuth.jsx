@@ -22,7 +22,7 @@ export default function RequireAuth({ children }) {
       if (import.meta.env.DEV) {
         console.log('[RequireAuth] Verificación inicial de sesión');
       }
-      checkSession?.();
+    checkSession?.();
       lastCheckRef.current = now;
     }
 

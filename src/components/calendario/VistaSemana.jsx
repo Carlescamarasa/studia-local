@@ -129,9 +129,9 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
     };
     switch (tipo) {
       case 'sesion':
-        return <EventoSesion key={evento.id} sesion={evento} {...props} />;
+        return <EventoSesion key={evento.id} sesion={evento} {...props} onMediaClick={handleMediaClick} />;
       case 'feedback':
-        return <EventoFeedback key={evento.id} feedback={evento} {...props} />;
+        return <EventoFeedback key={evento.id} feedback={evento} {...props} onMediaClick={handleMediaClick} />;
       case 'asignacion':
         return <EventoAsignacion key={evento.id} asignacion={evento} {...props} registrosSesion={registrosSesion} />;
       case 'evento':
@@ -287,9 +287,9 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
               {lunesSemana.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
             </h3>
             {isDesktop && (
-              <p className="text-sm text-ui/60">
-                {lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — {domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-              </p>
+            <p className="text-sm text-ui/60">
+              {lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — {domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+            </p>
             )}
           </div>
           <div className="flex gap-2">

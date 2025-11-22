@@ -309,6 +309,7 @@ function CalendarioPageContent() {
               usuarios={usuarios}
               filtroTipoGlobal={filtroTipoGlobal}
               setFiltroTipoGlobal={setFiltroTipoGlobal}
+              registrosSesion={registrosSesion}
             />
           ) : (
           <VistaSemana
@@ -341,6 +342,7 @@ function CalendarioPageContent() {
             usuarios={usuarios}
             filtroTipoGlobal={filtroTipoGlobal}
             setFiltroTipoGlobal={setFiltroTipoGlobal}
+            registrosSesion={registrosSesion}
           />
         )}
       </div>

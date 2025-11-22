@@ -183,7 +183,7 @@ export default function EventoImportante({ evento, onClick, variant = 'default',
             compact={true}
             maxDisplay={3}
           />
-        </div>
+      </div>
       )}
     </div>
   );

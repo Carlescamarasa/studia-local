@@ -82,14 +82,14 @@ function SoporteProfPageContent() {
   // Ya no necesitamos hacer peticiones adicionales a profiles
   useEffect(() => {
     if (tickets && tickets.length > 0) {
-      const names = {};
+        const names = {};
       tickets.forEach((ticket) => {
         // Los nombres ya vienen en los tickets desde supportTicketsClient
         if (ticket.alumnoId && ticket._alumnoNombre) {
           names[ticket.alumnoId] = ticket._alumnoNombre;
         }
-      });
-      setAlumnoNames(names);
+        });
+        setAlumnoNames(names);
     }
   }, [tickets]);
 
@@ -292,7 +292,7 @@ function SoporteProfPageContent() {
                 
                 {/* Filtro de profesor (solo visible para PROF, no ADMIN) */}
                 {!isAdmin && (
-                  <div className="flex gap-2">
+                <div className="flex gap-2">
                     <Button
                       variant={profesorFilter === 'mis_tickets' ? 'default' : 'outline'}
                       size="sm"
@@ -365,10 +365,10 @@ function SoporteProfPageContent() {
                         {getEstadoBadge(ticket.estado)}
                       </div>
                       {/* Mostrar nombre del alumno siempre en la lista */}
-                      <div className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] mb-1">
-                        <User className="w-3 h-3" />
+                        <div className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] mb-1">
+                          <User className="w-3 h-3" />
                         <span>Alumno: {alumnoNames[ticket.alumnoId] || ticket._alumnoNombre || 'Desconocido'}</span>
-                      </div>
+                        </div>
                       <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
                         <Clock className="w-3 h-3" />
                         {formatDate(ticket.updated_at)}
@@ -410,13 +410,13 @@ function SoporteProfPageContent() {
                     {/* Mostrar información del alumno y profesor en el detalle */}
                     {selectedTicket && (
                       <>
-                        <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                      <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
                           Alumno: <span className="font-medium">{alumnoNames[selectedTicket.alumnoId] || selectedTicket._alumnoNombre || 'Desconocido'}</span>
                         </div>
                         {selectedTicket.profesorId && selectedTicket._profesorNombre && (
                           <div className="mt-1 text-sm text-[var(--color-text-secondary)]">
                             Profesor: <span className="font-medium">{selectedTicket._profesorNombre}</span>
-                          </div>
+                      </div>
                         )}
                       </>
                     )}

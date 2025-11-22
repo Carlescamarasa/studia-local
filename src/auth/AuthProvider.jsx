@@ -168,9 +168,9 @@ export function AuthProvider({ children }) {
       if (!data) {
         // Respuesta 200 pero sin datos
         if (import.meta.env.DEV) {
-          console.warn('[AuthProvider] No se encontró perfil en la tabla profiles (respuesta vacía):', {
-            userId,
-          });
+        console.warn('[AuthProvider] No se encontró perfil en la tabla profiles (respuesta vacía):', {
+          userId,
+        });
         }
         setAuthState(prev => ({
           ...prev,
@@ -538,7 +538,7 @@ export function AuthProvider({ children }) {
         
         // Actualizar estado solo si cambió algo
         setAuthState(prev => {
-          // Si no hay sesión pero tenemos usuario en estado, limpiar
+        // Si no hay sesión pero tenemos usuario en estado, limpiar
           if (!session && prev.user) {
             return {
               session: null,
@@ -575,9 +575,9 @@ export function AuthProvider({ children }) {
           }
           fetchProfile(session.user.id, false).catch(err => {
             if (import.meta.env.DEV) {
-              console.error('[AuthProvider] Error obteniendo perfil en verificación periódica:', err);
-            }
-          });
+                console.error('[AuthProvider] Error obteniendo perfil en verificación periódica:', err);
+              }
+            });
         }
       } catch (err) {
         // Error al verificar sesión - no hacer nada para no interrumpir la experiencia

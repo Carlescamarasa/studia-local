@@ -18,7 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
  * Muestra eventos en un rango de "Hoy + 7 días" (7 días en total: hoy hasta hoy+6)
  * Los eventos están ordenados por fecha ASC y hora ASC, agrupados por día
  */
-export default function VistaLista({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipoGlobal, setFiltroTipoGlobal }) {
+export default function VistaLista({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipoGlobal, setFiltroTipoGlobal, registrosSesion = [] }) {
   const isMobile = useIsMobile();
   const [busqueda, setBusqueda] = useState('');
   const filtroTipo = filtroTipoGlobal || 'all';
@@ -130,7 +130,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
         
         // Si es la misma hora, ordenar por prioridad
         if (horaA === horaB) {
-          return a.prioridad - b.prioridad;
+        return a.prioridad - b.prioridad;
         }
         
         return horaA - horaB;
@@ -187,11 +187,11 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
     const agrupados = {};
     eventosFiltrados.forEach(item => {
       if (item && item.fecha) {
-        const fecha = item.fecha;
-        if (!agrupados[fecha]) {
-          agrupados[fecha] = [];
-        }
-        agrupados[fecha].push(item);
+      const fecha = item.fecha;
+      if (!agrupados[fecha]) {
+        agrupados[fecha] = [];
+      }
+      agrupados[fecha].push(item);
       }
     });
     return agrupados;
@@ -208,8 +208,8 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
     // Ordenar fechas ascendente
     return fechas.sort((a, b) => {
       try {
-        const fechaA = parseLocalDate(a);
-        const fechaB = parseLocalDate(b);
+      const fechaA = parseLocalDate(a);
+      const fechaB = parseLocalDate(b);
         return fechaA - fechaB;
       } catch (e) {
         console.error('[VistaLista] Error ordenando fechas:', e);
@@ -319,7 +319,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
             </div>
           ) : (
             fechasOrdenadas.map(fecha => {
-              const eventosFecha = eventosPorFecha[fecha] || [];
+            const eventosFecha = eventosPorFecha[fecha] || [];
               const fechaObj = parseLocalDate(fecha);
               const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { 
                 weekday: 'short', 
@@ -328,9 +328,9 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
               });
               const esHoy = fecha === hoyISO;
 
-              if (!eventosFecha || !Array.isArray(eventosFecha) || eventosFecha.length === 0) {
-                return null;
-              }
+            if (!eventosFecha || !Array.isArray(eventosFecha) || eventosFecha.length === 0) {
+              return null;
+            }
 
               return (
                 <div key={fecha} className="space-y-2">
@@ -353,6 +353,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
                             asignacion={item.evento}
                             usuarios={usuarios}
                             onClick={() => onEventoClick(item.evento, 'asignacion')}
+                            registrosSesion={registrosSesion}
                           />
                         )}
                         {item.tipo === 'sesion' && (
