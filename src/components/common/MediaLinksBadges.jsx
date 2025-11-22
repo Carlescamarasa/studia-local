@@ -41,30 +41,38 @@ export default function MediaLinksBadges({ mediaLinks = [], onMediaClick, compac
                   variant="outline"
                   size="sm"
                   onClick={() => onMediaClick?.(idx)}
-                  className={`h-8 gap-1.5 text-xs ${componentStyles.buttons.outline}`}
+                  className={`h-8 w-8 p-0 ${componentStyles.buttons.outline}`}
+                  aria-label={`Abrir ${label}`}
                 >
-                  <MediaIcon url={url} className="w-3.5 h-3.5" />
-                  <span>{label}</span>
-                  <Play className="w-3 h-3 text-[var(--color-text-secondary)]" />
+                  <MediaIcon url={url} className="w-4 h-4" />
+                  <span className="sr-only">{label}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p className="text-xs max-w-xs break-all" title={url}>{url}</p>
+                <p className="text-xs max-w-xs break-all" title={url}>{label}: {url}</p>
               </TooltipContent>
             </Tooltip>
           );
         })}
         
         {hasMore && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onMediaClick?.(0)}
-            className={`h-8 gap-1 text-xs ${componentStyles.buttons.outline} text-[var(--color-info)] hover:text-[var(--color-info)]/80`}
-          >
-            <Eye className="w-3.5 h-3.5" />
-            +{normalizedLinks.length - maxDisplay} más
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onMediaClick?.(0)}
+                className={`h-8 w-8 p-0 ${componentStyles.buttons.outline} text-[var(--color-info)] hover:text-[var(--color-info)]/80`}
+                aria-label={`Ver ${normalizedLinks.length - maxDisplay} enlaces más`}
+              >
+                <Eye className="w-4 h-4" />
+                <span className="sr-only">+{normalizedLinks.length - maxDisplay} más</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Ver {normalizedLinks.length - maxDisplay} enlaces más</p>
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
     </TooltipProvider>

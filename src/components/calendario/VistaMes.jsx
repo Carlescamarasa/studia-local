@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
@@ -10,10 +10,25 @@ import { agruparEventosPorDia, startOfMonday, formatLocalDate, parseLocalDate, f
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export default function VistaMes({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipo = 'all' }) {
   const isMobile = useIsMobile();
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
   const [diaSeleccionado, setDiaSeleccionado] = useState(null);
+
+  // Detectar tamaño de ventana
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isTablet = windowWidth >= 768 && windowWidth < 1024;
+  const isDesktop = windowWidth >= 1024;
+
   const primerDiaMes = useMemo(() => {
     return new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1);
   }, [fechaActual]);
@@ -60,10 +75,12 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
     const nuevaFecha = new Date(fechaActual);
     nuevaFecha.setMonth(fechaActual.getMonth() + direccion);
     onFechaChange(nuevaFecha);
+    setDiaSeleccionado(null);
   };
 
   const irHoy = () => {
     onFechaChange(new Date());
+    setDiaSeleccionado(null);
   };
 
   const hoyISO = formatLocalDate(new Date());
@@ -72,38 +89,223 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
 
   const nombresDias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
-  const contenido = (
-    <>
+  // Obtener eventos del día seleccionado
+  const eventosDiaSeleccionado = useMemo(() => {
+    if (!diaSeleccionado) return null;
+    return eventosPorDia[diaSeleccionado] || { sesiones: [], feedbacks: [], asignaciones: [], eventos: [] };
+  }, [diaSeleccionado, eventosPorDia]);
+
+  // Renderizar lista de eventos del día seleccionado
+  const renderEventosDelDia = () => {
+    if (!eventosDiaSeleccionado) return null;
+
+    const todosEventos = [
+      ...eventosDiaSeleccionado.eventos.map(e => ({ tipo: 'evento', evento: e, prioridad: 1 })),
+      ...eventosDiaSeleccionado.asignaciones.map(a => ({ tipo: 'asignacion', evento: a, prioridad: 2 })),
+      ...eventosDiaSeleccionado.sesiones.map(s => ({ tipo: 'sesion', evento: s, prioridad: 3 })),
+      ...eventosDiaSeleccionado.feedbacks.map(f => ({ tipo: 'feedback', evento: f, prioridad: 4 })),
+    ].sort((a, b) => a.prioridad - b.prioridad);
+
+    if (todosEventos.length === 0) {
+      return (
+        <div className="text-center py-8 text-[var(--color-text-secondary)]">
+          No hay eventos este día
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-2">
+        {todosEventos.map((item, idx) => (
+          <div key={`${item.tipo}-${item.evento.id}-${idx}`}>
+            {item.tipo === 'evento' && (
+              <EventoImportante
+                evento={item.evento}
+                onClick={() => {
+                  onEventoClick(item.evento, 'evento');
+                  setDiaSeleccionado(null);
+                }}
+              />
+            )}
+            {item.tipo === 'asignacion' && (
+              <EventoAsignacion
+                asignacion={item.evento}
+                usuarios={usuarios}
+                onClick={() => {
+                  onEventoClick(item.evento, 'asignacion');
+                  setDiaSeleccionado(null);
+                }}
+              />
+            )}
+            {item.tipo === 'sesion' && (
+              <EventoSesion
+                sesion={item.evento}
+                usuarios={usuarios}
+                onClick={() => {
+                  onEventoClick(item.evento, 'sesion');
+                  setDiaSeleccionado(null);
+                }}
+              />
+            )}
+            {item.tipo === 'feedback' && (
+              <EventoFeedback
+                feedback={item.evento}
+                usuarios={usuarios}
+                onClick={() => {
+                  onEventoClick(item.evento, 'feedback');
+                  setDiaSeleccionado(null);
+                }}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Vista móvil/tablet: mini-calendario + lista
+  if (isMobile || isTablet) {
+    return (
+      <div className="space-y-4">
+        <Card className={componentStyles.containers.cardBase}>
+          <CardContent className="p-4">
+            {/* Navegación */}
+            <div className="flex items-center justify-between mb-4">
+              <Button variant="outline" size="sm" onClick={() => navegarMes(-1)} className="rounded-xl focus-brand">
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <div className="text-center">
+                <h3 className="font-semibold text-base">
+                  {fechaActual.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                </h3>
+              </div>
+              <div className="flex gap-2">
+                {!isMobile && (
+                  <Button variant="outline" size="sm" onClick={irHoy} className="rounded-xl focus-brand">
+                    Hoy
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" onClick={() => navegarMes(1)} className="rounded-xl focus-brand">
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Mini-calendario con puntos */}
+            <div className="grid grid-cols-7 gap-1">
+              {/* Encabezados */}
+              {nombresDias.map(dia => (
+                <div key={dia} className="text-center text-xs p-1 font-medium text-[var(--color-text-secondary)]">
+                  {isMobile ? dia.substring(0, 1) : dia}
+                </div>
+              ))}
+
+              {/* Días */}
+              {diasCalendario.map((dia, idx) => {
+                const fechaISO = formatLocalDate(dia);
+                const eventosDia = eventosPorDia[fechaISO] || { sesiones: [], feedbacks: [], asignaciones: [], eventos: [] };
+                const esHoy = hoyISO === fechaISO;
+                const esOtroMes = dia.getMonth() !== mesActual;
+                const estaSeleccionado = diaSeleccionado === fechaISO;
+                const totalEventos = eventosDia.sesiones.length + eventosDia.feedbacks.length + 
+                                    eventosDia.asignaciones.length + eventosDia.eventos.length;
+
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setDiaSeleccionado(fechaISO)}
+                    className={`border rounded p-1 min-h-[40px] flex flex-col items-center justify-center transition-colors ${
+                      estaSeleccionado
+                        ? 'bg-[var(--color-primary)]/20 border-[var(--color-primary)]'
+                        : esHoy
+                          ? 'bg-[var(--color-primary)]/5 border-[var(--color-primary)]'
+                          : 'bg-background border-[var(--color-border-default)]'
+                    } ${esOtroMes ? 'opacity-40' : ''} ${totalEventos > 0 ? 'hover:bg-[var(--color-primary)]/10' : ''}`}
+                  >
+                    <div className={`text-xs font-medium ${esHoy ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-primary)]'}`}>
+                      {dia.getDate()}
+                    </div>
+                    {totalEventos > 0 && (
+                      <div className="flex gap-0.5 mt-1 justify-center flex-wrap max-w-full">
+                        {eventosDia.sesiones.length > 0 && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)]" title={`${eventosDia.sesiones.length} sesión(es)`} />
+                        )}
+                        {eventosDia.feedbacks.length > 0 && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-info)]" title={`${eventosDia.feedbacks.length} feedback(s)`} />
+                        )}
+                        {eventosDia.asignaciones.length > 0 && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-warning)]" title={`${eventosDia.asignaciones.length} asignación(es)`} />
+                        )}
+                        {eventosDia.eventos.length > 0 && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)]" title={`${eventosDia.eventos.length} evento(s)`} />
+                        )}
+                        {totalEventos > 4 && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-text-secondary)]" title={`+${totalEventos - 4} más`} />
+                        )}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Lista de eventos del día seleccionado */}
+        {diaSeleccionado && (
+          <Card className={componentStyles.containers.cardBase}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-base">
+                  {formatearFechaEvento(diaSeleccionado)}
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDiaSeleccionado(null)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              {renderEventosDelDia()}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
+  // Vista desktop: cuadrícula completa con puntos de colores
+  return (
+    <Card className={componentStyles.containers.cardBase}>
+      <CardContent className="p-4">
         {/* Navegación */}
-      <div className={`flex items-center justify-between ${isMobile ? 'mb-0.5 px-0' : 'mb-4'}`}>
-          <Button variant="outline" size="sm" onClick={() => navegarMes(-1)} className={`rounded-xl focus-brand ${isMobile ? 'h-7 w-7 p-0' : ''}`}>
-            <ChevronLeft className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+        <div className="flex items-center justify-between mb-4">
+          <Button variant="outline" size="sm" onClick={() => navegarMes(-1)} className="rounded-xl focus-brand">
+            <ChevronLeft className="w-4 h-4" />
           </Button>
           <div className="text-center">
-            <h3 className={`font-semibold ${isMobile ? 'text-xs' : 'text-base'}`}>
-              {isMobile 
-                ? fechaActual.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })
-                : fechaActual.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+            <h3 className="font-semibold text-base">
+              {fechaActual.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
             </h3>
           </div>
-          <div className="flex gap-1">
-            {!isMobile && (
-              <Button variant="outline" size="sm" onClick={irHoy} className="rounded-xl focus-brand">
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={irHoy} className="rounded-xl focus-brand">
               Hoy
             </Button>
-            )}
-            <Button variant="outline" size="sm" onClick={() => navegarMes(1)} className={`rounded-xl focus-brand ${isMobile ? 'h-7 w-7 p-0' : ''}`}>
-              <ChevronRight className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+            <Button variant="outline" size="sm" onClick={() => navegarMes(1)} className="rounded-xl focus-brand">
+              <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
         {/* Grid de calendario */}
-        <div className={`grid grid-cols-7 ${isMobile ? 'gap-0' : 'gap-1'}`}>
+        <div className="grid grid-cols-7 gap-1">
           {/* Encabezados de días */}
           {nombresDias.map(dia => (
-            <div key={dia} className={`text-center ${isMobile ? 'text-[8px] py-0.5' : 'text-xs p-2'} font-medium text-ui/60`}>
-              {isMobile ? dia.substring(0, 1) : dia}
+            <div key={dia} className="text-center text-xs p-2 font-medium text-[var(--color-text-secondary)]">
+              {dia}
             </div>
           ))}
 
@@ -116,186 +318,60 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
             const totalEventos = eventosDia.sesiones.length + eventosDia.feedbacks.length + 
                                 eventosDia.asignaciones.length + eventosDia.eventos.length;
 
-            if (isMobile) {
-              // Vista mobile: solo indicadores de puntos
-              return (
-                <div
-                  key={idx}
-                  onClick={() => totalEventos > 0 && setDiaSeleccionado(fechaISO)}
-                  className={`border rounded ${isMobile ? 'p-0 min-h-[28px]' : 'p-1 min-h-[40px]'} flex flex-col items-center justify-center cursor-pointer transition-colors ${
-                    esHoy ? 'bg-primary/5 border-primary' : 'bg-background border-border-default'
-                  } ${esOtroMes ? 'opacity-40' : ''} ${totalEventos > 0 ? 'hover:bg-primary/10 active:bg-primary/15' : ''}`}
-                >
-                  <div className={`${isMobile ? 'text-[9px] leading-tight' : 'text-xs'} font-medium ${esHoy ? 'text-primary' : 'text-ui'}`}>
-                    {dia.getDate()}
-                  </div>
-                  {totalEventos > 0 && (
-                    <div className={`flex gap-0.5 ${isMobile ? 'mt-0' : 'mt-0.5'} justify-center flex-wrap`}>
-                      {eventosDia.eventos.length > 0 && (
-                        <div className={`${isMobile ? 'w-1 h-1' : 'w-1.5 h-1.5'} rounded-full bg-[var(--color-primary)]`} />
-                      )}
-                      {eventosDia.asignaciones.length > 0 && (
-                        <div className={`${isMobile ? 'w-1 h-1' : 'w-1.5 h-1.5'} rounded-full bg-[var(--color-info)]`} />
-                      )}
-                      {eventosDia.sesiones.length > 0 && (
-                        <div className={`${isMobile ? 'w-1 h-1' : 'w-1.5 h-1.5'} rounded-full bg-[var(--color-success)]`} />
-                      )}
-                      {eventosDia.feedbacks.length > 0 && (
-                        <div className={`${isMobile ? 'w-1 h-1' : 'w-1.5 h-1.5'} rounded-full bg-[var(--color-warning)]`} />
-                      )}
-                      {totalEventos > 4 && (
-                        <div className={`${isMobile ? 'w-1 h-1' : 'w-1.5 h-1.5'} rounded-full bg-[var(--color-text-muted)]`} />
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            }
-
-            // Vista desktop: vista normal
             return (
-              <div
+              <button
                 key={idx}
-                className={`border rounded p-1 min-h-[100px] ${
-                  esHoy ? 'bg-primary/5 border-primary' : 'bg-background border-border-default'
-                } ${esOtroMes ? 'opacity-40' : ''}`}
+                onClick={() => totalEventos > 0 && setDiaSeleccionado(fechaISO)}
+                className={`border rounded-lg p-2 min-h-[100px] flex flex-col transition-colors ${
+                  esHoy ? 'bg-[var(--color-primary)]/5 border-[var(--color-primary)]' : 'bg-background border-[var(--color-border-default)]'
+                } ${esOtroMes ? 'opacity-40' : ''} ${totalEventos > 0 ? 'hover:bg-[var(--color-primary)]/10 cursor-pointer' : 'cursor-default'}`}
               >
-                <div className={`text-xs mb-1 font-medium ${esHoy ? 'text-primary' : 'text-ui'}`}>
+                {/* Número del día */}
+                <div className={`text-sm font-medium mb-2 ${esHoy ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-primary)]'}`}>
                   {dia.getDate()}
                 </div>
-                <div className="space-y-0.5">
-                  {eventosDia.eventos.slice(0, 1).map(evento => (
-                    <EventoImportante
-                      key={evento.id}
-                      evento={evento}
-                      onClick={() => onEventoClick(evento, 'evento')}
-                    />
-                  ))}
-                  {eventosDia.asignaciones.slice(0, 1).map(asignacion => (
-                    <EventoAsignacion
-                      key={asignacion.id}
-                      asignacion={asignacion}
-                      usuarios={usuarios}
-                      onClick={() => onEventoClick(asignacion, 'asignacion')}
-                    />
-                  ))}
-                  {eventosDia.sesiones.slice(0, 2).map(sesion => (
-                    <EventoSesion
-                      key={sesion.id}
-                      sesion={sesion}
-                      usuarios={usuarios}
-                      onClick={() => onEventoClick(sesion, 'sesion')}
-                    />
-                  ))}
-                  {eventosDia.feedbacks.slice(0, 1).map(feedback => (
-                    <EventoFeedback
-                      key={feedback.id}
-                      feedback={feedback}
-                      usuarios={usuarios}
-                      onClick={() => onEventoClick(feedback, 'feedback')}
-                    />
-                  ))}
-                  {totalEventos > 3 && (
-                    <div className="text-[9px] text-ui/60 text-center py-0.5">
-                      +{totalEventos - 3} más
-                    </div>
-                  )}
-                </div>
-              </div>
+
+                {/* Puntos de colores */}
+                {totalEventos > 0 && (
+                  <div className="flex gap-1 flex-wrap justify-start">
+                    {eventosDia.sesiones.length > 0 && (
+                      <div className="w-2 h-2 rounded-full bg-[var(--color-success)]" title={`${eventosDia.sesiones.length} sesión(es)`} />
+                    )}
+                    {eventosDia.feedbacks.length > 0 && (
+                      <div className="w-2 h-2 rounded-full bg-[var(--color-info)]" title={`${eventosDia.feedbacks.length} feedback(s)`} />
+                    )}
+                    {eventosDia.asignaciones.length > 0 && (
+                      <div className="w-2 h-2 rounded-full bg-[var(--color-warning)]" title={`${eventosDia.asignaciones.length} asignación(es)`} />
+                    )}
+                    {eventosDia.eventos.length > 0 && (
+                      <div className="w-2 h-2 rounded-full bg-[var(--color-primary)]" title={`${eventosDia.eventos.length} evento(s)`} />
+                    )}
+                    {totalEventos > 4 && (
+                      <span className="text-[10px] text-[var(--color-text-secondary)] ml-1">
+                        +{totalEventos - 4}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </button>
             );
           })}
         </div>
-
-      {/* Modal de eventos del día (solo mobile) */}
-      {isMobile && diaSeleccionado && (
-        <Dialog open={!!diaSeleccionado} onOpenChange={(open) => !open && setDiaSeleccionado(null)}>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-            <DialogHeader className="pb-2">
-              <DialogTitle className="text-base">
-                {formatearFechaEvento(diaSeleccionado)}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-2 mt-4">
-              {(() => {
-                const eventosDia = eventosPorDia[diaSeleccionado] || { sesiones: [], feedbacks: [], asignaciones: [], eventos: [] };
-                const todosEventos = [
-                  ...eventosDia.eventos.map(e => ({ tipo: 'evento', evento: e, prioridad: 1 })),
-                  ...eventosDia.asignaciones.map(a => ({ tipo: 'asignacion', evento: a, prioridad: 2 })),
-                  ...eventosDia.sesiones.map(s => ({ tipo: 'sesion', evento: s, prioridad: 3 })),
-                  ...eventosDia.feedbacks.map(f => ({ tipo: 'feedback', evento: f, prioridad: 4 })),
-                ].sort((a, b) => a.prioridad - b.prioridad);
-
-                if (todosEventos.length === 0) {
-                  return (
-                    <div className="text-center py-8 text-ui/60">
-                      No hay eventos este día
-                    </div>
-                  );
-                }
-
-                return todosEventos.map((item, idx) => (
-                  <div key={`${item.tipo}-${item.evento.id}-${idx}`}>
-                    {item.tipo === 'evento' && (
-                      <EventoImportante
-                        evento={item.evento}
-                        onClick={() => {
-                          onEventoClick(item.evento, 'evento');
-                          setDiaSeleccionado(null);
-                        }}
-                      />
-                    )}
-                    {item.tipo === 'asignacion' && (
-                      <EventoAsignacion
-                        asignacion={item.evento}
-                        usuarios={usuarios}
-                        onClick={() => {
-                          onEventoClick(item.evento, 'asignacion');
-                          setDiaSeleccionado(null);
-                        }}
-                      />
-                    )}
-                    {item.tipo === 'sesion' && (
-                      <EventoSesion
-                        sesion={item.evento}
-                        usuarios={usuarios}
-                        onClick={() => {
-                          onEventoClick(item.evento, 'sesion');
-                          setDiaSeleccionado(null);
-                        }}
-                      />
-                    )}
-                    {item.tipo === 'feedback' && (
-                      <EventoFeedback
-                        feedback={item.evento}
-                        usuarios={usuarios}
-                        onClick={() => {
-                          onEventoClick(item.evento, 'feedback');
-                          setDiaSeleccionado(null);
-                        }}
-                      />
-                    )}
-                  </div>
-                ));
-              })()}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-    </>
-  );
-
-  // En mobile, sin Card wrapper para máximo espacio
-  if (isMobile) {
-    return contenido;
-  }
-
-  // En desktop, con Card
-  return (
-    <Card className={componentStyles.containers.cardBase}>
-      <CardContent className="p-4">
-        {contenido}
       </CardContent>
+
+      {/* Panel lateral (Sheet) para mostrar eventos del día seleccionado en desktop */}
+      {isDesktop && diaSeleccionado && (
+        <Sheet open={!!diaSeleccionado} onOpenChange={(open) => !open && setDiaSeleccionado(null)}>
+          <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+            <SheetHeader className="mb-4">
+              <SheetTitle>
+                {formatearFechaEvento(diaSeleccionado)}
+              </SheetTitle>
+            </SheetHeader>
+            {renderEventosDelDia()}
+          </SheetContent>
+        </Sheet>
+      )}
     </Card>
   );
 }
-
