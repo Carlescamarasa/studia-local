@@ -4,7 +4,7 @@ import { Badge } from "@/components/ds";
 import { getNombreVisible } from "@/components/utils/helpers";
 import { formatearFechaEvento, obtenerColorEvento, obtenerLabelEstadoAsignacion } from "./utils";
 
-export default function EventoAsignacion({ asignacion, usuarios, onClick }) {
+export default function EventoAsignacion({ asignacion, usuarios, onClick, variant = 'default', registrosSesion = [] }) {
   const alumno = usuarios.find(u => u.id === asignacion.alumnoId);
   const fechaSemana = asignacion.semanaInicioISO ? formatearFechaEvento(asignacion.semanaInicioISO) : '';
   const piezaNombre = asignacion.piezaSnapshot?.nombre || asignacion.piezaId || 'Pieza';
@@ -17,6 +17,56 @@ export default function EventoAsignacion({ asignacion, usuarios, onClick }) {
     archivada: 'warning',
   };
 
+  // Calcular patrón de semanas para variante week
+  const calcularPatronSemanas = () => {
+    if (!asignacion.plan || !Array.isArray(asignacion.plan.semanas)) return null;
+    const totalSemanas = asignacion.plan.semanas.length;
+    if (totalSemanas === 0) return null;
+
+    // Calcular qué semanas tienen registros de sesión
+    const semanasConSesiones = new Set();
+    registrosSesion.forEach(registro => {
+      if (registro.asignacionId === asignacion.id && registro.semanaIdx !== undefined) {
+        semanasConSesiones.add(registro.semanaIdx);
+      }
+    });
+
+    // Generar patrón: • = semana activa/trabajada, ○ = otras semanas
+    const patron = [];
+    for (let i = 0; i < Math.min(totalSemanas, 8); i++) { // Máximo 8 semanas en el patrón
+      if (semanasConSesiones.has(i)) {
+        patron.push('•');
+      } else {
+        patron.push('○');
+      }
+    }
+    return patron.length > 0 ? patron.join(' ') : null;
+  };
+
+  // Variante compacta para vista Semana
+  if (variant === 'week') {
+    const patronSemanas = calcularPatronSemanas();
+
+    return (
+      <div
+        onClick={onClick}
+        className={`${colores.bg} ${colores.border} border rounded p-1.5 text-xs cursor-pointer hover:opacity-80 transition-opacity`}
+      >
+        {/* Línea 1: Nombre de la pieza */}
+        <p className={`font-medium ${colores.text} mb-1 line-clamp-1`}>
+          {piezaNombre}
+        </p>
+        {/* Línea 2: Patrón de semanas */}
+        {patronSemanas && (
+          <p className={`${colores.text} text-[10px] font-mono`}>
+            {patronSemanas}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // Variante default (completa)
   return (
     <div
       onClick={onClick}

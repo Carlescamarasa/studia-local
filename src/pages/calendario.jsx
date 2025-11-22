@@ -318,6 +318,7 @@ function CalendarioPageContent() {
             onEventoClick={handleEventoClick}
             usuarios={usuarios}
             filtroTipo={filtroTipoGlobal}
+            registrosSesion={registrosSesion}
           />
           )
         )}

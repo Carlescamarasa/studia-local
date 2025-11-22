@@ -183,6 +183,7 @@ function createEntityAPI(entityName, dataKey, entityApi) {
         entityName === 'Plan' ? PlanesAPI.createPlan :
         entityName === 'RegistroBloque' ? RegistrosBloqueAPI.createRegistroBloque :
         entityName === 'RegistroSesion' ? RegistrosSesionAPI.createRegistroSesion :
+        entityName === 'EventoCalendario' ? EventosCalendarioAPI.createEventoCalendario :
         null;
 
       if (!apiCreate) {
@@ -213,6 +214,7 @@ function createEntityAPI(entityName, dataKey, entityApi) {
         entityName === 'Plan' ? PlanesAPI.updatePlan :
         entityName === 'RegistroBloque' ? RegistrosBloqueAPI.updateRegistroBloque :
         entityName === 'RegistroSesion' ? RegistrosSesionAPI.updateRegistroSesion :
+        entityName === 'EventoCalendario' ? EventosCalendarioAPI.updateEventoCalendario :
         null;
 
       if (!apiUpdate) {
@@ -244,6 +246,7 @@ function createEntityAPI(entityName, dataKey, entityApi) {
         entityName === 'Plan' ? PlanesAPI.deletePlan :
         entityName === 'RegistroBloque' ? RegistrosBloqueAPI.deleteRegistroBloque :
         entityName === 'RegistroSesion' ? RegistrosSesionAPI.deleteRegistroSesion :
+        entityName === 'EventoCalendario' ? EventosCalendarioAPI.deleteEventoCalendario :
         null;
 
       if (!apiDelete) {

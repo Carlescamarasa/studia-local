@@ -7,7 +7,7 @@ import { componentStyles } from "@/design/componentStyles";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
 import MediaPreviewModal from "@/components/common/MediaPreviewModal";
 
-export default function EventoSesion({ sesion, usuarios, onClick }) {
+export default function EventoSesion({ sesion, usuarios, onClick, variant = 'default' }) {
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [selectedMediaLinks, setSelectedMediaLinks] = useState([]);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
@@ -56,6 +56,67 @@ export default function EventoSesion({ sesion, usuarios, onClick }) {
     return componentStyles.status.badgeDefault;
   };
 
+  // Variante compacta para vista Semana
+  if (variant === 'week') {
+    const sesionNombre = sesion.sesionNombre || 'Sesión sin nombre';
+    const sesionNombreCorto = sesionNombre.length > 20 ? sesionNombre.substring(0, 20) + '…' : sesionNombre;
+    
+    // Construir línea 2: duración y valoración
+    const partesLinea2 = [];
+    if (duracionMin > 0) {
+      partesLinea2.push(`${duracionMin} min`);
+    }
+    if (sesion.calificacion !== undefined && sesion.calificacion !== null && sesion.calificacion > 0 && !isNaN(sesion.calificacion)) {
+      partesLinea2.push(`${Math.round(sesion.calificacion)}/4`);
+    }
+    const linea2 = partesLinea2.length > 0 ? partesLinea2.join(' · ') : null;
+
+    return (
+      <div
+        onClick={onClick}
+        className="flex items-start gap-2 py-1.5 px-2 border-l-4 border-l-[var(--color-success)] bg-[var(--color-success)]/5 hover:bg-[var(--color-success)]/10 transition-colors cursor-pointer rounded"
+      >
+        <div className="flex-1 min-w-0">
+          {/* Línea 1: Nombre de sesión */}
+          <p className="text-xs text-[var(--color-text-primary)] font-semibold mb-0.5 line-clamp-1">
+            {sesionNombreCorto}
+          </p>
+          {/* Línea 2: Duración y valoración */}
+          {linea2 && (
+            <p className="text-[10px] text-[var(--color-text-secondary)] mb-1">
+              {linea2}
+            </p>
+          )}
+          {/* Línea 3: Media links */}
+          {sesion.mediaLinks && Array.isArray(sesion.mediaLinks) && sesion.mediaLinks.length > 0 && (
+            <div className="mt-1">
+              <MediaLinksBadges
+                mediaLinks={sesion.mediaLinks}
+                onMediaClick={(idx) => handleMediaClick(idx, sesion.mediaLinks)}
+                compact={true}
+                maxDisplay={3}
+              />
+            </div>
+          )}
+        </div>
+        {/* Modal de preview de medios */}
+        {showMediaModal && selectedMediaLinks.length > 0 && (
+          <MediaPreviewModal
+            urls={selectedMediaLinks}
+            initialIndex={selectedMediaIndex || 0}
+            open={showMediaModal}
+            onClose={() => {
+              setShowMediaModal(false);
+              setSelectedMediaLinks([]);
+              setSelectedMediaIndex(0);
+            }}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Variante default (completa)
   return (
     <div
       onClick={onClick}

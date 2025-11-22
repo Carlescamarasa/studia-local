@@ -10,8 +10,9 @@ import { agruparEventosPorDia, startOfMonday, endOfSunday, formatLocalDate } fro
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ds";
+import MediaPreviewModal from "@/components/common/MediaPreviewModal";
 
-export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipo = 'all' }) {
+export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipo = 'all', registrosSesion = [] }) {
   const isMobile = useIsMobile();
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
   const [diaSeleccionado, setDiaSeleccionado] = useState(() => formatLocalDate(new Date()));
@@ -91,18 +92,50 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
     return esSegundaMitad ? diasSemana.slice(4) : diasSemana.slice(0, 4);
   }, [isTablet, diasSemana, fechaActual]);
 
-  // Renderizar evento compacto para desktop/tablet
+  // Normalizar media links para EventoImportante
+  const normalizeMediaLinks = (rawLinks) => {
+    if (!rawLinks || !Array.isArray(rawLinks)) return [];
+    return rawLinks
+      .map((raw) => {
+        if (typeof raw === 'string') return raw;
+        if (raw && typeof raw === 'object' && raw.url) return raw.url;
+        if (raw && typeof raw === 'object' && raw.href) return raw.href;
+        if (raw && typeof raw === 'object' && raw.link) return raw.link;
+        return '';
+      })
+      .filter((url) => typeof url === 'string' && url.length > 0);
+  };
+
+  const [showMediaModal, setShowMediaModal] = useState(false);
+  const [selectedMediaLinks, setSelectedMediaLinks] = useState([]);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+
+  const handleMediaClick = (index, mediaLinks) => {
+    if (!mediaLinks || !Array.isArray(mediaLinks) || mediaLinks.length === 0) return;
+    const normalizedLinks = normalizeMediaLinks(mediaLinks);
+    if (normalizedLinks.length === 0) return;
+    const safeIndex = Math.max(0, Math.min(index, normalizedLinks.length - 1));
+    setSelectedMediaLinks(normalizedLinks);
+    setSelectedMediaIndex(safeIndex);
+    setShowMediaModal(true);
+  };
+
+  // Renderizar evento compacto para desktop/tablet (variante week)
   const renderEventoCompacto = (evento, tipo) => {
-    const props = { usuarios, onClick: () => onEventoClick(evento, tipo) };
+    const props = { 
+      usuarios, 
+      onClick: () => onEventoClick(evento, tipo),
+      variant: 'week'
+    };
     switch (tipo) {
       case 'sesion':
         return <EventoSesion key={evento.id} sesion={evento} {...props} />;
       case 'feedback':
         return <EventoFeedback key={evento.id} feedback={evento} {...props} />;
       case 'asignacion':
-        return <EventoAsignacion key={evento.id} asignacion={evento} {...props} />;
+        return <EventoAsignacion key={evento.id} asignacion={evento} {...props} registrosSesion={registrosSesion} />;
       case 'evento':
-        return <EventoImportante key={evento.id} evento={evento} onClick={props.onClick} />;
+        return <EventoImportante key={evento.id} evento={evento} onClick={props.onClick} variant="week" onMediaClick={handleMediaClick} />;
       default:
         return null;
     }
@@ -180,6 +213,8 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
                 key={evento.id}
                 evento={evento}
                 onClick={() => onEventoClick(evento, 'evento')}
+                variant="week"
+                onMediaClick={handleMediaClick}
               />
             ))}
             {eventosDiaSeleccionado.asignaciones.map(asignacion => (
@@ -188,6 +223,8 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
                 asignacion={asignacion}
                 usuarios={usuarios}
                 onClick={() => onEventoClick(asignacion, 'asignacion')}
+                variant="week"
+                registrosSesion={registrosSesion}
               />
             ))}
             {eventosDiaSeleccionado.sesiones.map(sesion => (
@@ -196,6 +233,7 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
                 sesion={sesion}
                 usuarios={usuarios}
                 onClick={() => onEventoClick(sesion, 'sesion')}
+                variant="week"
               />
             ))}
             {eventosDiaSeleccionado.feedbacks.map(feedback => (
@@ -204,6 +242,7 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
                 feedback={feedback}
                 usuarios={usuarios}
                 onClick={() => onEventoClick(feedback, 'feedback')}
+                variant="week"
               />
             ))}
             {eventosDiaSeleccionado.sesiones.length === 0 && 
@@ -216,6 +255,20 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
             )}
           </div>
         </CardContent>
+        
+        {/* Modal de preview de medios para eventos importantes */}
+        {showMediaModal && selectedMediaLinks.length > 0 && (
+          <MediaPreviewModal
+            urls={selectedMediaLinks}
+            initialIndex={selectedMediaIndex || 0}
+            open={showMediaModal}
+            onClose={() => {
+              setShowMediaModal(false);
+              setSelectedMediaLinks([]);
+              setSelectedMediaIndex(0);
+            }}
+          />
+        )}
       </Card>
     );
   }
@@ -287,6 +340,20 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
           })}
         </div>
       </CardContent>
+      
+      {/* Modal de preview de medios para eventos importantes */}
+      {showMediaModal && selectedMediaLinks.length > 0 && (
+        <MediaPreviewModal
+          urls={selectedMediaLinks}
+          initialIndex={selectedMediaIndex || 0}
+          open={showMediaModal}
+          onClose={() => {
+            setShowMediaModal(false);
+            setSelectedMediaLinks([]);
+            setSelectedMediaIndex(0);
+          }}
+        />
+      )}
     </Card>
   );
 }

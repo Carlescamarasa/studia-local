@@ -303,8 +303,11 @@ export interface EventoCalendario {
   id: string;
   titulo: string;
   descripcion?: string | null;
-  fechaInicio: string; // YYYY-MM-DD
-  fechaFin?: string | null; // YYYY-MM-DD (opcional, para eventos de varios días)
+  fechaInicio: string; // YYYY-MM-DD (legacy, mantenido para compatibilidad)
+  fechaFin?: string | null; // YYYY-MM-DD (legacy, mantenido para compatibilidad)
+  start_at?: string | null; // ISO timestamp con hora (ej. 2024-01-15T18:00:00Z)
+  end_at?: string | null; // ISO timestamp con hora (ej. 2024-01-15T20:00:00Z)
+  all_day?: boolean; // true si es evento de todo el día
   tipo: 'encuentro' | 'masterclass' | 'colectiva' | 'otro';
   creadoPorId: string; // ID del usuario que creó el evento
   visiblePara: UserRole[]; // Roles que pueden verlo

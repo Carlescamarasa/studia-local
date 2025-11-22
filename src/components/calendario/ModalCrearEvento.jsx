@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ds/Button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,30 @@ import { generateId } from "@/data/localStorageClient";
 
 const pad2 = (n) => String(n).padStart(2, "0");
 const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+const formatLocalTime = (d) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+
+// Helper para convertir fecha + hora a ISO timestamp
+const buildISO = (dateStr, timeStr = null) => {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  if (timeStr) {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    date.setHours(hours || 0, minutes || 0, 0, 0);
+  } else {
+    date.setHours(0, 0, 0, 0);
+  }
+  return date.toISOString();
+};
+
+// Helper para extraer fecha y hora de un ISO timestamp
+const parseISO = (isoStr) => {
+  if (!isoStr) return { date: '', time: '' };
+  const date = new Date(isoStr);
+  return {
+    date: formatLocalDate(date),
+    time: formatLocalTime(date),
+  };
+};
 
 export default function ModalCrearEvento({ open, onOpenChange, evento, userIdActual }) {
   const queryClient = useQueryClient();
@@ -27,26 +52,49 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
     descripcion: '',
     fechaInicio: formatLocalDate(new Date()),
     fechaFin: '',
+    horaInicio: '18:00',
+    horaFin: '19:00',
+    all_day: false,
     tipo: 'otro',
     visiblePara: ['ESTU', 'PROF', 'ADMIN'],
   });
 
   useEffect(() => {
     if (evento) {
+      // Si tiene start_at, usar eso; si no, usar fechaInicio legacy
+      const inicioData = evento.start_at ? parseISO(evento.start_at) : {
+        date: evento.fechaInicio || formatLocalDate(new Date()),
+        time: '18:00',
+      };
+      const finData = evento.end_at ? parseISO(evento.end_at) : {
+        date: evento.fechaFin || '',
+        time: '19:00',
+      };
+      
       setFormData({
         titulo: evento.titulo || '',
         descripcion: evento.descripcion || '',
-        fechaInicio: evento.fechaInicio || formatLocalDate(new Date()),
-        fechaFin: evento.fechaFin || '',
+        fechaInicio: inicioData.date,
+        fechaFin: finData.date,
+        horaInicio: inicioData.time,
+        horaFin: finData.time,
+        all_day: evento.all_day === true,
         tipo: evento.tipo || 'otro',
         visiblePara: evento.visiblePara || ['ESTU', 'PROF', 'ADMIN'],
       });
     } else {
+      const ahora = new Date();
+      const horaInicio = formatLocalTime(ahora);
+      const horaFin = formatLocalTime(new Date(ahora.getTime() + 60 * 60 * 1000)); // +1h
+      
       setFormData({
         titulo: '',
         descripcion: '',
-        fechaInicio: formatLocalDate(new Date()),
+        fechaInicio: formatLocalDate(ahora),
         fechaFin: '',
+        horaInicio,
+        horaFin,
+        all_day: false,
         tipo: 'otro',
         visiblePara: ['ESTU', 'PROF', 'ADMIN'],
       });
@@ -71,7 +119,19 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
     },
     onError: (error) => {
       console.error('Error creando evento:', error);
-      toast.error('❌ Error al crear evento');
+      console.error('Detalles del error:', {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+        userIdActual,
+        eventoData: {
+          id: eventoData?.id,
+          creadoPorId: eventoData?.creadoPorId,
+          titulo: eventoData?.titulo,
+        },
+      });
+      toast.error(`❌ Error al crear evento: ${error?.message || 'Error desconocido'}`);
     },
   });
 
@@ -109,11 +169,48 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
       return;
     }
 
+    // Construir start_at y end_at según all_day
+    let start_at = null;
+    let end_at = null;
+    
+    if (formData.all_day) {
+      // Todo el día: start_at a las 00:00, end_at al final del día o null
+      start_at = buildISO(formData.fechaInicio, '00:00');
+      if (formData.fechaFin) {
+        const finDate = new Date(formData.fechaFin);
+        finDate.setHours(23, 59, 59, 999);
+        end_at = finDate.toISOString();
+      } else {
+        // Si no hay fecha fin, el evento dura todo el día de inicio
+        const inicioDate = new Date(formData.fechaInicio);
+        inicioDate.setHours(23, 59, 59, 999);
+        end_at = inicioDate.toISOString();
+      }
+    } else {
+      // Con horario específico
+      start_at = buildISO(formData.fechaInicio, formData.horaInicio);
+      if (formData.fechaFin) {
+        end_at = buildISO(formData.fechaFin, formData.horaFin);
+      } else {
+        // Si no hay fecha fin, usar misma fecha con hora fin
+        end_at = buildISO(formData.fechaInicio, formData.horaFin);
+      }
+      
+      // Validar que end_at sea posterior a start_at
+      if (end_at && start_at && new Date(end_at) <= new Date(start_at)) {
+        toast.error('La hora de fin debe ser posterior a la hora de inicio');
+        return;
+      }
+    }
+
     const data = {
       titulo: formData.titulo.trim(),
       descripcion: formData.descripcion.trim() || null,
-      fechaInicio: formData.fechaInicio,
-      fechaFin: formData.fechaFin || null,
+      fechaInicio: formData.fechaInicio, // Mantener para compatibilidad
+      fechaFin: formData.fechaFin || null, // Mantener para compatibilidad
+      start_at,
+      end_at,
+      all_day: formData.all_day,
       tipo: formData.tipo,
       visiblePara: formData.visiblePara,
     };
@@ -141,6 +238,9 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
           <DialogTitle>
             {evento ? 'Editar Evento' : 'Crear Evento Importante'}
           </DialogTitle>
+          <DialogDescription>
+            {evento ? 'Edita los detalles del evento del calendario' : 'Crea un nuevo evento importante (masterclass, audición, etc.) para que aparezca en el calendario'}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -166,6 +266,19 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
             />
           </div>
 
+          {/* Toggle Todo el día */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="all_day"
+              checked={formData.all_day}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, all_day: checked === true }))}
+            />
+            <Label htmlFor="all_day" className="text-sm font-normal cursor-pointer">
+              Todo el día
+            </Label>
+          </div>
+
+          {/* Fechas */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="fechaInicio">Fecha de Inicio *</Label>
@@ -190,6 +303,34 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
               />
             </div>
           </div>
+
+          {/* Horarios (solo si no es todo el día) */}
+          {!formData.all_day && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="horaInicio">Hora de Inicio *</Label>
+                <Input
+                  id="horaInicio"
+                  type="time"
+                  value={formData.horaInicio}
+                  onChange={(e) => setFormData(prev => ({ ...prev, horaInicio: e.target.value }))}
+                  className={componentStyles.controls.inputDefault}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="horaFin">Hora de Fin *</Label>
+                <Input
+                  id="horaFin"
+                  type="time"
+                  value={formData.horaFin}
+                  onChange={(e) => setFormData(prev => ({ ...prev, horaFin: e.target.value }))}
+                  className={componentStyles.controls.inputDefault}
+                  required
+                />
+              </div>
+            </div>
+          )}
 
           <div>
             <Label htmlFor="tipo">Tipo de Evento</Label>

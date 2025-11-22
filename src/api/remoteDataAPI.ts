@@ -17,6 +17,7 @@ import type {
   RegistroSesion,
   RegistroBloque,
   FeedbackSemanal,
+  EventoCalendario,
 } from '@/types/domain';
 
 /**
@@ -1702,6 +1703,158 @@ export function createRemoteDataAPI(): AppDataAPI {
       delete: async (id: string) => {
         const { error } = await supabase
           .from('feedbacks_semanal')
+          .delete()
+          .eq('id', id);
+        
+        if (error) throw error;
+        return { success: true };
+      },
+    },
+    eventosCalendario: {
+      list: async (sort?: string) => {
+        let query = supabase.from('eventos_calendario').select('*');
+        
+        if (sort) {
+          const direction = sort.startsWith('-') ? 'desc' : 'asc';
+          const field = sort.startsWith('-') ? sort.slice(1) : sort;
+          const snakeField = toSnakeCase(field);
+          query = query.order(snakeField, { ascending: direction === 'asc' });
+        }
+        
+        const { data, error } = await query;
+        if (error) throw error;
+        return (data || []).map((e: any) => {
+          const parsed = snakeToCamel<EventoCalendario>(e);
+          // snakeToCamel convierte start_at -> startAt, pero el tipo usa start_at
+          // Mapear de vuelta a start_at, end_at, all_day
+          const result: any = { ...parsed };
+          if ((parsed as any).startAt !== undefined) {
+            result.start_at = (parsed as any).startAt;
+          }
+          if ((parsed as any).endAt !== undefined) {
+            result.end_at = (parsed as any).endAt;
+          }
+          if ((parsed as any).allDay !== undefined) {
+            result.all_day = (parsed as any).allDay;
+          }
+          // Mantener fechaInicio/fechaFin para compatibilidad si no existen
+          if (!result.fechaInicio && result.start_at) {
+            const startDate = new Date(result.start_at);
+            result.fechaInicio = startDate.toISOString().split('T')[0];
+          }
+          return result as EventoCalendario;
+        });
+      },
+      get: async (id: string) => {
+        const { data, error } = await supabase
+          .from('eventos_calendario')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (error) {
+          if (error.code === 'PGRST116') return null;
+          throw error;
+        }
+        const parsed = snakeToCamel<EventoCalendario>(data);
+        // snakeToCamel convierte start_at -> startAt, mapear de vuelta
+        const result: any = { ...parsed };
+        if ((parsed as any).startAt !== undefined) {
+          result.start_at = (parsed as any).startAt;
+        }
+        if ((parsed as any).endAt !== undefined) {
+          result.end_at = (parsed as any).endAt;
+        }
+        if ((parsed as any).allDay !== undefined) {
+          result.all_day = (parsed as any).allDay;
+        }
+        // Mantener fechaInicio/fechaFin para compatibilidad si no existen
+        if (!result.fechaInicio && result.start_at) {
+          const startDate = new Date(result.start_at);
+          result.fechaInicio = startDate.toISOString().split('T')[0];
+        }
+        return result as EventoCalendario;
+      },
+      filter: async (filters: Record<string, any>, limit?: number | null) => {
+        let query = supabase.from('eventos_calendario').select('*');
+        
+        for (const [key, value] of Object.entries(filters)) {
+          const snakeKey = toSnakeCase(key);
+          query = query.eq(snakeKey, value);
+        }
+        
+        if (limit) {
+          query = query.limit(limit);
+        }
+        
+        const { data, error } = await query;
+        if (error) throw error;
+        return (data || []).map((e: any) => {
+          const parsed = snakeToCamel<EventoCalendario>(e);
+          // Asegurar que start_at, end_at, all_day estén presentes
+          if ((parsed as any).startAt && !parsed.start_at) {
+            parsed.start_at = (parsed as any).startAt;
+          }
+          if ((parsed as any).endAt && !parsed.end_at) {
+            parsed.end_at = (parsed as any).endAt;
+          }
+          if ((parsed as any).allDay !== undefined && parsed.all_day === undefined) {
+            parsed.all_day = (parsed as any).allDay;
+          }
+          return parsed;
+        });
+      },
+      create: async (data) => {
+        const snakeData = camelToSnake({
+          ...data,
+          id: data.id || `evento_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        });
+        const { data: result, error } = await supabase
+          .from('eventos_calendario')
+          .insert(snakeData)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        const parsed = snakeToCamel<EventoCalendario>(result);
+        // Asegurar que start_at, end_at, all_day estén presentes
+        if ((parsed as any).startAt && !parsed.start_at) {
+          parsed.start_at = (parsed as any).startAt;
+        }
+        if ((parsed as any).endAt && !parsed.end_at) {
+          parsed.end_at = (parsed as any).endAt;
+        }
+        if ((parsed as any).allDay !== undefined && parsed.all_day === undefined) {
+          parsed.all_day = (parsed as any).allDay;
+        }
+        return parsed;
+      },
+      update: async (id: string, updates: any) => {
+        const snakeUpdates = camelToSnake(updates);
+        const { data, error } = await supabase
+          .from('eventos_calendario')
+          .update(snakeUpdates)
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        const parsed = snakeToCamel<EventoCalendario>(data);
+        // Asegurar que start_at, end_at, all_day estén presentes
+        if ((parsed as any).startAt && !parsed.start_at) {
+          parsed.start_at = (parsed as any).startAt;
+        }
+        if ((parsed as any).endAt && !parsed.end_at) {
+          parsed.end_at = (parsed as any).endAt;
+        }
+        if ((parsed as any).allDay !== undefined && parsed.all_day === undefined) {
+          parsed.all_day = (parsed as any).allDay;
+        }
+        return parsed;
+      },
+      delete: async (id: string) => {
+        const { error } = await supabase
+          .from('eventos_calendario')
           .delete()
           .eq('id', id);
         

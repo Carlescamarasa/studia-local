@@ -30,6 +30,9 @@ import type {
   FeedbackSemanal,
   CreateFeedbackSemanalInput,
   UpdateFeedbackSemanalInput,
+  EventoCalendario,
+  CreateEventoCalendarioInput,
+  UpdateEventoCalendarioInput,
 } from '@/types/domain';
 
 /**
@@ -86,6 +89,11 @@ export interface RegistroBloqueAPI extends EntityAPI<RegistroBloque, CreateRegis
 export interface FeedbackSemanalAPI extends EntityAPI<FeedbackSemanal, CreateFeedbackSemanalInput, UpdateFeedbackSemanalInput> {}
 
 /**
+ * API de eventos del calendario
+ */
+export interface EventoCalendarioAPI extends EntityAPI<EventoCalendario, CreateEventoCalendarioInput, UpdateEventoCalendarioInput> {}
+
+/**
  * Interfaz principal AppDataAPI
  * 
  * Agrupa todas las APIs de entidades en un solo objeto.
@@ -99,5 +107,6 @@ export interface AppDataAPI {
   registrosSesion: RegistroSesionAPI;
   registrosBloque: RegistroBloqueAPI;
   feedbacksSemanal: FeedbackSemanalAPI;
+  eventosCalendario: EventoCalendarioAPI;
 }
 
