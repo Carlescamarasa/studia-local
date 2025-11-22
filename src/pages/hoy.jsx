@@ -1927,15 +1927,6 @@ function HoyPageContent() {
               <p className={`${componentStyles.empty.emptyText} mb-4`}>
                 Consulta con tu profesor para obtener asignaciones
               </p>
-              {process.env.NODE_ENV === 'development' && (
-                <div className="text-xs text-[var(--color-text-muted)] mb-4 p-2 bg-[var(--color-surface-muted)] rounded">
-                  <p>Debug: asignacionActiva = {asignacionActiva ? '✓' : '✗'}</p>
-                  <p>Debug: semanaDelPlan = {semanaDelPlan ? '✓' : '✗'}</p>
-                  {asignacionActiva && (
-                    <p>Debug: semanaIdx = {semanaIdx}, semanas disponibles = {asignacionActiva.plan?.semanas?.length}</p>
-                  )}
-                </div>
-              )}
               <Button
                 variant="outline"
                 onClick={() => navigate(createPageUrl('estadisticas'))}

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ds";
 import { Input } from "@/components/ui/input";
 import {
-  Target, Eye, Edit, Copy, Trash2, FileDown, Search, X, Plus, RotateCcw, XCircle, User, Users
+  Target, Eye, Edit, Copy, Trash2, FileDown, Search, X, Plus, RotateCcw, XCircle, User, Users, ChevronLeft, ChevronRight, Calendar
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -16,7 +16,7 @@ import RequireRole from "@/components/auth/RequireRole";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import FormularioRapido from "@/components/asignaciones/FormularioRapido";
 import StudentSearchBar from "@/components/asignaciones/StudentSearchBar";
-import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
+import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, useEffectiveUser, resolveUserIdActual, startOfMonday, calcularLunesSemanaISO, calcularOffsetSemanas } from "../components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MultiSelect from "@/components/ui/MultiSelect";
 import PageHeader from "@/components/ds/PageHeader";
@@ -46,6 +46,12 @@ function AsignacionesPageContent() {
   const [estadoFilter, setEstadoFilter] = useState('all');
   const [profesoresFilter, setProfesoresFilter] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  
+  // Estado para filtro por semana
+  const [semanaSeleccionada, setSemanaSeleccionada] = useState(() => {
+    const hoy = new Date();
+    return startOfMonday(hoy);
+  });
   const [showAsignarProfesorDialog, setShowAsignarProfesorDialog] = useState(false);
   const [showAsignarEstudianteDialog, setShowAsignarEstudianteDialog] = useState(false);
   const [asignacionParaAsignar, setAsignacionParaAsignar] = useState(null);
@@ -340,9 +346,35 @@ function AsignacionesPageContent() {
     return result;
   }, [usuarios]);
 
-  // Aplicar filtros adicionales (estado, búsqueda y profesores)
+  // Filtrar asignaciones por semana seleccionada
+  const semanaSeleccionadaISO = useMemo(() => {
+    return formatLocalDate(semanaSeleccionada);
+  }, [semanaSeleccionada]);
+
+  // Aplicar filtros adicionales (semana, estado, búsqueda y profesores)
   const asignacionesFinales = useMemo(() => {
     let resultado = asignacionesFiltradas;
+
+    // Filtrar por semana seleccionada
+    resultado = resultado.filter(a => {
+      if (!a.semanaInicioISO || !a.plan?.semanas?.length) return false;
+      
+      try {
+        const inicioPlan = parseLocalDate(a.semanaInicioISO);
+        const numSemanas = a.plan.semanas.length;
+        const semanaActual = parseLocalDate(semanaSeleccionadaISO);
+        
+        // Calcular offset de semanas
+        const diffTime = semanaActual - inicioPlan;
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+        const offsetWeeks = Math.floor(diffDays / 7);
+        
+        // La asignación está activa si offsetWeeks está en el rango [0, numSemanas)
+        return offsetWeeks >= 0 && offsetWeeks < numSemanas;
+      } catch (error) {
+        return false;
+      }
+    });
 
   if (estadoFilter !== 'all') {
       resultado = resultado.filter(a => a.estado === estadoFilter);
@@ -363,7 +395,7 @@ function AsignacionesPageContent() {
   }
 
     return resultado;
-  }, [asignacionesFiltradas, estadoFilter, profesoresFilter, searchTerm, usuarios]);
+  }, [asignacionesFiltradas, estadoFilter, profesoresFilter, searchTerm, usuarios, semanaSeleccionadaISO]);
 
   const estadoLabels = {
     borrador: 'Borrador',
@@ -425,12 +457,54 @@ function AsignacionesPageContent() {
     {
       key: 'plan',
       label: 'Plan',
-      render: (a) => (
-        <div>
-          <p className="text-sm">{a.plan?.nombre}</p>
-          <p className="text-xs text-ui/80">{a.plan?.semanas?.length || 0} semanas</p>
-        </div>
-      ),
+      render: (a) => {
+        // Calcular semana actual del plan
+        let semanaActual = null;
+        let numSemanas = 0;
+        let indicador = '';
+        
+        if (a.semanaInicioISO && a.plan?.semanas?.length) {
+          try {
+            const inicioPlan = parseLocalDate(a.semanaInicioISO);
+            numSemanas = a.plan.semanas.length;
+            const semanaActualPlan = parseLocalDate(semanaSeleccionadaISO);
+            
+            const diffTime = semanaActualPlan - inicioPlan;
+            const diffDays = diffTime / (1000 * 60 * 60 * 24);
+            const offsetWeeks = Math.floor(diffDays / 7);
+            
+            if (offsetWeeks >= 0 && offsetWeeks < numSemanas) {
+              semanaActual = offsetWeeks + 1;
+              // Generar indicador visual tipo X--- (● ○ ○ ○)
+              indicador = Array.from({ length: numSemanas }, (_, i) => 
+                i === offsetWeeks ? '●' : '○'
+              ).join(' ');
+            }
+          } catch (error) {
+            // Si hay error, no mostrar indicador
+          }
+        }
+        
+        return (
+          <div>
+            <p className="text-sm">{a.plan?.nombre || '-'}</p>
+            <div className="flex items-center gap-2 mt-1">
+              {semanaActual ? (
+                <>
+                  <p className="text-xs text-ui/80">
+                    Semana {semanaActual} de {numSemanas}
+                  </p>
+                  <span className="text-xs font-mono text-[var(--color-text-secondary)]" title={`Semana ${semanaActual} de ${numSemanas}`}>
+                    {indicador}
+                  </span>
+                </>
+              ) : (
+                <p className="text-xs text-ui/60">{numSemanas || 0} semanas</p>
+              )}
+            </div>
+          </div>
+        );
+      },
     },
     {
       key: 'inicio',
@@ -467,6 +541,63 @@ function AsignacionesPageContent() {
         subtitle="Gestiona las asignaciones de tus estudiantes"
         filters={
           <>
+            {/* Controles de navegación de semana */}
+            <div className="flex items-center gap-2 border rounded-lg p-2 bg-[var(--color-surface-muted)]">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const nuevaSemana = new Date(semanaSeleccionada);
+                  nuevaSemana.setDate(nuevaSemana.getDate() - 7);
+                  setSemanaSeleccionada(startOfMonday(nuevaSemana));
+                }}
+                className="h-8 w-8 p-0"
+                aria-label="Semana anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <div className="flex flex-col items-center min-w-[140px]">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const hoy = new Date();
+                    setSemanaSeleccionada(startOfMonday(hoy));
+                  }}
+                  className="h-6 text-xs font-semibold"
+                  aria-label="Volver a hoy"
+                >
+                  Hoy
+                </Button>
+                <div className="text-xs font-medium text-center">
+                  {(() => {
+                    const lunes = semanaSeleccionada;
+                    const domingo = new Date(lunes);
+                    domingo.setDate(domingo.getDate() + 6);
+                    const lunesStr = lunes.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                    const domingoStr = domingo.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                    return `${lunesStr} – ${domingoStr}`;
+                  })()}
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const nuevaSemana = new Date(semanaSeleccionada);
+                  nuevaSemana.setDate(nuevaSemana.getDate() + 7);
+                  setSemanaSeleccionada(startOfMonday(nuevaSemana));
+                }}
+                className="h-8 w-8 p-0"
+                aria-label="Semana siguiente"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ui/80" />
               <Input

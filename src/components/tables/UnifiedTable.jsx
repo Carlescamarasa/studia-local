@@ -2,11 +2,12 @@ import React, { useState, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent } from "@/components/ds";
 import { ChevronUp, ChevronDown, FileText } from "lucide-react";
 import RowActionsMenu from "@/components/common/RowActionsMenu";
 import TablePagination from "@/components/common/TablePagination";
 import { componentStyles } from "@/design/componentStyles";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 export default function UnifiedTable({
   columns,
@@ -85,20 +86,8 @@ export default function UnifiedTable({
     }
   };
 
-  const [isDesktop, setIsDesktop] = React.useState(
-    typeof window !== 'undefined' && window.innerWidth >= 1024
-  );
-
-  React.useEffect(() => {
-    const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 1024);
-    };
-    
-    window.addEventListener('resize', handleResize);
-    handleResize();
-    
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const isMobile = useIsMobile();
+  const isDesktop = !isMobile;
 
   const hasActions = (rowActions && typeof rowActions === 'function') || getRowActions;
   
@@ -108,6 +97,22 @@ export default function UnifiedTable({
     : [];
   const hasOnlyOneAction = sampleActions.length === 1;
   const shouldHideActionsColumn = hasOnlyOneAction;
+
+  // Preparar columnas para mobile: filtrar ocultas y determinar columna primaria
+  const mobileColumns = useMemo(() => {
+    return columns.filter(col => !col.mobileHidden);
+  }, [columns]);
+
+  const primaryColumn = useMemo(() => {
+    return mobileColumns.find(col => col.mobileIsPrimary) || mobileColumns[0];
+  }, [mobileColumns]);
+
+  const detailColumns = useMemo(() => {
+    // Hasta 3 columnas que no sean la primaria y no estén ocultas
+    return mobileColumns
+      .filter(col => col.key !== primaryColumn?.key && !col.mobileHidden)
+      .slice(0, 3);
+  }, [mobileColumns, primaryColumn]);
 
   if (data.length === 0) {
     return (
@@ -122,12 +127,12 @@ export default function UnifiedTable({
     <>
       {isDesktop ? (
         <>
-          <div className="w-full overflow-x-auto">
+          <div className="w-full overflow-x-auto rounded-2xl border border-[var(--color-border-default)] overflow-hidden">
             <Table>
               <TableHeader sticky>
                 <TableRow>
                   {selectable && (
-                    <TableHead className="w-12">
+                    <TableHead className="w-12 py-2 px-3">
                       <Checkbox
                         checked={selectedItems.size === data.length && data.length > 0}
                         onCheckedChange={toggleSelectAll}
@@ -141,8 +146,9 @@ export default function UnifiedTable({
                       sortable={col.sortable}
                       onClick={() => col.sortable && handleSort(col.key)}
                       aria-sort={sortColumn === col.key ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+                      className="py-2 px-3"
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 text-xs font-semibold">
                         {col.label}
                         {col.sortable && sortColumn === col.key && (
                           sortDirection === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
@@ -150,7 +156,7 @@ export default function UnifiedTable({
                       </div>
                     </TableHead>
                   ))}
-                  {hasActions && !shouldHideActionsColumn && <TableHead className="w-10"></TableHead>}
+                  {hasActions && !shouldHideActionsColumn && <TableHead className="w-10 py-2 px-3"></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody zebra>
@@ -174,11 +180,11 @@ export default function UnifiedTable({
                       key={item[keyField]}
                       clickable={!!(onRowClick || (hasOnlyOneAction && actions.length === 1))}
                       selected={isSelected}
-                      className="group"
+                      className="group hover:bg-[var(--color-surface-muted)]/50 transition-colors"
                       onClick={handleRowClick}
                     >
                       {selectable && (
-                        <TableCell onClick={(e) => e.stopPropagation()}>
+                        <TableCell onClick={(e) => e.stopPropagation()} className="py-2 px-3">
                           <Checkbox
                             checked={isSelected}
                             onCheckedChange={() => toggleSelection(item[keyField])}
@@ -187,12 +193,12 @@ export default function UnifiedTable({
                         </TableCell>
                       )}
                       {columns.map((col) => (
-                        <TableCell key={col.key}>
+                        <TableCell key={col.key} className="py-2 px-3 text-sm">
                           {col.render ? col.render(item) : item[col.key]}
                         </TableCell>
                       ))}
                       {hasActions && !shouldHideActionsColumn && (
-                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                        <TableCell className="text-right py-2 px-3" onClick={(e) => e.stopPropagation()}>
                           <div className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 flex justify-end">
                             <RowActionsMenu actions={actions} />
                           </div>
@@ -247,7 +253,7 @@ export default function UnifiedTable({
         </>
       ) : (
         <>
-          <div className="space-y-2 sm:space-y-3">
+          <div className="space-y-2">
             {displayData.map((item) => {
               const actions = getRowActions ? getRowActions(item) : (rowActions ? rowActions(item) : []);
               const isSelected = selectedItems.has(item[keyField]);
@@ -265,44 +271,68 @@ export default function UnifiedTable({
               
               const isClickable = !!(onRowClick || (hasOnlyOneAction && actions.length === 1));
               
+              // Renderizar columna primaria (título)
+              const primaryContent = primaryColumn
+                ? (primaryColumn.render ? primaryColumn.render(item) : item[primaryColumn.key])
+                : null;
+              
+              // Renderizar columnas de detalle
+              const detailContent = detailColumns.map((col) => {
+                const label = col.mobileLabel || col.label;
+                const value = col.render ? col.render(item) : item[col.key];
+                return { label, value, key: col.key };
+              }).filter(detail => detail.value != null && detail.value !== '');
+              
               return (
-                <Card 
-                  key={item[keyField]} 
-                  className={`app-card hover:shadow-md transition-all ${isSelected ? 'border-l-4 border-l-[hsl(var(--brand-500))] bg-[hsl(var(--brand-50))]' : ''} ${isClickable ? 'cursor-pointer' : ''}`}
+                <div
+                  key={item[keyField]}
+                  className={cn(
+                    "w-full text-left rounded-2xl border border-[var(--color-border-default)]",
+                    "bg-[var(--color-surface-default)]",
+                    "px-3 py-2 flex flex-col gap-1",
+                    "transition-all hover:shadow-sm",
+                    isSelected && "border-l-4 border-l-[hsl(var(--brand-500))] bg-[hsl(var(--brand-50))]",
+                    isClickable && "cursor-pointer"
+                  )}
+                  onClick={isClickable ? handleCardClick : undefined}
                 >
-                  <CardContent className="p-0.5 sm:p-1 md:p-1.5">
-                    <div className="flex items-start gap-1.5 sm:gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1 flex items-center gap-2">
                       {selectable && (
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => toggleSelection(item[keyField])}
-                          className="mt-1"
-                          aria-label={`Seleccionar ${item[keyField]}`}
-                        />
-                      )}
-                      <div 
-                        className={`flex-1 min-w-0 ${isClickable ? 'cursor-pointer' : ''}`}
-                        onClick={isClickable ? handleCardClick : undefined}
-                      >
-                        {columns.map((col) => (
-                          <div key={col.key} className="mb-1 sm:mb-1.5 md:mb-2 last:mb-0">
-                            {col.render ? col.render(item) : (
-                              <>
-                                <p className="text-[10px] sm:text-xs text-[var(--color-text-secondary)] mb-0.5 sm:mb-1">{col.label}</p>
-                                <p className="text-xs sm:text-sm font-medium text-[var(--color-text-primary)]">{item[col.key]}</p>
-                              </>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                      {hasActions && !shouldHideActionsColumn && actions.length > 0 && (
                         <div onClick={(e) => e.stopPropagation()}>
-                          <RowActionsMenu actions={actions} />
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleSelection(item[keyField])}
+                            className="h-4 w-4 shrink-0"
+                            aria-label={`Seleccionar ${item[keyField]}`}
+                          />
                         </div>
                       )}
+                      <div className="min-w-0 flex-1">
+                        {primaryContent && (
+                          <p className="font-medium text-sm truncate">
+                            {primaryContent}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
+                    {hasActions && !shouldHideActionsColumn && actions.length > 0 && (
+                      <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                        <RowActionsMenu actions={actions} />
+                      </div>
+                    )}
+                  </div>
+                  {detailContent.length > 0 && (
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[var(--color-text-secondary)]">
+                      {detailContent.map((detail) => (
+                        <span key={detail.key}>
+                          <span className="font-medium">{detail.label}:</span>{' '}
+                          <span className="text-[var(--color-text-primary)]">{detail.value}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>

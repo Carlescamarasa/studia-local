@@ -447,10 +447,10 @@ function LayoutContent() {
         <aside
           id="sidebar"
           aria-label="Menú de navegación"
-          aria-hidden={!abierto && isMobile}
+          aria-hidden={!abierto}
           data-open={abierto}
-          inert={!abierto && isMobile ? "" : undefined}
-          tabIndex={-1}
+          inert={!abierto ? "" : undefined}
+          tabIndex={!abierto ? -1 : undefined}
           className={`
             z-[90] flex flex-col sidebar-modern
             transition-transform duration-200 will-change-transform transform-gpu
@@ -462,6 +462,7 @@ function LayoutContent() {
           style={{
             transform: abierto ? 'translateX(0)' : 'translateX(-100%)',
             backgroundColor: 'var(--sidebar-bg)',
+            pointerEvents: !abierto ? 'none' : 'auto',
           }}
         >
           {/* Header del sidebar */}
@@ -597,6 +598,7 @@ function LayoutContent() {
           }}
           aria-hidden={isMobile && abierto}
           inert={isMobile && abierto ? "" : undefined}
+          tabIndex={isMobile && abierto ? -1 : undefined}
         >
 
           {/* Botón flotante para desktop - solo visible cuando está cerrado */}

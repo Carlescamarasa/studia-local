@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Users, TrendingUp } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
@@ -7,6 +7,7 @@ import { formatDuracionHM } from "./utils";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import { Badge } from "@/components/ds";
 import { displayName } from "@/components/utils/helpers";
+import MultiSelect from "@/components/ui/MultiSelect";
 
 /**
  * ComparativaEstudiantes - Componente para comparar métricas entre estudiantes (PROF/ADMIN)
@@ -17,6 +18,24 @@ import { displayName } from "@/components/utils/helpers";
  */
 export default function ComparativaEstudiantes({ estudiantes, usuarios }) {
   const isMobile = useIsMobile();
+  const [estudiantesFiltrados, setEstudiantesFiltrados] = useState([]);
+  
+  // Filtrar estudiantes según la selección
+  const estudiantesMostrados = useMemo(() => {
+    if (estudiantesFiltrados.length === 0) return estudiantes;
+    return estudiantes.filter(e => estudiantesFiltrados.includes(e.id));
+  }, [estudiantes, estudiantesFiltrados]);
+  
+  // Opciones para el multiselector (todos los estudiantes disponibles)
+  const opcionesEstudiantes = useMemo(() => {
+    return estudiantes.map(e => {
+      const usuario = usuarios.find(u => u.id === e.id);
+      return {
+        value: e.id,
+        label: usuario ? displayName(usuario) : e.id
+      };
+    });
+  }, [estudiantes, usuarios]);
 
   const columns = [
     {
@@ -92,9 +111,16 @@ export default function ComparativaEstudiantes({ estudiantes, usuarios }) {
       label: 'Racha',
       sortable: true,
       render: (e) => (
-        <Badge variant="outline" className={componentStyles.status.badgeWarning}>
-          {e.racha} días
-        </Badge>
+        <div className="flex flex-col gap-0.5">
+          <Badge variant="outline" className={componentStyles.status.badgeWarning}>
+            {e.racha} días
+          </Badge>
+          {e.rachaMaxima && e.rachaMaxima > e.racha && (
+            <span className="text-xs text-[var(--color-text-muted)]">
+              Máx: {e.rachaMaxima}
+            </span>
+          )}
+        </div>
       ),
     },
   ];
@@ -120,18 +146,45 @@ export default function ComparativaEstudiantes({ estudiantes, usuarios }) {
   return (
     <Card className={componentStyles.components.cardBase}>
       <CardHeader>
-        <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
-          <Users className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primary)]" />
-          Comparativa de Estudiantes ({estudiantes.length})
-        </CardTitle>
+        <div className="space-y-4">
+          <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primary)]" />
+            Comparativa de Estudiantes ({estudiantesMostrados.length} de {estudiantes.length})
+          </CardTitle>
+          
+          {/* Filtro multiselector de estudiantes */}
+          <div className="max-w-md">
+            <MultiSelect
+              label="Filtrar por estudiantes"
+              items={opcionesEstudiantes}
+              value={estudiantesFiltrados}
+              onChange={setEstudiantesFiltrados}
+              placeholder="Selecciona estudiantes para comparar..."
+            />
+            {estudiantesFiltrados.length > 0 && (
+              <button
+                onClick={() => setEstudiantesFiltrados([])}
+                className="text-xs text-[var(--color-primary)] hover:underline mt-1"
+              >
+                Mostrar todos los estudiantes
+              </button>
+            )}
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <UnifiedTable
-          data={estudiantes}
-          columns={columns}
-          defaultPageSize={10}
-          keyField="id"
-        />
+        {estudiantesMostrados.length === 0 ? (
+          <div className="text-center py-8 text-[var(--color-text-secondary)]">
+            No hay estudiantes seleccionados. Usa el filtro para seleccionar estudiantes.
+          </div>
+        ) : (
+          <UnifiedTable
+            data={estudiantesMostrados}
+            columns={columns}
+            defaultPageSize={10}
+            keyField="id"
+          />
+        )}
       </CardContent>
     </Card>
   );

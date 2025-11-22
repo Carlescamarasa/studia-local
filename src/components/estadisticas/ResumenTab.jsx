@@ -1,7 +1,8 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import StatCard from "./StatCard";
-import { Clock, Timer, Smile, Star, Calendar, CalendarDays, Activity, TrendingUp } from "lucide-react";
+import RachaBadge from "./RachaBadge";
+import { Clock, Timer, Smile, Calendar, CalendarDays, Activity, TrendingUp } from "lucide-react";
 import { formatDuracionHM, parseLocalDate } from "./utils";
 import Tabs from "@/components/ds/Tabs";
 import { Sun, CalendarRange, Grid3x3 } from "lucide-react";
@@ -52,18 +53,11 @@ export default function ResumenTab({
           variant="success"
         />
         
-        <StatCard
-          value={kpis.racha.actual}
-          label="Racha"
-          icon={Star}
-          variant="warning"
-          tooltip={`Racha actual: ${kpis.racha.actual}, Máxima: ${kpis.racha.maxima}`}
-        />
-        
-        <div className="text-center">
-          <p className="text-[10px] sm:text-xs text-[var(--color-text-muted)] mt-0.5">
-            Máx: {kpis.racha.maxima}
-          </p>
+        <div className="text-center flex flex-col items-center justify-center">
+          <RachaBadge 
+            rachaActual={kpis.racha.actual}
+            rachaMaxima={kpis.racha.maxima}
+          />
         </div>
         
         <StatCard
@@ -88,22 +82,10 @@ export default function ResumenTab({
         />
       </div>
 
-      {/* Tabs de granularidad y gráfico */}
+      {/* Gráficos separados - Tiempo y Valoración */}
       <div className="space-y-4">
-        <div className="flex justify-center">
-          <Tabs
-            variant="segmented"
-            value={granularidad}
-            onChange={onGranularidadChange}
-            showIconsOnlyMobile={true}
-            items={[
-              { value: 'dia', label: 'Diario', icon: Sun },
-              { value: 'semana', label: 'Semanal', icon: CalendarRange },
-              { value: 'mes', label: 'Mensual', icon: Grid3x3 },
-            ]}
-          />
-        </div>
 
+        {/* Gráfica de Tiempo de Estudio */}
         <Card className={`${componentStyles.components.cardBase} ${isMobile ? '!p-0' : ''}`}>
           <CardHeader className={`${isMobile ? 'px-1 pt-1 pb-0.5' : 'p-1.5'} sm:p-2 md:p-3`}>
             <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
@@ -152,13 +134,30 @@ export default function ResumenTab({
                     <YAxis 
                       tick={{ fontSize: isMobile ? 9 : 11 }}
                       width={isMobile ? 30 : 50}
+                      tickFormatter={(v) => {
+                        const minutos = Math.round(v);
+                        if (minutos >= 60) {
+                          const horas = Math.floor(minutos / 60);
+                          return isMobile ? `${horas}h` : `${horas} h`;
+                        }
+                        return isMobile ? `${minutos}m` : `${minutos} min`;
+                      }}
                     />
                     <RechartsTooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'var(--color-surface-elevated)',
-                        border: '1px solid var(--color-border-default)',
-                        borderRadius: '8px',
-                        fontSize: isMobile ? '11px' : '12px',
+                      content={({ active, payload }) => {
+                        if (!active || !payload || payload.length === 0) return null;
+                        return (
+                          <div className={`${componentStyles.components.panelBase} bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] shadow-lg p-3 rounded-lg`}>
+                            <p className="text-xs font-semibold mb-2 text-[var(--color-text-primary)]">
+                              {granularidad === 'dia' 
+                                ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
+                                : payload[0]?.payload.fecha}
+                            </p>
+                            <p className="text-xs text-[var(--color-primary)]">
+                              <strong>Tiempo:</strong> {formatDuracionHM(payload[0]?.payload.tiempo * 60)}
+                            </p>
+                          </div>
+                        );
                       }}
                     />
                     <Line 
@@ -175,6 +174,86 @@ export default function ResumenTab({
             )}
           </CardContent>
         </Card>
+
+        {/* Gráfica de Evolución de Valoración - Separada */}
+        {datosLinea.some(d => d.satisfaccion !== null) && (
+          <Card className={`${componentStyles.components.cardBase} ${isMobile ? '!p-0' : ''}`}>
+            <CardHeader className={`${isMobile ? 'px-1 pt-1 pb-0.5' : 'p-1.5'} sm:p-2 md:p-3`}>
+              <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
+                <Smile className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-success)]" />
+                Evolución de Valoración
+              </CardTitle>
+            </CardHeader>
+            <CardContent className={`${isMobile ? 'px-1 pb-1' : 'p-1.5'} sm:p-2 md:p-3`}>
+              <div className="w-full overflow-x-auto -mx-2 px-2">
+                <ResponsiveContainer width="100%" height={isMobile ? 180 : 250} minHeight={180}>
+                  <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis 
+                    dataKey="fecha" 
+                    tick={{ fontSize: isMobile ? 9 : 11 }}
+                    angle={isMobile ? -45 : 0}
+                    textAnchor={isMobile ? 'end' : 'middle'}
+                    height={isMobile ? 60 : 30}
+                    interval={isMobile ? 'preserveStartEnd' : 0}
+                    tickFormatter={(fecha) => {
+                      if (granularidad === 'dia') {
+                        const d = parseLocalDate(fecha);
+                        return isMobile 
+                          ? `${d.getDate()}/${d.getMonth() + 1}`
+                          : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                      } else if (granularidad === 'semana') {
+                        const d = parseLocalDate(fecha);
+                        return `${d.getDate()}/${d.getMonth() + 1}`;
+                      } else {
+                        const [y, m] = fecha.split('-');
+                        const d = new Date(Number(y), Number(m) - 1, 1);
+                        return isMobile
+                          ? `${m}/${y.slice(-2)}`
+                          : d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+                      }
+                    }}
+                  />
+                    <YAxis 
+                      tick={{ fontSize: isMobile ? 9 : 11 }}
+                      width={isMobile ? 30 : 50}
+                      domain={[0, 4]}
+                      tickFormatter={(v) => `${v}/4`}
+                    />
+                    <RechartsTooltip 
+                      content={({ active, payload }) => {
+                        if (!active || !payload || payload.length === 0) return null;
+                        const satisfaccion = payload[0]?.payload.satisfaccion;
+                        if (satisfaccion === null || satisfaccion === undefined) return null;
+                        return (
+                          <div className={`${componentStyles.components.panelBase} bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] shadow-lg p-3 rounded-lg`}>
+                            <p className="text-xs font-semibold mb-2 text-[var(--color-text-primary)]">
+                              {granularidad === 'dia' 
+                                ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
+                                : payload[0]?.payload.fecha}
+                            </p>
+                            <p className="text-xs text-[var(--color-success)]">
+                              <strong>Valoración:</strong> {satisfaccion}/4
+                            </p>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="satisfaccion" 
+                      stroke="var(--color-success)" 
+                      strokeWidth={2}
+                      dot={{ r: isMobile ? 3 : 4 }}
+                      activeDot={{ r: isMobile ? 5 : 6 }}
+                      connectNulls
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

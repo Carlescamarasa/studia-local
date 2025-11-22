@@ -7,6 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import { formatDuracionHM } from "./utils";
 import { Badge } from "@/components/ds";
+import TopEjercicioModal from "./TopEjercicioModal";
 
 const tipoColors = {
   CA: 'bg-blue-100 text-blue-800 border-blue-300',
@@ -23,10 +24,17 @@ const tipoColors = {
  * 
  * @param {Object} props
  * @param {Array} props.topEjercicios - Array de ejercicios ordenados por tiempo
+ * @param {Array} props.bloquesFiltrados - Bloques filtrados para el modal
+ * @param {Array} props.registrosFiltrados - Registros filtrados para el modal
  */
-export default function TopEjerciciosTab({ topEjercicios }) {
+export default function TopEjerciciosTab({ 
+  topEjercicios,
+  bloquesFiltrados = [],
+  registrosFiltrados = [],
+}) {
   const isMobile = useIsMobile();
   const [searchEjercicio, setSearchEjercicio] = useState('');
+  const [ejercicioSeleccionado, setEjercicioSeleccionado] = useState(null);
 
   const topEjerciciosFiltrados = topEjercicios.filter(e => {
     if (searchEjercicio) {
@@ -64,7 +72,11 @@ export default function TopEjerciciosTab({ topEjercicios }) {
       label: 'Nombre',
       sortable: true,
       render: (item) => (
-        <div className="flex-1 min-w-0">
+        <div 
+          className="flex-1 min-w-0 cursor-pointer hover:text-[var(--color-primary)] transition-colors"
+          onClick={() => setEjercicioSeleccionado(item)}
+          title="Haz click para ver detalles"
+        >
           <p className="font-medium text-sm truncate">{item.nombre}</p>
           <p className="text-xs text-[var(--color-text-secondary)]">{item.code}</p>
         </div>
@@ -131,6 +143,14 @@ export default function TopEjerciciosTab({ topEjercicios }) {
           />
         )}
       </CardContent>
+      
+      {/* Modal de detalle */}
+      <TopEjercicioModal
+        ejercicio={ejercicioSeleccionado}
+        onClose={() => setEjercicioSeleccionado(null)}
+        bloquesFiltrados={bloquesFiltrados}
+        registrosFiltrados={registrosFiltrados}
+      />
     </Card>
   );
 }

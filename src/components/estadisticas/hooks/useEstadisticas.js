@@ -127,7 +127,7 @@ function calcularCalidadPromedio(registrosFiltrados) {
  */
 export function useEstadisticas({
   registrosFiltradosUnicos,
-  bloquesFiltrados,
+  bloquesFiltrados = [],
   periodoInicio,
   periodoFin,
   granularidad,
@@ -174,12 +174,32 @@ export function useEstadisticas({
       ? ((sesionesCompletadas / numSesiones) * 100).toFixed(1) 
       : 0;
 
-    const totalCompletados = registrosFiltradosUnicos.reduce((sum, r) => 
+    // Calcular bloques completados y omitidos desde registros_sesion
+    let totalCompletados = registrosFiltradosUnicos.reduce((sum, r) => 
       sum + safeNumber(r.bloquesCompletados), 0
     );
-    const totalOmitidos = registrosFiltradosUnicos.reduce((sum, r) => 
+    let totalOmitidos = registrosFiltradosUnicos.reduce((sum, r) => 
       sum + safeNumber(r.bloquesOmitidos), 0
     );
+    
+    // Si no hay datos en registros_sesion, calcular desde bloques_filtrados como respaldo
+    // Esto asegura que siempre tengamos datos precisos
+    // Solo usar el respaldo si realmente no hay datos (puede ser que los valores sean 0 pero válidos)
+    if (totalCompletados === 0 && totalOmitidos === 0 && bloquesFiltrados.length > 0) {
+      const completadosDesdeBloques = bloquesFiltrados.filter(b => 
+        b.estado === 'completado' || (b.duracionRealSeg && b.duracionRealSeg > 0)
+      ).length;
+      const omitidosDesdeBloques = bloquesFiltrados.filter(b => 
+        b.estado === 'omitido'
+      ).length;
+      
+      // Solo usar los datos de bloques si hay al menos algunos bloques
+      if (completadosDesdeBloques > 0 || omitidosDesdeBloques > 0) {
+        totalCompletados = completadosDesdeBloques;
+        totalOmitidos = omitidosDesdeBloques;
+      }
+    }
+    
     const ratioCompletado = (totalCompletados + totalOmitidos) > 0
       ? ((totalCompletados / (totalCompletados + totalOmitidos)) * 100).toFixed(1)
       : 0;
@@ -198,7 +218,7 @@ export function useEstadisticas({
       totalOmitidos,
       ratioCompletado,
     };
-  }, [registrosFiltradosUnicos, periodoInicio, periodoFin, isEstu, userIdActual]);
+  }, [registrosFiltradosUnicos, bloquesFiltrados, periodoInicio, periodoFin, isEstu, userIdActual]);
 
   // Datos para gráfico de línea
   const datosLinea = useMemo(() => {

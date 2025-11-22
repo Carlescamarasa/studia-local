@@ -52,7 +52,7 @@ export default function ProgresoTab({
           label="Ratio completado"
           icon={CheckCircle}
           variant="success"
-          tooltip="Porcentaje de bloques completados vs omitidos"
+          tooltip={`Porcentaje de bloques completados vs omitidos. Completados: ${kpis.totalCompletados}, Omitidos: ${kpis.totalOmitidos}`}
         />
         <StatCard
           value={kpis.porcentajeCompletadas}
@@ -68,7 +68,7 @@ export default function ProgresoTab({
           label="Cumplimiento objetivo"
           icon={Clock}
           variant={parseFloat(tiempoRealVsObjetivo.porcentajeCumplimiento) >= 90 ? 'success' : 'warning'}
-          tooltip="Porcentaje de tiempo real vs tiempo objetivo"
+          tooltip={`Porcentaje de tiempo real vs tiempo objetivo. Real: ${formatDuracionHM(tiempoRealVsObjetivo.totalReal)}, Objetivo: ${formatDuracionHM(tiempoRealVsObjetivo.totalObjetivo)}`}
         />
         <StatCard
           value={tiempoRealVsObjetivo.porcentajeSesionesCumplen}
@@ -76,7 +76,7 @@ export default function ProgresoTab({
           label="Sesiones cumplen objetivo"
           icon={TrendingUp}
           variant="info"
-          tooltip="Porcentaje de sesiones que cumplen al menos el 90% del objetivo"
+          tooltip={`${tiempoRealVsObjetivo.sesionesCumplenObjetivo} de ${tiempoRealVsObjetivo.totalSesiones} sesiones cumplen al menos el 90% del objetivo`}
         />
       </div>
 

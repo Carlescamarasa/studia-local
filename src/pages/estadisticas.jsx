@@ -101,11 +101,7 @@ function EstadisticasPageContent() {
   // Resolver ID de usuario actual de la BD (UUID en Supabase, string en local)
   // Usar useMemo para recalcular cuando usuarios cambie
   const userIdActual = useMemo(() => {
-    const resolved = resolveUserIdActual(effectiveUser, usuarios);
-    console.log('[DEBUG] userIdActual resuelto:', resolved, 'typeof:', typeof resolved);
-    console.log('[DEBUG] effectiveUser:', effectiveUser);
-    console.log('[DEBUG] usuarios disponibles:', usuarios.map(u => ({ id: u.id, email: u.email, rol: u.rolPersonalizado })));
-    return resolved;
+    return resolveUserIdActual(effectiveUser, usuarios);
   }, [effectiveUser, usuarios]);
 
   const { data: asignacionesProf = [] } = useQuery({
@@ -144,9 +140,6 @@ function EstadisticasPageContent() {
   const { data: feedbacksSemanal = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
     queryFn: async () => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[estadisticas.jsx] Consultando tabla feedbacks_semanal (NO registros_sesion)');
-      }
       return await localDataClient.entities.FeedbackSemanal.list('-created_at');
     },
   });
@@ -228,6 +221,7 @@ function EstadisticasPageContent() {
     setPeriodoInicio(inicio ? formatLocalDate(inicio) : '');
     setPeriodoFin(fin ? formatLocalDate(fin) : '');
     setRangoPreset(preset);
+    // Los datos se actualizarán automáticamente por los useMemo que dependen de periodoInicio/periodoFin
   };
 
   const calcularRacha = (registrosFiltrados, alumnoId = null) => {
@@ -502,26 +496,13 @@ function EstadisticasPageContent() {
 
   // Feedbacks del profesor para estudiantes
   const feedbackProfesor = useMemo(() => {
-    console.log('[DEBUG feedbackProfesor] isEstu:', isEstu, 'userIdActual:', userIdActual, 'feedbacksSemanal:', feedbacksSemanal.length);
     if (!isEstu) return [];
     
     const filtrados = feedbacksSemanal.filter(f => {
-      console.log('[DEBUG] Comparando feedback:', {
-        feedbackId: f.id,
-        alumnoId: f.alumnoId,
-        userIdActual: userIdActual,
-        match: f.alumnoId === userIdActual,
-        semanaInicioISO: f.semanaInicioISO,
-        periodoInicio: periodoInicio,
-        periodoFin: periodoFin
-      });
-      
       if (f.alumnoId !== userIdActual) {
-        console.log('[DEBUG] Filtrado por alumnoId diferente:', f.alumnoId, 'vs', userIdActual);
         return false;
       }
       if (!f.semanaInicioISO) {
-        console.log('[DEBUG] Filtrado por falta de semanaInicioISO');
         return false;
       }
       
@@ -530,7 +511,6 @@ function EstadisticasPageContent() {
       if (periodoInicio) {
         const inicioDate = parseLocalDate(periodoInicio);
         if (feedbackDate < inicioDate) {
-          console.log('[DEBUG] Filtrado por fecha anterior al periodo inicio:', feedbackDate, '<', inicioDate);
           return false;
         }
       }
@@ -538,7 +518,6 @@ function EstadisticasPageContent() {
       if (periodoFin) {
         const finDate = parseLocalDate(periodoFin);
         if (feedbackDate > finDate) {
-          console.log('[DEBUG] Filtrado por fecha posterior al periodo fin:', feedbackDate, '>', finDate);
           return false;
         }
       }
@@ -546,7 +525,6 @@ function EstadisticasPageContent() {
       return true;
     });
     
-    console.log('[DEBUG feedbackProfesor] Resultado filtrado:', filtrados.length, filtrados);
     return filtrados.sort((a, b) => b.semanaInicioISO.localeCompare(a.semanaInicioISO));
   }, [feedbacksSemanal, userIdActual, periodoInicio, periodoFin, isEstu]);
 
@@ -554,58 +532,25 @@ function EstadisticasPageContent() {
   const feedbacksParaProfAdmin = useMemo(() => {
     if (isEstu) return [];
     
-    // Logs exhaustivos para diagnóstico
-    if (process.env.NODE_ENV === 'development') {
-    console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Inicio del filtrado:', {
-      totalFeedbacksSemanal: feedbacksSemanal.length,
-      feedbacksConNotaProfesor: feedbacksSemanal.filter(f => f.notaProfesor).length,
-      alumnosSeleccionados: alumnosSeleccionados,
-      alumnosSeleccionadosLength: alumnosSeleccionados.length,
-      periodoInicio,
-      periodoFin,
-      isAdmin,
-      isProf,
-    });
-    }
-    
     // Para ADMIN: mostrar TODOS los feedbacks si no hay filtros explícitos
     // Para PROF: mostrar TODOS los feedbacks si no hay filtros explícitos
     let resultado = [...feedbacksSemanal];
     
     // Solo filtrar por estudiantes si hay selección EXPLÍCITA
     if (alumnosSeleccionados.length > 0) {
-      const antes = resultado.length;
       resultado = resultado.filter(f => alumnosSeleccionados.includes(f.alumnoId));
-      if (process.env.NODE_ENV === 'development') {
-      console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Filtro por estudiantes (explícito):', {
-        antes,
-        despues: resultado.length,
-        alumnosSeleccionados: alumnosSeleccionados.length,
-      });
-      }
     }
     
     // Solo filtrar por profesores si hay selección EXPLÍCITA
     if (profesoresSeleccionados.length > 0) {
-      const antes = resultado.length;
       resultado = resultado.filter(f => profesoresSeleccionados.includes(f.profesorId));
-      if (process.env.NODE_ENV === 'development') {
-      console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Filtro por profesores (explícito):', {
-        antes,
-        despues: resultado.length,
-        profesoresSeleccionados: profesoresSeleccionados.length,
-      });
-      }
     }
     
     // Solo filtrar por período si hay filtro EXPLÍCITO de período
     // IMPORTANTE: Para ADMIN y PROF, incluir feedbacks sin semanaInicioISO también
-    // Si el filtro de período excluye todos los feedbacks, no aplicar el filtro
     if (periodoInicio || periodoFin) {
-      const antes = resultado.length;
-      const resultadoConFiltroPeriodo = resultado.filter(f => {
+      resultado = resultado.filter(f => {
         // Si no tiene semanaInicioISO, INCLUIR siempre (no excluir feedbacks sin fecha)
-        // Esto permite ver todos los feedbacks aunque no tengan fecha configurada
         if (!f.semanaInicioISO) {
           return true;
         }
@@ -631,18 +576,6 @@ function EstadisticasPageContent() {
         
         return true;
       });
-      
-      // Aplicar el filtro de período (sin ignorar si no hay resultados)
-      resultado = resultadoConFiltroPeriodo;
-      if (process.env.NODE_ENV === 'development') {
-      console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Filtro por período aplicado:', {
-        antes,
-        despues: resultado.length,
-        periodoInicio,
-        periodoFin,
-        feedbacksSinFecha: resultado.filter(f => !f.semanaInicioISO).length,
-      });
-      }
     }
     
     // Ordenar: primero por alumno, luego por fecha descendente
@@ -655,26 +588,8 @@ function EstadisticasPageContent() {
       return fechaB.localeCompare(fechaA);
     });
     
-    if (process.env.NODE_ENV === 'development') {
-    console.log('[estadisticas.jsx] [feedbacksParaProfAdmin] Resultado final:', {
-      total: resultado.length,
-      conNotaProfesor: resultado.filter(f => f.notaProfesor).length,
-      sinNotaProfesor: resultado.filter(f => !f.notaProfesor).length,
-      conSemanaInicioISO: resultado.filter(f => f.semanaInicioISO).length,
-      sinSemanaInicioISO: resultado.filter(f => !f.semanaInicioISO).length,
-      primeros3: resultado.slice(0, 3).map(f => ({
-        id: f.id?.substring(0, 20),
-        tieneNotaProfesor: !!f.notaProfesor,
-        notaProfesorPreview: f.notaProfesor?.substring(0, 50) || null,
-        alumnoId: f.alumnoId?.substring(0, 20),
-        profesorId: f.profesorId?.substring(0, 20),
-        semanaInicioISO: f.semanaInicioISO,
-      })),
-    });
-    }
-    
     return resultado;
-  }, [feedbacksSemanal, alumnosSeleccionados, profesoresSeleccionados, periodoInicio, periodoFin, isEstu, isAdmin, isProf]);
+  }, [feedbacksSemanal, alumnosSeleccionados, profesoresSeleccionados, periodoInicio, periodoFin, isEstu]);
 
   // Mutación para actualizar feedback
   const actualizarFeedbackMutation = useMutation({
@@ -853,6 +768,73 @@ function EstadisticasPageContent() {
     return true;
   });
 
+  // Calcular métricas de comparación de estudiantes - Siempre ejecutar el hook (fuera de condiciones)
+  const estudiantesComparacion = useMemo(() => {
+    if (isEstu) return [];
+    
+    // Calcular métricas por estudiante
+    const estudiantesMap = new Map();
+    
+    // Obtener todos los estudiantes si no hay selección
+    const estudiantesIds = alumnosSeleccionados.length > 0 
+      ? alumnosSeleccionados 
+      : estudiantes.map(e => e.id);
+    
+    estudiantesIds.forEach(alumnoId => {
+      const registrosEstudiante = registrosFiltradosUnicos.filter(r => r.alumnoId === alumnoId);
+      
+      // Calcular KPIs manualmente para cada estudiante
+      const tiempoTotal = registrosEstudiante.reduce((sum, r) => {
+        const duracion = safeNumber(r.duracionRealSeg);
+        return sum + (duracion > 0 && duracion <= 43200 ? duracion : 0);
+      }, 0);
+      
+      const numSesiones = registrosEstudiante.length;
+      
+      let mediaSemanalSesiones = 0;
+      if (periodoInicio && periodoFin) {
+        const inicio = parseLocalDate(periodoInicio);
+        const fin = parseLocalDate(periodoFin);
+        const diffMs = fin.getTime() - inicio.getTime();
+        const numDias = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1);
+        mediaSemanalSesiones = numDias > 0 ? (numSesiones / numDias) * 7 : 0;
+      }
+      
+      const conCalificacion = registrosEstudiante.filter(r => {
+        const cal = safeNumber(r.calificacion);
+        return cal > 0 && cal <= 4;
+      });
+      const calificacionPromedio = conCalificacion.length > 0
+        ? (conCalificacion.reduce((acc, r) => acc + safeNumber(r.calificacion), 0) / conCalificacion.length).toFixed(1)
+        : '0.0';
+      
+      const totalCompletados = registrosEstudiante.reduce((sum, r) => 
+        sum + safeNumber(r.bloquesCompletados), 0
+      );
+      const totalOmitidos = registrosEstudiante.reduce((sum, r) => 
+        sum + safeNumber(r.bloquesOmitidos), 0
+      );
+      const ratioCompletado = (totalCompletados + totalOmitidos) > 0
+        ? ((totalCompletados / (totalCompletados + totalOmitidos)) * 100).toFixed(1)
+        : 0;
+      
+      const racha = calcularRacha(registrosEstudiante, null);
+      
+      estudiantesMap.set(alumnoId, {
+        id: alumnoId,
+        tiempoTotal,
+        sesiones: numSesiones,
+        sesionesPorSemana: mediaSemanalSesiones,
+        calificacionPromedio,
+        ratioCompletado,
+        racha: racha.actual,
+        rachaMaxima: racha.maxima,
+      });
+    });
+    
+    return Array.from(estudiantesMap.values());
+  }, [isEstu, alumnosSeleccionados, estudiantes, registrosFiltradosUnicos, periodoInicio, periodoFin]);
+
   const presets = [
     { key: 'esta-semana', label: 'Semana' },
     { key: '4-semanas', label: '4 sem' },
@@ -871,34 +853,55 @@ function EstadisticasPageContent() {
         subtitle={isEstu ? 'Tu progreso en la práctica' : 'Análisis del rendimiento y progreso'}
         filters={
           <div className="w-full space-y-2 sm:space-y-3 md:space-y-4">
-            {/* Filtros de fecha y presets */}
+            {/* Filtros de fecha y presets - Mejorado con botones toggle más claros */}
             <div className={componentStyles.components.panelBase + " p-2 sm:p-3 md:p-4"}>
               <div className="space-y-2 sm:space-y-3">
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center justify-between">
-                  <div className="flex-1 w-full sm:w-auto">
+                <div className="flex flex-col gap-2 sm:gap-3">
+                  {/* Rango de fechas */}
+                  <div className="flex-1 w-full">
+                    <Label className="text-xs sm:text-sm mb-1.5 block text-[var(--color-text-secondary)]">
+                      Rango de fechas
+                    </Label>
                     <DateRangePicker
                       startDate={periodoInicio}
                       endDate={periodoFin}
                       onDateChange={(start, end) => {
                         setPeriodoInicio(start);
                         setPeriodoFin(end);
+                        setRangoPreset('personalizado');
                       }}
                       className="w-full sm:w-auto"
                     />
                   </div>
-                  <div className="flex gap-1 flex-wrap">
-                    {presets.map(p => (
-                      <Button
-                        key={p.key}
-                        variant={rangoPreset === p.key ? "primary" : "outline"}
-                        size="sm"
-                        onClick={() => aplicarPreset(p.key)}
-                        className="text-xs h-8 sm:h-9 rounded-xl focus-brand"
-                        aria-label={`Preset ${p.label}`}
-                      >
-                        {p.label}
-                      </Button>
-                    ))}
+                  
+                  {/* Presets con estados activos más claros */}
+                  <div>
+                    <Label className="text-xs sm:text-sm mb-1.5 block text-[var(--color-text-secondary)]">
+                      Presets rápidos
+                    </Label>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {presets.map(p => (
+                        <Button
+                          key={p.key}
+                          variant={rangoPreset === p.key ? "primary" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            aplicarPreset(p.key);
+                          }}
+                          className={`
+                            text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all
+                            ${rangoPreset === p.key 
+                              ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-sm' 
+                              : 'hover:bg-[var(--color-surface-muted)]'
+                            }
+                          `}
+                          aria-label={`Preset ${p.label}`}
+                          title={`Ver estadísticas: ${p.label}`}
+                        >
+                          {p.label}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -933,8 +936,14 @@ function EstadisticasPageContent() {
                   value={focosSeleccionados}
                   onChange={setFocosSeleccionados}
                 />
+              </div>
+            </div>
+            
+            {/* Botón Actualizar datos - Ahora más visible y alineado a la derecha */}
+            <div className={componentStyles.components.panelBase + " p-2 sm:p-3 md:p-4"}>
+              <div className="flex justify-end">
                 <Button 
-                  variant="outline" 
+                  variant="primary" 
                   size="sm"
                   onClick={async () => {
                     try {
@@ -957,9 +966,9 @@ function EstadisticasPageContent() {
                       toast.error('❌ Error al actualizar datos');
                     }
                   }}
-                  className={`${componentStyles.buttons.outline} h-8 sm:h-9 w-full sm:w-auto text-xs sm:text-sm`}
+                  className={`${componentStyles.buttons.primary} h-9 sm:h-10 text-sm sm:text-base px-4 sm:px-6`}
                 >
-                  <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                  <RefreshCw className="w-4 h-4 mr-2" />
                   Actualizar datos
                 </Button>
               </div>
@@ -969,12 +978,14 @@ function EstadisticasPageContent() {
       />
 
       <div className={componentStyles.layout.page}>
-        {/* Tabs principales */}
-        <div className="flex justify-center mb-6">
-          <Tabs
-            variant="segmented"
-            value={tabActiva}
-            onChange={setTabActiva}
+        {/* Tabs principales - Ahora ocupan todo el ancho */}
+        <Card className={`${componentStyles.components.cardBase} mb-6 p-0`}>
+          <div className="w-full">
+            <Tabs
+              variant="segmented"
+              value={tabActiva}
+              onChange={setTabActiva}
+              className="w-full"
             items={[
               { value: 'resumen', label: 'Resumen', icon: BarChart3 },
               { value: 'progreso', label: 'Progreso', icon: TrendingUp },
@@ -982,9 +993,13 @@ function EstadisticasPageContent() {
               { value: 'top', label: 'Top', icon: Star },
               { value: 'autoevaluaciones', label: 'Sesiones', icon: List },
               { value: 'feedback', label: 'Feedback', icon: MessageSquare },
+              ...(!isEstu ? [{ value: 'comparar', label: 'Comparar', icon: Activity }] : []),
             ]}
-          />
-        </div>
+            />
+          </div>
+        </Card>
+
+        {/* Control de granularidad - Solo visible en tabs específicas (ahora dentro de cada tab) */}
 
         {tabActiva === 'resumen' && (
           <ResumenTab
@@ -1008,6 +1023,7 @@ function EstadisticasPageContent() {
               data={heatmapData}
               periodoInicio={periodoInicio}
               periodoFin={periodoFin}
+              registrosFiltrados={registrosFiltradosUnicos}
             />
             {progresoPorPieza.length > 0 && (
               <ProgresoPorPieza progresoPorPieza={progresoPorPieza} />
@@ -1020,7 +1036,11 @@ function EstadisticasPageContent() {
         )}
 
         {tabActiva === 'top' && (
-          <TopEjerciciosTab topEjercicios={topEjercicios} />
+          <TopEjerciciosTab 
+            topEjercicios={topEjercicios}
+            bloquesFiltrados={bloquesFiltrados}
+            registrosFiltrados={registrosFiltradosUnicos}
+          />
         )}
 
         {tabActiva === 'autoevaluaciones' && (
@@ -1038,74 +1058,14 @@ function EstadisticasPageContent() {
           />
         )}
 
-        {/* Vista comparativa de estudiantes (solo PROF/ADMIN) */}
-        {!isEstu && (tabActiva === 'resumen' || tabActiva === 'progreso') && alumnosSeleccionados.length > 1 && (
+        {/* Tab de comparación de estudiantes (solo PROF/ADMIN) */}
+        {!isEstu && tabActiva === 'comparar' && (
           <ComparativaEstudiantes
-            estudiantes={useMemo(() => {
-              // Calcular métricas por estudiante
-              const estudiantesMap = new Map();
-              
-              alumnosSeleccionados.forEach(alumnoId => {
-                const registrosEstudiante = registrosFiltradosUnicos.filter(r => r.alumnoId === alumnoId);
-                const bloquesEstudiante = bloquesFiltrados.filter(b => {
-                  const registro = registrosFiltradosUnicos.find(r => r.id === b.registroSesionId);
-                  return registro && registro.alumnoId === alumnoId;
-                });
-                
-                // Calcular KPIs manualmente para cada estudiante
-                const tiempoTotal = registrosEstudiante.reduce((sum, r) => {
-                  const duracion = safeNumber(r.duracionRealSeg);
-                  return sum + (duracion > 0 && duracion <= 43200 ? duracion : 0);
-                }, 0);
-                
-                const numSesiones = registrosEstudiante.length;
-                const tiempoPromedioPorSesion = numSesiones > 0 ? tiempoTotal / numSesiones : 0;
-                
-                let mediaSemanalSesiones = 0;
-                if (periodoInicio && periodoFin) {
-                  const inicio = parseLocalDate(periodoInicio);
-                  const fin = parseLocalDate(periodoFin);
-                  const diffMs = fin.getTime() - inicio.getTime();
-                  const numDias = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1);
-                  mediaSemanalSesiones = numDias > 0 ? (numSesiones / numDias) * 7 : 0;
-                }
-                
-                const conCalificacion = registrosEstudiante.filter(r => {
-                  const cal = safeNumber(r.calificacion);
-                  return cal > 0 && cal <= 4;
-                });
-                const calidadPromedio = conCalificacion.length > 0
-                  ? (conCalificacion.reduce((acc, r) => acc + safeNumber(r.calificacion), 0) / conCalificacion.length).toFixed(1)
-                  : '0.0';
-                
-                const totalCompletados = registrosEstudiante.reduce((sum, r) => 
-                  sum + safeNumber(r.bloquesCompletados), 0
-                );
-                const totalOmitidos = registrosEstudiante.reduce((sum, r) => 
-                  sum + safeNumber(r.bloquesOmitidos), 0
-                );
-                const ratioCompletado = (totalCompletados + totalOmitidos) > 0
-                  ? ((totalCompletados / (totalCompletados + totalOmitidos)) * 100).toFixed(1)
-                  : 0;
-                
-                const racha = calcularRacha(registrosEstudiante, null);
-                
-                estudiantesMap.set(alumnoId, {
-                  id: alumnoId,
-                  tiempoTotal,
-                  sesiones: numSesiones,
-                  sesionesPorSemana: mediaSemanalSesiones,
-                  calificacionPromedio,
-                  ratioCompletado,
-                  racha: racha.actual,
-                });
-              });
-              
-              return Array.from(estudiantesMap.values());
-            }, [alumnosSeleccionados, registrosFiltradosUnicos, bloquesFiltrados, periodoInicio, periodoFin])}
+            estudiantes={estudiantesComparacion}
             usuarios={usuarios}
           />
         )}
+
 
         {/* Código antiguo removido - ahora usando componentes modulares arriba */}
         {false && (
