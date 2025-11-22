@@ -14,7 +14,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsToolti
 import {
   Activity, Clock, Calendar, Star, Smile, BarChart3, TrendingUp,
   MessageSquare, Eye, RefreshCw, Dumbbell, List, PieChart, CalendarDays, Calendar as CalendarIcon,
-  Sun, CalendarRange, Grid3x3, Layers, FileText, Timer, Edit, X, Save
+  Sun, CalendarRange, Grid3x3, Layers, FileText, Timer, Edit, X, Save, ChevronLeft
 } from "lucide-react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -862,6 +862,16 @@ function EstadisticasPageContent() {
         icon={Activity}
         title={isEstu ? 'Mis Estadísticas' : isProf ? 'Estadísticas de Estudiantes' : 'Estadísticas Generales'}
         subtitle={isEstu ? 'Tu progreso en la práctica' : 'Análisis del rendimiento y progreso'}
+        actions={location.state?.from === 'hoy' ? (
+          <Button
+            variant="outline"
+            onClick={() => navigate('/hoy')}
+            className={`${componentStyles.buttons.outline} h-9 sm:h-10`}
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Volver
+          </Button>
+        ) : undefined}
         filters={
           <div className="w-full space-y-2 sm:space-y-3 md:space-y-4">
             {/* Filtros de fecha y presets - Mejorado con botones toggle más claros */}

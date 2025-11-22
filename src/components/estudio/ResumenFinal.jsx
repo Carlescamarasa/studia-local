@@ -193,7 +193,7 @@ export default function ResumenFinal({
               {/* Input de subida de vídeo */}
               <div className="space-y-2">
                 <Label htmlFor="video-sesion">Subir vídeo (opcional)</Label>
-                <p className="text-xs text-[var(--color-text-secondary)]">
+                <p className="text-xs text-[var(--color-text-secondary)] break-words">
                   Por ejemplo, un fragmento de la sesión, una duda o tu progreso.
                 </p>
                 <div className="flex items-center gap-2">
@@ -226,8 +226,8 @@ export default function ResumenFinal({
               {/* Input manual de mediaLinks (para URLs directas) */}
               <div className="space-y-2">
                 <Label htmlFor="media-links">Enlaces multimedia (opcional)</Label>
-                <p className="text-xs text-[var(--color-text-secondary)]">
-                  Puedes pegar enlaces a vídeos, audios, PDFs o cualquier otro recurso.
+                <p className="text-xs text-[var(--color-text-secondary)] break-words">
+                  Pega una URL por línea. Soporta imágenes, audio, vídeo, PDF, YouTube, Vimeo, SoundCloud y Google Drive.
                 </p>
                 <MediaLinksInput
                   value={mediaLinks}
@@ -237,11 +237,11 @@ export default function ResumenFinal({
               </div>
             </div>
             
-            <div className="flex gap-2 pt-2">
+            <div className="flex gap-2 pt-2 flex-wrap">
               <Button
                 variant="outline"
                 onClick={onReiniciar}
-                className={`flex-1 text-xs sm:text-sm h-9 sm:h-10 ${componentStyles.buttons.outline}`}
+                className={`flex-1 min-w-[120px] text-xs sm:text-sm h-9 sm:h-10 ${componentStyles.buttons.outline}`}
               >
                 <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
                 Repetir
@@ -249,7 +249,7 @@ export default function ResumenFinal({
               <Button
                 onClick={handleGuardarFeedback}
                 disabled={guardado || uploadingVideo}
-                className={`flex-1 text-xs sm:text-sm h-9 sm:h-10 ${componentStyles.buttons.primary}`}
+                className={`flex-1 min-w-[120px] text-xs sm:text-sm h-9 sm:h-10 ${componentStyles.buttons.primary}`}
               >
                 {uploadingVideo ? (
                   <>

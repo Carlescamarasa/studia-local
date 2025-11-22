@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   PlayCircle, Calendar, Target, Music, Clock, Layers,
-  ChevronRight, ChevronLeft, ChevronsRight, AlertTriangle, ChevronDown,
+  ChevronRight, ChevronLeft, ChevronsRight, AlertTriangle, ChevronDown, ChevronUp,
   Play, Pause, X, List, HelpCircle,
   Maximize2, Minimize2, CheckCircle, XCircle,
   SkipForward, Shuffle, Menu, User
@@ -66,12 +66,12 @@ function HoyPageContent() {
   });
   const [asignacionSeleccionadaId, setAsignacionSeleccionadaId] = useState(null); // Para múltiples asignaciones
   const [sesionSeleccionada, setSesionSeleccionada] = useState(0);
-  const [planDesplegado, setPlanDesplegado] = useState(true); // Por defecto desplegado
   const [sesionesConResumenExpandido, setSesionesConResumenExpandido] = useState(new Set());
   const [sesionActiva, setSesionActiva] = useState(null);
   const [indiceActual, setIndiceActual] = useState(0);
   const [tiempoActual, setTiempoActual] = useState(0);
   const [cronometroActivo, setCronometroActiva] = useState(false);
+  const [timerCollapsed, setTimerCollapsed] = useState(false); // Timer compacto/expandido
   const [completados, setCompletados] = useState(new Set());
   const [omitidos, setOmitidos] = useState(new Set());
   const [pantallaCompleta, setPantallaCompleta] = useState(false);
@@ -1044,37 +1044,103 @@ function HoyPageContent() {
     const excedido = tiempoActual > (ejercicioActual?.duracionSeg || 0);
 
     return (
-      <div className="min-h-screen bg-background pb-32 md:pb-24">
+      <div className="min-h-screen bg-background" style={{ 
+        paddingBottom: timerCollapsed ? '60px' : '200px'
+      }}>
         {/* Timer dock inferior fijo */}
         {sesionActiva && (
           <div
-            className="fixed bottom-0 left-0 right-0 z-[30] bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+            className={cn(
+              "fixed bottom-0 left-0 right-0 z-[30] bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-[0_-4px_12px_rgba(0,0,0,0.08)] transition-all duration-300",
+              timerCollapsed ? "h-[60px]" : "h-auto"
+            )}
           >
+            {timerCollapsed ? (
+              /* Modo compacto */
+              <div className="max-w-5xl mx-auto px-4 py-2 flex items-center justify-between gap-3 h-full">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <Clock className={cn(
+                    "w-4 h-4 shrink-0",
+                    excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
+                  )} />
+                  <div className="flex flex-col min-w-0">
             <div className={cn(
-              "max-w-5xl mx-auto",
-              !isAD && ejercicioActual?.duracionSeg > 0 && cronometroActivo && (
-                excedido ? "bg-[var(--color-danger)]/5" : porcentajeEjercicio >= 75 ? "bg-[var(--color-warning)]/5" : "bg-[var(--color-primary)]/5"
-              )
+                      "text-base font-mono font-bold tabular-nums leading-tight",
+                      excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
+                    )}>
+                      {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
+                    </div>
+                    {!isAD && ejercicioActual?.duracionSeg > 0 && (
+                      <div className="text-[10px] text-[var(--color-text-secondary)] font-mono tabular-nums leading-tight">
+                        / {Math.floor(ejercicioActual.duracionSeg / 60)}:{String((ejercicioActual.duracionSeg % 60)).padStart(2, '0')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Barra de progreso compacta */}
+                {!isAD && ejercicioActual?.duracionSeg > 0 && (
+                  <div className="flex-1 max-w-[200px] bg-[var(--color-border-default)]/30 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full transition-all duration-300",
+                        excedido ? 'bg-[var(--color-danger)]' : porcentajeEjercicio >= 75 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-primary)]'
+                      )}
+                      style={{ width: `${Math.min(porcentajeEjercicio, 100)}%` }}
+                    />
+                  </div>
+                )}
+                
+                {/* Botón OK compacto */}
+                <Button
+                  variant="primary"
+                  onClick={completarYAvanzar}
+                  className="h-9 px-4 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm rounded-lg focus-brand shadow-sm text-white"
+                  title="Completar (Enter)"
+                  aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
+                >
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  {isUltimo ? 'Finalizar' : 'OK'}
+                </Button>
+                
+                {/* Botón expandir */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setTimerCollapsed(false)}
+                  className="h-9 w-9 p-0"
+                  aria-label="Expandir timer"
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              /* Modo expandido */
+              <div className={cn(
+                "max-w-5xl mx-auto",
+                !isAD && ejercicioActual?.duracionSeg > 0 && cronometroActivo && (
+                  excedido ? "bg-[var(--color-danger)]/5" : porcentajeEjercicio >= 75 ? "bg-[var(--color-warning)]/5" : "bg-[var(--color-primary)]/5"
+                )
             )}>
               {/* Header con Timer y Contador */}
               {(!isAD && ejercicioActual?.duracionSeg > 0) || (sesionActiva && listaEjecucion.length > 0) ? (
-                <div className="px-4 py-3 border-b border-[var(--color-border-default)]/50">
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="px-4 py-3 border-b border-[var(--color-border-default)]/50">
+                    <div className="flex items-center justify-between gap-4">
                     {/* Timer - Solo visible si no es AD y tiene duración */}
                     {!isAD && ejercicioActual?.duracionSeg > 0 && (
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <Clock className={cn(
-                          "w-5 h-5 md:w-6 md:h-6 shrink-0",
+                            "w-5 h-5 md:w-6 md:h-6 shrink-0",
                           excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
                         )} />
                         <div className="flex flex-col">
                           <div className={cn(
-                            "text-xl md:text-2xl font-mono font-bold tabular-nums leading-tight",
+                              "text-xl md:text-2xl font-mono font-bold tabular-nums leading-tight",
                             excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
                           )}>
                             {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
                           </div>
-                          <div className="text-xs md:text-sm text-[var(--color-text-secondary)] font-mono tabular-nums leading-tight">
+                            <div className="text-xs md:text-sm text-[var(--color-text-secondary)] font-mono tabular-nums leading-tight">
                             / {Math.floor(ejercicioActual.duracionSeg / 60)}:{String((ejercicioActual.duracionSeg % 60)).padStart(2, '0')}
                           </div>
                         </div>
@@ -1096,11 +1162,22 @@ function HoyPageContent() {
                         </div>
                       </div>
                     )}
+                      
+                      {/* Botón colapsar */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setTimerCollapsed(true)}
+                        className="h-8 w-8 p-0"
+                        aria-label="Colapsar timer"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </Button>
                   </div>
                   
-                  {/* Barra de progreso del ejercicio - Solo si hay timer - Más gruesa y visible */}
+                    {/* Barra de progreso del ejercicio - Solo si hay timer - Más gruesa y visible */}
                   {!isAD && ejercicioActual?.duracionSeg > 0 && (
-                    <div className="mt-3 bg-[var(--color-border-default)]/30 rounded-full h-2 md:h-2.5 overflow-hidden">
+                      <div className="mt-3 bg-[var(--color-border-default)]/30 rounded-full h-2 md:h-2.5 overflow-hidden">
                       <div
                         className={cn(
                           "h-full transition-all duration-300",
@@ -1114,77 +1191,78 @@ function HoyPageContent() {
               ) : null}
               
               {/* Controles principales - Compactos pero táctiles */}
-              <div className="px-4 py-3 flex items-center justify-center gap-2 md:gap-3 max-w-[560px] mx-auto">
-                {/* Navegación: Atrás */}
+                <div className="px-4 py-3 flex items-center justify-center gap-2 md:gap-3 max-w-[560px] mx-auto">
+                  {/* Navegación: Atrás */}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleAnterior}
                   disabled={indiceActual === 0}
-                  className="h-12 md:h-14 px-4 md:px-6 rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors touch-manipulation min-h-[48px]"
+                    className="h-12 md:h-14 px-4 md:px-6 rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors touch-manipulation min-h-[48px]"
                   title="Anterior (P)"
                   aria-label="Ejercicio anterior"
                 >
-                  <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
-                  <span className="hidden sm:inline text-xs md:text-sm">Anterior</span>
+                    <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
+                    <span className="hidden sm:inline text-xs md:text-sm">Anterior</span>
                 </Button>
 
-                {/* Control principal: Play/Pause */}
+                  {/* Control principal: Play/Pause */}
                 {!isAD && (
                   <Button
                     variant="primary"
                     size="sm"
                     onClick={togglePlayPausa}
-                    className="h-12 md:h-14 px-4 md:px-6 rounded-lg focus-brand shadow-sm hover:shadow-md transition-all touch-manipulation min-h-[48px]"
+                      className="h-12 md:h-14 px-4 md:px-6 rounded-lg focus-brand shadow-sm hover:shadow-md transition-all touch-manipulation min-h-[48px]"
                     title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
                     aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
                   >
-                    {cronometroActivo ? (
-                      <>
-                        <Pause className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
-                        <span className="hidden sm:inline text-xs md:text-sm">Pausar</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
-                        <span className="hidden sm:inline text-xs md:text-sm">Reproducir</span>
-                      </>
-                    )}
+                      {cronometroActivo ? (
+                        <>
+                          <Pause className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
+                          <span className="hidden sm:inline text-xs md:text-sm">Pausar</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
+                          <span className="hidden sm:inline text-xs md:text-sm">Reproducir</span>
+                        </>
+                      )}
                   </Button>
                 )}
 
-                {/* Acciones de ejercicio: Completar */}
+                  {/* Acciones de ejercicio: Completar */}
                 <Button
                   variant="primary"
                   onClick={completarYAvanzar}
                   className={cn(
-                    "h-12 md:h-14 px-4 md:px-6 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm md:text-base rounded-lg focus-brand shadow-sm hover:shadow-md transition-all text-white touch-manipulation min-h-[48px]",
-                    isAD && "flex-1"
+                      "h-12 md:h-14 px-4 md:px-6 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm md:text-base rounded-lg focus-brand shadow-sm hover:shadow-md transition-all text-white touch-manipulation min-h-[48px]",
+                      isAD && "flex-1"
                   )}
                   title="Completar (Enter)"
                   aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
                 >
-                  <CheckCircle className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
+                    <CheckCircle className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
                   {isUltimo ? 'Finalizar' : 'OK'}
                 </Button>
 
-                {/* Acciones de ejercicio: Saltar */}
-                {!isUltimo && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={omitirYAvanzar}
-                    disabled={isUltimo}
-                    className="h-12 md:h-14 px-4 md:px-6 rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors touch-manipulation min-h-[48px]"
-                    title="Omitir y pasar (N)"
-                    aria-label="Omitir ejercicio"
-                  >
-                    <ChevronsRight className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
-                    <span className="hidden sm:inline text-xs md:text-sm">Saltar</span>
-                  </Button>
-                )}
+                  {/* Acciones de ejercicio: Saltar */}
+                  {!isUltimo && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={omitirYAvanzar}
+                  disabled={isUltimo}
+                      className="h-12 md:h-14 px-4 md:px-6 rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors touch-manipulation min-h-[48px]"
+                  title="Omitir y pasar (N)"
+                  aria-label="Omitir ejercicio"
+                >
+                      <ChevronsRight className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
+                      <span className="hidden sm:inline text-xs md:text-sm">Saltar</span>
+                </Button>
+                  )}
               </div>
             </div>
+            )}
           </div>
         )}
 
@@ -1244,20 +1322,30 @@ function HoyPageContent() {
         </div>
 
         {/* Contenido del ejercicio - Tarjeta principal unificada */}
-        <div className="max-w-[900px] md:max-w-[1000px] mx-auto p-4 md:p-6 pb-32 md:pb-24">
-          <Card className="shadow-md">
+        <div 
+          className="max-w-[900px] md:max-w-[1000px] mx-auto p-4 md:p-6" 
+          style={{ 
+            paddingBottom: timerCollapsed ? '80px' : '220px',
+            minHeight: timerCollapsed ? 'calc(100vh - 140px)' : 'calc(100vh - 260px)',
+            height: timerCollapsed ? 'calc(100vh - 140px)' : 'calc(100vh - 260px)',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
+          <Card className="shadow-md flex-1 overflow-y-auto" style={{ maxHeight: '100%' }}>
             <CardContent className="p-4 md:p-6 space-y-6">
-              {isAD && (
-                <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-primary)] bg-[var(--color-primary-soft)]`}>
-                  <AlertTriangle className="h-4 w-4 text-[var(--color-primary)]" />
-                  <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-text-primary)]`}>
-                    Este ejercicio no suma tiempo real
-                  </AlertDescription>
-                </Alert>
-              )}
+          {isAD && (
+            <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-primary)] bg-[var(--color-primary-soft)]`}>
+              <AlertTriangle className="h-4 w-4 text-[var(--color-primary)]" />
+              <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-text-primary)]`}>
+                Este ejercicio no suma tiempo real
+              </AlertDescription>
+            </Alert>
+          )}
 
               {/* Objetivo de logro */}
-              {ejercicioActual.indicadorLogro && (
+          {ejercicioActual.indicadorLogro && (
                 <div className="border-b border-[var(--color-border-default)] pb-4">
                   <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-info)] mb-2`}>💡 Objetivo de logro</p>
                   <p className={`${componentStyles.typography.bodyText} text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed`}>{ejercicioActual.indicadorLogro}</p>
@@ -1265,17 +1353,17 @@ function HoyPageContent() {
               )}
 
               {/* Instrucciones */}
-              {ejercicioActual.instrucciones && (
+          {ejercicioActual.instrucciones && (
                 <div className="border-b border-[var(--color-border-default)] pb-4">
                   <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] mb-2`}>📋 Instrucciones</p>
                   <p className="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed">
-                    {ejercicioActual.instrucciones}
-                  </p>
+                  {ejercicioActual.instrucciones}
+                </p>
                 </div>
-              )}
+          )}
 
               {/* Material de la pieza */}
-              {!isAD && (isFM ? elementosFM.length > 0 : ((ejercicioActual.media && Object.keys(ejercicioActual.media).length > 0) || (ejercicioActual.mediaLinks && ejercicioActual.mediaLinks.length > 0))) && (
+          {!isAD && (isFM ? elementosFM.length > 0 : ((ejercicioActual.media && Object.keys(ejercicioActual.media).length > 0) || (ejercicioActual.mediaLinks && ejercicioActual.mediaLinks.length > 0))) && (
                 <div className="border-b border-[var(--color-border-default)] pb-4 last:border-b-0">
                   <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] mb-3`}>
                     {isFM ? '🎼 Material de la Pieza' : '📎 Material'}
@@ -1299,15 +1387,15 @@ function HoyPageContent() {
                                 </div>
                               );
                             }
-                            // Resto: abrir en nueva pestaña (modo estudio)
+                            // Resto: abrir modal pantalla completa (modo estudio)
                             return (
                               <Button
                                 key={urlIdx}
                                 type="button"
                                 variant="outline"
-                                onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+                                onClick={() => setMediaModal(url)}
                                 className="flex items-center justify-center p-2 h-10 w-10 border border-[var(--color-border-default)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-elevated)] transition-colors flex-shrink-0"
-                                aria-label={`Abrir ${getMediaLabel(url)} en nueva pestaña`}
+                                aria-label={`Abrir ${getMediaLabel(url)} en pantalla completa`}
                               >
                                 <MediaIcon url={url} className="w-5 h-5" />
                                 <span className="sr-only">{getMediaLabel(url)}</span>
@@ -1322,9 +1410,9 @@ function HoyPageContent() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => window.open(elemento.media.pdf, "_blank", "noopener,noreferrer")}
+                            onClick={() => setMediaModal(elemento.media.pdf)}
                             className="w-full h-10 text-sm rounded-lg"
-                            aria-label="Ver partitura (PDF) en nueva pestaña"
+                            aria-label="Ver partitura (PDF) en pantalla completa"
                           >
                             📄 Ver partitura (PDF)
                           </Button>
@@ -1364,48 +1452,67 @@ function HoyPageContent() {
                   ))
                 ) : (
                   <>
-                    {/* Mostrar mediaLinks como iconos (excepto audio que va embedido) */}
-                    {ejercicioActual.mediaLinks && ejercicioActual.mediaLinks.length > 0 && (
+                    {/* Audio y PDF: grid 2 columnas en desktop, stacked en mobile */}
+                    {(ejercicioActual.mediaLinks && ejercicioActual.mediaLinks.some(url => {
+                      const media = resolveMedia(url);
+                      return media.kind === MediaKind.AUDIO || media.kind === MediaKind.SOUNDCLOUD;
+                    })) || ejercicioActual.media?.pdf ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {/* Audio / SoundCloud: embedidos directamente */}
+                        {ejercicioActual.mediaLinks && ejercicioActual.mediaLinks
+                          .filter(url => {
+                            const media = resolveMedia(url);
+                            return media.kind === MediaKind.AUDIO || media.kind === MediaKind.SOUNDCLOUD;
+                          })
+                          .map((url, urlIdx) => (
+                            <div key={urlIdx} className="md:col-span-1 w-full">
+                              <MediaEmbed url={url} className="w-full" />
+                            </div>
+                          ))}
+                        
+                        {/* PDF: botón grande - abre modal pantalla completa */}
+                        {ejercicioActual.media?.pdf && (
+                          <div className="md:col-span-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setMediaModal(ejercicioActual.media.pdf)}
+                              className="w-full h-10 text-sm rounded-lg"
+                              aria-label="Ver partitura (PDF) en pantalla completa"
+                            >
+                              📄 Ver partitura (PDF)
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+
+                    {/* Otros media links (vídeos, etc.): iconos clickeables - abren modal */}
+                    {ejercicioActual.mediaLinks && ejercicioActual.mediaLinks
+                      .filter(url => {
+                        const media = resolveMedia(url);
+                        return media.kind !== MediaKind.AUDIO && media.kind !== MediaKind.SOUNDCLOUD;
+                      })
+                      .length > 0 && (
                       <div className="flex flex-wrap gap-2">
-                        {ejercicioActual.mediaLinks.map((url, urlIdx) => {
-                          const media = resolveMedia(url);
-                          // Audio y SoundCloud: embedidos directamente (solo en modo estudio)
-                          if (media.kind === MediaKind.AUDIO || media.kind === MediaKind.SOUNDCLOUD) {
-                            return (
-                              <div key={urlIdx} className="w-full">
-                                <MediaEmbed url={url} className="w-full" />
-                              </div>
-                            );
-                          }
-                          // Resto: abrir en nueva pestaña (modo estudio)
-                          return (
+                        {ejercicioActual.mediaLinks
+                          .filter(url => {
+                            const media = resolveMedia(url);
+                            return media.kind !== MediaKind.AUDIO && media.kind !== MediaKind.SOUNDCLOUD;
+                          })
+                          .map((url, urlIdx) => (
                             <Button
                               key={urlIdx}
                               type="button"
                               variant="outline"
-                              onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+                              onClick={() => setMediaModal(url)}
                               className="flex items-center justify-center p-2 h-10 w-10 border border-[var(--color-border-default)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-elevated)] transition-colors flex-shrink-0"
-                              aria-label={`Abrir ${getMediaLabel(url)} en nueva pestaña`}
+                              aria-label={`Abrir ${getMediaLabel(url)} en pantalla completa`}
                             >
                               <MediaIcon url={url} className="w-5 h-5" />
                               <span className="sr-only">{getMediaLabel(url)}</span>
                             </Button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {ejercicioActual.media?.pdf && (
-                      <div className="md:col-span-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(ejercicioActual.media.pdf, "_blank", "noopener,noreferrer")}
-                          className="w-full h-10 text-sm rounded-lg"
-                          aria-label="Ver partitura (PDF) en nueva pestaña"
-                        >
-                          📄 Ver partitura (PDF)
-                        </Button>
+                          ))}
                       </div>
                     )}
 
@@ -1442,21 +1549,21 @@ function HoyPageContent() {
                 )}
                   </div>
                 </div>
-              )}
+          )}
 
               {/* Materiales Requeridos */}
-              {ejercicioActual.materialesRequeridos && ejercicioActual.materialesRequeridos.length > 0 && (
+          {ejercicioActual.materialesRequeridos && ejercicioActual.materialesRequeridos.length > 0 && (
                 <div className="pt-4">
                   <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] mb-2`}>🎒 Materiales Requeridos</p>
                   <ul className="list-disc list-inside space-y-1 text-sm text-[var(--color-text-primary)]">
-                    {ejercicioActual.materialesRequeridos.map((material, idx) => (
-                      <li key={idx}>{material}</li>
-                    ))}
-                  </ul>
+                  {ejercicioActual.materialesRequeridos.map((material, idx) => (
+                    <li key={idx}>{material}</li>
+                  ))}
+                </ul>
                 </div>
               )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
         </div>
 
         {/* Footer de controles - Oculto (controles ahora en timer flotante) */}
@@ -1624,31 +1731,49 @@ function HoyPageContent() {
           </>
         )}
 
-        {/* Modal para materiales (popup grande) */}
+        {/* Modal de pantalla completa para recursos multimedia (modo estudio) */}
         {mediaModal && (
-          <Dialog open={!!mediaModal} onOpenChange={(open) => !open && setMediaModal(null)}>
-            <DialogContent className="max-w-6xl max-h-[90vh] w-full p-0 overflow-hidden">
-              <DialogHeader className="px-6 pt-6 pb-4 border-b">
-                <div className="flex items-center justify-between">
-                  <DialogTitle className="text-lg font-semibold">
-                    Material
-                  </DialogTitle>
+          <div 
+            className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-0 md:p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setMediaModal(null);
+              }
+            }}
+          >
+            <div className="w-full h-full md:w-[95vw] md:h-[95vh] md:max-w-7xl bg-[var(--color-surface-elevated)] md:rounded-2xl shadow-2xl flex flex-col">
+              {/* Header del modal */}
+              <div className="flex items-center justify-between p-4 md:p-6 border-b border-[var(--color-border-default)] shrink-0">
+                <h2 className="text-lg md:text-xl font-semibold text-[var(--color-text-primary)]">
+                  Recurso multimedia
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMediaModal(null)}
+                  className="h-9 w-9 p-0"
+                  aria-label="Cerrar"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+              {/* Contenido del modal */}
+              <div className="flex-1 overflow-auto p-4 md:p-6 min-h-0">
+                <MediaEmbed url={mediaModal} className="w-full h-full min-h-[400px]" />
+                {/* Enlace de emergencia si el embed falla (especialmente para PDFs) */}
+                <div className="mt-4 text-center">
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    onClick={() => setMediaModal(null)}
-                    className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-[var(--btn-radius)] touch-manipulation"
-                    aria-label="Cerrar"
+                    onClick={() => window.open(mediaModal, "_blank", "noopener,noreferrer")}
+                    className="text-xs"
                   >
-                    <X className="w-5 h-5" />
+                    Abrir en nueva pestaña
                   </Button>
                 </div>
-              </DialogHeader>
-              <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-                <MediaEmbed url={mediaModal} className="w-full" />
               </div>
-            </DialogContent>
-          </Dialog>
+            </div>
+          </div>
         )}
 
         {/* Panel de itinerario - Dialog central mediano */}
@@ -1917,27 +2042,6 @@ function HoyPageContent() {
           </div>
         )}
 
-        {/* Selector de asignación si hay múltiples */}
-        {asignacionesActivas.length > 1 && (
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {asignacionesActivas.map((asignacion) => (
-              <button
-                key={asignacion.id}
-                onClick={() => setAsignacionSeleccionadaId(asignacion.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border whitespace-nowrap shrink-0 transition-colors ${
-                  asignacionSeleccionadaId === asignacion.id || (!asignacionSeleccionadaId && asignacion.id === asignacionesActivas[0]?.id)
-                    ? 'bg-[var(--color-primary-soft)] border-[var(--color-primary)] text-[var(--color-text-primary)]'
-                    : 'bg-[var(--color-surface-muted)] border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-elevated)]'
-                }`}
-              >
-                <Music className="w-4 h-4 shrink-0" />
-                <span className="font-medium text-sm">{asignacion.piezaSnapshot?.nombre}</span>
-                <span className="text-xs">·</span>
-                <span className="text-xs">{asignacion.plan?.nombre}</span>
-              </button>
-            ))}
-          </div>
-        )}
         {!asignacionActiva || !semanaDelPlan ? (
           <Card className="border-dashed border-2">
             <CardContent className="text-center py-16">
@@ -1963,41 +2067,174 @@ function HoyPageContent() {
           </Card>
         ) : (
           <>
-            <div className="border-l-4 border-[var(--color-primary)] bg-[var(--color-primary-soft)]/50 rounded-r-lg p-3">
-              {/* Información de la semana - siempre visible */}
+            {/* Si hay múltiples asignaciones, mostrarlas como tarjetas en columna */}
+            {asignacionesActivas.length > 1 ? (
+              <div className="space-y-4">
+                {asignacionesActivas.map((asignacion) => {
+                  const offsetAsignacion = calcularOffsetSemanas(asignacion.semanaInicioISO, semanaActualISO);
+                  const semanaAsignacion = asignacion.plan?.semanas?.[offsetAsignacion] || null;
+                  const isSelected = asignacionSeleccionadaId === asignacion.id || (!asignacionSeleccionadaId && asignacion.id === asignacionesActivas[0]?.id);
+                  
+                  if (!semanaAsignacion) return null;
+                  
+                  return (
+                    <Card key={asignacion.id} className={`border-l-4 ${isSelected ? 'border-[var(--color-primary)]' : 'border-[var(--color-border-default)]'}`}>
+                      <CardContent className="p-4">
+                        {/* Header de asignación */}
               <div className="mb-3">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <h2 className={`text-base font-bold text-[var(--color-text-primary)] font-headings`}>{semanaDelPlan.nombre}</h2>
-                  <Badge className={focoColors[semanaDelPlan.foco]}>
-                    {focoLabels[semanaDelPlan.foco]}
+                            <Music className="w-4 h-4 text-[var(--color-primary)]" />
+                            <span className="font-semibold text-[var(--color-text-primary)]">{asignacion.piezaSnapshot?.nombre}</span>
+                            <span className="text-[var(--color-text-secondary)]">·</span>
+                            <Target className="w-4 h-4 text-[var(--color-info)]" />
+                            <span className="text-[var(--color-text-primary)]">{asignacion.plan?.nombre}</span>
+                          </div>
+                          <h2 className={`text-base font-bold text-[var(--color-text-primary)] font-headings`}>{semanaAsignacion.nombre}</h2>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <Badge className={focoColors[semanaAsignacion.foco]}>
+                              {focoLabels[semanaAsignacion.foco]}
                   </Badge>
                   <span className="text-sm text-[var(--color-text-secondary)]">
-                    ({semanaDelPlan.sesiones?.length || 0} sesiones)
+                              ({semanaAsignacion.sesiones?.length || 0} sesiones)
                   </span>
                 </div>
-                {semanaDelPlan.objetivo && (
-                  <p className="text-sm text-[var(--color-text-secondary)] italic mt-1">"{semanaDelPlan.objetivo}"</p>
+                          {semanaAsignacion.objetivo && (
+                            <p className="text-sm text-[var(--color-text-secondary)] italic mt-1">"{semanaAsignacion.objetivo}"</p>
                 )}
               </div>
 
-              {/* Botón clickeable para desplegar/colapsar sesiones */}
+                        {/* Sesiones - siempre visibles */}
+                        {semanaAsignacion.sesiones && (
+                          <div className="space-y-2">
+                            {semanaAsignacion.sesiones.map((sesion, sesionIdx) => {
+                              const tiempoTotal = calcularTiempoSesion(sesion);
+                              const minutos = Math.floor(tiempoTotal / 60);
+                              const segundos = tiempoTotal % 60;
+                              const resumenExpandido = sesionesConResumenExpandido.has(`${asignacion.id}-${sesionIdx}`);
+
+                              const toggleResumen = (e) => {
+                                e.stopPropagation();
+                                setSesionesConResumenExpandido(prev => {
+                                  const next = new Set(prev);
+                                  const key = `${asignacion.id}-${sesionIdx}`;
+                                  if (next.has(key)) {
+                                    next.delete(key);
+                                  } else {
+                                    next.add(key);
+                                  }
+                                  return next;
+                                });
+                              };
+
+                              return (
+                                <div
+                                  key={sesionIdx}
+                                  className={`border rounded-lg p-3 cursor-pointer hover:shadow-sm transition-all ${
+                                    sesionSeleccionada === sesionIdx && isSelected
+                                      ? `border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm`
+                                      : `border-[var(--color-border-default)] bg-[var(--color-surface-default)] hover:bg-[var(--color-surface-muted)]`
+                                  }`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setAsignacionSeleccionadaId(asignacion.id);
+                                    setSesionSeleccionada(sesionIdx);
+                                  }}
+                                >
+                                  <div className="space-y-3">
+                                    {/* Header de la sesión: chip + tiempo + foco */}
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <Badge variant="outline" className="text-xs px-2 py-0.5 bg-[var(--color-surface-muted)]">
+                                        {sesion.nombre}
+                                      </Badge>
+                                      <Badge
+                                        variant="outline"
+                                        className={`text-xs px-2 py-0.5 ${componentStyles.status.badgeSuccess}`}
+                                      >
+                                        <Clock className="w-3 h-3 mr-1" />
+                                        {minutos}:{String(segundos).padStart(2, '0')} min
+                                      </Badge>
+                                      <Badge className={`${focoColors[sesion.foco]} text-xs px-2 py-0.5`} variant="outline">
+                                        Foco: {focoLabels[sesion.foco]}
+                                      </Badge>
+                                    </div>
+
+                                    {/* Botón para desplegar/colapsar ejercicios */}
               <button
-                className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-[var(--color-primary-soft)] transition-colors"
-                onClick={() => setPlanDesplegado(!planDesplegado)}
-              >
-                {planDesplegado ? (
+                                      className={`w-full flex items-center gap-2 p-1.5 rounded-lg transition-colors ${
+                                        resumenExpandido ? 'bg-[var(--color-surface-muted)]' : 'hover:bg-[var(--color-surface-muted)]'
+                                      }`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleResumen(e);
+                                      }}
+                                    >
+                                      {resumenExpandido ? (
                   <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
                 ) : (
                   <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
                 )}
-                <span className="text-base font-medium text-[var(--color-text-primary)]">
-                  {planDesplegado ? 'Ocultar sesiones' : 'Mostrar sesiones'}
+                                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                                        {resumenExpandido ? 'Ocultar ejercicios' : 'Ver ejercicios'}
                 </span>
               </button>
 
-              {/* Sesiones - desplegables */}
-              {planDesplegado && semanaDelPlan.sesiones && (
-                <div className="mt-3 space-y-2">
+                                    {/* Resumen expandido */}
+                                    {resumenExpandido && (
+                                      <div className="border-t border-[var(--color-border-default)] pt-2" onClick={(e) => e.stopPropagation()}>
+                                        <SessionContentView sesion={sesion} compact />
+                                      </div>
+                                    )}
+
+                                    {/* Botón de iniciar práctica (solo si está seleccionada) */}
+                                    {sesionSeleccionada === sesionIdx && isSelected && (
+                                      <div className="pt-2 border-t border-[var(--color-border-default)] flex justify-center" onClick={(e) => e.stopPropagation()}>
+                                        <Button
+                                          variant="primary"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            empezarSesion(sesion, sesionIdx);
+                                          }}
+                                          size="lg"
+                                          className={`${componentStyles.buttons.primary} w-full md:w-auto h-12 shadow-sm`}
+                                        >
+                                          <PlayCircle className="w-5 h-5 mr-2" />
+                                          Iniciar Práctica
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              /* Una sola asignación: mostrar como antes pero sin toggle de sesiones */
+              <div className="border-l-4 border-[var(--color-primary)] bg-[var(--color-primary-soft)]/50 rounded-r-lg p-3">
+                {/* Información de la semana - siempre visible */}
+                <div className="mb-3">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h2 className={`text-base font-bold text-[var(--color-text-primary)] font-headings`}>{semanaDelPlan.nombre}</h2>
+                    <Badge className={focoColors[semanaDelPlan.foco]}>
+                      {focoLabels[semanaDelPlan.foco]}
+                    </Badge>
+                    <span className="text-sm text-[var(--color-text-secondary)]">
+                      ({semanaDelPlan.sesiones?.length || 0} sesiones)
+                    </span>
+                  </div>
+                  {semanaDelPlan.objetivo && (
+                    <p className="text-sm text-[var(--color-text-secondary)] italic mt-1">"{semanaDelPlan.objetivo}"</p>
+                  )}
+                </div>
+
+                {/* Sesiones - siempre visibles */}
+                {semanaDelPlan.sesiones && (
+                <div className="space-y-2">
                     {semanaDelPlan.sesiones.map((sesion, sesionIdx) => {
                       const tiempoTotal = calcularTiempoSesion(sesion);
                       const minutos = Math.floor(tiempoTotal / 60);
@@ -2036,22 +2273,44 @@ function HoyPageContent() {
                               <Badge variant="outline" className="text-xs px-2 py-0.5 bg-[var(--color-surface-muted)]">
                                 {sesion.nombre}
                               </Badge>
-                              <Badge
-                                variant="outline"
+                                  <Badge
+                                    variant="outline"
                                 className={`text-xs px-2 py-0.5 ${componentStyles.status.badgeSuccess}`}
-                              >
-                                <Clock className="w-3 h-3 mr-1" />
-                                {minutos}:{String(segundos).padStart(2, '0')} min
-                              </Badge>
+                                  >
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    {minutos}:{String(segundos).padStart(2, '0')} min
+                                  </Badge>
                               <Badge className={`${focoColors[sesion.foco]} text-xs px-2 py-0.5`} variant="outline">
                                 Foco: {focoLabels[sesion.foco]}
-                              </Badge>
+                                  </Badge>
                             </div>
 
-                            {/* Resumen expandido por defecto */}
-                            <div className="border-t border-[var(--color-border-default)] pt-2" onClick={(e) => e.stopPropagation()}>
-                              <SessionContentView sesion={sesion} compact />
-                            </div>
+                            {/* Botón para desplegar/colapsar ejercicios */}
+                            <button
+                              className={`w-full flex items-center gap-2 p-1.5 rounded-lg transition-colors ${
+                                resumenExpandido ? 'bg-[var(--color-surface-muted)]' : 'hover:bg-[var(--color-surface-muted)]'
+                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleResumen(e);
+                              }}
+                            >
+                              {resumenExpandido ? (
+                                <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                              )}
+                              <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                                {resumenExpandido ? 'Ocultar ejercicios' : 'Ver ejercicios'}
+                              </span>
+                            </button>
+
+                            {/* Resumen expandido */}
+                            {resumenExpandido && (
+                              <div className="border-t border-[var(--color-border-default)] pt-2" onClick={(e) => e.stopPropagation()}>
+                                <SessionContentView sesion={sesion} compact />
+                              </div>
+                            )}
 
                             {/* Botón de iniciar práctica (solo si está seleccionada) */}
                             {sesionSeleccionada === sesionIdx && (
@@ -2077,6 +2336,7 @@ function HoyPageContent() {
                 </div>
               )}
             </div>
+            )}
 
             <div className="flex items-center justify-center pt-4 border-t">
               <Button
