@@ -83,14 +83,32 @@ class ErrorBoundary extends React.Component {
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button
                   onClick={() => {
+                    console.log('[ErrorBoundary] Botón "Reportar error" clickeado');
+                    console.log('[ErrorBoundary] Estado del error:', {
+                      error: this.state.error,
+                      errorInfo: this.state.errorInfo,
+                    });
                     // Abrir modal de reporte con el error
-                    window.dispatchEvent(new CustomEvent('open-error-report', {
-                      detail: {
+                    try {
+                      const eventDetail = {
                         error: this.state.error,
                         errorInfo: this.state.errorInfo,
-                        category: 'Algo no funciona',
-                      }
-                    }));
+                        category: 'algo_no_funciona',
+                      };
+                      console.log('[ErrorBoundary] Disparando evento open-error-report con detail:', eventDetail);
+                      
+                      const event = new CustomEvent('open-error-report', {
+                        detail: eventDetail,
+                        bubbles: true,
+                        cancelable: true
+                      });
+                      
+                      const dispatched = window.dispatchEvent(event);
+                      console.log('[ErrorBoundary] Evento disparado, dispatched:', dispatched);
+                      console.log('[ErrorBoundary] Esperando que Layout escuche el evento...');
+                    } catch (error) {
+                      console.error('[ErrorBoundary] Error al disparar evento:', error);
+                    }
                   }}
                   className={`${componentStyles.buttons.primary} gap-2`}
                 >

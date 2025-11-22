@@ -1099,7 +1099,7 @@ function HoyPageContent() {
                       excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
                     )} />
                     <div className="flex flex-col min-w-0">
-                      <div className={cn(
+            <div className={cn(
                         "text-base font-mono font-bold tabular-nums leading-tight",
                         excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
                       )}>
@@ -1161,49 +1161,49 @@ function HoyPageContent() {
               {/* Fila: Tiempo | meta | botón colapsar */}
               {(!isAD && ejercicioActual?.duracionSeg > 0) || (sesionActiva && listaEjecucion.length > 0) ? (
                 <div className="px-4 py-3 flex items-center justify-between gap-4">
-                  {/* Timer - Solo visible si no es AD y tiene duración */}
-                  {!isAD && ejercicioActual?.duracionSeg > 0 && (
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <Clock className={cn(
+                    {/* Timer - Solo visible si no es AD y tiene duración */}
+                    {!isAD && ejercicioActual?.duracionSeg > 0 && (
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Clock className={cn(
                         "w-5 h-5 md:w-6 md:h-6 shrink-0",
-                        excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
-                      )} />
-                      <div className="flex flex-col">
-                        <div className={cn(
+                          excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
+                        )} />
+                        <div className="flex flex-col">
+                          <div className={cn(
                           "text-xl md:text-2xl font-mono font-bold tabular-nums leading-tight",
-                          excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
-                        )}>
-                          {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
-                        </div>
+                            excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
+                          )}>
+                            {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
+                          </div>
                         <div className="text-xs md:text-sm text-[var(--color-text-secondary)] font-mono tabular-nums leading-tight">
-                          / {Math.floor(ejercicioActual.duracionSeg / 60)}:{String((ejercicioActual.duracionSeg % 60)).padStart(2, '0')}
+                            / {Math.floor(ejercicioActual.duracionSeg / 60)}:{String((ejercicioActual.duracionSeg % 60)).padStart(2, '0')}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                  
-                  {/* Contador visual de ejercicios - Siempre visible */}
-                  {sesionActiva && listaEjecucion.length > 0 && (
-                    <div className="flex flex-col items-end shrink-0">
-                      <div className={cn(
-                        "flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-xs transition-all",
-                        "bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30",
-                        "text-[var(--color-primary)]"
-                      )}>
-                        <Target className="w-3.5 h-3.5" />
-                        <span className="font-mono tabular-nums">
-                          {indiceActual + 1}<span className="text-[var(--color-text-secondary)] font-normal">/{listaEjecucion.length}</span>
-                        </span>
+                    )}
+                    
+                    {/* Contador visual de ejercicios - Siempre visible */}
+                    {sesionActiva && listaEjecucion.length > 0 && (
+                      <div className="flex flex-col items-end shrink-0">
+                        <div className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-xs transition-all",
+                          "bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30",
+                          "text-[var(--color-primary)]"
+                        )}>
+                          <Target className="w-3.5 h-3.5" />
+                          <span className="font-mono tabular-nums">
+                            {indiceActual + 1}<span className="text-[var(--color-text-secondary)] font-normal">/{listaEjecucion.length}</span>
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                   
-                  {/* Botón colapsar - Oculto cuando el botón de reporte está visible */}
+                  {/* Botón colapsar */}
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setTimerCollapsed(true)}
-                    className="h-8 w-8 p-0 hidden"
+                    className="h-8 w-8 p-0"
                     aria-label="Colapsar timer"
                   >
                     <ChevronDown className="w-4 h-4" />
@@ -1366,7 +1366,7 @@ function HoyPageContent() {
                   <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-info)] mb-2`}>💡 Objetivo de logro</p>
                   <p className={`${componentStyles.typography.bodyText} text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed`}>{ejercicioActual.indicadorLogro}</p>
                 </div>
-              )}
+          )}
 
               {/* Instrucciones */}
           {ejercicioActual.instrucciones && (
@@ -1423,15 +1423,15 @@ function HoyPageContent() {
 
                       {elemento.media?.pdf && (
                         <div className="md:col-span-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
+                            <Button
+                              variant="outline"
+                              size="sm"
                             onClick={() => setMediaModal(elemento.media.pdf)}
                             className="w-full h-10 text-sm rounded-lg"
                             aria-label="Ver partitura (PDF) en pantalla completa"
-                          >
+                            >
                             📄 Ver partitura (PDF)
-                          </Button>
+                            </Button>
                         </div>
                       )}
 
@@ -1470,7 +1470,7 @@ function HoyPageContent() {
                   <>
                     {/* Audio y PDF: grid 2 columnas en desktop, stacked en mobile */}
                     {(ejercicioActual.mediaLinks && ejercicioActual.mediaLinks.some(url => {
-                      const media = resolveMedia(url);
+                          const media = resolveMedia(url);
                       return media.kind === MediaKind.AUDIO || media.kind === MediaKind.SOUNDCLOUD;
                     })) || ejercicioActual.media?.pdf ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1482,23 +1482,23 @@ function HoyPageContent() {
                           })
                           .map((url, urlIdx) => (
                             <div key={urlIdx} className="md:col-span-1 w-full">
-                              <MediaEmbed url={url} className="w-full" />
-                            </div>
+                                <MediaEmbed url={url} className="w-full" />
+                              </div>
                           ))}
                         
                         {/* PDF: botón grande - abre modal pantalla completa */}
-                        {ejercicioActual.media?.pdf && (
+                    {ejercicioActual.media?.pdf && (
                           <div className="md:col-span-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
+                          <Button
+                            variant="outline"
+                            size="sm"
                               onClick={() => setMediaModal(ejercicioActual.media.pdf)}
                               className="w-full h-10 text-sm rounded-lg"
                               aria-label="Ver partitura (PDF) en pantalla completa"
-                            >
+                          >
                               📄 Ver partitura (PDF)
-                            </Button>
-                          </div>
+                          </Button>
+                        </div>
                         )}
                       </div>
                     ) : null}
@@ -1763,16 +1763,16 @@ function HoyPageContent() {
                 <h2 className="text-lg md:text-xl font-semibold text-[var(--color-text-primary)]">
                   Recurso multimedia
                 </h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setMediaModal(null)}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMediaModal(null)}
                   className="h-9 w-9 p-0"
-                  aria-label="Cerrar"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
+                    aria-label="Cerrar"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
               {/* Contenido del modal */}
               <div className="flex-1 overflow-auto p-4 md:p-6 min-h-0">
                 <MediaEmbed url={mediaModal} className="w-full h-full min-h-[400px]" />
@@ -1786,7 +1786,7 @@ function HoyPageContent() {
                   >
                     Abrir en nueva pestaña
                   </Button>
-                </div>
+              </div>
               </div>
             </div>
           </div>
@@ -2183,7 +2183,7 @@ function HoyPageContent() {
                                         e.stopPropagation();
                                         toggleResumen(e);
                                       }}
-                                    >
+              >
                                       {resumenExpandido ? (
                   <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
                 ) : (

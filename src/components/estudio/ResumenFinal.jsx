@@ -141,62 +141,62 @@ export default function ResumenFinal({
           <div className="flex flex-col gap-4 sm:gap-6 h-full sm:h-auto">
             {/* Header: Título */}
             <header className="shrink-0">
-              <DialogHeader className="text-center">
-                <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
-                  <div className="icon-tile mx-auto mb-2 sm:mb-3 bg-[var(--color-success)]/10 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--color-success)]" />
-                  </div>
-                  <DialogTitle className={`text-lg sm:text-xl ${componentStyles.typography.pageTitle} text-center`}>¡Sesión Completada!</DialogTitle>
-                  <DialogDescription className="text-xs sm:text-sm mt-0.5 sm:mt-1 text-center">{sesion.nombre}</DialogDescription>
-                </div>
-              </DialogHeader>
+          <DialogHeader className="text-center">
+            <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
+              <div className="icon-tile mx-auto mb-2 sm:mb-3 bg-[var(--color-success)]/10 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--color-success)]" />
+              </div>
+              <DialogTitle className={`text-lg sm:text-xl ${componentStyles.typography.pageTitle} text-center`}>¡Sesión Completada!</DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm mt-0.5 sm:mt-1 text-center">{sesion.nombre}</DialogDescription>
+            </div>
+          </DialogHeader>
             </header>
-            
+          
             <div className="flex-1 overflow-y-auto min-h-0 space-y-3 sm:space-y-4">
               {/* Métricas: Completados / Omitidos / Minutos */}
               <section className="flex flex-wrap items-center gap-4 justify-center pb-2 sm:pb-3 border-b border-[var(--color-border-default)]">
-                <div className="text-center">
-                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-success)]" />
-                  <p className="text-base sm:text-lg font-bold text-[var(--color-text-primary)]">{completados.size}</p>
-                  <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Completados</p>
-                </div>
-                
-                <div className="text-center">
-                  <XCircle className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
-                  <p className="text-base sm:text-lg font-bold text-[var(--color-text-primary)]">{omitidos.size}</p>
-                  <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Omitidos</p>
-                </div>
-                
-                <div className="text-center">
-                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-info)]" />
-                  <p className="text-base sm:text-lg font-bold text-[var(--color-text-primary)]">
-                    {Math.floor(tiempoReal / 60)}:{String(tiempoReal % 60).padStart(2, '0')}
-                  </p>
-                  <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Minutos</p>
-                </div>
+              <div className="text-center">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-success)]" />
+                <p className="text-base sm:text-lg font-bold text-[var(--color-text-primary)]">{completados.size}</p>
+                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Completados</p>
+              </div>
+              
+              <div className="text-center">
+                <XCircle className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
+                <p className="text-base sm:text-lg font-bold text-[var(--color-text-primary)]">{omitidos.size}</p>
+                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Omitidos</p>
+              </div>
+              
+              <div className="text-center">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-info)]" />
+                <p className="text-base sm:text-lg font-bold text-[var(--color-text-primary)]">
+                  {Math.floor(tiempoReal / 60)}:{String(tiempoReal % 60).padStart(2, '0')}
+                </p>
+                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Minutos</p>
+              </div>
               </section>
 
               {/* Bloque de feedback: caritas */}
               <section className="space-y-2 sm:space-y-3">
-                <h2 className={`font-semibold text-sm sm:text-base text-center ${componentStyles.typography.sectionTitle}`}>¿Cómo fue la práctica?</h2>
-                
+              <h2 className={`font-semibold text-sm sm:text-base text-center ${componentStyles.typography.sectionTitle}`}>¿Cómo fue la práctica?</h2>
+              
                 <div className="grid grid-cols-2 gap-2 sm:gap-3 max-w-[300px] mx-auto">
-                  {[1, 2, 3, 4].map((nivel) => (
-                    <button
-                      key={nivel}
-                      onClick={() => setCalidad(nivel)}
+                {[1, 2, 3, 4].map((nivel) => (
+                  <button
+                    key={nivel}
+                    onClick={() => setCalidad(nivel)}
                       className={cn(
                         "flex flex-col items-center justify-center p-2 sm:p-3 app-panel border-2 transition-all w-full",
-                        calidad === nivel 
-                          ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' 
-                          : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
+                      calidad === nivel 
+                        ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' 
+                        : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
                       )}
-                      aria-label={`Calificar como ${["Muy difícil", "Difícil", "Bien", "Excelente"][nivel - 1]}`}
-                    >
-                      <EmojiCalidad nivel={nivel} />
-                    </button>
-                  ))}
-                </div>
+                    aria-label={`Calificar como ${["Muy difícil", "Difícil", "Bien", "Excelente"][nivel - 1]}`}
+                  >
+                    <EmojiCalidad nivel={nivel} />
+                  </button>
+                ))}
+              </div>
               </section>
               
               {/* Notas sobre la práctica */}
@@ -267,7 +267,7 @@ export default function ResumenFinal({
                       <X className="w-4 h-4" />
                     </Button>
                   )}
-                </div>
+              </div>
                 {videoFile && (
                   <p className="text-xs text-[var(--color-text-secondary)]">
                     Archivo seleccionado: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
@@ -277,11 +277,11 @@ export default function ResumenFinal({
 
               {/* Input manual de mediaLinks (para URLs directas) */}
               <section className="space-y-1">
-                <MediaLinksInput
-                  value={mediaLinks}
-                  onChange={setMediaLinks}
-                  onPreview={handlePreview}
-                />
+              <MediaLinksInput
+                value={mediaLinks}
+                onChange={setMediaLinks}
+                onPreview={handlePreview}
+              />
               </section>
             </div>
             

@@ -241,14 +241,14 @@ function SoportePageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto p-6">
-        <PageHeader
-          title="Centro de dudas"
-          subtitle="Comunícate con tu profesor y resuelve tus dudas"
-        />
+    <div className="bg-background min-h-screen">
+      <PageHeader
+        title="Centro de dudas"
+        subtitle="Comunícate con tu profesor y resuelve tus dudas"
+      />
 
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Lista de tickets */}
         <div className="lg:col-span-1">
           <Card className={componentStyles.containers.cardBase}>
