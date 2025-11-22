@@ -34,6 +34,7 @@ import TimelineProgreso from "../components/estudio/TimelineProgreso";
 import ModalCancelar from "../components/estudio/ModalCancelar";
 import ResumenFinal from "../components/estudio/ResumenFinal";
 import SessionContentView from "../components/study/SessionContentView";
+import ReportErrorButtonInTimer from "../components/common/ReportErrorButtonInTimer";
 import { toast } from "sonner";
 import { useSidebar } from "@/components/ui/SidebarState";
 import PageHeader from "@/components/ds/PageHeader";
@@ -225,6 +226,20 @@ function HoyPageContent() {
       sidebarCerradoRef.current = false;
     }
   }, [sesionActiva, sesionFinalizada, closeSidebar]);
+
+  // Notificar cuando el timer está visible o no
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('timer-state-change', {
+      detail: { visible: !!sesionActiva }
+    }));
+    
+    return () => {
+      // Notificar cuando el timer se oculta
+      window.dispatchEvent(new CustomEvent('timer-state-change', {
+        detail: { visible: false }
+      }));
+    };
+  }, [sesionActiva]);
 
   // useEffect para manejar el arrastre del timer
   useEffect(() => {
@@ -1044,43 +1059,28 @@ function HoyPageContent() {
     const excedido = tiempoActual > (ejercicioActual?.duracionSeg || 0);
 
     return (
-      <div className="min-h-screen bg-background" style={{ 
-        paddingBottom: timerCollapsed ? '60px' : '200px'
+      <div className="bg-background" style={{ 
+        paddingBottom: timerCollapsed ? '80px' : '220px'
       }}>
         {/* Timer dock inferior fijo */}
         {sesionActiva && (
           <div
             className={cn(
               "fixed bottom-0 left-0 right-0 z-[30] bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-[0_-4px_12px_rgba(0,0,0,0.08)] transition-all duration-300",
-              timerCollapsed ? "h-[60px]" : "h-auto"
+              timerCollapsed ? "h-[80px]" : "h-auto"
             )}
           >
+            {/* Botón de reporte - Posicionado absolutamente, separación constante */}
+            <div className="absolute right-4 bottom-full mb-4 z-[50]">
+              <ReportErrorButtonInTimer />
+            </div>
+            
             {timerCollapsed ? (
-              /* Modo compacto */
-              <div className="max-w-5xl mx-auto px-4 py-2 flex items-center justify-between gap-3 h-full">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <Clock className={cn(
-                    "w-4 h-4 shrink-0",
-                    excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
-                  )} />
-                  <div className="flex flex-col min-w-0">
-            <div className={cn(
-                      "text-base font-mono font-bold tabular-nums leading-tight",
-                      excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
-                    )}>
-                      {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
-                    </div>
-                    {!isAD && ejercicioActual?.duracionSeg > 0 && (
-                      <div className="text-[10px] text-[var(--color-text-secondary)] font-mono tabular-nums leading-tight">
-                        / {Math.floor(ejercicioActual.duracionSeg / 60)}:{String((ejercicioActual.duracionSeg % 60)).padStart(2, '0')}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Barra de progreso compacta */}
+              /* Modo compacto: solo tiempo + barra de progreso + botón OK */
+              <div className="max-w-5xl mx-auto px-4 py-2 flex flex-col gap-2">
+                {/* Barra de progreso - ARRIBA, mismo grosor que expandido */}
                 {!isAD && ejercicioActual?.duracionSeg > 0 && (
-                  <div className="flex-1 max-w-[200px] bg-[var(--color-border-default)]/30 rounded-full h-1.5 overflow-hidden">
+                  <div className="w-full bg-[var(--color-border-default)]/30 rounded-full h-2 md:h-2.5 overflow-hidden">
                     <div
                       className={cn(
                         "h-full transition-all duration-300",
@@ -1091,28 +1091,51 @@ function HoyPageContent() {
                   </div>
                 )}
                 
-                {/* Botón OK compacto */}
-                <Button
-                  variant="primary"
-                  onClick={completarYAvanzar}
-                  className="h-9 px-4 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm rounded-lg focus-brand shadow-sm text-white"
-                  title="Completar (Enter)"
-                  aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
-                >
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                  {isUltimo ? 'Finalizar' : 'OK'}
-                </Button>
-                
-                {/* Botón expandir */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setTimerCollapsed(false)}
-                  className="h-9 w-9 p-0"
-                  aria-label="Expandir timer"
-                >
-                  <ChevronUp className="w-4 h-4" />
-                </Button>
+                {/* Fila: Tiempo + Botón OK */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Clock className={cn(
+                      "w-4 h-4 shrink-0",
+                      excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
+                    )} />
+                    <div className="flex flex-col min-w-0">
+                      <div className={cn(
+                        "text-base font-mono font-bold tabular-nums leading-tight",
+                        excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
+                      )}>
+                        {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
+                      </div>
+                      {!isAD && ejercicioActual?.duracionSeg > 0 && (
+                        <div className="text-[10px] text-[var(--color-text-secondary)] font-mono tabular-nums leading-tight">
+                          / {Math.floor(ejercicioActual.duracionSeg / 60)}:{String((ejercicioActual.duracionSeg % 60)).padStart(2, '0')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Botón OK compacto */}
+                  <Button
+                    variant="primary"
+                    onClick={completarYAvanzar}
+                    className="h-9 px-4 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm rounded-lg focus-brand shadow-sm text-white"
+                    title="Completar (Enter)"
+                    aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-1" />
+                    {isUltimo ? 'Finalizar' : 'OK'}
+                  </Button>
+                  
+                  {/* Botón expandir */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTimerCollapsed(false)}
+                    className="h-9 w-9 p-0"
+                    aria-label="Expandir timer"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             ) : (
               /* Modo expandido */
@@ -1122,71 +1145,69 @@ function HoyPageContent() {
                   excedido ? "bg-[var(--color-danger)]/5" : porcentajeEjercicio >= 75 ? "bg-[var(--color-warning)]/5" : "bg-[var(--color-primary)]/5"
                 )
             )}>
-              {/* Header con Timer y Contador */}
+              {/* Barra de progreso - ARRIBA del bloque del timer */}
+              {!isAD && ejercicioActual?.duracionSeg > 0 && (
+                <div className="w-full bg-[var(--color-border-default)]/30 rounded-full h-2 md:h-2.5 overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full transition-all duration-300",
+                      excedido ? 'bg-[var(--color-danger)]' : porcentajeEjercicio >= 75 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-primary)]'
+                    )}
+                    style={{ width: `${Math.min(porcentajeEjercicio, 100)}%` }}
+                  />
+                </div>
+              )}
+              
+              {/* Fila: Tiempo | meta | botón colapsar */}
               {(!isAD && ejercicioActual?.duracionSeg > 0) || (sesionActiva && listaEjecucion.length > 0) ? (
-                  <div className="px-4 py-3 border-b border-[var(--color-border-default)]/50">
-                    <div className="flex items-center justify-between gap-4">
-                    {/* Timer - Solo visible si no es AD y tiene duración */}
-                    {!isAD && ejercicioActual?.duracionSeg > 0 && (
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <Clock className={cn(
-                            "w-5 h-5 md:w-6 md:h-6 shrink-0",
-                          excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
-                        )} />
-                        <div className="flex flex-col">
-                          <div className={cn(
-                              "text-xl md:text-2xl font-mono font-bold tabular-nums leading-tight",
-                            excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
-                          )}>
-                            {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
-                          </div>
-                            <div className="text-xs md:text-sm text-[var(--color-text-secondary)] font-mono tabular-nums leading-tight">
-                            / {Math.floor(ejercicioActual.duracionSeg / 60)}:{String((ejercicioActual.duracionSeg % 60)).padStart(2, '0')}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Contador visual de ejercicios - Siempre visible */}
-                    {sesionActiva && listaEjecucion.length > 0 && (
-                      <div className="flex flex-col items-end shrink-0">
-                        <div className={cn(
-                          "flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-xs transition-all",
-                          "bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30",
-                          "text-[var(--color-primary)]"
-                        )}>
-                          <Target className="w-3.5 h-3.5" />
-                          <span className="font-mono tabular-nums">
-                            {indiceActual + 1}<span className="text-[var(--color-text-secondary)] font-normal">/{listaEjecucion.length}</span>
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                      
-                      {/* Botón colapsar */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setTimerCollapsed(true)}
-                        className="h-8 w-8 p-0"
-                        aria-label="Colapsar timer"
-                      >
-                        <ChevronDown className="w-4 h-4" />
-                      </Button>
-                  </div>
-                  
-                    {/* Barra de progreso del ejercicio - Solo si hay timer - Más gruesa y visible */}
+                <div className="px-4 py-3 flex items-center justify-between gap-4">
+                  {/* Timer - Solo visible si no es AD y tiene duración */}
                   {!isAD && ejercicioActual?.duracionSeg > 0 && (
-                      <div className="mt-3 bg-[var(--color-border-default)]/30 rounded-full h-2 md:h-2.5 overflow-hidden">
-                      <div
-                        className={cn(
-                          "h-full transition-all duration-300",
-                          excedido ? 'bg-[var(--color-danger)]' : porcentajeEjercicio >= 75 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-primary)]'
-                        )}
-                        style={{ width: `${Math.min(porcentajeEjercicio, 100)}%` }}
-                      />
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <Clock className={cn(
+                        "w-5 h-5 md:w-6 md:h-6 shrink-0",
+                        excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
+                      )} />
+                      <div className="flex flex-col">
+                        <div className={cn(
+                          "text-xl md:text-2xl font-mono font-bold tabular-nums leading-tight",
+                          excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
+                        )}>
+                          {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
+                        </div>
+                        <div className="text-xs md:text-sm text-[var(--color-text-secondary)] font-mono tabular-nums leading-tight">
+                          / {Math.floor(ejercicioActual.duracionSeg / 60)}:{String((ejercicioActual.duracionSeg % 60)).padStart(2, '0')}
+                        </div>
+                      </div>
                     </div>
                   )}
+                  
+                  {/* Contador visual de ejercicios - Siempre visible */}
+                  {sesionActiva && listaEjecucion.length > 0 && (
+                    <div className="flex flex-col items-end shrink-0">
+                      <div className={cn(
+                        "flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-xs transition-all",
+                        "bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30",
+                        "text-[var(--color-primary)]"
+                      )}>
+                        <Target className="w-3.5 h-3.5" />
+                        <span className="font-mono tabular-nums">
+                          {indiceActual + 1}<span className="text-[var(--color-text-secondary)] font-normal">/{listaEjecucion.length}</span>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Botón colapsar - Oculto cuando el botón de reporte está visible */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTimerCollapsed(true)}
+                    className="h-8 w-8 p-0 hidden"
+                    aria-label="Colapsar timer"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </Button>
                 </div>
               ) : null}
               
@@ -1326,14 +1347,9 @@ function HoyPageContent() {
           className="max-w-[900px] md:max-w-[1000px] mx-auto p-4 md:p-6" 
           style={{ 
             paddingBottom: timerCollapsed ? '80px' : '220px',
-            minHeight: timerCollapsed ? 'calc(100vh - 140px)' : 'calc(100vh - 260px)',
-            height: timerCollapsed ? 'calc(100vh - 140px)' : 'calc(100vh - 260px)',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column'
           }}
         >
-          <Card className="shadow-md flex-1 overflow-y-auto" style={{ maxHeight: '100%' }}>
+          <Card className="app-card shadow-md">
             <CardContent className="p-4 md:p-6 space-y-6">
           {isAD && (
             <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-primary)] bg-[var(--color-primary-soft)]`}>
