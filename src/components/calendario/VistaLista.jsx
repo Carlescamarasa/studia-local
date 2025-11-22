@@ -81,14 +81,14 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
           
           // Solo incluir si está en el rango visible
           if (fecha >= lunesSemana && fecha <= domingoSemana) {
-            lista.push({
-              tipo: 'asignacion',
-              evento: asignacion,
+          lista.push({
+            tipo: 'asignacion',
+            evento: asignacion,
               fecha: fechaISO,
               fechaISO: fechaISO,
               horaISO: `${fechaISO}T00:00:00`, // Sin hora específica
-              prioridad: 2,
-            });
+            prioridad: 2,
+          });
           }
         }
       }

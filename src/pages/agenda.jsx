@@ -26,7 +26,10 @@ import SessionContentView from "../components/study/SessionContentView";
 import { calcularTiempoSesion } from "../components/study/sessionSequence";
 import { componentStyles } from "@/design/componentStyles";
 import PageHeader from "@/components/ds/PageHeader";
-import UnifiedTable from "@/components/tables/UnifiedTable";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Checkbox } from "@/components/ui/checkbox";
+import TablePagination from "@/components/common/TablePagination";
+import RowActionsMenu from "@/components/common/RowActionsMenu";
 
 const pad2 = (n) => String(n).padStart(2, "0");
 const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
@@ -60,8 +63,12 @@ function AgendaPageContent() {
   const [previewUrls, setPreviewUrls] = useState([]);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [expandedSessions, setExpandedSessions] = useState(new Set());
+  const [selectedItems, setSelectedItems] = useState(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const effectiveUser = useEffectiveUser();
+  const isMobile = useIsMobile();
 
   const focoLabels = {
     GEN: 'General',
@@ -534,30 +541,313 @@ function AgendaPageContent() {
   });
   }, [estudiantesFiltrados, asignaciones, feedbacksSemanal, semanaActualISO, userIdActual, usuarios]);
 
-  // Definir columnas de la tabla
+  // Calcular datos paginados
+  const displayData = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return tableData.slice(startIndex, endIndex);
+  }, [tableData, currentPage, pageSize]);
+
+  const toggleSelection = (itemId) => {
+    setSelectedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedItems.size === tableData.length && tableData.length > 0) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(tableData.map(item => item.id)));
+    }
+  };
+
+  // Función para renderizar una card de estudiante
+  const renderStudentCard = (row) => {
+    const totalSemanas = row.asignacionActiva?.plan?.semanas?.length || 0;
+    const semanaActual = totalSemanas > 0 ? (row.semanaIdx + 1) : null;
+    const planNombre = row.asignacionActiva?.plan?.nombre || '';
+    const isSelected = selectedItems.has(row.id);
+    
+    const actions = [];
+    if (row.asignacionActiva) {
+      actions.push({
+        id: 'view',
+        label: 'Ver detalle de asignación',
+        onClick: () => navigate(createPageUrl(`asignacion-detalle?id=${row.asignacionActiva.id}`)),
+        icon: <Eye className="w-4 h-4" />,
+      });
+    }
+
+    return (
+      <div
+        key={row.id}
+        className={`rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-default)] dark:bg-[var(--color-surface-elevated)] px-4 py-3 md:px-5 md:py-4 shadow-sm flex flex-col gap-3 md:gap-4 ${
+          isSelected ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]' : ''
+        }`}
+      >
+        {/* Cabecera: avatar + nombre + badges */}
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          {/* Izquierda: checkbox + avatar + nombre */}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => toggleSelection(row.id)}
+              className="h-4 w-4 shrink-0"
+              aria-label={`Seleccionar ${displayName(row.alumno)}`}
+            />
+            <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center shrink-0">
+              <span className="text-[var(--color-text-primary)] font-semibold text-sm">
+                {displayName(row.alumno).slice(0, 1).toUpperCase()}
+              </span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+                {displayName(row.alumno)}
+              </p>
+            </div>
+          </div>
+          {/* Derecha: badges de semana y plan */}
+          {row.asignacionActiva && row.semana && (
+            <div className="flex flex-wrap gap-2 shrink-0">
+              {semanaActual && totalSemanas > 0 && (
+                <Badge variant="outline" className="text-xs px-2 py-0.5">
+                  Semana {semanaActual} de {totalSemanas}
+                </Badge>
+              )}
+              {planNombre && (
+                <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                  {planNombre}
+                </Badge>
+              )}
+            </div>
+          )}
+          {/* Acciones */}
+          {actions.length > 0 && (
+            <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+              <RowActionsMenu actions={actions} />
+            </div>
+          )}
+        </div>
+
+        {/* Cuerpo: pieza + sesiones (izquierda) y feedback (derecha) */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          {/* Columna izquierda: pieza + semana del plan + sesiones */}
+          <div className="flex-1 min-w-[220px] space-y-2">
+            {/* Pieza y semana */}
+            {!row.asignacionActiva || !row.semana ? (
+              <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-surface-muted)]/50 border border-[var(--color-border-default)] rounded-lg">
+                <Target className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />
+                <span className="text-sm text-[var(--color-text-secondary)]">Sin asignación esta semana</span>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Music className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
+                    <p className="text-sm font-medium text-[var(--color-text-primary)] break-words">
+                      {row.asignacionActiva.piezaSnapshot?.nombre || '—'}
+                    </p>
+                  </div>
+                  {row.semana.nombre && (
+                    <p className="text-xs text-[var(--color-text-secondary)] ml-6">
+                      {row.semana.nombre}
+                    </p>
+                  )}
+                  {row.semana.objetivo && (
+                    <p className="text-xs text-[var(--color-text-secondary)] italic ml-6 break-words">
+                      "{row.semana.objetivo}"
+                    </p>
+                  )}
+                </div>
+                {/* Sesiones */}
+                {row.semana?.sesiones && row.semana.sesiones.length > 0 && (
+                  <div className="space-y-1.5">
+                    {row.semana.sesiones.map((sesion, sesionIdx) => {
+                      const sesionKey = `${row.alumno.id}-${row.semanaIdx}-${sesionIdx}`;
+                      const isExpanded = expandedSessions.has(sesionKey);
+                      const tiempo = calcularTiempoSesion(sesion);
+                      const mins = Math.floor(tiempo / 60);
+                      const tiempoTexto = mins > 0 ? `${mins} min` : null;
+                      const focoTexto = sesion.foco ? focoLabels[sesion.foco] : null;
+
+                      return (
+                        <div key={sesionIdx} className="space-y-1">
+                          <div
+                            className="flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors hover:bg-[var(--color-surface-muted)] cursor-pointer border border-[var(--color-border-default)]/50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSession(sesionKey);
+                            }}
+                          >
+                            <PlayCircle className="w-4 h-4 text-[var(--color-info)] shrink-0" />
+                            <div className="flex-1 min-w-0 flex items-center gap-2">
+                              <span className="text-sm text-[var(--color-text-primary)] break-words">
+                                {sesion.nombre}
+                              </span>
+                              {tiempoTexto && (
+                                <span className="text-xs text-[var(--color-text-secondary)]">
+                                  · {tiempoTexto}
+                                </span>
+                              )}
+                              {focoTexto && (
+                                <span className="text-xs text-[var(--color-text-secondary)]">
+                                  · {focoTexto}
+                                </span>
+                              )}
+                            </div>
+                            <ChevronRight className={`w-4 h-4 text-[var(--color-text-secondary)] shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                          </div>
+                          {isExpanded && (
+                            <div className="ml-6 mt-1 mb-2 border-l-2 border-[var(--color-info)]/40 pl-3" onClick={(e) => e.stopPropagation()}>
+                              <SessionContentView sesion={sesion} compact />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Columna derecha: feedback */}
+          {isProfesorOrAdmin && (
+            <div className="w-full md:w-[40%] min-w-[220px] space-y-2">
+              {!row.feedback ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    abrirFeedbackDrawer(row.alumno);
+                  }}
+                  className={`${componentStyles.buttons.outline}`}
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Dar feedback
+                </Button>
+              ) : (
+                <div className="flex items-start gap-2">
+                  <MessageSquare className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
+                      {(() => {
+                        const profesor = usuarios.find(u => u.id === row.feedback.profesorId);
+                        if (profesor) {
+                          return (
+                            <span className="text-xs text-[var(--color-text-secondary)]">
+                              • {displayName(profesor)}
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                    {row.feedback.notaProfesor && (
+                      <p className="text-sm text-[var(--color-text-primary)] italic mt-0.5 break-words">
+                        "{row.feedback.notaProfesor}"
+                      </p>
+                    )}
+                    {row.feedback.mediaLinks && row.feedback.mediaLinks.length > 0 && (
+                      <div className="mt-2">
+                        <MediaLinksBadges
+                          mediaLinks={row.feedback.mediaLinks}
+                          onMediaClick={(idx) => handlePreviewMedia(idx, row.feedback.mediaLinks)}
+                          compact={true}
+                          maxDisplay={3}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        abrirFeedbackDrawer(row.alumno, row.feedback);
+                      }}
+                      className={`h-8 ${componentStyles.buttons.ghost}`}
+                      aria-label="Editar feedback"
+                    >
+                      <Edit className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm('¿Eliminar feedback?')) {
+                          eliminarFeedbackMutation.mutate(row.feedback.id);
+                        }
+                      }}
+                      className={`h-8 ${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle}`}
+                      aria-label="Eliminar feedback"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Definir columnas de la tabla (mantenidas para compatibilidad, pero no se usan en el renderizado)
   const columns = [
     {
       key: 'estudiante',
       label: 'Estudiante',
       sortable: true,
       sortValue: (row) => displayName(row.alumno),
-      render: (row) => (
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center shrink-0">
-            <span className="text-[var(--color-text-primary)] font-semibold text-sm">
-              {displayName(row.alumno).slice(0, 1).toUpperCase()}
-            </span>
+      render: (row) => {
+        const totalSemanas = row.asignacionActiva?.plan?.semanas?.length || 0;
+        const semanaActual = totalSemanas > 0 ? (row.semanaIdx + 1) : null;
+        const planNombre = row.asignacionActiva?.plan?.nombre || '';
+        
+        return (
+          <div className="flex items-center justify-between gap-3 min-w-0">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center shrink-0">
+                <span className="text-[var(--color-text-primary)] font-semibold text-sm">
+                  {displayName(row.alumno).slice(0, 1).toUpperCase()}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-[var(--color-text-primary)] break-words">
+                  {displayName(row.alumno)}
+                </p>
+              </div>
+            </div>
+            {row.asignacionActiva && row.semana && (
+              <div className="flex items-center gap-2 shrink-0">
+                {semanaActual && totalSemanas > 0 && (
+                  <Badge variant="outline" className="text-xs px-2 py-0.5">
+                    Semana {semanaActual} de {totalSemanas}
+                  </Badge>
+                )}
+                {planNombre && (
+                  <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                    {planNombre}
+                  </Badge>
+                )}
+              </div>
+            )}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-[var(--color-text-primary)] break-words">
-              {displayName(row.alumno)}
-            </p>
-            <p className="text-xs text-[var(--color-text-secondary)] break-all">
-              {row.alumno.email}
-            </p>
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: 'pieza',
@@ -567,21 +857,25 @@ function AgendaPageContent() {
       render: (row) => {
         if (!row.asignacionActiva || !row.semana) {
           return (
-            <div className="text-center py-6 border-2 border-dashed border-[var(--color-border-default)] rounded-2xl bg-[var(--color-surface-muted)]">
-              <Target className={`w-10 h-10 mx-auto mb-2 ${componentStyles.empty.emptyIcon}`} />
-              <p className="text-sm text-[var(--color-text-secondary)]">Sin asignación esta semana</p>
+            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-surface-muted)]/50 border border-[var(--color-border-default)] rounded-lg">
+              <Target className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />
+              <span className="text-sm text-[var(--color-text-secondary)]">Sin asignación esta semana</span>
             </div>
           );
         }
         return (
-          <div className={"flex items-start gap-2 py-1 " + componentStyles.components.toneRowPlan}>
-            <Music className="w-4 h-4 text-[var(--color-primary)] mt-0.5 shrink-0" />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-[var(--color-text-secondary)] font-medium">Pieza</p>
-              <p className="text-sm break-words text-[var(--color-text-primary)] mt-0.5">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Music className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
+              <p className="text-sm font-medium text-[var(--color-text-primary)] break-words">
                 {row.asignacionActiva.piezaSnapshot?.nombre || '—'}
               </p>
             </div>
+            {row.semana.nombre && (
+              <p className="text-xs text-[var(--color-text-secondary)] ml-6">
+                {row.semana.nombre}
+              </p>
+            )}
           </div>
         );
       },
@@ -591,24 +885,18 @@ function AgendaPageContent() {
       label: 'Semana del Plan',
       sortable: true,
       sortValue: (row) => row.semana?.nombre || '',
+      mobileHidden: true, // Ocultar en mobile ya que se muestra en la columna "pieza"
       render: (row) => {
         if (!row.asignacionActiva || !row.semana) {
           return null; // No mostrar nada si no hay asignación
         }
         return (
-          <div className={"flex items-start gap-2 py-1 " + componentStyles.components.toneRowSemana}>
-            <Target className="w-4 h-4 text-[var(--color-primary)] mt-0.5 shrink-0" />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-[var(--color-text-secondary)] font-medium">Semana del Plan</p>
-              <p className="text-sm break-words text-[var(--color-text-primary)] mt-0.5">
-                {row.semana.nombre}
+          <div className="min-w-0">
+            {row.semana.objetivo && (
+              <p className="text-xs text-[var(--color-text-secondary)] break-words">
+                {row.semana.objetivo}
               </p>
-              {row.semana.objetivo && (
-                <p className="text-xs text-[var(--color-text-secondary)] italic mt-1 break-words">
-                  "{row.semana.objetivo}"
-                </p>
-              )}
-            </div>
+            )}
           </div>
         );
       },
@@ -623,61 +911,47 @@ function AgendaPageContent() {
           return null; // No mostrar nada si no hay sesiones
         }
         return (
-          <div className="space-y-2">
-            <p className="text-xs font-semibold text-[var(--color-text-primary)] mb-2">
-              {row.semana.sesiones.length} sesiones programadas:
-            </p>
+          <div className="space-y-1.5">
             {row.semana.sesiones.map((sesion, sesionIdx) => {
               const sesionKey = `${row.alumno.id}-${row.semanaIdx}-${sesionIdx}`;
               const isExpanded = expandedSessions.has(sesionKey);
               const tiempo = calcularTiempoSesion(sesion);
               const mins = Math.floor(tiempo / 60);
-              const secs = tiempo % 60;
+              const tiempoTexto = mins > 0 ? `${mins} min` : null;
+              const focoTexto = sesion.foco ? focoLabels[sesion.foco] : null;
 
               return (
-                <div
-                  key={sesionIdx}
-                  className="ml-4 border-l-2 border-[var(--color-info)]/40 bg-[var(--color-info)]/10 rounded-r-lg p-2.5 transition-all hover:bg-[var(--color-info)]/20 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleSession(sesionKey);
-                  }}
-                >
-                  <div className="flex items-start gap-2">
-                    <button className="pt-1 flex-shrink-0">
-                      {isExpanded ? (
-                        <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
-                      ) : (
-                        <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
-                      )}
-                    </button>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <PlayCircle className="w-3.5 h-3.5 text-[var(--color-info)] flex-shrink-0" />
-                        <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                          {sesion.nombre}
+                <div key={sesionIdx} className="space-y-1">
+                  <div
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors hover:bg-[var(--color-surface-muted)] cursor-pointer border border-[var(--color-border-default)]/50"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSession(sesionKey);
+                    }}
+                  >
+                    <PlayCircle className="w-4 h-4 text-[var(--color-info)] shrink-0" />
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                      <span className="text-sm text-[var(--color-text-primary)] break-words">
+                        {sesion.nombre}
+                      </span>
+                      {tiempoTexto && (
+                        <span className="text-xs text-[var(--color-text-secondary)]">
+                          · {tiempoTexto}
                         </span>
-                        <Badge 
-                          variant="outline" 
-                          className={tiempo > 0 ? componentStyles.status.badgeSuccess : componentStyles.status.badgeDefault}
-                        >
-                          <Clock className="w-3 h-3 mr-1" />
-                          {mins}:{String(secs).padStart(2, '0')} min
-                        </Badge>
-                        {sesion.foco && (
-                          <Badge className={`rounded-full ${focoColors[sesion.foco]}`} variant="outline">
-                            {focoLabels[sesion.foco]}
-                          </Badge>
-                        )}
-                      </div>
-                      {isExpanded && (
-                        <div className="ml-2 mt-2" onClick={(e) => e.stopPropagation()}>
-                          <SessionContentView sesion={sesion} compact />
-                        </div>
+                      )}
+                      {focoTexto && (
+                        <span className="text-xs text-[var(--color-text-secondary)]">
+                          · {focoTexto}
+                        </span>
                       )}
                     </div>
+                    <ChevronRight className={`w-4 h-4 text-[var(--color-text-secondary)] shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                   </div>
+                  {isExpanded && (
+                    <div className="ml-6 mt-1 mb-2 border-l-2 border-[var(--color-info)]/40 pl-3" onClick={(e) => e.stopPropagation()}>
+                      <SessionContentView sesion={sesion} compact />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -813,43 +1087,80 @@ function AgendaPageContent() {
       />
 
       <div className={componentStyles.layout.page}>
+        {/* Cards de estudiantes */}
+        <div className="space-y-3">
+          {tableData.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="w-12 h-12 mx-auto mb-4 text-[var(--color-text-secondary)]" />
+              <p className="text-[var(--color-text-secondary)]">
+                {searchTerm ? 'No se encontraron estudiantes' : 'No hay estudiantes asignados'}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Selector de "Seleccionar todo" */}
+              {tableData.length > 0 && (
+                <div className="flex items-center gap-2 pb-2">
+                  <Checkbox
+                    checked={selectedItems.size === tableData.length && tableData.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Seleccionar todo"
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm text-[var(--color-text-secondary)]">
+                    Seleccionar todo
+                  </span>
+                </div>
+              )}
 
-        {/* Tabla de estudiantes */}
-        {/* Nota: UnifiedTable maneja sus propios Cards en móvil, no necesita contenedor adicional */}
-        <div className={componentStyles.layout.tableSection}>
-          <UnifiedTable
-            columns={columns}
-            data={tableData}
-            selectable={true}
-            bulkActions={[
-              {
-                id: 'feedback',
-                label: 'Dar feedback',
-                icon: MessageSquare,
-                onClick: (ids) => {
-                  const primerEstudiante = tableData.find(row => ids.includes(row.id));
-                  if (primerEstudiante) {
-                    abrirFeedbackDrawer(primerEstudiante.alumno);
-                  }
-                },
-              },
-            ]}
-            getRowActions={(row) => {
-              const actions = [];
-              if (row.asignacionActiva) {
-                actions.push({
-                  id: 'view',
-                  label: 'Ver detalle de asignación',
-                  onClick: () => navigate(createPageUrl(`asignacion-detalle?id=${row.asignacionActiva.id}`)),
-                  icon: <Eye className="w-4 h-4" />,
-                });
-              }
-              return actions;
-            }}
-            emptyMessage={searchTerm ? 'No se encontraron estudiantes' : 'No hay estudiantes asignados'}
-            emptyIcon={Users}
-            keyField="id"
-          />
+              {/* Lista de cards */}
+              <div className="space-y-3">
+                {displayData.map(row => renderStudentCard(row))}
+              </div>
+
+              {/* Paginación */}
+              {tableData.length > pageSize && (
+                <div className="mt-4">
+                  <TablePagination
+                    data={tableData}
+                    pageSize={pageSize}
+                    currentPage={currentPage}
+                    onPageChange={setCurrentPage}
+                    onPageSizeChange={(newSize) => {
+                      setPageSize(newSize);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Acciones en lote */}
+              {selectedItems.size > 0 && (
+                <div className="sticky bottom-0 left-0 right-0 border-t border-[var(--color-border-default)] bg-[var(--color-surface-default)]/95 backdrop-blur px-4 py-2 flex flex-wrap items-center justify-between gap-2 shadow-[0_-4px_12px_rgba(15,23,42,0.08)] z-20">
+                  <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                    {selectedItems.size} {selectedItems.size === 1 ? 'elemento seleccionado' : 'elementos seleccionados'}
+                  </span>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const primerEstudiante = tableData.find(row => selectedItems.has(row.id));
+                        if (primerEstudiante) {
+                          abrirFeedbackDrawer(primerEstudiante.alumno);
+                        }
+                        setSelectedItems(new Set());
+                      }}
+                      className="h-9 text-xs"
+                    >
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Dar feedback
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 

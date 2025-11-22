@@ -68,7 +68,7 @@ export default function EventoAsignacion({ asignacion, usuarios, onClick, varian
     >
       {/* Línea 1: Nombre de la pieza (texto principal) */}
       <p className="text-xs text-[var(--color-text-primary)] font-semibold mb-0.5 line-clamp-1">
-        {piezaNombre}
+          {piezaNombre}
       </p>
       {/* Línea 2: Subtítulo con "Asignación" y patrón semanal si existe */}
       <div className="text-[10px] text-[var(--color-text-secondary)] mb-1">
@@ -86,7 +86,7 @@ export default function EventoAsignacion({ asignacion, usuarios, onClick, varian
             compact={true}
             maxDisplay={3}
           />
-        </div>
+      </div>
       )}
     </div>
   );
