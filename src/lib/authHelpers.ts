@@ -23,10 +23,23 @@ export function isAuthError(error: any): boolean {
     'invalid token',
     'token expired',
     'session expired',
+    'session_not_found',
     'unauthorized',
     'forbidden',
     'authentication failed',
   ];
+  
+  // Verificar código de error específico de Supabase para session_not_found
+  if (error.code === 'session_not_found' || error.statusCode === 403) {
+    // Verificar también en headers de respuesta si está disponible
+    if (error.response?.headers?.['x-sb-error-code'] === 'session_not_found') {
+      return true;
+    }
+    // Si el mensaje contiene session_not_found o el status es 403, es probablemente un error de sesión
+    if (errorMessage.includes('session_not_found') || error.status === 403) {
+      return true;
+    }
+  }
 
   if (authErrorPatterns.some(pattern => errorMessage.includes(pattern))) {
     return true;

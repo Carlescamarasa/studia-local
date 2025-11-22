@@ -30,6 +30,8 @@ const Layout = lazy(() => import("@/pages/Layout.jsx"));
 const QAVisualPage = lazy(() => import("@/pages/qa-visual.jsx"));
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage.jsx"));
 const ResetPasswordPage = lazy(() => import("@/pages/auth/ResetPasswordPage.jsx"));
+const DebugFormularioRapido = lazy(() => import("@/pages/DebugFormularioRapido.jsx"));
+const DebugAsignacionWizard = lazy(() => import("@/pages/DebugAsignacionWizard.jsx"));
 
 // Componente de carga
 const PageLoader = () => (
@@ -48,6 +50,14 @@ export default function AppRouter() {
         {/* Rutas públicas */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        
+        {/* Ruta de debug - accesible sin autenticación para facilitar depuración */}
+        {process.env.NODE_ENV === 'development' && (
+          <>
+            <Route path="/debug/formulario-rapido" element={<DebugFormularioRapido />} />
+            <Route path="/debug/asignacion-wizard" element={<DebugAsignacionWizard />} />
+          </>
+        )}
         
         {/* Rutas protegidas: todas requieren autenticación */}
         <Route

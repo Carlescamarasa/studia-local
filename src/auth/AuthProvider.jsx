@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { isAuthError } from '@/lib/authHelpers';
+import { toast } from 'sonner';
 
 const AuthContext = createContext(undefined);
 
@@ -31,12 +32,15 @@ function calculateAppRoleFromEmail(email) {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
   const fetchingProfileRef = useRef(false);
   const currentUserIdRef = useRef(null);
   const sessionCheckIntervalRef = useRef(null);
   const recursionErrorRef = useRef(false);
+  const sessionNotFoundShownRef = useRef(false); // Evitar mostrar múltiples toasts
   
   // Calcular appRole basándose en el email del usuario
   const appRole = useMemo(() => {
@@ -108,9 +112,53 @@ export function AuthProvider({ children }) {
     let isMounted = true;
 
     // Obtener sesión inicial
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (!isMounted) return;
+      
+      // Manejar errores de sesión explícitamente
+      if (error) {
+        const isSessionNotFound = error.message?.includes('session_not_found') || 
+                                  error.status === 403 ||
+                                  error.code === 'session_not_found';
+        
+        if (isSessionNotFound && !sessionNotFoundShownRef.current) {
+          sessionNotFoundShownRef.current = true;
+          toast.error('Sesión expirada. Por favor, vuelve a iniciar sesión.', {
+            duration: 5000,
+          });
+          
+          // Limpiar estado
+          setUser(null);
+          setSession(null);
+          setProfile(null);
+          setAuthError(error);
+          currentUserIdRef.current = null;
+          fetchingProfileRef.current = false;
+          setLoading(false);
+          
+          // Limpiar tokens locales
+          try {
+            await supabase.auth.signOut();
+          } catch (signOutError) {
+            // Ignorar errores al cerrar sesión
+          }
+          
+          // Redirigir a login después de 2 segundos
+          setTimeout(() => {
+            if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/login') {
+              window.location.href = '/auth/login';
+            }
+          }, 2000);
+          
+          return;
+        }
+      }
+      
+      setSession(session);
       setUser(session?.user ?? null);
+      setAuthError(null);
+      sessionNotFoundShownRef.current = false;
+      
       if (session?.user?.id) {
         await fetchProfile(session.user.id);
       } else {
@@ -130,16 +178,22 @@ export function AuthProvider({ children }) {
         if (event === 'SIGNED_OUT') {
           // Sesión cerrada explícitamente o expirada
           setUser(null);
+          setSession(null);
           setProfile(null);
+          setAuthError(null);
           currentUserIdRef.current = null;
           fetchingProfileRef.current = false;
           recursionErrorRef.current = false; // Resetear flag al cerrar sesión
+          sessionNotFoundShownRef.current = false;
           setLoading(false);
           return;
         } else if (event === 'TOKEN_REFRESHED') {
           // Token refrescado - verificar que la sesión sigue válida
           if (session?.user) {
+            setSession(session);
             setUser(session.user);
+            setAuthError(null);
+            sessionNotFoundShownRef.current = false;
             setLoading(false);
             if (session.user.id) {
               fetchProfile(session.user.id).catch(err => {
@@ -151,9 +205,12 @@ export function AuthProvider({ children }) {
           } else {
             // Token refrescado pero no hay sesión válida - limpiar
             setUser(null);
+            setSession(null);
             setProfile(null);
+            setAuthError(null);
             currentUserIdRef.current = null;
             fetchingProfileRef.current = false;
+            sessionNotFoundShownRef.current = false;
             setLoading(false);
           }
           return;
@@ -163,16 +220,22 @@ export function AuthProvider({ children }) {
       // Si no hay sesión (sesión expirada o usuario cerrado sesión), limpiar estado
       if (!session) {
         setUser(null);
+        setSession(null);
         setProfile(null);
+        setAuthError(null);
         currentUserIdRef.current = null;
         fetchingProfileRef.current = false;
         recursionErrorRef.current = false; // Resetear flag al cerrar sesión
+        sessionNotFoundShownRef.current = false;
         setLoading(false);
         return;
       }
       
       // Actualizar usuario inmediatamente
+      setSession(session);
       setUser(session.user);
+      setAuthError(null);
+      sessionNotFoundShownRef.current = false;
       setLoading(false);
       
       // Obtener perfil en background (no bloquear)
@@ -194,13 +257,36 @@ export function AuthProvider({ children }) {
       if (!isMounted) return;
       const error = event.detail?.error;
       if (error && isAuthError(error)) {
+        const isSessionNotFound = error.message?.includes('session_not_found') || 
+                                  error.status === 403 ||
+                                  error.code === 'session_not_found';
+        
         // Forzar cierre de sesión cuando se detecta error de autenticación
         setUser(null);
+        setSession(null);
         setProfile(null);
+        setAuthError(error);
         currentUserIdRef.current = null;
         fetchingProfileRef.current = false;
         recursionErrorRef.current = false;
+        sessionNotFoundShownRef.current = false;
         setLoading(false);
+        
+        // Mostrar mensaje solo si no se ha mostrado recientemente
+        if (isSessionNotFound && !sessionNotFoundShownRef.current) {
+          sessionNotFoundShownRef.current = true;
+          toast.error('Sesión expirada. Por favor, vuelve a iniciar sesión.', {
+            duration: 5000,
+          });
+          
+          // Redirigir a login después de 2 segundos
+          setTimeout(() => {
+            if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/login') {
+              window.location.href = '/auth/login';
+            }
+          }, 2000);
+        }
+        
         try {
           await supabase.auth.signOut();
         } catch (signOutError) {
@@ -224,27 +310,64 @@ export function AuthProvider({ children }) {
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error && isAuthError(error)) {
+          const isSessionNotFound = error.message?.includes('session_not_found') || 
+                                    error.status === 403 ||
+                                    error.code === 'session_not_found';
+          
           // Sesión expirada - limpiar estado
           setUser(null);
+          setSession(null);
           setProfile(null);
+          setAuthError(error);
           currentUserIdRef.current = null;
           fetchingProfileRef.current = false;
           recursionErrorRef.current = false;
+          
+          // Mostrar mensaje solo si no se ha mostrado recientemente
+          if (isSessionNotFound && !sessionNotFoundShownRef.current) {
+            sessionNotFoundShownRef.current = true;
+            toast.error('Sesión expirada. Por favor, vuelve a iniciar sesión.', {
+              duration: 5000,
+            });
+            
+            // Limpiar tokens locales
+            try {
+              await supabase.auth.signOut();
+            } catch (signOutError) {
+              // Ignorar errores al cerrar sesión
+            }
+            
+            // Redirigir a login después de 2 segundos
+            setTimeout(() => {
+              if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/login') {
+                window.location.href = '/auth/login';
+              }
+            }, 2000);
+          }
+          
           setLoading(false);
           return;
         }
         
+        setAuthError(null);
+        setSession(session);
+        
         // Si no hay sesión pero tenemos usuario en estado, limpiar
         if (!session && user) {
           setUser(null);
+          setSession(null);
           setProfile(null);
           currentUserIdRef.current = null;
           fetchingProfileRef.current = false;
           recursionErrorRef.current = false;
+          sessionNotFoundShownRef.current = false;
           setLoading(false);
         } else if (session?.user && (!user || user.id !== session.user.id)) {
           // Si hay sesión pero el usuario cambió, actualizar
+          setSession(session);
           setUser(session.user);
+          setAuthError(null);
+          sessionNotFoundShownRef.current = false;
           if (session.user.id && !recursionErrorRef.current) {
             fetchProfile(session.user.id).catch(err => {
               if (process.env.NODE_ENV === 'development') {
@@ -322,9 +445,12 @@ export function AuthProvider({ children }) {
     
     // Limpiar perfil al cerrar sesión (siempre, incluso si falló el signOut)
     setUser(null);
+    setSession(null);
     setProfile(null);
+    setAuthError(null);
     fetchingProfileRef.current = false;
     currentUserIdRef.current = null;
+    sessionNotFoundShownRef.current = false;
   }, []);
 
   // Función para verificar manualmente la sesión
@@ -333,22 +459,56 @@ export function AuthProvider({ children }) {
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error && isAuthError(error)) {
+        const isSessionNotFound = error.message?.includes('session_not_found') || 
+                                  error.status === 403 ||
+                                  error.code === 'session_not_found';
+        
         // Sesión expirada - limpiar estado
         setUser(null);
+        setSession(null);
         setProfile(null);
+        setAuthError(error);
         currentUserIdRef.current = null;
         fetchingProfileRef.current = false;
+        
+        // Mostrar mensaje solo si no se ha mostrado recientemente
+        if (isSessionNotFound && !sessionNotFoundShownRef.current) {
+          sessionNotFoundShownRef.current = true;
+          toast.error('Sesión expirada. Por favor, vuelve a iniciar sesión.', {
+            duration: 5000,
+          });
+          
+          // Limpiar tokens locales
+          try {
+            await supabase.auth.signOut();
+          } catch (signOutError) {
+            // Ignorar errores al cerrar sesión
+          }
+          
+          // Redirigir a login después de 2 segundos
+          setTimeout(() => {
+            if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/login') {
+              window.location.href = '/auth/login';
+            }
+          }, 2000);
+        }
+        
         setLoading(false);
         return false;
       }
+      
+      setAuthError(null);
+      setSession(session);
       
       if (!session) {
         // No hay sesión - limpiar si tenemos usuario en estado
         if (user) {
           setUser(null);
+          setSession(null);
           setProfile(null);
           currentUserIdRef.current = null;
           fetchingProfileRef.current = false;
+          sessionNotFoundShownRef.current = false;
           setLoading(false);
         }
         return false;
@@ -356,7 +516,10 @@ export function AuthProvider({ children }) {
       
       // Hay sesión válida - actualizar estado si es necesario
       if (!user || user.id !== session.user.id) {
+        setSession(session);
         setUser(session.user);
+        setAuthError(null);
+        sessionNotFoundShownRef.current = false;
         if (session.user.id) {
           await fetchProfile(session.user.id);
         }
@@ -397,15 +560,17 @@ export function AuthProvider({ children }) {
   // Usar useMemo para estabilizar el valor del contexto
   const value = useMemo(() => ({
     user,
+    session,
     profile,
     appRole,
     loading,
+    authError,
     signIn,
     signOut,
     checkSession,
     handleAuthError,
     resetPassword,
-  }), [user, profile, appRole, loading, signIn, signOut, checkSession, handleAuthError, resetPassword]);
+  }), [user, session, profile, appRole, loading, authError, signIn, signOut, checkSession, handleAuthError, resetPassword]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

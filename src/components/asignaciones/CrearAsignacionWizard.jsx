@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { formatLocalDate, parseLocalDate, startOfMonday, displayName, useEffectiveUser } from "@/components/utils/helpers";
-import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/auth/AuthProvider";
 
 export default function CrearAsignacionWizard({ onClose }) {
   const queryClient = useQueryClient();
@@ -37,6 +37,7 @@ export default function CrearAsignacionWizard({ onClose }) {
   const [searchPlan, setSearchPlan] = useState('');
 
   const effectiveUser = useEffectiveUser();
+  const { user: authUser, authError: authErrorContext } = useAuth();
 
   const { data: estudiantes = [] } = useQuery({
     queryKey: ['estudiantes'],
@@ -58,17 +59,25 @@ export default function CrearAsignacionWizard({ onClose }) {
 
   const crearAsignacionesMutation = useMutation({
     mutationFn: async (data) => {
-      // Obtener el usuario autenticado directamente de Supabase Auth
-      // Esto asegura que usamos auth.uid() que coincide con la política RLS
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      // Usar usuario del contexto AuthProvider en lugar de llamar directamente a supabase.auth.getUser()
+      // Verificar si hay error de autenticación en el contexto
+      if (authErrorContext) {
+        const isSessionNotFound = authErrorContext.message?.includes('session_not_found') || 
+                                  authErrorContext.status === 403 ||
+                                  authErrorContext.code === 'session_not_found';
+        if (isSessionNotFound) {
+          throw new Error('Sesión expirada. Por favor, vuelve a iniciar sesión.');
+        }
+        throw new Error('Error de autenticación. Por favor, inicia sesión nuevamente.');
+      }
       
-      if (authError || !authUser) {
-        console.error('[CrearAsignacionWizard] Error obteniendo usuario autenticado:', authError);
+      // Verificar que hay usuario autenticado
+      if (!authUser && !effectiveUser) {
         throw new Error('Usuario no autenticado. Por favor, inicia sesión nuevamente.');
       }
 
-      // Usar authUser.id (auth.uid()) como prioridad, fallback a effectiveUser?.id
-      const profesorId = authUser.id || effectiveUser?.id;
+      // Usar authUser.id (del contexto) si está disponible, sino effectiveUser?.id
+      const profesorId = authUser?.id || effectiveUser?.id;
       
       if (!profesorId) {
         throw new Error('No se pudo obtener el ID del profesor. Por favor, inicia sesión nuevamente.');

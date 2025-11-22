@@ -19,10 +19,12 @@ import { createPageUrl } from "@/utils";
 import { displayName, formatLocalDate, parseLocalDate, startOfMonday, useEffectiveUser } from "@/components/utils/helpers";
 import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
-import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/auth/AuthProvider";
 import LoadingSpinner from "@/components/ds/LoadingSpinner";
+import PieceEditor from "@/components/editor/PieceEditor";
+import PlanEditor from "@/components/editor/PlanEditor";
 
-export default function FormularioRapido({ onClose }) {
+export default function FormularioRapido({ onClose, debugInline = false }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -38,22 +40,19 @@ export default function FormularioRapido({ onClose }) {
     adaptarPlanAhora: true,
   });
   const [filtroProfesor, setFiltroProfesor] = useState('all');
+  const [piezaEditorAbierto, setPiezaEditorAbierto] = useState(false);
+  const [planEditorAbierto, setPlanEditorAbierto] = useState(false);
+  const [contadorPiezasAntes, setContadorPiezasAntes] = useState(null);
+  const [contadorPlanesAntes, setContadorPlanesAntes] = useState(null);
 
   const effectiveUser = useEffectiveUser();
+  const { user: authUser, session, authError: authErrorContext } = useAuth();
 
   // Obtener usuarios solo para la lista de profesores (no para estudiantes)
   const { data: usuarios = [], isLoading: isLoadingUsuarios, isError: isErrorUsuarios, error: errorUsuarios } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const result = await localDataClient.entities.User.list();
-      console.log('[FormularioRapido] Usuarios obtenidos de API:', result?.length || 0, result);
-      if (result && result.length > 0) {
-        console.log('[FormularioRapido] Primer usuario ejemplo:', result[0]);
-        console.log('[FormularioRapido] Campos del primer usuario:', Object.keys(result[0]));
-        console.log('[FormularioRapido] rolPersonalizado del primer usuario:', result[0].rolPersonalizado);
-        console.log('[FormularioRapido] role del primer usuario:', result[0].role);
-      }
-      return result;
+      return await localDataClient.entities.User.list();
     },
     retry: (failureCount, error) => {
       // No reintentar si es AbortError
@@ -67,29 +66,26 @@ export default function FormularioRapido({ onClose }) {
 
   // Obtener profesores para el filtro
   const profesores = React.useMemo(() => {
-    console.log('[FormularioRapido] usuarios recibidos:', usuarios.length, usuarios);
-    
     // Verificar tanto rolPersonalizado como role (por si acaso no se normalizó correctamente)
     const profesoresFiltrados = usuarios.filter(u => {
       const rol = u.rolPersonalizado || u.role;
-      const esProfesor = rol === 'PROF' || rol === 'ADMIN';
-      if (!esProfesor) {
-        console.log('[FormularioRapido] Usuario descartado:', u.id, 'rol:', rol, 'usuario completo:', u);
-      }
-      return esProfesor;
+      return rol === 'PROF' || rol === 'ADMIN';
     });
-    
-    console.log('[FormularioRapido] profesores filtrados:', profesoresFiltrados.length, profesoresFiltrados);
     
     const profesoresMapeados = profesoresFiltrados.map(p => ({
       value: p.id,
       label: displayName(p),
     }));
     
-    console.log('[FormularioRapido] profesores mapeados antes de sort:', profesoresMapeados);
-    
     return profesoresMapeados.sort((a, b) => a.label.localeCompare(b.label));
   }, [usuarios]);
+
+  // Log de profesores solo cuando cambian los datos (solo en desarrollo)
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && usuarios.length > 0 && profesores.length > 0) {
+      console.log('[FormularioRapido] Profesores disponibles:', profesores.length);
+    }
+  }, [profesores.length, usuarios.length]);
 
   // Obtener información de estudiantes ya seleccionados para mostrarlos en los chips
   const selectedStudentsData = React.useMemo(() => {
@@ -109,6 +105,7 @@ export default function FormularioRapido({ onClose }) {
       .filter(Boolean);
   }, [formData.estudiantesIds, usuarios]);
 
+
   const { data: piezas = [], isLoading: isLoadingPiezas, isError: isErrorPiezas, error: errorPiezas } = useQuery({
     queryKey: ['piezas'],
     queryFn: () => localDataClient.entities.Pieza.list(),
@@ -124,11 +121,7 @@ export default function FormularioRapido({ onClose }) {
 
   const { data: planes = [], isLoading: isLoadingPlanes, isError: isErrorPlanes, error: errorPlanes } = useQuery({
     queryKey: ['planes'],
-    queryFn: async () => {
-      const result = await localDataClient.entities.Plan.list();
-      console.log('[FormularioRapido] Planes obtenidos de API:', result?.length || 0, result);
-      return result;
-    },
+      queryFn: () => localDataClient.entities.Plan.list(),
     retry: (failureCount, error) => {
       // No reintentar si es AbortError
       if (error?.name === 'AbortError') return false;
@@ -145,15 +138,25 @@ export default function FormularioRapido({ onClose }) {
 
   const crearAsignacionesMutation = useMutation({
     mutationFn: async (data) => {
-      // Obtener el usuario autenticado directamente de Supabase Auth
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      // Usar usuario del contexto AuthProvider en lugar de llamar directamente a supabase.auth.getUser()
+      // Verificar si hay error de autenticación en el contexto
+      if (authErrorContext) {
+        const isSessionNotFound = authErrorContext.message?.includes('session_not_found') || 
+                                  authErrorContext.status === 403 ||
+                                  authErrorContext.code === 'session_not_found';
+        if (isSessionNotFound) {
+          throw new Error('Sesión expirada. Por favor, vuelve a iniciar sesión.');
+        }
+        throw new Error('Error de autenticación. Por favor, inicia sesión nuevamente.');
+      }
       
-      if (authError || !authUser) {
-        console.error('[FormularioRapido] Error obteniendo usuario autenticado:', authError);
+      // Verificar que hay usuario autenticado
+      if (!authUser && !effectiveUser) {
         throw new Error('Usuario no autenticado. Por favor, inicia sesión nuevamente.');
       }
 
-      const profesorId = authUser.id || effectiveUser?.id;
+      // Usar authUser.id (del contexto) si está disponible, sino effectiveUser.id
+      const profesorId = authUser?.id || effectiveUser?.id;
       
       if (!profesorId) {
         throw new Error('No se pudo obtener el ID del profesor. Por favor, inicia sesión nuevamente.');
@@ -260,17 +263,24 @@ export default function FormularioRapido({ onClose }) {
     return formatLocalDate(date);
   };
 
+  // Calcular semanaInicioISO cuando cambia fechaSeleccionada
   useEffect(() => {
     if (formData.fechaSeleccionada) {
       const lunes = calcularLunesSemanaISO(formData.fechaSeleccionada);
-      setFormData(prev => ({ ...prev, semanaInicioISO: lunes }));
+      setFormData(prev => {
+        // Solo actualizar si el valor cambió
+        if (prev.semanaInicioISO !== lunes) {
+          return { ...prev, semanaInicioISO: lunes };
+        }
+        return prev;
+      });
     }
   }, [formData.fechaSeleccionada]);
 
   // Validar paso 1 (incluyendo verificar que los datos estén disponibles)
   const isStep1Valid = formData.estudiantesIds.length > 0 && formData.piezaId && formData.fechaSeleccionada && !isLoadingData && piezas.length > 0;
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (isLoadingData) {
       toast.error('Espera a que se carguen los datos...');
       return;
@@ -292,13 +302,13 @@ export default function FormularioRapido({ onClose }) {
       return;
     }
     setStep(2);
-  };
+  }, [isLoadingData, isLoadingPiezas, piezas.length, isStep1Valid, formData]);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     setStep(1);
-  };
+  }, []);
 
-  const handleCrear = () => {
+  const handleCrear = useCallback(() => {
     if (isLoadingData) {
       toast.error('Espera a que se carguen los datos...');
       return;
@@ -315,7 +325,7 @@ export default function FormularioRapido({ onClose }) {
     }
 
     crearAsignacionesMutation.mutate(formData);
-  };
+  }, [isLoadingData, isLoadingPlanes, planes.length, formData, crearAsignacionesMutation]);
 
   // Shortcuts de teclado
   useEffect(() => {
@@ -329,13 +339,13 @@ export default function FormularioRapido({ onClose }) {
         if (step === 1) {
           handleNext();
         } else {
-        handleCrear();
+          handleCrear();
         }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [step, formData, onClose, handleCrear, handleNext]);
+  }, [step, onClose, handleNext, handleCrear]);
 
   const piezaSeleccionada = piezas.find(p => p.id === formData.piezaId);
   const planSeleccionado = planes.find(p => p.id === formData.planId);
@@ -465,14 +475,11 @@ export default function FormularioRapido({ onClose }) {
                     className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                   >
                     <SelectItem value="all">Todos los profesores</SelectItem>
-                    {(() => {
-                      console.log('[FormularioRapido] Renderizando SelectContent de profesores, cantidad:', profesores.length, profesores);
-                      return profesores.map((prof) => (
-                        <SelectItem key={prof.value} value={prof.value}>
-                          {prof.label}
-                        </SelectItem>
-                      ));
-                    })()}
+                    {profesores.map((prof) => (
+                      <SelectItem key={prof.value} value={prof.value}>
+                        {prof.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               )}
@@ -495,7 +502,7 @@ export default function FormularioRapido({ onClose }) {
                 <StudentSearchBarAsync
                   value={formData.estudiantesIds}
                   onChange={(vals) => {
-                    setFormData({ ...formData, estudiantesIds: vals });
+                    setFormData(prev => ({ ...prev, estudiantesIds: vals }));
                   }}
                   placeholder="Buscar estudiante por nombre..."
                   profesorFilter={filtroProfesor !== 'all' ? filtroProfesor : null}
@@ -521,7 +528,7 @@ export default function FormularioRapido({ onClose }) {
                   <Input
                     type="date"
                     value={formData.fechaSeleccionada}
-                    onChange={(e) => setFormData({ ...formData, fechaSeleccionada: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, fechaSeleccionada: e.target.value }))}
                     className={componentStyles.controls.inputDefault}
                   />
                   {formData.fechaSeleccionada && formData.semanaInicioISO && (
@@ -549,8 +556,8 @@ export default function FormularioRapido({ onClose }) {
               variant="ghost"
               size="sm"
               onClick={() => {
-                // TODO: Implementar creación inline de pieza
-                toast.info('Próximamente: creación de pieza inline');
+                setContadorPiezasAntes(piezas.length);
+                setPiezaEditorAbierto(true);
               }}
               className="text-xs gap-1 text-[var(--color-primary)]"
             >
@@ -576,11 +583,7 @@ export default function FormularioRapido({ onClose }) {
             <Select 
               value={formData.piezaId} 
               onValueChange={(v) => {
-                console.log('[FormularioRapido] Select Pieza onValueChange:', v);
-                setFormData({ ...formData, piezaId: v });
-              }}
-              onOpenChange={(open) => {
-                console.log('[FormularioRapido] Select Pieza onOpenChange:', open);
+                setFormData(prev => ({ ...prev, piezaId: v }));
               }}
               modal={false}
               disabled={piezas.length === 0}
@@ -595,17 +598,15 @@ export default function FormularioRapido({ onClose }) {
                 sideOffset={4}
                 className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
               >
-                {(() => {
-                  console.log('[FormularioRapido] Renderizando SelectContent de piezas, cantidad:', piezas.length, piezas);
-                  if (piezas.length === 0) {
-                    return <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay piezas disponibles</div>;
-                  }
-                  return piezas.map((pieza) => (
+                {piezas.length === 0 ? (
+                  <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay piezas disponibles</div>
+                ) : (
+                  piezas.map((pieza) => (
                     <SelectItem key={pieza.id} value={pieza.id}>
                       {pieza.nombre}
                     </SelectItem>
-                  ));
-                })()}
+                  ))
+                )}
               </SelectContent>
             </Select>
           )}
@@ -640,8 +641,8 @@ export default function FormularioRapido({ onClose }) {
               variant="ghost"
               size="sm"
               onClick={() => {
-                // TODO: Implementar creación inline de plan
-                toast.info('Próximamente: creación de plan inline');
+                setContadorPlanesAntes(planes.length);
+                setPlanEditorAbierto(true);
               }}
               className="text-xs gap-1 text-[var(--color-primary)]"
             >
@@ -666,7 +667,7 @@ export default function FormularioRapido({ onClose }) {
           ) : (
             <Select 
               value={formData.planId} 
-              onValueChange={(v) => setFormData({ ...formData, planId: v })}
+              onValueChange={(v) => setFormData(prev => ({ ...prev, planId: v }))}
               modal={false}
               disabled={planes.length === 0}
             >
@@ -680,17 +681,15 @@ export default function FormularioRapido({ onClose }) {
                 sideOffset={4}
                 className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
               >
-                {(() => {
-                  console.log('[FormularioRapido] Renderizando SelectContent de planes, cantidad:', planes.length, planes);
-                  if (planes.length === 0) {
-                    return <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay planes disponibles</div>;
-                  }
-                  return planes.map((plan) => (
+                {planes.length === 0 ? (
+                  <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay planes disponibles</div>
+                ) : (
+                  planes.map((plan) => (
                     <SelectItem key={plan.id} value={plan.id}>
                       {plan.nombre}
                     </SelectItem>
-                  ));
-                })()}
+                  ))
+                )}
               </SelectContent>
             </Select>
           )}
@@ -721,7 +720,7 @@ export default function FormularioRapido({ onClose }) {
           <CardContent>
             <Select 
               value={formData.foco} 
-              onValueChange={(v) => setFormData({ ...formData, foco: v })}
+              onValueChange={(v) => setFormData(prev => ({ ...prev, foco: v }))}
               modal={false}
             >
               <SelectTrigger id="foco" className={`w-full ${componentStyles.controls.selectDefault}`}>
@@ -754,7 +753,7 @@ export default function FormularioRapido({ onClose }) {
                   <Textarea
                     id="notas"
                     value={formData.notas}
-                    onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, notas: e.target.value }))}
               placeholder="Instrucciones o comentarios... (opcional)"
               rows={4}
                     className={componentStyles.controls.inputDefault}
@@ -780,7 +779,7 @@ export default function FormularioRapido({ onClose }) {
                   <Switch
                     id="publicar"
                     checked={formData.publicarAhora}
-                    onCheckedChange={(checked) => setFormData({ ...formData, publicarAhora: checked, adaptarPlanAhora: false })}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, publicarAhora: checked, adaptarPlanAhora: false }))}
                   />
                 </div>
 
@@ -794,7 +793,7 @@ export default function FormularioRapido({ onClose }) {
                   <Switch
                     id="adaptar"
                     checked={formData.adaptarPlanAhora}
-                    onCheckedChange={(checked) => setFormData({ ...formData, adaptarPlanAhora: checked, publicarAhora: false })}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, adaptarPlanAhora: checked, publicarAhora: false }))}
                     disabled={formData.estudiantesIds.length > 1}
                   />
                 </div>
@@ -826,27 +825,57 @@ export default function FormularioRapido({ onClose }) {
     </div>
   );
 
+  // Detectar cuando se crea una nueva pieza y seleccionarla automáticamente
+  useEffect(() => {
+    if (contadorPiezasAntes !== null && !piezaEditorAbierto && piezas.length > contadorPiezasAntes) {
+      // Se creó una nueva pieza - seleccionar la última
+      const nuevaPieza = piezas[piezas.length - 1];
+      if (nuevaPieza && nuevaPieza.id) {
+        setFormData(prev => ({ ...prev, piezaId: nuevaPieza.id }));
+        toast.success('✅ Pieza creada y seleccionada');
+      }
+      setContadorPiezasAntes(null);
+    }
+  }, [piezas, contadorPiezasAntes, piezaEditorAbierto]);
+
+  // Detectar cuando se crea un nuevo plan y seleccionarlo automáticamente
+  useEffect(() => {
+    if (contadorPlanesAntes !== null && !planEditorAbierto && planes.length > contadorPlanesAntes) {
+      // Se creó un nuevo plan - seleccionar el último
+      const nuevoPlan = planes[planes.length - 1];
+      if (nuevoPlan && nuevoPlan.id) {
+        setFormData(prev => ({ ...prev, planId: nuevoPlan.id }));
+        toast.success('✅ Plan creado y seleccionado');
+      }
+      setContadorPlanesAntes(null);
+    }
+  }, [planes, contadorPlanesAntes, planEditorAbierto]);
+
+  // Manejar cierre de PieceEditor
+  const handlePiezaEditorClose = useCallback(() => {
+    setPiezaEditorAbierto(false);
+    // Invalidar query para refrescar lista de piezas
+    queryClient.invalidateQueries({ queryKey: ['piezas'] });
+  }, [queryClient]);
+
+  // Manejar cierre de PlanEditor
+  const handlePlanEditorClose = useCallback(() => {
+    setPlanEditorAbierto(false);
+    // Invalidar query para refrescar lista de planes
+    queryClient.invalidateQueries({ queryKey: ['planes'] });
+  }, [queryClient]);
+
   const modalContent = (
     <>
       <div 
         className="fixed inset-0 bg-black/40 z-[80]"
-        onClick={(e) => {
-          // No cerrar si el clic es en un Select o en su contenido
-          const target = e.target;
-          if (target.closest('[data-radix-select-content]') || 
-              target.closest('[data-radix-select-viewport]') ||
-              target.closest('[data-radix-select-item]')) {
-            return;
-          }
-          onClose();
-        }}
+        onClick={onClose}
       />
       
       <div className="fixed inset-0 z-[90] flex items-center justify-center pointer-events-none p-4 overflow-y-auto" role="dialog" aria-modal="true">
         <div 
           className="bg-[var(--color-surface-elevated)] w-full max-w-3xl max-h-[92vh] shadow-card rounded-[var(--radius-modal)] flex flex-col pointer-events-auto my-8"
           onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-[var(--radius-modal)] px-6 py-4">
@@ -945,5 +974,47 @@ export default function FormularioRapido({ onClose }) {
     </>
   );
 
-  return createPortal(modalContent, document.body);
+  // Renderizar editores modales anidados si están abiertos
+  const renderEditores = () => {
+    if (piezaEditorAbierto) {
+      return (
+        <PieceEditor
+          pieza={null}
+          onClose={handlePiezaEditorClose}
+        />
+      );
+    }
+    
+    if (planEditorAbierto) {
+      return (
+        <PlanEditor
+          plan={null}
+          onClose={handlePlanEditorClose}
+        />
+      );
+    }
+    
+    return null;
+  };
+
+  // Si debugInline es true, renderizar directamente sin portal (útil para depuración aislada)
+  // El contenedor padre deberá proporcionar el fondo y el posicionamiento
+  if (debugInline) {
+    // En modo debug, el modal se renderiza inline, por lo que el overlay fixed funcionará
+    // dentro del contenedor padre que deberá ocupar toda la pantalla
+    return (
+      <>
+        {modalContent}
+        {renderEditores()}
+      </>
+    );
+  }
+
+  // Comportamiento normal: usar portal para renderizar en document.body
+  return (
+    <>
+      {createPortal(modalContent, document.body)}
+      {renderEditores()}
+    </>
+  );
 }

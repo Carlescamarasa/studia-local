@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { componentStyles } from "@/design/componentStyles";
 import { supabase } from "@/lib/supabaseClient";
+import { localDataClient } from "@/api/localDataClient";
 import { displayName } from "@/components/utils/helpers";
 
 /**
@@ -44,7 +45,8 @@ export default function StudentSearchBarAsync({
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Buscar estudiantes en Supabase cuando cambia la query (mínimo 1 carácter)
+  // Buscar estudiantes cuando cambia la query (mínimo 1 carácter)
+  // Funciona tanto en modo local (localDataClient) como remoto (Supabase)
   useEffect(() => {
     const searchStudents = async () => {
       const trimmedQuery = debouncedQuery.trim();
@@ -58,33 +60,92 @@ export default function StudentSearchBarAsync({
       setIsLoading(true);
       
       try {
-        let supabaseQuery = supabase
-          .from('profiles')
-          .select('id, full_name, role, profesor_asignado_id')
-          .eq('role', 'ESTU')
-          .ilike('full_name', `%${trimmedQuery}%`)
-          .order('full_name', { ascending: true });
+        const dataSource = import.meta.env.VITE_DATA_SOURCE || 'local';
+        
+        if (dataSource === 'remote') {
+          // Modo remoto: buscar en Supabase
+          let supabaseQuery = supabase
+            .from('profiles')
+            .select('id, full_name, role, profesor_asignado_id')
+            .eq('role', 'ESTU')
+            .ilike('full_name', `%${trimmedQuery}%`)
+            .order('full_name', { ascending: true });
 
-        // Si hay filtro de profesor, añadir condición
-        if (profesorFilter && profesorFilter !== 'all') {
-          supabaseQuery = supabaseQuery.eq('profesor_asignado_id', profesorFilter);
-        }
+          // Si hay filtro de profesor, añadir condición
+          if (profesorFilter && profesorFilter !== 'all') {
+            supabaseQuery = supabaseQuery.eq('profesor_asignado_id', profesorFilter);
+          }
 
-        const { data, error } = await supabaseQuery;
+          const { data, error } = await supabaseQuery;
 
-        if (error) {
-          console.error('[StudentSearchBarAsync] Error buscando estudiantes:', error);
-          setResults([]);
-        } else {
+          if (error) {
+            console.error('[StudentSearchBarAsync] Error buscando estudiantes en Supabase:', error);
+            setResults([]);
+            return;
+          }
+
           // Normalizar resultados
-          // Nota: El email no está en profiles, se obtiene del usuario autenticado si coincide
           const normalized = (data || []).map(estudiante => ({
             value: estudiante.id,
             label: estudiante.full_name || 'Sin nombre',
             nombre: estudiante.full_name || 'Sin nombre',
-            email: null, // El email no está disponible en profiles
+            email: null,
           }));
+          
           setResults(normalized);
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[StudentSearchBarAsync] Búsqueda remota:', { 
+              termino: trimmedQuery, 
+              profesorFilter, 
+              resultados: normalized.length 
+            });
+          }
+        } else {
+          // Modo local: buscar en localDataClient
+          const queryLower = trimmedQuery.toLowerCase();
+          
+          // Obtener todos los usuarios
+          const usuarios = await localDataClient.entities.User.list();
+          
+          // Filtrar estudiantes
+          let estudiantes = usuarios.filter(u => {
+            const rol = u.rolPersonalizado || u.role;
+            return rol === 'ESTU';
+          });
+
+          // Filtrar por texto de búsqueda (en nombre completo, nombre, email)
+          estudiantes = estudiantes.filter(e => {
+            const nombre = displayName(e).toLowerCase();
+            const email = (e.email || '').toLowerCase();
+            return nombre.includes(queryLower) || email.includes(queryLower);
+          });
+
+          // Si hay filtro de profesor, filtrar estudiantes por ese profesor
+          if (profesorFilter && profesorFilter !== 'all') {
+            estudiantes = estudiantes.filter(e => e.profesor_asignado_id === profesorFilter);
+          }
+
+          // Normalizar resultados
+          const normalized = estudiantes.map(estudiante => ({
+            value: estudiante.id,
+            label: `${displayName(estudiante)}${estudiante.email ? ` (${estudiante.email})` : ''}`.trim(),
+            nombre: displayName(estudiante),
+            email: estudiante.email || null,
+          }));
+
+          // Ordenar por nombre
+          normalized.sort((a, b) => a.label.localeCompare(b.label));
+          
+          setResults(normalized);
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[StudentSearchBarAsync] Búsqueda local:', { 
+              termino: trimmedQuery, 
+              profesorFilter, 
+              resultados: normalized.length 
+            });
+          }
         }
       } catch (error) {
         console.error('[StudentSearchBarAsync] Error inesperado:', error);
