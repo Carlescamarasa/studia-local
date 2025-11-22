@@ -32,6 +32,8 @@ const LoginPage = lazy(() => import("@/pages/auth/LoginPage.jsx"));
 const ResetPasswordPage = lazy(() => import("@/pages/auth/ResetPasswordPage.jsx"));
 const DebugFormularioRapido = lazy(() => import("@/pages/DebugFormularioRapido.jsx"));
 const DebugSubidaYT = lazy(() => import("@/pages/debug/DebugSubidaYTPage.jsx"));
+const Soporte = lazy(() => import("@/pages/soporte.jsx"));
+const SoporteProf = lazy(() => import("@/pages/soporte-prof.jsx"));
 
 // Componente de carga
 const PageLoader = () => (
@@ -91,6 +93,8 @@ export default function AppRouter() {
           <Route path="local" element={<LocalPage />} />
           <Route path="qa-visual" element={<QAVisualPage />} />
           <Route path="debug/subidaYT" element={<DebugSubidaYT />} />
+          <Route path="soporte" element={<Soporte />} />
+          <Route path="soporte-prof" element={<SoporteProf />} />
         </Route>
       </Routes>
     </Suspense>

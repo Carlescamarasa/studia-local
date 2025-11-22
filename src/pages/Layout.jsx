@@ -23,6 +23,7 @@ import {
   Layers,
   Palette,
   Bug,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ds";
@@ -71,6 +72,7 @@ const navigationByRole = {
     { title: "Mis Estudiantes", url: "/estudiantes", icon: Users, group: "Planificador" },
     { title: "Asignaciones", url: "/asignaciones", icon: Target, group: "Planificador" },
     { title: "Plantillas", url: "/plantillas", icon: Edit3, group: "Planificador" },
+    { title: "Tickets alumnos", url: "/soporte-prof", icon: MessageSquare, group: "Vista" },
     { title: "Agenda", url: "/agenda", icon: Calendar, group: "Vista" },
     { title: "Calendario", url: "/calendario", icon: Calendar, group: "Vista" },
     { title: "Estadísticas", url: "/estadisticas", icon: Activity, group: "Vista" },
@@ -79,6 +81,7 @@ const navigationByRole = {
     { title: "Estudiar Ahora", url: "/hoy", icon: PlayCircle, group: "Estudio" },
     { title: "Mi Semana", url: "/semana", icon: Calendar, group: "Estudio" },
     { title: "Calendario", url: "/calendario", icon: Calendar, group: "Estudio" },
+    { title: "Centro de dudas", url: "/soporte", icon: MessageSquare, group: "Estudio" },
     { title: "Mis Estadísticas", url: "/estadisticas", icon: Activity, group: "Estudio" },
   ],
 };
@@ -353,6 +356,8 @@ function LayoutContent() {
     '/design': ['ADMIN'],
     '/testseed': ['ADMIN'],
     '/import-export': ['ADMIN'],
+    '/soporte': ['ESTU'],
+    '/soporte-prof': ['PROF', 'ADMIN'],
   };
 
   // Filtrar items del sidebar según los permisos reales de acceso

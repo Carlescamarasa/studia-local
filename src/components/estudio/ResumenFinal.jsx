@@ -1,11 +1,15 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, XCircle, Clock, RotateCcw, Home } from "lucide-react";
+import { CheckCircle, XCircle, Clock, RotateCcw, Home, Upload, X, Loader2 } from "lucide-react";
 import MediaLinksInput from "../common/MediaLinksInput";
 import MediaPreviewModal from "../common/MediaPreviewModal";
 import { componentStyles } from "@/design/componentStyles";
+import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -43,11 +47,18 @@ export default function ResumenFinal({
   onReiniciar,
   onCalidadNotas,
   open = true,
-  onOpenChange
+  onOpenChange,
+  // Props adicionales para subida de vídeo
+  userId,
+  userProfile,
+  registroSesionId,
+  profesorAsignadoId
 }) {
   const [calidad, setCalidad] = useState(3);
   const [notas, setNotas] = useState("");
   const [mediaLinks, setMediaLinks] = useState([]);
+  const [videoFile, setVideoFile] = useState(null);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [guardado, setGuardado] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
@@ -55,9 +66,42 @@ export default function ResumenFinal({
   const pendientes = totalEjercicios - completados.size - omitidos.size;
   
   const handleGuardarFeedback = async () => {
+    let finalMediaLinks = [...mediaLinks];
+    
+    // Si hay vídeo, subirlo primero
+    if (videoFile && userId && userProfile) {
+      setUploadingVideo(true);
+      
+      try {
+        const uploadResult = await uploadVideoToYouTube(videoFile, {
+          contexto: 'sesion_estudio',
+          alumno_id: userId,
+          alumno_nombre: userProfile.full_name || userProfile.name || 'Alumno',
+          profesor_id: profesorAsignadoId || undefined,
+          sesion_id: registroSesionId || undefined,
+          comentarios: notas.trim() || sesion?.nombre || 'Autoevaluación de sesión',
+        });
+
+        if (uploadResult.ok && uploadResult.videoUrl) {
+          // Añadir la URL del vídeo a mediaLinks
+          finalMediaLinks = [...finalMediaLinks, uploadResult.videoUrl];
+          toast.success('Vídeo subido correctamente');
+        } else {
+          throw new Error(uploadResult.error || 'Error al subir el vídeo');
+        }
+      } catch (error) {
+        console.error('[ResumenFinal] Error subiendo vídeo:', error);
+        toast.error(`La sesión se guardará, pero hubo un error al subir el vídeo: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+        // Continuar con el guardado aunque falle la subida del vídeo
+      } finally {
+        setUploadingVideo(false);
+      }
+    }
+
+    // Guardar feedback con mediaLinks (incluyendo el vídeo subido si hubo)
     if (onCalidadNotas) {
       // Llamar a onCalidadNotas y esperar a que termine
-      await onCalidadNotas(calidad, notas, mediaLinks);
+      await onCalidadNotas(calidad, notas, finalMediaLinks);
     }
     
     setGuardado(true);
@@ -146,6 +190,40 @@ export default function ResumenFinal({
                 />
               </div>
 
+              {/* Input de subida de vídeo */}
+              <div className="space-y-2">
+                <Label htmlFor="video-sesion">Vídeo de la sesión (opcional)</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="video-sesion"
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                    className={componentStyles.controls.inputDefault}
+                    disabled={uploadingVideo || guardado}
+                  />
+                  {videoFile && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setVideoFile(null)}
+                      disabled={uploadingVideo || guardado}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+                {videoFile && (
+                  <p className="text-xs text-[var(--color-text-secondary)]">
+                    Archivo seleccionado: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  Opcional: puedes adjuntar un vídeo corto de esta sesión (ejercicio, fragmento, etc.).
+                </p>
+              </div>
+
+              {/* Input manual de mediaLinks (para URLs directas) */}
               <MediaLinksInput
                 value={mediaLinks}
                 onChange={setMediaLinks}
@@ -164,10 +242,15 @@ export default function ResumenFinal({
               </Button>
               <Button
                 onClick={handleGuardarFeedback}
-                disabled={guardado}
+                disabled={guardado || uploadingVideo}
                 className={`flex-1 text-xs sm:text-sm h-9 sm:h-10 ${componentStyles.buttons.primary}`}
               >
-                {guardado ? (
+                {uploadingVideo ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 animate-spin" />
+                    Subiendo vídeo...
+                  </>
+                ) : guardado ? (
                   <>
                     <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
                     Guardado

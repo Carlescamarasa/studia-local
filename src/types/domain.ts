@@ -232,6 +232,7 @@ export interface RegistroSesion {
   motivoFin?: string | null;
   calificacion?: number | null; // 1-4
   notas?: string | null;
+  mediaLinks?: string[]; // Array de URLs de medios (YouTube, etc.)
   dispositivo?: string;
   versionSchema?: string;
   piezaNombre?: string;
@@ -313,4 +314,43 @@ export interface EventoCalendario {
 
 export type CreateEventoCalendarioInput = Omit<EventoCalendario, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateEventoCalendarioInput = Partial<Omit<EventoCalendario, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Ticket de soporte
+ * 
+ * Representa un ticket de soporte/duda entre un alumno y un profesor.
+ */
+export interface SupportTicket {
+  id: string;
+  alumnoId: string;
+  profesorId: string | null;
+  estado: 'abierto' | 'en_proceso' | 'cerrado';
+  tipo: 'duda_general' | 'tecnica' | 'pieza' | 'ritmo' | 'sonido' | 'otro' | null;
+  titulo: string;
+  created_at: string;
+  updated_at: string;
+  cerradoAt: string | null;
+  ultimaRespuestaDe: 'alumno' | 'profesor' | null;
+}
+
+export type CreateSupportTicketInput = Omit<SupportTicket, 'id' | 'created_at' | 'updated_at' | 'cerradoAt' | 'ultimaRespuestaDe'>;
+export type UpdateSupportTicketInput = Partial<Omit<SupportTicket, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Mensaje dentro de un ticket de soporte
+ * 
+ * Representa un mensaje (texto + media_links) dentro de un ticket.
+ */
+export interface SupportMensaje {
+  id: string;
+  ticketId: string;
+  autorId: string;
+  rolAutor: 'alumno' | 'profesor' | 'admin';
+  texto: string;
+  mediaLinks: string[]; // Array de URLs
+  created_at: string;
+}
+
+export type CreateSupportMensajeInput = Omit<SupportMensaje, 'id' | 'created_at'>;
+export type UpdateSupportMensajeInput = Partial<Omit<SupportMensaje, 'id' | 'created_at'>> & { id: string };
 

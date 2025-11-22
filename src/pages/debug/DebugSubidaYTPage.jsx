@@ -48,12 +48,28 @@ function DebugSubidaYTPageContent() {
         throw new Error('Faltan VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY en las variables de entorno');
       }
 
+      // Validar y parsear metadata JSON si existe
+      let metadataObj = null;
+      if (metaText.trim()) {
+        try {
+          metadataObj = JSON.parse(metaText.trim());
+          // Validar que es un objeto
+          if (typeof metadataObj !== 'object' || metadataObj === null || Array.isArray(metadataObj)) {
+            throw new Error('La metadata debe ser un objeto JSON válido');
+          }
+        } catch (parseError) {
+          toast.error(`Error en el formato JSON de metadata: ${parseError.message}`);
+          setStatus('idle');
+          return;
+        }
+      }
+
       // Crear FormData
       const formData = new FormData();
       formData.append('file', file);
       
-      if (metaText.trim()) {
-        formData.append('meta', metaText.trim());
+      if (metadataObj) {
+        formData.append('meta', JSON.stringify(metadataObj));
       }
 
       // Llamar a la Edge Function
@@ -87,28 +103,41 @@ function DebugSubidaYTPageContent() {
           console.error('[DebugSubidaYT] Error parseando JSON de respuesta:', parseError);
           const text = await res.text().catch(() => '');
           console.error('[DebugSubidaYT] Respuesta como texto:', text);
+          setStatus('error');
+          setError(`Error al parsear respuesta del servidor: ${parseError.message}`);
+          toast.error('Error al procesar la respuesta del servidor');
+          return;
         }
       } else {
         // Si no es JSON, leer como texto
         const text = await res.text().catch(() => '');
         console.warn('[DebugSubidaYT] Respuesta no es JSON:', { contentType, text });
-        json = { message: text || 'Error desconocido' };
+        json = { 
+          ok: false,
+          message: 'Error desconocido',
+          error: text || 'Respuesta no es JSON válido'
+        };
       }
 
-      if (res.ok && json.success) {
+      // Trabajar con el nuevo formato de respuesta
+      // Éxito: response.ok === true Y data.ok === true
+      if (res.ok && json && json.ok === true) {
         setStatus('success');
         setResult(json);
-        toast.success('Vídeo subido correctamente (simulado)');
+        console.log('[DebugSubidaYT] Upload OK', json);
+        toast.success('✅ Vídeo subido correctamente');
       } else {
+        // Error: !response.ok O data.ok === false
         setStatus('error');
-        const errorMsg = json.message || json.error || res.statusText || 'Error desconocido';
-        setError(`Error ${res.status}: ${errorMsg}`);
+        const errorMsg = json?.message || json?.error || res.statusText || 'Error desconocido';
+        const errorDetails = json?.error || '';
+        setError(`Error ${res.status}: ${errorMsg}${errorDetails ? ` (${errorDetails})` : ''}`);
         console.error('[DebugSubidaYT] Error en respuesta:', {
           status: res.status,
           statusText: res.statusText,
           json,
         });
-        toast.error(`Error al subir el vídeo: ${errorMsg}`);
+        toast.error(`❌ Error al subir el vídeo: ${errorMsg}`);
       }
     } catch (err) {
       setStatus('error');
@@ -120,8 +149,20 @@ function DebugSubidaYTPageContent() {
       } : err;
       
       console.error('[DebugSubidaYT] Excepción al llamar a Edge Function:', errorDetails);
-      setError(`Error de red: ${errorMessage}`);
-      toast.error(`Error de conexión: ${errorMessage}`);
+      
+      // Distinguir entre error de red y otros errores
+      const isNetworkError = err instanceof TypeError && 
+        (errorMessage.includes('NetworkError') || 
+         errorMessage.includes('Failed to fetch') ||
+         errorMessage.includes('fetch'));
+      
+      if (isNetworkError) {
+        setError(`Error de red: No se pudo conectar con el servidor. Verifica tu conexión.`);
+        toast.error('Error de conexión: No se pudo conectar con el servidor');
+      } else {
+        setError(`Error: ${errorMessage}`);
+        toast.error(`Error: ${errorMessage}`);
+      }
     }
   };
 
@@ -178,15 +219,24 @@ function DebugSubidaYTPageContent() {
                 </Label>
                 <Textarea
                   id="meta"
-                  placeholder='{"alumno_id": "...", "profesor_id": "...", "comentarios": "..."}'
+                  placeholder={`{
+  "alumno_id": "uuid-del-alumno",
+  "alumno_nombre": "Juan Pérez",
+  "profesor_id": "uuid-del-profesor",
+  "profesor_nombre": "María García",
+  "contexto": "sesion_estudio",
+  "comentarios": "Comentario opcional del alumno o profesor",
+  "sesion_id": "uuid-de-sesion",
+  "ticket_id": "uuid-de-ticket"
+}`}
                   value={metaText}
                   onChange={(e) => setMetaText(e.target.value)}
                   disabled={status === 'uploading'}
                   className={`${componentStyles.controls.inputDefault} font-mono text-sm`}
-                  rows={4}
+                  rows={8}
                 />
                 <p className="text-xs text-[var(--color-text-secondary)]">
-                  JSON opcional con metadatos del vídeo
+                  JSON opcional con metadatos del vídeo. Contexto puede ser: "sesion_estudio", "ticket_alumno", "ticket_profesor"
                 </p>
               </div>
 
@@ -276,47 +326,45 @@ function DebugSubidaYTPageContent() {
                     </pre>
                   </div>
 
-                  {/* Enlace al vídeo fake */}
-                  {result.fakeUrl && (
+                  {/* Enlace al vídeo */}
+                  {result.videoUrl && (
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--color-info)]/10 border border-[var(--color-info)]/20">
                       <ExternalLink className="w-4 h-4 text-[var(--color-info)]" />
                       <a
-                        href={result.fakeUrl}
+                        href={result.videoUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-[var(--color-info)] hover:underline"
+                        className="text-sm text-[var(--color-info)] hover:underline font-medium"
                       >
-                        Ver vídeo en YouTube (fake): {result.fakeVideoId}
+                        Ver vídeo en YouTube
                       </a>
                     </div>
                   )}
 
                   {/* Información adicional */}
                   <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-[var(--color-text-secondary)]">ID del vídeo:</span>
-                      <span className="ml-2 font-mono text-[var(--color-text-primary)]">
-                        {result.fakeVideoId}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[var(--color-text-secondary)]">Tamaño:</span>
-                      <span className="ml-2 text-[var(--color-text-primary)]">
-                        {(result.size / 1024 / 1024).toFixed(2)} MB
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[var(--color-text-secondary)]">Archivo original:</span>
-                      <span className="ml-2 text-[var(--color-text-primary)]">
-                        {result.originalFilename}
-                      </span>
-                    </div>
-                    {result.meta && (
+                    {result.videoId && (
                       <div>
-                        <span className="text-[var(--color-text-secondary)]">Metadata:</span>
-                        <span className="ml-2 text-[var(--color-text-primary)]">
-                          {JSON.stringify(result.meta)}
+                        <span className="text-[var(--color-text-secondary)]">ID del vídeo:</span>
+                        <span className="ml-2 font-mono text-[var(--color-text-primary)]">
+                          {result.videoId}
                         </span>
+                      </div>
+                    )}
+                    {result.message && (
+                      <div>
+                        <span className="text-[var(--color-text-secondary)]">Mensaje:</span>
+                        <span className="ml-2 text-[var(--color-text-primary)]">
+                          {result.message}
+                        </span>
+                      </div>
+                    )}
+                    {result.metadata && (
+                      <div className="col-span-2">
+                        <span className="text-[var(--color-text-secondary)]">Metadata recibida:</span>
+                        <pre className="mt-1 text-xs font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-muted)] p-2 rounded overflow-auto">
+                          {JSON.stringify(result.metadata, null, 2)}
+                        </pre>
                       </div>
                     )}
                   </div>

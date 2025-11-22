@@ -906,11 +906,12 @@ function HoyPageContent() {
 
           if (registroSesionId) {
             try {
-              // Nota: mediaLinks no se guarda en registros_sesion, solo en feedbacks_semanal
+              // Ahora mediaLinks se guarda en registros_sesion
               // Asegurar que notas sea null si está vacía o undefined
               const updateData = {
                 calificacion: calidad || null,
                 notas: (notas && notas.trim()) ? notas.trim() : null,
+                mediaLinks: mediaLinks || [],
                 finalizada: true,
               };
               
@@ -929,6 +930,10 @@ function HoyPageContent() {
             }
           }
         }}
+        userId={userIdActual}
+        userProfile={alumnoActual}
+        registroSesionId={registroSesionId}
+        profesorAsignadoId={asignacionActiva?.profesorId || null}
       />
     );
   }

@@ -31,7 +31,7 @@ import {
 } from "@/data/supportTicketsClient";
 import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
-import MediaEmbed from "@/components/common/MediaEmbed";
+import MediaPreviewModal from "@/components/common/MediaPreviewModal";
 import { useAuth } from "@/auth/AuthProvider";
 import { 
   Dialog,
@@ -41,10 +41,13 @@ import {
 } from "@/components/ui/dialog";
 
 function SoportePageContent() {
+  // ===== TODOS LOS HOOKS AL PRINCIPIO - SIEMPRE EN EL MISMO ORDEN =====
+  
+  // Hook de autenticación
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
 
-  // Todos los hooks deben declararse antes de cualquier return condicional
+  // Hooks de estado
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const [showNewTicketModal, setShowNewTicketModal] = useState(false);
   const [newTicketTitle, setNewTicketTitle] = useState("");
@@ -53,21 +56,18 @@ function SoportePageContent() {
   const [videoFile, setVideoFile] = useState(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(null);
+  const [selectedMediaLinks, setSelectedMediaLinks] = useState([]);
+  const [showMediaModal, setShowMediaModal] = useState(false);
 
-  // Validar que user y profile estén disponibles (después de todos los hooks)
-  if (!user || !profile) {
-    return (
-      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-primary)]" />
-      </div>
-    );
-  }
-
+  // Hooks de React Query - SIEMPRE se declaran, usando 'enabled' para controlar la ejecución
   // Obtener tickets del alumno
   const { data: tickets, isLoading: loadingTickets } = useQuery({
     queryKey: ['support-tickets', user?.id],
-    queryFn: () => getTicketsByAlumno(user.id),
-    enabled: !!user,
+    queryFn: () => {
+      if (!user?.id) throw new Error('Usuario no disponible');
+      return getTicketsByAlumno(user.id);
+    },
+    enabled: !!user && !!profile,
     retry: false,
     onError: (error) => {
       console.error('[Soporte] Error cargando tickets:', error);
@@ -78,15 +78,21 @@ function SoportePageContent() {
   // Obtener ticket seleccionado
   const { data: selectedTicket } = useQuery({
     queryKey: ['support-ticket', selectedTicketId],
-    queryFn: () => getTicketById(selectedTicketId),
-    enabled: !!selectedTicketId,
+    queryFn: () => {
+      if (!selectedTicketId) throw new Error('Ticket ID no disponible');
+      return getTicketById(selectedTicketId);
+    },
+    enabled: !!selectedTicketId && !!user && !!profile,
   });
 
   // Obtener mensajes del ticket seleccionado
   const { data: mensajes, isLoading: loadingMensajes } = useQuery({
     queryKey: ['support-mensajes', selectedTicketId],
-    queryFn: () => getMensajesByTicket(selectedTicketId),
-    enabled: !!selectedTicketId,
+    queryFn: () => {
+      if (!selectedTicketId) throw new Error('Ticket ID no disponible');
+      return getMensajesByTicket(selectedTicketId);
+    },
+    enabled: !!selectedTicketId && !!user && !!profile,
   });
 
   // Mutación para crear ticket
@@ -120,6 +126,17 @@ function SoportePageContent() {
       setUploadingVideo(false);
     },
   });
+
+  // ===== RETURNS CONDICIONALES DESPUÉS DE TODOS LOS HOOKS =====
+  
+  // Validar que user y profile estén disponibles
+  if (!user || !profile) {
+    return (
+      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-primary)]" />
+      </div>
+    );
+  }
 
   const handleCreateTicket = async () => {
     if (!newTicketTitle.trim()) {
@@ -351,13 +368,12 @@ function SoportePageContent() {
                               <div className={`mt-2 ${mensaje.texto ? 'pt-2 border-t border-[var(--color-border-default)]/50' : ''}`}>
                                 <MediaLinksBadges
                                   mediaLinks={mensaje.mediaLinks}
-                                  onMediaClick={(idx) => setSelectedMediaIndex(idx)}
+                                  onMediaClick={(idx) => {
+                                    setSelectedMediaLinks(mensaje.mediaLinks);
+                                    setSelectedMediaIndex(idx);
+                                    setShowMediaModal(true);
+                                  }}
                                 />
-                                {selectedMediaIndex !== null && mensaje.mediaLinks[selectedMediaIndex] && (
-                                  <div className="mt-3">
-                                    <MediaEmbed url={mensaje.mediaLinks[selectedMediaIndex]} />
-                                  </div>
-                                )}
                               </div>
                             )}
                           </div>
@@ -446,6 +462,7 @@ function SoportePageContent() {
             </Card>
           )}
         </div>
+        </div>
 
         {/* Modal para nuevo ticket */}
         <Dialog open={showNewTicketModal} onOpenChange={setShowNewTicketModal}>
@@ -507,6 +524,20 @@ function SoportePageContent() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Modal de preview de medios */}
+      {showMediaModal && selectedMediaLinks.length > 0 && (
+        <MediaPreviewModal
+          urls={selectedMediaLinks}
+          initialIndex={selectedMediaIndex || 0}
+          open={showMediaModal}
+          onClose={() => {
+            setShowMediaModal(false);
+            setSelectedMediaLinks([]);
+            setSelectedMediaIndex(null);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -518,4 +549,3 @@ export default function SoportePage() {
     </RequireRole>
   );
 }
-

@@ -32,7 +32,7 @@ import {
 } from "@/data/supportTicketsClient";
 import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
-import MediaEmbed from "@/components/common/MediaEmbed";
+import MediaPreviewModal from "@/components/common/MediaPreviewModal";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -48,20 +48,27 @@ function SoporteProfPageContent() {
   const [videoFile, setVideoFile] = useState(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(null);
+  const [selectedMediaLinks, setSelectedMediaLinks] = useState([]);
+  const [showMediaModal, setShowMediaModal] = useState(false);
   const [alumnoNames, setAlumnoNames] = useState({});
+  // Filtro de profesor: por defecto "mis_tickets" (solo tickets asignados al profesor actual)
+  const [profesorFilter, setProfesorFilter] = useState('mis_tickets');
 
   // Calcular isAdmin antes de los hooks que lo usan
   const isAdmin = profile?.role === 'ADMIN';
 
   // Obtener tickets (debe estar antes del return condicional)
+  // Con las nuevas políticas RLS, todos los profesores pueden ver todos los tickets
   const { data: tickets, isLoading: loadingTickets } = useQuery({
     queryKey: ['support-tickets-prof', user?.id, isAdmin],
     queryFn: async () => {
       if (!user) return [];
+      // Todos los PROF pueden ver todos los tickets ahora (las políticas RLS lo permiten)
       if (isAdmin) {
         return getAllTickets();
       } else {
-        return getTicketsByProfesor(user.id);
+        // Aunque el backend devuelve todos los tickets, la UI filtra por profesor asignado por defecto
+        return getAllTickets();
       }
     },
     enabled: !!user,
@@ -100,6 +107,12 @@ function SoporteProfPageContent() {
     if (!tickets) return [];
     let filtered = tickets;
 
+    // Filtrar por profesor asignado (por defecto solo mis tickets)
+    if (!isAdmin && profesorFilter === 'mis_tickets') {
+      filtered = filtered.filter(t => t.profesorId === user?.id);
+    }
+    // Si es admin y el filtro es por profesor específico, se aplicaría aquí (pendiente de implementar selector de profesor)
+
     // Filtrar por estado
     if (estadoFilter !== 'todos') {
       filtered = filtered.filter(t => t.estado === estadoFilter);
@@ -118,7 +131,7 @@ function SoporteProfPageContent() {
     }
 
     return filtered;
-  }, [tickets, estadoFilter, searchText, alumnoNames]);
+  }, [tickets, estadoFilter, searchText, alumnoNames, profesorFilter, user?.id, isAdmin]);
 
   // Obtener ticket seleccionado
   const { data: selectedTicket } = useQuery({
@@ -284,6 +297,27 @@ function SoporteProfPageContent() {
                     className={`pl-8 ${componentStyles.controls.inputDefault}`}
                   />
                 </div>
+                {/* Filtro de profesor (solo visible para PROF, no ADMIN) */}
+                {!isAdmin && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant={profesorFilter === 'mis_tickets' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setProfesorFilter('mis_tickets')}
+                      className="flex-1"
+                    >
+                      Mis tickets
+                    </Button>
+                    <Button
+                      variant={profesorFilter === 'todos' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setProfesorFilter('todos')}
+                      className="flex-1"
+                    >
+                      Todos
+                    </Button>
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <Button
                     variant={estadoFilter === 'todos' ? 'default' : 'outline'}
@@ -444,13 +478,12 @@ function SoporteProfPageContent() {
                               <div className={`mt-2 ${mensaje.texto ? 'pt-2 border-t border-[var(--color-border-default)]/50' : ''}`}>
                                 <MediaLinksBadges
                                   mediaLinks={mensaje.mediaLinks}
-                                  onMediaClick={(idx) => setSelectedMediaIndex(idx)}
+                                  onMediaClick={(idx) => {
+                                    setSelectedMediaLinks(mensaje.mediaLinks);
+                                    setSelectedMediaIndex(idx);
+                                    setShowMediaModal(true);
+                                  }}
                                 />
-                                {selectedMediaIndex !== null && mensaje.mediaLinks[selectedMediaIndex] && (
-                                  <div className="mt-3">
-                                    <MediaEmbed url={mensaje.mediaLinks[selectedMediaIndex]} />
-                                  </div>
-                                )}
                               </div>
                             )}
                           </div>
@@ -541,6 +574,20 @@ function SoporteProfPageContent() {
         </div>
       </div>
       </div>
+
+      {/* Modal de preview de medios */}
+      {showMediaModal && selectedMediaLinks.length > 0 && (
+        <MediaPreviewModal
+          urls={selectedMediaLinks}
+          initialIndex={selectedMediaIndex || 0}
+          open={showMediaModal}
+          onClose={() => {
+            setShowMediaModal(false);
+            setSelectedMediaLinks([]);
+            setSelectedMediaIndex(null);
+          }}
+        />
+      )}
     </div>
   );
 }
