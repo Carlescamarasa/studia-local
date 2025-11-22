@@ -6,12 +6,16 @@ import { supabase } from '@/lib/supabaseClient';
 import type { SupportTicket, SupportMensaje, CreateSupportTicketInput, CreateSupportMensajeInput, UpdateSupportTicketInput } from '@/types/domain';
 
 /**
- * Obtener todos los tickets de un alumno
+ * Obtener todos los tickets de un alumno (incluye nombres de perfiles)
  */
 export async function getTicketsByAlumno(alumnoId: string): Promise<SupportTicket[]> {
   const { data, error } = await supabase
     .from('support_tickets')
-    .select('*')
+    .select(`
+      *,
+      alumno:alumno_id(id, full_name),
+      profesor:profesor_id(id, full_name)
+    `)
     .eq('alumno_id', alumnoId)
     .order('created_at', { ascending: false });
 
@@ -20,12 +24,16 @@ export async function getTicketsByAlumno(alumnoId: string): Promise<SupportTicke
 }
 
 /**
- * Obtener todos los tickets asignados a un profesor
+ * Obtener todos los tickets asignados a un profesor (incluye nombres de perfiles)
  */
 export async function getTicketsByProfesor(profesorId: string): Promise<SupportTicket[]> {
   const { data, error } = await supabase
     .from('support_tickets')
-    .select('*')
+    .select(`
+      *,
+      alumno:alumno_id(id, full_name),
+      profesor:profesor_id(id, full_name)
+    `)
     .eq('profesor_id', profesorId)
     .order('created_at', { ascending: false });
 
@@ -34,12 +42,16 @@ export async function getTicketsByProfesor(profesorId: string): Promise<SupportT
 }
 
 /**
- * Obtener todos los tickets (solo para ADMIN)
+ * Obtener todos los tickets (solo para ADMIN) (incluye nombres de perfiles)
  */
 export async function getAllTickets(): Promise<SupportTicket[]> {
   const { data, error } = await supabase
     .from('support_tickets')
-    .select('*')
+    .select(`
+      *,
+      alumno:alumno_id(id, full_name),
+      profesor:profesor_id(id, full_name)
+    `)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -47,12 +59,16 @@ export async function getAllTickets(): Promise<SupportTicket[]> {
 }
 
 /**
- * Obtener un ticket por ID
+ * Obtener un ticket por ID (incluye nombres de perfiles)
  */
 export async function getTicketById(ticketId: string): Promise<SupportTicket | null> {
   const { data, error } = await supabase
     .from('support_tickets')
-    .select('*')
+    .select(`
+      *,
+      alumno:alumno_id(id, full_name),
+      profesor:profesor_id(id, full_name)
+    `)
     .eq('id', ticketId)
     .single();
 
@@ -104,12 +120,15 @@ export async function updateTicket(input: UpdateSupportTicketInput): Promise<Sup
 }
 
 /**
- * Obtener todos los mensajes de un ticket
+ * Obtener todos los mensajes de un ticket (incluye nombres de perfiles de autores)
  */
 export async function getMensajesByTicket(ticketId: string): Promise<SupportMensaje[]> {
   const { data, error } = await supabase
     .from('support_mensajes')
-    .select('*')
+    .select(`
+      *,
+      autor:autor_id(id, full_name, role)
+    `)
     .eq('ticket_id', ticketId)
     .order('created_at', { ascending: true });
 
@@ -134,8 +153,13 @@ export async function createMensaje(input: CreateSupportMensajeInput): Promise<S
 
 /**
  * Mapear ticket de DB (snake_case) a dominio (camelCase)
+ * Incluye información de perfiles relacionados (alumno y profesor)
  */
 function mapTicketFromDB(db: any): SupportTicket {
+  // Extraer información de perfiles relacionados (pueden venir como objetos anidados)
+  const alumnoNombre = db.alumno?.full_name || null;
+  const profesorNombre = db.profesor?.full_name || null;
+  
   return {
     id: db.id,
     alumnoId: db.alumno_id,
@@ -147,6 +171,9 @@ function mapTicketFromDB(db: any): SupportTicket {
     updated_at: db.updated_at,
     cerradoAt: db.cerrado_at,
     ultimaRespuestaDe: db.ultima_respuesta_de,
+    // Información adicional de perfiles (no en el tipo base pero útil para la UI)
+    _alumnoNombre: alumnoNombre,
+    _profesorNombre: profesorNombre,
   };
 }
 
@@ -167,6 +194,7 @@ function mapTicketToDB(ticket: Partial<SupportTicket>): any {
 
 /**
  * Mapear mensaje de DB (snake_case) a dominio (camelCase)
+ * Incluye información del autor (nombre, etc.)
  */
 function mapMensajeFromDB(db: any): SupportMensaje {
   // Normalizar media_links: puede venir como array de strings o array de objetos
@@ -181,6 +209,9 @@ function mapMensajeFromDB(db: any): SupportMensaje {
     }
   }
 
+  // Extraer información del autor (puede venir como objeto anidado)
+  const autorNombre = db.autor?.full_name || null;
+
   return {
     id: db.id,
     ticketId: db.ticket_id,
@@ -189,6 +220,8 @@ function mapMensajeFromDB(db: any): SupportMensaje {
     texto: db.texto,
     mediaLinks,
     created_at: db.created_at,
+    // Información adicional del autor (no en el tipo base pero útil para la UI)
+    _autorNombre: autorNombre,
   };
 }
 

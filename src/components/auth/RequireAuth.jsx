@@ -7,19 +7,34 @@ import { isAuthError } from '@/lib/authHelpers';
 export default function RequireAuth({ children }) {
   const { user, loading, checkSession, signOut } = useAuth();
   const checkIntervalRef = useRef(null);
+  const lastCheckRef = useRef(null);
 
-  // Verificación activa de sesión cada 30 segundos
+  // Verificación optimizada de sesión: menos frecuente y solo cuando es necesario
   useEffect(() => {
-    // Solo verificar si hay usuario (no tiene sentido verificar si no hay usuario)
+    // Solo verificar si hay usuario
     if (!user) {
       return;
     }
 
-    // Verificar inmediatamente al montar
-    checkSession?.();
+    // Verificar inmediatamente al montar solo si no se ha verificado recientemente
+    const now = Date.now();
+    if (!lastCheckRef.current || (now - lastCheckRef.current) > 60000) { // Solo si pasó más de 1 minuto
+      if (import.meta.env.DEV) {
+        console.log('[RequireAuth] Verificación inicial de sesión');
+      }
+      checkSession?.();
+      lastCheckRef.current = now;
+    }
 
-    // Configurar verificación periódica cada 30 segundos
+    // Configurar verificación periódica cada 5 minutos (en lugar de 30 segundos)
+    // AuthProvider ya tiene su propia verificación cada 5 minutos
     checkIntervalRef.current = setInterval(async () => {
+      const now = Date.now();
+      // Solo verificar si pasó suficiente tiempo desde la última verificación
+      if (lastCheckRef.current && (now - lastCheckRef.current) < 60000) {
+        return; // Ya se verificó recientemente
+      }
+
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
@@ -32,17 +47,19 @@ export default function RequireAuth({ children }) {
         if (!session) {
           // No hay sesión pero tenemos usuario en estado - forzar actualización
           await checkSession?.();
+          lastCheckRef.current = Date.now();
         } else {
           // Verificar que la sesión sigue válida usando checkSession
           await checkSession?.();
+          lastCheckRef.current = Date.now();
         }
       } catch (err) {
         // Error al verificar - no hacer nada para no interrumpir la experiencia
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
           console.warn('[RequireAuth] Error en verificación de sesión:', err);
         }
       }
-    }, 30 * 1000); // 30 segundos
+    }, 5 * 60 * 1000); // 5 minutos (sincronizado con AuthProvider)
 
     return () => {
       if (checkIntervalRef.current) {
@@ -50,7 +67,7 @@ export default function RequireAuth({ children }) {
         checkIntervalRef.current = null;
       }
     };
-  }, [user, checkSession, signOut]);
+  }, [user?.id, checkSession, signOut]); // Solo reejecutar si cambia el ID del usuario
 
   if (loading) {
     return (

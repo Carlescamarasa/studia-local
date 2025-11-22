@@ -31,38 +31,71 @@ function calculateAppRoleFromEmail(email) {
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [session, setSession] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [authError, setAuthError] = useState(null);
+  // ============================================================================
+  // ESTADO UNIFICADO DE AUTENTICACIÓN
+  // ============================================================================
+  // Usamos un estado unificado para evitar condiciones de carrera y bucles
+  const [authState, setAuthState] = useState({
+    session: null,
+    user: null,
+    profile: null,
+    loading: true,           // Solo true durante carga inicial
+    initialProfileLoaded: false, // Flag para saber si ya cargamos el perfil inicial
+    error: null,
+  });
+  
+  // Refs para control de carga
   const fetchingProfileRef = useRef(false);
-  const currentUserIdRef = useRef(null);
+  const lastProfileUserIdRef = useRef(null); // Trackear último userId cargado
   const sessionCheckIntervalRef = useRef(null);
-  const recursionErrorRef = useRef(false);
-  const sessionNotFoundShownRef = useRef(false); // Evitar mostrar múltiples toasts
+  const sessionNotFoundShownRef = useRef(false);
+  
+  // Extraer valores del estado para compatibilidad
+  const user = authState.user;
+  const session = authState.session;
+  const profile = authState.profile;
+  const loading = authState.loading;
+  const authError = authState.error;
   
   // Calcular appRole basándose en el email del usuario
   const appRole = useMemo(() => {
     return calculateAppRoleFromEmail(user?.email);
   }, [user?.email]);
 
-  // Función para obtener el perfil desde Supabase
-  const fetchProfile = async (userId) => {
+  // ============================================================================
+  // FUNCIÓN PARA CARGAR PERFIL - OPTIMIZADA
+  // ============================================================================
+  // Solo carga el perfil una vez por usuario y evita recargas innecesarias
+  const fetchProfile = useCallback(async (userId, isInitialLoad = false) => {
     if (!userId) {
-      setProfile(null);
-      currentUserIdRef.current = null;
+      setAuthState(prev => ({ ...prev, profile: null }));
+      lastProfileUserIdRef.current = null;
       fetchingProfileRef.current = false;
       return;
     }
 
     // Evitar múltiples llamadas simultáneas para el mismo usuario
-    if (fetchingProfileRef.current && currentUserIdRef.current === userId) {
+    if (fetchingProfileRef.current && lastProfileUserIdRef.current === userId) {
+      if (import.meta.env.DEV) {
+        console.log('[AuthProvider] fetchProfile ya en progreso para userId:', userId);
+      }
+      return;
+    }
+
+    // Evitar llamadas si ya tenemos el perfil cargado para este usuario
+    if (lastProfileUserIdRef.current === userId && authState.profile?.id === userId) {
+      if (import.meta.env.DEV) {
+        console.log('[AuthProvider] Perfil ya cargado para userId:', userId);
+      }
       return;
     }
 
     fetchingProfileRef.current = true;
-    currentUserIdRef.current = userId;
+    lastProfileUserIdRef.current = userId;
+
+    if (import.meta.env.DEV) {
+      console.log(`[AuthProvider] ${isInitialLoad ? 'Carga inicial' : 'Refetch'} de perfil para userId:`, userId);
+    }
 
     try {
       // Petición específica a la tabla profiles
@@ -91,7 +124,11 @@ export function AuthProvider({ children }) {
               endpoint: 'profiles',
             });
           }
-          setProfile(null);
+          setAuthState(prev => ({
+            ...prev,
+            profile: null,
+            loading: isInitialLoad ? false : prev.loading,
+          }));
           fetchingProfileRef.current = false;
           return;
         }
@@ -110,7 +147,7 @@ export function AuthProvider({ children }) {
           });
         } else {
           // Otro tipo de error
-          if (process.env.NODE_ENV === 'development') {
+          if (import.meta.env.DEV) {
             console.warn('[AuthProvider] Error al cargar perfil:', {
               userId,
               error: error.message,
@@ -118,7 +155,11 @@ export function AuthProvider({ children }) {
             });
           }
         }
-        setProfile(null);
+        setAuthState(prev => ({
+          ...prev,
+          profile: null,
+          loading: isInitialLoad ? false : prev.loading,
+        }));
         fetchingProfileRef.current = false;
         return;
       }
@@ -126,16 +167,32 @@ export function AuthProvider({ children }) {
       // Si hay data, establecer perfil
       if (!data) {
         // Respuesta 200 pero sin datos
-        console.warn('[AuthProvider] No se encontró perfil en la tabla profiles (respuesta vacía):', {
-          userId,
-        });
-        setProfile(null);
+        if (import.meta.env.DEV) {
+          console.warn('[AuthProvider] No se encontró perfil en la tabla profiles (respuesta vacía):', {
+            userId,
+          });
+        }
+        setAuthState(prev => ({
+          ...prev,
+          profile: null,
+          loading: isInitialLoad ? false : prev.loading,
+        }));
         fetchingProfileRef.current = false;
         return;
       }
 
-      setProfile(data);
-      // Nota: appRole ahora se calcula desde el email, no desde profile.role
+      // Actualizar estado con el perfil cargado
+      setAuthState(prev => ({
+        ...prev,
+        profile: data,
+        initialProfileLoaded: isInitialLoad ? true : prev.initialProfileLoaded,
+        loading: isInitialLoad ? false : prev.loading, // Solo cambiar loading en carga inicial
+      }));
+      
+      if (import.meta.env.DEV) {
+        console.log('[AuthProvider] Perfil cargado exitosamente para userId:', userId);
+      }
+      
       fetchingProfileRef.current = false;
     } catch (err) {
       // Error de red o excepción no controlada en la petición a profiles
@@ -176,13 +233,30 @@ export function AuthProvider({ children }) {
           suspectedEndpoint: errorMessage.includes('/functions/') ? 'edge-function' : 'profiles',
         });
       }
-      setProfile(null);
+      setAuthState(prev => ({
+        ...prev,
+        profile: null,
+        loading: isInitialLoad ? false : prev.loading,
+      }));
       fetchingProfileRef.current = false;
     }
-  };
+  }, []); // Sin dependencias - función estable que no cambia
 
+  // ============================================================================
+  // FLUJO DE CARGA DE PERFIL OPTIMIZADO
+  // ============================================================================
+  // 1. Se ejecuta UNA VEZ al montar el componente (sin dependencias que cambien)
+  // 2. Obtiene la sesión inicial
+  // 3. Si hay sesión y usuario, carga el perfil UNA VEZ
+  // 4. Se suscribe a cambios de autenticación
+  // 5. Solo recarga el perfil si cambia el ID del usuario (nuevo login)
+  // ============================================================================
   useEffect(() => {
     let isMounted = true;
+    
+    if (import.meta.env.DEV) {
+      console.log('[AuthProvider] Montando componente, iniciando carga de sesión');
+    }
 
     // Obtener sesión inicial
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
@@ -201,13 +275,16 @@ export function AuthProvider({ children }) {
           });
           
           // Limpiar estado
-          setUser(null);
-          setSession(null);
-          setProfile(null);
-          setAuthError(error);
-          currentUserIdRef.current = null;
+          setAuthState({
+            session: null,
+            user: null,
+            profile: null,
+            loading: false,
+            initialProfileLoaded: false,
+            error,
+          });
+          lastProfileUserIdRef.current = null;
           fetchingProfileRef.current = false;
-          setLoading(false);
           
           // Limpiar tokens locales
           try {
@@ -227,17 +304,31 @@ export function AuthProvider({ children }) {
         }
       }
       
-      setSession(session);
-      setUser(session?.user ?? null);
-      setAuthError(null);
+      // Actualizar estado con sesión inicial
+      setAuthState(prev => ({
+        ...prev,
+        session,
+        user: session?.user ?? null,
+        error: null,
+      }));
       sessionNotFoundShownRef.current = false;
       
+      // Solo cargar perfil si hay sesión y usuario, y no está ya cargado
       if (session?.user?.id) {
-        await fetchProfile(session.user.id);
+        if (import.meta.env.DEV) {
+          console.log('[AuthProvider] Sesión inicial obtenida, userId:', session.user.id);
+        }
+        // Cargar perfil inicial (loading será true hasta que termine)
+        await fetchProfile(session.user.id, true);
       } else {
-        setProfile(null);
+        // No hay sesión - marcar como cargado sin perfil
+        setAuthState(prev => ({
+          ...prev,
+          profile: null,
+          loading: false,
+          initialProfileLoaded: true,
+        }));
       }
-      setLoading(false);
     });
 
     // Suscribirse a cambios de autenticación
@@ -250,41 +341,53 @@ export function AuthProvider({ children }) {
       if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
         if (event === 'SIGNED_OUT') {
           // Sesión cerrada explícitamente o expirada
-          setUser(null);
-          setSession(null);
-          setProfile(null);
-          setAuthError(null);
-          currentUserIdRef.current = null;
+          setAuthState({
+            session: null,
+            user: null,
+            profile: null,
+            loading: false,
+            initialProfileLoaded: false,
+            error: null,
+          });
+          lastProfileUserIdRef.current = null;
           fetchingProfileRef.current = false;
-          recursionErrorRef.current = false; // Resetear flag al cerrar sesión
           sessionNotFoundShownRef.current = false;
-          setLoading(false);
           return;
         } else if (event === 'TOKEN_REFRESHED') {
           // Token refrescado - verificar que la sesión sigue válida
+          // NO recargar el perfil a menos que cambie el usuario
           if (session?.user) {
-            setSession(session);
-            setUser(session.user);
-            setAuthError(null);
+            setAuthState(prev => ({
+              ...prev,
+              session,
+              user: session.user,
+              error: null,
+            }));
             sessionNotFoundShownRef.current = false;
-            setLoading(false);
-            if (session.user.id) {
-              fetchProfile(session.user.id).catch(err => {
-                if (process.env.NODE_ENV === 'development') {
+            // Solo recargar perfil si el usuario cambió (muy raro en TOKEN_REFRESHED)
+            if (session.user.id && lastProfileUserIdRef.current !== session.user.id) {
+              if (import.meta.env.DEV) {
+                console.log('[AuthProvider] TOKEN_REFRESHED: usuario cambió, recargando perfil');
+              }
+              fetchProfile(session.user.id, false).catch(err => {
+                if (import.meta.env.DEV) {
                   console.error('[AuthProvider] Error obteniendo perfil después de refresh:', err);
                 }
               });
             }
           } else {
             // Token refrescado pero no hay sesión válida - limpiar
-            setUser(null);
-            setSession(null);
-            setProfile(null);
-            setAuthError(null);
-            currentUserIdRef.current = null;
+            setAuthState({
+              session: null,
+              user: null,
+              profile: null,
+              loading: false,
+              initialProfileLoaded: false,
+              error: null,
+            });
+            lastProfileUserIdRef.current = null;
             fetchingProfileRef.current = false;
             sessionNotFoundShownRef.current = false;
-            setLoading(false);
           }
           return;
         }
@@ -292,36 +395,48 @@ export function AuthProvider({ children }) {
       
       // Si no hay sesión (sesión expirada o usuario cerrado sesión), limpiar estado
       if (!session) {
-        setUser(null);
-        setSession(null);
-        setProfile(null);
-        setAuthError(null);
-        currentUserIdRef.current = null;
+        setAuthState({
+          session: null,
+          user: null,
+          profile: null,
+          loading: false,
+          initialProfileLoaded: false,
+          error: null,
+        });
+        lastProfileUserIdRef.current = null;
         fetchingProfileRef.current = false;
-        recursionErrorRef.current = false; // Resetear flag al cerrar sesión
         sessionNotFoundShownRef.current = false;
-        setLoading(false);
         return;
       }
       
       // Actualizar usuario inmediatamente
-      setSession(session);
-      setUser(session.user);
-      setAuthError(null);
-      sessionNotFoundShownRef.current = false;
-      setLoading(false);
+      const userIdChanged = !authState.user || authState.user.id !== session.user.id;
       
-      // Obtener perfil en background (no bloquear)
-      if (session?.user?.id) {
-        fetchProfile(session.user.id).catch(err => {
-          if (process.env.NODE_ENV === 'development') {
+      setAuthState(prev => ({
+        ...prev,
+        session,
+        user: session.user,
+        error: null,
+        // Solo poner loading en true si es un usuario nuevo y aún no tenemos perfil
+        loading: userIdChanged && !prev.initialProfileLoaded ? true : prev.loading,
+      }));
+      sessionNotFoundShownRef.current = false;
+      
+      // Obtener perfil solo si el usuario cambió (nuevo login)
+      if (session?.user?.id && userIdChanged) {
+        if (import.meta.env.DEV) {
+          console.log('[AuthProvider] onAuthStateChange: usuario cambió, cargando perfil:', session.user.id);
+        }
+        fetchProfile(session.user.id, !authState.initialProfileLoaded).catch(err => {
+          if (import.meta.env.DEV) {
             console.error('[AuthProvider] Error obteniendo perfil en onAuthStateChange:', err);
           }
         });
-      } else {
-        setProfile(null);
-        currentUserIdRef.current = null;
-        fetchingProfileRef.current = false;
+      } else if (session?.user?.id && !userIdChanged) {
+        // Mismo usuario, no recargar perfil
+        if (import.meta.env.DEV) {
+          console.log('[AuthProvider] onAuthStateChange: mismo usuario, perfil ya cargado, omitiendo');
+        }
       }
     });
 
@@ -335,15 +450,17 @@ export function AuthProvider({ children }) {
                                   error.code === 'session_not_found';
         
         // Forzar cierre de sesión cuando se detecta error de autenticación
-        setUser(null);
-        setSession(null);
-        setProfile(null);
-        setAuthError(error);
-        currentUserIdRef.current = null;
+        setAuthState({
+          session: null,
+          user: null,
+          profile: null,
+          loading: false,
+          initialProfileLoaded: false,
+          error,
+        });
+        lastProfileUserIdRef.current = null;
         fetchingProfileRef.current = false;
-        recursionErrorRef.current = false;
         sessionNotFoundShownRef.current = false;
-        setLoading(false);
         
         // Mostrar mensaje solo si no se ha mostrado recientemente
         if (isSessionNotFound && !sessionNotFoundShownRef.current) {
@@ -370,14 +487,10 @@ export function AuthProvider({ children }) {
 
     window.addEventListener('auth-error', handleAuthErrorEvent);
 
-    // Verificación periódica de sesión (cada 5 minutos) - SOLO si no hay error de recursión
+    // Verificación periódica de sesión (cada 30 minutos) - REDUCIDO para evitar spam
+    // IMPORTANTE: Solo verifica la sesión, NO recarga el perfil a menos que cambie el usuario
     sessionCheckIntervalRef.current = setInterval(async () => {
       if (!isMounted) return;
-      
-      // No verificar si hay un error de recursión activo
-      if (recursionErrorRef.current) {
-        return;
-      }
       
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -388,13 +501,16 @@ export function AuthProvider({ children }) {
                                     error.code === 'session_not_found';
           
           // Sesión expirada - limpiar estado
-          setUser(null);
-          setSession(null);
-          setProfile(null);
-          setAuthError(error);
-          currentUserIdRef.current = null;
+          setAuthState({
+            session: null,
+            user: null,
+            profile: null,
+            loading: false,
+            initialProfileLoaded: false,
+            error,
+          });
+          lastProfileUserIdRef.current = null;
           fetchingProfileRef.current = false;
-          recursionErrorRef.current = false;
           
           // Mostrar mensaje solo si no se ha mostrado recientemente
           if (isSessionNotFound && !sessionNotFoundShownRef.current) {
@@ -417,45 +533,59 @@ export function AuthProvider({ children }) {
               }
             }, 2000);
           }
-          
-          setLoading(false);
           return;
         }
         
-        setAuthError(null);
-        setSession(session);
-        
-        // Si no hay sesión pero tenemos usuario en estado, limpiar
-        if (!session && user) {
-          setUser(null);
-          setSession(null);
-          setProfile(null);
-          currentUserIdRef.current = null;
-          fetchingProfileRef.current = false;
-          recursionErrorRef.current = false;
-          sessionNotFoundShownRef.current = false;
-          setLoading(false);
-        } else if (session?.user && (!user || user.id !== session.user.id)) {
-          // Si hay sesión pero el usuario cambió, actualizar
-          setSession(session);
-          setUser(session.user);
-          setAuthError(null);
-          sessionNotFoundShownRef.current = false;
-          if (session.user.id && !recursionErrorRef.current) {
-            fetchProfile(session.user.id).catch(err => {
-              if (process.env.NODE_ENV === 'development') {
-                console.error('[AuthProvider] Error obteniendo perfil en verificación periódica:', err);
-              }
-            });
+        // Actualizar estado solo si cambió algo
+        setAuthState(prev => {
+          // Si no hay sesión pero tenemos usuario en estado, limpiar
+          if (!session && prev.user) {
+            return {
+              session: null,
+              user: null,
+              profile: null,
+              loading: false,
+              initialProfileLoaded: false,
+              error: null,
+            };
           }
+          
+          // Si hay sesión pero el usuario cambió, actualizar (muy raro)
+          if (session?.user && (!prev.user || prev.user.id !== session.user.id)) {
+            return {
+              ...prev,
+              session,
+              user: session.user,
+              error: null,
+            };
+          }
+          
+          // Solo actualizar error si cambió
+          if (prev.error !== null) {
+            return { ...prev, error: null };
+          }
+          
+          return prev; // No hay cambios
+        });
+        
+        // Solo recargar perfil si cambió el usuario (muy raro en verificación periódica)
+        if (session?.user?.id && lastProfileUserIdRef.current !== session.user.id) {
+          if (import.meta.env.DEV) {
+            console.log('[AuthProvider] Verificación periódica: usuario cambió, recargando perfil');
+          }
+          fetchProfile(session.user.id, false).catch(err => {
+            if (import.meta.env.DEV) {
+              console.error('[AuthProvider] Error obteniendo perfil en verificación periódica:', err);
+            }
+          });
         }
       } catch (err) {
         // Error al verificar sesión - no hacer nada para no interrumpir la experiencia
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
           console.warn('[AuthProvider] Error en verificación periódica de sesión:', err);
         }
       }
-    }, 5 * 60 * 1000); // 5 minutos
+    }, 30 * 60 * 1000); // 30 minutos (reducido de 5 minutos para evitar llamadas innecesarias)
 
     return () => {
       isMounted = false;
@@ -466,7 +596,11 @@ export function AuthProvider({ children }) {
         sessionCheckIntervalRef.current = null;
       }
     };
-  }, [user]);
+    // IMPORTANTE: Sin dependencias que cambien frecuentemente
+    // Solo se ejecuta al montar/desmontar el componente
+    // fetchProfile está memoizado y se accede a través del ref cuando es necesario
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Dependencias vacías: solo se ejecuta una vez
 
   const signIn = useCallback(async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -481,13 +615,17 @@ export function AuthProvider({ children }) {
     // Actualizar estado inmediatamente después del login exitoso
     // onAuthStateChange se disparará también, pero esto asegura respuesta rápida
     if (data?.user) {
-      setUser(data.user);
-      setLoading(false);
+      setAuthState(prev => ({
+        ...prev,
+        user: data.user,
+        // Mantener loading hasta que se cargue el perfil inicial
+        loading: !prev.initialProfileLoaded,
+      }));
+      
       // Obtener perfil en background (no bloquear)
       if (data.user.id) {
-        // Llamar a fetchProfile directamente (está en el scope del componente)
-        fetchProfile(data.user.id).catch(err => {
-          if (process.env.NODE_ENV === 'development') {
+        fetchProfile(data.user.id, !authState.initialProfileLoaded).catch(err => {
+          if (import.meta.env.DEV) {
             console.error('[AuthProvider] Error obteniendo perfil después del login:', err);
           }
         });
@@ -517,12 +655,16 @@ export function AuthProvider({ children }) {
     }
     
     // Limpiar perfil al cerrar sesión (siempre, incluso si falló el signOut)
-    setUser(null);
-    setSession(null);
-    setProfile(null);
-    setAuthError(null);
+    setAuthState({
+      session: null,
+      user: null,
+      profile: null,
+      loading: false,
+      initialProfileLoaded: false,
+      error: null,
+    });
     fetchingProfileRef.current = false;
-    currentUserIdRef.current = null;
+    lastProfileUserIdRef.current = null;
     sessionNotFoundShownRef.current = false;
   }, []);
 
@@ -537,11 +679,15 @@ export function AuthProvider({ children }) {
                                   error.code === 'session_not_found';
         
         // Sesión expirada - limpiar estado
-        setUser(null);
-        setSession(null);
-        setProfile(null);
-        setAuthError(error);
-        currentUserIdRef.current = null;
+        setAuthState({
+          session: null,
+          user: null,
+          profile: null,
+          loading: false,
+          initialProfileLoaded: false,
+          error,
+        });
+        lastProfileUserIdRef.current = null;
         fetchingProfileRef.current = false;
         
         // Mostrar mensaje solo si no se ha mostrado recientemente
@@ -566,35 +712,40 @@ export function AuthProvider({ children }) {
           }, 2000);
         }
         
-        setLoading(false);
-        return false;
-      }
-      
-      setAuthError(null);
-      setSession(session);
-      
-      if (!session) {
-        // No hay sesión - limpiar si tenemos usuario en estado
-        if (user) {
-          setUser(null);
-          setSession(null);
-          setProfile(null);
-          currentUserIdRef.current = null;
-          fetchingProfileRef.current = false;
-          sessionNotFoundShownRef.current = false;
-          setLoading(false);
-        }
         return false;
       }
       
       // Hay sesión válida - actualizar estado si es necesario
-      if (!user || user.id !== session.user.id) {
-        setSession(session);
-        setUser(session.user);
-        setAuthError(null);
+      if (!session) {
+        // No hay sesión - limpiar si tenemos usuario en estado
+        if (authState.user) {
+          setAuthState({
+            session: null,
+            user: null,
+            profile: null,
+            loading: false,
+            initialProfileLoaded: false,
+            error: null,
+          });
+          lastProfileUserIdRef.current = null;
+          fetchingProfileRef.current = false;
+          sessionNotFoundShownRef.current = false;
+        }
+        return false;
+      }
+      
+      // Hay sesión válida - actualizar estado solo si cambió el usuario
+      const userIdChanged = !authState.user || authState.user.id !== session.user.id;
+      if (userIdChanged) {
+        setAuthState(prev => ({
+          ...prev,
+          session,
+          user: session.user,
+          error: null,
+        }));
         sessionNotFoundShownRef.current = false;
         if (session.user.id) {
-          await fetchProfile(session.user.id);
+          await fetchProfile(session.user.id, !authState.initialProfileLoaded);
         }
       }
       
@@ -605,7 +756,7 @@ export function AuthProvider({ children }) {
       }
       return false;
     }
-  }, [user, fetchProfile]);
+  }, []); // Sin dependencias - función estable
 
   // Función para manejar errores de autenticación
   const handleAuthError = useCallback(async (error) => {
@@ -631,28 +782,53 @@ export function AuthProvider({ children }) {
   }, []);
 
   // Usar useMemo para estabilizar el valor del contexto
+  // Extraer valores del estado unificado
   const value = useMemo(() => ({
-    user,
-    session,
-    profile,
+    user: authState.user,
+    session: authState.session,
+    profile: authState.profile,
     appRole,
-    loading,
-    authError,
+    loading: authState.loading,
+    authError: authState.error,
     signIn,
     signOut,
     checkSession,
     handleAuthError,
     resetPassword,
-  }), [user, session, profile, appRole, loading, authError, signIn, signOut, checkSession, handleAuthError, resetPassword]);
+  }), [authState.user, authState.session, authState.profile, authState.loading, authState.error, appRole, signIn, signOut, checkSession, handleAuthError, resetPassword]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  
+  if (!context) {
+    // En desarrollo, durante HMR, intenta no crashear toda la app
+    if (import.meta.env.DEV && import.meta.hot) {
+      if (import.meta.env.DEV) {
+        console.warn('[AuthProvider] useAuth llamado sin provider durante HMR - devolviendo objeto temporal');
+      }
+      // Devuelve un objeto mínimo para que nada explote durante HMR
+      return {
+        session: null,
+        user: null,
+        profile: null,
+        appRole: 'ESTU',
+        loading: true,
+        authError: null,
+        signIn: async () => ({ user: null, session: null }),
+        signOut: async () => {},
+        checkSession: async () => false,
+        handleAuthError: async () => {},
+        resetPassword: async () => true,
+      };
+    }
+    
+    // En producción, sí quiero que esto sea un error duro
     throw new Error('useAuth debe usarse dentro de AuthProvider');
   }
+  
   return context;
 }
 

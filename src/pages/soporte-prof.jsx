@@ -34,7 +34,6 @@ import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
 import MediaPreviewModal from "@/components/common/MediaPreviewModal";
 import { useAuth } from "@/auth/AuthProvider";
-import { supabase } from "@/lib/supabaseClient";
 
 function SoporteProfPageContent() {
   const { user, profile } = useAuth();
@@ -79,26 +78,18 @@ function SoporteProfPageContent() {
     },
   });
 
-  // Obtener nombres de alumnos (debe estar antes del return condicional)
+  // Obtener nombres de alumnos desde los tickets (ya vienen en la consulta)
+  // Ya no necesitamos hacer peticiones adicionales a profiles
   useEffect(() => {
     if (tickets && tickets.length > 0) {
-      const uniqueAlumnoIds = [...new Set(tickets.map(t => t.alumnoId))];
-      Promise.all(
-        uniqueAlumnoIds.map(async (id) => {
-          const { data } = await supabase
-            .from('profiles')
-            .select('id, full_name')
-            .eq('id', id)
-            .single();
-          return data ? { id, name: data.full_name } : null;
-        })
-      ).then((results) => {
-        const names = {};
-        results.forEach((r) => {
-          if (r) names[r.id] = r.name;
-        });
-        setAlumnoNames(names);
+      const names = {};
+      tickets.forEach((ticket) => {
+        // Los nombres ya vienen en los tickets desde supportTicketsClient
+        if (ticket.alumnoId && ticket._alumnoNombre) {
+          names[ticket.alumnoId] = ticket._alumnoNombre;
+        }
       });
+      setAlumnoNames(names);
     }
   }, [tickets]);
 
@@ -369,12 +360,11 @@ function SoporteProfPageContent() {
                         </h3>
                         {getEstadoBadge(ticket.estado)}
                       </div>
-                      {isAdmin && (
-                        <div className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] mb-1">
-                          <User className="w-3 h-3" />
-                          {alumnoNames[ticket.alumnoId] || 'Alumno desconocido'}
-                        </div>
-                      )}
+                      {/* Mostrar nombre del alumno siempre en la lista */}
+                      <div className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] mb-1">
+                        <User className="w-3 h-3" />
+                        {alumnoNames[ticket.alumnoId] || ticket._alumnoNombre || 'Alumno desconocido'}
+                      </div>
                       <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
                         <Clock className="w-3 h-3" />
                         {formatDate(ticket.updated_at)}
@@ -413,9 +403,16 @@ function SoporteProfPageContent() {
                         <Badge variant="outline">{selectedTicket.tipo}</Badge>
                       )}
                     </div>
-                    {isAdmin && selectedTicket && (
+                    {/* Mostrar nombre del alumno siempre en el detalle */}
+                    {selectedTicket && (
                       <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                        Alumno: {alumnoNames[selectedTicket.alumnoId] || 'Desconocido'}
+                        Alumno: {alumnoNames[selectedTicket.alumnoId] || selectedTicket._alumnoNombre || 'Desconocido'}
+                      </div>
+                    )}
+                    {/* Mostrar profesor asignado si existe */}
+                    {selectedTicket && selectedTicket.profesorId && (
+                      <div className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                        Profesor asignado: {selectedTicket._profesorNombre || 'Sin nombre'}
                       </div>
                     )}
                   </div>
@@ -445,6 +442,10 @@ function SoporteProfPageContent() {
                   <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
                     {mensajes.map((mensaje) => {
                       const isProfesor = mensaje.rolAutor === 'profesor';
+                      const isCurrentProfesor = isProfesor && mensaje.autorId === user?.id;
+                      const alumnoNombre = mensaje.rolAutor === 'alumno' ? mensaje._autorNombre || null : null;
+                      const profesorNombre = isProfesor && !isCurrentProfesor ? mensaje._autorNombre || null : null;
+                      
                       return (
                         <div
                           key={mensaje.id}
@@ -463,7 +464,11 @@ function SoporteProfPageContent() {
                                   ? 'text-[var(--color-primary)]' 
                                   : 'text-[var(--color-text-secondary)]'
                               }`}>
-                                {isProfesor ? 'Tú' : 'Alumno'}
+                                {isCurrentProfesor 
+                                  ? 'Tú' 
+                                  : isProfesor 
+                                    ? `Profesor${profesorNombre ? ` – ${profesorNombre}` : ''}`
+                                    : `Alumno${alumnoNombre ? ` – ${alumnoNombre}` : ''}`}
                               </span>
                               <span className="text-xs text-[var(--color-text-secondary)] opacity-70">
                                 {formatDate(mensaje.created_at)}

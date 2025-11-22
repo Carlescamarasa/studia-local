@@ -60,7 +60,7 @@ function SoportePageContent() {
   const [showMediaModal, setShowMediaModal] = useState(false);
 
   // Hooks de React Query - SIEMPRE se declaran, usando 'enabled' para controlar la ejecución
-  // Obtener tickets del alumno
+  // Obtener tickets del alumno (incluyen nombres de perfiles en la consulta)
   const { data: tickets, isLoading: loadingTickets } = useQuery({
     queryKey: ['support-tickets', user?.id],
     queryFn: () => {
@@ -314,7 +314,7 @@ function SoportePageContent() {
             <Card className={componentStyles.containers.cardBase}>
               <CardHeader>
                 <div className="flex items-start justify-between">
-                  <div>
+                  <div className="flex-1">
                     <CardTitle>{selectedTicket?.titulo}</CardTitle>
                     <div className="flex items-center gap-2 mt-2">
                       {selectedTicket && getEstadoBadge(selectedTicket.estado)}
@@ -322,6 +322,12 @@ function SoportePageContent() {
                         <Badge variant="outline">{selectedTicket.tipo}</Badge>
                       )}
                     </div>
+                    {/* Mostrar nombre del profesor asignado */}
+                    {selectedTicket && (
+                      <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                        Profesor asignado: {selectedTicket._profesorNombre || 'Sin asignar'}
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -353,7 +359,9 @@ function SoportePageContent() {
                                   ? 'text-[var(--color-primary)]' 
                                   : 'text-[var(--color-text-secondary)]'
                               }`}>
-                                {isAlumno ? 'Tú' : 'Profesor'}
+                                {isAlumno 
+                                  ? 'Tú' 
+                                  : `Profesor${mensaje._autorNombre ? ` – ${mensaje._autorNombre}` : ''}`}
                               </span>
                               <span className="text-xs text-[var(--color-text-secondary)] opacity-70">
                                 {formatDate(mensaje.created_at)}
