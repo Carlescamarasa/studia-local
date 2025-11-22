@@ -16,7 +16,7 @@ import {
   ChevronRight, ChevronLeft, ChevronsRight, AlertTriangle, ChevronDown,
   Play, Pause, X, List, HelpCircle,
   Maximize2, Minimize2, CheckCircle, XCircle,
-  SkipForward, Shuffle, Menu
+  SkipForward, Shuffle, Menu, User
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -39,7 +39,7 @@ import { useSidebar } from "@/components/ui/SidebarState";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 import MediaEmbed from "../components/common/MediaEmbed";
-import MediaIconButton from "../components/common/MediaIconButton";
+import { MediaIcon, getMediaLabel } from "../components/common/MediaEmbed";
 import { resolveMedia, MediaKind } from "../components/utils/media";
 
 import RequireRole from "@/components/auth/RequireRole";
@@ -64,6 +64,7 @@ function HoyPageContent() {
   const [semanaActualISO, setSemanaActualISO] = useState(() => {
     return calcularLunesSemanaISO(new Date());
   });
+  const [asignacionSeleccionadaId, setAsignacionSeleccionadaId] = useState(null); // Para múltiples asignaciones
   const [sesionSeleccionada, setSesionSeleccionada] = useState(0);
   const [planDesplegado, setPlanDesplegado] = useState(true); // Por defecto desplegado
   const [sesionesConResumenExpandido, setSesionesConResumenExpandido] = useState(new Set());
@@ -177,7 +178,8 @@ function HoyPageContent() {
   });
 
 
-  const asignacionActiva = asignaciones.find(a => {
+  // Filtrar asignaciones activas (que tienen semana válida para la semana actual)
+  const asignacionesActivas = asignaciones.filter(a => {
     if (a.alumnoId !== userIdActual) return false;
     if (a.estado !== 'publicada' && a.estado !== 'en_curso') return false;
     try {
@@ -188,6 +190,18 @@ function HoyPageContent() {
       return false;
     }
   });
+
+  // Determinar asignación activa: si hay selección, usarla; sino, la primera
+  const asignacionActiva = asignacionSeleccionadaId 
+    ? asignacionesActivas.find(a => a.id === asignacionSeleccionadaId)
+    : asignacionesActivas[0] || null;
+
+  // Si no hay selección y hay asignaciones, seleccionar la primera automáticamente
+  useEffect(() => {
+    if (!asignacionSeleccionadaId && asignacionesActivas.length > 0) {
+      setAsignacionSeleccionadaId(asignacionesActivas[0].id);
+    }
+  }, [asignacionesActivas.length, asignacionSeleccionadaId]);
 
   // Calcular semanaDelPlan de forma más robusta
   let semanaDelPlan = null;
@@ -1030,48 +1044,37 @@ function HoyPageContent() {
     const excedido = tiempoActual > (ejercicioActual?.duracionSeg || 0);
 
     return (
-      <div className="min-h-screen bg-background pb-4">
-        {/* Timer flotante con controles integrados */}
+      <div className="min-h-screen bg-background pb-32 md:pb-24">
+        {/* Timer dock inferior fijo */}
         {sesionActiva && (
           <div
-            ref={timerRef}
-            className="fixed z-[30] select-none min-w-[320px] sm:min-w-[380px] md:min-w-[420px]"
-            style={{
-              top: timerPosition.top !== null ? `${timerPosition.top}px` : undefined,
-              left: timerPosition.left !== null ? `${timerPosition.left}px` : undefined,
-              right: timerPosition.right !== null ? `${timerPosition.right}px` : undefined,
-              cursor: isDraggingTimer ? 'grabbing' : 'grab',
-              userSelect: 'none',
-            }}
-            onMouseDown={handleTimerMouseDown}
-            onTouchStart={handleTimerTouchStart}
+            className="fixed bottom-0 left-0 right-0 z-[30] bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
           >
             <div className={cn(
-              componentStyles.effects.playerTranslucent,
-              !isAD && ejercicioActual?.duracionSeg > 0 && (
-                excedido ? "border-[var(--color-danger)]/30" : porcentajeEjercicio >= 75 ? "border-[var(--color-warning)]/30" : "border-[var(--color-primary)]/20"
-              ),
-              !isAD && ejercicioActual?.duracionSeg > 0 && !isDraggingTimer && componentStyles.effects.playerTranslucentHover
+              "max-w-5xl mx-auto",
+              !isAD && ejercicioActual?.duracionSeg > 0 && cronometroActivo && (
+                excedido ? "bg-[var(--color-danger)]/5" : porcentajeEjercicio >= 75 ? "bg-[var(--color-warning)]/5" : "bg-[var(--color-primary)]/5"
+              )
             )}>
               {/* Header con Timer y Contador */}
               {(!isAD && ejercicioActual?.duracionSeg > 0) || (sesionActiva && listaEjecucion.length > 0) ? (
-                <div className="px-3 py-2 border-b border-[var(--color-border-default)]/50">
-                  <div className="flex items-center justify-between gap-2">
+                <div className="px-4 py-3 border-b border-[var(--color-border-default)]/50">
+                  <div className="flex items-center justify-between gap-4">
                     {/* Timer - Solo visible si no es AD y tiene duración */}
                     {!isAD && ejercicioActual?.duracionSeg > 0 && (
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <Clock className={cn(
-                          "w-4 h-4 shrink-0",
+                          "w-5 h-5 md:w-6 md:h-6 shrink-0",
                           excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
                         )} />
                         <div className="flex flex-col">
                           <div className={cn(
-                            "text-lg font-mono font-bold tabular-nums leading-tight",
+                            "text-xl md:text-2xl font-mono font-bold tabular-nums leading-tight",
                             excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
                           )}>
                             {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
                           </div>
-                          <div className="text-[10px] text-[var(--color-text-secondary)] font-mono tabular-nums leading-tight">
+                          <div className="text-xs md:text-sm text-[var(--color-text-secondary)] font-mono tabular-nums leading-tight">
                             / {Math.floor(ejercicioActual.duracionSeg / 60)}:{String((ejercicioActual.duracionSeg % 60)).padStart(2, '0')}
                           </div>
                         </div>
@@ -1091,23 +1094,13 @@ function HoyPageContent() {
                             {indiceActual + 1}<span className="text-[var(--color-text-secondary)] font-normal">/{listaEjecucion.length}</span>
                           </span>
                         </div>
-                        {/* Mini barra de progreso del contador */}
-                        <div className="mt-1 w-full max-w-[60px] bg-[var(--color-border-default)]/30 rounded-full h-1 overflow-hidden">
-                          <div
-                            className={cn(
-                              "h-full transition-all duration-300 rounded-full",
-                              progreso <= 85 ? 'bg-[var(--color-success)]' : progreso <= 100 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-danger)]'
-                            )}
-                            style={{ width: `${Math.min(progreso, 100)}%` }}
-                          />
-                        </div>
                       </div>
                     )}
                   </div>
                   
-                  {/* Barra de progreso del ejercicio - Solo si hay timer */}
+                  {/* Barra de progreso del ejercicio - Solo si hay timer - Más gruesa y visible */}
                   {!isAD && ejercicioActual?.duracionSeg > 0 && (
-                    <div className="mt-1.5 bg-[var(--color-border-default)]/30 rounded-full h-0.5 overflow-hidden">
+                    <div className="mt-3 bg-[var(--color-border-default)]/30 rounded-full h-2 md:h-2.5 overflow-hidden">
                       <div
                         className={cn(
                           "h-full transition-all duration-300",
@@ -1121,62 +1114,75 @@ function HoyPageContent() {
               ) : null}
               
               {/* Controles principales - Compactos pero táctiles */}
-              {/* Controles de ejercicio - Distribución 19-2-29-2-29-2-19 con gaps */}
-              <div className="p-2 flex items-center w-full gap-[2%]">
-                {/* Navegación: Atrás - 19% */}
+              <div className="px-4 py-3 flex items-center justify-center gap-2 md:gap-3 max-w-[560px] mx-auto">
+                {/* Navegación: Atrás */}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleAnterior}
                   disabled={indiceActual === 0}
-                  className="h-10 flex-[0.19] rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
+                  className="h-12 md:h-14 px-4 md:px-6 rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors touch-manipulation min-h-[48px]"
                   title="Anterior (P)"
                   aria-label="Ejercicio anterior"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
+                  <span className="hidden sm:inline text-xs md:text-sm">Anterior</span>
                 </Button>
 
-                {/* Control principal: Play/Pause - 29% */}
+                {/* Control principal: Play/Pause */}
                 {!isAD && (
                   <Button
                     variant="primary"
                     size="sm"
                     onClick={togglePlayPausa}
-                    className="h-10 flex-[0.29] rounded-lg focus-brand shadow-sm hover:shadow-md transition-all"
+                    className="h-12 md:h-14 px-4 md:px-6 rounded-lg focus-brand shadow-sm hover:shadow-md transition-all touch-manipulation min-h-[48px]"
                     title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
                     aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
                   >
-                    {cronometroActivo ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    {cronometroActivo ? (
+                      <>
+                        <Pause className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
+                        <span className="hidden sm:inline text-xs md:text-sm">Pausar</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
+                        <span className="hidden sm:inline text-xs md:text-sm">Reproducir</span>
+                      </>
+                    )}
                   </Button>
                 )}
 
-                {/* Acciones de ejercicio: Completar - 29% */}
+                {/* Acciones de ejercicio: Completar */}
                 <Button
                   variant="primary"
                   onClick={completarYAvanzar}
                   className={cn(
-                    "h-10 flex-[0.29] bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm rounded-lg focus-brand shadow-sm hover:shadow-md transition-all text-white",
-                    isAD && "flex-[0.58]"
+                    "h-12 md:h-14 px-4 md:px-6 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm md:text-base rounded-lg focus-brand shadow-sm hover:shadow-md transition-all text-white touch-manipulation min-h-[48px]",
+                    isAD && "flex-1"
                   )}
                   title="Completar (Enter)"
                   aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
                 >
-                  <CheckCircle className="w-4 h-4 mr-1.5" />
+                  <CheckCircle className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
                   {isUltimo ? 'Finalizar' : 'OK'}
                 </Button>
 
-                {/* Acciones de ejercicio: Saltar - 19% */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={omitirYAvanzar}
-                  disabled={isUltimo}
-                  className="h-10 flex-[0.19] rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
-                  title="Omitir y pasar (N)"
-                  aria-label="Omitir ejercicio"
-                >
-                  <ChevronsRight className="w-4 h-4" />
-                </Button>
+                {/* Acciones de ejercicio: Saltar */}
+                {!isUltimo && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={omitirYAvanzar}
+                    disabled={isUltimo}
+                    className="h-12 md:h-14 px-4 md:px-6 rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors touch-manipulation min-h-[48px]"
+                    title="Omitir y pasar (N)"
+                    aria-label="Omitir ejercicio"
+                  >
+                    <ChevronsRight className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
+                    <span className="hidden sm:inline text-xs md:text-sm">Saltar</span>
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -1237,49 +1243,44 @@ function HoyPageContent() {
           </div>
         </div>
 
-        {/* Contenido del ejercicio */}
-        <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
-          {isAD && (
-            <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-primary)] bg-[var(--color-primary-soft)]`}>
-              <AlertTriangle className="h-4 w-4 text-[var(--color-primary)]" />
-              <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-text-primary)]`}>
-                Este ejercicio no suma tiempo real
-              </AlertDescription>
-            </Alert>
-          )}
+        {/* Contenido del ejercicio - Tarjeta principal unificada */}
+        <div className="max-w-[900px] md:max-w-[1000px] mx-auto p-4 md:p-6 pb-32 md:pb-24">
+          <Card className="shadow-md">
+            <CardContent className="p-4 md:p-6 space-y-6">
+              {isAD && (
+                <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-primary)] bg-[var(--color-primary-soft)]`}>
+                  <AlertTriangle className="h-4 w-4 text-[var(--color-primary)]" />
+                  <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-text-primary)]`}>
+                    Este ejercicio no suma tiempo real
+                  </AlertDescription>
+                </Alert>
+              )}
 
-          {ejercicioActual.indicadorLogro && (
-            <Card className={`${componentStyles.items.itemCardHighlight} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
-              <CardContent className="pt-4">
-                <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-info)] mb-1`}>💡 Objetivo de logro</p>
-                <p className={`${componentStyles.typography.bodyText} text-[var(--color-info)]`}>{ejercicioActual.indicadorLogro}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {ejercicioActual.instrucciones && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">📋 Instrucciones</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-ui whitespace-pre-wrap leading-relaxed">
-                  {ejercicioActual.instrucciones}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {!isAD && (isFM ? elementosFM.length > 0 : ((ejercicioActual.media && Object.keys(ejercicioActual.media).length > 0) || (ejercicioActual.mediaLinks && ejercicioActual.mediaLinks.length > 0))) && (
-            <Card className={isFM ? `border-[var(--color-accent)]` : ""}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className={`${componentStyles.typography.cardTitle} ${isFM ? "text-[var(--color-accent)]" : ""}`}>
-                    {isFM ? '🎼 Material de la Pieza' : '📎 Material'}
-                  </CardTitle>
+              {/* Objetivo de logro */}
+              {ejercicioActual.indicadorLogro && (
+                <div className="border-b border-[var(--color-border-default)] pb-4">
+                  <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-info)] mb-2`}>💡 Objetivo de logro</p>
+                  <p className={`${componentStyles.typography.bodyText} text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed`}>{ejercicioActual.indicadorLogro}</p>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
+              )}
+
+              {/* Instrucciones */}
+              {ejercicioActual.instrucciones && (
+                <div className="border-b border-[var(--color-border-default)] pb-4">
+                  <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] mb-2`}>📋 Instrucciones</p>
+                  <p className="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed">
+                    {ejercicioActual.instrucciones}
+                  </p>
+                </div>
+              )}
+
+              {/* Material de la pieza */}
+              {!isAD && (isFM ? elementosFM.length > 0 : ((ejercicioActual.media && Object.keys(ejercicioActual.media).length > 0) || (ejercicioActual.mediaLinks && ejercicioActual.mediaLinks.length > 0))) && (
+                <div className="border-b border-[var(--color-border-default)] pb-4 last:border-b-0">
+                  <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] mb-3`}>
+                    {isFM ? '🎼 Material de la Pieza' : '📎 Material'}
+                  </p>
+                  <div className="space-y-4">
                 {isFM ? (
                   elementosFM.map((elemento, idx) => (
                     <div key={idx} className={`border rounded-lg p-3 bg-[var(--color-accent)]/10 space-y-2`}>
@@ -1298,39 +1299,35 @@ function HoyPageContent() {
                                 </div>
                               );
                             }
-                            // Resto: iconos clickeables
+                            // Resto: abrir en nueva pestaña (modo estudio)
                             return (
-                              <MediaIconButton
+                              <Button
                                 key={urlIdx}
-                                url={url}
-                                onOpen={(url) => setMediaModal(url)}
-                                className="flex-shrink-0"
-                              />
+                                type="button"
+                                variant="outline"
+                                onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+                                className="flex items-center justify-center p-2 h-10 w-10 border border-[var(--color-border-default)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-elevated)] transition-colors flex-shrink-0"
+                                aria-label={`Abrir ${getMediaLabel(url)} en nueva pestaña`}
+                              >
+                                <MediaIcon url={url} className="w-5 h-5" />
+                                <span className="sr-only">{getMediaLabel(url)}</span>
+                              </Button>
                             );
                           })}
                         </div>
                       )}
 
                       {elemento.media?.pdf && (
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="text-xs font-medium text-ui">📄 PDF</p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setMediaFullscreen({ tipo: 'pdf', url: elemento.media.pdf, nombre: elemento.nombre })}
-                              className="h-7 text-xs rounded-xl"
-                              aria-label="Ver PDF en pantalla completa"
-                            >
-                              <Maximize2 className="w-3 h-3 mr-1" />
-                              Pantalla completa
-                            </Button>
-                          </div>
-                          <iframe
-                            src={elemento.media.pdf}
-                            className="w-full h-80 rounded-lg border"
-                            title={elemento.nombre}
-                          />
+                        <div className="md:col-span-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(elemento.media.pdf, "_blank", "noopener,noreferrer")}
+                            className="w-full h-10 text-sm rounded-lg"
+                            aria-label="Ver partitura (PDF) en nueva pestaña"
+                          >
+                            📄 Ver partitura (PDF)
+                          </Button>
                         </div>
                       )}
 
@@ -1380,39 +1377,35 @@ function HoyPageContent() {
                               </div>
                             );
                           }
-                          // Resto: iconos clickeables
+                          // Resto: abrir en nueva pestaña (modo estudio)
                           return (
-                            <MediaIconButton
+                            <Button
                               key={urlIdx}
-                              url={url}
-                              onOpen={(url) => setMediaModal(url)}
-                              className="flex-shrink-0"
-                            />
+                              type="button"
+                              variant="outline"
+                              onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+                              className="flex items-center justify-center p-2 h-10 w-10 border border-[var(--color-border-default)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-elevated)] transition-colors flex-shrink-0"
+                              aria-label={`Abrir ${getMediaLabel(url)} en nueva pestaña`}
+                            >
+                              <MediaIcon url={url} className="w-5 h-5" />
+                              <span className="sr-only">{getMediaLabel(url)}</span>
+                            </Button>
                           );
                         })}
                       </div>
                     )}
 
                     {ejercicioActual.media?.pdf && (
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-xs font-medium text-ui">📄 PDF</p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setMediaFullscreen({ tipo: 'pdf', url: ejercicioActual.media.pdf, nombre: 'Material' })}
-                            className="h-7 text-xs rounded-xl"
-                            aria-label="Ver PDF en pantalla completa"
-                          >
-                            <Maximize2 className="w-3 h-3 mr-1" />
-                            Pantalla completa
-                          </Button>
-                        </div>
-                        <iframe
-                          src={ejercicioActual.media.pdf}
-                          className="w-full h-80 rounded-lg border"
-                          title="Material PDF"
-                        />
+                      <div className="md:col-span-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(ejercicioActual.media.pdf, "_blank", "noopener,noreferrer")}
+                          className="w-full h-10 text-sm rounded-lg"
+                          aria-label="Ver partitura (PDF) en nueva pestaña"
+                        >
+                          📄 Ver partitura (PDF)
+                        </Button>
                       </div>
                     )}
 
@@ -1447,24 +1440,23 @@ function HoyPageContent() {
                     )}
                   </>
                 )}
-              </CardContent>
-            </Card>
-          )}
+                  </div>
+                </div>
+              )}
 
-          {ejercicioActual.materialesRequeridos && ejercicioActual.materialesRequeridos.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">🎒 Materiales Requeridos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="list-disc list-inside space-y-1 text-sm text-ui">
-                  {ejercicioActual.materialesRequeridos.map((material, idx) => (
-                    <li key={idx}>{material}</li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
+              {/* Materiales Requeridos */}
+              {ejercicioActual.materialesRequeridos && ejercicioActual.materialesRequeridos.length > 0 && (
+                <div className="pt-4">
+                  <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] mb-2`}>🎒 Materiales Requeridos</p>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-[var(--color-text-primary)]">
+                    {ejercicioActual.materialesRequeridos.map((material, idx) => (
+                      <li key={idx}>{material}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Footer de controles - Oculto (controles ahora en timer flotante) */}
@@ -1908,20 +1900,44 @@ function HoyPageContent() {
         icon={PlayCircle}
         title="Estudiar Ahora"
         subtitle={`Plan de estudio para ${formatearSemana(semanaActualISO)}`}
-        filters={asignacionActiva ? (
-            <div className={`flex items-center gap-2 flex-wrap ${componentStyles.typography.bodyText} bg-[var(--color-primary-soft)] rounded-xl p-3 border border-[var(--color-primary)]`}>
-              <Music className="w-4 h-4 text-[var(--color-primary)]" />
-              <span className="font-semibold">{asignacionActiva.piezaSnapshot?.nombre}</span>
-              <span className="text-ui/80">•</span>
-              <Target className="w-4 h-4 text-[var(--color-info)]" />
-              <span>{asignacionActiva.plan?.nombre}</span>
-              <span className="text-ui/80">•</span>
-              <span className="font-medium">{getNombreVisible(alumnoActual)}</span>
-            </div>
-        ) : null}
       />
 
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
+        {/* Barra de contexto: pieza / plan / alumno (fuera de filtros) */}
+        {asignacionActiva && (
+          <div className="flex items-center gap-2 flex-wrap bg-[var(--color-primary-soft)] rounded-xl p-3 border border-[var(--color-primary)]">
+            <Music className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
+            <span className="font-semibold text-[var(--color-text-primary)]">{asignacionActiva.piezaSnapshot?.nombre}</span>
+            <span className="text-[var(--color-text-secondary)]">•</span>
+            <Target className="w-4 h-4 text-[var(--color-info)] shrink-0" />
+            <span className="text-[var(--color-text-primary)]">{asignacionActiva.plan?.nombre}</span>
+            <span className="text-[var(--color-text-secondary)]">•</span>
+            <User className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />
+            <span className="font-medium text-[var(--color-text-primary)]">{getNombreVisible(alumnoActual)}</span>
+          </div>
+        )}
+
+        {/* Selector de asignación si hay múltiples */}
+        {asignacionesActivas.length > 1 && (
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {asignacionesActivas.map((asignacion) => (
+              <button
+                key={asignacion.id}
+                onClick={() => setAsignacionSeleccionadaId(asignacion.id)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border whitespace-nowrap shrink-0 transition-colors ${
+                  asignacionSeleccionadaId === asignacion.id || (!asignacionSeleccionadaId && asignacion.id === asignacionesActivas[0]?.id)
+                    ? 'bg-[var(--color-primary-soft)] border-[var(--color-primary)] text-[var(--color-text-primary)]'
+                    : 'bg-[var(--color-surface-muted)] border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-elevated)]'
+                }`}
+              >
+                <Music className="w-4 h-4 shrink-0" />
+                <span className="font-medium text-sm">{asignacion.piezaSnapshot?.nombre}</span>
+                <span className="text-xs">·</span>
+                <span className="text-xs">{asignacion.plan?.nombre}</span>
+              </button>
+            ))}
+          </div>
+        )}
         {!asignacionActiva || !semanaDelPlan ? (
           <Card className="border-dashed border-2">
             <CardContent className="text-center py-16">
@@ -1934,7 +1950,11 @@ function HoyPageContent() {
               </p>
               <Button
                 variant="outline"
-                onClick={() => navigate(createPageUrl('estadisticas'))}
+                onClick={() => {
+                  navigate(createPageUrl('estadisticas'), {
+                    state: { from: 'hoy' }
+                  });
+                }}
                 className={`${componentStyles.buttons.outline} focus-brand`}
               >
                 Ver mi historial y estadísticas →
@@ -2000,64 +2020,42 @@ function HoyPageContent() {
                       return (
                         <div
                           key={sesionIdx}
-                          className={`ml-4 border-l-2 cursor-pointer hover:shadow-sm transition-all rounded-r-lg p-2.5 ${
+                          className={`border rounded-lg p-3 cursor-pointer hover:shadow-sm transition-all ${
                             sesionSeleccionada === sesionIdx
                               ? `border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm`
-                              : `border-[var(--color-info)]/40 bg-[var(--color-info)]/10 hover:bg-[var(--color-info)]/20`
+                              : `border-[var(--color-border-default)] bg-[var(--color-surface-default)] hover:bg-[var(--color-surface-muted)]`
                           }`}
                           onClick={(e) => {
                             e.stopPropagation();
                             setSesionSeleccionada(sesionIdx);
                           }}
                         >
-                          <div className="space-y-2">
-                            {/* Header de la sesión */}
-                            <div className="flex items-start gap-2">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <PlayCircle className="w-3.5 h-3.5 text-[var(--color-info)] flex-shrink-0" />
-                                  <span className={`text-sm font-semibold text-[var(--color-text-primary)]`}>{sesion.nombre}</span>
-                                  <Badge
-                                    variant="outline"
-                                    className={componentStyles.status.badgeSuccess}
-                                  >
-                                    <Clock className="w-3 h-3 mr-1" />
-                                    {minutos}:{String(segundos).padStart(2, '0')} min
-                                  </Badge>
-                                  <Badge className={focoColors[sesion.foco]} variant="outline">
-                                    {focoLabels[sesion.foco]}
-                                  </Badge>
-                                </div>
-                              </div>
+                          <div className="space-y-3">
+                            {/* Header de la sesión: chip + tiempo + foco */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant="outline" className="text-xs px-2 py-0.5 bg-[var(--color-surface-muted)]">
+                                {sesion.nombre}
+                              </Badge>
+                              <Badge
+                                variant="outline"
+                                className={`text-xs px-2 py-0.5 ${componentStyles.status.badgeSuccess}`}
+                              >
+                                <Clock className="w-3 h-3 mr-1" />
+                                {minutos}:{String(segundos).padStart(2, '0')} min
+                              </Badge>
+                              <Badge className={`${focoColors[sesion.foco]} text-xs px-2 py-0.5`} variant="outline">
+                                Foco: {focoLabels[sesion.foco]}
+                              </Badge>
                             </div>
 
-                            {/* Botón de resumen de sesión */}
-                            <button
-                              className={`w-full flex items-center gap-2 p-1.5 rounded-lg transition-colors ${
-                                resumenExpandido ? 'bg-[var(--color-surface-muted)]' : 'hover:bg-[var(--color-surface-muted)]'
-                              }`}
-                              onClick={toggleResumen}
-                            >
-                              {resumenExpandido ? (
-                                <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                              ) : (
-                                <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                              )}
-                              <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                                {resumenExpandido ? 'Ocultar resumen' : 'Ver resumen de la sesión'}
-                              </span>
-                            </button>
-
-                            {/* Resumen expandido */}
-                            {resumenExpandido && (
-                              <div className="ml-2 sm:ml-4 mt-2 pt-2 border-t border-[var(--color-border-default)]" onClick={(e) => e.stopPropagation()}>
-                                <SessionContentView sesion={sesion} compact />
-                              </div>
-                            )}
+                            {/* Resumen expandido por defecto */}
+                            <div className="border-t border-[var(--color-border-default)] pt-2" onClick={(e) => e.stopPropagation()}>
+                              <SessionContentView sesion={sesion} compact />
+                            </div>
 
                             {/* Botón de iniciar práctica (solo si está seleccionada) */}
                             {sesionSeleccionada === sesionIdx && (
-                              <div className="pt-2 border-t border-[var(--color-border-default)]" onClick={(e) => e.stopPropagation()}>
+                              <div className="pt-2 border-t border-[var(--color-border-default)] flex justify-center" onClick={(e) => e.stopPropagation()}>
                                 <Button
                                   variant="primary"
                                   onClick={(e) => {
@@ -2083,7 +2081,11 @@ function HoyPageContent() {
             <div className="flex items-center justify-center pt-4 border-t">
               <Button
                 variant="outline"
-                onClick={() => navigate(createPageUrl('estadisticas'))}
+                onClick={() => {
+                  navigate(createPageUrl('estadisticas'), {
+                    state: { from: 'hoy' }
+                  });
+                }}
                 className="rounded-xl focus-brand"
               >
                 Ver Historial y estadísticas →

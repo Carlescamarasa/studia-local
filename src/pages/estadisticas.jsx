@@ -16,7 +16,7 @@ import {
   MessageSquare, Eye, RefreshCw, Dumbbell, List, PieChart, CalendarDays, Calendar as CalendarIcon,
   Sun, CalendarRange, Grid3x3, Layers, FileText, Timer, Edit, X, Save
 } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { displayName, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
 import MultiSelect from "../components/ui/MultiSelect";
@@ -47,6 +47,7 @@ import { formatDuracionHM, formatLocalDate, parseLocalDate, startOfMonday } from
 
 function EstadisticasPageContent() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
@@ -707,13 +708,23 @@ function EstadisticasPageContent() {
       // ArrowLeft para volver
       if (e.key === 'ArrowLeft' && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
         e.preventDefault();
-        navigate(-1);
+        // Si venimos de /hoy, volver a /hoy; sino, usar navigate(-1)
+        if (location.state?.from === 'hoy') {
+          navigate('/hoy');
+        } else {
+          // Si no hay history útil, ir a /calendario
+          if (window.history.length <= 1) {
+            navigate('/calendario');
+          } else {
+            navigate(-1);
+          }
+        }
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigate, modalSesionOpen, feedbackDrawer, viewingMedia]);
+  }, [navigate, location.state, modalSesionOpen, feedbackDrawer, viewingMedia]);
 
   const tipoLabels = {
     CA: 'Calentamiento A',

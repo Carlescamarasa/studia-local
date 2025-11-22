@@ -192,7 +192,10 @@ export default function ResumenFinal({
 
               {/* Input de subida de vídeo */}
               <div className="space-y-2">
-                <Label htmlFor="video-sesion">Vídeo de la sesión (opcional)</Label>
+                <Label htmlFor="video-sesion">Subir vídeo (opcional)</Label>
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  Por ejemplo, un fragmento de la sesión, una duda o tu progreso.
+                </p>
                 <div className="flex items-center gap-2">
                   <Input
                     id="video-sesion"
@@ -218,17 +221,20 @@ export default function ResumenFinal({
                     Archivo seleccionado: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
                   </p>
                 )}
-                <p className="text-xs text-[var(--color-text-secondary)]">
-                  Opcional: puedes adjuntar un vídeo corto de esta sesión (ejercicio, fragmento, etc.).
-                </p>
               </div>
 
               {/* Input manual de mediaLinks (para URLs directas) */}
-              <MediaLinksInput
-                value={mediaLinks}
-                onChange={setMediaLinks}
-                onPreview={handlePreview}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="media-links">Enlaces multimedia (opcional)</Label>
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  Puedes pegar enlaces a vídeos, audios, PDFs o cualquier otro recurso.
+                </p>
+                <MediaLinksInput
+                  value={mediaLinks}
+                  onChange={setMediaLinks}
+                  onPreview={handlePreview}
+                />
+              </div>
             </div>
             
             <div className="flex gap-2 pt-2">
