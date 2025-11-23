@@ -186,16 +186,15 @@ serve(async (req) => {
         break;
 
       case 'resend_invitation':
-        // Reenviar invitación
-        result = await adminClient.auth.admin.generateLink({
-          type: 'invite',
-          email: targetUser.email!,
-          options: {
+        // Reenviar invitación usando inviteUserByEmail (envía email automáticamente)
+        const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
+          targetUser.email!,
+          {
             redirectTo: redirectUrl,
-          },
-        });
-        if (result.error) {
-          error = result.error;
+          }
+        );
+        if (inviteError) {
+          error = inviteError;
         }
         break;
 

@@ -30,6 +30,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { log } from "@/utils/log";
 import { sendPasswordResetEmailFor } from "@/lib/authPasswordHelpers";
+import { useUserActions } from "@/pages/auth/hooks/useUserActions";
 
 export default function PerfilModal({ 
   open, 
@@ -555,16 +556,20 @@ export default function PerfilModal({
           throw new Error('No hay sesión activa o no se pudo obtener el email. Por favor, inicia sesión de nuevo.');
         }
         targetEmail = session.user.email;
+        // Usar el helper compartido (funciona para el usuario autenticado)
+        await sendPasswordResetEmailFor(targetEmail);
       } else {
-        // Admin editando otro usuario: usar email del usuario objetivo
+        // Admin editando otro usuario: usar Edge Function con Admin API
         if (!targetUser?.email) {
           throw new Error('No se pudo obtener el email del usuario.');
         }
+        if (!targetUser?.id) {
+          throw new Error('No se pudo obtener el ID del usuario.');
+        }
         targetEmail = targetUser.email;
+        // Usar Edge Function que usa Admin API (más confiable para otros usuarios)
+        await sendResetPassword(targetUser.id, targetEmail);
       }
-
-      // Usar el helper compartido
-      await sendPasswordResetEmailFor(targetEmail);
       return { success: true, email: targetEmail };
     },
     onSuccess: (data) => {

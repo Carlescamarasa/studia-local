@@ -8,9 +8,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { componentStyles } from "@/design/componentStyles";
-import { Keyboard } from "lucide-react";
+import { Keyboard, HelpCircle } from "lucide-react";
 import { useEffectiveUser } from "../utils/helpers";
 import { getHotkeysForRole, formatShortcut } from "@/utils/hotkeys";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 /**
  * Modal que muestra todas las leyendas de atajos de teclado disponibles
@@ -18,6 +20,7 @@ import { getHotkeysForRole, formatShortcut } from "@/utils/hotkeys";
 export default function HotkeysModal({ open, onOpenChange }) {
   const effectiveUser = useEffectiveUser();
   const userRole = effectiveUser?.rolPersonalizado || 'ESTU';
+  const navigate = useNavigate();
 
   // Obtener hotkeys desde la configuración única - mostrar primary y alt si existe
   const formatHotkeyDisplay = (hotkey) => {
@@ -177,10 +180,22 @@ export default function HotkeysModal({ open, onOpenChange }) {
 
         {/* Footer fijo */}
         <DialogFooter className="flex-shrink-0 px-6 py-3 border-t border-[var(--color-border-default)] bg-[var(--color-surface)] shadow-sm">
-          <div className="w-full rounded-lg bg-[var(--color-info)]/10 border border-[var(--color-info)]/20 p-2.5">
-            <p className="text-xs text-[var(--color-text-secondary)] text-center">
-              <strong className="text-[var(--color-text-primary)]">Nota:</strong> Los atajos no se activan mientras escribes en campos de texto, textareas o áreas editables.
-            </p>
+          <div className="w-full space-y-3">
+            <div className="rounded-lg bg-[var(--color-info)]/10 border border-[var(--color-info)]/20 p-2.5">
+              <p className="text-xs text-[var(--color-text-secondary)] text-center">
+                <strong className="text-[var(--color-text-primary)]">Nota:</strong> Los atajos no se activan mientras escribes en campos de texto, textareas o áreas editables.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                onOpenChange(false);
+                navigate(createPageUrl('ayuda') + '?tab=hotkeys');
+              }}
+              className="w-full flex items-center justify-center gap-2 text-xs text-[var(--color-primary)] hover:text-[var(--color-primary)]/80 hover:underline transition-colors"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              Ver más información en el Centro de Ayuda
+            </button>
           </div>
         </DialogFooter>
       </DialogContent>

@@ -17,13 +17,13 @@ import {
   LogOut,
   Edit3,
   PanelLeft,
-  PanelLeftClose,
   FileDown,
   Beaker,
   Layers,
   Palette,
   Bug,
   MessageSquare,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ds";
@@ -617,19 +617,6 @@ function LayoutContent() {
 
           {/* Pie del sidebar */}
           <div className="border-t border-[var(--color-border-default)]/30 p-4 pt-3 space-y-3 text-[var(--color-text-secondary)]">
-            {!isMobile && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={safeToggle}
-                className={`w-full justify-start gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
-                aria-label="Ocultar menú lateral"
-              >
-                <PanelLeftClose className="w-4 h-4" />
-                Ocultar menú (Ctrl/⌘+M)
-              </Button>
-            )}
-
             <button
               onClick={goProfile}
               className="flex items-center gap-3 px-2 w-full hover:bg-[var(--color-surface-muted)] rounded-xl py-2 transition-all cursor-pointer min-h-[44px]"
@@ -649,6 +636,17 @@ function LayoutContent() {
                 <p className="text-xs text-[var(--color-text-secondary)] truncate">{effectiveUser?.email}</p>
               </div>
             </button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(createPageUrl('ayuda'))}
+              className={`w-full justify-start gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
+              aria-label="Centro de Ayuda"
+            >
+              <HelpCircle className="w-4 h-4" />
+              Ayuda
+            </Button>
 
             <Button
               variant="ghost"

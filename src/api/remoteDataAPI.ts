@@ -443,30 +443,73 @@ async function wrapSupabaseCall<T>(operation: () => Promise<T>): Promise<T> {
 }
 
 /**
- * Obtiene emails de usuarios desde auth.users usando Admin API o función SQL
- * Por ahora, retornamos un mapa vacío ya que no tenemos acceso directo a auth.users
- * desde el cliente. Los emails se obtendrán del usuario autenticado cuando coincidan.
- * 
- * Para obtener emails de todos los usuarios, se recomienda:
- * 1. Crear una función SQL en Supabase que haga JOIN entre profiles y auth.users
- * 2. O almacenar email también en profiles (duplicación pero funcional)
- * 3. O usar el Admin API de Supabase con service_role key
+ * Obtiene emails de usuarios desde auth.users usando Edge Function get-user-emails
+ * Solo funciona para usuarios ADMIN
  */
 async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>> {
   const emailMap = new Map<string, string>();
   
   if (!userIds || userIds.length === 0) return emailMap;
 
-  // Por ahora, solo podemos obtener el email del usuario autenticado
-  // Para obtener emails de todos los usuarios, se requiere una función SQL
-  // o usar el Admin API con permisos service_role
   try {
-    const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
-    if (user && user.id && userIds.includes(user.id)) {
-      emailMap.set(user.id, user.email || '');
+    // Obtener token de sesión
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      // Si no hay sesión, solo devolver email del usuario autenticado si coincide
+      const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
+      if (user && user.id && userIds.includes(user.id)) {
+        emailMap.set(user.id, user.email || '');
+      }
+      return emailMap;
+    }
+
+    // Llamar a la Edge Function para obtener emails
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl) {
+      // Fallback: solo email del usuario autenticado
+      const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
+      if (user && user.id && userIds.includes(user.id)) {
+        emailMap.set(user.id, user.email || '');
+      }
+      return emailMap;
+    }
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/get-user-emails`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userIds }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.emails) {
+        // Convertir objeto a Map
+        for (const [userId, email] of Object.entries(data.emails)) {
+          if (email) {
+            emailMap.set(userId, email as string);
+          }
+        }
+      }
+    } else {
+      // Si falla (probablemente no es ADMIN), usar fallback
+      const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
+      if (user && user.id && userIds.includes(user.id)) {
+        emailMap.set(user.id, user.email || '');
+      }
     }
   } catch (error) {
-    // Ignorar si no hay usuario autenticado
+    // Si falla, usar fallback: solo email del usuario autenticado
+    try {
+      const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
+      if (user && user.id && userIds.includes(user.id)) {
+        emailMap.set(user.id, user.email || '');
+      }
+    } catch (e) {
+      // Ignorar si no hay usuario autenticado
+    }
   }
 
   return emailMap;

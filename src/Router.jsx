@@ -34,6 +34,7 @@ const DebugFormularioRapido = lazy(() => import("@/pages/DebugFormularioRapido.j
 const DebugSubidaYT = lazy(() => import("@/pages/debug/DebugSubidaYTPage.jsx"));
 const Soporte = lazy(() => import("@/pages/soporte.jsx"));
 const SoporteProf = lazy(() => import("@/pages/soporte-prof.jsx"));
+const Ayuda = lazy(() => import("@/pages/ayuda.jsx"));
 
 // Componente de carga
 const PageLoader = () => (
@@ -95,6 +96,7 @@ export default function AppRouter() {
           <Route path="debug/subidaYT" element={<DebugSubidaYT />} />
           <Route path="soporte" element={<Soporte />} />
           <Route path="soporte-prof" element={<SoporteProf />} />
+          <Route path="ayuda" element={<Ayuda />} />
         </Route>
       </Routes>
     </Suspense>
