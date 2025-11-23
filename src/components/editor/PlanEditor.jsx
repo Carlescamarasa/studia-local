@@ -864,7 +864,7 @@ export default function PlanEditor({ plan, onClose }) {
     <>
       {/* Overlay con cierre al hacer clic */}
       <div 
-        className="fixed inset-0 bg-black/40 z-[80]"
+        className="fixed inset-0 bg-black/40 z-[115]"
         onClick={() => {
           if (!editingSemana && !editingSesion && !editingEjercicio) {
             onClose();
@@ -872,9 +872,9 @@ export default function PlanEditor({ plan, onClose }) {
         }}
       />
       
-      <div className="fixed inset-0 z-[90] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
+      <div className="fixed inset-0 z-[120] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
         <div 
-          className="bg-[var(--color-surface-elevated)] w-full max-w-5xl max-h-[92vh] shadow-card rounded-[var(--radius-modal)] flex flex-col pointer-events-auto my-8 border border-[var(--color-border-default)]"
+          className="bg-[var(--color-surface-elevated)] w-full max-w-5xl max-h-[92vh] shadow-[0_8px_24px_rgba(0,0,0,0.16)] rounded-[var(--radius-modal)] flex flex-col pointer-events-auto my-8 border border-[var(--color-border-default)]"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-[var(--radius-modal)] px-6 py-4">
