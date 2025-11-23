@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabaseClient";
 import { log } from "@/utils/log";
+import { sendPasswordResetEmailFor } from "@/lib/authPasswordHelpers";
 
 export default function PerfilModal({ 
   open, 
@@ -562,35 +563,8 @@ export default function PerfilModal({
         targetEmail = targetUser.email;
       }
 
-      // Usar el mismo patrón que userAdmin.ts para construir la URL de redirect
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      let redirectUrl;
-      
-      if (supabaseUrl) {
-        // Usar la URL de Supabase como base (más confiable)
-        redirectUrl = `${new URL(supabaseUrl).origin}/reset-password`;
-      } else {
-        // Fallback si no hay VITE_SUPABASE_URL
-        redirectUrl = `${window.location.origin}/reset-password`;
-      }
-      
-      if (import.meta.env.DEV) {
-        log.debug('[PerfilModal] Enviando email de restablecimiento a:', targetEmail);
-        log.debug('[PerfilModal] URL de redirect:', redirectUrl);
-      }
-
-      // Enviar email para restablecer contraseña
-      const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
-        redirectTo: redirectUrl,
-      });
-
-      if (error) {
-        if (import.meta.env.DEV) {
-          log.error('[PerfilModal] Error al enviar email de restablecimiento:', error);
-        }
-        throw error;
-      }
-
+      // Usar el helper compartido
+      await sendPasswordResetEmailFor(targetEmail);
       return { success: true, email: targetEmail };
     },
     onSuccess: (data) => {
@@ -632,7 +606,12 @@ export default function PerfilModal({
     ESTU: 'Estudiante',
   };
 
-  const isEditingOwnProfile = targetUser?.id === effectiveUser?.id;
+  // Determinar si estamos editando el perfil propio
+  // Verificar tanto por ID como por email para asegurar que funciona en todos los casos
+  const isEditingOwnProfile = targetUser?.id === effectiveUser?.id || 
+    (targetUser?.email && effectiveUser?.email && 
+     targetUser.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim()) ||
+    (!userId && targetUser?.id === effectiveUser?.id); // Si no hay userId, siempre es el perfil propio
   const userRole = effectiveUser?.rolPersonalizado;
   
   // Permisos de edición según rol
@@ -649,15 +628,17 @@ export default function PerfilModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg" className="max-h-[90vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-[var(--color-border-default)] shadow-sm">
-          <DialogTitle className="flex items-center gap-2">
-            <User className="w-5 h-5 text-[var(--color-primary)]" />
-            {isLoading || !targetUser 
-              ? 'Cargando perfil...' 
-              : (isEditingOwnProfile ? 'Mi Perfil' : `Perfil de ${getNombreCompleto(targetUser)}`)
-            }
-          </DialogTitle>
-          <DialogDescription>
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-[var(--color-border-default)] shadow-sm relative">
+          <div className="flex items-center justify-center">
+            <DialogTitle className="flex items-center gap-2 text-center">
+              <User className="w-5 h-5 text-[var(--color-primary)]" />
+              {isLoading || !targetUser 
+                ? 'Cargando perfil...' 
+                : (isEditingOwnProfile ? 'Mi Perfil' : `Perfil de ${getNombreCompleto(targetUser)}`)
+              }
+            </DialogTitle>
+          </div>
+          <DialogDescription className="text-center">
             {isEditingOwnProfile ? 'Edita tu información personal' : 'Edita la información del usuario'}
           </DialogDescription>
         </DialogHeader>
@@ -1166,14 +1147,17 @@ export default function PerfilModal({
                 )}
 
                 {/* Sección de Seguridad - Cambio de contraseña */}
-                {isEditingOwnProfile && (
+                {/* Visible para TODOS los usuarios cuando editan su propio perfil, independientemente del rol */}
+                {isEditingOwnProfile && targetUser?.email && (
                   <div className="pt-6 border-t border-[var(--color-border-default)] space-y-4">
                     <div className="space-y-1 mb-4">
                       <div className="flex items-center gap-2">
                         <Lock className="w-5 h-5 text-[var(--color-primary)]" />
                         <h3 className="text-base font-semibold text-[var(--color-text-primary)]">Seguridad</h3>
                       </div>
-                      <p className="text-sm text-[var(--color-text-secondary)] ml-7">Actualiza tu contraseña de acceso.</p>
+                      <p className="text-sm text-[var(--color-text-secondary)] ml-7">
+                        Puedes enviarte un enlace de cambio de contraseña a tu correo.
+                      </p>
                     </div>
                     
                     {passwordResult && (
@@ -1201,11 +1185,12 @@ export default function PerfilModal({
                           loading={changePasswordMutation.isPending}
                           loadingText="Enviando correo..."
                           disabled={changePasswordMutation.isPending}
+                          variant="outline"
                           size="sm"
-                          className={componentStyles.buttons.primary + " flex-1"}
+                          className={componentStyles.buttons.outline + " flex-1"}
                         >
                           <Lock className="w-4 h-4 mr-2" />
-                          Cambiar contraseña
+                          Enviar enlace de cambio de contraseña
                         </Button>
                       </div>
                     </div>

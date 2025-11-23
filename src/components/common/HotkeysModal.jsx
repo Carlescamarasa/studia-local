@@ -10,115 +10,27 @@ import {
 import { componentStyles } from "@/design/componentStyles";
 import { Keyboard } from "lucide-react";
 import { useEffectiveUser } from "../utils/helpers";
+import { getHotkeysForRole, formatShortcut } from "@/utils/hotkeys";
 
 /**
  * Modal que muestra todas las leyendas de atajos de teclado disponibles
  */
 export default function HotkeysModal({ open, onOpenChange }) {
   const effectiveUser = useEffectiveUser();
-  const userRole = effectiveUser?.rolPersonalizado;
+  const userRole = effectiveUser?.rolPersonalizado || 'ESTU';
 
-  const hotkeysGlobales = [
-    {
-      atajo: "Ctrl/⌘ + M",
-      descripcion: "Abrir/cerrar menú lateral",
-      disponible: true,
-    },
-    {
-      atajo: "Ctrl/⌘ + Shift + D",
-      descripcion: "Alternar tema claro/oscuro",
-      disponible: true,
-    },
-    {
-      atajo: "Ctrl/⌘ + Alt + K",
-      descripcion: "Mostrar/ocultar panel de atajos de teclado",
-      disponible: true,
-    },
-    {
-      atajo: "Ctrl/⌘ + Alt + L",
-      descripcion: "Cerrar sesión",
-      disponible: true,
-    },
-    ...(userRole === 'ESTU' ? [
-      {
-        atajo: "Ctrl/⌘ + Alt + S",
-        descripcion: "Ir a Studia ahora",
-        disponible: true,
-      },
-      {
-        atajo: "Ctrl/⌘ + Alt + M",
-        descripcion: "Ir a Mi Semana",
-        disponible: true,
-      },
-      {
-        atajo: "Ctrl/⌘ + Alt + E",
-        descripcion: "Ir a Mis Estadísticas",
-        disponible: true,
-      },
-      {
-        atajo: "Ctrl/⌘ + Alt + C",
-        descripcion: "Ir a Calendario",
-        disponible: true,
-      },
-      {
-        atajo: "Ctrl/⌘ + Alt + D",
-        descripcion: "Ir a Centro de dudas",
-        disponible: true,
-      },
-    ] : []),
-    ...(userRole === 'PROF' || userRole === 'ADMIN' ? [
-      {
-        atajo: "Ctrl/⌘ + Alt + A",
-        descripcion: "Ir a Asignaciones",
-        disponible: true,
-      },
-      {
-        atajo: "Ctrl/⌘ + Alt + G",
-        descripcion: "Ir a Agenda",
-        disponible: true,
-      },
-      {
-        atajo: "Ctrl/⌘ + Alt + P",
-        descripcion: "Ir a Plantillas",
-        disponible: true,
-      },
-      {
-        atajo: "Ctrl/⌘ + Alt + E",
-        descripcion: "Ir a Estadísticas",
-        disponible: true,
-      },
-      {
-        atajo: "Ctrl/⌘ + Alt + C",
-        descripcion: "Ir a Calendario",
-        disponible: true,
-      },
-    ] : []),
-    ...(userRole === 'ADMIN' ? [
-      {
-        atajo: "Ctrl/⌘ + Alt + U",
-        descripcion: "Ir a Usuarios",
-        disponible: true,
-      },
-      {
-        atajo: "Ctrl/⌘ + Alt + I",
-        descripcion: "Ir a Importar y Exportar",
-        disponible: true,
-      },
-      {
-        atajo: "Ctrl/⌘ + Alt + O",
-        descripcion: "Ir a Panel de Diseño",
-        disponible: true,
-      },
-    ] : []),
-  ];
+  // Obtener hotkeys desde la configuración única
+  const hotkeysGlobales = getHotkeysForRole(userRole, 'global').map(hk => ({
+    atajo: formatShortcut(hk.combos[0]),
+    descripcion: hk.description,
+    disponible: true,
+  }));
 
-  const hotkeysCrear = [
-    {
-      atajo: "Ctrl/⌘ + Alt + N",
-      descripcion: "Crear nuevo elemento (contextual según la página)",
-      disponible: true,
-    },
-  ];
+  const hotkeysCrear = getHotkeysForRole(userRole, 'create').map(hk => ({
+    atajo: formatShortcut(hk.combos[0]),
+    descripcion: hk.description,
+    disponible: true,
+  }));
 
   const hotkeysEstudio = userRole === 'ESTU' ? [
     {
@@ -282,9 +194,9 @@ export default function HotkeysModal({ open, onOpenChange }) {
                   key={idx}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-surface-muted)] transition-colors"
                 >
-                  <kbd className="kbd shrink-0 min-w-[140px] text-center text-xs">
-                    {hotkey.atajo}
-                  </kbd>
+                    <kbd className="shrink-0 min-w-[140px] text-center text-xs font-mono bg-[var(--color-surface-muted)] border border-[var(--color-border-default)] rounded px-2.5 py-1.5 text-[var(--color-text-primary)] leading-tight">
+                      {hotkey.atajo}
+                    </kbd>
                   <span className="text-sm text-[var(--color-text-primary)] flex-1">
                     {hotkey.descripcion}
                   </span>
@@ -305,7 +217,7 @@ export default function HotkeysModal({ open, onOpenChange }) {
                     key={idx}
                     className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-surface-muted)] transition-colors"
                   >
-                    <kbd className="kbd shrink-0 min-w-[140px] text-center text-xs">
+                    <kbd className="shrink-0 min-w-[140px] text-center text-xs font-mono bg-[var(--color-surface-muted)] border border-[var(--color-border-default)] rounded px-2.5 py-1.5 text-[var(--color-text-primary)] leading-tight">
                       {hotkey.atajo}
                     </kbd>
                     <span className="text-sm text-[var(--color-text-primary)] flex-1">
@@ -329,7 +241,7 @@ export default function HotkeysModal({ open, onOpenChange }) {
                     key={idx}
                     className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-surface-muted)] transition-colors"
                   >
-                    <kbd className="kbd shrink-0 min-w-[100px] text-center text-xs">
+                    <kbd className="shrink-0 min-w-[100px] text-center text-xs font-mono bg-[var(--color-surface-muted)] border border-[var(--color-border-default)] rounded px-2.5 py-1.5 text-[var(--color-text-primary)] leading-tight">
                       {hotkey.atajo}
                     </kbd>
                     <span className="text-sm text-[var(--color-text-primary)] flex-1">
@@ -353,7 +265,7 @@ export default function HotkeysModal({ open, onOpenChange }) {
                     key={idx}
                     className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-surface-muted)] transition-colors"
                   >
-                    <kbd className="kbd shrink-0 min-w-[100px] text-center text-xs">
+                    <kbd className="shrink-0 min-w-[100px] text-center text-xs font-mono bg-[var(--color-surface-muted)] border border-[var(--color-border-default)] rounded px-2.5 py-1.5 text-[var(--color-text-primary)] leading-tight">
                       {hotkey.atajo}
                     </kbd>
                     <span className="text-sm text-[var(--color-text-primary)] flex-1">

@@ -23,7 +23,7 @@ import PageHeader from "@/components/ds/PageHeader";
 import { LoadingSpinner } from "@/components/ds";
 import { componentStyles } from "@/design/componentStyles";
 import { useDesign } from "@/components/design/DesignProvider";
-import { sendPasswordResetAdmin } from "@/api/userAdmin";
+import { sendPasswordResetEmailFor } from "@/lib/authPasswordHelpers";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function PerfilPage() {
@@ -35,11 +35,6 @@ export default function PerfilPage() {
   
   const [editedData, setEditedData] = useState(null);
   const [saveResult, setSaveResult] = useState(null);
-  const [passwordData, setPasswordData] = useState({
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordResult, setPasswordResult] = useState(null);
 
   const effectiveUser = useEffectiveUser();
@@ -174,68 +169,6 @@ export default function PerfilPage() {
     updateUserMutation.mutate(dataToSave);
   };
 
-  const changePasswordMutation = useMutation({
-    mutationFn: async ({ newPassword }) => {
-      // Verificar que hay sesión activa
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('No hay sesión activa. Por favor, inicia sesión de nuevo.');
-      }
-
-      // Actualizar contraseña usando Supabase auth
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword.trim(),
-      });
-
-      if (error) {
-        if (import.meta.env.DEV) {
-          console.error('[Perfil] Error al actualizar contraseña:', error);
-        }
-        throw error;
-      }
-
-      return { success: true };
-    },
-    onSuccess: () => {
-      setPasswordResult({ success: true, message: '✅ Contraseña actualizada correctamente' });
-      setPasswordData({ newPassword: '', confirmPassword: '' });
-      toast.success('Contraseña actualizada correctamente');
-    },
-    onError: (error) => {
-      const errorMessage = error.message || 'No se pudo actualizar la contraseña';
-      setPasswordResult({ success: false, message: `❌ Error: ${errorMessage}` });
-      toast.error(`Error al actualizar la contraseña: ${errorMessage}`);
-      if (import.meta.env.DEV) {
-        console.error('[Perfil] Error al actualizar contraseña:', error);
-      }
-    },
-  });
-
-  const handleChangePassword = async () => {
-    setPasswordResult(null);
-
-    if (!passwordData.newPassword || !passwordData.confirmPassword) {
-      setPasswordResult({ success: false, message: '❌ Completa todos los campos' });
-      toast.error('Completa todos los campos');
-      return;
-    }
-
-    if (passwordData.newPassword.length < 8) {
-      setPasswordResult({ success: false, message: '❌ La contraseña debe tener al menos 8 caracteres' });
-      toast.error('La contraseña debe tener al menos 8 caracteres');
-      return;
-    }
-
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordResult({ success: false, message: '❌ Las contraseñas no coinciden' });
-      toast.error('Las contraseñas no coinciden');
-      return;
-    }
-
-    changePasswordMutation.mutate({
-      newPassword: passwordData.newPassword,
-    });
-  };
 
   const roleLabels = {
     ADMIN: 'Administrador',
@@ -495,23 +428,6 @@ export default function PerfilPage() {
                 <p className="text-[var(--color-text-primary)]">Registrado: <span className="text-[var(--color-text-secondary)]">{targetUser?.created_date ? new Date(targetUser.created_date).toLocaleDateString('es-ES') : '-'}</span></p>
               </div>
               <div className="flex gap-2">
-                {isEditingOwnProfile && targetUser?.email && (
-                  <Button
-                    onClick={async () => {
-                      try {
-                        await sendPasswordResetAdmin(targetUser.email);
-                        toast.success('Te hemos enviado un email para restablecer la contraseña');
-                      } catch (error) {
-                        toast.error(error.message || 'Error al enviar email de restablecimiento');
-                      }
-                    }}
-                    variant="outline"
-                    className={componentStyles.buttons.secondary}
-                  >
-                    <KeyRound className="w-4 h-4 mr-2" />
-                    Restablecer contraseña
-                  </Button>
-                )}
                 <Button
                   onClick={handleSave}
                   loading={updateUserMutation.isPending}
@@ -547,60 +463,52 @@ export default function PerfilPage() {
             )}
 
             <p className="text-sm text-[var(--color-text-secondary)] mb-4">
-              Cambia tu contraseña de acceso a Studia.
+              Puedes enviarte un enlace de cambio de contraseña a tu correo.
             </p>
 
-            <div className={componentStyles.layout.grid2}>
-              <div className="space-y-2">
-                <Label htmlFor="newPassword" className="text-[var(--color-text-primary)]">Nueva contraseña</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                  placeholder="••••••••"
-                  className={componentStyles.controls.inputDefault}
-                  disabled={changePasswordMutation.isPending}
-                />
-                <p className="text-xs text-[var(--color-text-secondary)]">Mínimo 8 caracteres</p>
-              </div>
+            <div className="space-y-3">
+              <Alert variant="info" className={componentStyles.containers.panelBase}>
+                <AlertDescription className="text-xs sm:text-sm">
+                  Para cambiar tu contraseña, te enviaremos un correo con un enlace seguro. 
+                  Desde ese enlace podrás establecer una nueva contraseña.
+                </AlertDescription>
+              </Alert>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-[var(--color-text-primary)]">Repetir contraseña</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                  placeholder="••••••••"
-                  className={componentStyles.controls.inputDefault}
-                  disabled={changePasswordMutation.isPending}
-                />
+              <div className="flex gap-2 pt-1">
+                <Button
+                  onClick={async () => {
+                    setPasswordResult(null);
+                    try {
+                      const { data: { session } } = await supabase.auth.getSession();
+                      if (!session?.user?.email) {
+                        throw new Error('No hay sesión activa o no se pudo obtener el email. Por favor, inicia sesión de nuevo.');
+                      }
+                      await sendPasswordResetEmailFor(session.user.email);
+                      setPasswordResult({ 
+                        success: true, 
+                        message: `✅ Te hemos enviado un correo a ${session.user.email} para cambiar tu contraseña.` 
+                      });
+                      toast.success('Te hemos enviado un correo para cambiar tu contraseña.');
+                    } catch (error) {
+                      const errorMessage = error.message || 'No se pudo enviar el correo';
+                      setPasswordResult({ 
+                        success: false, 
+                        message: `❌ Error: ${errorMessage}` 
+                      });
+                      toast.error(`Error al enviar el correo: ${errorMessage}`);
+                      if (import.meta.env.DEV) {
+                        console.error('[Perfil] Error al enviar email de restablecimiento:', error);
+                      }
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className={componentStyles.buttons.outline + " flex-1"}
+                >
+                  <Lock className="w-4 h-4 mr-2" />
+                  Enviar enlace de cambio de contraseña
+                </Button>
               </div>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button
-                onClick={handleChangePassword}
-                loading={changePasswordMutation.isPending}
-                loadingText="Actualizando..."
-                disabled={!passwordData.newPassword || !passwordData.confirmPassword}
-                className={componentStyles.buttons.primary}
-              >
-                <Lock className="w-4 h-4 mr-2" />
-                Actualizar contraseña
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setPasswordData({ newPassword: '', confirmPassword: '' });
-                  setPasswordResult(null);
-                }}
-                disabled={changePasswordMutation.isPending}
-                className={componentStyles.buttons.outline}
-              >
-                Limpiar
-              </Button>
             </div>
           </CardContent>
         </Card>

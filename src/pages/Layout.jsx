@@ -52,7 +52,7 @@ import ReportErrorButton from "@/components/common/ReportErrorButton";
 import { useQuery } from "@tanstack/react-query";
 import { listErrorReports } from "@/api/errorReportsAPI";
 import { Badge } from "@/components/ds";
-import { shouldIgnoreHotkey } from "@/utils/hotkeys";
+import { shouldIgnoreHotkey, matchesCombo, getHotkeyById, HOTKEYS_CONFIG } from "@/utils/hotkeys";
 import HotkeysModal from "@/components/common/HotkeysModal";
 import { HotkeysModalProvider, useHotkeysModal } from "@/hooks/useHotkeysModal.jsx";
 
@@ -181,75 +181,104 @@ function LayoutContent() {
 
   /* Hotkeys globales */
   useEffect(() => {
+    const userRole = effectiveUser?.rolPersonalizado || 'ESTU';
+    
     const handleKey = (e) => {
       // Usar helper centralizado para detectar campos editables
       if (shouldIgnoreHotkey(e)) return;
 
-      const isCtrlOrCmd = e.metaKey || e.ctrlKey;
-      const isAlt = e.altKey;
-      const key = e.key?.toLowerCase();
-
-      // Ctrl/⌘ + M: Abrir/cerrar menú lateral
-      if (isCtrlOrCmd && !isAlt && !e.shiftKey && (key === "m")) {
-        e.preventDefault();
-        safeToggle();
-        return;
-      }
-
-      // Ctrl/⌘ + Shift + D: Alternar tema claro/oscuro
-      if (isCtrlOrCmd && e.shiftKey && !isAlt && (key === "d")) {
-        e.preventDefault();
-        const currentTheme = design?.theme || 'light';
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        setDesignPartial('theme', newTheme);
-        return;
-      }
-
-      // Ctrl/⌘ + Alt + K: Mostrar/ocultar panel de atajos
-      if (isCtrlOrCmd && isAlt && (key === "k")) {
-        e.preventDefault();
-        setShowHotkeysModal(prev => !prev);
-        return;
-      }
-
-      // Ctrl/⌘ + Alt + L: Cerrar sesión
-      if (isCtrlOrCmd && isAlt && (key === "l")) {
-        e.preventDefault();
-        if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-          signOut();
-        }
-        return;
-      }
-
-      // Navegación por rol (Ctrl/⌘ + Alt + letra)
-      if (isCtrlOrCmd && isAlt) {
-        const userRole = effectiveUser?.rolPersonalizado || 'ESTU';
-        let targetPath = null;
-
-        if (userRole === 'ESTU') {
-          if (key === "s") targetPath = "/hoy";
-          else if (key === "m") targetPath = "/semana";
-          else if (key === "e") targetPath = "/estadisticas";
-          else if (key === "c") targetPath = "/calendario";
-          else if (key === "d") targetPath = "/soporte";
-        } else if (userRole === 'PROF' || userRole === 'ADMIN') {
-          if (key === "a") targetPath = "/asignaciones";
-          else if (key === "g") targetPath = "/agenda";
-          else if (key === "p") targetPath = "/plantillas";
-          else if (key === "e") targetPath = "/estadisticas";
-          else if (key === "c") targetPath = "/calendario";
-        }
-
-        if (userRole === 'ADMIN') {
-          if (key === "u") targetPath = "/usuarios";
-          else if (key === "i") targetPath = "/import-export";
-          else if (key === "o") targetPath = "/design";
-        }
-
-        if (targetPath) {
+      // Mapeo de IDs de hotkeys a sus acciones
+      const hotkeyActions = {
+        'toggle-sidebar': () => {
           e.preventDefault();
-          navigate(createPageUrl(targetPath.split('/').pop()));
-          return;
+          safeToggle();
+        },
+        'toggle-theme': () => {
+          e.preventDefault();
+          const currentTheme = design?.theme || 'light';
+          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+          setDesignPartial('theme', newTheme);
+        },
+        'toggle-hotkeys-modal': () => {
+          e.preventDefault();
+          setShowHotkeysModal(prev => !prev);
+        },
+        'logout': () => {
+          e.preventDefault();
+          if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+            signOut();
+          }
+        },
+        // Navegación
+        'go-studia': () => {
+          e.preventDefault();
+          navigate(createPageUrl('hoy'));
+        },
+        'go-week': () => {
+          e.preventDefault();
+          navigate(createPageUrl('semana'));
+        },
+        'go-stats-estu': () => {
+          e.preventDefault();
+          navigate(createPageUrl('estadisticas'));
+        },
+        'go-calendar-estu': () => {
+          e.preventDefault();
+          navigate(createPageUrl('calendario'));
+        },
+        'go-support': () => {
+          e.preventDefault();
+          navigate(createPageUrl('soporte'));
+        },
+        'go-assignments': () => {
+          e.preventDefault();
+          navigate(createPageUrl('asignaciones'));
+        },
+        'go-agenda': () => {
+          e.preventDefault();
+          navigate(createPageUrl('agenda'));
+        },
+        'go-templates': () => {
+          e.preventDefault();
+          navigate(createPageUrl('plantillas'));
+        },
+        'go-stats-prof': () => {
+          e.preventDefault();
+          navigate(createPageUrl('estadisticas'));
+        },
+        'go-calendar-prof': () => {
+          e.preventDefault();
+          navigate(createPageUrl('calendario'));
+        },
+        'go-users': () => {
+          e.preventDefault();
+          navigate(createPageUrl('usuarios'));
+        },
+        'go-import': () => {
+          e.preventDefault();
+          navigate(createPageUrl('import-export'));
+        },
+        'go-design': () => {
+          e.preventDefault();
+          navigate(createPageUrl('design'));
+        },
+      };
+
+      // Procesar hotkeys globales permitidos para este rol
+      for (const hotkey of HOTKEYS_CONFIG) {
+        if (hotkey.scope !== 'global' || !hotkey.roles.includes(userRole)) {
+          continue;
+        }
+
+        // Verificar si alguna combinación coincide
+        for (const combo of hotkey.combos) {
+          if (matchesCombo(e, combo)) {
+            const action = hotkeyActions[hotkey.id];
+            if (action) {
+              action();
+              return; // Handler procesó el evento
+            }
+          }
         }
       }
     };

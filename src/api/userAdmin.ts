@@ -54,18 +54,13 @@ export async function inviteUserByEmail(
 
 /**
  * Envía un email de restablecimiento de contraseña (admin)
+ * @deprecated Usar sendPasswordResetEmailFor de @/lib/authPasswordHelpers en su lugar
  * @param email - Email del usuario
  * @returns Promise que se resuelve cuando se envía el email
  */
 export async function sendPasswordResetAdmin(email: string): Promise<void> {
-  const redirectTo = getResetPasswordRedirectUrl();
-  
-  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo,
-  });
-
-  if (error) {
-    throw new Error(error.message || 'No se pudo enviar el email de restablecimiento');
-  }
+  // Reexportar el helper compartido para mantener compatibilidad
+  const { sendPasswordResetEmailFor } = await import('@/lib/authPasswordHelpers');
+  return sendPasswordResetEmailFor(email);
 }
 
