@@ -36,7 +36,6 @@ export default function PerfilPage() {
   const [editedData, setEditedData] = useState(null);
   const [saveResult, setSaveResult] = useState(null);
   const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
@@ -176,22 +175,22 @@ export default function PerfilPage() {
   };
 
   const changePasswordMutation = useMutation({
-    mutationFn: async ({ currentPassword, newPassword }) => {
-      // Nota: Supabase permite cambiar la contraseña del usuario autenticado
-      // sin verificar la contraseña actual si hay sesión activa.
-      // Sin embargo, es mejor práctica verificar primero.
-      // Por simplicidad, aquí solo actualizamos la contraseña si hay sesión activa.
+    mutationFn: async ({ newPassword }) => {
+      // Verificar que hay sesión activa
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('No hay sesión activa. Por favor, inicia sesión de nuevo.');
       }
 
-      // Actualizar contraseña
+      // Actualizar contraseña usando Supabase auth
       const { error } = await supabase.auth.updateUser({
         password: newPassword.trim(),
       });
 
       if (error) {
+        if (import.meta.env.DEV) {
+          console.error('[Perfil] Error al actualizar contraseña:', error);
+        }
         throw error;
       }
 
@@ -199,12 +198,16 @@ export default function PerfilPage() {
     },
     onSuccess: () => {
       setPasswordResult({ success: true, message: '✅ Contraseña actualizada correctamente' });
-      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setPasswordData({ newPassword: '', confirmPassword: '' });
       toast.success('Contraseña actualizada correctamente');
     },
     onError: (error) => {
-      setPasswordResult({ success: false, message: `❌ Error: ${error.message || 'No se pudo actualizar la contraseña'}` });
-      toast.error(`Error al actualizar la contraseña: ${error.message || 'Error desconocido'}`);
+      const errorMessage = error.message || 'No se pudo actualizar la contraseña';
+      setPasswordResult({ success: false, message: `❌ Error: ${errorMessage}` });
+      toast.error(`Error al actualizar la contraseña: ${errorMessage}`);
+      if (import.meta.env.DEV) {
+        console.error('[Perfil] Error al actualizar contraseña:', error);
+      }
     },
   });
 
@@ -217,9 +220,9 @@ export default function PerfilPage() {
       return;
     }
 
-    if (passwordData.newPassword.length < 6) {
-      setPasswordResult({ success: false, message: '❌ La contraseña debe tener al menos 6 caracteres' });
-      toast.error('La contraseña debe tener al menos 6 caracteres');
+    if (passwordData.newPassword.length < 8) {
+      setPasswordResult({ success: false, message: '❌ La contraseña debe tener al menos 8 caracteres' });
+      toast.error('La contraseña debe tener al menos 8 caracteres');
       return;
     }
 
@@ -230,7 +233,6 @@ export default function PerfilPage() {
     }
 
     changePasswordMutation.mutate({
-      currentPassword: passwordData.currentPassword,
       newPassword: passwordData.newPassword,
     });
   };
@@ -544,21 +546,11 @@ export default function PerfilPage() {
               </Alert>
             )}
 
-            <div className={componentStyles.layout.grid2}>
-              <div className="space-y-2">
-                <Label htmlFor="currentPassword" className="text-[var(--color-text-primary)]">Contraseña actual</Label>
-                <Input
-                  id="currentPassword"
-                  type="password"
-                  value={passwordData.currentPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                  placeholder="••••••••"
-                  className={componentStyles.controls.inputDefault}
-                  disabled={changePasswordMutation.isPending}
-                />
-                <p className="text-xs text-[var(--color-text-secondary)]">Opcional si hay sesión activa</p>
-              </div>
+            <p className="text-sm text-[var(--color-text-secondary)] mb-4">
+              Cambia tu contraseña de acceso a Studia.
+            </p>
 
+            <div className={componentStyles.layout.grid2}>
               <div className="space-y-2">
                 <Label htmlFor="newPassword" className="text-[var(--color-text-primary)]">Nueva contraseña</Label>
                 <Input
@@ -570,7 +562,7 @@ export default function PerfilPage() {
                   className={componentStyles.controls.inputDefault}
                   disabled={changePasswordMutation.isPending}
                 />
-                <p className="text-xs text-[var(--color-text-secondary)]">Mínimo 6 caracteres</p>
+                <p className="text-xs text-[var(--color-text-secondary)]">Mínimo 8 caracteres</p>
               </div>
 
               <div className="space-y-2">
@@ -601,7 +593,7 @@ export default function PerfilPage() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                  setPasswordData({ newPassword: '', confirmPassword: '' });
                   setPasswordResult(null);
                 }}
                 disabled={changePasswordMutation.isPending}

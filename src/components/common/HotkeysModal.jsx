@@ -29,17 +29,141 @@ export default function HotkeysModal({ open, onOpenChange }) {
       descripcion: "Alternar tema claro/oscuro",
       disponible: true,
     },
-    ...(userRole === 'ESTU' ? [{
-      atajo: "Ctrl/⌘ + Alt + S",
-      descripcion: "Ir a Studia ahora",
+    {
+      atajo: "Ctrl/⌘ + Alt + K",
+      descripcion: "Mostrar/ocultar panel de atajos de teclado",
       disponible: true,
-    }] : []),
+    },
+    {
+      atajo: "Ctrl/⌘ + Alt + L",
+      descripcion: "Cerrar sesión",
+      disponible: true,
+    },
+    ...(userRole === 'ESTU' ? [
+      {
+        atajo: "Ctrl/⌘ + Alt + S",
+        descripcion: "Ir a Studia ahora",
+        disponible: true,
+      },
+      {
+        atajo: "Ctrl/⌘ + Alt + M",
+        descripcion: "Ir a Mi Semana",
+        disponible: true,
+      },
+      {
+        atajo: "Ctrl/⌘ + Alt + E",
+        descripcion: "Ir a Mis Estadísticas",
+        disponible: true,
+      },
+      {
+        atajo: "Ctrl/⌘ + Alt + C",
+        descripcion: "Ir a Calendario",
+        disponible: true,
+      },
+      {
+        atajo: "Ctrl/⌘ + Alt + D",
+        descripcion: "Ir a Centro de dudas",
+        disponible: true,
+      },
+    ] : []),
+    ...(userRole === 'PROF' || userRole === 'ADMIN' ? [
+      {
+        atajo: "Ctrl/⌘ + Alt + A",
+        descripcion: "Ir a Asignaciones",
+        disponible: true,
+      },
+      {
+        atajo: "Ctrl/⌘ + Alt + G",
+        descripcion: "Ir a Agenda",
+        disponible: true,
+      },
+      {
+        atajo: "Ctrl/⌘ + Alt + P",
+        descripcion: "Ir a Plantillas",
+        disponible: true,
+      },
+      {
+        atajo: "Ctrl/⌘ + Alt + E",
+        descripcion: "Ir a Estadísticas",
+        disponible: true,
+      },
+      {
+        atajo: "Ctrl/⌘ + Alt + C",
+        descripcion: "Ir a Calendario",
+        disponible: true,
+      },
+    ] : []),
+    ...(userRole === 'ADMIN' ? [
+      {
+        atajo: "Ctrl/⌘ + Alt + U",
+        descripcion: "Ir a Usuarios",
+        disponible: true,
+      },
+      {
+        atajo: "Ctrl/⌘ + Alt + I",
+        descripcion: "Ir a Importar y Exportar",
+        disponible: true,
+      },
+      {
+        atajo: "Ctrl/⌘ + Alt + O",
+        descripcion: "Ir a Panel de Diseño",
+        disponible: true,
+      },
+    ] : []),
+  ];
+
+  const hotkeysCrear = [
+    {
+      atajo: "Ctrl/⌘ + Alt + N",
+      descripcion: "Crear nuevo elemento (contextual según la página)",
+      disponible: true,
+    },
   ];
 
   const hotkeysEstudio = userRole === 'ESTU' ? [
     {
-      atajo: "← →",
-      descripcion: "Navegar entre ejercicios",
+      atajo: "Alt + ←",
+      descripcion: "Ejercicio anterior",
+      disponible: true,
+    },
+    {
+      atajo: "Alt + →",
+      descripcion: "Siguiente ejercicio",
+      disponible: true,
+    },
+    {
+      atajo: "Alt + P",
+      descripcion: "Pausar/reanudar",
+      disponible: true,
+    },
+    {
+      atajo: "Alt + O",
+      descripcion: "Marcar ejercicio como completado (OK)",
+      disponible: true,
+    },
+    {
+      atajo: "Alt + S",
+      descripcion: "Saltar ejercicio actual",
+      disponible: true,
+    },
+    {
+      atajo: "Alt + T",
+      descripcion: "Colapsar/expandir barra de timer",
+      disponible: true,
+    },
+    {
+      atajo: "Alt + I",
+      descripcion: "Mostrar/ocultar índice de ejercicios",
+      disponible: true,
+    },
+    {
+      atajo: "Alt + R",
+      descripcion: "Repetir ejercicio actual",
+      disponible: true,
+    },
+    {
+      atajo: "Alt + Esc",
+      descripcion: "Abrir diálogo de salir de la sesión",
       disponible: true,
     },
     {
@@ -48,8 +172,13 @@ export default function HotkeysModal({ open, onOpenChange }) {
       disponible: true,
     },
     {
+      atajo: "← →",
+      descripcion: "Navegar entre ejercicios (alternativa)",
+      disponible: true,
+    },
+    {
       atajo: "O",
-      descripcion: "Completar ejercicio actual",
+      descripcion: "Completar ejercicio (alternativa)",
       disponible: true,
     },
     {
@@ -59,7 +188,7 @@ export default function HotkeysModal({ open, onOpenChange }) {
     },
     {
       atajo: "I",
-      descripcion: "Alternar índice/breadcrumb de ejercicios",
+      descripcion: "Alternar índice (alternativa)",
       disponible: true,
     },
     {
@@ -76,13 +205,43 @@ export default function HotkeysModal({ open, onOpenChange }) {
 
   const hotkeysFeedback = userRole === 'ESTU' ? [
     {
+      atajo: "Alt + 1",
+      descripcion: "Muy difícil",
+      disponible: true,
+    },
+    {
+      atajo: "Alt + 2",
+      descripcion: "Difícil",
+      disponible: true,
+    },
+    {
+      atajo: "Alt + 3",
+      descripcion: "Bien",
+      disponible: true,
+    },
+    {
+      atajo: "Alt + 4",
+      descripcion: "Excelente",
+      disponible: true,
+    },
+    {
+      atajo: "Alt + Enter",
+      descripcion: "Finalizar (submit feedback)",
+      disponible: true,
+    },
+    {
+      atajo: "Esc",
+      descripcion: "Cerrar modal",
+      disponible: true,
+    },
+    {
       atajo: "1 - 4",
-      descripcion: "Valoración rápida (Muy difícil, Difícil, Bien, Excelente)",
+      descripcion: "Valoración rápida (alternativa)",
       disponible: true,
     },
     {
       atajo: "Ctrl/⌘ + Enter",
-      descripcion: "Guardar feedback y finalizar sesión",
+      descripcion: "Guardar feedback (alternativa)",
       disponible: true,
     },
   ] : [];
@@ -115,7 +274,7 @@ export default function HotkeysModal({ open, onOpenChange }) {
           {/* Atajos globales */}
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-[var(--color-text-primary)] uppercase tracking-wide mb-2">
-              Atajos globales
+              Navegación general
             </h3>
             <div className="space-y-1">
               {hotkeysGlobales.map((hotkey, idx) => (
@@ -123,7 +282,7 @@ export default function HotkeysModal({ open, onOpenChange }) {
                   key={idx}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-surface-muted)] transition-colors"
                 >
-                  <kbd className="kbd shrink-0 min-w-[100px] text-center text-xs">
+                  <kbd className="kbd shrink-0 min-w-[140px] text-center text-xs">
                     {hotkey.atajo}
                   </kbd>
                   <span className="text-sm text-[var(--color-text-primary)] flex-1">
@@ -133,6 +292,30 @@ export default function HotkeysModal({ open, onOpenChange }) {
               ))}
             </div>
           </div>
+
+          {/* Atajos de crear elementos */}
+          {hotkeysCrear.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-[var(--color-text-primary)] uppercase tracking-wide mb-2">
+                Listas / Crear elementos
+              </h3>
+              <div className="space-y-1">
+                {hotkeysCrear.map((hotkey, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-surface-muted)] transition-colors"
+                  >
+                    <kbd className="kbd shrink-0 min-w-[140px] text-center text-xs">
+                      {hotkey.atajo}
+                    </kbd>
+                    <span className="text-sm text-[var(--color-text-primary)] flex-1">
+                      {hotkey.descripcion}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Atajos de modo estudio */}
           {hotkeysEstudio.length > 0 && (

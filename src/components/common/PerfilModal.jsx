@@ -544,10 +544,22 @@ export default function PerfilModal({
   // Cambiar contraseña usando resetPasswordForEmail (envía email para restablecer contraseña)
   const changePasswordMutation = useMutation({
     mutationFn: async () => {
-      // Obtener el email del usuario autenticado
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user?.email) {
-        throw new Error('No hay sesión activa o no se pudo obtener el email. Por favor, inicia sesión de nuevo.');
+      // Determinar el email del usuario objetivo
+      let targetEmail;
+      
+      if (isEditingOwnProfile) {
+        // Usuario editando su propio perfil: usar email de la sesión activa
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.email) {
+          throw new Error('No hay sesión activa o no se pudo obtener el email. Por favor, inicia sesión de nuevo.');
+        }
+        targetEmail = session.user.email;
+      } else {
+        // Admin editando otro usuario: usar email del usuario objetivo
+        if (!targetUser?.email) {
+          throw new Error('No se pudo obtener el email del usuario.');
+        }
+        targetEmail = targetUser.email;
       }
 
       // Usar el mismo patrón que userAdmin.ts para construir la URL de redirect
@@ -563,12 +575,12 @@ export default function PerfilModal({
       }
       
       if (import.meta.env.DEV) {
-        log.debug('[PerfilModal] Enviando email de restablecimiento a:', session.user.email);
+        log.debug('[PerfilModal] Enviando email de restablecimiento a:', targetEmail);
         log.debug('[PerfilModal] URL de redirect:', redirectUrl);
       }
 
       // Enviar email para restablecer contraseña
-      const { error } = await supabase.auth.resetPasswordForEmail(session.user.email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
         redirectTo: redirectUrl,
       });
 
@@ -579,16 +591,21 @@ export default function PerfilModal({
         throw error;
       }
 
-      return { success: true, email: session.user.email };
+      return { success: true, email: targetEmail };
     },
     onSuccess: (data) => {
       const email = data?.email || targetUser?.email || effectiveUser?.email || 'tu correo';
+      const mensaje = isEditingOwnProfile 
+        ? `✅ Te hemos enviado un correo a ${email} para cambiar tu contraseña.`
+        : `✅ Se ha enviado un correo a ${email} para cambiar la contraseña.`;
       setPasswordResult({ 
         success: true, 
-        message: `✅ Te hemos enviado un correo a ${email} para cambiar tu contraseña.` 
+        message: mensaje
       });
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      toast.success('Te hemos enviado un correo para cambiar tu contraseña.');
+      toast.success(isEditingOwnProfile 
+        ? 'Te hemos enviado un correo para cambiar tu contraseña.'
+        : 'Se ha enviado un correo para cambiar la contraseña.');
     },
     onError: (error) => {
       log.error('[PerfilModal] Error al enviar email de restablecimiento:', error);
@@ -1191,6 +1208,54 @@ export default function PerfilModal({
                           Cambiar contraseña
                         </Button>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Sección de Seguridad para administradores editando otros usuarios */}
+                {!isEditingOwnProfile && canEditRole && targetUser?.email && (
+                  <div className="pt-6 border-t border-[var(--color-border-default)] space-y-4">
+                    <div className="space-y-1 mb-4">
+                      <div className="flex items-center gap-2">
+                        <Lock className="w-5 h-5 text-[var(--color-primary)]" />
+                        <h3 className="text-base font-semibold text-[var(--color-text-primary)]">Seguridad</h3>
+                      </div>
+                      <p className="text-sm text-[var(--color-text-secondary)] ml-7">
+                        Enviar enlace para cambiar contraseña a este usuario.
+                      </p>
+                    </div>
+                    
+                    {passwordResult && (
+                      <Alert 
+                        variant={passwordResult.success ? 'success' : 'danger'}
+                        className={componentStyles.containers.panelBase}
+                      >
+                        <AlertDescription>
+                          {passwordResult.message}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    <div className="flex gap-2 pt-1">
+                      <Button
+                        onClick={async () => {
+                          setPasswordResult(null);
+                          try {
+                            await changePasswordMutation.mutateAsync();
+                          } catch (error) {
+                            // Error ya manejado en la mutation
+                          }
+                        }}
+                        loading={changePasswordMutation.isPending}
+                        loadingText="Enviando correo..."
+                        disabled={changePasswordMutation.isPending}
+                        variant="outline"
+                        size="sm"
+                        className={componentStyles.buttons.outline + " flex-1"}
+                      >
+                        <Lock className="w-4 h-4 mr-2" />
+                        Enviar enlace de cambio de contraseña
+                      </Button>
                     </div>
                   </div>
                 )}

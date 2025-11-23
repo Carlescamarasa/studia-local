@@ -1,9 +1,10 @@
 /**
- * Utilidades centralizadas para atajos de teclado (hotkeys)
+ * Sistema centralizado de atajos de teclado (hotkeys)
  * 
  * Maneja:
- * - Hotkeys globales (ej: Ctrl+Alt+S para "Studia ahora")
- * - Helper para detectar campos editables
+ * - Hotkeys globales (navegación, acciones generales)
+ * - Hotkeys contextuales (modo estudio, modales, etc.)
+ * - Protección contra activación en campos editables
  */
 
 /**
@@ -58,3 +59,100 @@ export function shouldIgnoreHotkey(event) {
   return isEditableTarget(event.target);
 }
 
+/**
+ * Registro centralizado de handlers de hotkeys
+ * Permite suscribirse/desuscribirse dinámicamente para evitar fugas de eventos
+ */
+class HotkeyRegistry {
+  constructor() {
+    this.globalHandlers = [];
+    this.contextualHandlers = [];
+    this.isRegistered = false;
+  }
+
+  /**
+   * Registra un handler global de hotkeys
+   * @param {Function} handler - Función que recibe (event) y retorna true si procesó el evento
+   */
+  registerGlobal(handler) {
+    this.globalHandlers.push(handler);
+    if (!this.isRegistered) {
+      this.setupGlobalListener();
+    }
+    return () => {
+      this.globalHandlers = this.globalHandlers.filter(h => h !== handler);
+    };
+  }
+
+  /**
+   * Registra un handler contextual (solo activo en ciertas condiciones)
+   * @param {Function} handler - Función que recibe (event) y retorna true si procesó el evento
+   * @param {Function} isActive - Función que retorna true si el contexto está activo
+   */
+  registerContextual(handler, isActive) {
+    const contextual = { handler, isActive };
+    this.contextualHandlers.push(contextual);
+    if (!this.isRegistered) {
+      this.setupGlobalListener();
+    }
+    return () => {
+      this.contextualHandlers = this.contextualHandlers.filter(h => h !== contextual);
+    };
+  }
+
+  setupGlobalListener() {
+    if (this.isRegistered) return;
+    
+    const handleKeyDown = (e) => {
+      // Verificar campos editables primero
+      if (shouldIgnoreHotkey(e)) {
+        return;
+      }
+
+      // Procesar handlers contextuales primero (tienen prioridad)
+      for (const { handler, isActive } of this.contextualHandlers) {
+        if (isActive && isActive()) {
+          if (handler(e)) {
+            return; // Handler procesó el evento
+          }
+        }
+      }
+
+      // Procesar handlers globales
+      for (const handler of this.globalHandlers) {
+        if (handler(e)) {
+          return; // Handler procesó el evento
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    this.isRegistered = true;
+    
+    // Cleanup cuando se desmonte (si es necesario)
+    if (import.meta.env.DEV) {
+      if (typeof window !== 'undefined' && !window.__hotkeyRegistryCleanup) {
+        window.__hotkeyRegistryCleanup = () => {
+          window.removeEventListener('keydown', handleKeyDown, true);
+          this.isRegistered = false;
+        };
+      }
+    }
+  }
+}
+
+// Instancia singleton del registro
+export const hotkeyRegistry = new HotkeyRegistry();
+
+/**
+ * Helper para crear handlers de navegación
+ */
+export function createNavigationHandler(navigate, path) {
+  return (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.altKey) {
+      // Se procesará en el handler específico
+      return false;
+    }
+    return false;
+  };
+}

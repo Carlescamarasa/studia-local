@@ -81,7 +81,7 @@ const navigationByRole = {
     { title: "Estadísticas", url: "/estadisticas", icon: Activity, group: "Profesor" },
   ],
   ESTU: [
-    { title: "Estudiar Ahora", url: "/hoy", icon: PlayCircle, group: "Estudio" },
+    { title: "Studia ahora", url: "/hoy", icon: PlayCircle, group: "Estudio" },
     { title: "Mi Semana", url: "/semana", icon: Calendar, group: "Estudio" },
     { title: "Calendario", url: "/calendario", icon: Calendar, group: "Estudio" },
     { title: "Centro de dudas", url: "/soporte", icon: MessageSquare, group: "Estudio" },
@@ -105,6 +105,7 @@ function LayoutContent() {
   const { abierto, toggleSidebar, closeSidebar } = useSidebar();
   const { usuarios } = useLocalData();
   const { signOut, user, loading: authLoading, checkSession, handleAuthError } = useAuth();
+  const { setShowHotkeysModal } = useHotkeysModal();
 
   const [pointerStart, setPointerStart] = useState({ x: 0, y: 0, id: null });
   const [isMobile, setIsMobile] = useState(false);
@@ -178,30 +179,84 @@ function LayoutContent() {
     }
   }, [abierto, isMobile]);
 
-  /* Hotkey: Ctrl/⌘ + M - funciona SIEMPRE (incluso con modales) */
+  /* Hotkeys globales */
   useEffect(() => {
     const handleKey = (e) => {
-      const active = document.activeElement;
-      const inEditable =
-        ["INPUT", "TEXTAREA", "SELECT"].includes(active?.tagName) ||
-        active?.isContentEditable;
-      if (inEditable) return;
+      // Usar helper centralizado para detectar campos editables
+      if (shouldIgnoreHotkey(e)) return;
 
-      if ((e.metaKey || e.ctrlKey) && (e.key === "m" || e.key === "M")) {
+      const isCtrlOrCmd = e.metaKey || e.ctrlKey;
+      const isAlt = e.altKey;
+      const key = e.key?.toLowerCase();
+
+      // Ctrl/⌘ + M: Abrir/cerrar menú lateral
+      if (isCtrlOrCmd && !isAlt && !e.shiftKey && (key === "m")) {
         e.preventDefault();
         safeToggle();
+        return;
       }
-      // Cambiar entre modo light y dark: Ctrl/⌘ + Shift + D (todos los roles)
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "d" || e.key === "D")) {
+
+      // Ctrl/⌘ + Shift + D: Alternar tema claro/oscuro
+      if (isCtrlOrCmd && e.shiftKey && !isAlt && (key === "d")) {
         e.preventDefault();
         const currentTheme = design?.theme || 'light';
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         setDesignPartial('theme', newTheme);
+        return;
+      }
+
+      // Ctrl/⌘ + Alt + K: Mostrar/ocultar panel de atajos
+      if (isCtrlOrCmd && isAlt && (key === "k")) {
+        e.preventDefault();
+        setShowHotkeysModal(prev => !prev);
+        return;
+      }
+
+      // Ctrl/⌘ + Alt + L: Cerrar sesión
+      if (isCtrlOrCmd && isAlt && (key === "l")) {
+        e.preventDefault();
+        if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+          signOut();
+        }
+        return;
+      }
+
+      // Navegación por rol (Ctrl/⌘ + Alt + letra)
+      if (isCtrlOrCmd && isAlt) {
+        const userRole = effectiveUser?.rolPersonalizado || 'ESTU';
+        let targetPath = null;
+
+        if (userRole === 'ESTU') {
+          if (key === "s") targetPath = "/hoy";
+          else if (key === "m") targetPath = "/semana";
+          else if (key === "e") targetPath = "/estadisticas";
+          else if (key === "c") targetPath = "/calendario";
+          else if (key === "d") targetPath = "/soporte";
+        } else if (userRole === 'PROF' || userRole === 'ADMIN') {
+          if (key === "a") targetPath = "/asignaciones";
+          else if (key === "g") targetPath = "/agenda";
+          else if (key === "p") targetPath = "/plantillas";
+          else if (key === "e") targetPath = "/estadisticas";
+          else if (key === "c") targetPath = "/calendario";
+        }
+
+        if (userRole === 'ADMIN') {
+          if (key === "u") targetPath = "/usuarios";
+          else if (key === "i") targetPath = "/import-export";
+          else if (key === "o") targetPath = "/design";
+        }
+
+        if (targetPath) {
+          e.preventDefault();
+          navigate(createPageUrl(targetPath.split('/').pop()));
+          return;
+        }
       }
     };
+
     window.addEventListener("keydown", handleKey, { capture: true, passive: false });
     return () => window.removeEventListener("keydown", handleKey, { capture: true });
-  }, [design, setDesignPartial]);
+  }, [design, setDesignPartial, safeToggle, navigate, effectiveUser, signOut, setShowHotkeysModal]);
 
   /* Gestos: swipe desde borde para abrir; swipe izq para cerrar */
   useEffect(() => {
