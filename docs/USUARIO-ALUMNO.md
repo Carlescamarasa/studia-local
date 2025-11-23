@@ -175,53 +175,193 @@ La página **Mi Semana** te muestra una vista semanal de todas tus sesiones:
 
 ## Mis Estadísticas
 
-En **Mis Estadísticas** puedes ver un análisis detallado de tu progreso:
+En **Mis Estadísticas** puedes ver un análisis detallado de tu progreso con diferentes métricas y visualizaciones.
 
-- **Resumen**: KPIs principales (tiempo total, sesiones completadas, etc.)
-- **Progreso**: Evolución temporal de tu práctica
-- **Tipos de bloques**: Análisis por tipo de ejercicio (CA, CB, TC, etc.)
-- **Top ejercicios**: Ejercicios más practicados
-- **Autoevaluaciones**: Historial de tus valoraciones (1-4)
-- **Feedback del profesor**: Comentarios y observaciones de tu profesor
+### Filtrar por Período
+
+En la parte superior puedes filtrar las estadísticas por período:
+- **Presets rápidos**: Últimas 4 semanas, último mes, últimos 3 meses, etc.
+- **Rango personalizado**: Selecciona una fecha de inicio y fin específica
+- Los filtros se aplican a todas las pestañas de estadísticas
+
+### Pestañas de Estadísticas
+
+#### Resumen
+
+Muestra los KPIs principales de tu práctica:
+- **Tiempo total**: Tiempo acumulado de todas tus sesiones
+- **Sesiones completadas**: Número total de sesiones que has finalizado
+- **Ejercicios completados**: Total de ejercicios que has practicado
+- **Promedio de calificación**: Tu autoevaluación promedio (1-4)
+- **Días activos**: Días en los que has practicado
+
+#### Progreso
+
+Gráficos que muestran la evolución temporal de tu práctica:
+- **Gráfico de tiempo**: Evolución del tiempo dedicado día a día o semana a semana
+- **Gráfico de sesiones**: Número de sesiones completadas por período
+- **Heatmap de actividad**: Visualización tipo calendario que muestra qué días has practicado (más oscuro = más tiempo)
+- Puedes cambiar la granularidad (día, semana, mes) para ver diferentes niveles de detalle
+
+#### Tipos de Bloques
+
+Análisis por tipo de ejercicio:
+- **Gráfico circular**: Distribución del tiempo dedicado a cada tipo (CA, CB, TC, TM, FM, VC, AD)
+- **Tabla detallada**: Tiempo total, número de ejercicios y promedio por tipo
+- Útil para identificar en qué tipos de ejercicios dedicas más tiempo
+
+#### Top Ejercicios
+
+Lista de los ejercicios más practicados:
+- Ordenados por número de veces completados
+- Muestra código del ejercicio, nombre y número de repeticiones
+- Útil para identificar qué ejercicios practicas más frecuentemente
+
+#### Autoevaluaciones
+
+Historial de tus valoraciones (1-4):
+- **Gráfico de barras**: Distribución de tus calificaciones
+- **Lista cronológica**: Todas tus autoevaluaciones ordenadas por fecha
+- Muestra la calificación, fecha y notas asociadas (si las hay)
+- Útil para ver tu evolución en cómo percibes la dificultad de las sesiones
+
+#### Feedback del Profesor
+
+Todos los feedbacks que tu profesor te ha dejado:
+- **Lista cronológica**: Feedback ordenados por fecha (más reciente primero)
+- **Información mostrada**:
+  - Fecha del feedback
+  - Observaciones del profesor
+  - Enlaces multimedia compartidos (videos, audios, PDFs)
+- Haz clic en cualquier enlace multimedia para verlo o descargarlo
+
+### Interpretar los Gráficos
+
+- **Colores**: Los colores en los gráficos representan diferentes categorías (tipos de ejercicios, calificaciones, etc.)
+- **Hover**: Pasa el cursor sobre los elementos del gráfico para ver valores exactos
+- **Zoom**: En algunos gráficos puedes hacer zoom para ver más detalle
+- **Comparación**: Los gráficos te permiten comparar tu progreso a lo largo del tiempo
+
+### Consejos
+
+- Revisa regularmente tus estadísticas para identificar patrones en tu práctica
+- Usa los filtros de período para analizar tu progreso en diferentes momentos
+- Compara tus autoevaluaciones con el feedback del profesor para obtener una visión más completa
 
 ## Calendario
 
-El **Calendario** te permite ver tus sesiones en formato calendario:
+El **Calendario** te permite ver todas tus actividades (sesiones, feedback del profesor, asignaciones) en formato calendario.
 
-- **Vista mensual**: Visualiza todas tus sesiones del mes
-- **Vista semanal**: Vista detallada semana por semana
+### Vistas Disponibles
+
+- **Vista mensual**: Visualiza todas tus sesiones del mes en formato calendario tradicional
+  - Cada día muestra el número de sesiones programadas
+  - Haz clic en un día para ver las sesiones de ese día
+- **Vista semanal**: Vista detallada semana por semana (solo en desktop)
+  - Muestra cada día de la semana con sus sesiones
+  - Útil para planificar tu práctica semanal
 - **Vista lista**: Lista cronológica de todas tus sesiones
+  - Ordenadas por fecha, de más reciente a más antigua
+  - Muestra información resumida de cada sesión
 
-Haz clic en cualquier sesión para ver más detalles.
+**Nota**: En móvil, la vista "Semana" no está disponible y se usa automáticamente la vista "Lista".
+
+### Filtros
+
+Puedes filtrar el calendario por tipo de evento:
+- **Todos**: Muestra todas las actividades
+- **Sesiones**: Solo sesiones de práctica completadas
+- **Asignaciones**: Solo asignaciones activas
+- **Feedback**: Solo feedbacks del profesor
+- **Eventos**: Eventos importantes (audiciones, conciertos, etc.)
+
+### Ver Detalle de Sesión
+
+Haz clic en cualquier sesión del calendario para ver:
+- **Información de la sesión**: Nombre, fecha, duración
+- **Ejercicios completados**: Lista de todos los ejercicios que practicaste
+- **Tiempo objetivo vs tiempo real**: Comparación del tiempo estimado vs tiempo que realmente dedicaste
+- **Calificación**: Tu autoevaluación (1-4) si la proporcionaste
+- **Notas**: Notas que añadiste al finalizar la sesión
+- **Enlaces multimedia**: Materiales que subiste (si los hay)
+
+### Ver Feedback del Profesor
+
+Cuando tu profesor te deja feedback semanal, aparecerá en el calendario:
+- Haz clic en el evento de feedback para ver:
+  - **Observaciones del profesor**: Comentarios sobre tu progreso
+  - **Enlaces multimedia**: Videos, audios o PDFs que tu profesor haya compartido
+  - **Fecha del feedback**: Cuándo te lo dejó
+- Los feedbacks aparecen en el día correspondiente a la semana que cubren
 
 ## Centro de Dudas
 
-Desde el **Centro de dudas** puedes:
+El **Centro de dudas** es tu canal de comunicación directo con tu profesor. Puedes crear tickets para resolver dudas, reportar problemas técnicos o hacer sugerencias.
 
-- Reportar problemas técnicos
-- Sugerir mejoras
-- Hacer preguntas sobre el funcionamiento de la aplicación
+### Crear un Nuevo Ticket
 
-Tu profesor recibirá tus mensajes y podrá responderte.
+1. Ve a **Centro de dudas** desde el menú lateral
+2. Haz clic en el botón **"Nuevo"** en la parte superior de la lista de tickets
+3. Se abrirá un modal donde deberás:
+   - **Título**: Escribe un título claro y descriptivo para tu consulta
+   - **Tipo**: Selecciona el tipo de ticket:
+     - **Duda general**: Preguntas sobre el funcionamiento de la aplicación
+     - **Problema técnico**: Reportar errores o problemas técnicos
+     - **Sugerencia**: Proponer mejoras o nuevas funcionalidades
+     - **Otro**: Cualquier otra consulta
+4. Haz clic en **"Crear ticket"**
+
+### Adjuntar Videos
+
+Puedes adjuntar videos a tus mensajes para mostrar mejor tu consulta o problema:
+
+1. En un ticket existente, escribe tu mensaje en el campo de texto
+2. Haz clic en el botón **"Adjuntar vídeo"** o arrastra un archivo de video
+3. El video se subirá automáticamente a YouTube (privado, solo visible para tu profesor)
+4. Una vez subido, aparecerá como enlace en tu mensaje
+5. Haz clic en **"Enviar"** para enviar el mensaje con el video adjunto
+
+**Nota**: La subida de videos puede tardar unos momentos. No cierres la página mientras se sube.
+
+### Ver Respuestas del Profesor
+
+1. En la lista de tickets, verás todos tus tickets con su estado:
+   - **Abierto**: El ticket está activo y esperando respuesta
+   - **En proceso**: Tu profesor está trabajando en tu consulta
+   - **Cerrado**: El ticket ha sido resuelto
+2. Haz clic en cualquier ticket para ver la conversación completa
+3. Los mensajes del profesor aparecerán con su nombre y fecha
+4. Puedes responder a cualquier mensaje escribiendo en el campo de texto y haciendo clic en **"Enviar"**
+
+### Cerrar o Reabrir Tickets
+
+- **Cerrar un ticket**: Si tu consulta ha sido resuelta, puedes cerrar el ticket. Los tickets cerrados se mantienen en tu historial pero ya no aparecen como activos.
+- **Reabrir un ticket**: Si necesitas seguir la conversación sobre un ticket cerrado, puedes reabrirlo enviando un nuevo mensaje.
+
+### Tipos de Tickets
+
+- **Duda general**: Para preguntas sobre cómo usar la aplicación, interpretar estadísticas, entender ejercicios, etc.
+- **Problema técnico**: Para reportar errores, problemas de carga, videos que no se reproducen, etc.
+- **Sugerencia**: Para proponer mejoras o nuevas funcionalidades que te gustaría ver en la aplicación
+- **Otro**: Para cualquier consulta que no encaje en las categorías anteriores
+
+**Consejo**: Sé específico en el título y descripción de tu ticket. Esto ayudará a tu profesor a responderte más rápido.
 
 ## Atajos de Teclado
 
 Studia incluye atajos de teclado para hacer tu experiencia más rápida y eficiente.
 
-### Atajos Globales
+### Atajos Más Importantes
 
 | Función | Windows/Linux | Mac |
 |---------|---------------|-----|
-| Abrir/cerrar menú lateral | `Ctrl + M` | `⌘ + M` |
-| Alternar tema claro/oscuro | `Ctrl + Shift + D` | `⌘ + ⇧ + D` |
-| Mostrar panel de atajos | `Ctrl + /` o `?` | `⌘ + /` o `?` |
 | Ir a Studia ahora | `Ctrl + Alt + S` | `⌘ + ⌥ + S` |
 | Ir a Mi Semana | `Ctrl + Alt + M` | `⌘ + ⌥ + M` |
 | Ir a Mis Estadísticas | `Ctrl + Alt + E` | `⌘ + ⌥ + E` |
 | Ir a Calendario | `Ctrl + Alt + C` | `⌘ + ⌥ + C` |
 | Ir a Centro de dudas | `Ctrl + Alt + H` | `⌘ + ⌥ + H` |
 
-### Atajos en Modo Estudio
+### En Modo Estudio
 
 | Función | Tecla |
 |---------|-------|
@@ -229,21 +369,19 @@ Studia incluye atajos de teclado para hacer tu experiencia más rápida y eficie
 | Siguiente ejercicio | `→` |
 | Pausar/reanudar audio | `Espacio` |
 | Marcar ejercicio como completado (OK) | `Enter` |
-| Mostrar/ocultar índice de ejercicios | `I` |
-| Abrir diálogo de salir de sesión | `Esc` |
+| Mostrar/ocultar índice | `I` |
+| Salir de sesión | `Esc` |
 
-### Atajos en Feedback
+### En Feedback de Sesión
 
-| Función | Windows/Linux | Mac |
-|---------|---------------|-----|
-| Valoración: Muy difícil | `1` | `1` |
-| Valoración: Difícil | `2` | `2` |
-| Valoración: Bien | `3` | `3` |
-| Valoración: Excelente | `4` | `4` |
-| Finalizar sesión | `Ctrl + Enter` | `⌘ + Enter` |
-| Cerrar modal | `Esc` | `Esc` |
+| Función | Tecla |
+|---------|-------|
+| Valoración rápida (1-4) | `1`, `2`, `3`, `4` |
+| Finalizar sesión | `Ctrl + Enter` (Mac: `⌘ + Enter`) |
 
-**Nota**: Los atajos **NO** se activan cuando estás escribiendo en un campo de texto. Para más detalles, consulta [HOTKEYS.md](HOTKEYS.md).
+**Nota**: Los atajos **NO** se activan cuando estás escribiendo en un campo de texto.
+
+Para ver la lista completa de atajos, consulta [HOTKEYS.md](HOTKEYS.md).
 
 ## Preguntas Frecuentes
 

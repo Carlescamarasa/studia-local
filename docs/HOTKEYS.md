@@ -4,78 +4,120 @@ Referencia completa de atajos de teclado disponibles en la aplicación.
 
 ## Importante
 
-- Los atajos **NO** se activan cuando estás escribiendo en un campo de texto (inputs, textareas, etc.)
-- En **Mac** se usa `⌘` (Cmd) y `⌥` (Alt) donde en **Windows/Linux** se usa `Ctrl` y `Alt`
+### Convenciones de Teclas
+
+- **`mod`** = `Ctrl` en Windows/Linux, `⌘` (Cmd) en Mac
+- **`alt`** = `Alt` en Windows/Linux, `⌥` (Option) en Mac
+- **`shift`** = `Shift` en ambas plataformas, mostrado como `⇧`
+
+### Reglas Generales
+
+- Los atajos **NO** se activan cuando estás escribiendo en un campo de texto (inputs, textareas, campos editables)
 - Algunos atajos solo funcionan en contextos específicos (modo estudio, feedback, etc.)
+- Los atajos están organizados por contexto de uso, no por rol
 
-## Atajos Globales (Todos los Usuarios)
+### Combinaciones Reservadas
 
-| Función | Windows/Linux | Mac | Contexto |
-|---------|---------------|-----|----------|
-| Abrir/cerrar menú lateral | `Ctrl + M` | `⌘ + M` | Global |
-| Alternar tema claro/oscuro | `Ctrl + Shift + D` | `⌘ + ⇧ + D` | Global |
-| Mostrar/ocultar panel de atajos | `Ctrl + /` o `?` | `⌘ + /` o `?` | Global |
-| Cerrar sesión | `Ctrl + Alt + L` | `⌘ + ⌥ + L` | Global |
+Algunas combinaciones pueden entrar en conflicto con atajos del navegador:
+- `mod+alt+C` podría abrir las herramientas de desarrollador en algunos navegadores
+- `mod+alt+I` podría abrir las herramientas de desarrollador en algunos navegadores
+- Si un atajo no funciona, verifica que no estés en un campo de texto y que no haya conflictos con extensiones del navegador
 
-## Navegación - Alumno
+## 1. Globales (Todos los Usuarios)
 
-| Función | Windows/Linux | Mac | Contexto |
-|---------|---------------|-----|----------|
-| Ir a Studia ahora | `Ctrl + Alt + S` | `⌘ + ⌥ + S` | Global |
-| Ir a Mi Semana | `Ctrl + Alt + M` | `⌘ + ⌥ + M` | Global |
-| Ir a Mis Estadísticas | `Ctrl + Alt + E` | `⌘ + ⌥ + E` | Global |
-| Ir a Calendario | `Ctrl + Alt + C` | `⌘ + ⌥ + C` | Global |
-| Ir a Centro de dudas | `Ctrl + Alt + H` | `⌘ + ⌥ + H` | Global |
+Atajos disponibles en cualquier momento (excepto cuando estás escribiendo en campos de texto).
 
-## Navegación - Profesor/Admin
+| Función | Windows/Linux | Mac | Roles |
+|---------|---------------|-----|-------|
+| Abrir/cerrar menú lateral | `Ctrl + M` | `⌘ + M` | Todos |
+| Alternar tema claro/oscuro | `Ctrl + Shift + D` | `⌘ + ⇧ + D` | Todos |
+| Mostrar/ocultar panel de atajos | `Ctrl + /` o `?` | `⌘ + /` o `?` | Todos |
+| Cerrar sesión | `Ctrl + Alt + L` | `⌘ + ⌥ + L` | Todos |
 
-| Función | Windows/Linux | Mac | Contexto |
-|---------|---------------|-----|----------|
-| Ir a Asignaciones | `Ctrl + Alt + A` | `⌘ + ⌥ + A` | Global |
-| Ir a Agenda | `Ctrl + Alt + G` | `⌘ + ⌥ + G` | Global |
-| Ir a Plantillas | `Ctrl + Alt + P` | `⌘ + ⌥ + P` | Global |
-| Ir a Estadísticas | `Ctrl + Alt + E` | `⌘ + ⌥ + E` | Global |
-| Ir a Calendario | `Ctrl + Alt + C` | `⌘ + ⌥ + C` | Global |
+## 2. Navegación por Rol
 
-## Navegación - Solo Admin
+### 2.1 Navegación - Alumno
 
-| Función | Windows/Linux | Mac | Contexto |
-|---------|---------------|-----|----------|
-| Ir a Usuarios | `Ctrl + Alt + U` | `⌘ + ⌥ + U` | Global |
-| Ir a Importar y Exportar | `Ctrl + Alt + I` | `⌘ + ⌥ + I` | Global |
-| Ir a Panel de Diseño | `Ctrl + Alt + O` | `⌘ + ⌥ + O` | Global |
+| Función | Windows/Linux | Mac |
+|---------|---------------|-----|
+| Ir a Studia ahora | `Ctrl + Alt + S` | `⌘ + ⌥ + S` |
+| Ir a Mi Semana | `Ctrl + Alt + M` | `⌘ + ⌥ + M` |
+| Ir a Mis Estadísticas | `Ctrl + Alt + E` | `⌘ + ⌥ + E` |
+| Ir a Calendario | `Ctrl + Alt + C` | `⌘ + ⌥ + C` |
+| Ir a Centro de dudas | `Ctrl + Alt + H` | `⌘ + ⌥ + H` |
 
-## Crear Elementos
+### 2.2 Navegación - Profesor/Admin
 
-| Función | Windows/Linux | Mac | Contexto |
-|---------|---------------|-----|----------|
-| Crear nuevo elemento | `Ctrl + N` | `⌘ + N` | Contextual (según la página) |
+| Función | Windows/Linux | Mac |
+|---------|---------------|-----|
+| Ir a Asignaciones | `Ctrl + Alt + A` | `⌘ + ⌥ + A` |
+| Ir a Agenda | `Ctrl + Alt + G` | `⌘ + ⌥ + G` |
+| Ir a Plantillas | `Ctrl + Alt + P` | `⌘ + ⌥ + P` |
+| Ir a Estadísticas | `Ctrl + Alt + E` | `⌘ + ⌥ + E` |
+| Ir a Calendario | `Ctrl + Alt + C` | `⌘ + ⌥ + C` |
 
-## Modo Estudio (Solo Alumno)
+### 2.3 Navegación - Solo Admin
 
-| Función | Windows/Linux | Mac | Contexto |
-|---------|---------------|-----|----------|
-| Ejercicio anterior | `←` | `←` | Durante sesión activa |
-| Siguiente ejercicio | `→` | `→` | Durante sesión activa |
-| Pausar/reanudar audio | `Espacio` | `Espacio` | Durante sesión activa |
-| Marcar ejercicio como completado (OK) | `Enter` | `Enter` | Durante sesión activa |
-| Mostrar/ocultar índice de ejercicios | `I` | `I` | Durante sesión activa |
-| Abrir diálogo de salir de sesión | `Esc` | `Esc` | Durante sesión activa |
+| Función | Windows/Linux | Mac |
+|---------|---------------|-----|
+| Ir a Usuarios | `Ctrl + Alt + U` | `⌘ + ⌥ + U` |
+| Ir a Importar y Exportar | `Ctrl + Alt + I` | `⌘ + ⌥ + I` |
+| Ir a Panel de Diseño | `Ctrl + Alt + O` | `⌘ + ⌥ + O` |
 
-## Feedback de Sesión (Solo Alumno)
+## 3. Crear Elementos
+
+Atajo contextual que crea el elemento apropiado según la página en la que te encuentres.
 
 | Función | Windows/Linux | Mac | Contexto |
 |---------|---------------|-----|----------|
-| Valoración: Muy difícil | `1` | `1` | Modal de feedback |
-| Valoración: Difícil | `2` | `2` | Modal de feedback |
-| Valoración: Bien | `3` | `3` | Modal de feedback |
-| Valoración: Excelente | `4` | `4` | Modal de feedback |
-| Finalizar sesión (enviar feedback) | `Ctrl + Enter` | `⌘ + Enter` | Modal de feedback |
-| Cerrar modal de feedback | `Esc` | `Esc` | Modal de feedback |
+| Crear nuevo elemento | `Ctrl + N` | `⌘ + N` | Contextual |
 
-## Notas
+**Ejemplos**:
+- En **Asignaciones**: crea una nueva asignación
+- En **Plantillas** → Piezas: crea una nueva pieza
+- En **Plantillas** → Ejercicios: crea un nuevo ejercicio
+- En **Plantillas** → Planes: crea un nuevo plan
+- En **Usuarios**: crea un nuevo usuario
 
-- Los atajos de modo estudio solo funcionan durante una sesión activa
-- Los atajos de feedback solo funcionan cuando el modal de feedback está abierto
-- El atajo "Crear nuevo elemento" (`Ctrl + N` / `⌘ + N`) es contextual: crea el elemento apropiado según la página en la que te encuentres (ej: nueva asignación en Asignaciones, nueva pieza en Plantillas, etc.)
+## 4. Modo Estudio (Solo Alumno)
+
+Atajos disponibles durante una sesión de estudio activa.
+
+| Función | Windows/Linux | Mac |
+|---------|---------------|-----|
+| Ejercicio anterior | `←` | `←` |
+| Siguiente ejercicio | `→` | `→` |
+| Pausar/reanudar audio | `Espacio` | `Espacio` |
+| Marcar ejercicio como completado (OK) | `Enter` | `Enter` |
+| Mostrar/ocultar índice de ejercicios | `I` | `I` |
+| Abrir diálogo de salir de sesión | `Esc` | `Esc` |
+
+**Nota**: Estos atajos solo funcionan cuando hay una sesión de estudio activa. Si no estás en modo estudio, estos atajos no harán nada.
+
+## 5. Feedback de Sesión (Solo Alumno)
+
+Atajos disponibles en el modal de feedback al finalizar una sesión.
+
+| Función | Windows/Linux | Mac |
+|---------|---------------|-----|
+| Valoración: Muy difícil | `1` | `1` |
+| Valoración: Difícil | `2` | `2` |
+| Valoración: Bien | `3` | `3` |
+| Valoración: Excelente | `4` | `4` |
+| Finalizar sesión (enviar feedback) | `Ctrl + Enter` | `⌘ + Enter` |
+| Cerrar modal de feedback | `Esc` | `Esc` |
+
+**Nota**: Los atajos de valoración (1-4) funcionan incluso si el modal tiene el foco en un campo de texto, para permitir valoración rápida.
+
+## 6. Agenda/Feedback Semanal (Profesor)
+
+Atajos disponibles en la página de Agenda cuando estás dando feedback semanal a estudiantes.
+
+**Nota**: Actualmente no hay atajos de teclado específicos para la agenda/feedback semanal. Se usan los controles de la interfaz (botones, formularios, etc.).
+
+## 7. Tickets/Soporte
+
+Atajos disponibles en las páginas de Centro de Dudas (alumno) y Tickets de Alumnos (profesor/admin).
+
+**Nota**: Actualmente no hay atajos de teclado específicos para tickets/soporte. Se usan los controles de la interfaz (botones, formularios, etc.).
 

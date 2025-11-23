@@ -1,5 +1,7 @@
 # Sistema de Diseño – Studia
 
+> **Nota**: Este documento se mantiene como referencia técnica específica del sistema de diseño. Para documentación general de arquitectura, consulta [docs/ARQUITECTURA.md](../../docs/ARQUITECTURA.md).
+
 Origen único de verdad para estilos, tokens y clases semánticas.
 
 ## 1) Tokens
@@ -201,7 +203,7 @@ Esta sección recoge todos los elementos/atributos ya mapeados a tokens y CSS gl
 
 9) Tema Light/Dark
 - `DesignProvider` alterna `.dark` en `<html>` según `design.theme`.
-- El preset se puede alternar desde el sidebar (Light/Dark). En `/design` (pestaña “QA”) se incluyen fixtures estáticos (`.page-header`, `.btn-primary`, `.badge`, `.app-panel`, `[data-testid="tabs-segmented"]`) para auditoría consistente.
+- El preset se puede alternar desde el sidebar (Light/Dark). En `/design` (pestaña "QA") se incluyen fixtures estáticos (`.page-header`, `.btn-primary`, `.badge`, `.app-panel`, `[data-testid="tabs-segmented"]`) para auditoría consistente.
 
 ---
 

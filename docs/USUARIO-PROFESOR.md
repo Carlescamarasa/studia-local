@@ -182,19 +182,53 @@ En **Estadísticas** puedes ver métricas detalladas del progreso de tus estudia
 1. Selecciona un estudiante del selector en la parte superior
 2. Verás diferentes pestañas con información:
    - **Resumen**: KPIs principales (tiempo total, sesiones completadas, etc.)
-   - **Progreso**: Evolución temporal de la práctica
-   - **Tipos de bloques**: Análisis por tipo de ejercicio
+   - **Progreso**: Evolución temporal de la práctica con gráficos
+   - **Tipos de bloques**: Análisis por tipo de ejercicio (CA, CB, TC, etc.)
    - **Top ejercicios**: Ejercicios más practicados
-   - **Autoevaluaciones**: Historial de valoraciones del estudiante
+   - **Autoevaluaciones**: Historial de valoraciones del estudiante (1-4)
    - **Feedback**: Todos los feedbacks que le has dado
+
+### Filtrar Estadísticas
+
+Puedes filtrar las estadísticas de varias formas:
+
+#### Por Período
+- **Presets rápidos**: Últimas 4 semanas, último mes, últimos 3 meses, etc.
+- **Rango personalizado**: Selecciona una fecha de inicio y fin específica
+- Los filtros se aplican a todas las pestañas
+
+#### Por Estudiantes (Solo Profesor)
+- Selecciona uno o varios estudiantes del selector
+- Si no seleccionas ninguno, verás estadísticas agregadas de todos tus estudiantes
+
+#### Por Focos
+- Filtra por tipo de foco: GEN, LIG, RIT, ART, S&A
+- Útil para analizar el progreso en áreas específicas
+
+#### Por Calificación
+- Filtra sesiones por la autoevaluación del estudiante (1-4)
+- Útil para identificar sesiones que fueron muy difíciles o muy fáciles
 
 ### Vista Comparativa (Solo Admin)
 
-Si eres admin, también puedes ver una vista comparativa de todos los estudiantes para comparar métricas entre ellos.
+Si eres admin, también puedes ver una vista comparativa de todos los estudiantes:
+1. Ve a **Estadísticas**
+2. Haz clic en la pestaña **"Comparativa"** (si está disponible)
+3. Verás una tabla comparando métricas entre estudiantes:
+   - Tiempo total
+   - Sesiones completadas
+   - Promedio de calificación
+   - Otros KPIs relevantes
 
-### Filtrar por Período
+**Nota**: Esta vista solo está disponible para administradores. Los profesores solo pueden ver estadísticas de sus propios estudiantes.
 
-Usa los filtros de fecha en la parte superior para ver estadísticas de un período específico.
+### Interpretar los Gráficos
+
+- **Gráficos de línea**: Muestran la evolución temporal (tiempo, sesiones, etc.)
+- **Gráficos circulares**: Muestran distribución (tipos de ejercicios, calificaciones)
+- **Gráficos de barras**: Comparan valores (ejercicios más practicados, etc.)
+- **Heatmap**: Muestra actividad día a día (más oscuro = más tiempo)
+- Pasa el cursor sobre los elementos para ver valores exactos
 
 ## Plantillas
 
@@ -239,6 +273,79 @@ La página **Plantillas** te permite gestionar:
    - **Semanas**: Añade semanas y sesiones con sus ejercicios
 
 **Nota**: Los planes tienen una estructura anidada: Plan → Semanas → Sesiones → Ejercicios/Rondas.
+
+## Centro de Dudas (Tickets de Alumnos)
+
+La página **Tickets de alumnos** (también llamada "Centro de dudas") te permite gestionar las consultas y dudas de tus estudiantes.
+
+### Vista General
+
+En la parte superior verás:
+- **Barra de búsqueda**: Busca tickets por título o nombre del alumno
+- **Filtros**: Filtra por estado (Todos, Abiertos, En proceso, Cerrados) y por profesor asignado
+
+### Filtrar Tickets
+
+Puedes filtrar los tickets de varias formas:
+
+#### Por Estado
+- **Todos**: Muestra todos los tickets sin filtrar
+- **Abiertos**: Solo tickets que están activos y esperando respuesta
+- **En proceso**: Tickets en los que estás trabajando
+- **Cerrados**: Tickets que ya han sido resueltos
+
+#### Por Profesor Asignado
+- **Mis tickets**: Solo tickets asignados a ti (por defecto)
+- **Todos**: Todos los tickets del sistema (útil si eres admin o si hay varios profesores trabajando con los mismos estudiantes)
+
+**Nota**: Si eres admin, verás todos los tickets del sistema. Si eres profesor, por defecto verás solo los tickets asignados a ti, pero puedes cambiar el filtro para ver todos.
+
+### Ver y Responder Tickets
+
+1. En la lista de tickets, haz clic en cualquier ticket para ver la conversación completa
+2. Verás:
+   - **Título del ticket**: El asunto de la consulta
+   - **Estado**: Abierto, En proceso o Cerrado
+   - **Tipo**: Duda general, Problema técnico, Sugerencia, Otro
+   - **Alumno**: Nombre del estudiante que creó el ticket
+   - **Historial de mensajes**: Toda la conversación entre el alumno y tú
+3. Para responder:
+   - Escribe tu mensaje en el campo de texto
+   - (Opcional) Adjunta un video haciendo clic en "Adjuntar vídeo" o arrastrando un archivo
+   - Haz clic en **"Enviar"**
+
+### Adjuntar Videos en Respuestas
+
+Puedes adjuntar videos a tus respuestas para explicar mejor o mostrar ejemplos:
+
+1. En el campo de respuesta, haz clic en **"Adjuntar vídeo"** o arrastra un archivo de video
+2. El video se subirá automáticamente a YouTube (privado, solo visible para el alumno)
+3. Una vez subido, aparecerá como enlace en tu mensaje
+4. Haz clic en **"Enviar"** para enviar el mensaje con el video adjunto
+
+**Nota**: La subida de videos puede tardar unos momentos. No cierres la página mientras se sube.
+
+### Cambiar Estado de Tickets
+
+Puedes cambiar el estado de un ticket para indicar su progreso:
+
+- **Abierto**: El ticket está activo y esperando respuesta
+- **En proceso**: Estás trabajando en resolver la consulta
+- **Cerrado**: El ticket ha sido resuelto
+
+Para cambiar el estado:
+1. Abre el ticket
+2. Haz clic en el botón de estado actual (junto al título)
+3. Selecciona el nuevo estado
+
+**Consejo**: Cambia el estado a "En proceso" cuando empieces a trabajar en un ticket, y a "Cerrado" cuando lo hayas resuelto completamente.
+
+### Ver Enlaces Multimedia
+
+Los tickets pueden contener enlaces multimedia (videos, audios, PDFs) tanto del alumno como tuyos:
+- Haz clic en cualquier enlace para verlo o descargarlo
+- Los videos se abren en YouTube
+- Los PDFs se descargan o abren en el navegador
 
 ## Importar/Exportar
 
@@ -326,4 +433,24 @@ Sí, si un estudiante tiene varios profesores trabajando con él, puedes ver tod
 ### ¿Qué pasa si cambio un plan que ya está asignado?
 
 Si editas un plan que ya está siendo usado por asignaciones, los cambios no afectarán a las asignaciones ya publicadas (que tienen un snapshot del plan). Solo afectarán a nuevas asignaciones que uses ese plan.
+
+### ¿Cuál es la diferencia entre ser Profesor y Administrador?
+
+**Profesor (PROF)**:
+- Puede crear y gestionar asignaciones para cualquier estudiante
+- Puede ver estadísticas de todos los estudiantes (no solo los asignados)
+- Puede dar feedback semanal a cualquier estudiante
+- Puede gestionar tickets de estudiantes
+- Puede crear y editar plantillas (piezas, ejercicios, planes)
+- **NO** puede gestionar usuarios (crear, editar roles, activar/desactivar)
+- **NO** puede acceder al Panel de Diseño
+- **NO** puede acceder a Tests & Seeds
+
+**Administrador (ADMIN)**:
+- Tiene todas las capacidades de Profesor, **más**:
+- Puede gestionar usuarios (crear, editar, cambiar roles, activar/desactivar)
+- Puede acceder al Panel de Diseño para personalizar la apariencia de la aplicación
+- Puede acceder a Tests & Seeds para generar datos de prueba
+- Puede ver estadísticas comparativas de todos los estudiantes
+- Puede ver todos los tickets del sistema (no solo los asignados a él)
 

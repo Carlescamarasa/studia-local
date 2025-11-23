@@ -207,6 +207,121 @@ Si necesitas crear un CSV de datos desde cero, puedes descargar un archivo de ej
 2. Haz clic en **"Descargar CSV de ejemplo"** en la sección correspondiente
 3. Usa el archivo descargado como plantilla
 
+## Tests & Seeds
+
+La página **Tests & Seeds** (`/testseed`) es una herramienta manual para generar datos de prueba y realizar pruebas de funcionalidad.
+
+### Acceso
+
+1. Ve a la URL `/testseed` en tu navegador
+2. O accede desde el menú lateral si está disponible (solo visible para administradores)
+
+**Importante**: Esta herramienta solo está disponible en modo remoto (Supabase). No funciona en modo local.
+
+### Generar Datos de Prueba
+
+La herramienta te permite generar diferentes tipos de datos de prueba:
+
+#### Crear Usuarios de Prueba
+
+1. En la pestaña **"Seeds"**, haz clic en **"Crear usuarios de prueba"**
+2. El sistema creará automáticamente:
+   - **2 profesores**: Profesor Prueba 1 y Profesor Prueba 2
+   - **5 estudiantes**: Estudiante Prueba 1 a Estudiante Prueba 5
+3. Los usuarios se crearán con emails tipo `prof1@test.studia` y `estudiante1@test.studia`
+4. Si un usuario ya existe, se saltará y no se duplicará
+
+**Nota**: Los usuarios de prueba se crean en Supabase y requieren autenticación activa.
+
+#### Generar Piezas, Ejercicios y Planes de Prueba
+
+1. En la pestaña **"Seeds"**, haz clic en **"Generar piezas, ejercicios y planes"**
+2. El sistema creará:
+   - **Piezas de prueba**: Varias piezas con diferentes niveles
+   - **Ejercicios de prueba**: Ejercicios de diferentes tipos (CA, CB, TC, etc.)
+   - **Planes de prueba**: Planes completos con semanas y sesiones
+3. Los datos se generan con nombres y códigos de prueba claramente identificables
+
+#### Generar Asignaciones de Prueba
+
+1. Primero asegúrate de tener usuarios y planes creados
+2. Haz clic en **"Generar asignaciones de prueba"**
+3. El sistema creará asignaciones para los estudiantes de prueba usando los planes disponibles
+
+#### Generar Registros de Sesión
+
+1. Haz clic en **"Generar registros de sesión"**
+2. El sistema creará registros de sesiones completadas para los estudiantes de prueba
+3. Incluye:
+   - Registros de sesión completas
+   - Registros de bloques (ejercicios individuales)
+   - Calificaciones y notas
+
+#### Generar Feedbacks Semanales
+
+1. Haz clic en **"Generar feedbacks semanales"**
+2. El sistema creará feedbacks del profesor para los estudiantes de prueba
+3. Incluye observaciones y enlaces multimedia de ejemplo
+
+### Resetear Datos de Prueba
+
+Si quieres limpiar los datos de prueba generados:
+
+1. Haz clic en **"Resetear datos de prueba"**
+2. El sistema eliminará:
+   - Registros de sesión de prueba
+   - Registros de bloques de prueba
+   - Feedbacks semanales de prueba
+   - Asignaciones de prueba
+3. **No elimina**: Usuarios, piezas, ejercicios ni planes (para poder reutilizarlos)
+
+**Advertencia**: Esta acción no se puede deshacer. Asegúrate de que realmente quieres eliminar estos datos.
+
+### Ver Estadísticas de Seeds
+
+En la parte superior de la página verás un resumen de los datos actuales:
+- Número de usuarios
+- Número de piezas
+- Número de planes
+- Número de bloques
+- Número de asignaciones
+- Número de registros de sesión
+- Número de registros de bloques
+- Número de feedbacks semanales
+
+Haz clic en **"Actualizar"** para refrescar estas estadísticas.
+
+### Auditorías y Tests
+
+La herramienta también incluye funciones de auditoría y tests:
+
+#### Auditoría de Enlaces
+
+1. En la pestaña **"Auditoría"**, puedes ejecutar auditorías de enlaces multimedia
+2. Verifica que todos los enlaces en piezas, ejercicios y planes sean válidos
+3. Muestra un reporte de enlaces rotos o inválidos
+
+#### Tests de Funcionalidad
+
+1. En la pestaña **"Tests"**, puedes ejecutar tests manuales de funcionalidad
+2. Verifica que las funciones principales del sistema funcionen correctamente
+3. Muestra un reporte de tests pasados y fallidos
+
+### Aclaración Importante
+
+**NO hay framework de tests automatizados** en este proyecto:
+- No existe `npm test` ni comandos de testing automatizado
+- No hay tests unitarios ni tests de integración configurados
+- `testseed.jsx` es una **herramienta manual** para:
+  - Generar datos de prueba
+  - Realizar pruebas manuales de funcionalidad
+  - Verificar que el sistema funciona correctamente después de cambios
+
+**Para testing real**, debes:
+1. Usar la herramienta de seeds para generar datos
+2. Probar manualmente las funcionalidades
+3. Verificar que todo funciona como se espera
+
 ## Panel de Diseño
 
 El **Panel de Diseño** (`/design`) te permite personalizar la apariencia visual de la aplicación en tiempo real.
@@ -284,16 +399,7 @@ También puedes ver una vista comparativa de todos los estudiantes:
 
 Como admin, tienes acceso a todos los atajos de teclado del sistema.
 
-### Atajos Globales
-
-| Función | Windows/Linux | Mac |
-|---------|---------------|-----|
-| Abrir/cerrar menú lateral | `Ctrl + M` | `⌘ + M` |
-| Alternar tema claro/oscuro | `Ctrl + Shift + D` | `⌘ + ⇧ + D` |
-| Mostrar panel de atajos | `Ctrl + /` o `?` | `⌘ + /` o `?` |
-| Cerrar sesión | `Ctrl + Alt + L` | `⌘ + ⌥ + L` |
-
-### Navegación
+### Atajos Más Importantes
 
 | Función | Windows/Linux | Mac |
 |---------|---------------|-----|
@@ -301,18 +407,13 @@ Como admin, tienes acceso a todos los atajos de teclado del sistema.
 | Ir a Agenda | `Ctrl + Alt + G` | `⌘ + ⌥ + G` |
 | Ir a Plantillas | `Ctrl + Alt + P` | `⌘ + ⌥ + P` |
 | Ir a Estadísticas | `Ctrl + Alt + E` | `⌘ + ⌥ + E` |
-| Ir a Calendario | `Ctrl + Alt + C` | `⌘ + ⌥ + C` |
 | Ir a Usuarios | `Ctrl + Alt + U` | `⌘ + ⌥ + U` |
-| Ir a Importar y Exportar | `Ctrl + Alt + I` | `⌘ + ⌥ + I` |
 | Ir a Panel de Diseño | `Ctrl + Alt + O` | `⌘ + ⌥ + O` |
-
-### Crear Nuevos Elementos
-
-| Función | Windows/Linux | Mac |
-|---------|---------------|-----|
 | Crear nuevo elemento (contextual) | `Ctrl + N` | `⌘ + N` |
 
-**Nota**: Los atajos **NO** se activan cuando estás escribiendo en un campo de texto. Para más detalles, consulta [HOTKEYS.md](HOTKEYS.md).
+**Nota**: Los atajos **NO** se activan cuando estás escribiendo en un campo de texto.
+
+Para ver la lista completa de atajos, consulta [HOTKEYS.md](HOTKEYS.md).
 
 ## Preguntas Frecuentes
 
