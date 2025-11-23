@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ds";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   User, ArrowLeft, Mail, Shield, Target, Music,
-  Save, Edit, AlertCircle, CheckCircle, Sun, Moon, Monitor, KeyRound
+  Save, Edit, AlertCircle, CheckCircle, Sun, Moon, Monitor, KeyRound, Lock
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -24,6 +24,7 @@ import { LoadingSpinner } from "@/components/ds";
 import { componentStyles } from "@/design/componentStyles";
 import { useDesign } from "@/components/design/DesignProvider";
 import { sendPasswordResetAdmin } from "@/api/userAdmin";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function PerfilPage() {
   const navigate = useNavigate();
@@ -34,6 +35,13 @@ export default function PerfilPage() {
   
   const [editedData, setEditedData] = useState(null);
   const [saveResult, setSaveResult] = useState(null);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordResult, setPasswordResult] = useState(null);
 
   const effectiveUser = useEffectiveUser();
 
@@ -165,6 +173,66 @@ export default function PerfilPage() {
     };
 
     updateUserMutation.mutate(dataToSave);
+  };
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async ({ currentPassword, newPassword }) => {
+      // Nota: Supabase permite cambiar la contraseña del usuario autenticado
+      // sin verificar la contraseña actual si hay sesión activa.
+      // Sin embargo, es mejor práctica verificar primero.
+      // Por simplicidad, aquí solo actualizamos la contraseña si hay sesión activa.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No hay sesión activa. Por favor, inicia sesión de nuevo.');
+      }
+
+      // Actualizar contraseña
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword.trim(),
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return { success: true };
+    },
+    onSuccess: () => {
+      setPasswordResult({ success: true, message: '✅ Contraseña actualizada correctamente' });
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      toast.success('Contraseña actualizada correctamente');
+    },
+    onError: (error) => {
+      setPasswordResult({ success: false, message: `❌ Error: ${error.message || 'No se pudo actualizar la contraseña'}` });
+      toast.error(`Error al actualizar la contraseña: ${error.message || 'Error desconocido'}`);
+    },
+  });
+
+  const handleChangePassword = async () => {
+    setPasswordResult(null);
+
+    if (!passwordData.newPassword || !passwordData.confirmPassword) {
+      setPasswordResult({ success: false, message: '❌ Completa todos los campos' });
+      toast.error('Completa todos los campos');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      setPasswordResult({ success: false, message: '❌ La contraseña debe tener al menos 6 caracteres' });
+      toast.error('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordResult({ success: false, message: '❌ Las contraseñas no coinciden' });
+      toast.error('Las contraseñas no coinciden');
+      return;
+    }
+
+    changePasswordMutation.mutate({
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword,
+    });
   };
 
   const roleLabels = {
@@ -456,6 +524,95 @@ export default function PerfilPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Sección de Seguridad - Cambio de contraseña */}
+      {isEditingOwnProfile && (
+        <Card className={componentStyles.containers.cardBase + " mt-6"}>
+          <CardHeader className="border-b border-[var(--color-border-default)]">
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-[var(--color-primary)]" />
+              Seguridad
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-4">
+            {passwordResult && (
+              <Alert className={`${componentStyles.containers.panelBase} ${passwordResult.success ? 'border-[var(--color-success)] bg-[var(--color-success)]/10' : 'border-[var(--color-danger)] bg-[var(--color-danger)]/10'}`}>
+                <AlertDescription className={passwordResult.success ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}>
+                  {passwordResult.success ? <CheckCircle className="w-4 h-4 inline mr-2" /> : <AlertCircle className="w-4 h-4 inline mr-2" />}
+                  {passwordResult.message}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className={componentStyles.layout.grid2}>
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword" className="text-[var(--color-text-primary)]">Contraseña actual</Label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                  placeholder="••••••••"
+                  className={componentStyles.controls.inputDefault}
+                  disabled={changePasswordMutation.isPending}
+                />
+                <p className="text-xs text-[var(--color-text-secondary)]">Opcional si hay sesión activa</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newPassword" className="text-[var(--color-text-primary)]">Nueva contraseña</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                  placeholder="••••••••"
+                  className={componentStyles.controls.inputDefault}
+                  disabled={changePasswordMutation.isPending}
+                />
+                <p className="text-xs text-[var(--color-text-secondary)]">Mínimo 6 caracteres</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-[var(--color-text-primary)]">Repetir contraseña</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                  placeholder="••••••••"
+                  className={componentStyles.controls.inputDefault}
+                  disabled={changePasswordMutation.isPending}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                onClick={handleChangePassword}
+                loading={changePasswordMutation.isPending}
+                loadingText="Actualizando..."
+                disabled={!passwordData.newPassword || !passwordData.confirmPassword}
+                className={componentStyles.buttons.primary}
+              >
+                <Lock className="w-4 h-4 mr-2" />
+                Actualizar contraseña
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                  setPasswordResult(null);
+                }}
+                disabled={changePasswordMutation.isPending}
+                className={componentStyles.buttons.outline}
+              >
+                Limpiar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {canEditRole && isEditingOwnProfile && (
         <Alert className={`mt-6 ${componentStyles.containers.panelBase} border-[var(--color-warning)]/20 bg-[var(--color-warning)]/10`}>

@@ -2495,10 +2495,17 @@ export default function TestSeedPage() {
       <PageHeader
         icon={Settings}
         title="Tests & Seeds"
-        subtitle="Semillas de datos, pruebas y utilidades"
+        subtitle="Herramienta interna de desarrollo para poblar datos y validaciones"
       />
 
       <div className={`${componentStyles.layout.page} space-y-6`}>
+        <Alert className={`rounded-xl ${componentStyles.containers.panelBase} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
+          <AlertCircle className="h-4 w-4 text-[var(--color-info)]" />
+          <AlertDescription className="text-xs text-[var(--color-text-secondary)]">
+            <strong>Herramienta de desarrollo:</strong> Esta página está diseñada para debugging y desarrollo. No hay tests automatizados configurados actualmente. Usa esta herramienta para poblar datos de prueba y realizar validaciones manuales.
+          </AlertDescription>
+        </Alert>
+        
         <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 md:gap-6">
           <div className="text-center min-w-[80px] sm:min-w-[100px]">
             <Music className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-primary)]" />

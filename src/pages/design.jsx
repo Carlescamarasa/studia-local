@@ -377,25 +377,10 @@ function DesignPageContent({ embedded = false }) {
       <PageHeader
         icon={Palette}
         title="Panel de Diseño"
-        subtitle="Ajusta tokens visuales en tiempo real sin tocar código"
+        subtitle="Herramienta interna para ajustar tokens visuales y presets del sistema"
       />
 
       <div className={componentStyles.layout.page}>
-        {/* Selector de tema movido al sidebar (Layout) */}
-        <Card className="app-card border-[var(--color-border-default)] bg-[var(--color-primary-soft)]">
-                    <CardContent className="pt-4 text-[var(--color-text-primary)]">
-            <div className="flex items-start gap-3">
-              <Settings className="w-5 h-5 text-[var(--color-primary)] mt-0.5" />
-              <div className="flex-1">
-                <p className="text-sm text-[var(--color-text-primary)]">
-                  <strong>Modo runtime:</strong> Los cambios se guardan en <code className="bg-[var(--color-primary-soft)] px-1 rounded">localStorage</code> y se aplican mediante variables CSS generadas por el <code className="bg-[var(--color-primary-soft)] px-1 rounded">DesignProvider</code> (desde <code className="bg-[var(--color-primary-soft)] px-1 rounded">src/components/design/designConfig.ts</code>). 
-                  Los <strong>tokens</strong> de diseño viven en <code className="bg-[var(--color-primary-soft)] px-1 rounded">src/design/designSystem.ts</code> y las <strong>clases semánticas</strong> en <code className="bg-[var(--color-primary-soft)] px-1 rounded">src/design/componentStyles.ts</code>, tal y como se describe en el README. Útil para probar variantes sin deployar código.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         <div className="flex justify-center">
           <Tabs
             value={activeSection}
@@ -403,8 +388,6 @@ function DesignPageContent({ embedded = false }) {
             items={[
               { value: 'presets', label: 'Presets' },
               { value: 'controls', label: 'Controles' },
-              { value: 'audit', label: 'Auditoría' },
-              { value: 'qa', label: 'QA' },
               { value: 'preview', label: 'Preview' },
             ]}
           />
@@ -420,14 +403,16 @@ function DesignPageContent({ embedded = false }) {
                     <Button
                       variant="outline"
                       onClick={() => setShowImportExportModal(true)}
-                      className="h-9 rounded-xl shadow-sm"
+                      size="sm"
+                      className="h-8 rounded-xl"
                     >
                       <FileCode className="w-4 h-4 mr-2" />
                       Importar/Exportar
                     </Button>
                     <Button
                       onClick={() => setShowSavePresetModal(true)}
-                      className="btn-primary h-9 rounded-xl shadow-sm"
+                      size="sm"
+                      className="btn-primary h-8 rounded-xl"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Guardar Como...
@@ -435,16 +420,13 @@ function DesignPageContent({ embedded = false }) {
                   </div>
                 </div>
               </CardHeader>
-                    <CardContent className="pt-4 text-[var(--color-text-primary)]">
+              <CardContent className="pt-4 text-[var(--color-text-primary)]">
                 {/* Presets Base */}
                 {basePresets && basePresets.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">
-                      Presets Base (Oficiales)
+                  <div className="mb-4">
+                    <h3 className="text-xs font-semibold text-[var(--color-text-secondary)] mb-3 uppercase tracking-wide">
+                      Presets Base
                     </h3>
-                    <p className="text-xs text-[var(--color-text-secondary)] mb-4">
-                      Estos presets son parte del sistema y no se pueden eliminar. El modo dark/light se controla mediante el toggle de tema en el sidebar.
-                    </p>
                     <div className={componentStyles.layout.grid2}>
                       {basePresets.map((preset) => {
                         const isActive = currentPresetId === preset.id;
@@ -452,21 +434,58 @@ function DesignPageContent({ embedded = false }) {
                         return (
                           <Card 
                             key={preset.id}
-                            className={`app-panel cursor-pointer transition-all ${
-                              isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'hover:bg-[var(--color-surface-muted)]'
+                            className={`app-panel cursor-pointer transition-all border ${
+                              isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
                             }`}
                             onClick={() => handleLoadPreset(preset.id)}
                           >
-                            <CardContent className="pt-4">
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex-1">
-                                  <h4 className="font-semibold text-[var(--color-text-primary)] flex items-center gap-2">
-                                    {preset.label}
-                                    {isActive && <Badge className="badge-primary">Activo</Badge>}
-                                    <Badge className="badge-outline text-[10px]">Base</Badge>
-                                  </h4>
-                                  <p className="text-xs text-[var(--color-text-secondary)] mt-1">{preset.description}</p>
+                            <CardContent className="p-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="font-semibold text-sm text-[var(--color-text-primary)] truncate">
+                                      {preset.label}
+                                    </h4>
+                                    {isActive && (
+                                      <Badge className="badge-primary text-[10px] px-1.5 py-0.5 shrink-0">Activo</Badge>
+                                    )}
+                                    <Badge className="badge-outline text-[10px] px-1.5 py-0.5 shrink-0">Base</Badge>
+                                  </div>
+                                  <p className="text-xs text-[var(--color-text-secondary)] line-clamp-2">{preset.description}</p>
                                 </div>
+                                {!isActive && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleLoadPreset(preset.id);
+                                    }}
+                                    className="h-7 px-2 text-xs shrink-0"
+                                  >
+                                    Activar
+                                  </Button>
+                                )}
+                              </div>
+                              <div className="flex gap-2 mt-3">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      const json = JSON.stringify(preset.design || config, null, 2);
+                                      navigator.clipboard.writeText(json);
+                                      toast.success('✅ Preset exportado al portapapeles');
+                                    } catch (err) {
+                                      toast.error('❌ Error al exportar');
+                                    }
+                                  }}
+                                  className="h-7 px-2 text-xs flex-1"
+                                >
+                                  <Download className="w-3 h-3 mr-1" />
+                                  Exportar
+                                </Button>
                               </div>
                             </CardContent>
                           </Card>
@@ -478,8 +497,8 @@ function DesignPageContent({ embedded = false }) {
 
                 {/* Presets Personalizados */}
                 {Object.keys(customPresets).length > 0 && (
-                  <div className="mt-8">
-                    <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">
+                  <div className="mt-6">
+                    <h3 className="text-xs font-semibold text-[var(--color-text-secondary)] mb-3 uppercase tracking-wide">
                       Presets Personalizados
                     </h3>
                     <div className={componentStyles.layout.grid2}>
@@ -489,19 +508,23 @@ function DesignPageContent({ embedded = false }) {
                         return (
                           <Card 
                             key={id}
-                            className={`app-panel cursor-pointer transition-all ${
-                              isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'hover:bg-[var(--color-surface-muted)]'
+                            className={`app-panel cursor-pointer transition-all border ${
+                              isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
                             }`}
                             onClick={() => handleLoadPreset(id)}
                           >
-                            <CardContent className="pt-4">
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex-1">
-                                  <h4 className="font-semibold text-[var(--color-text-primary)] flex items-center gap-2">
-                                    {preset.name}
-                                    {isActive && <Badge className="badge-primary">Activo</Badge>}
-                                  </h4>
-                                  <p className="text-xs text-[var(--color-text-secondary)] mt-1">{preset.description}</p>
+                            <CardContent className="p-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="font-semibold text-sm text-[var(--color-text-primary)] truncate">
+                                      {preset.name}
+                                    </h4>
+                                    {isActive && (
+                                      <Badge className="badge-primary text-[10px] px-1.5 py-0.5 shrink-0">Activo</Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-[var(--color-text-secondary)] line-clamp-2">{preset.description || 'Sin descripción'}</p>
                                 </div>
                                 <Button
                                   variant="ghost"
@@ -510,9 +533,43 @@ function DesignPageContent({ embedded = false }) {
                                     e.stopPropagation();
                                     handleDeletePreset(id);
                                   }}
-                                  className={componentStyles.buttons.deleteIcon}
+                                  className="h-7 w-7 p-0 shrink-0"
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                              <div className="flex gap-2 mt-3">
+                                {!isActive && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleLoadPreset(id);
+                                    }}
+                                    className="h-7 px-2 text-xs flex-1"
+                                  >
+                                    Activar
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      const presetData = customPresets[id];
+                                      const json = JSON.stringify({ id, name: presetData.name, description: presetData.description, config: presetData.config }, null, 2);
+                                      navigator.clipboard.writeText(json);
+                                      toast.success('✅ Preset exportado al portapapeles');
+                                    } catch (err) {
+                                      toast.error('❌ Error al exportar');
+                                    }
+                                  }}
+                                  className="h-7 px-2 text-xs flex-1"
+                                >
+                                  <Download className="w-3 h-3 mr-1" />
+                                  Exportar
                                 </Button>
                               </div>
                             </CardContent>
@@ -524,10 +581,10 @@ function DesignPageContent({ embedded = false }) {
                 )}
 
                 {/* Mensaje si no hay presets personalizados */}
-                {Object.keys(customPresets).length === 0 && (
-                  <div className="text-center py-8 text-sm text-[var(--color-text-secondary)]">
+                {Object.keys(customPresets).length === 0 && basePresets && basePresets.length > 0 && (
+                  <div className="text-center py-6 text-sm text-[var(--color-text-secondary)] border-t border-[var(--color-border-default)] mt-6">
                     <p>No hay presets personalizados guardados.</p>
-                    <p className="mt-2">Usa "Guardar Como..." para crear uno nuevo.</p>
+                    <p className="mt-1 text-xs">Usa "Guardar Como..." para crear uno nuevo.</p>
                   </div>
                 )}
               </CardContent>
@@ -1444,7 +1501,8 @@ function DesignPageContent({ embedded = false }) {
           </>
         )}
 
-        {activeSection === 'audit' && (
+        {/* Auditoría y QA: funcionalidad mantenida pero oculta en UI simplificada */}
+        {false && activeSection === 'audit' && (
           <Card className="app-card">
             <CardHeader className="border-b border-[var(--color-border-default)]">
               <div className="flex items-center justify-between">
@@ -1559,7 +1617,7 @@ function DesignPageContent({ embedded = false }) {
           </Card>
         )}
 
-        {activeSection === 'qa' && (
+        {activeSection === 'qa' && false && (
           <>
             <Card className="app-card">
               <CardHeader className="border-b border-[var(--color-border-default)]">

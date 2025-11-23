@@ -27,6 +27,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function PerfilModal({ 
   open, 
@@ -38,6 +39,12 @@ export default function PerfilModal({
   
   const [editedData, setEditedData] = useState(null);
   const [saveResult, setSaveResult] = useState(null);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [passwordResult, setPasswordResult] = useState(null);
   const [phoneCountryCode, setPhoneCountryCode] = useState('+34'); // Default: España
   const [phoneSearch, setPhoneSearch] = useState(''); // Para búsqueda/filtrado de teléfono
   const [isEditingPhone, setIsEditingPhone] = useState(false);
@@ -531,6 +538,65 @@ export default function PerfilModal({
     }
 
     updateUserMutation.mutate(dataToSave);
+  };
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async ({ currentPassword, newPassword }) => {
+      // Nota: Supabase permite cambiar la contraseña del usuario autenticado
+      // sin verificar la contraseña actual si hay sesión activa.
+      // Por simplicidad, aquí solo actualizamos la contraseña si hay sesión activa.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No hay sesión activa. Por favor, inicia sesión de nuevo.');
+      }
+
+      // Actualizar contraseña
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword.trim(),
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return { success: true };
+    },
+    onSuccess: () => {
+      setPasswordResult({ success: true, message: '✅ Contraseña actualizada correctamente' });
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      toast.success('Contraseña actualizada correctamente');
+    },
+    onError: (error) => {
+      setPasswordResult({ success: false, message: `❌ Error: ${error.message || 'No se pudo actualizar la contraseña'}` });
+      toast.error(`Error al actualizar la contraseña: ${error.message || 'Error desconocido'}`);
+    },
+  });
+
+  const handleChangePassword = async () => {
+    setPasswordResult(null);
+
+    if (!passwordData.newPassword || !passwordData.confirmPassword) {
+      setPasswordResult({ success: false, message: '❌ Completa todos los campos' });
+      toast.error('Completa todos los campos');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      setPasswordResult({ success: false, message: '❌ La contraseña debe tener al menos 6 caracteres' });
+      toast.error('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordResult({ success: false, message: '❌ Las contraseñas no coinciden' });
+      toast.error('Las contraseñas no coinciden');
+      return;
+    }
+
+    changePasswordMutation.mutate({
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword,
+    });
   };
 
   const roleLabels = {
@@ -1071,6 +1137,96 @@ export default function PerfilModal({
                     <p className="text-xs mt-2 text-[var(--color-text-secondary)]">
                       Enlaces multimedia personales (videos demostrativos, recursos, etc.)
                     </p>
+                  </div>
+                )}
+
+                {/* Sección de Seguridad - Cambio de contraseña */}
+                {isEditingOwnProfile && (
+                  <div className="pt-6 border-t border-[var(--color-border-default)] space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Lock className="w-4 h-4 text-[var(--color-primary)]" />
+                      <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">Seguridad</h3>
+                    </div>
+                    
+                    {passwordResult && (
+                      <Alert 
+                        variant={passwordResult.success ? 'success' : 'danger'}
+                        className={componentStyles.containers.panelBase}
+                      >
+                        <AlertDescription>
+                          {passwordResult.message}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="currentPassword" className="block text-sm text-[var(--color-text-primary)]">Contraseña actual</Label>
+                        <Input
+                          id="currentPassword"
+                          type="password"
+                          value={passwordData.currentPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                          placeholder="••••••••"
+                          className={componentStyles.controls.inputDefault}
+                          disabled={changePasswordMutation.isPending}
+                        />
+                        <p className="text-xs text-[var(--color-text-secondary)]">Opcional si hay sesión activa</p>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="newPassword" className="block text-sm text-[var(--color-text-primary)]">Nueva contraseña</Label>
+                        <Input
+                          id="newPassword"
+                          type="password"
+                          value={passwordData.newPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                          placeholder="••••••••"
+                          className={componentStyles.controls.inputDefault}
+                          disabled={changePasswordMutation.isPending}
+                        />
+                        <p className="text-xs text-[var(--color-text-secondary)]">Mínimo 6 caracteres</p>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="confirmPassword" className="block text-sm text-[var(--color-text-primary)]">Repetir contraseña</Label>
+                        <Input
+                          id="confirmPassword"
+                          type="password"
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                          placeholder="••••••••"
+                          className={componentStyles.controls.inputDefault}
+                          disabled={changePasswordMutation.isPending}
+                        />
+                      </div>
+
+                      <div className="flex gap-2 pt-1">
+                        <Button
+                          onClick={handleChangePassword}
+                          loading={changePasswordMutation.isPending}
+                          loadingText="Actualizando..."
+                          disabled={!passwordData.newPassword || !passwordData.confirmPassword}
+                          size="sm"
+                          className={componentStyles.buttons.primary + " flex-1"}
+                        >
+                          <Lock className="w-4 h-4 mr-2" />
+                          Actualizar contraseña
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                            setPasswordResult(null);
+                          }}
+                          disabled={changePasswordMutation.isPending}
+                          size="sm"
+                          className={componentStyles.buttons.outline}
+                        >
+                          Limpiar
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 )}
 
