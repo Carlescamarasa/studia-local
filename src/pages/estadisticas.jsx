@@ -129,6 +129,12 @@ function EstadisticasPageContent() {
     queryFn: () => localDataClient.entities.RegistroSesion.list('-inicioISO'),
   });
 
+  // Filtrar sesiones válidas: solo aquellas con calificación (sesiones realmente finalizadas)
+  const registrosSesionValidos = useMemo(
+    () => registros.filter(r => r.calificacion != null),
+    [registros]
+  );
+
   const { data: bloques = [] } = useQuery({
     queryKey: ['registrosBloques'],
     queryFn: () => localDataClient.entities.RegistroBloque.list('-inicioISO'),
@@ -338,7 +344,8 @@ function EstadisticasPageContent() {
 
   const registrosFiltrados = useMemo(() => {
     // Filtrar y normalizar registros antes de procesar
-    let filtered = registros
+    // Usar solo sesiones válidas (con calificación) como base
+    let filtered = registrosSesionValidos
       .filter(r => {
         // Filtrar registros con duración inválida
         const duracion = safeNumber(r.duracionRealSeg);
@@ -410,7 +417,7 @@ function EstadisticasPageContent() {
     }
 
     return filtered;
-  }, [registros, effectiveUser, periodoInicio, periodoFin, isEstu, profesoresSeleccionados, alumnosSeleccionados, focosSeleccionados, usuarios, isProf, estudiantesDelProfesor, asignaciones]);
+  }, [registrosSesionValidos, effectiveUser, periodoInicio, periodoFin, isEstu, profesoresSeleccionados, alumnosSeleccionados, focosSeleccionados, usuarios, isProf, estudiantesDelProfesor, asignaciones]);
 
   // Evitar duplicados de sesiones (por id) antes de agregar estadísticas
   const registrosFiltradosUnicos = useMemo(() => {

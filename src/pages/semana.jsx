@@ -108,10 +108,12 @@ function SemanaPageContent() {
   }, [feedbacksSemanal, userIdActual]);
 
   // Filtrar registros de sesión de este alumno (todas las semanas, no solo la actual)
+  // Solo sesiones válidas: aquellas con calificación (sesiones realmente finalizadas)
   const registrosSesionesAlumno = useMemo(() => {
     return registrosSesion
       .filter(r => r.alumnoId === userIdActual)
       .filter(r => r.inicioISO) // Solo los que tienen fecha
+      .filter(r => r.calificacion != null) // Solo sesiones válidas (con calificación)
       .sort((a, b) => {
         // Ordenar por fecha descendente (más reciente primero)
         return new Date(b.inicioISO) - new Date(a.inicioISO);
