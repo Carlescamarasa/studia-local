@@ -74,11 +74,11 @@ export default function HotkeysModal({ open, onOpenChange }) {
               <DialogTitle className="text-xl font-bold text-[var(--color-text-primary)]">
                 Atajos de teclado
               </DialogTitle>
-              <DialogDescription className="text-sm text-[var(--color-text-secondary)] mt-1">
-                Lista completa de atajos disponibles en la aplicación
-              </DialogDescription>
             </div>
           </div>
+          <DialogDescription className="sr-only">
+            Lista completa de atajos de teclado disponibles en la aplicación
+          </DialogDescription>
         </DialogHeader>
 
         {/* Contenido scrolleable */}

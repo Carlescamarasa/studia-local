@@ -39,6 +39,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription
 } from "@/components/ui/dialog";
 
 function SoportePageContent() {
@@ -502,6 +503,9 @@ function SoportePageContent() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Nuevo ticket</DialogTitle>
+              <DialogDescription>
+                Crea un nuevo ticket de soporte para reportar un problema o hacer una pregunta
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">

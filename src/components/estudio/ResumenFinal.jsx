@@ -171,9 +171,6 @@ export default function ResumenFinal({
             "[&>button[data-radix-dialog-close]]:hidden"
           )}
         >
-          <div className="flex flex-col gap-4 sm:gap-6 h-full sm:h-auto">
-            {/* Header: Título */}
-            <header className="shrink-0">
           <DialogHeader className="text-center">
             <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
               <div className="icon-tile mx-auto mb-2 sm:mb-3 bg-[var(--color-success)]/10 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
@@ -183,9 +180,7 @@ export default function ResumenFinal({
               <DialogDescription className="text-xs sm:text-sm mt-0.5 sm:mt-1 text-center">{sesion.nombre}</DialogDescription>
             </div>
           </DialogHeader>
-            </header>
-          
-            <div className="flex-1 overflow-y-auto min-h-0 space-y-3 sm:space-y-4">
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-3 sm:space-y-4">
               {/* Métricas: Completados / Omitidos / Minutos */}
               <section className="flex flex-wrap items-center gap-4 justify-center pb-2 sm:pb-3 border-b border-[var(--color-border-default)]">
               <div className="text-center">
@@ -351,7 +346,6 @@ export default function ResumenFinal({
                 )}
               </Button>
             </footer>
-          </div>
         </DialogContent>
       </Dialog>
 

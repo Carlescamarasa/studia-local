@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ds/Button";
 import { getNombreVisible } from "@/components/utils/helpers";
@@ -63,6 +64,9 @@ export default function ModalFeedback({
             <MessageSquare className="w-4 h-4 text-[var(--color-info)]" />
             Detalles de Feedback
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Información detallada del feedback del profesor
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 text-sm">

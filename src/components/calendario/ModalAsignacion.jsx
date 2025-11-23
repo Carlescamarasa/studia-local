@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ds/Button";
 import { Badge } from "@/components/ds";
@@ -71,6 +72,9 @@ export default function ModalAsignacion({
             <Target className="w-4 h-4 text-[var(--color-primary)]" />
             Detalles de Asignación
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Información detallada de la asignación
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 text-sm">

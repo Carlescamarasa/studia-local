@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
@@ -56,6 +57,9 @@ export default function ModalSesion({ open, onOpenChange, registroSesion, usuari
             <PlayCircle className="w-4 h-4 text-[var(--color-info)]" />
             Detalles de Sesión
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Información detallada de la sesión de estudio
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 text-sm">

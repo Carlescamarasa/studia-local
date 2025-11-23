@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   PlayCircle, Calendar, Target, Music, Clock, Layers,
@@ -1908,6 +1909,9 @@ function HoyPageContent() {
             <DialogContent size="md" className="max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Índice de Ejercicios</DialogTitle>
+                <DialogDescription className="sr-only">
+                  Lista de ejercicios de la sesión actual
+                </DialogDescription>
               </DialogHeader>
               <div className="p-3 space-y-2">
                 {(() => {
