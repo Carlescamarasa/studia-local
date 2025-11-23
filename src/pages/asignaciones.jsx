@@ -71,7 +71,7 @@ function AsignacionesPageContent() {
   };
 
   // Estado del PeriodHeader
-  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState(true);
+  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState();
 
   const [showAsignarProfesorDialog, setShowAsignarProfesorDialog] = useState(false);
   const [showAsignarEstudianteDialog, setShowAsignarEstudianteDialog] = useState(false);

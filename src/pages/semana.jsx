@@ -237,7 +237,7 @@ function SemanaPageContent() {
   };
 
   // Estado del PeriodHeader
-  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState(true);
+  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState();
 
   const focoLabels = {
     GEN: 'General',

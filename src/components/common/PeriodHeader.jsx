@@ -9,17 +9,20 @@ import { useIsMobile } from "@/hooks/use-mobile";
  * Hook para manejar el estado del PeriodHeader
  * Permite compartir el estado entre el botón (en actions) y el panel (fuera del PageHeader)
  */
-export function usePeriodHeaderState(defaultOpenDesktop = true) {
+export function usePeriodHeaderState(defaultOpenDesktop = false) {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(() => {
-    return !isMobile && defaultOpenDesktop;
+    // Por defecto, siempre cerrado
+    return false;
   });
 
   useEffect(() => {
     if (isMobile) {
+      // En mobile, siempre cerrado
       setIsOpen(false);
-    } else if (defaultOpenDesktop) {
-      setIsOpen(true);
+    } else {
+      // En desktop, usar el valor de defaultOpenDesktop
+      setIsOpen(defaultOpenDesktop);
     }
   }, [isMobile, defaultOpenDesktop]);
 

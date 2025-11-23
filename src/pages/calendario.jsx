@@ -231,7 +231,7 @@ function CalendarioPageContent() {
   };
 
   // Estado del PeriodHeader
-  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState(true);
+  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState();
 
   // Calcular label y rangeText para PeriodHeader según la vista
   const { labelPeriodo, rangeTextPeriodo } = useMemo(() => {
