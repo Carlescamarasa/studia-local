@@ -376,6 +376,31 @@ export async function getPendingSupportTicketsCountForAdmin(): Promise<number> {
 }
 
 /**
+ * Obtener conteo de tickets pendientes (total y no leídos) para ADMIN
+ * No leídos = tickets donde la última respuesta es del alumno (el admin/prof debe responder)
+ */
+export async function getPendingSupportTicketsCountsForAdmin(): Promise<{ total: number; unread: number }> {
+  // Total pendientes
+  const { count: total, error: totalError } = await supabase
+    .from('support_tickets')
+    .select('id', { count: 'exact', head: true })
+    .neq('estado', 'cerrado');
+
+  if (totalError) throw totalError;
+
+  // No leídos: tickets donde la última respuesta es del alumno
+  const { count: unread, error: unreadError } = await supabase
+    .from('support_tickets')
+    .select('id', { count: 'exact', head: true })
+    .neq('estado', 'cerrado')
+    .eq('ultima_respuesta_de', 'alumno');
+
+  if (unreadError) throw unreadError;
+
+  return { total: total || 0, unread: unread || 0 };
+}
+
+/**
  * Obtener el conteo de tickets pendientes para un ESTU
  * Pendientes = estado != 'cerrado' AND alumno_id = estudianteId
  */
@@ -407,6 +432,47 @@ export async function getPendingSupportTicketsCountForEstu(estudianteId: string)
   });
   
   return count || 0;
+}
+
+/**
+ * Obtener conteo de tickets pendientes (total y no leídos) para un ESTU
+ * No leídos = tickets donde la última respuesta es del profesor (el estudiante debe leer/responder)
+ */
+export async function getPendingSupportTicketsCountsForEstu(estudianteId: string): Promise<{ total: number; unread: number }> {
+  console.log('[supportTicketsClient] Contando tickets pendientes (total y no leídos) para ESTU:', { estudianteId });
+  
+  // Total pendientes
+  const { count: total, error: totalError } = await supabase
+    .from('support_tickets')
+    .select('id', { count: 'exact', head: true })
+    .eq('alumno_id', estudianteId)
+    .neq('estado', 'cerrado');
+
+  if (totalError) {
+    console.error('[supportTicketsClient] Error contando tickets totales para ESTU:', totalError);
+    throw totalError;
+  }
+
+  // No leídos: tickets donde la última respuesta es del profesor
+  const { count: unread, error: unreadError } = await supabase
+    .from('support_tickets')
+    .select('id', { count: 'exact', head: true })
+    .eq('alumno_id', estudianteId)
+    .neq('estado', 'cerrado')
+    .eq('ultima_respuesta_de', 'profesor');
+
+  if (unreadError) {
+    console.error('[supportTicketsClient] Error contando tickets no leídos para ESTU:', unreadError);
+    throw unreadError;
+  }
+  
+  console.log('[supportTicketsClient] Conteo obtenido para ESTU:', {
+    estudianteId,
+    total: total || 0,
+    unread: unread || 0,
+  });
+  
+  return { total: total || 0, unread: unread || 0 };
 }
 
 /**
@@ -476,5 +542,94 @@ export async function getPendingSupportTicketsCountForProf(profesorId: string): 
   });
 
   return total;
+}
+
+/**
+ * Obtener conteo de tickets pendientes (total y no leídos) para un PROF
+ * No leídos = tickets donde la última respuesta es del alumno (el profesor debe leer/responder)
+ */
+export async function getPendingSupportTicketsCountsForProf(profesorId: string): Promise<{ total: number; unread: number }> {
+  // Obtener IDs de alumnos asignados
+  const { data: alumnos, error: alumnosError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('profesor_asignado_id', profesorId)
+    .eq('role', 'ESTU');
+
+  if (alumnosError) {
+    console.error('[supportTicketsClient] Error obteniendo alumnos del profesor:', alumnosError);
+    throw alumnosError;
+  }
+
+  const alumnoIds = alumnos?.map(a => a.id) || [];
+
+  // Total pendientes: tickets asignados directamente + tickets de alumnos asignados
+  const { count: total1, error: error1 } = await supabase
+    .from('support_tickets')
+    .select('id', { count: 'exact', head: true })
+    .neq('estado', 'cerrado')
+    .eq('profesor_id', profesorId);
+
+  if (error1) {
+    console.error('[supportTicketsClient] Error contando tickets totales por profesor_id:', error1);
+    throw error1;
+  }
+
+  let total2 = 0;
+  if (alumnoIds.length > 0) {
+    const { count, error: error2 } = await supabase
+      .from('support_tickets')
+      .select('id', { count: 'exact', head: true })
+      .neq('estado', 'cerrado')
+      .in('alumno_id', alumnoIds);
+
+    if (error2) {
+      console.error('[supportTicketsClient] Error contando tickets totales por alumno_id:', error2);
+      throw error2;
+    }
+    total2 = count || 0;
+  }
+
+  const total = (total1 || 0) + total2;
+
+  // No leídos: tickets donde la última respuesta es del alumno
+  const { count: unread1, error: unreadError1 } = await supabase
+    .from('support_tickets')
+    .select('id', { count: 'exact', head: true })
+    .neq('estado', 'cerrado')
+    .eq('profesor_id', profesorId)
+    .eq('ultima_respuesta_de', 'alumno');
+
+  if (unreadError1) {
+    console.error('[supportTicketsClient] Error contando tickets no leídos por profesor_id:', unreadError1);
+    throw unreadError1;
+  }
+
+  let unread2 = 0;
+  if (alumnoIds.length > 0) {
+    const { count, error: unreadError2 } = await supabase
+      .from('support_tickets')
+      .select('id', { count: 'exact', head: true })
+      .neq('estado', 'cerrado')
+      .in('alumno_id', alumnoIds)
+      .eq('ultima_respuesta_de', 'alumno');
+
+    if (unreadError2) {
+      console.error('[supportTicketsClient] Error contando tickets no leídos por alumno_id:', unreadError2);
+      throw unreadError2;
+    }
+    unread2 = count || 0;
+  }
+
+  const unread = (unread1 || 0) + unread2;
+
+  console.log('[supportTicketsClient] Conteo de tickets pendientes (total y no leídos) para PROF:', {
+    profesorId,
+    alumnosCount: alumnoIds.length,
+    total,
+    unread,
+  });
+
+  return { total, unread };
 }
 
