@@ -19,6 +19,7 @@ import WeekNavigator from "../components/common/WeekNavigator";
 import RequireRole from "@/components/auth/RequireRole";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
+import { cn } from "@/lib/utils";
 import SessionContentView from "../components/study/SessionContentView";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
 import MediaPreviewModal from "@/components/common/MediaPreviewModal";
@@ -430,36 +431,37 @@ function SemanaPageContent() {
 
               {/* Feedback y Registros de Semana Actual - Combinados por fecha */}
               <div className="pt-4 border-t border-[var(--color-border-default)]">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className={componentStyles.typography.sectionTitle}>
-                    Semana Actual
-                  </h3>
-                  <div className="flex gap-2">
-                    <Button
-                      variant={tipoFeedbackSemana === 'todos' ? 'primary' : 'outline'}
-                      size="sm"
-                      onClick={() => setTipoFeedbackSemana('todos')}
-                      className="text-xs"
-                    >
-                      Todos
-                    </Button>
-                    <Button
-                      variant={tipoFeedbackSemana === 'profesor' ? 'primary' : 'outline'}
-                      size="sm"
-                      onClick={() => setTipoFeedbackSemana('profesor')}
-                      className="text-xs"
-                    >
-                      Feedback Profesor
-                    </Button>
-                    <Button
-                      variant={tipoFeedbackSemana === 'sesiones' ? 'primary' : 'outline'}
-                      size="sm"
-                      onClick={() => setTipoFeedbackSemana('sesiones')}
-                      className="text-xs"
-                    >
-                      Registro Sesiones
-                    </Button>
-                  </div>
+                {/* Título arriba de los filtros */}
+                <h3 className={cn(componentStyles.typography.sectionTitle, "mb-3")}>
+                  Semana Actual
+                </h3>
+                
+                {/* Filtros compactos debajo del título */}
+                <div className="flex gap-1.5 flex-wrap mb-4">
+                  <Button
+                    variant={tipoFeedbackSemana === 'todos' ? 'primary' : 'outline'}
+                    size="sm"
+                    onClick={() => setTipoFeedbackSemana('todos')}
+                    className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+                  >
+                    Todos
+                  </Button>
+                  <Button
+                    variant={tipoFeedbackSemana === 'profesor' ? 'primary' : 'outline'}
+                    size="sm"
+                    onClick={() => setTipoFeedbackSemana('profesor')}
+                    className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+                  >
+                    Feedback Profesor
+                  </Button>
+                  <Button
+                    variant={tipoFeedbackSemana === 'sesiones' ? 'primary' : 'outline'}
+                    size="sm"
+                    onClick={() => setTipoFeedbackSemana('sesiones')}
+                    className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+                  >
+                    Registro Sesiones
+                  </Button>
                 </div>
 
                 {itemsFiltrados.length === 0 ? (

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ds';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCw, Bug } from 'lucide-react';
+import { AlertCircle, RefreshCw, Bug, Copy, Check } from 'lucide-react';
 import { componentStyles } from '@/design/componentStyles';
 
 class ErrorBoundary extends React.Component {
@@ -11,7 +11,8 @@ class ErrorBoundary extends React.Component {
       hasError: false, 
       error: null,
       errorInfo: null,
-      reportSent: false
+      reportSent: false,
+      copied: false
     };
     this.handleReportSent = this.handleReportSent.bind(this);
   }
@@ -46,8 +47,53 @@ class ErrorBoundary extends React.Component {
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null, reportSent: false });
+    this.setState({ hasError: false, error: null, errorInfo: null, reportSent: false, copied: false });
     window.location.reload();
+  };
+
+  handleCopyDetails = async () => {
+    const { error, errorInfo } = this.state;
+    
+    // Construir el texto completo con todos los detalles
+    let detailsText = '';
+    
+    if (error) {
+      detailsText += `Error: ${error.toString()}\n`;
+      if (error.stack) {
+        detailsText += `\nStack trace:\n${error.stack}\n`;
+      }
+    }
+    
+    if (errorInfo?.componentStack) {
+      detailsText += `\nComponent stack:\n${errorInfo.componentStack}`;
+    }
+    
+    try {
+      await navigator.clipboard.writeText(detailsText);
+      this.setState({ copied: true });
+      setTimeout(() => {
+        this.setState({ copied: false });
+      }, 2000);
+    } catch (err) {
+      console.error('Error al copiar al portapapeles:', err);
+      // Fallback: intentar con el método antiguo
+      const textArea = document.createElement('textarea');
+      textArea.value = detailsText;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        this.setState({ copied: true });
+        setTimeout(() => {
+          this.setState({ copied: false });
+        }, 2000);
+      } catch (fallbackErr) {
+        console.error('Error en fallback de copia:', fallbackErr);
+      }
+      document.body.removeChild(textArea);
+    }
   };
 
   render() {
@@ -73,10 +119,53 @@ class ErrorBoundary extends React.Component {
 
               {this.state.error && (
                 <div className="text-left bg-[var(--color-surface-muted)] rounded-lg p-4 text-sm">
-                  <p className="font-semibold mb-2">Detalles técnicos:</p>
-                  <p className="text-[var(--color-text-secondary)] break-words">
-                    {this.state.error.toString()}
-                  </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="font-semibold">Detalles técnicos:</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={this.handleCopyDetails}
+                      className="h-7 px-2 text-xs hover:bg-[var(--color-surface-elevated)]"
+                      title="Copiar detalles técnicos al portapapeles"
+                    >
+                      {this.state.copied ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 mr-1.5 text-[var(--color-success)]" />
+                          <span className="text-[var(--color-success)]">Copiado</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 mr-1.5" />
+                          <span>Copiar</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[var(--color-text-secondary)] break-words">
+                      {this.state.error.toString()}
+                    </p>
+                    {this.state.error?.stack && (
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] text-xs font-medium mb-1">
+                          Ver stack trace
+                        </summary>
+                        <pre className="mt-1 text-xs text-[var(--color-text-secondary)] break-words whitespace-pre-wrap font-mono bg-[var(--color-surface)]/50 p-2 rounded">
+                          {this.state.error.stack}
+                        </pre>
+                      </details>
+                    )}
+                    {this.state.errorInfo?.componentStack && (
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] text-xs font-medium mb-1">
+                          Ver component stack
+                        </summary>
+                        <pre className="mt-1 text-xs text-[var(--color-text-secondary)] break-words whitespace-pre-wrap font-mono bg-[var(--color-surface)]/50 p-2 rounded">
+                          {this.state.errorInfo.componentStack}
+                        </pre>
+                      </details>
+                    )}
+                  </div>
                 </div>
               )}
 

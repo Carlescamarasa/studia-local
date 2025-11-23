@@ -425,21 +425,21 @@ export const DEFAULT_DESIGN: DesignTokens = {
     },
     card: {
       padding: {
-        x: '1.5rem',    // 24px - padding horizontal base de la card (aumentado de 16px)
-        y: '1.5rem',    // 24px - padding vertical base de la card (aumentado de 16px)
+        x: '1rem',    // 16px - padding horizontal base de la card (reducido de 24px)
+        y: '1rem',    // 16px - padding vertical base de la card (reducido de 24px)
         header: {
-          x: '1.5rem',  // 24px - padding horizontal del header (aumentado de 16px)
-          y: '1.5rem',  // 24px - padding vertical del header (aumentado de 16px)
+          x: '1rem',  // 16px - padding horizontal del header (reducido de 24px)
+          y: '0.75rem',  // 12px - padding vertical del header (reducido de 24px)
           // Nota: el padding-bottom del header suele ser menor (pb-2 ≈ 0.5rem)
           // pero usamos y para el padding-block completo; ajustar según necesidad
         },
         content: {
-          x: '1.5rem',  // 24px - padding horizontal del content (aumentado de 16px)
-          y: '1.5rem',  // 24px - padding vertical del content (aumentado de 16px)
+          x: '1rem',  // 16px - padding horizontal del content (reducido de 24px)
+          y: '0.75rem',  // 12px - padding vertical del content (reducido de 24px)
         },
         footer: {
-          x: '1.5rem',  // 24px - padding horizontal del footer (aumentado de 16px)
-          y: '1.5rem',  // 24px - padding vertical del footer (aumentado de 16px)
+          x: '1rem',  // 16px - padding horizontal del footer (reducido de 24px)
+          y: '0.75rem',  // 12px - padding vertical del footer (reducido de 24px)
         },
       },
       radius: 'lg',     // rounded-xl en Tailwind = 0.75rem (12px), que corresponde a 'lg' en RADIUS_MAP
@@ -447,7 +447,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
       border: '1px solid',
       borderColor: 'var(--color-border-default)',
       background: 'var(--color-surface-elevated)',
-      gap: '1rem',      // 16px - gap interno entre elementos (equivalente a space-y-4)
+      gap: '0.75rem',      // 12px - gap interno entre elementos (reducido de 16px, equivalente a space-y-3)
     },
     button: {
       padding: {

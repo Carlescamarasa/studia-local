@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
 import PageHeader from "@/components/ds/PageHeader";
-import { Calendar, Grid3x3, List, Plus } from "lucide-react";
+import { Calendar, Grid3x3, List, Plus, CalendarDays } from "lucide-react";
 import { useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
 import RequireRole from "@/components/auth/RequireRole";
 import VistaSemana from "../components/calendario/VistaSemana";
@@ -18,6 +18,8 @@ import { componentStyles } from "@/design/componentStyles";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { startOfMonday, formatLocalDate } from "../components/calendario/utils";
+import { isoWeekNumberLocal } from "../components/utils/helpers";
 
 function CalendarioPageContent() {
   const isMobile = useIsMobile();
@@ -202,6 +204,30 @@ function CalendarioPageContent() {
     deleteAsignacionMutation.mutate(id);
   };
 
+  // Función para ir a hoy
+  const irHoy = () => {
+    setFechaActual(new Date());
+  };
+
+  // Calcular periodo actual para el selector
+  const periodoActual = useMemo(() => {
+    if (vista === 'semana') {
+      const lunes = startOfMonday(fechaActual);
+      const domingo = new Date(lunes);
+      domingo.setDate(lunes.getDate() + 6);
+      const numeroSemana = isoWeekNumberLocal(lunes);
+      const formatoFecha = (fecha) => {
+        const dia = fecha.getDate();
+        const mes = fecha.toLocaleDateString('es-ES', { month: 'short' });
+        return `${dia} ${mes}`;
+      };
+      return `Semana ${numeroSemana} · ${formatoFecha(lunes)} – ${formatoFecha(domingo)} ${lunes.getFullYear()}`;
+    } else if (vista === 'mes') {
+      return fechaActual.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+    }
+    return fechaActual.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+  }, [vista, fechaActual]);
+
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
@@ -210,43 +236,36 @@ function CalendarioPageContent() {
         subtitle="Visualiza sesiones, feedbacks, asignaciones y eventos importantes"
         actions={
           <div className="flex gap-2">
-            {!isMobile && (
+            {/* Botón Hoy */}
             <Button
-              variant={vista === 'semana' ? 'default' : 'outline'}
+              variant="outline"
               size="sm"
-              onClick={() => setVista('semana')}
-                className="rounded-xl focus-brand"
+              onClick={irHoy}
+              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
             >
-              <Grid3x3 className="w-4 h-4 mr-2" />
-              Semana
+              Hoy
             </Button>
-            )}
+            {/* Selector de periodo/rango */}
             <Button
-              variant={vista === 'mes' ? 'default' : 'outline'}
+              variant="outline"
               size="sm"
-              onClick={() => setVista('mes')}
-              className="rounded-xl focus-brand"
+              onClick={() => {
+                // TODO: Abrir selector de fecha/periodo si se implementa
+              }}
+              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all flex items-center gap-1.5"
             >
-              <Calendar className="w-4 h-4 mr-2" />
-              Mes
-            </Button>
-            <Button
-              variant={vista === 'lista' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setVista('lista')}
-              className="rounded-xl focus-brand"
-            >
-              <List className="w-4 h-4 mr-2" />
-              Lista
+              <CalendarDays className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{periodoActual}</span>
             </Button>
             {(isAdmin || isProf) && (
               <Button
                 variant="primary"
                 size="sm"
                 onClick={handleCrearEvento}
+                className="text-xs h-8 sm:h-9 rounded-xl focus-brand"
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Evento
+                <Plus className="w-3.5 h-3.5 mr-1.5" />
+                <span className="hidden sm:inline">Evento</span>
               </Button>
             )}
           </div>
@@ -254,48 +273,82 @@ function CalendarioPageContent() {
       />
 
       <div className={componentStyles.layout.page}>
-        {/* Filtro global por tipo */}
-        <div className="mb-4 flex gap-2 flex-wrap">
-          <Button
-            variant={filtroTipoGlobal === 'all' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setFiltroTipoGlobal('all')}
-            className="rounded-xl focus-brand"
-          >
-            Todos
-          </Button>
-          <Button
-            variant={filtroTipoGlobal === 'evento' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setFiltroTipoGlobal('evento')}
-            className="rounded-xl focus-brand"
-          >
-            Eventos
-          </Button>
-          <Button
-            variant={filtroTipoGlobal === 'asignacion' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setFiltroTipoGlobal('asignacion')}
-            className="rounded-xl focus-brand"
-          >
-            Asignaciones
-          </Button>
-          <Button
-            variant={filtroTipoGlobal === 'sesion' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setFiltroTipoGlobal('sesion')}
-            className="rounded-xl focus-brand"
-          >
-            Sesiones
-          </Button>
-          <Button
-            variant={filtroTipoGlobal === 'feedback' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setFiltroTipoGlobal('feedback')}
-            className="rounded-xl focus-brand"
-          >
-            Feedbacks
-          </Button>
+        {/* Filtros compactos: Vista + Tipo en una sola fila */}
+        <div className="mb-3 flex gap-1.5 flex-wrap items-center">
+          {/* Vista: Semana / Mes / Lista */}
+          <div className="flex items-center gap-1 flex-wrap">
+            <Button
+              variant={vista === 'semana' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setVista('semana')}
+              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+            >
+              Semana
+            </Button>
+            <Button
+              variant={vista === 'mes' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setVista('mes')}
+              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+            >
+              Mes
+            </Button>
+            <Button
+              variant={vista === 'lista' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setVista('lista')}
+              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+            >
+              Lista
+            </Button>
+          </div>
+          
+          {/* Separador visual */}
+          <div className="w-px h-6 bg-[var(--color-border-default)] mx-1" />
+          
+          {/* Tipo: Todos / Eventos / Asignaciones / Sesiones / Feedback */}
+          <div className="flex items-center gap-1 flex-wrap">
+            <Button
+              variant={filtroTipoGlobal === 'all' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setFiltroTipoGlobal('all')}
+              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+            >
+              Todos
+            </Button>
+            <Button
+              variant={filtroTipoGlobal === 'evento' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setFiltroTipoGlobal('evento')}
+              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+            >
+              Eventos
+            </Button>
+            <Button
+              variant={filtroTipoGlobal === 'asignacion' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setFiltroTipoGlobal('asignacion')}
+              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+            >
+              Asignaciones
+            </Button>
+            <Button
+              variant={filtroTipoGlobal === 'sesion' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setFiltroTipoGlobal('sesion')}
+              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+            >
+              Sesiones
+            </Button>
+            <Button
+              variant={filtroTipoGlobal === 'feedback' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setFiltroTipoGlobal('feedback')}
+              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+            >
+              Feedbacks
+            </Button>
+          </div>
         </div>
 
         {vista === 'semana' && (

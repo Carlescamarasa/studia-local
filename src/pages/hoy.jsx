@@ -460,38 +460,8 @@ function HoyPageContent() {
     }
   };
 
-  useEffect(() => {
-    if (!sesionActiva || sesionFinalizada) return;
-
-    if (!heartbeatIntervalRef.current) {
-      heartbeatIntervalRef.current = setInterval(() => {
-        guardarRegistroSesion(false);
-      }, 15000);
-    }
-
-    return () => {
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-        heartbeatIntervalRef.current = null;
-      }
-    };
-  }, [sesionActiva, sesionFinalizada, tiempoActual, completados, omitidos, registroSesionId]);
-
-  useEffect(() => {
-    const handlePageHide = () => {
-      if (sesionActiva && !sesionFinalizada && registroSesionId) {
-        guardarRegistroSesion(false);
-      }
-    };
-
-    window.addEventListener('pagehide', handlePageHide);
-    window.addEventListener('beforeunload', handlePageHide);
-
-    return () => {
-      window.removeEventListener('pagehide', handlePageHide);
-      window.removeEventListener('beforeunload', handlePageHide);
-    };
-  }, [sesionActiva, sesionFinalizada, registroSesionId, tiempoActual, completados, omitidos]);
+  // NOTA: Eliminados los useEffect que actualizaban el registro periódicamente
+  // El registro solo se actualiza una vez al final cuando el usuario presiona "Finalizar" en ResumenFinal
 
   useEffect(() => {
     if (!sesionActiva || sesionFinalizada) return;
@@ -716,7 +686,7 @@ function HoyPageContent() {
     setCompletados(newCompletados);
     setOmitidos(newOmitidos);
 
-    await guardarRegistroSesion(false);
+    // NO actualizar registro de sesión aquí - solo se actualiza al final en ResumenFinal
 
     toast.info("⏭️ Ejercicio omitido");
 
@@ -745,7 +715,7 @@ function HoyPageContent() {
     setCompletados(newCompletados);
     setOmitidos(newOmitidos);
 
-    await guardarRegistroSesion(false);
+    // NO actualizar registro de sesión aquí - solo se actualiza al final en ResumenFinal
 
     if (indiceActual === listaEjecucion.length - 1) {
       setSesionFinalizada(true);
@@ -846,7 +816,7 @@ function HoyPageContent() {
   };
 
   const guardarYSalir = async () => {
-    await guardarRegistroSesion(false);
+    // NO actualizar registro aquí - solo se actualiza al final en ResumenFinal cuando el usuario presiona "Finalizar"
     setMostrarModalCancelar(false);
     // Finalizar la sesión para mostrar el feedback en lugar de cerrar directamente
     setSesionFinalizada(true);
@@ -935,13 +905,20 @@ function HoyPageContent() {
 
           if (registroSesionId) {
             try {
-              // Ahora mediaLinks se guarda en registros_sesion
-              // Asegurar que notas sea null si está vacía o undefined
+              // Actualizar el registro de sesión con todos los datos finales
+              // Esta es la ÚNICA actualización del registro de sesión (además de la creación inicial)
+              const listaEjecucion = aplanarSesion(sesionActiva);
               const updateData = {
+                finISO: new Date().toISOString(),
+                duracionRealSeg: Math.min(tiempoActual, 18000),
+                bloquesCompletados: completados.size,
+                bloquesOmitidos: omitidos.size,
                 calificacion: calidad || null,
                 notas: (notas && notas.trim()) ? notas.trim() : null,
                 mediaLinks: mediaLinks || [],
                 finalizada: true,
+                finAnticipado: false,
+                motivoFin: null,
               };
               
               // Verificar que el registro existe antes de actualizar
@@ -1058,16 +1035,58 @@ function HoyPageContent() {
       : 0;
     const excedido = tiempoActual > (ejercicioActual?.duracionSeg || 0);
 
+    // Calcular información de rondas para el stepper
+    const totalRondas = sesionActiva?.rondas?.length || 0;
+    const rondaActual = ejercicioActual?.esRonda ? (ejercicioActual.rondaIdx + 1) : null;
+    const repeticionActual = ejercicioActual?.esRonda ? ejercicioActual.repeticion : null;
+    const totalRepeticiones = ejercicioActual?.esRonda ? ejercicioActual.totalRepeticiones : null;
+
+    // Componente del stepper de rondas
+    const RoundStepper = ({ compact = false }) => {
+      if (!ejercicioActual?.esRonda || totalRondas === 0) return null;
+
+    return (
+        <div className="flex flex-col items-center gap-1.5 shrink-0">
+          {/* Stepper visual: mini cápsulas */}
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: totalRondas }).map((_, idx) => {
+              const rondaNum = idx + 1;
+              const isActive = rondaNum === rondaActual;
+              return (
+                <div
+                  key={idx}
+                  className={cn(
+                    "h-2 w-2 rounded-full transition-all duration-300",
+                    isActive
+                      ? "bg-[var(--color-primary)]"
+                      : "border border-[var(--color-border-default)]/50 bg-transparent"
+                  )}
+                  title={`Ronda ${rondaNum}`}
+                />
+              );
+            })}
+          </div>
+          {/* Texto "Ronda X de Y" */}
+          <span className="text-[10px] sm:text-xs text-[var(--color-text-secondary)] font-medium tabular-nums">
+            Ronda {rondaActual} de {totalRondas}
+            {repeticionActual && totalRepeticiones && (
+              <span className="text-[var(--color-text-tertiary)]"> • Rep {repeticionActual}/{totalRepeticiones}</span>
+            )}
+          </span>
+        </div>
+      );
+    };
+
     return (
       <div className="bg-background transition-all duration-300 ease-in-out" style={{ 
-        paddingBottom: timerCollapsed ? '80px' : '220px'
+        paddingBottom: timerCollapsed ? '80px' : '150px'
       }}>
-        {/* Timer dock inferior fijo */}
+        {/* Timer dock inferior fijo - Una única barra con dos filas */}
         {sesionActiva && (
           <div
             className={cn(
               "fixed bottom-0 left-0 right-0 z-[30] bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-[0_-4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 ease-in-out",
-              timerCollapsed ? "h-[80px]" : "h-auto"
+              timerCollapsed ? "h-[80px]" : "min-h-[80px]"
             )}
           >
             {/* Botón de reporte - Posicionado absolutamente, separación constante */}
@@ -1075,7 +1094,7 @@ function HoyPageContent() {
               <ReportErrorButtonInTimer />
             </div>
             
-            {/* Barra de progreso - SIEMPRE en el borde superior, de lado a lado */}
+            {/* Barra de progreso - SIEMPRE en el borde superior, de lado a lado, MISMO grosor en expandido y colapsado */}
             {!isAD && ejercicioActual?.duracionSeg > 0 && (
               <div className="w-full bg-[var(--color-border-default)]/30 rounded-full h-2 md:h-2.5 overflow-hidden">
                 <div
@@ -1088,32 +1107,94 @@ function HoyPageContent() {
               </div>
             )}
             
-            {timerCollapsed ? (
-              /* Modo compacto: solo tiempo + botón OK */
-              <div className="max-w-5xl mx-auto px-4 py-2 flex flex-col gap-2 transition-opacity duration-300 ease-in-out">
-                {/* Fila: Tiempo + Botón OK */}
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <Clock className={cn(
-                      "w-4 h-4 shrink-0",
-                      excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
-                    )} />
-                    <div className="flex flex-col min-w-0">
-            <div className={cn(
-                        "text-base font-mono font-bold tabular-nums leading-tight",
-                        excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
-                      )}>
-                        {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
-                      </div>
-                      {!isAD && ejercicioActual?.duracionSeg > 0 && (
-                        <div className="text-[10px] text-[var(--color-text-secondary)] font-mono tabular-nums leading-tight">
-                          / {Math.floor(ejercicioActual.duracionSeg / 60)}:{String((ejercicioActual.duracionSeg % 60)).padStart(2, '0')}
-                        </div>
-                      )}
+            {/* Fila principal - Siempre visible (tanto expandido como colapsado) */}
+            <div className="max-w-5xl mx-auto px-4 py-2">
+              <div className="flex items-center justify-between gap-3">
+                {/* Izquierda: Tiempo */}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <Clock className={cn(
+                    "w-4 h-4 shrink-0",
+                    excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
+                  )} />
+                  <div className="flex flex-col min-w-0">
+                    <div className={cn(
+                      "text-base font-mono font-bold tabular-nums leading-tight",
+                      excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
+                    )}>
+                      {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
                     </div>
+                    {!isAD && ejercicioActual?.duracionSeg > 0 && (
+                      <div className="text-[10px] text-[var(--color-text-secondary)] font-mono tabular-nums leading-tight">
+                        / {Math.floor(ejercicioActual.duracionSeg / 60)}:{String((ejercicioActual.duracionSeg % 60)).padStart(2, '0')}
+                      </div>
+                    )}
                   </div>
-                  
-                  {/* Botón OK compacto */}
+                </div>
+                
+                {/* Centro: Controles - Solo visible cuando expandido */}
+                {!timerCollapsed && (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Anterior */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAnterior}
+                      disabled={indiceActual === 0}
+                      className="h-9 w-9 p-0 rounded-lg"
+                      title="Anterior (P)"
+                      aria-label="Ejercicio anterior"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    
+                    {/* Play/Pause */}
+                    {!isAD && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={togglePlayPausa}
+                        className="h-9 w-9 p-0 rounded-lg"
+                        title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
+                        aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
+                      >
+                        {cronometroActivo ? (
+                          <Pause className="w-4 h-4" />
+                        ) : (
+                          <Play className="w-4 h-4" />
+                        )}
+                      </Button>
+                    )}
+                    
+                    {/* OK - Botón primario */}
+                    <Button
+                      variant="primary"
+                      onClick={completarYAvanzar}
+                      className="h-9 px-3 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm rounded-lg focus-brand shadow-sm text-white"
+                      title="Completar (Enter)"
+                      aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
+                    >
+                      <CheckCircle className="w-4 h-4 mr-1" />
+                      {isUltimo ? 'Finalizar' : 'OK'}
+                    </Button>
+                    
+                    {/* Siguiente */}
+                    {!isUltimo && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={omitirYAvanzar}
+                        className="h-9 w-9 p-0 rounded-lg"
+                        title="Omitir y pasar (N)"
+                        aria-label="Omitir ejercicio"
+                      >
+                        <ChevronsRight className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                )}
+                
+                {/* OK en modo compacto (cuando colapsado) */}
+                {timerCollapsed && (
                   <Button
                     variant="primary"
                     onClick={completarYAvanzar}
@@ -1124,152 +1205,89 @@ function HoyPageContent() {
                     <CheckCircle className="w-4 h-4 mr-1" />
                     {isUltimo ? 'Finalizar' : 'OK'}
                   </Button>
-                  
-                  {/* Botón expandir */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setTimerCollapsed(false)}
-                    className="h-9 w-9 p-0"
-                    aria-label="Expandir timer"
-                  >
-                    <ChevronUp className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              /* Modo expandido */
-              <div className={cn(
-                "max-w-5xl mx-auto transition-all duration-300 ease-in-out",
-                !isAD && ejercicioActual?.duracionSeg > 0 && cronometroActivo && (
-                  excedido ? "bg-[var(--color-danger)]/5" : porcentajeEjercicio >= 75 ? "bg-[var(--color-warning)]/5" : "bg-[var(--color-primary)]/5"
-                )
-            )}>
-              {/* Fila: Tiempo | meta | botón colapsar */}
-              {(!isAD && ejercicioActual?.duracionSeg > 0) || (sesionActiva && listaEjecucion.length > 0) ? (
-                <div className="px-4 py-3 flex items-center justify-between gap-4 transition-opacity duration-300">
-                    {/* Timer - Solo visible si no es AD y tiene duración */}
-                    {!isAD && ejercicioActual?.duracionSeg > 0 && (
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <Clock className={cn(
-                        "w-5 h-5 md:w-6 md:h-6 shrink-0",
-                          excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
-                        )} />
-                        <div className="flex flex-col">
-                          <div className={cn(
-                          "text-xl md:text-2xl font-mono font-bold tabular-nums leading-tight",
-                            excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
-                          )}>
-                            {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
-                          </div>
-                        <div className="text-xs md:text-sm text-[var(--color-text-secondary)] font-mono tabular-nums leading-tight">
-                            / {Math.floor(ejercicioActual.duracionSeg / 60)}:{String((ejercicioActual.duracionSeg % 60)).padStart(2, '0')}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Contador visual de ejercicios - Siempre visible */}
-                    {sesionActiva && listaEjecucion.length > 0 && (
-                      <div className="flex flex-col items-end shrink-0">
-                        <div className={cn(
-                          "flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-xs transition-all",
-                          "bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30",
-                          "text-[var(--color-primary)]"
-                        )}>
-                          <Target className="w-3.5 h-3.5" />
-                          <span className="font-mono tabular-nums">
-                            {indiceActual + 1}<span className="text-[var(--color-text-secondary)] font-normal">/{listaEjecucion.length}</span>
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  
-                  {/* Botón colapsar */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setTimerCollapsed(true)}
-                    className="h-8 w-8 p-0"
-                    aria-label="Colapsar timer"
-                  >
-                    <ChevronDown className="w-4 h-4" />
-                  </Button>
-                </div>
-              ) : null}
-              
-              {/* Controles principales - Compactos pero táctiles */}
-                <div className="px-4 py-3 flex items-center justify-center gap-2 md:gap-3 max-w-[560px] mx-auto transition-opacity duration-300">
-                  {/* Navegación: Atrás */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAnterior}
-                  disabled={indiceActual === 0}
-                    className="h-12 md:h-14 px-4 md:px-6 rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors touch-manipulation min-h-[48px]"
-                  title="Anterior (P)"
-                  aria-label="Ejercicio anterior"
-                >
-                    <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
-                    <span className="hidden sm:inline text-xs md:text-sm">Anterior</span>
-                </Button>
-
-                  {/* Control principal: Play/Pause */}
-                {!isAD && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={togglePlayPausa}
-                      className="h-12 md:h-14 px-4 md:px-6 rounded-lg focus-brand shadow-sm hover:shadow-md transition-all touch-manipulation min-h-[48px]"
-                    title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
-                    aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
-                  >
-                      {cronometroActivo ? (
-                        <>
-                          <Pause className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
-                          <span className="hidden sm:inline text-xs md:text-sm">Pausar</span>
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
-                          <span className="hidden sm:inline text-xs md:text-sm">Reproducir</span>
-                        </>
-                      )}
-                  </Button>
                 )}
-
-                  {/* Acciones de ejercicio: Completar */}
-                <Button
-                  variant="primary"
-                  onClick={completarYAvanzar}
-                  className={cn(
-                      "h-12 md:h-14 px-4 md:px-6 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm md:text-base rounded-lg focus-brand shadow-sm hover:shadow-md transition-all text-white touch-manipulation min-h-[48px]",
-                      isAD && "flex-1"
+                
+                {/* Derecha: Pill de progreso + Botón colapsar/expandir */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Pill de progreso */}
+                  {sesionActiva && listaEjecucion.length > 0 && (
+                    <div className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-xs transition-all",
+                      "bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30",
+                      "text-[var(--color-primary)]"
+                    )}>
+                      <Target className="w-3.5 h-3.5" />
+                      <span className="font-mono tabular-nums">
+                        {indiceActual + 1}<span className="text-[var(--color-text-secondary)] font-normal">/{listaEjecucion.length}</span>
+                      </span>
+                    </div>
                   )}
-                  title="Completar (Enter)"
-                  aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
-                >
-                    <CheckCircle className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
-                  {isUltimo ? 'Finalizar' : 'OK'}
-                </Button>
-
-                  {/* Acciones de ejercicio: Saltar */}
-                  {!isUltimo && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={omitirYAvanzar}
-                  disabled={isUltimo}
-                      className="h-12 md:h-14 px-4 md:px-6 rounded-lg focus-brand hover:bg-[var(--color-surface-muted)] transition-colors touch-manipulation min-h-[48px]"
-                  title="Omitir y pasar (N)"
-                  aria-label="Omitir ejercicio"
-                >
-                      <ChevronsRight className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
-                      <span className="hidden sm:inline text-xs md:text-sm">Saltar</span>
-                </Button>
-                  )}
+                  
+                  {/* Botón colapsar/expandir */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTimerCollapsed(!timerCollapsed)}
+                    className="h-9 w-9 p-0"
+                    aria-label={timerCollapsed ? "Expandir timer" : "Colapsar timer"}
+                  >
+                    {timerCollapsed ? (
+                      <ChevronUp className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
+            
+            {/* Fila secundaria - Solo en modo expandido: Breadcrumb de ejercicios */}
+            {!timerCollapsed && sesionActiva && listaEjecucion.length > 0 && (
+              <div className="max-w-5xl mx-auto px-4 pb-3 border-t border-[var(--color-border-default)]/50 pt-2">
+                <div className="flex items-center gap-1.5 pb-2 overflow-x-auto scrollbar-hide">
+                  {listaEjecucion.map((ej, idx) => {
+                    const isActive = idx === indiceActual;
+                    const isCompleted = completados.has(idx);
+                    const isOmitted = omitidos.has(idx);
+                    
+                    // Formatear label: código corto
+                    let label = ej.tipo;
+                    if (ej.esRonda && ej.rondaIdx !== undefined && ej.repeticion !== undefined) {
+                      label = `${ej.tipo} R${ej.rondaIdx + 1}-${ej.repeticion}`;
+                    }
+                    
+                    return (
+                      <React.Fragment key={idx}>
+                        {idx > 0 && <ChevronRight className="w-3 h-3 text-[var(--color-text-muted)] shrink-0" />}
+                        <div
+                          className={cn(
+                            "px-2 py-0.5 rounded text-xs font-medium shrink-0 transition-all whitespace-nowrap flex items-center gap-1",
+                            isActive 
+                              ? "bg-[var(--color-primary)] text-white shadow-sm" 
+                              : isCompleted
+                              ? "bg-[var(--color-success)]/20 text-[var(--color-success)] border border-[var(--color-success)]/30"
+                              : isOmitted
+                              ? "bg-[var(--color-warning)]/20 text-[var(--color-warning)] border border-[var(--color-warning)]/30"
+                              : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] border border-[var(--color-border-default)]"
+                          )}
+                          title={ej.nombre || `${ej.tipo}${ej.esRonda ? ` - Ronda ${ej.rondaIdx + 1}, Repetición ${ej.repeticion}/${ej.totalRepeticiones}` : ''}`}
+                        >
+                          {isCompleted && <CheckCircle className="w-3 h-3" />}
+                          <span>{label}</span>
+                        </div>
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+                {/* Nombre corto del ejercicio actual (opcional) */}
+                {ejercicioActual?.nombre && (
+                  <div className="px-2">
+                    <span className="text-xs text-[var(--color-text-secondary)] truncate block">
+                      {ejercicioActual.nombre}
+                    </span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -1283,9 +1301,31 @@ function HoyPageContent() {
                 <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl flex-1 min-w-0`}>
                   <span className="truncate block">{ejercicioActual?.nombre || 'Ejercicio sin nombre'}</span>
                   {ejercicioActual?.esRonda && (
-                    <span className="text-xs sm:text-sm text-[var(--color-text-secondary)] font-normal block mt-0.5">
-                      Ronda {ejercicioActual.rondaIdx + 1} • Rep {ejercicioActual.repeticion}/{ejercicioActual.totalRepeticiones}
-                    </span>
+                    <div className="flex items-center gap-2 mt-1">
+                      {/* Stepper visual: mini cápsulas */}
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalRondas }).map((_, idx) => {
+                          const rondaNum = idx + 1;
+                          const isActive = rondaNum === rondaActual;
+                          return (
+                            <div
+                              key={idx}
+                              className={cn(
+                                "h-1.5 w-1.5 rounded-full transition-all duration-300",
+                                isActive
+                                  ? "bg-[var(--color-primary)]"
+                                  : "border border-[var(--color-border-default)]/50 bg-transparent"
+                              )}
+                              title={`Ronda ${rondaNum}`}
+                            />
+                          );
+                        })}
+                      </div>
+                      {/* Texto "Ronda X de Y" */}
+                      <span className="text-xs sm:text-sm text-[var(--color-text-secondary)] font-normal tabular-nums">
+                        Ronda {rondaActual} de {totalRondas} • Rep {repeticionActual}/{totalRepeticiones}
+                      </span>
+                    </div>
                   )}
                 </h1>
                 <div className="flex items-center gap-1 shrink-0">
@@ -1331,10 +1371,7 @@ function HoyPageContent() {
 
         {/* Contenido del ejercicio - Tarjeta principal unificada */}
         <div 
-          className="max-w-[900px] md:max-w-[1000px] mx-auto p-4 md:p-6" 
-          style={{ 
-            paddingBottom: timerCollapsed ? '80px' : '220px',
-          }}
+          className="max-w-[900px] md:max-w-[1000px] mx-auto p-4 md:p-6"
         >
           <Card className="app-card shadow-md">
             <CardContent className="p-4 md:p-6 space-y-6">
