@@ -14,7 +14,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsToolti
 import {
   Activity, Clock, Calendar, Star, Smile, BarChart3, TrendingUp,
   MessageSquare, Eye, RefreshCw, Dumbbell, List, PieChart, CalendarDays, Calendar as CalendarIcon,
-  Sun, CalendarRange, Grid3x3, Layers, FileText, Timer, Edit, X, Save, ChevronLeft
+  Sun, CalendarRange, Grid3x3, Layers, FileText, Timer, Edit, X, Save, ChevronLeft, ChevronDown, ChevronUp
 } from "lucide-react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -53,6 +53,7 @@ function EstadisticasPageContent() {
   const queryClient = useQueryClient();
   
   const [rangoPreset, setRangoPreset] = useState('4-semanas');
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [periodoInicio, setPeriodoInicio] = useState(() => {
     const stored = searchParams.get('inicio');
     if (stored) return stored;
@@ -856,147 +857,200 @@ function EstadisticasPageContent() {
     { key: 'todo', label: 'Todo' },
   ];
 
+  // Formatear el rango de fechas como "26 oct — 23 nov 2025"
+  const formatDateRange = useMemo(() => {
+    if (!periodoInicio && !periodoFin) {
+      return 'Todo el período';
+    }
+    if (!periodoInicio || !periodoFin) {
+      const fecha = periodoInicio || periodoFin;
+      if (fecha) {
+        try {
+          const d = parseLocalDate(fecha);
+          const day = d.getDate();
+          const month = d.toLocaleDateString('es-ES', { month: 'short' });
+          const year = d.getFullYear();
+          return `${day} ${month} ${year}`;
+        } catch (e) {
+          return 'Seleccionar rango';
+        }
+      }
+      return 'Seleccionar rango';
+    }
+    
+    try {
+      const inicio = parseLocalDate(periodoInicio);
+      const fin = parseLocalDate(periodoFin);
+      
+      const dayInicio = inicio.getDate();
+      const monthInicio = inicio.toLocaleDateString('es-ES', { month: 'short' });
+      
+      const dayFin = fin.getDate();
+      const monthFin = fin.toLocaleDateString('es-ES', { month: 'short' });
+      const yearFin = fin.getFullYear();
+      
+      // Si son el mismo mes, mostrar "26 — 30 oct 2025"
+      if (inicio.getMonth() === fin.getMonth() && inicio.getFullYear() === fin.getFullYear()) {
+        return `${dayInicio} — ${dayFin} ${monthFin} ${yearFin}`;
+      }
+      
+      // Si son años diferentes, mostrar ambos años
+      if (inicio.getFullYear() !== fin.getFullYear()) {
+        const yearInicio = inicio.getFullYear();
+        return `${dayInicio} ${monthInicio} ${yearInicio} — ${dayFin} ${monthFin} ${yearFin}`;
+      }
+      
+      // Meses diferentes, mismo año: "26 oct — 23 nov 2025"
+      return `${dayInicio} ${monthInicio} — ${dayFin} ${monthFin} ${yearFin}`;
+    } catch (e) {
+      return 'Seleccionar rango';
+    }
+  }, [periodoInicio, periodoFin]);
+
   return (
     <div className={componentStyles.layout.appBackground}>
       <PageHeader
         icon={Activity}
         title={isEstu ? 'Mis Estadísticas' : isProf ? 'Estadísticas de Estudiantes' : 'Estadísticas Generales'}
         subtitle={isEstu ? 'Tu progreso en la práctica' : 'Análisis del rendimiento y progreso'}
-        actions={location.state?.from === 'hoy' ? (
-          <Button
-            variant="outline"
-            onClick={() => navigate('/hoy')}
-            className={`${componentStyles.buttons.outline} h-9 sm:h-10`}
-          >
-            <ChevronLeft className="w-4 h-4 mr-2" />
-            Volver
-          </Button>
-        ) : undefined}
-        filters={
-          <div className="w-full space-y-2 sm:space-y-3 md:space-y-4">
-            {/* Filtros de fecha y presets - Mejorado con botones toggle más claros */}
-            <div className={componentStyles.components.panelBase + " p-2 sm:p-3 md:p-4"}>
-              <div className="space-y-2 sm:space-y-3">
-                <div className="flex flex-col gap-2 sm:gap-3">
-                  {/* Rango de fechas */}
-                  <div className="flex-1 w-full">
-                    <Label className="text-xs sm:text-sm mb-1.5 block text-[var(--color-text-secondary)]">
-                      Rango de fechas
-                    </Label>
-                    <DateRangePicker
-                      startDate={periodoInicio}
-                      endDate={periodoFin}
-                      onDateChange={(start, end) => {
-                        setPeriodoInicio(start);
-                        setPeriodoFin(end);
-                        setRangoPreset('personalizado');
-                      }}
-                      className="w-full sm:w-auto"
-                    />
-                  </div>
-                  
-                  {/* Presets con estados activos más claros */}
-                  <div>
-                    <Label className="text-xs sm:text-sm mb-1.5 block text-[var(--color-text-secondary)]">
-                      Presets rápidos
-                    </Label>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {presets.map(p => (
-                        <Button
-                          key={p.key}
-                          variant={rangoPreset === p.key ? "primary" : "outline"}
-                          size="sm"
-                          onClick={() => {
-                            aplicarPreset(p.key);
-                          }}
-                          className={`
-                            text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all
-                            ${rangoPreset === p.key 
-                              ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-sm' 
-                              : 'hover:bg-[var(--color-surface-muted)]'
-                            }
-                          `}
-                          aria-label={`Preset ${p.label}`}
-                          title={`Ver estadísticas: ${p.label}`}
-                        >
-                          {p.label}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Filtros adicionales (solo si no es estudiante) */}
-            {!isEstu && (
-              <div className={componentStyles.components.panelBase + " p-2 sm:p-3 md:p-4"}>
-                <div className={`${componentStyles.layout.grid2} gap-2 sm:gap-3`}>
-                  <MultiSelect
-                    label="Profesores"
-                    items={profesores.map(p => ({ value: p.id, label: displayName(p) }))}
-                    value={profesoresSeleccionados}
-                    onChange={setProfesoresSeleccionados}
-                  />
-                  <MultiSelect
-                    label="Alumnos"
-                    items={estudiantes.map(a => ({ value: a.id, label: displayName(a) }))}
-                    value={alumnosSeleccionados}
-                    onChange={setAlumnosSeleccionados}
-                  />
-                </div>
-              </div>
+        actions={
+          <div className="flex items-center gap-2">
+            {/* Pill de rango de fechas */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFiltersExpanded(!filtersExpanded)}
+              className={`${componentStyles.buttons.outline} flex items-center justify-center gap-1.5 text-xs sm:text-sm min-h-[48px] min-w-[48px] h-12 w-12 sm:h-auto sm:min-w-0 px-3 sm:px-3 py-3 sm:py-2 touch-manipulation shrink-0 transition-all duration-300`}
+              aria-label={filtersExpanded ? "Ocultar filtros" : "Mostrar filtros"}
+              aria-expanded={filtersExpanded}
+            >
+              <CalendarDays className="w-4 h-4 sm:w-4 sm:h-4 shrink-0" />
+              <span className="hidden sm:inline text-xs sm:text-sm whitespace-nowrap">
+                {formatDateRange}
+              </span>
+              {filtersExpanded ? (
+                <ChevronUp className="w-4 h-4 sm:w-4 sm:h-4 shrink-0 hidden sm:inline" />
+              ) : (
+                <ChevronDown className="w-4 h-4 sm:w-4 sm:h-4 shrink-0 hidden sm:inline" />
+              )}
+            </Button>
+            {location.state?.from === 'hoy' && (
+              <Button
+                variant="outline"
+                onClick={() => navigate('/hoy')}
+                className={`${componentStyles.buttons.outline} h-9 sm:h-10`}
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Volver
+              </Button>
             )}
-
-            {/* Filtro de Foco y botón Actualizar datos */}
-            <div className={componentStyles.components.panelBase + " p-2 sm:p-3 md:p-4"}>
-              <div className={`${componentStyles.layout.grid2} gap-2 sm:gap-3 items-end`}>
-                <MultiSelect
-                  label="Foco"
-                  items={Object.entries(focoLabels).map(([key, label]) => ({ value: key, label }))}
-                  value={focosSeleccionados}
-                  onChange={setFocosSeleccionados}
-                />
-              </div>
-            </div>
-            
-            {/* Botón Actualizar datos - Ahora más visible y alineado a la derecha */}
-            <div className={componentStyles.components.panelBase + " p-2 sm:p-3 md:p-4"}>
-              <div className="flex justify-end">
-                <Button 
-                  variant="primary" 
-                  size="sm"
-                  onClick={async () => {
-                    try {
-                      // Invalidar todas las queries relacionadas con estadísticas
-                      // Usar exact: false para invalidar todas las variantes con parámetros
-                      await Promise.all([
-                        queryClient.invalidateQueries({ queryKey: ['users'] }),
-                        queryClient.invalidateQueries({ queryKey: ['asignacionesProf'], exact: false }),
-                        queryClient.invalidateQueries({ queryKey: ['registrosSesion'] }),
-                        queryClient.invalidateQueries({ queryKey: ['registrosBloques'] }),
-                        queryClient.invalidateQueries({ queryKey: ['asignaciones'] }),
-                        queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] }),
-                      ]);
-                      toast.success('✅ Datos actualizados');
-                    } catch (error) {
-                      console.error('[estadisticas.jsx] Error al actualizar datos:', {
-                        error: error?.message || error,
-                        code: error?.code,
-                      });
-                      toast.error('❌ Error al actualizar datos');
-                    }
-                  }}
-                  className={`${componentStyles.buttons.primary} h-9 sm:h-10 text-sm sm:text-base px-4 sm:px-6`}
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Actualizar datos
-                </Button>
-              </div>
-            </div>
           </div>
         }
       />
+
+      {/* Panel de filtros colapsable */}
+      {filtersExpanded && (
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4">
+          <Card className={componentStyles.containers.cardBase}>
+            <CardContent className="p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className={`${componentStyles.typography.sectionTitle} text-base sm:text-lg`}>Filtros</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setFiltersExpanded(false)}
+                  className="text-xs sm:text-sm h-8 w-8 p-0"
+                  aria-label="Ocultar filtros"
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <div className="w-full space-y-4 md:space-y-6">
+                {/* Filtros de fecha y presets */}
+                <div className="space-y-3">
+                  <div className="flex flex-col gap-3">
+                    {/* Rango de fechas */}
+                    <div className="flex-1 w-full">
+                      <Label className="text-xs sm:text-sm mb-1.5 block text-[var(--color-text-secondary)]">
+                        Rango de fechas
+                      </Label>
+                      <DateRangePicker
+                        startDate={periodoInicio}
+                        endDate={periodoFin}
+                        onDateChange={(start, end) => {
+                          setPeriodoInicio(start);
+                          setPeriodoFin(end);
+                          setRangoPreset('personalizado');
+                        }}
+                        className="w-full sm:w-auto"
+                      />
+                    </div>
+                    
+                    {/* Presets */}
+                    <div>
+                      <Label className="text-xs sm:text-sm mb-1.5 block text-[var(--color-text-secondary)]">
+                        Presets rápidos
+                      </Label>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {presets.map(p => (
+                          <Button
+                            key={p.key}
+                            variant={rangoPreset === p.key ? "primary" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              aplicarPreset(p.key);
+                            }}
+                            className={`
+                              text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all
+                              ${rangoPreset === p.key 
+                                ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-sm' 
+                                : 'hover:bg-[var(--color-surface-muted)]'
+                              }
+                            `}
+                            aria-label={`Preset ${p.label}`}
+                            title={`Ver estadísticas: ${p.label}`}
+                          >
+                            {p.label}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Filtros adicionales (solo si no es estudiante) */}
+                {!isEstu && (
+                  <div className={`${componentStyles.layout.grid2} gap-3`}>
+                    <MultiSelect
+                      label="Profesores"
+                      items={profesores.map(p => ({ value: p.id, label: displayName(p) }))}
+                      value={profesoresSeleccionados}
+                      onChange={setProfesoresSeleccionados}
+                    />
+                    <MultiSelect
+                      label="Alumnos"
+                      items={estudiantes.map(a => ({ value: a.id, label: displayName(a) }))}
+                      value={alumnosSeleccionados}
+                      onChange={setAlumnosSeleccionados}
+                    />
+                  </div>
+                )}
+
+                {/* Filtro de Foco */}
+                <div>
+                  <MultiSelect
+                    label="Foco"
+                    items={Object.entries(focoLabels).map(([key, label]) => ({ value: key, label }))}
+                    value={focosSeleccionados}
+                    onChange={setFocosSeleccionados}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div className={componentStyles.layout.page}>
         {/* Tabs principales - Ahora ocupan todo el ancho */}

@@ -82,19 +82,36 @@ class ErrorBoundary extends React.Component {
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     console.log('[ErrorBoundary] Botón "Reportar error" clickeado');
                     console.log('[ErrorBoundary] Estado del error:', {
                       error: this.state.error,
                       errorInfo: this.state.errorInfo,
                     });
+                    
+                    // Convertir el Error a un objeto serializable
+                    const serializableError = {
+                      message: this.state.error?.message || 'Error desconocido',
+                      stack: this.state.error?.stack || '',
+                      name: this.state.error?.name || 'Error',
+                      toString: this.state.error?.toString() || String(this.state.error || 'Error desconocido'),
+                    };
+                    
+                    const serializableErrorInfo = {
+                      componentStack: this.state.errorInfo?.componentStack || '',
+                      toString: this.state.errorInfo?.toString() || String(this.state.errorInfo || ''),
+                    };
+                    
                     // Abrir modal de reporte con el error
                     try {
                       const eventDetail = {
-                        error: this.state.error,
-                        errorInfo: this.state.errorInfo,
+                        error: serializableError,
+                        errorInfo: serializableErrorInfo,
                         category: 'algo_no_funciona',
                       };
+                      
                       console.log('[ErrorBoundary] Disparando evento open-error-report con detail:', eventDetail);
                       
                       const event = new CustomEvent('open-error-report', {
@@ -108,6 +125,12 @@ class ErrorBoundary extends React.Component {
                       console.log('[ErrorBoundary] Esperando que Layout escuche el evento...');
                     } catch (error) {
                       console.error('[ErrorBoundary] Error al disparar evento:', error);
+                      // Fallback: intentar sin serializar (aunque puede fallar)
+                      window.dispatchEvent(new CustomEvent('open-error-report', {
+                        detail: { category: 'algo_no_funciona' },
+                        bubbles: true,
+                        cancelable: true
+                      }));
                     }
                   }}
                   className={`${componentStyles.buttons.primary} gap-2`}

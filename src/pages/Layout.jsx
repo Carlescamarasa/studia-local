@@ -419,10 +419,17 @@ function LayoutContent() {
   useEffect(() => {
     const handleOpenReport = (event) => {
       console.log('[Layout] Evento open-error-report recibido:', event.detail);
-      setReportModalError(event.detail?.error || null);
-      setReportModalCategory(event.detail?.category || null);
-      setReportModalOpen(true);
-      console.log('[Layout] Modal de reporte abierto');
+      try {
+        setReportModalError(event.detail?.error || null);
+        setReportModalCategory(event.detail?.category || null);
+        setReportModalOpen(true);
+        console.log('[Layout] Modal de reporte abierto, error:', event.detail?.error);
+      } catch (error) {
+        console.error('[Layout] Error al abrir modal de reporte:', error);
+        // Fallback: abrir modal sin error
+        setReportModalOpen(true);
+        setReportModalCategory(event.detail?.category || 'algo_no_funciona');
+      }
     };
 
     window.addEventListener('open-error-report', handleOpenReport);

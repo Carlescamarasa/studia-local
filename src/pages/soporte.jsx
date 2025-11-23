@@ -272,41 +272,47 @@ function SoportePageContent() {
                     <div
                       key={ticket.id}
                       onClick={() => setSelectedTicketId(ticket.id)}
-                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                      className={`rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-default)] px-4 py-3 md:px-5 md:py-4 shadow-sm cursor-pointer transition-colors ${
                         selectedTicketId === ticket.id
-                          ? 'bg-[var(--color-primary)]/10 border border-[var(--color-primary)]'
-                          : 'bg-[var(--color-surface-muted)] hover:bg-[var(--color-surface-muted)]/80'
+                          ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]'
+                          : 'hover:bg-[var(--color-surface-muted)]'
                       }`}
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-medium text-sm text-[var(--color-text-primary)] line-clamp-2">
+                      {/* Fila principal: título + estatus */}
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <h3 className="font-medium text-sm text-[var(--color-text-primary)] line-clamp-2 flex-1 min-w-0">
                           {ticket.titulo}
                         </h3>
-                        {getEstadoBadge(ticket.estado)}
+                        <div className="shrink-0">
+                          {getEstadoBadge(ticket.estado)}
+                        </div>
                       </div>
-                      {/* Mostrar nombre del profesor asignado en la lista */}
+                      
+                      {/* Profesor asignado */}
                       {ticket._profesorNombre ? (
-                        <div className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] mb-1">
-                          <User className="w-3 h-3" />
-                          <span>Profesor asignado: {ticket._profesorNombre}</span>
+                        <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)] mb-1.5">
+                          <User className="w-3 h-3 shrink-0" />
+                          <span className="truncate">Profesor: {ticket._profesorNombre}</span>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)]/70 mb-1 italic">
-                          <User className="w-3 h-3" />
-                          <span>Profesor asignado: Sin asignar</span>
+                        <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]/70 mb-1.5 italic">
+                          <User className="w-3 h-3 shrink-0" />
+                          <span>Profesor: Sin asignar</span>
                         </div>
                       )}
-                      <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
-                        <Clock className="w-3 h-3" />
-                        {formatDate(ticket.updated_at)}
-                      </div>
-                      {ticket.ultimaRespuestaDe === 'profesor' && (
-                        <div className="mt-2">
-                          <Badge variant="success" className="text-xs">
+                      
+                      {/* Fecha y badge de nueva respuesta */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
+                          <Clock className="w-3 h-3 shrink-0" />
+                          <span>{formatDate(ticket.updated_at)}</span>
+                        </div>
+                        {ticket.ultimaRespuestaDe === 'profesor' && (
+                          <Badge variant="success" className="text-xs px-2 py-0.5 shrink-0">
                             Nueva respuesta
                           </Badge>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

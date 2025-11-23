@@ -1059,14 +1059,14 @@ function HoyPageContent() {
     const excedido = tiempoActual > (ejercicioActual?.duracionSeg || 0);
 
     return (
-      <div className="bg-background" style={{ 
+      <div className="bg-background transition-all duration-300 ease-in-out" style={{ 
         paddingBottom: timerCollapsed ? '80px' : '220px'
       }}>
         {/* Timer dock inferior fijo */}
         {sesionActiva && (
           <div
             className={cn(
-              "fixed bottom-0 left-0 right-0 z-[30] bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-[0_-4px_12px_rgba(0,0,0,0.08)] transition-all duration-300",
+              "fixed bottom-0 left-0 right-0 z-[30] bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-[0_-4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 ease-in-out",
               timerCollapsed ? "h-[80px]" : "h-auto"
             )}
           >
@@ -1075,22 +1075,22 @@ function HoyPageContent() {
               <ReportErrorButtonInTimer />
             </div>
             
+            {/* Barra de progreso - SIEMPRE en el borde superior, de lado a lado */}
+            {!isAD && ejercicioActual?.duracionSeg > 0 && (
+              <div className="w-full bg-[var(--color-border-default)]/30 rounded-full h-2 md:h-2.5 overflow-hidden">
+                <div
+                  className={cn(
+                    "h-full transition-all duration-300",
+                    excedido ? 'bg-[var(--color-danger)]' : porcentajeEjercicio >= 75 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-primary)]'
+                  )}
+                  style={{ width: `${Math.min(porcentajeEjercicio, 100)}%` }}
+                />
+              </div>
+            )}
+            
             {timerCollapsed ? (
-              /* Modo compacto: solo tiempo + barra de progreso + botón OK */
-              <div className="max-w-5xl mx-auto px-4 py-2 flex flex-col gap-2">
-                {/* Barra de progreso - ARRIBA, mismo grosor que expandido */}
-                {!isAD && ejercicioActual?.duracionSeg > 0 && (
-                  <div className="w-full bg-[var(--color-border-default)]/30 rounded-full h-2 md:h-2.5 overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full transition-all duration-300",
-                        excedido ? 'bg-[var(--color-danger)]' : porcentajeEjercicio >= 75 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-primary)]'
-                      )}
-                      style={{ width: `${Math.min(porcentajeEjercicio, 100)}%` }}
-                    />
-                  </div>
-                )}
-                
+              /* Modo compacto: solo tiempo + botón OK */
+              <div className="max-w-5xl mx-auto px-4 py-2 flex flex-col gap-2 transition-opacity duration-300 ease-in-out">
                 {/* Fila: Tiempo + Botón OK */}
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -1140,27 +1140,14 @@ function HoyPageContent() {
             ) : (
               /* Modo expandido */
               <div className={cn(
-                "max-w-5xl mx-auto",
+                "max-w-5xl mx-auto transition-all duration-300 ease-in-out",
                 !isAD && ejercicioActual?.duracionSeg > 0 && cronometroActivo && (
                   excedido ? "bg-[var(--color-danger)]/5" : porcentajeEjercicio >= 75 ? "bg-[var(--color-warning)]/5" : "bg-[var(--color-primary)]/5"
                 )
             )}>
-              {/* Barra de progreso - ARRIBA del bloque del timer */}
-              {!isAD && ejercicioActual?.duracionSeg > 0 && (
-                <div className="w-full bg-[var(--color-border-default)]/30 rounded-full h-2 md:h-2.5 overflow-hidden">
-                  <div
-                    className={cn(
-                      "h-full transition-all duration-300",
-                      excedido ? 'bg-[var(--color-danger)]' : porcentajeEjercicio >= 75 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-primary)]'
-                    )}
-                    style={{ width: `${Math.min(porcentajeEjercicio, 100)}%` }}
-                  />
-                </div>
-              )}
-              
               {/* Fila: Tiempo | meta | botón colapsar */}
               {(!isAD && ejercicioActual?.duracionSeg > 0) || (sesionActiva && listaEjecucion.length > 0) ? (
-                <div className="px-4 py-3 flex items-center justify-between gap-4">
+                <div className="px-4 py-3 flex items-center justify-between gap-4 transition-opacity duration-300">
                     {/* Timer - Solo visible si no es AD y tiene duración */}
                     {!isAD && ejercicioActual?.duracionSeg > 0 && (
                       <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -1212,7 +1199,7 @@ function HoyPageContent() {
               ) : null}
               
               {/* Controles principales - Compactos pero táctiles */}
-                <div className="px-4 py-3 flex items-center justify-center gap-2 md:gap-3 max-w-[560px] mx-auto">
+                <div className="px-4 py-3 flex items-center justify-center gap-2 md:gap-3 max-w-[560px] mx-auto transition-opacity duration-300">
                   {/* Navegación: Atrás */}
                 <Button
                   variant="outline"

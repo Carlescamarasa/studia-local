@@ -263,13 +263,13 @@ function SoporteProfPageContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto p-6">
-        <PageHeader
-          title={isAdmin ? "Tickets de soporte" : "Tickets de alumnos"}
-          subtitle={isAdmin ? "Gestiona todos los tickets del sistema" : "Responde a las dudas de tus alumnos"}
-        />
+      <PageHeader
+        title={isAdmin ? "Tickets de soporte" : "Tickets de alumnos"}
+        subtitle={isAdmin ? "Gestiona todos los tickets del sistema" : "Responde a las dudas de tus alumnos"}
+      />
 
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Lista de tickets */}
         <div className="lg:col-span-1">
           <Card className={componentStyles.containers.cardBase}>
@@ -352,34 +352,40 @@ function SoporteProfPageContent() {
                     <div
                       key={ticket.id}
                       onClick={() => setSelectedTicketId(ticket.id)}
-                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                      className={`rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-default)] px-4 py-3 md:px-5 md:py-4 shadow-sm cursor-pointer transition-colors ${
                         selectedTicketId === ticket.id
-                          ? 'bg-[var(--color-primary)]/10 border border-[var(--color-primary)]'
-                          : 'bg-[var(--color-surface-muted)] hover:bg-[var(--color-surface-muted)]/80'
+                          ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]'
+                          : 'hover:bg-[var(--color-surface-muted)]'
                       }`}
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-medium text-sm text-[var(--color-text-primary)] line-clamp-2">
+                      {/* Fila principal: título + estatus */}
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <h3 className="font-medium text-sm text-[var(--color-text-primary)] line-clamp-2 flex-1 min-w-0">
                           {ticket.titulo}
                         </h3>
-                        {getEstadoBadge(ticket.estado)}
-                      </div>
-                      {/* Mostrar nombre del alumno siempre en la lista */}
-                        <div className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] mb-1">
-                          <User className="w-3 h-3" />
-                        <span>Alumno: {alumnoNames[ticket.alumnoId] || ticket._alumnoNombre || 'Desconocido'}</span>
+                        <div className="shrink-0">
+                          {getEstadoBadge(ticket.estado)}
                         </div>
-                      <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
-                        <Clock className="w-3 h-3" />
-                        {formatDate(ticket.updated_at)}
                       </div>
-                      {ticket.ultimaRespuestaDe === 'alumno' && (
-                        <div className="mt-2">
-                          <Badge variant="info" className="text-xs">
+                      
+                      {/* Nombre del alumno */}
+                      <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)] mb-1.5">
+                        <User className="w-3 h-3 shrink-0" />
+                        <span className="truncate">Alumno: {alumnoNames[ticket.alumnoId] || ticket._alumnoNombre || 'Desconocido'}</span>
+                      </div>
+                      
+                      {/* Fecha y badge de nueva respuesta */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
+                          <Clock className="w-3 h-3 shrink-0" />
+                          <span>{formatDate(ticket.updated_at)}</span>
+                        </div>
+                        {ticket.ultimaRespuestaDe === 'alumno' && (
+                          <Badge variant="info" className="text-xs px-2 py-0.5 shrink-0">
                             Nueva respuesta
                           </Badge>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

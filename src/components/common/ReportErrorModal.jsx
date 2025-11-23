@@ -393,7 +393,11 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       // Al abrir, establecer valores desde props o eventos
       if (initialError) {
         setCategory(initialCategory || 'algo_no_funciona');
-        setDescription(initialError?.message || String(initialError) || '');
+        // Manejar tanto objetos Error como objetos serializados
+        const errorMessage = initialError?.message || 
+                            (typeof initialError?.toString === 'function' ? initialError.toString() : null) ||
+                            (typeof initialError === 'string' ? initialError : String(initialError || ''));
+        setDescription(errorMessage);
       } else if (initialCategory) {
         setCategory(initialCategory);
       } else {
@@ -424,9 +428,11 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   // Escuchar eventos para abrir modal
   useEffect(() => {
     const handleOpenReport = (event) => {
+      console.log('[ReportErrorModal] Evento open-error-report recibido:', event.detail);
       if (event.detail?.error) {
+        const errorMessage = event.detail.error?.message || event.detail.error?.toString || String(event.detail.error || '');
         setCategory(event.detail.category || 'algo_no_funciona');
-        setDescription(event.detail.error?.message || '');
+        setDescription(errorMessage);
       } else if (event.detail?.category) {
         setCategory(event.detail.category);
       }
