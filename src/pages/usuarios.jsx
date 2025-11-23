@@ -409,9 +409,9 @@ function UsuariosPageContent() {
           <div className="flex items-center gap-1.5 sm:gap-2">
             <Button
               onClick={() => setIsInviteUserModalOpen(true)}
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="text-xs sm:text-sm h-8 sm:h-9"
+              className={`${componentStyles.buttons.outline} text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3`}
             >
               <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
               <span className="hidden sm:inline">Invitar usuario</span>
@@ -421,7 +421,7 @@ function UsuariosPageContent() {
               onClick={() => setIsCreateUserModalOpen(true)}
               variant="primary"
               size="sm"
-              className="text-xs sm:text-sm h-8 sm:h-9"
+              className={`${componentStyles.buttons.primary} text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3`}
             >
               <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
               <span className="hidden sm:inline">+ Crear usuario</span>
@@ -460,7 +460,11 @@ function UsuariosPageContent() {
                   variant={roleFilter === 'all' ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => setRoleFilter('all')}
-                  className="text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3"
+                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${
+                    roleFilter === 'all' 
+                      ? componentStyles.buttons.primary 
+                      : componentStyles.buttons.outline
+                  }`}
                 >
                   Todos
                 </Button>
@@ -468,7 +472,11 @@ function UsuariosPageContent() {
                   variant={roleFilter === 'ESTU' ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => setRoleFilter('ESTU')}
-                  className="text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3"
+                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${
+                    roleFilter === 'ESTU' 
+                      ? componentStyles.buttons.primary 
+                      : componentStyles.buttons.outline
+                  }`}
                 >
                   Alumno
                 </Button>
@@ -476,7 +484,11 @@ function UsuariosPageContent() {
                   variant={roleFilter === 'PROF' ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => setRoleFilter('PROF')}
-                  className="text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3"
+                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${
+                    roleFilter === 'PROF' 
+                      ? componentStyles.buttons.primary 
+                      : componentStyles.buttons.outline
+                  }`}
                 >
                   Profesor
                 </Button>
@@ -484,7 +496,11 @@ function UsuariosPageContent() {
                   variant={roleFilter === 'ADMIN' ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => setRoleFilter('ADMIN')}
-                  className="text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3"
+                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${
+                    roleFilter === 'ADMIN' 
+                      ? componentStyles.buttons.primary 
+                      : componentStyles.buttons.outline
+                  }`}
                 >
                   Admin
                 </Button>
@@ -500,7 +516,11 @@ function UsuariosPageContent() {
                   variant={estadoFilter === 'all' ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => setEstadoFilter('all')}
-                  className="text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3"
+                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${
+                    estadoFilter === 'all' 
+                      ? componentStyles.buttons.primary 
+                      : componentStyles.buttons.outline
+                  }`}
                 >
                   Todos
                 </Button>
@@ -508,7 +528,11 @@ function UsuariosPageContent() {
                   variant={estadoFilter === 'activo' ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => setEstadoFilter('activo')}
-                  className="text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3"
+                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${
+                    estadoFilter === 'activo' 
+                      ? componentStyles.buttons.primary 
+                      : componentStyles.buttons.outline
+                  }`}
                 >
                   Activo
                 </Button>
@@ -516,7 +540,11 @@ function UsuariosPageContent() {
                   variant={estadoFilter === 'invitacion_pendiente' ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => setEstadoFilter('invitacion_pendiente')}
-                  className="text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3"
+                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${
+                    estadoFilter === 'invitacion_pendiente' 
+                      ? componentStyles.buttons.primary 
+                      : componentStyles.buttons.outline
+                  }`}
                 >
                   Invitación pendiente
                 </Button>
@@ -524,7 +552,11 @@ function UsuariosPageContent() {
                   variant={estadoFilter === 'bloqueado' ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => setEstadoFilter('bloqueado')}
-                  className="text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3"
+                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${
+                    estadoFilter === 'bloqueado' 
+                      ? componentStyles.buttons.primary 
+                      : componentStyles.buttons.outline
+                  }`}
                 >
                   Bloqueado
                 </Button>

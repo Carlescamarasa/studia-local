@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import SessionContentView from "../components/study/SessionContentView";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
 import MediaPreviewModal from "@/components/common/MediaPreviewModal";
+import { log } from "@/utils/log";
 
 // --- Helpers de fechas locales ---
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -217,7 +218,7 @@ function SemanaPageContent() {
     try {
       await deleteRegistroMutation.mutateAsync(registro.id);
     } catch (error) {
-      console.error('Error al eliminar sesión:', error);
+      log.error('Error al eliminar sesión:', error);
       alert('Error al eliminar la sesión. Por favor, inténtalo de nuevo.');
     }
   };

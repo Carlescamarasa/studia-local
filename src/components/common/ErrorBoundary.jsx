@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ds';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw, Bug, Copy, Check } from 'lucide-react';
 import { componentStyles } from '@/design/componentStyles';
+import { log } from '@/utils/log';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -27,10 +28,8 @@ class ErrorBoundary extends React.Component {
       errorInfo,
     });
     
-    // Log del error para debugging
-    if (process.env.NODE_ENV === 'development') {
-      console.error('[ErrorBoundary] Error capturado:', error, errorInfo);
-    }
+    // Log del error (siempre loguea errores, incluso en producción)
+    log.error('[ErrorBoundary] Error capturado:', error, errorInfo);
   }
 
   componentDidMount() {
@@ -75,7 +74,7 @@ class ErrorBoundary extends React.Component {
         this.setState({ copied: false });
       }, 2000);
     } catch (err) {
-      console.error('Error al copiar al portapapeles:', err);
+      log.error('Error al copiar al portapapeles:', err);
       // Fallback: intentar con el método antiguo
       const textArea = document.createElement('textarea');
       textArea.value = detailsText;
@@ -90,7 +89,7 @@ class ErrorBoundary extends React.Component {
           this.setState({ copied: false });
         }, 2000);
       } catch (fallbackErr) {
-        console.error('Error en fallback de copia:', fallbackErr);
+        log.error('Error en fallback de copia:', fallbackErr);
       }
       document.body.removeChild(textArea);
     }
@@ -174,8 +173,8 @@ class ErrorBoundary extends React.Component {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('[ErrorBoundary] Botón "Reportar error" clickeado');
-                    console.log('[ErrorBoundary] Estado del error:', {
+                    log.debug('[ErrorBoundary] Botón "Reportar error" clickeado');
+                    log.debug('[ErrorBoundary] Estado del error:', {
                       error: this.state.error,
                       errorInfo: this.state.errorInfo,
                     });
@@ -201,7 +200,7 @@ class ErrorBoundary extends React.Component {
                         category: 'algo_no_funciona',
                       };
                       
-                      console.log('[ErrorBoundary] Disparando evento open-error-report con detail:', eventDetail);
+                      log.debug('[ErrorBoundary] Disparando evento open-error-report con detail:', eventDetail);
                       
                       const event = new CustomEvent('open-error-report', {
                         detail: eventDetail,
@@ -210,10 +209,10 @@ class ErrorBoundary extends React.Component {
                       });
                       
                       const dispatched = window.dispatchEvent(event);
-                      console.log('[ErrorBoundary] Evento disparado, dispatched:', dispatched);
-                      console.log('[ErrorBoundary] Esperando que Layout escuche el evento...');
+                      log.debug('[ErrorBoundary] Evento disparado, dispatched:', dispatched);
+                      log.debug('[ErrorBoundary] Esperando que Layout escuche el evento...');
                     } catch (error) {
-                      console.error('[ErrorBoundary] Error al disparar evento:', error);
+                      log.error('[ErrorBoundary] Error al disparar evento:', error);
                       // Fallback: intentar sin serializar (aunque puede fallar)
                     window.dispatchEvent(new CustomEvent('open-error-report', {
                         detail: { category: 'algo_no_funciona' },

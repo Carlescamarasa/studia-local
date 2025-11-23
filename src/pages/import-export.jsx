@@ -810,7 +810,7 @@ export default function ImportExportPage() {
                           variant="outline"
                           size="sm"
                           onClick={descargarEjemploEjercicios}
-                          className="text-xs h-9"
+                          className={`${componentStyles.buttons.outline} text-xs h-9 px-3`}
                         >
                           <FileText className="w-4 h-4 mr-2" />
                           Descargar CSV de ejemplo
@@ -826,7 +826,7 @@ export default function ImportExportPage() {
                             setImportFile(null);
                             if (fileInputRef.current) fileInputRef.current.value = '';
                           }}
-                          className="text-xs h-9 flex-1 sm:flex-initial"
+                          className={`${componentStyles.buttons.outline} text-xs h-9 px-3 flex-1 sm:flex-initial`}
                         >
                           <Upload className="w-4 h-4 mr-2" />
                           Subir CSV
@@ -862,7 +862,7 @@ export default function ImportExportPage() {
                           variant="outline"
                           size="sm"
                           onClick={descargarEjemploPiezas}
-                          className="text-xs h-9"
+                          className={`${componentStyles.buttons.outline} text-xs h-9 px-3`}
                         >
                           <FileText className="w-4 h-4 mr-2" />
                           Descargar CSV de ejemplo
@@ -878,7 +878,7 @@ export default function ImportExportPage() {
                             setImportFile(null);
                             if (fileInputRef.current) fileInputRef.current.value = '';
                           }}
-                          className="text-xs h-9 flex-1 sm:flex-initial"
+                          className={`${componentStyles.buttons.outline} text-xs h-9 px-3 flex-1 sm:flex-initial`}
                         >
                           <Upload className="w-4 h-4 mr-2" />
                           Subir CSV

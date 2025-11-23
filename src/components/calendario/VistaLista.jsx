@@ -263,7 +263,8 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
               variant="outline"
               size="sm"
               onClick={() => navegarFechas(-1)}
-              className="h-8"
+              className={`${componentStyles.buttons.outline} h-8 sm:h-9 px-2 sm:px-3`}
+              aria-label="Semana anterior"
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
@@ -271,16 +272,18 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
               variant="outline"
               size="sm"
               onClick={irHoy}
-              className="h-8"
+              className={`${componentStyles.buttons.outline} h-8 sm:h-9 px-2 sm:px-3`}
+              aria-label="Ir a hoy"
             >
-              <Calendar className="w-4 h-4 mr-1" />
+              <Calendar className="w-4 h-4 mr-1.5" />
               Hoy
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => navegarFechas(1)}
-              className="h-8"
+              className={`${componentStyles.buttons.outline} h-8 sm:h-9 px-2 sm:px-3`}
+              aria-label="Semana siguiente"
             >
               <ChevronRight className="w-4 h-4" />
             </Button>

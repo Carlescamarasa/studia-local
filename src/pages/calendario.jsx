@@ -280,7 +280,11 @@ function CalendarioPageContent() {
                   e.stopPropagation();
                   setVista('mes');
                 }}
-                className={`text-xs h-7 sm:h-8 px-2 sm:px-3 rounded-lg transition-all ${vista === 'mes' ? '' : 'hover:bg-transparent'}`}
+                className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${
+                  vista === 'mes' 
+                    ? componentStyles.buttons.primary 
+                    : `${componentStyles.buttons.ghost} hover:bg-transparent`
+                }`}
                 type="button"
               >
                 Mes
@@ -294,7 +298,11 @@ function CalendarioPageContent() {
                     e.stopPropagation();
                     setVista('semana');
                   }}
-                  className={`text-xs h-7 sm:h-8 px-2 sm:px-3 rounded-lg transition-all ${vista === 'semana' ? '' : 'hover:bg-transparent'}`}
+                  className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${
+                    vista === 'semana' 
+                      ? componentStyles.buttons.primary 
+                      : `${componentStyles.buttons.ghost} hover:bg-transparent`
+                  }`}
                   type="button"
                 >
                   Semana
@@ -308,7 +316,11 @@ function CalendarioPageContent() {
                   e.stopPropagation();
                   setVista('lista');
                 }}
-                className={`text-xs h-7 sm:h-8 px-2 sm:px-3 rounded-lg transition-all ${vista === 'lista' ? '' : 'hover:bg-transparent'}`}
+                className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${
+                  vista === 'lista' 
+                    ? componentStyles.buttons.primary 
+                    : `${componentStyles.buttons.ghost} hover:bg-transparent`
+                }`}
                 type="button"
               >
                 Lista

@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Lock, CheckCircle } from 'lucide-react';
 import logoLTS from '@/assets/Logo_LTS.png';
 import { getAppName } from '@/components/utils/appMeta';
+import { log } from '@/utils/log';
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -73,7 +74,7 @@ export default function ResetPasswordPage() {
         navigate('/login', { replace: true });
       }, 2000);
     } catch (error) {
-      console.error('Error al actualizar contraseña:', error);
+      log.error('Error al actualizar contraseña:', error);
       const errorMessage = error.message?.toLowerCase() || '';
 
       if (errorMessage.includes('session') || errorMessage.includes('token')) {

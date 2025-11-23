@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ds";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   User, Mail, Shield, Target, Music,
-  Save, AlertCircle, Sun, Moon, Monitor, X, MessageCircle, Search
+  Save, AlertCircle, Sun, Moon, Monitor, X, MessageCircle, Search, Lock
 } from "lucide-react";
 import { toast } from "sonner";
 import { displayName, displayNameById, useEffectiveUser } from "../utils/helpers";
@@ -28,6 +28,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabaseClient";
+import { log } from "@/utils/log";
 
 export default function PerfilModal({ 
   open, 
@@ -153,7 +154,7 @@ export default function PerfilModal({
     onError: (error) => {
       // Solo loguear si NO es un error 406 (que es esperado por RLS)
       if (error?.status !== 406 && error?.code !== 'PGRST301') {
-        console.warn('[PerfilModal] Error al cargar profesor asignado:', error);
+        log.warn('[PerfilModal] Error al cargar profesor asignado:', error);
       }
     },
   });
@@ -306,14 +307,12 @@ export default function PerfilModal({
       // Asegurar que profesorAsignadoId se carga correctamente desde targetUser
       // Puede venir como profesorAsignadoId o profesor_asignado_id
       const profesorAsignadoIdValue = targetUser.profesorAsignadoId || targetUser.profesor_asignado_id || null;
-      if (import.meta.env.DEV) {
-        console.log('[PerfilModal] Cargando editedData:', {
-          targetUserProfesorAsignadoId: targetUser.profesorAsignadoId,
-          targetUserProfesor_asignado_id: targetUser.profesor_asignado_id,
-          profesorAsignadoIdValue,
-          allUsersLength: allUsers?.length,
-        });
-      }
+      log.debug('[PerfilModal] Cargando editedData:', {
+        targetUserProfesorAsignadoId: targetUser.profesorAsignadoId,
+        targetUserProfesor_asignado_id: targetUser.profesor_asignado_id,
+        profesorAsignadoIdValue,
+        allUsersLength: allUsers?.length,
+      });
 
       setEditedData({
         nombreCompleto: targetUser.full_name || targetUser.nombreCompleto || getNombreCompleto(targetUser),
@@ -442,7 +441,7 @@ export default function PerfilModal({
       setIsEditingPhone(false);
       toast.success('Teléfono guardado correctamente');
     } catch (error) {
-      console.error('[PerfilModal] Error al guardar teléfono:', {
+      log.error('[PerfilModal] Error al guardar teléfono:', {
         error: error?.message || error,
         code: error?.code,
       });
@@ -569,6 +568,7 @@ export default function PerfilModal({
       toast.success('Contraseña actualizada correctamente');
     },
     onError: (error) => {
+      log.error('[PerfilModal] Error al actualizar contraseña:', error);
       setPasswordResult({ success: false, message: `❌ Error: ${error.message || 'No se pudo actualizar la contraseña'}` });
       toast.error(`Error al actualizar la contraseña: ${error.message || 'Error desconocido'}`);
     },
@@ -906,9 +906,7 @@ export default function PerfilModal({
                                   </a>
                                 );
                               } catch (error) {
-                                if (process.env.NODE_ENV === 'development') {
-                                  console.error('[PerfilModal] Error al generar link de WhatsApp:', error);
-                                }
+                                log.error('[PerfilModal] Error al generar link de WhatsApp:', error);
                                 return null;
                               }
                             })()}
@@ -1145,9 +1143,12 @@ export default function PerfilModal({
                 {/* Sección de Seguridad - Cambio de contraseña */}
                 {isEditingOwnProfile && (
                   <div className="pt-6 border-t border-[var(--color-border-default)] space-y-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Lock className="w-4 h-4 text-[var(--color-primary)]" />
-                      <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">Seguridad</h3>
+                    <div className="space-y-1 mb-4">
+                      <div className="flex items-center gap-2">
+                        <Lock className="w-5 h-5 text-[var(--color-primary)]" />
+                        <h3 className="text-base font-semibold text-[var(--color-text-primary)]">Seguridad</h3>
+                      </div>
+                      <p className="text-sm text-[var(--color-text-secondary)] ml-7">Actualiza tu contraseña de acceso.</p>
                     </div>
                     
                     {passwordResult && (

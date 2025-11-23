@@ -1112,17 +1112,17 @@ export default function TestSeedPage() {
               
               if (import.meta.env.DEV) {
                 console.log('Datos antes de crear asignación:', {
-                alumnoId: estudiante.id,
-                piezaId: piezaSeleccionada.id,
-                semanaInicioISO,
-                estado: 'publicada',
-                hasPlan: !!planCopy,
-                planType: typeof planCopy,
-                hasPiezaSnapshot: !!piezaSnapshotData,
-                piezaSnapshotType: typeof piezaSnapshotData,
-                profesorId: profesorAsignado.id
+                  alumnoId: estudiante.id,
+                  piezaId: piezaSeleccionada.id,
+                  semanaInicioISO,
+                  estado: 'publicada',
+                  hasPlan: !!planCopy,
+                  planType: typeof planCopy,
+                  hasPiezaSnapshot: !!piezaSnapshotData,
+                  piezaSnapshotType: typeof piezaSnapshotData,
+                  profesorId: profesorAsignado.id
+                });
               }
-              });
               
               // CRÍTICO: En modo remoto, usar SIEMPRE profesorParaRLS.id para cumplir con RLS
               // Las políticas RLS requieren que profesor_id = auth.uid()

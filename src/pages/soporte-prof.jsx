@@ -294,18 +294,26 @@ function SoporteProfPageContent() {
                 {!isAdmin && (
                 <div className="flex gap-2">
                     <Button
-                      variant={profesorFilter === 'mis_tickets' ? 'default' : 'outline'}
+                      variant={profesorFilter === 'mis_tickets' ? 'primary' : 'outline'}
                       size="sm"
                       onClick={() => setProfesorFilter('mis_tickets')}
-                      className="flex-1"
+                      className={`flex-1 text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-xl ${
+                        profesorFilter === 'mis_tickets' 
+                          ? componentStyles.buttons.primary 
+                          : componentStyles.buttons.outline
+                      }`}
                     >
                       Mis tickets
                     </Button>
                     <Button
-                      variant={profesorFilter === 'todos' ? 'default' : 'outline'}
+                      variant={profesorFilter === 'todos' ? 'primary' : 'outline'}
                       size="sm"
                       onClick={() => setProfesorFilter('todos')}
-                      className="flex-1"
+                      className={`flex-1 text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-xl ${
+                        profesorFilter === 'todos' 
+                          ? componentStyles.buttons.primary 
+                          : componentStyles.buttons.outline
+                      }`}
                     >
                       Todos
                     </Button>
@@ -315,30 +323,50 @@ function SoporteProfPageContent() {
                 {/* Filtros de estado */}
                 <div className="flex flex-wrap gap-2">
                   <Button
-                    variant={estadoFilter === 'todos' ? 'default' : 'outline'}
+                    variant={estadoFilter === 'todos' ? 'primary' : 'outline'}
                     size="sm"
                     onClick={() => setEstadoFilter('todos')}
+                    className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-xl ${
+                      estadoFilter === 'todos' 
+                        ? componentStyles.buttons.primary 
+                        : componentStyles.buttons.outline
+                    }`}
                   >
                     Todos
                   </Button>
                   <Button
-                    variant={estadoFilter === 'abierto' ? 'default' : 'outline'}
+                    variant={estadoFilter === 'abierto' ? 'primary' : 'outline'}
                     size="sm"
                     onClick={() => setEstadoFilter('abierto')}
+                    className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-xl ${
+                      estadoFilter === 'abierto' 
+                        ? componentStyles.buttons.primary 
+                        : componentStyles.buttons.outline
+                    }`}
                   >
                     Abiertos
                   </Button>
                   <Button
-                    variant={estadoFilter === 'en_proceso' ? 'default' : 'outline'}
+                    variant={estadoFilter === 'en_proceso' ? 'primary' : 'outline'}
                     size="sm"
                     onClick={() => setEstadoFilter('en_proceso')}
+                    className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-xl ${
+                      estadoFilter === 'en_proceso' 
+                        ? componentStyles.buttons.primary 
+                        : componentStyles.buttons.outline
+                    }`}
                   >
                     En proceso
                   </Button>
                   <Button
-                    variant={estadoFilter === 'cerrado' ? 'default' : 'outline'}
+                    variant={estadoFilter === 'cerrado' ? 'primary' : 'outline'}
                     size="sm"
                     onClick={() => setEstadoFilter('cerrado')}
+                    className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-xl ${
+                      estadoFilter === 'cerrado' 
+                        ? componentStyles.buttons.primary 
+                        : componentStyles.buttons.outline
+                    }`}
                   >
                     Cerrados
                   </Button>
