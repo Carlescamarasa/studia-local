@@ -67,6 +67,7 @@ function AgendaPageContent() {
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [filtroEstudiantes, setFiltroEstudiantes] = useState('asignados'); // 'asignados' | 'todos'
 
   const effectiveUser = useEffectiveUser();
   const isMobile = useIsMobile();
@@ -300,10 +301,17 @@ function AgendaPageContent() {
   const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState();
 
   const isProfesorOrAdmin = effectiveUser?.rolPersonalizado === 'PROF' || effectiveUser?.rolPersonalizado === 'ADMIN';
+  const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
 
-  // Todos los profesores y admins pueden ver y dar feedback a TODOS los estudiantes
-  // No es necesario que el alumno esté asignado a un profesor en particular
+  // Filtrar estudiantes según el filtro seleccionado
   let estudiantesFiltrados = usuarios.filter(u => u.rolPersonalizado === 'ESTU');
+
+  // Si es PROF y el filtro es "asignados", mostrar solo estudiantes asignados a este profesor
+  if (isProfesorOrAdmin && !isAdmin && filtroEstudiantes === 'asignados') {
+    const asignacionesDelProfesor = asignaciones.filter(a => a.profesorId === userIdActual);
+    const alumnosAsignadosIds = new Set(asignacionesDelProfesor.map(a => a.alumnoId));
+    estudiantesFiltrados = estudiantesFiltrados.filter(e => alumnosAsignadosIds.has(e.id));
+  }
 
   if (searchTerm) {
     const term = searchTerm.toLowerCase();
@@ -739,32 +747,43 @@ function AgendaPageContent() {
                     )}
                     {/* Botones de acción */}
                     <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          abrirFeedbackDrawer(row.alumno, row.feedback);
-                        }}
-                        className={`h-8 ${componentStyles.buttons.ghost}`}
-                        aria-label="Editar feedback"
-                      >
-                        <Edit className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (window.confirm('¿Eliminar feedback?')) {
-                            eliminarFeedbackMutation.mutate(row.feedback.id);
-                          }
-                        }}
-                        className={`h-8 ${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle}`}
-                        aria-label="Eliminar feedback"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
+                      {(() => {
+                        // Verificar permisos: solo el profesor que creó el feedback o ADMIN puede editarlo/eliminarlo
+                        const canEditFeedback = isAdmin || row.feedback.profesorId === userIdActual;
+                        
+                        if (!canEditFeedback) return null;
+                        
+                        return (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                abrirFeedbackDrawer(row.alumno, row.feedback);
+                              }}
+                              className={`h-8 ${componentStyles.buttons.ghost}`}
+                              aria-label="Editar feedback"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm('¿Eliminar feedback?')) {
+                                  eliminarFeedbackMutation.mutate(row.feedback.id);
+                                }
+                              }}
+                              className={`h-8 ${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle}`}
+                              aria-label="Eliminar feedback"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}
@@ -1080,6 +1099,34 @@ function AgendaPageContent() {
           </PeriodHeaderPanel>
         );
       })()}
+
+      {/* Filtro de estudiantes (solo para PROF) */}
+      {isProfesorOrAdmin && !isAdmin && (
+        <div className="px-4 sm:px-6 py-3 border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)]">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFiltroEstudiantes('asignados')}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                filtroEstudiantes === 'asignados'
+                  ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)]'
+                  : 'bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]'
+              }`}
+            >
+              Mis alumnos
+            </button>
+            <button
+              onClick={() => setFiltroEstudiantes('todos')}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                filtroEstudiantes === 'todos'
+                  ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)]'
+                  : 'bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]'
+              }`}
+            >
+              Ver todos
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className={componentStyles.layout.page}>
         {/* Cards de estudiantes */}
