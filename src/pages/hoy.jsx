@@ -27,8 +27,11 @@ import {
   calcularTiempoSesion,
   aplanarSesion,
   getNombreVisible,
-  useEffectiveUser
+  useEffectiveUser,
+  formatLocalDate,
+  parseLocalDate
 } from "../components/utils/helpers";
+import WeekNavigator from "../components/common/WeekNavigator";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "../components/study/sessionSequence";
 import TimelineProgreso from "../components/estudio/TimelineProgreso";
 import ModalCancelar from "../components/estudio/ModalCancelar";
@@ -46,9 +49,13 @@ import { resolveMedia, MediaKind } from "../components/utils/media";
 import RequireRole from "@/components/auth/RequireRole";
 
 // --- Helpers de fechas locales (para formateo de semana) ---
-const pad2 = (n) => String(n).padStart(2, "0");
-const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-const parseLocalDate = (s) => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const startOfMonday = (date) => {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dow = d.getDay();
+  const diff = dow === 0 ? -6 : 1 - dow;
+  d.setDate(d.getDate() + diff);
+  return d;
+};
 
 export default function HoyPage() {
   return (
@@ -65,6 +72,19 @@ function HoyPageContent() {
   const [semanaActualISO, setSemanaActualISO] = useState(() => {
     return calcularLunesSemanaISO(new Date());
   });
+  
+  const cambiarSemana = (direccion) => {
+    const base = parseLocalDate(semanaActualISO);
+    base.setDate(base.getDate() + (direccion * 7));
+    const lunes = startOfMonday(base);
+    const nextISO = formatLocalDate(lunes);
+    if (nextISO !== semanaActualISO) setSemanaActualISO(nextISO);
+  };
+  
+  const irSemanaActual = () => {
+    const lunes = startOfMonday(new Date());
+    setSemanaActualISO(formatLocalDate(lunes));
+  };
   const [asignacionSeleccionadaId, setAsignacionSeleccionadaId] = useState(null); // Para múltiples asignaciones
   const [sesionSeleccionada, setSesionSeleccionada] = useState(0);
   const [sesionesConResumenExpandido, setSesionesConResumenExpandido] = useState(new Set());
@@ -2064,23 +2084,32 @@ function HoyPageContent() {
       <PageHeader
         icon={PlayCircle}
         title="Estudiar Ahora"
-        subtitle={`Plan de estudio para ${formatearSemana(semanaActualISO)}`}
+        subtitle="Plan de estudio semanal"
+        filters={
+          <WeekNavigator 
+            mondayISO={semanaActualISO}
+            onPrev={() => cambiarSemana(-1)}
+            onNext={() => cambiarSemana(1)}
+            onToday={irSemanaActual}
+          >
+            {/* Barra de contexto: pieza / plan / alumno dentro del WeekNavigator */}
+            {asignacionActiva && (
+              <div className="flex items-center gap-2 flex-wrap text-sm">
+                <Music className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
+                <span className="font-semibold text-[var(--color-text-primary)]">{asignacionActiva.piezaSnapshot?.nombre}</span>
+                <span className="text-[var(--color-text-secondary)]">·</span>
+                <Target className="w-4 h-4 text-[var(--color-info)] shrink-0" />
+                <span className="text-[var(--color-text-primary)]">{asignacionActiva.plan?.nombre}</span>
+                <span className="text-[var(--color-text-secondary)]">·</span>
+                <User className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />
+                <span className="font-medium text-[var(--color-text-primary)]">{getNombreVisible(alumnoActual)}</span>
+              </div>
+            )}
+          </WeekNavigator>
+        }
       />
 
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
-        {/* Barra de contexto: pieza / plan / alumno (fuera de filtros) */}
-        {asignacionActiva && (
-          <div className="flex items-center gap-2 flex-wrap bg-[var(--color-primary-soft)] rounded-xl p-3 border border-[var(--color-primary)]">
-            <Music className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
-            <span className="font-semibold text-[var(--color-text-primary)]">{asignacionActiva.piezaSnapshot?.nombre}</span>
-            <span className="text-[var(--color-text-secondary)]">•</span>
-            <Target className="w-4 h-4 text-[var(--color-info)] shrink-0" />
-            <span className="text-[var(--color-text-primary)]">{asignacionActiva.plan?.nombre}</span>
-            <span className="text-[var(--color-text-secondary)]">•</span>
-            <User className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />
-            <span className="font-medium text-[var(--color-text-primary)]">{getNombreVisible(alumnoActual)}</span>
-          </div>
-        )}
 
         {!asignacionActiva || !semanaDelPlan ? (
           <Card className="border-dashed border-2">

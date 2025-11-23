@@ -25,9 +25,9 @@ function CalendarioPageContent() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [vista, setVista] = useState(() => isMobile ? 'lista' : 'semana'); // 'semana' | 'mes' | 'lista'
+  const [vista, setVista] = useState('mes'); // 'semana' | 'mes' | 'lista' - Vista por defecto: Mes
   
-  // Asegurar que la vista por defecto sea 'lista' en mobile cuando cambie isMobile
+  // Asegurar que en mobile se oculte 'semana' y use solo 'mes' o 'lista'
   React.useEffect(() => {
     if (isMobile && vista === 'semana') {
       setVista('lista');
@@ -241,7 +241,52 @@ function CalendarioPageContent() {
         title="Calendario"
         subtitle="Visualiza sesiones, feedbacks, asignaciones y eventos importantes"
         actions={
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            {/* Selector de vista: Mes / Semana / Lista */}
+            <div className="flex items-center gap-1 border border-[var(--color-border-default)] rounded-xl p-0.5">
+              <Button
+                variant={vista === 'mes' ? 'primary' : 'ghost'}
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setVista('mes');
+                }}
+                className={`text-xs h-7 sm:h-8 px-2 sm:px-3 rounded-lg transition-all ${vista === 'mes' ? '' : 'hover:bg-transparent'}`}
+                type="button"
+              >
+                Mes
+              </Button>
+              {!isMobile && (
+                <Button
+                  variant={vista === 'semana' ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setVista('semana');
+                  }}
+                  className={`text-xs h-7 sm:h-8 px-2 sm:px-3 rounded-lg transition-all ${vista === 'semana' ? '' : 'hover:bg-transparent'}`}
+                  type="button"
+                >
+                  Semana
+                </Button>
+              )}
+              <Button
+                variant={vista === 'lista' ? 'primary' : 'ghost'}
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setVista('lista');
+                }}
+                className={`text-xs h-7 sm:h-8 px-2 sm:px-3 rounded-lg transition-all ${vista === 'lista' ? '' : 'hover:bg-transparent'}`}
+                type="button"
+              >
+                Lista
+              </Button>
+            </div>
+            
             {/* Botón Hoy */}
             <Button
               variant="outline"
@@ -256,18 +301,7 @@ function CalendarioPageContent() {
             >
               Hoy
             </Button>
-            {/* Selector de periodo/rango */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                // TODO: Abrir selector de fecha/periodo si se implementa
-              }}
-              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all flex items-center gap-1.5"
-            >
-              <CalendarDays className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{periodoActual}</span>
-            </Button>
+            
             {(isAdmin || isProf) && (
               <Button
                 variant="primary"
@@ -289,39 +323,8 @@ function CalendarioPageContent() {
       />
 
       <div className={componentStyles.layout.page}>
-        {/* Filtros compactos: Vista + Tipo en una sola fila */}
+        {/* Filtros compactos: Tipo en una sola fila */}
         <div className="mb-3 flex gap-1.5 flex-wrap items-center">
-          {/* Vista: Semana / Mes / Lista */}
-          <div className="flex items-center gap-1 flex-wrap">
-            <Button
-              variant={vista === 'semana' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setVista('semana')}
-              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-            >
-              Semana
-            </Button>
-            <Button
-              variant={vista === 'mes' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setVista('mes')}
-              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-            >
-              Mes
-            </Button>
-            <Button
-              variant={vista === 'lista' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setVista('lista')}
-              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-            >
-              Lista
-            </Button>
-          </div>
-          
-          {/* Separador visual */}
-          <div className="w-px h-6 bg-[var(--color-border-default)] mx-1" />
-          
           {/* Tipo: Todos / Eventos / Asignaciones / Sesiones / Feedback */}
           <div className="flex items-center gap-1 flex-wrap">
           <Button
@@ -367,20 +370,7 @@ function CalendarioPageContent() {
           </div>
         </div>
 
-        {vista === 'semana' && (
-          isMobile ? (
-            // En mobile, mostrar VistaLista directamente
-            <VistaLista
-              fechaActual={fechaActual}
-              onFechaChange={setFechaActual}
-              eventos={eventosFiltrados}
-              onEventoClick={handleEventoClick}
-              usuarios={usuarios}
-              filtroTipoGlobal={filtroTipoGlobal}
-              setFiltroTipoGlobal={setFiltroTipoGlobal}
-              registrosSesion={registrosSesion}
-            />
-          ) : (
+        {vista === 'semana' && !isMobile && (
           <VistaSemana
             fechaActual={fechaActual}
             onFechaChange={setFechaActual}
@@ -390,7 +380,6 @@ function CalendarioPageContent() {
             filtroTipo={filtroTipoGlobal}
             registrosSesion={registrosSesion}
           />
-          )
         )}
         {vista === 'mes' && (
           <VistaMes

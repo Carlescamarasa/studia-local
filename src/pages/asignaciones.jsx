@@ -20,6 +20,7 @@ import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, use
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MultiSelect from "@/components/ui/MultiSelect";
 import PageHeader from "@/components/ds/PageHeader";
+import WeekNavigator from "../components/common/WeekNavigator";
 import { componentStyles } from "@/design/componentStyles";
 import {
   Dialog,
@@ -47,11 +48,27 @@ function AsignacionesPageContent() {
   const [profesoresFilter, setProfesoresFilter] = useState([]);
   const [showForm, setShowForm] = useState(false);
   
-  // Estado para filtro por semana
-  const [semanaSeleccionada, setSemanaSeleccionada] = useState(() => {
+  // Estado para filtro por semana (ISO formato YYYY-MM-DD)
+  const [semanaSeleccionadaISO, setSemanaSeleccionadaISO] = useState(() => {
     const hoy = new Date();
-    return startOfMonday(hoy);
+    return formatLocalDate(startOfMonday(hoy));
   });
+  
+  // Helper para convertir ISO a Date (compatibilidad con código existente)
+  const semanaSeleccionada = parseLocalDate(semanaSeleccionadaISO);
+  
+  const cambiarSemana = (direccion) => {
+    const base = parseLocalDate(semanaSeleccionadaISO);
+    base.setDate(base.getDate() + (direccion * 7));
+    const lunes = startOfMonday(base);
+    const nextISO = formatLocalDate(lunes);
+    if (nextISO !== semanaSeleccionadaISO) setSemanaSeleccionadaISO(nextISO);
+  };
+  
+  const irSemanaActual = () => {
+    const lunes = startOfMonday(new Date());
+    setSemanaSeleccionadaISO(formatLocalDate(lunes));
+  };
   const [showAsignarProfesorDialog, setShowAsignarProfesorDialog] = useState(false);
   const [showAsignarEstudianteDialog, setShowAsignarEstudianteDialog] = useState(false);
   const [asignacionParaAsignar, setAsignacionParaAsignar] = useState(null);
@@ -346,11 +363,6 @@ function AsignacionesPageContent() {
     return result;
   }, [usuarios]);
 
-  // Filtrar asignaciones por semana seleccionada
-  const semanaSeleccionadaISO = useMemo(() => {
-    return formatLocalDate(semanaSeleccionada);
-  }, [semanaSeleccionada]);
-
   // Aplicar filtros adicionales (semana, estado, búsqueda y profesores)
   const asignacionesFinales = useMemo(() => {
     let resultado = asignacionesFiltradas;
@@ -540,103 +552,55 @@ function AsignacionesPageContent() {
         title="Asignaciones"
         subtitle="Gestiona las asignaciones de tus estudiantes"
         filters={
-          <>
-            {/* Controles de navegación de semana */}
-            <div className="flex items-center gap-2 border rounded-lg p-2 bg-[var(--color-surface-muted)]">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  const nuevaSemana = new Date(semanaSeleccionada);
-                  nuevaSemana.setDate(nuevaSemana.getDate() - 7);
-                  setSemanaSeleccionada(startOfMonday(nuevaSemana));
-                }}
-                className="h-8 w-8 p-0"
-                aria-label="Semana anterior"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <div className="flex flex-col items-center min-w-[140px]">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    const hoy = new Date();
-                    setSemanaSeleccionada(startOfMonday(hoy));
-                  }}
-                  className="h-6 text-xs font-semibold"
-                  aria-label="Volver a hoy"
-                >
-                  Hoy
-                </Button>
-                <div className="text-xs font-medium text-center">
-                  {(() => {
-                    const lunes = semanaSeleccionada;
-                    const domingo = new Date(lunes);
-                    domingo.setDate(domingo.getDate() + 6);
-                    const lunesStr = lunes.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-                    const domingoStr = domingo.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-                    return `${lunesStr} – ${domingoStr}`;
-                  })()}
-                </div>
+          <WeekNavigator 
+            mondayISO={semanaSeleccionadaISO}
+            onPrev={() => cambiarSemana(-1)}
+            onNext={() => cambiarSemana(1)}
+            onToday={irSemanaActual}
+          >
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
+                <Input
+                  placeholder="Buscar estudiante o pieza..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className={`w-full pl-9 pr-9 ${componentStyles.controls.inputDefault}`}
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                    aria-label="Limpiar búsqueda"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  const nuevaSemana = new Date(semanaSeleccionada);
-                  nuevaSemana.setDate(nuevaSemana.getDate() + 7);
-                  setSemanaSeleccionada(startOfMonday(nuevaSemana));
-                }}
-                className="h-8 w-8 p-0"
-                aria-label="Semana siguiente"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
+              
+              <div className="flex gap-2 flex-wrap">
+                <Select value={estadoFilter} onValueChange={setEstadoFilter}>
+                  <SelectTrigger className={`flex-1 min-w-[140px] ${componentStyles.controls.selectDefault}`}>
+                    <SelectValue placeholder="Estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="borrador">Borradores</SelectItem>
+                    <SelectItem value="publicada">Publicadas</SelectItem>
+                    <SelectItem value="en_curso">En Curso</SelectItem>
+                    <SelectItem value="cerrada">Cerradas</SelectItem>
+                  </SelectContent>
+                </Select>
 
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ui/80" />
-              <Input
-                placeholder="Buscar estudiante o pieza..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pl-9 pr-9 ${componentStyles.controls.inputDefault}`}
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ui/80 hover:text-ui"
-                  aria-label="Limpiar búsqueda"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+                <MultiSelect
+                  label={profesoresFilter.length === 0 ? "Profesor (TODOS)" : "Profesor"}
+                  items={profesoresDisponibles}
+                  value={profesoresFilter}
+                  onChange={setProfesoresFilter}
+                />
+              </div>
             </div>
-            
-            <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-              <SelectTrigger className={`w-full md:w-48 ${componentStyles.controls.selectDefault}`}>
-                <SelectValue placeholder="Estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="borrador">Borradores</SelectItem>
-                <SelectItem value="publicada">Publicadas</SelectItem>
-                <SelectItem value="en_curso">En Curso</SelectItem>
-                <SelectItem value="cerrada">Cerradas</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <MultiSelect
-              label={profesoresFilter.length === 0 ? "Profesor (TODOS)" : "Profesor"}
-              items={profesoresDisponibles}
-              value={profesoresFilter}
-              onChange={setProfesoresFilter}
-            />
-          </>
+          </WeekNavigator>
         }
         actions={
           <Button onClick={() => setShowForm(!showForm)} className={`w-full md:w-auto ${componentStyles.buttons.primary}`}>

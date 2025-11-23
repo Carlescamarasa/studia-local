@@ -306,12 +306,14 @@ export default function PerfilModal({
       // Asegurar que profesorAsignadoId se carga correctamente desde targetUser
       // Puede venir como profesorAsignadoId o profesor_asignado_id
       const profesorAsignadoIdValue = targetUser.profesorAsignadoId || targetUser.profesor_asignado_id || null;
-      console.log('[PerfilModal] Cargando editedData:', {
-        targetUserProfesorAsignadoId: targetUser.profesorAsignadoId,
-        targetUserProfesor_asignado_id: targetUser.profesor_asignado_id,
-        profesorAsignadoIdValue,
-        allUsersLength: allUsers?.length,
-      });
+      if (import.meta.env.DEV) {
+        console.log('[PerfilModal] Cargando editedData:', {
+          targetUserProfesorAsignadoId: targetUser.profesorAsignadoId,
+          targetUserProfesor_asignado_id: targetUser.profesor_asignado_id,
+          profesorAsignadoIdValue,
+          allUsersLength: allUsers?.length,
+        });
+      }
 
       setEditedData({
         nombreCompleto: targetUser.full_name || targetUser.nombreCompleto || getNombreCompleto(targetUser),

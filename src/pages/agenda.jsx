@@ -128,27 +128,12 @@ function AgendaPageContent() {
   const feedbacksSemanal = useMemo(() => feedbacksSemanalRaw, [feedbacksSemanalRaw]);
 
   // Logs de depuración (después de declarar feedbacksSemanal)
-  if (process.env.NODE_ENV === 'development' && feedbacksSemanal.length > 0) {
-    console.log('[agenda.jsx] Resolución de usuario:', {
-      effectiveUserId: effectiveUser?.id,
-      userIdActual,
-      totalFeedbacks: feedbacksSemanal.length,
-      feedbacksPorProfesor: feedbacksSemanal.filter(f => f.profesorId === userIdActual).length,
-      esProfesorOAdmin: effectiveUser?.rolPersonalizado === 'PROF' || effectiveUser?.rolPersonalizado === 'ADMIN',
-  });
-  }
 
   const crearFeedbackMutation = useMutation({
     mutationFn: async (data) => {
       // Intentar crear, pero si falla con 409, buscar y actualizar
       try {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[agenda.jsx] Intentando crear feedback:', data);
-        }
         const resultado = await localDataClient.entities.FeedbackSemanal.create(data);
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[agenda.jsx] Feedback creado exitosamente:', resultado.id);
-        }
         return resultado;
       } catch (error) {
         console.error('[agenda.jsx] Error al crear feedback:', {
@@ -161,9 +146,6 @@ function AgendaPageContent() {
         
         // Si es error 409, buscar el feedback existente directamente en la BD
         if (error?.code === '23505' || error?.message?.includes('duplicate') || error?.status === 409) {
-          if (process.env.NODE_ENV === 'development') {
-          console.log('[agenda.jsx] Error 409 detectado, buscando feedback existente...');
-          }
           // Buscar el feedback existente directamente en la base de datos
           try {
             const feedbacksExistentes = await localDataClient.entities.FeedbackSemanal.filter({
@@ -174,15 +156,9 @@ function AgendaPageContent() {
             
             if (feedbacksExistentes && feedbacksExistentes.length > 0) {
               const feedbackExistente = feedbacksExistentes[0];
-              if (process.env.NODE_ENV === 'development') {
-              console.log('[agenda.jsx] Feedback existente encontrado, actualizando:', feedbackExistente.id);
-              }
               // Actualizar el feedback existente
               return await localDataClient.entities.FeedbackSemanal.update(feedbackExistente.id, data);
             } else {
-              if (process.env.NODE_ENV === 'development') {
-              console.warn('[agenda.jsx] Error 409 pero no se encontró feedback en BD');
-              }
             }
           } catch (searchError) {
             console.error('[agenda.jsx] Error buscando feedback existente:', {
@@ -225,14 +201,8 @@ function AgendaPageContent() {
 
   const actualizarFeedbackMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[agenda.jsx] Actualizando feedback:', { id, data });
-      }
       try {
         const resultado = await localDataClient.entities.FeedbackSemanal.update(id, data);
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[agenda.jsx] Feedback actualizado exitosamente');
-        }
         return resultado;
       } catch (error) {
         console.error('[agenda.jsx] Error al actualizar feedback:', {
@@ -382,14 +352,6 @@ function AgendaPageContent() {
       mediaLinks: feedbackDrawer.mediaLinks || [],
     };
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[agenda.jsx] Guardando feedback:', {
-        data,
-        userIdActual,
-        existingId: feedbackDrawer.existingId,
-        totalFeedbacks: feedbacksSemanal.length,
-      });
-    }
 
     // Verificar si ya existe un feedback para este alumno/profesor/semana
     // El índice único es (alumno_id, profesor_id, semana_inicio_iso)
@@ -400,26 +362,12 @@ function AgendaPageContent() {
            f.semanaInicioISO === data.semanaInicioISO
     );
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[agenda.jsx] Feedback en lista local:', feedbackExistente ? 'encontrado' : 'no encontrado');
-      if (feedbackExistente) {
-        console.log('[agenda.jsx] Feedback encontrado:', {
-          id: feedbackExistente.id,
-          alumnoId: feedbackExistente.alumnoId,
-          profesorId: feedbackExistente.profesorId,
-          semanaInicioISO: feedbackExistente.semanaInicioISO,
-        });
-      }
-    }
 
     // Si no se encuentra en la lista local, buscar directamente en la BD
     // IMPORTANTE: Buscar solo por alumno y semana, ya que el índice único es (alumno_id, profesor_id, semana_inicio_iso)
     // Si ya existe un feedback para ese alumno/semana (incluso de otro profesor), el 409 ocurrirá
     if (!feedbackExistente && !feedbackDrawer.existingId) {
       try {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[agenda.jsx] Buscando feedback en BD...');
-        }
         const feedbacksEnBD = await localDataClient.entities.FeedbackSemanal.filter({
           alumnoId: data.alumnoId,
           profesorId: data.profesorId,
@@ -427,25 +375,10 @@ function AgendaPageContent() {
         });
         if (feedbacksEnBD && feedbacksEnBD.length > 0) {
           feedbackExistente = feedbacksEnBD[0];
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[agenda.jsx] Feedback encontrado en BD:', feedbackExistente.id);
-          }
-        } else {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[agenda.jsx] No se encontró feedback en BD con los filtros exactos');
-            // Intentar buscar solo por alumno y semana para ver si hay algún feedback
-            const todosFeedbacksAlumno = await localDataClient.entities.FeedbackSemanal.filter({
-              alumnoId: data.alumnoId,
-              semanaInicioISO: data.semanaInicioISO,
-            });
-            if (todosFeedbacksAlumno && todosFeedbacksAlumno.length > 0) {
-              console.log('[agenda.jsx] Se encontraron feedbacks para este alumno/semana pero de otro profesor:', todosFeedbacksAlumno);
-            }
-          }
         }
       } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-        console.warn('[agenda.jsx] Error buscando feedback en BD:', error);
+        if (import.meta.env.DEV) {
+          console.error('[agenda.jsx] Error buscando feedback en BD:', error);
         }
         // Continuar con el flujo normal si falla la búsqueda
       }
@@ -453,14 +386,8 @@ function AgendaPageContent() {
 
     if (feedbackDrawer.existingId || feedbackExistente) {
       const id = feedbackDrawer.existingId || feedbackExistente.id;
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[agenda.jsx] Actualizando feedback existente:', id);
-      }
       actualizarFeedbackMutation.mutate({ id, data });
     } else {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[agenda.jsx] Creando nuevo feedback');
-      }
       crearFeedbackMutation.mutate(data);
     }
   };
@@ -496,34 +423,8 @@ function AgendaPageContent() {
       f.alumnoId === alumno.id && f.semanaInicioISO === semanaActualISO
     );
       
-      // Logs de depuración
-      if (process.env.NODE_ENV === 'development' && feedbacksAlumno.length > 0) {
-        console.log('[agenda.jsx] Feedbacks encontrados para alumno/semana:', {
-          alumnoId: alumno.id,
-          alumnoNombre: displayName(alumno),
-          semanaActualISO,
-          totalFeedbacks: feedbacksAlumno.length,
-          feedbacks: feedbacksAlumno.map(f => ({
-            id: f.id,
-            profesorId: f.profesorId,
-            profesorNombre: displayName(usuarios.find(u => u.id === f.profesorId)),
-            coincideConUsuarioActual: f.profesorId === userIdActual,
-          })),
-          userIdActual,
-        });
-      }
-      
       // Si hay múltiples, preferir el del profesor actual, sino el más reciente
       const feedback = feedbacksAlumno.find(f => f.profesorId === userIdActual) || feedbacksAlumno[0];
-      
-      if (process.env.NODE_ENV === 'development' && feedbacksAlumno.length > 0) {
-        console.log('[agenda.jsx] Feedback seleccionado para row:', {
-          alumnoId: alumno.id,
-          feedbackId: feedback?.id,
-          feedbackProfesorId: feedback?.profesorId,
-          feedbackProfesorNombre: displayName(usuarios.find(u => u.id === feedback?.profesorId)),
-        });
-      }
 
     const semanaIdx = asignacionActiva ? 
       calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO) : 0;

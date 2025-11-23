@@ -1110,7 +1110,8 @@ export default function TestSeedPage() {
                 tiempoObjetivoSeg: piezaSeleccionada.tiempoObjetivoSeg || 0,
               };
               
-              console.log('Datos antes de crear asignación:', {
+              if (import.meta.env.DEV) {
+                console.log('Datos antes de crear asignación:', {
                 alumnoId: estudiante.id,
                 piezaId: piezaSeleccionada.id,
                 semanaInicioISO,
@@ -1120,6 +1121,7 @@ export default function TestSeedPage() {
                 hasPiezaSnapshot: !!piezaSnapshotData,
                 piezaSnapshotType: typeof piezaSnapshotData,
                 profesorId: profesorAsignado.id
+              }
               });
               
               // CRÍTICO: En modo remoto, usar SIEMPRE profesorParaRLS.id para cumplir con RLS
@@ -1142,12 +1144,14 @@ export default function TestSeedPage() {
               profesorId: profesorIdParaRLS
               });
               
-              console.log('Asignación creada exitosamente:', {
-                id: asignacion.id,
-                estado: asignacion.estado,
-                hasPlan: !!asignacion.plan,
-                hasPiezaSnapshot: !!asignacion.piezaSnapshot
-              });
+              if (import.meta.env.DEV) {
+                console.log('Asignación creada exitosamente:', {
+                  id: asignacion.id,
+                  estado: asignacion.estado,
+                  hasPlan: !!asignacion.plan,
+                  hasPiezaSnapshot: !!asignacion.piezaSnapshot
+                });
+              }
               
               addLog(`✅ Asignación creada para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO} (Prof RLS: ${getNombreVisible(profesorParaRLS)}, Prof lógico: ${getNombreVisible(profesorAsignado)})`, 'info');
               totalAsignaciones++;
