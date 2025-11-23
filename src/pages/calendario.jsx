@@ -206,7 +206,13 @@ function CalendarioPageContent() {
 
   // Función para ir a hoy
   const irHoy = () => {
-    setFechaActual(new Date());
+    const hoy = new Date();
+    setFechaActual(hoy);
+    // Si estamos en vista semana, asegurar que la fecha actual esté en la semana visible
+    if (vista === 'semana') {
+      const lunesSemanaActual = startOfMonday(hoy);
+      setFechaActual(lunesSemanaActual);
+    }
   };
 
   // Calcular periodo actual para el selector
@@ -240,8 +246,13 @@ function CalendarioPageContent() {
             <Button
               variant="outline"
               size="sm"
-              onClick={irHoy}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                irHoy();
+              }}
               className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+              type="button"
             >
               Hoy
             </Button>
@@ -261,8 +272,13 @@ function CalendarioPageContent() {
               <Button
                 variant="primary"
                 size="sm"
-                onClick={handleCrearEvento}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleCrearEvento();
+                }}
                 className="text-xs h-8 sm:h-9 rounded-xl focus-brand"
+                type="button"
               >
                 <Plus className="w-3.5 h-3.5 mr-1.5" />
                 <span className="hidden sm:inline">Evento</span>

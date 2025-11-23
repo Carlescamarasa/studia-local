@@ -61,6 +61,13 @@ export default function PageHeader({
     
     const handleTouchMove = (e) => {
       if (!isMobileRef.current || !swipeStartRef.current.x) return;
+      
+      // Si el evento viene de un botón o input, no interferir
+      const target = e.target;
+      if (target && (target.closest('button') || target.closest('input') || target.closest('[role="button"]'))) {
+        return;
+      }
+      
       const touch = e.touches[0];
       const dx = Math.abs(touch.clientX - swipeStartRef.current.x);
       const dy = Math.abs(touch.clientY - swipeStartRef.current.y);
@@ -158,7 +165,7 @@ export default function PageHeader({
       <div className="px-2 sm:px-3 md:px-6 py-1.5 sm:py-2 md:py-2.5 border-b border-[var(--color-border-default)]" style={{ position: 'relative', zIndex: 1 }}>
         <div className="max-w-7xl mx-auto">
           {/* Primera fila: Botón menú (mobile) + Icono + Título + Acciones (derecha) */}
-          <div className="flex items-center gap-2 sm:gap-2 md:gap-3 mb-1 md:mb-1.5" style={{ position: 'relative', zIndex: 1 }}>
+          <div className="flex items-center gap-2 sm:gap-2 md:gap-3 mb-1 md:mb-1.5" style={{ position: 'relative', zIndex: 1, pointerEvents: 'auto' }}>
             {/* Botón de menú solo en mobile */}
             {showMenuButton && (
               <button
@@ -181,7 +188,7 @@ export default function PageHeader({
             )}
             {/* Acciones siempre a la derecha en zona 1 */}
             {actions && (
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto relative z-10" style={{ pointerEvents: 'auto' }}>
                 {actions}
               </div>
             )}
