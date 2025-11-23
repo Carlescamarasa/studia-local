@@ -914,24 +914,24 @@ function EstadisticasPageContent() {
         title={isEstu ? 'Mis Estadísticas' : isProf ? 'Estadísticas de Estudiantes' : 'Estadísticas Generales'}
         subtitle={isEstu ? 'Tu progreso en la práctica' : 'Análisis del rendimiento y progreso'}
         actions={
-          <div className="flex items-center gap-2">
+          <>
             {/* Pill de rango de fechas */}
             <Button
               variant="outline"
               size="sm"
               onClick={() => setFiltersExpanded(!filtersExpanded)}
-              className={`${componentStyles.buttons.outline} flex items-center justify-center gap-1.5 text-xs sm:text-sm min-h-[48px] min-w-[48px] h-12 w-12 sm:h-auto sm:min-w-0 px-3 sm:px-3 py-3 sm:py-2 touch-manipulation shrink-0 transition-all duration-300`}
+              className={`${componentStyles.buttons.outline} flex items-center justify-center gap-1 sm:gap-1.5 text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3 py-1.5 touch-manipulation shrink-0 transition-all duration-300 whitespace-nowrap`}
               aria-label={filtersExpanded ? "Ocultar filtros" : "Mostrar filtros"}
               aria-expanded={filtersExpanded}
             >
-              <CalendarDays className="w-4 h-4 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden sm:inline text-xs sm:text-sm whitespace-nowrap">
+              <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="text-xs sm:text-sm">
                 {formatDateRange}
               </span>
               {filtersExpanded ? (
-                <ChevronUp className="w-4 h-4 sm:w-4 sm:h-4 shrink-0 hidden sm:inline" />
+                <ChevronUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               ) : (
-                <ChevronDown className="w-4 h-4 sm:w-4 sm:h-4 shrink-0 hidden sm:inline" />
+                <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               )}
             </Button>
             {location.state?.from === 'hoy' && (
@@ -944,7 +944,7 @@ function EstadisticasPageContent() {
                 Volver
               </Button>
             )}
-          </div>
+          </>
         }
       />
 

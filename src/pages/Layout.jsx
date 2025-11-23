@@ -49,7 +49,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import PerfilModal from "@/components/common/PerfilModal";
 import { useDesign } from "@/components/design/DesignProvider";
 import ReportErrorButton from "@/components/common/ReportErrorButton";
-import ReportErrorModal from "@/components/common/ReportErrorModal";
 import { useQuery } from "@tanstack/react-query";
 import { listErrorReports } from "@/api/errorReportsAPI";
 import { Badge } from "@/components/ds";
@@ -406,35 +405,11 @@ function LayoutContent() {
   };
 
   const [perfilModalOpen, setPerfilModalOpen] = useState(false);
-  const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [reportModalError, setReportModalError] = useState(null);
-  const [reportModalCategory, setReportModalCategory] = useState(null);
 
   const goProfile = () => {
     if (isMobile) closeSidebar();
     setPerfilModalOpen(true);
   };
-
-  // Escuchar eventos para abrir modal de reporte
-  useEffect(() => {
-    const handleOpenReport = (event) => {
-      console.log('[Layout] Evento open-error-report recibido:', event.detail);
-      try {
-        setReportModalError(event.detail?.error || null);
-        setReportModalCategory(event.detail?.category || null);
-        setReportModalOpen(true);
-        console.log('[Layout] Modal de reporte abierto, error:', event.detail?.error);
-      } catch (error) {
-        console.error('[Layout] Error al abrir modal de reporte:', error);
-        // Fallback: abrir modal sin error
-        setReportModalOpen(true);
-        setReportModalCategory(event.detail?.category || 'algo_no_funciona');
-      }
-    };
-
-    window.addEventListener('open-error-report', handleOpenReport);
-    return () => window.removeEventListener('open-error-report', handleOpenReport);
-  }, []);
 
   /* ------------------------------- Render -------------------------------- */
   return (
@@ -683,12 +658,6 @@ function LayoutContent() {
       <PerfilModal 
         open={perfilModalOpen} 
         onOpenChange={setPerfilModalOpen}
-      />
-      <ReportErrorModal
-        open={reportModalOpen}
-        onOpenChange={setReportModalOpen}
-        initialError={reportModalError}
-        initialCategory={reportModalCategory}
       />
     </RoleBootstrap>
   );

@@ -176,7 +176,13 @@ export default function PageHeader({
                 <Icon className={iconClass} />
             )}
             {title && (
-              <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl flex-1`}>{title}</h1>
+              <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl flex-1 min-w-0`}>{title}</h1>
+            )}
+            {/* Acciones en línea con el título (si no hay filtros) */}
+            {actions && !filters && (
+              <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 ml-1 sm:ml-2">
+                {actions}
+              </div>
             )}
             {/* Botón de filtros en línea con el título */}
             {filters && (
@@ -220,17 +226,15 @@ export default function PageHeader({
           )}
         </div>
       </div>
-      {(filters || actions) && (
+      {filters && (
         <div className="w-full flex justify-center px-2 sm:px-3 md:px-6 pb-1 sm:pb-1.5 md:pb-2">
           <div className="w-full max-w-full">
             <div className="flex flex-col md:flex-row gap-1.5 sm:gap-2 md:gap-2.5 items-start md:items-center justify-between">
-              {filters && (
-                <div className={`flex gap-1.5 sm:gap-2 flex-wrap flex-1 w-full md:w-auto text-sm transition-all duration-300 ${
-                  filtersExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
-                }`}>
-                  {filters}
-                </div>
-              )}
+              <div className={`flex gap-1.5 sm:gap-2 flex-wrap flex-1 w-full md:w-auto text-sm transition-all duration-300 ${
+                filtersExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+              }`}>
+                {filters}
+              </div>
               {actions && (
                 <div className="flex gap-1.5 sm:gap-2 flex-wrap items-center w-full md:w-auto">
                   {actions}
