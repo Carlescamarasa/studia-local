@@ -591,7 +591,7 @@ function LayoutContent() {
                   {groupItems.map((item) => {
                     const isActive = location.pathname === item.url;
                     const isReportes = item.url === '/reportes';
-                    const isSoporte = item.url === '/soporte-prof';
+                    const isSoporte = item.url === '/soporte-prof' || item.url === '/soporte';
                     const nuevos = reportCounts?.nuevos || 0;
                     const enRevision = reportCounts?.enRevision || 0;
                     const totalCount = isReportes ? (nuevos + enRevision) : 0;

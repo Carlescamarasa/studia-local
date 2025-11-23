@@ -41,7 +41,6 @@ import {
   DialogTitle,
   DialogDescription
 } from "@/components/ui/dialog";
-import { SupportTicketsBadge } from "@/components/common/SupportTicketsBadge";
 
 function SoportePageContent() {
   // ===== TODOS LOS HOOKS AL PRINCIPIO - SIEMPRE EN EL MISMO ORDEN =====
@@ -247,12 +246,7 @@ function SoportePageContent() {
   return (
     <div className="bg-background min-h-screen">
         <PageHeader
-          title={
-            <span className="flex items-center gap-2">
-              Centro de dudas
-              <SupportTicketsBadge />
-            </span>
-          }
+          title="Centro de dudas"
           subtitle="Comunícate con tu profesor y resuelve tus dudas"
         />
 
