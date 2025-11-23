@@ -230,11 +230,11 @@ export default function PageHeader({
         <div className="w-full flex justify-center px-2 sm:px-3 md:px-6 pb-1 sm:pb-1.5 md:pb-2">
           <div className="w-full max-w-full">
             <div className="flex flex-col md:flex-row gap-1.5 sm:gap-2 md:gap-2.5 items-start md:items-center justify-between">
-              <div className={`flex gap-1.5 sm:gap-2 flex-wrap flex-1 w-full md:w-auto text-sm transition-all duration-300 ${
-                filtersExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
-              }`}>
-                {filters}
-              </div>
+                <div className={`flex gap-1.5 sm:gap-2 flex-wrap flex-1 w-full md:w-auto text-sm transition-all duration-300 ${
+                  filtersExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+                }`}>
+                  {filters}
+                </div>
               {actions && (
                 <div className="flex gap-1.5 sm:gap-2 flex-wrap items-center w-full md:w-auto">
                   {actions}

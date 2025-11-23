@@ -338,8 +338,8 @@ https://drive.google.com/file/d/ID/view?usp=sharing&format=mp3`}
           data-form-type="other"
         />
         <p className="text-xs text-[var(--color-text-secondary)] mt-1 break-words">
-          Pega una URL por línea. Soporta imágenes, audio, vídeo, PDF, YouTube, Vimeo, SoundCloud y Google Drive.
-        </p>
+            Pega una URL por línea. Soporta imágenes, audio, vídeo, PDF, YouTube, Vimeo, SoundCloud y Google Drive.
+          </p>
         {errors.length > 0 && (
           <div className="flex items-center gap-2 mt-2 text-xs text-[var(--color-danger)]">
             <AlertCircle className="w-4 h-4 shrink-0" />

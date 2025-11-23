@@ -1065,15 +1065,15 @@ function HoyPageContent() {
                 />
               );
             })}
-          </div>
+                          </div>
           {/* Texto "Ronda X de Y" */}
           <span className="text-[10px] sm:text-xs text-[var(--color-text-secondary)] font-medium tabular-nums">
             Ronda {rondaActual} de {totalRondas}
             {repeticionActual && totalRepeticiones && (
               <span className="text-[var(--color-text-tertiary)]"> • Rep {repeticionActual}/{totalRepeticiones}</span>
             )}
-          </span>
-        </div>
+                          </span>
+                        </div>
       );
     };
 
@@ -1083,8 +1083,8 @@ function HoyPageContent() {
       }}>
         {/* Timer dock inferior fijo - Una única barra con dos filas */}
         {sesionActiva && (
-          <div
-            className={cn(
+                          <div
+                            className={cn(
               "fixed bottom-0 left-0 right-0 z-[30] bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-[0_-4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 ease-in-out",
               timerCollapsed ? "h-[80px]" : "min-h-[80px]"
             )}
@@ -1092,20 +1092,20 @@ function HoyPageContent() {
             {/* Botón de reporte - Posicionado absolutamente, separación constante */}
             <div className="absolute right-4 bottom-full mb-4 z-[50]">
               <ReportErrorButtonInTimer />
-            </div>
-            
+                  </div>
+                  
             {/* Barra de progreso - SIEMPRE en el borde superior, de lado a lado, MISMO grosor en expandido y colapsado */}
-            {!isAD && ejercicioActual?.duracionSeg > 0 && (
+                  {!isAD && ejercicioActual?.duracionSeg > 0 && (
               <div className="w-full bg-[var(--color-border-default)]/30 rounded-full h-2 md:h-2.5 overflow-hidden">
-                <div
-                  className={cn(
-                    "h-full transition-all duration-300",
-                    excedido ? 'bg-[var(--color-danger)]' : porcentajeEjercicio >= 75 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-primary)]'
+                      <div
+                        className={cn(
+                          "h-full transition-all duration-300",
+                          excedido ? 'bg-[var(--color-danger)]' : porcentajeEjercicio >= 75 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-primary)]'
+                        )}
+                        style={{ width: `${Math.min(porcentajeEjercicio, 100)}%` }}
+                      />
+                    </div>
                   )}
-                  style={{ width: `${Math.min(porcentajeEjercicio, 100)}%` }}
-                />
-              </div>
-            )}
             
             {/* Fila principal - Siempre visible (tanto expandido como colapsado) */}
             <div className="max-w-5xl mx-auto px-4 py-2">
@@ -1122,7 +1122,7 @@ function HoyPageContent() {
                       excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
                     )}>
                       {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
-                    </div>
+                </div>
                     {!isAD && ejercicioActual?.duracionSeg > 0 && (
                       <div className="text-[10px] text-[var(--color-text-secondary)] font-mono tabular-nums leading-tight">
                         / {Math.floor(ejercicioActual.duracionSeg / 60)}:{String((ejercicioActual.duracionSeg % 60)).padStart(2, '0')}
@@ -1135,62 +1135,62 @@ function HoyPageContent() {
                 {!timerCollapsed && (
                   <div className="flex items-center gap-1.5 shrink-0">
                     {/* Anterior */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleAnterior}
-                      disabled={indiceActual === 0}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAnterior}
+                  disabled={indiceActual === 0}
                       className="h-9 w-9 p-0 rounded-lg"
-                      title="Anterior (P)"
-                      aria-label="Ejercicio anterior"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    
+                  title="Anterior (P)"
+                  aria-label="Ejercicio anterior"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+
                     {/* Play/Pause */}
-                    {!isAD && (
-                      <Button
+                {!isAD && (
+                  <Button
                         variant="outline"
-                        size="sm"
-                        onClick={togglePlayPausa}
+                    size="sm"
+                    onClick={togglePlayPausa}
                         className="h-9 w-9 p-0 rounded-lg"
-                        title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
-                        aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
-                      >
+                    title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
+                    aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
+                  >
                         {cronometroActivo ? (
                           <Pause className="w-4 h-4" />
                         ) : (
                           <Play className="w-4 h-4" />
                         )}
-                      </Button>
-                    )}
-                    
+                  </Button>
+                )}
+
                     {/* OK - Botón primario */}
-                    <Button
-                      variant="primary"
-                      onClick={completarYAvanzar}
+                <Button
+                  variant="primary"
+                  onClick={completarYAvanzar}
                       className="h-9 px-3 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm rounded-lg focus-brand shadow-sm text-white"
-                      title="Completar (Enter)"
-                      aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
-                    >
+                  title="Completar (Enter)"
+                  aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
+                >
                       <CheckCircle className="w-4 h-4 mr-1" />
-                      {isUltimo ? 'Finalizar' : 'OK'}
-                    </Button>
-                    
+                  {isUltimo ? 'Finalizar' : 'OK'}
+                </Button>
+
                     {/* Siguiente */}
                     {!isUltimo && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={omitirYAvanzar}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={omitirYAvanzar}
                         className="h-9 w-9 p-0 rounded-lg"
-                        title="Omitir y pasar (N)"
-                        aria-label="Omitir ejercicio"
-                      >
-                        <ChevronsRight className="w-4 h-4" />
-                      </Button>
+                  title="Omitir y pasar (N)"
+                  aria-label="Omitir ejercicio"
+                >
+                  <ChevronsRight className="w-4 h-4" />
+                </Button>
                     )}
-                  </div>
+              </div>
                 )}
                 
                 {/* OK en modo compacto (cuando colapsado) */}
@@ -1220,7 +1220,7 @@ function HoyPageContent() {
                       <span className="font-mono tabular-nums">
                         {indiceActual + 1}<span className="text-[var(--color-text-secondary)] font-normal">/{listaEjecucion.length}</span>
                       </span>
-                    </div>
+            </div>
                   )}
                   
                   {/* Botón colapsar/expandir */}
@@ -1324,7 +1324,7 @@ function HoyPageContent() {
                       {/* Texto "Ronda X de Y" */}
                       <span className="text-xs sm:text-sm text-[var(--color-text-secondary)] font-normal tabular-nums">
                         Ronda {rondaActual} de {totalRondas} • Rep {repeticionActual}/{totalRepeticiones}
-                      </span>
+                    </span>
                     </div>
                   )}
                 </h1>

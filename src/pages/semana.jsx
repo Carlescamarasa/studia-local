@@ -433,35 +433,35 @@ function SemanaPageContent() {
               <div className="pt-4 border-t border-[var(--color-border-default)]">
                 {/* Título arriba de los filtros */}
                 <h3 className={cn(componentStyles.typography.sectionTitle, "mb-3")}>
-                  Semana Actual
-                </h3>
+                    Semana Actual
+                  </h3>
                 
                 {/* Filtros compactos debajo del título */}
                 <div className="flex gap-1.5 flex-wrap mb-4">
-                  <Button
-                    variant={tipoFeedbackSemana === 'todos' ? 'primary' : 'outline'}
-                    size="sm"
-                    onClick={() => setTipoFeedbackSemana('todos')}
+                    <Button
+                      variant={tipoFeedbackSemana === 'todos' ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setTipoFeedbackSemana('todos')}
                     className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-                  >
-                    Todos
-                  </Button>
-                  <Button
-                    variant={tipoFeedbackSemana === 'profesor' ? 'primary' : 'outline'}
-                    size="sm"
-                    onClick={() => setTipoFeedbackSemana('profesor')}
+                    >
+                      Todos
+                    </Button>
+                    <Button
+                      variant={tipoFeedbackSemana === 'profesor' ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setTipoFeedbackSemana('profesor')}
                     className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-                  >
-                    Feedback Profesor
-                  </Button>
-                  <Button
-                    variant={tipoFeedbackSemana === 'sesiones' ? 'primary' : 'outline'}
-                    size="sm"
-                    onClick={() => setTipoFeedbackSemana('sesiones')}
+                    >
+                      Feedback Profesor
+                    </Button>
+                    <Button
+                      variant={tipoFeedbackSemana === 'sesiones' ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setTipoFeedbackSemana('sesiones')}
                     className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-                  >
-                    Registro Sesiones
-                  </Button>
+                    >
+                      Registro Sesiones
+                    </Button>
                 </div>
 
                 {itemsFiltrados.length === 0 ? (

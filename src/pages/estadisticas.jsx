@@ -717,7 +717,7 @@ function EstadisticasPageContent() {
           if (window.history.length <= 1) {
             navigate('/calendario');
           } else {
-            navigate(-1);
+        navigate(-1);
           }
         }
       }
@@ -970,86 +970,86 @@ function EstadisticasPageContent() {
                 {/* Filtros de fecha y presets */}
                 <div className="space-y-3">
                   <div className="flex flex-col gap-3">
-                    {/* Rango de fechas */}
-                    <div className="flex-1 w-full">
-                      <Label className="text-xs sm:text-sm mb-1.5 block text-[var(--color-text-secondary)]">
-                        Rango de fechas
-                      </Label>
-                      <DateRangePicker
-                        startDate={periodoInicio}
-                        endDate={periodoFin}
-                        onDateChange={(start, end) => {
-                          setPeriodoInicio(start);
-                          setPeriodoFin(end);
-                          setRangoPreset('personalizado');
-                        }}
-                        className="w-full sm:w-auto"
-                      />
-                    </div>
-                    
+                  {/* Rango de fechas */}
+                  <div className="flex-1 w-full">
+                    <Label className="text-xs sm:text-sm mb-1.5 block text-[var(--color-text-secondary)]">
+                      Rango de fechas
+                    </Label>
+                    <DateRangePicker
+                      startDate={periodoInicio}
+                      endDate={periodoFin}
+                      onDateChange={(start, end) => {
+                        setPeriodoInicio(start);
+                        setPeriodoFin(end);
+                        setRangoPreset('personalizado');
+                      }}
+                      className="w-full sm:w-auto"
+                    />
+                  </div>
+                  
                     {/* Presets */}
-                    <div>
-                      <Label className="text-xs sm:text-sm mb-1.5 block text-[var(--color-text-secondary)]">
-                        Presets rápidos
-                      </Label>
-                      <div className="flex gap-1.5 flex-wrap">
-                        {presets.map(p => (
-                          <Button
-                            key={p.key}
-                            variant={rangoPreset === p.key ? "primary" : "outline"}
-                            size="sm"
-                            onClick={() => {
-                              aplicarPreset(p.key);
-                            }}
-                            className={`
-                              text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all
-                              ${rangoPreset === p.key 
-                                ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-sm' 
-                                : 'hover:bg-[var(--color-surface-muted)]'
-                              }
-                            `}
-                            aria-label={`Preset ${p.label}`}
-                            title={`Ver estadísticas: ${p.label}`}
-                          >
-                            {p.label}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
+                  <div>
+                    <Label className="text-xs sm:text-sm mb-1.5 block text-[var(--color-text-secondary)]">
+                      Presets rápidos
+                    </Label>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {presets.map(p => (
+                        <Button
+                          key={p.key}
+                          variant={rangoPreset === p.key ? "primary" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            aplicarPreset(p.key);
+                          }}
+                          className={`
+                            text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all
+                            ${rangoPreset === p.key 
+                              ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-sm' 
+                              : 'hover:bg-[var(--color-surface-muted)]'
+                            }
+                          `}
+                          aria-label={`Preset ${p.label}`}
+                          title={`Ver estadísticas: ${p.label}`}
+                        >
+                          {p.label}
+                        </Button>
+                      ))}
                   </div>
                 </div>
+              </div>
+            </div>
 
-                {/* Filtros adicionales (solo si no es estudiante) */}
-                {!isEstu && (
+            {/* Filtros adicionales (solo si no es estudiante) */}
+            {!isEstu && (
                   <div className={`${componentStyles.layout.grid2} gap-3`}>
-                    <MultiSelect
-                      label="Profesores"
-                      items={profesores.map(p => ({ value: p.id, label: displayName(p) }))}
-                      value={profesoresSeleccionados}
-                      onChange={setProfesoresSeleccionados}
-                    />
-                    <MultiSelect
-                      label="Alumnos"
-                      items={estudiantes.map(a => ({ value: a.id, label: displayName(a) }))}
-                      value={alumnosSeleccionados}
-                      onChange={setAlumnosSeleccionados}
-                    />
-                  </div>
-                )}
+                  <MultiSelect
+                    label="Profesores"
+                    items={profesores.map(p => ({ value: p.id, label: displayName(p) }))}
+                    value={profesoresSeleccionados}
+                    onChange={setProfesoresSeleccionados}
+                  />
+                  <MultiSelect
+                    label="Alumnos"
+                    items={estudiantes.map(a => ({ value: a.id, label: displayName(a) }))}
+                    value={alumnosSeleccionados}
+                    onChange={setAlumnosSeleccionados}
+                  />
+              </div>
+            )}
 
                 {/* Filtro de Foco */}
                 <div>
-                  <MultiSelect
-                    label="Foco"
-                    items={Object.entries(focoLabels).map(([key, label]) => ({ value: key, label }))}
-                    value={focosSeleccionados}
-                    onChange={setFocosSeleccionados}
-                  />
-                </div>
+                <MultiSelect
+                  label="Foco"
+                  items={Object.entries(focoLabels).map(([key, label]) => ({ value: key, label }))}
+                  value={focosSeleccionados}
+                  onChange={setFocosSeleccionados}
+                />
               </div>
+            </div>
             </CardContent>
           </Card>
-        </div>
+              </div>
       )}
 
       <div className={componentStyles.layout.page}>

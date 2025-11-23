@@ -142,9 +142,9 @@ class ErrorBoundary extends React.Component {
                     </Button>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-[var(--color-text-secondary)] break-words">
-                      {this.state.error.toString()}
-                    </p>
+                  <p className="text-[var(--color-text-secondary)] break-words">
+                    {this.state.error.toString()}
+                  </p>
                     {this.state.error?.stack && (
                       <details className="mt-2">
                         <summary className="cursor-pointer text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] text-xs font-medium mb-1">
@@ -215,11 +215,11 @@ class ErrorBoundary extends React.Component {
                     } catch (error) {
                       console.error('[ErrorBoundary] Error al disparar evento:', error);
                       // Fallback: intentar sin serializar (aunque puede fallar)
-                      window.dispatchEvent(new CustomEvent('open-error-report', {
+                    window.dispatchEvent(new CustomEvent('open-error-report', {
                         detail: { category: 'algo_no_funciona' },
                         bubbles: true,
                         cancelable: true
-                      }));
+                    }));
                     }
                   }}
                   className={`${componentStyles.buttons.primary} gap-2`}

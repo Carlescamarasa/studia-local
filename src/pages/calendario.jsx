@@ -308,46 +308,46 @@ function CalendarioPageContent() {
           
           {/* Tipo: Todos / Eventos / Asignaciones / Sesiones / Feedback */}
           <div className="flex items-center gap-1 flex-wrap">
-            <Button
-              variant={filtroTipoGlobal === 'all' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setFiltroTipoGlobal('all')}
+          <Button
+            variant={filtroTipoGlobal === 'all' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setFiltroTipoGlobal('all')}
               className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-            >
-              Todos
-            </Button>
-            <Button
-              variant={filtroTipoGlobal === 'evento' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setFiltroTipoGlobal('evento')}
+          >
+            Todos
+          </Button>
+          <Button
+            variant={filtroTipoGlobal === 'evento' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setFiltroTipoGlobal('evento')}
               className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-            >
-              Eventos
-            </Button>
-            <Button
-              variant={filtroTipoGlobal === 'asignacion' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setFiltroTipoGlobal('asignacion')}
+          >
+            Eventos
+          </Button>
+          <Button
+            variant={filtroTipoGlobal === 'asignacion' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setFiltroTipoGlobal('asignacion')}
               className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-            >
-              Asignaciones
-            </Button>
-            <Button
-              variant={filtroTipoGlobal === 'sesion' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setFiltroTipoGlobal('sesion')}
+          >
+            Asignaciones
+          </Button>
+          <Button
+            variant={filtroTipoGlobal === 'sesion' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setFiltroTipoGlobal('sesion')}
               className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-            >
-              Sesiones
-            </Button>
-            <Button
-              variant={filtroTipoGlobal === 'feedback' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setFiltroTipoGlobal('feedback')}
+          >
+            Sesiones
+          </Button>
+          <Button
+            variant={filtroTipoGlobal === 'feedback' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setFiltroTipoGlobal('feedback')}
               className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-            >
-              Feedbacks
-            </Button>
+          >
+            Feedbacks
+          </Button>
           </div>
         </div>
 

@@ -263,10 +263,10 @@ function SoporteProfPageContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PageHeader
-        title={isAdmin ? "Tickets de soporte" : "Tickets de alumnos"}
-        subtitle={isAdmin ? "Gestiona todos los tickets del sistema" : "Responde a las dudas de tus alumnos"}
-      />
+        <PageHeader
+          title={isAdmin ? "Tickets de soporte" : "Tickets de alumnos"}
+          subtitle={isAdmin ? "Gestiona todos los tickets del sistema" : "Responde a las dudas de tus alumnos"}
+        />
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
@@ -364,7 +364,7 @@ function SoporteProfPageContent() {
                           {ticket.titulo}
                         </h3>
                         <div className="shrink-0">
-                          {getEstadoBadge(ticket.estado)}
+                        {getEstadoBadge(ticket.estado)}
                         </div>
                       </div>
                       
@@ -379,13 +379,13 @@ function SoporteProfPageContent() {
                         <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
                           <Clock className="w-3 h-3 shrink-0" />
                           <span>{formatDate(ticket.updated_at)}</span>
-                        </div>
-                        {ticket.ultimaRespuestaDe === 'alumno' && (
+                      </div>
+                      {ticket.ultimaRespuestaDe === 'alumno' && (
                           <Badge variant="info" className="text-xs px-2 py-0.5 shrink-0">
                             Nueva respuesta
                           </Badge>
                         )}
-                      </div>
+                        </div>
                     </div>
                   ))}
                 </div>

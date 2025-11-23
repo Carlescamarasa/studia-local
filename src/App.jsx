@@ -29,8 +29,8 @@ function App() {
               {/* Handler global para reportes de errores - siempre montado dentro de los providers */}
               <GlobalErrorReportHandler />
               <ErrorBoundary>
-                <AppRouter />
-                <Toaster />
+              <AppRouter />
+              <Toaster />
               </ErrorBoundary>
             </DataProvider>
           </LocalDataProvider>
