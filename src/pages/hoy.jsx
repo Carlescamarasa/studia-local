@@ -2323,7 +2323,7 @@ function HoyPageContent() {
                                           className={`${componentStyles.buttons.primary} w-full md:w-auto h-12 shadow-sm`}
                                         >
                                           <PlayCircle className="w-5 h-5 mr-2" />
-                                          Iniciar Práctica
+                                          Studia ahora
                                         </Button>
                                       </div>
                                     )}

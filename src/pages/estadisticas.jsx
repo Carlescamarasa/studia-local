@@ -44,6 +44,7 @@ import ProgresoPorPieza from "@/components/estadisticas/ProgresoPorPieza";
 import ComparativaEstudiantes from "@/components/estadisticas/ComparativaEstudiantes";
 import { useEstadisticas, safeNumber } from "@/components/estadisticas/hooks/useEstadisticas";
 import { formatDuracionHM, formatLocalDate, parseLocalDate, startOfMonday } from "@/components/estadisticas/utils";
+import { shouldIgnoreHotkey } from "@/utils/hotkeys";
 
 function EstadisticasPageContent() {
   const navigate = useNavigate();
@@ -679,6 +680,9 @@ function EstadisticasPageContent() {
     if (!feedbackDrawer) return;
     
     const handleKeyDown = (e) => {
+      // No procesar si está en un campo editable
+      if (shouldIgnoreHotkey(e)) return;
+      
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
         if (feedbackDrawer && feedbackDrawer.notaProfesor?.trim()) {

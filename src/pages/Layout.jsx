@@ -52,7 +52,7 @@ import ReportErrorButton from "@/components/common/ReportErrorButton";
 import { useQuery } from "@tanstack/react-query";
 import { listErrorReports } from "@/api/errorReportsAPI";
 import { Badge } from "@/components/ds";
-import { shouldIgnoreHotkey, matchesCombo, getHotkeyById, HOTKEYS_CONFIG } from "@/utils/hotkeys";
+import { shouldIgnoreHotkey, matchesHotkey, getHotkeyById, HOTKEYS_CONFIG } from "@/utils/hotkeys";
 import HotkeysModal from "@/components/common/HotkeysModal";
 import { HotkeysModalProvider, useHotkeysModal } from "@/hooks/useHotkeysModal.jsx";
 
@@ -270,14 +270,12 @@ function LayoutContent() {
           continue;
         }
 
-        // Verificar si alguna combinación coincide
-        for (const combo of hotkey.combos) {
-          if (matchesCombo(e, combo)) {
-            const action = hotkeyActions[hotkey.id];
-            if (action) {
-              action();
-              return; // Handler procesó el evento
-            }
+        // Verificar si el hotkey coincide (primary o aliases)
+        if (matchesHotkey(e, hotkey)) {
+          const action = hotkeyActions[hotkey.id];
+          if (action) {
+            action();
+            return; // Handler procesó el evento
           }
         }
       }

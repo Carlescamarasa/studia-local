@@ -86,7 +86,11 @@ export function formatShortcut(combo) {
     if (p === 'escape') return 'Esc';
     if (p === 'enter') return 'Enter';
     if (p === 'space') return 'Espacio';
-    // Letras y números simples
+    if (p === '/') return '/';
+    if (p === '?') return '?';
+    // Números
+    if (/^\d$/.test(p)) return p;
+    // Letras simples
     return p.length === 1 ? p.toUpperCase() : p;
   });
   
@@ -134,161 +138,342 @@ export function matchesCombo(event, combo) {
     'escape': 'escape',
     'enter': 'enter',
     ' ': 'space',
+    'space': 'space',
+    '/': '/',
+    '?': '?',
   };
 
+  // Normalizar tecla principal
   const normalizedMainKey = keyMap[mainKey] || mainKey;
+  
+  // Normalizar tecla del evento
   const normalizedEventKey = keyMap[key] || key;
-  const normalizedEventCode = code ? code.replace('key', '').toLowerCase() : null;
+  
+  // Manejo especial para '/' con mod (mod+/)
+  if (mainKey === '/' && needsMod && !needsAlt && !needsShift) {
+    // Verificar que sea '/' y que mod esté presionado (sin otros modificadores)
+    if (key === '/' || code === 'slash' || code === 'numpaddivide') {
+      // Verificar que no haya otros modificadores no deseados
+      return !event.altKey && !event.shiftKey;
+    }
+    return false;
+  }
+  
+  // Manejo especial para '?' - se genera con Shift+/, así que requiere Shift pero lo capturamos como '?' simple
+  if (mainKey === '?' && !needsMod && !needsAlt && !needsShift) {
+    // Verificar que sea '?' (que viene de Shift+/) y que Shift esté presionado
+    // Pero que NO haya otros modificadores
+    if (key === '?' || (key === '/' && event.shiftKey)) {
+      // Asegurar que no haya otros modificadores no deseados, pero Shift sí es requerido para '?'
+      return !event.ctrlKey && !event.metaKey && !event.altKey && event.shiftKey;
+    }
+    return false;
+  }
+  
+  // Para teclas simples (una sola letra, número o '/' sin modificadores especiales)
+  if (mainKey.length === 1 && !needsMod && !needsAlt && !needsShift && mainKey !== '?' && mainKey !== '/') {
+    // Comparar directamente
+    if (mainKey === key) {
+      // Asegurar que no haya modificadores no deseados (incluyendo Shift para teclas normales)
+      return !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey;
+    }
+  }
 
-  // Comparar con key y code
-  return normalizedMainKey === normalizedEventKey || 
-         mainKey === key || 
-         mainKey === normalizedEventCode;
+  // Comparar teclas normalizadas (para teclas especiales como arrows, escape, etc.)
+  return normalizedMainKey === normalizedEventKey || mainKey === key;
 }
 
 /**
- * Configuración única de hotkeys
- * Cada entrada tiene:
+ * Configuración única de hotkeys siguiendo normas de diseño:
+ * - 1 acción = 1 atajo principal (primary)
+ * - Opcionalmente 1 alias si hay razón muy buena
+ * - Usar 'mod' para unificar ⌘/Ctrl (no duplicar por plataforma)
+ * 
+ * Formato:
  * - id: identificador único
  * - scope: "global" | "study" | "feedback" | "create"
- * - combos: array de combinaciones válidas (ej: ["mod+alt+s"])
+ * - primary: combinación principal en formato "mod+alt+s"
+ * - aliases: array opcional con máximo 1 alias (ej: ["arrowright"])
  * - description: descripción para mostrar en el modal de ayuda
  * - roles: array de roles que pueden usar este hotkey (["ESTU", "PROF", "ADMIN"])
- * - action: función a ejecutar (se pasa context como parámetro)
  */
 export const HOTKEYS_CONFIG = [
-  // Navegación global
+  // Navegación general
   {
     id: 'toggle-sidebar',
     scope: 'global',
-    combos: ['mod+m'],
+    primary: 'mod+m',
+    aliases: [],
     description: 'Abrir/cerrar menú lateral',
     roles: ['ESTU', 'PROF', 'ADMIN'],
   },
   {
     id: 'toggle-theme',
     scope: 'global',
-    combos: ['mod+shift+d'],
+    primary: 'mod+shift+d',
+    aliases: [],
     description: 'Alternar tema claro/oscuro',
     roles: ['ESTU', 'PROF', 'ADMIN'],
   },
   {
     id: 'toggle-hotkeys-modal',
     scope: 'global',
-    combos: ['mod+alt+k'],
+    primary: 'mod+/',
+    aliases: ['?'],
     description: 'Mostrar/ocultar panel de atajos de teclado',
     roles: ['ESTU', 'PROF', 'ADMIN'],
   },
   {
     id: 'logout',
     scope: 'global',
-    combos: ['mod+alt+l'],
+    primary: 'mod+alt+l',
+    aliases: [],
     description: 'Cerrar sesión',
     roles: ['ESTU', 'PROF', 'ADMIN'],
   },
-  // Navegación por rol (ESTU)
+  // Navegación principal (ESTU) - patrón: mod+alt+<letra>
   {
     id: 'go-studia',
     scope: 'global',
-    combos: ['mod+alt+s'],
+    primary: 'mod+alt+s',
+    aliases: [],
     description: 'Ir a Studia ahora',
     roles: ['ESTU'],
   },
   {
     id: 'go-week',
     scope: 'global',
-    combos: ['mod+alt+m'],
+    primary: 'mod+alt+m',
+    aliases: [],
     description: 'Ir a Mi Semana',
     roles: ['ESTU'],
   },
   {
     id: 'go-stats-estu',
     scope: 'global',
-    combos: ['mod+alt+e'],
+    primary: 'mod+alt+e',
+    aliases: [],
     description: 'Ir a Mis Estadísticas',
     roles: ['ESTU'],
   },
   {
     id: 'go-calendar-estu',
     scope: 'global',
-    combos: ['mod+alt+c'],
+    primary: 'mod+alt+c',
+    aliases: [],
     description: 'Ir a Calendario',
     roles: ['ESTU'],
   },
   {
     id: 'go-support',
     scope: 'global',
-    combos: ['mod+alt+d'],
+    primary: 'mod+alt+h',
+    aliases: [],
     description: 'Ir a Centro de dudas',
     roles: ['ESTU'],
   },
-  // Navegación por rol (PROF/ADMIN)
+  // Navegación principal (PROF/ADMIN) - patrón: mod+alt+<letra>
   {
     id: 'go-assignments',
     scope: 'global',
-    combos: ['mod+alt+a'],
+    primary: 'mod+alt+a',
+    aliases: [],
     description: 'Ir a Asignaciones',
     roles: ['PROF', 'ADMIN'],
   },
   {
     id: 'go-agenda',
     scope: 'global',
-    combos: ['mod+alt+g'],
+    primary: 'mod+alt+g',
+    aliases: [],
     description: 'Ir a Agenda',
     roles: ['PROF', 'ADMIN'],
   },
   {
     id: 'go-templates',
     scope: 'global',
-    combos: ['mod+alt+p'],
+    primary: 'mod+alt+p',
+    aliases: [],
     description: 'Ir a Plantillas',
     roles: ['PROF', 'ADMIN'],
   },
   {
     id: 'go-stats-prof',
     scope: 'global',
-    combos: ['mod+alt+e'],
+    primary: 'mod+alt+e',
+    aliases: [],
     description: 'Ir a Estadísticas',
     roles: ['PROF', 'ADMIN'],
   },
   {
     id: 'go-calendar-prof',
     scope: 'global',
-    combos: ['mod+alt+c'],
+    primary: 'mod+alt+c',
+    aliases: [],
     description: 'Ir a Calendario',
     roles: ['PROF', 'ADMIN'],
   },
-  // Navegación por rol (ADMIN)
+  // Navegación principal (ADMIN) - patrón: mod+alt+<letra>
   {
     id: 'go-users',
     scope: 'global',
-    combos: ['mod+alt+u'],
+    primary: 'mod+alt+u',
+    aliases: [],
     description: 'Ir a Usuarios',
     roles: ['ADMIN'],
   },
   {
     id: 'go-import',
     scope: 'global',
-    combos: ['mod+alt+i'],
+    primary: 'mod+alt+i',
+    aliases: [],
     description: 'Ir a Importar y Exportar',
     roles: ['ADMIN'],
   },
   {
     id: 'go-design',
     scope: 'global',
-    combos: ['mod+alt+o'],
+    primary: 'mod+alt+o',
+    aliases: [],
     description: 'Ir a Panel de Diseño',
     roles: ['ADMIN'],
   },
-  // Crear elementos (contextual)
+  // Crear elementos - patrón: mod+n (no mod+alt+n)
   {
     id: 'create-new',
     scope: 'create',
-    combos: ['mod+alt+n'],
+    primary: 'mod+n',
+    aliases: [],
     description: 'Crear nuevo elemento (contextual según la página)',
     roles: ['ESTU', 'PROF', 'ADMIN'],
   },
+  // Modo estudio (ESTU) - sin modificadores cuando sea posible
+  {
+    id: 'study-prev-exercise',
+    scope: 'study',
+    primary: 'arrowleft',
+    aliases: [],
+    description: 'Ejercicio anterior',
+    roles: ['ESTU'],
+  },
+  {
+    id: 'study-next-exercise',
+    scope: 'study',
+    primary: 'arrowright',
+    aliases: [],
+    description: 'Siguiente ejercicio',
+    roles: ['ESTU'],
+  },
+  {
+    id: 'study-play-pause',
+    scope: 'study',
+    primary: 'space',
+    aliases: [],
+    description: 'Pausar/reanudar audio',
+    roles: ['ESTU'],
+  },
+  {
+    id: 'study-mark-ok',
+    scope: 'study',
+    primary: 'enter',
+    aliases: [],
+    description: 'Marcar ejercicio como completado (OK)',
+    roles: ['ESTU'],
+  },
+  {
+    id: 'study-toggle-index',
+    scope: 'study',
+    primary: 'i',
+    aliases: [],
+    description: 'Mostrar/ocultar índice de ejercicios',
+    roles: ['ESTU'],
+  },
+  {
+    id: 'study-exit-session',
+    scope: 'study',
+    primary: 'escape',
+    aliases: [],
+    description: 'Abrir diálogo de salir de la sesión',
+    roles: ['ESTU'],
+  },
+  // Feedback de sesión (ESTU)
+  {
+    id: 'feedback-very-difficult',
+    scope: 'feedback',
+    primary: '1',
+    aliases: [],
+    description: 'Valoración: Muy difícil',
+    roles: ['ESTU'],
+  },
+  {
+    id: 'feedback-difficult',
+    scope: 'feedback',
+    primary: '2',
+    aliases: [],
+    description: 'Valoración: Difícil',
+    roles: ['ESTU'],
+  },
+  {
+    id: 'feedback-good',
+    scope: 'feedback',
+    primary: '3',
+    aliases: [],
+    description: 'Valoración: Bien',
+    roles: ['ESTU'],
+  },
+  {
+    id: 'feedback-excellent',
+    scope: 'feedback',
+    primary: '4',
+    aliases: [],
+    description: 'Valoración: Excelente',
+    roles: ['ESTU'],
+  },
+  {
+    id: 'feedback-submit',
+    scope: 'feedback',
+    primary: 'mod+enter',
+    aliases: [],
+    description: 'Finalizar sesión (enviar feedback)',
+    roles: ['ESTU'],
+  },
+  {
+    id: 'feedback-close',
+    scope: 'feedback',
+    primary: 'escape',
+    aliases: [],
+    description: 'Cerrar modal de feedback',
+    roles: ['ESTU'],
+  },
 ];
+
+/**
+ * Obtiene todas las combinaciones válidas para un hotkey (primary + aliases)
+ * 
+ * @param {Object} hotkey - Objeto de configuración del hotkey
+ * @returns {Array<string>} - Array de combinaciones válidas
+ */
+export function getHotkeyCombos(hotkey) {
+  if (!hotkey) return [];
+  const combos = [hotkey.primary];
+  if (hotkey.aliases && Array.isArray(hotkey.aliases)) {
+    combos.push(...hotkey.aliases);
+  }
+  return combos;
+}
+
+/**
+ * Verifica si un evento de teclado coincide con un hotkey (primary o aliases)
+ * 
+ * @param {KeyboardEvent} event - El evento de teclado
+ * @param {Object} hotkey - Objeto de configuración del hotkey
+ * @returns {boolean} - true si el evento coincide con el hotkey
+ */
+export function matchesHotkey(event, hotkey) {
+  if (!hotkey) return false;
+  const combos = getHotkeyCombos(hotkey);
+  return combos.some(combo => matchesCombo(event, combo));
+}
 
 /**
  * Obtiene los hotkeys visibles para un rol específico

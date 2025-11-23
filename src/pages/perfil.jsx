@@ -501,9 +501,9 @@ export default function PerfilPage() {
                       }
                     }
                   }}
-                  variant="outline"
+                  variant="danger"
                   size="sm"
-                  className={componentStyles.buttons.outline + " flex-1"}
+                  className={componentStyles.buttons.danger + " flex-1"}
                 >
                   <Lock className="w-4 h-4 mr-2" />
                   Enviar enlace de cambio de contraseña

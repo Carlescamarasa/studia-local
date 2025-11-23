@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import { displayName, calcularLunesSemanaISO, calcularOffsetSemanas, useEffectiveUser, resolveUserIdActual, isoWeekNumberLocal } from "../components/utils/helpers";
+import { shouldIgnoreHotkey } from "@/utils/hotkeys";
 import { usePeriodHeaderState, PeriodHeaderButton, PeriodHeaderPanel } from "../components/common/PeriodHeader";
 import MediaLinksInput from "../components/common/MediaLinksInput";
 import MediaLinksBadges from "../components/common/MediaLinksBadges";
@@ -265,6 +266,9 @@ function AgendaPageContent() {
     if (!feedbackDrawer) return;
     
     const handleKeyDown = (e) => {
+      // No procesar si está en un campo editable
+      if (shouldIgnoreHotkey(e)) return;
+      
       if ((e.ctrlKey || e.metaKey) && e.key === '.') {
         e.preventDefault();
         setFeedbackDrawer(null);

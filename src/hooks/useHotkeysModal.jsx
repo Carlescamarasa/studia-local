@@ -1,5 +1,5 @@
 import { useState, createContext, useContext } from "react";
-import { HelpCircle } from "lucide-react";
+import { Keyboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -38,14 +38,14 @@ export function HotkeysModalButton({ className = "", variant = "ghost", size = "
             size={size}
             onClick={() => setShowHotkeysModal(true)}
             className={`h-9 w-9 p-0 rounded-xl focus-brand touch-manipulation ${className}`}
-            aria-label="Mostrar atajos de teclado"
-            title="Atajos de teclado"
+            aria-label="Atajos de teclado (?)"
+            title="Atajos de teclado (?)"
           >
-            <HelpCircle className="w-4 h-4 sm:w-4 sm:h-4" />
+            <Keyboard className="w-4 h-4 sm:w-4 sm:h-4" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="left">
-          <p>Atajos de teclado</p>
+          <p>Atajos de teclado (?)</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

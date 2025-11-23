@@ -1185,9 +1185,9 @@ export default function PerfilModal({
                           loading={changePasswordMutation.isPending}
                           loadingText="Enviando correo..."
                           disabled={changePasswordMutation.isPending}
-                          variant="outline"
+                          variant="danger"
                           size="sm"
-                          className={componentStyles.buttons.outline + " flex-1"}
+                          className={componentStyles.buttons.danger + " flex-1"}
                         >
                           <Lock className="w-4 h-4 mr-2" />
                           Enviar enlace de cambio de contraseña
@@ -1234,9 +1234,9 @@ export default function PerfilModal({
                         loading={changePasswordMutation.isPending}
                         loadingText="Enviando correo..."
                         disabled={changePasswordMutation.isPending}
-                        variant="outline"
+                        variant="danger"
                         size="sm"
-                        className={componentStyles.buttons.outline + " flex-1"}
+                        className={componentStyles.buttons.danger + " flex-1"}
                       >
                         <Lock className="w-4 h-4 mr-2" />
                         Enviar enlace de cambio de contraseña

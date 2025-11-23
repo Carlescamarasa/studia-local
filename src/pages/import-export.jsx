@@ -331,40 +331,40 @@ export default function ImportExportPage() {
         }
       } else {
         // Importación JSON (lógica existente)
-        if (type === 'piezas') {
+      if (type === 'piezas') {
           const results = { created: 0, updated: 0, errors: [] };
-          for (const item of data) {
-            try {
+        for (const item of data) {
+          try {
               // Ignorar 'id' si viene en el JSON
               const { id, ...itemData } = item;
-              await localDataClient.entities.Pieza.create({
+            await localDataClient.entities.Pieza.create({
                 nombre: itemData.nombre,
                 descripcion: itemData.descripcion || '',
                 nivel: itemData.nivel || 'principiante',
                 tiempoObjetivoSeg: itemData.tiempoObjetivoSeg || 0,
                 elementos: itemData.elementos || [],
-                profesorId: effectiveUser.id,
-              });
-              results.created++;
-            } catch (error) {
-              results.errors.push(`${item.nombre}: ${error.message}`);
-            }
+              profesorId: effectiveUser.id,
+            });
+            results.created++;
+          } catch (error) {
+            results.errors.push(`${item.nombre}: ${error.message}`);
           }
-          return results;
+        }
+        return results;
         } else if (type === 'bloques' || type === 'ejercicios') {
           const results = { created: 0, updated: 0, skipped: 0, errors: [] };
-          for (const item of data) {
-            try {
+        for (const item of data) {
+          try {
               // Ignorar 'id' si viene en el JSON
               const { id, code, ...itemData } = item;
               
               const exists = bloques.some(b => b.code === code);
-              if (exists) {
-                results.skipped++;
-                continue;
-              }
+            if (exists) {
+              results.skipped++;
+              continue;
+            }
               
-              await localDataClient.entities.Bloque.create({
+            await localDataClient.entities.Bloque.create({
                 nombre: itemData.nombre || item.nombre,
                 code: code,
                 tipo: itemData.tipo || item.tipo,
@@ -374,71 +374,71 @@ export default function ImportExportPage() {
                 materialesRequeridos: itemData.materialesRequeridos || [],
                 media: itemData.media || {},
                 elementosOrdenados: itemData.elementosOrdenados || [],
-                profesorId: effectiveUser.id,
-              });
-              results.created++;
-            } catch (error) {
+              profesorId: effectiveUser.id,
+            });
+            results.created++;
+          } catch (error) {
               results.errors.push(`${item.code || item.nombre}: ${error.message}`);
-            }
           }
-          return results;
-        } else if (type === 'planes') {
+        }
+        return results;
+      } else if (type === 'planes') {
           const results = { created: 0, updated: 0, errors: [] };
-          for (const item of data) {
-            try {
-              let piezaId = item.piezaId;
-              
-              if (item.piezaNombre) {
-                const pieza = piezas.find(p => p.nombre === item.piezaNombre);
-                if (pieza) {
-                  piezaId = pieza.id;
-                } else {
-                  results.errors.push(`${item.nombre}: Pieza "${item.piezaNombre}" no encontrada`);
-                  continue;
-                }
+        for (const item of data) {
+          try {
+            let piezaId = item.piezaId;
+            
+            if (item.piezaNombre) {
+              const pieza = piezas.find(p => p.nombre === item.piezaNombre);
+              if (pieza) {
+                piezaId = pieza.id;
+              } else {
+                results.errors.push(`${item.nombre}: Pieza "${item.piezaNombre}" no encontrada`);
+                continue;
               }
-
-              const semanasResueltas = (item.semanas || []).map(semana => ({
-                ...semana,
-                sesiones: (semana.sesiones || []).map(sesion => ({
-                  ...sesion,
-                  bloques: (sesion.bloques || []).map(bloque => {
-                    if (typeof bloque === 'string') {
-                      const bloqueEncontrado = bloques.find(b => b.code === bloque);
-                      if (bloqueEncontrado) {
-                        return {
-                          nombre: bloqueEncontrado.nombre,
-                          code: bloqueEncontrado.code,
-                          tipo: bloqueEncontrado.tipo,
-                          duracionSeg: bloqueEncontrado.duracionSeg,
-                          instrucciones: bloqueEncontrado.instrucciones,
-                          indicadorLogro: bloqueEncontrado.indicadorLogro,
-                          materialesRequeridos: bloqueEncontrado.materialesRequeridos || [],
-                          media: bloqueEncontrado.media || {},
-                          elementosOrdenados: bloqueEncontrado.elementosOrdenados || [],
-                        };
-                      }
-                      return null;
-                    }
-                    return bloque;
-                  }).filter(Boolean)
-                }))
-              }));
-
-              await localDataClient.entities.Plan.create({
-                nombre: item.nombre,
-                focoGeneral: item.focoGeneral || 'GEN',
-                objetivoSemanalPorDefecto: item.objetivoSemanalPorDefecto || '',
-                piezaId: piezaId,
-                semanas: semanasResueltas,
-                profesorId: effectiveUser.id,
-              });
-              results.created++;
-            } catch (error) {
-              results.errors.push(`${item.nombre}: ${error.message}`);
             }
+
+            const semanasResueltas = (item.semanas || []).map(semana => ({
+              ...semana,
+              sesiones: (semana.sesiones || []).map(sesion => ({
+                ...sesion,
+                bloques: (sesion.bloques || []).map(bloque => {
+                  if (typeof bloque === 'string') {
+                    const bloqueEncontrado = bloques.find(b => b.code === bloque);
+                    if (bloqueEncontrado) {
+                      return {
+                        nombre: bloqueEncontrado.nombre,
+                        code: bloqueEncontrado.code,
+                        tipo: bloqueEncontrado.tipo,
+                        duracionSeg: bloqueEncontrado.duracionSeg,
+                        instrucciones: bloqueEncontrado.instrucciones,
+                        indicadorLogro: bloqueEncontrado.indicadorLogro,
+                        materialesRequeridos: bloqueEncontrado.materialesRequeridos || [],
+                        media: bloqueEncontrado.media || {},
+                        elementosOrdenados: bloqueEncontrado.elementosOrdenados || [],
+                      };
+                    }
+                    return null;
+                  }
+                  return bloque;
+                }).filter(Boolean)
+              }))
+            }));
+
+            await localDataClient.entities.Plan.create({
+              nombre: item.nombre,
+              focoGeneral: item.focoGeneral || 'GEN',
+              objetivoSemanalPorDefecto: item.objetivoSemanalPorDefecto || '',
+              piezaId: piezaId,
+              semanas: semanasResueltas,
+              profesorId: effectiveUser.id,
+            });
+            results.created++;
+          } catch (error) {
+            results.errors.push(`${item.nombre}: ${error.message}`);
           }
-          return results;
+        }
+        return results;
         }
       }
     },
@@ -476,9 +476,9 @@ export default function ImportExportPage() {
         }
       } else {
         data = JSON.parse(text);
-        if (!Array.isArray(data)) {
-          toast.error('❌ El archivo debe contener un array de objetos');
-          return;
+      if (!Array.isArray(data)) {
+        toast.error('❌ El archivo debe contener un array de objetos');
+        return;
         }
       }
 
@@ -1050,14 +1050,14 @@ export default function ImportExportPage() {
                             <Badge variant="outline" className="rounded-full">{bloques.length}</Badge>
                           </div>
                           <div className="flex gap-2">
-                            <Button 
+                          <Button 
                               onClick={() => exportarJSON('ejercicios')} 
                               className={`flex-1 h-9 ${componentStyles.buttons.primary}`}
-                              size="sm"
-                            >
-                              <FileDown className="w-4 h-4 mr-2" />
+                            size="sm"
+                          >
+                            <FileDown className="w-4 h-4 mr-2" />
                               JSON
-                            </Button>
+                          </Button>
                             <Button 
                               onClick={exportarEjercicios} 
                               className={`flex-1 h-9 ${componentStyles.buttons.outline}`}
@@ -1235,14 +1235,14 @@ export default function ImportExportPage() {
                           </Button>
                         </CardContent>
                       </Card>
-                    </div>
-                  </div>
+                          </div>
+                          </div>
                 </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                          </div>
 
       {/* Modal de importación */}
       {showImportModal && createPortal(

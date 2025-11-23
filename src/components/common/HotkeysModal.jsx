@@ -19,144 +19,41 @@ export default function HotkeysModal({ open, onOpenChange }) {
   const effectiveUser = useEffectiveUser();
   const userRole = effectiveUser?.rolPersonalizado || 'ESTU';
 
-  // Obtener hotkeys desde la configuración única
+  // Obtener hotkeys desde la configuración única - mostrar primary y alt si existe
+  const formatHotkeyDisplay = (hotkey) => {
+    let texto = formatShortcut(hotkey.primary);
+    // Si hay alias (máximo 1), mostrarlo también
+    if (hotkey.aliases && hotkey.aliases.length > 0) {
+      const alias = hotkey.aliases[0]; // Solo mostrar el primero si hay más de uno
+      texto += ` o ${formatShortcut(alias)}`;
+    }
+    return texto;
+  };
+  
   const hotkeysGlobales = getHotkeysForRole(userRole, 'global').map(hk => ({
-    atajo: formatShortcut(hk.combos[0]),
+    atajo: formatHotkeyDisplay(hk),
     descripcion: hk.description,
     disponible: true,
   }));
 
   const hotkeysCrear = getHotkeysForRole(userRole, 'create').map(hk => ({
-    atajo: formatShortcut(hk.combos[0]),
+    atajo: formatHotkeyDisplay(hk),
     descripcion: hk.description,
     disponible: true,
   }));
 
-  const hotkeysEstudio = userRole === 'ESTU' ? [
-    {
-      atajo: "Alt + ←",
-      descripcion: "Ejercicio anterior",
-      disponible: true,
-    },
-    {
-      atajo: "Alt + →",
-      descripcion: "Siguiente ejercicio",
-      disponible: true,
-    },
-    {
-      atajo: "Alt + P",
-      descripcion: "Pausar/reanudar",
-      disponible: true,
-    },
-    {
-      atajo: "Alt + O",
-      descripcion: "Marcar ejercicio como completado (OK)",
-      disponible: true,
-    },
-    {
-      atajo: "Alt + S",
-      descripcion: "Saltar ejercicio actual",
-      disponible: true,
-    },
-    {
-      atajo: "Alt + T",
-      descripcion: "Colapsar/expandir barra de timer",
-      disponible: true,
-    },
-    {
-      atajo: "Alt + I",
-      descripcion: "Mostrar/ocultar índice de ejercicios",
-      disponible: true,
-    },
-    {
-      atajo: "Alt + R",
-      descripcion: "Repetir ejercicio actual",
-      disponible: true,
-    },
-    {
-      atajo: "Alt + Esc",
-      descripcion: "Abrir diálogo de salir de la sesión",
-      disponible: true,
-    },
-    {
-      atajo: "Espacio",
-      descripcion: "Play/pausa del reproductor de audio",
-      disponible: true,
-    },
-    {
-      atajo: "← →",
-      descripcion: "Navegar entre ejercicios (alternativa)",
-      disponible: true,
-    },
-    {
-      atajo: "O",
-      descripcion: "Completar ejercicio (alternativa)",
-      disponible: true,
-    },
-    {
-      atajo: "Enter",
-      descripcion: "Completar ejercicio (alternativa)",
-      disponible: true,
-    },
-    {
-      atajo: "I",
-      descripcion: "Alternar índice (alternativa)",
-      disponible: true,
-    },
-    {
-      atajo: "?",
-      descripcion: "Mostrar ayuda",
-      disponible: true,
-    },
-    {
-      atajo: "Esc",
-      descripcion: "Cerrar modales o cancelar sesión",
-      disponible: true,
-    },
-  ] : [];
+  const hotkeysEstudio = getHotkeysForRole(userRole, 'study').map(hk => ({
+    atajo: formatHotkeyDisplay(hk),
+    descripcion: hk.description,
+    disponible: true,
+  }));
 
-  const hotkeysFeedback = userRole === 'ESTU' ? [
-    {
-      atajo: "Alt + 1",
-      descripcion: "Muy difícil",
-      disponible: true,
-    },
-    {
-      atajo: "Alt + 2",
-      descripcion: "Difícil",
-      disponible: true,
-    },
-    {
-      atajo: "Alt + 3",
-      descripcion: "Bien",
-      disponible: true,
-    },
-    {
-      atajo: "Alt + 4",
-      descripcion: "Excelente",
-      disponible: true,
-    },
-    {
-      atajo: "Alt + Enter",
-      descripcion: "Finalizar (submit feedback)",
-      disponible: true,
-    },
-    {
-      atajo: "Esc",
-      descripcion: "Cerrar modal",
-      disponible: true,
-    },
-    {
-      atajo: "1 - 4",
-      descripcion: "Valoración rápida (alternativa)",
-      disponible: true,
-    },
-    {
-      atajo: "Ctrl/⌘ + Enter",
-      descripcion: "Guardar feedback (alternativa)",
-      disponible: true,
-    },
-  ] : [];
+  const hotkeysFeedback = getHotkeysForRole(userRole, 'feedback').map(hk => ({
+    atajo: formatHotkeyDisplay(hk),
+    descripcion: hk.description,
+    disponible: true,
+  }));
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
