@@ -380,13 +380,32 @@ export async function getPendingSupportTicketsCountForAdmin(): Promise<number> {
  * Pendientes = estado != 'cerrado' AND alumno_id = estudianteId
  */
 export async function getPendingSupportTicketsCountForEstu(estudianteId: string): Promise<number> {
+  console.log('[supportTicketsClient] Contando tickets pendientes para ESTU:', { estudianteId });
+  
   const { count, error } = await supabase
     .from('support_tickets')
     .select('id', { count: 'exact', head: true })
     .eq('alumno_id', estudianteId)
     .neq('estado', 'cerrado');
 
-  if (error) throw error;
+  if (error) {
+    console.error('[supportTicketsClient] Error contando tickets para ESTU:', {
+      estudianteId,
+      error: {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      },
+    });
+    throw error;
+  }
+  
+  console.log('[supportTicketsClient] Conteo obtenido para ESTU:', {
+    estudianteId,
+    count: count || 0,
+  });
+  
   return count || 0;
 }
 

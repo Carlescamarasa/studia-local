@@ -1,8 +1,11 @@
 /**
  * Componente badge para mostrar el número de tickets de soporte pendientes
- * Solo se muestra para roles ADMIN y PROF
+ * Se muestra para roles ADMIN, PROF y ESTU
  * 
  * Pendientes = tickets con estado != 'cerrado' (es decir, 'abierto' o 'en_proceso')
+ * - ADMIN: todos los tickets pendientes
+ * - PROF: tickets pendientes de sus alumnos asignados
+ * - ESTU: tickets pendientes del estudiante
  */
 
 import { usePendingSupportTicketsCount } from '@/hooks/usePendingSupportTicketsCount';

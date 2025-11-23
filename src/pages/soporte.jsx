@@ -116,12 +116,14 @@ function SoportePageContent() {
   // Mutación para crear mensaje
   const createMensajeMutation = useMutation({
     mutationFn: createMensaje,
-    onSuccess: () => {
+    onSuccess: async (mensaje) => {
       queryClient.invalidateQueries({ queryKey: ['support-mensajes', selectedTicketId] });
       queryClient.invalidateQueries({ queryKey: ['support-ticket', selectedTicketId] });
       queryClient.invalidateQueries({ queryKey: ['support-tickets'] });
+      
       setMessageText("");
       setVideoFile(null);
+      setUploadingVideo(false);
       toast.success('Mensaje enviado');
     },
     onError: (error) => {
