@@ -15,8 +15,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { displayName, calcularLunesSemanaISO, calcularOffsetSemanas, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
-import WeekNavigator from "../components/common/WeekNavigator";
+import { displayName, calcularLunesSemanaISO, calcularOffsetSemanas, useEffectiveUser, resolveUserIdActual, isoWeekNumberLocal } from "../components/utils/helpers";
+import { usePeriodHeaderState, PeriodHeaderButton, PeriodHeaderPanel } from "../components/common/PeriodHeader";
 import MediaLinksInput from "../components/common/MediaLinksInput";
 import MediaLinksBadges from "../components/common/MediaLinksBadges";
 import MediaViewer from "../components/common/MediaViewer";
@@ -291,6 +291,9 @@ function AgendaPageContent() {
     const lunes = startOfMonday(new Date());
     setSemanaActualISO(formatLocalDate(lunes));
   };
+
+  // Estado del PeriodHeader
+  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState(true);
 
   const isProfesorOrAdmin = effectiveUser?.rolPersonalizado === 'PROF' || effectiveUser?.rolPersonalizado === 'ADMIN';
 
@@ -1019,9 +1022,33 @@ function AgendaPageContent() {
         icon={Calendar}
         title="Agenda Semanal"
         subtitle="Vista por estudiante y semana"
-        filters={
-          <WeekNavigator 
-            mondayISO={semanaActualISO}
+        actions={
+          (() => {
+            const lunesSemana = parseLocalDate(semanaActualISO);
+            const domingoSemana = new Date(lunesSemana);
+            domingoSemana.setDate(lunesSemana.getDate() + 6);
+            const numeroSemana = isoWeekNumberLocal(lunesSemana);
+            const labelSemana = `Semana ${numeroSemana}`;
+            const rangeTextSemana = `${lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} – ${domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+            
+            return (
+              <PeriodHeaderButton
+                label={labelSemana}
+                rangeText={rangeTextSemana}
+                isOpen={periodHeaderOpen}
+                onToggle={togglePeriodHeader}
+              />
+            );
+          })()
+        }
+      />
+
+      {/* Panel colapsable del PeriodHeader */}
+      {(() => {
+        const lunesSemana = parseLocalDate(semanaActualISO);
+        return (
+          <PeriodHeaderPanel
+            isOpen={periodHeaderOpen}
             onPrev={() => cambiarSemana(-1)}
             onNext={() => cambiarSemana(1)}
             onToday={irSemanaActual}
@@ -1046,9 +1073,9 @@ function AgendaPageContent() {
                 </button>
               )}
             </div>
-          </WeekNavigator>
-        }
-      />
+          </PeriodHeaderPanel>
+        );
+      })()}
 
       <div className={componentStyles.layout.page}>
         {/* Cards de estudiantes */}

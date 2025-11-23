@@ -13,9 +13,9 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { calcularLunesSemanaISO, calcularOffsetSemanas, calcularTiempoSesion, useEffectiveUser } from "../components/utils/helpers";
+import { calcularLunesSemanaISO, calcularOffsetSemanas, calcularTiempoSesion, useEffectiveUser, isoWeekNumberLocal } from "../components/utils/helpers";
 import { displayName } from "@/components/utils/helpers";
-import WeekNavigator from "../components/common/WeekNavigator";
+import { usePeriodHeaderState, PeriodHeaderButton, PeriodHeaderPanel } from "../components/common/PeriodHeader";
 import RequireRole from "@/components/auth/RequireRole";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
@@ -235,6 +235,9 @@ function SemanaPageContent() {
     setSemanaActualISO(formatLocalDate(lunes));
   };
 
+  // Estado del PeriodHeader
+  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState(true);
+
   const focoLabels = {
     GEN: 'General',
     LIG: 'Ligaduras',
@@ -266,15 +269,39 @@ function SemanaPageContent() {
         icon={Calendar}
         title="Mi Semana"
         subtitle="Resumen y planificación semanal"
-        filters={
-          <WeekNavigator 
-            mondayISO={semanaActualISO}
+        actions={
+          (() => {
+            const lunesSemana = parseLocalDate(semanaActualISO);
+            const domingoSemana = new Date(lunesSemana);
+            domingoSemana.setDate(lunesSemana.getDate() + 6);
+            const numeroSemana = isoWeekNumberLocal(lunesSemana);
+            const labelSemana = `Semana ${numeroSemana}`;
+            const rangeTextSemana = `${lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} – ${domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+            
+            return (
+              <PeriodHeaderButton
+                label={labelSemana}
+                rangeText={rangeTextSemana}
+                isOpen={periodHeaderOpen}
+                onToggle={togglePeriodHeader}
+              />
+            );
+          })()
+        }
+      />
+
+      {/* Panel colapsable del PeriodHeader */}
+      {(() => {
+        const lunesSemana = parseLocalDate(semanaActualISO);
+        return (
+          <PeriodHeaderPanel
+            isOpen={periodHeaderOpen}
             onPrev={() => cambiarSemana(-1)}
             onNext={() => cambiarSemana(1)}
             onToday={irSemanaActual}
           />
-        }
-      />
+        );
+      })()}
 
       <div className={`${componentStyles.layout.page} space-y-4`}>
         {!asignacionActiva || !semanaDelPlan ? (

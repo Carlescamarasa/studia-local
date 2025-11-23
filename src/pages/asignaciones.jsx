@@ -16,11 +16,11 @@ import RequireRole from "@/components/auth/RequireRole";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import FormularioRapido from "@/components/asignaciones/FormularioRapido";
 import StudentSearchBar from "@/components/asignaciones/StudentSearchBar";
-import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, useEffectiveUser, resolveUserIdActual, startOfMonday, calcularLunesSemanaISO, calcularOffsetSemanas } from "../components/utils/helpers";
+import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, useEffectiveUser, resolveUserIdActual, startOfMonday, calcularLunesSemanaISO, calcularOffsetSemanas, isoWeekNumberLocal } from "../components/utils/helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MultiSelect from "@/components/ui/MultiSelect";
 import PageHeader from "@/components/ds/PageHeader";
-import WeekNavigator from "../components/common/WeekNavigator";
+import { usePeriodHeaderState, PeriodHeaderButton, PeriodHeaderPanel } from "../components/common/PeriodHeader";
 import { componentStyles } from "@/design/componentStyles";
 import {
   Dialog,
@@ -69,6 +69,10 @@ function AsignacionesPageContent() {
     const lunes = startOfMonday(new Date());
     setSemanaSeleccionadaISO(formatLocalDate(lunes));
   };
+
+  // Estado del PeriodHeader
+  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState(true);
+
   const [showAsignarProfesorDialog, setShowAsignarProfesorDialog] = useState(false);
   const [showAsignarEstudianteDialog, setShowAsignarEstudianteDialog] = useState(false);
   const [asignacionParaAsignar, setAsignacionParaAsignar] = useState(null);
@@ -551,9 +555,39 @@ function AsignacionesPageContent() {
         icon={Target}
         title="Asignaciones"
         subtitle="Gestiona las asignaciones de tus estudiantes"
-        filters={
-          <WeekNavigator 
-            mondayISO={semanaSeleccionadaISO}
+        actions={
+          <>
+            {(() => {
+              const lunesSemana = parseLocalDate(semanaSeleccionadaISO);
+              const domingoSemana = new Date(lunesSemana);
+              domingoSemana.setDate(lunesSemana.getDate() + 6);
+              const numeroSemana = isoWeekNumberLocal(lunesSemana);
+              const labelSemana = `Semana ${numeroSemana}`;
+              const rangeTextSemana = `${lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} – ${domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+              
+              return (
+                <PeriodHeaderButton
+                  label={labelSemana}
+                  rangeText={rangeTextSemana}
+                  isOpen={periodHeaderOpen}
+                  onToggle={togglePeriodHeader}
+                />
+              );
+            })()}
+            <Button onClick={() => setShowForm(!showForm)} className={`w-full md:w-auto ${componentStyles.buttons.primary}`}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva
+            </Button>
+          </>
+        }
+      />
+
+      {/* Panel colapsable del PeriodHeader */}
+      {(() => {
+        const lunesSemana = parseLocalDate(semanaSeleccionadaISO);
+        return (
+          <PeriodHeaderPanel
+            isOpen={periodHeaderOpen}
             onPrev={() => cambiarSemana(-1)}
             onNext={() => cambiarSemana(1)}
             onToday={irSemanaActual}
@@ -600,15 +634,9 @@ function AsignacionesPageContent() {
                 />
               </div>
             </div>
-          </WeekNavigator>
-        }
-        actions={
-          <Button onClick={() => setShowForm(!showForm)} className={`w-full md:w-auto ${componentStyles.buttons.primary}`}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva
-          </Button>
-        }
-      />
+          </PeriodHeaderPanel>
+        );
+      })()}
 
       <div className={`${componentStyles.layout.page} space-y-6`}>
         {showForm && (

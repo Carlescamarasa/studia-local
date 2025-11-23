@@ -5,7 +5,8 @@ import { Card, CardContent } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
 import PageHeader from "@/components/ds/PageHeader";
 import { Calendar, Grid3x3, List, Plus, CalendarDays } from "lucide-react";
-import { useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
+import { useEffectiveUser, resolveUserIdActual, isoWeekNumberLocal, parseLocalDate } from "../components/utils/helpers";
+import { usePeriodHeaderState, PeriodHeaderButton, PeriodHeaderPanel } from "../components/common/PeriodHeader";
 import RequireRole from "@/components/auth/RequireRole";
 import VistaSemana from "../components/calendario/VistaSemana";
 import VistaMes from "../components/calendario/VistaMes";
@@ -19,7 +20,6 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { startOfMonday, formatLocalDate } from "../components/calendario/utils";
-import { isoWeekNumberLocal } from "../components/utils/helpers";
 
 function CalendarioPageContent() {
   const isMobile = useIsMobile();
@@ -204,20 +204,48 @@ function CalendarioPageContent() {
     deleteAsignacionMutation.mutate(id);
   };
 
-  // Función para ir a hoy
+  // Funciones de navegación según la vista
+  const navegarPeriodo = (direccion) => {
+    const nuevaFecha = new Date(fechaActual);
+    if (vista === 'mes') {
+      // Navegar por meses
+      nuevaFecha.setMonth(fechaActual.getMonth() + direccion);
+      setFechaActual(nuevaFecha);
+    } else {
+      // Navegar por semanas (para vista semana y lista)
+      const lunes = startOfMonday(fechaActual);
+      lunes.setDate(lunes.getDate() + (direccion * 7));
+      setFechaActual(lunes);
+    }
+  };
+
   const irHoy = () => {
     const hoy = new Date();
-    setFechaActual(hoy);
-    // Si estamos en vista semana, asegurar que la fecha actual esté en la semana visible
-    if (vista === 'semana') {
+    if (vista === 'mes') {
+      setFechaActual(hoy);
+    } else {
+      // Para semana y lista, ir al lunes de la semana actual
       const lunesSemanaActual = startOfMonday(hoy);
       setFechaActual(lunesSemanaActual);
     }
   };
 
-  // Calcular periodo actual para el selector
-  const periodoActual = useMemo(() => {
-    if (vista === 'semana') {
+  // Estado del PeriodHeader
+  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState(true);
+
+  // Calcular label y rangeText para PeriodHeader según la vista
+  const { labelPeriodo, rangeTextPeriodo } = useMemo(() => {
+    if (vista === 'mes') {
+      const mesNombre = fechaActual.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+      const primerDia = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1);
+      const ultimoDia = new Date(fechaActual.getFullYear(), fechaActual.getMonth() + 1, 0);
+      const rango = `${primerDia.getDate()} – ${ultimoDia.getDate()}`;
+      return {
+        labelPeriodo: mesNombre.split(' ')[0], // "noviembre" -> "Noviembre"
+        rangeTextPeriodo: rango + ' ' + fechaActual.getFullYear()
+      };
+    } else {
+      // Para semana y lista
       const lunes = startOfMonday(fechaActual);
       const domingo = new Date(lunes);
       domingo.setDate(lunes.getDate() + 6);
@@ -227,11 +255,11 @@ function CalendarioPageContent() {
         const mes = fecha.toLocaleDateString('es-ES', { month: 'short' });
         return `${dia} ${mes}`;
       };
-      return `Semana ${numeroSemana} · ${formatoFecha(lunes)} – ${formatoFecha(domingo)} ${lunes.getFullYear()}`;
-    } else if (vista === 'mes') {
-      return fechaActual.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+      return {
+        labelPeriodo: `Semana ${numeroSemana}`,
+        rangeTextPeriodo: `${formatoFecha(lunes)} – ${formatoFecha(domingo)} ${lunes.getFullYear()}`
+      };
     }
-    return fechaActual.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
   }, [vista, fechaActual]);
 
   return (
@@ -287,20 +315,12 @@ function CalendarioPageContent() {
               </Button>
             </div>
             
-            {/* Botón Hoy */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                irHoy();
-              }}
-              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-              type="button"
-            >
-              Hoy
-            </Button>
+            <PeriodHeaderButton
+              label={labelPeriodo}
+              rangeText={rangeTextPeriodo}
+              isOpen={periodHeaderOpen}
+              onToggle={togglePeriodHeader}
+            />
             
             {(isAdmin || isProf) && (
               <Button
@@ -320,6 +340,14 @@ function CalendarioPageContent() {
             )}
           </div>
         }
+      />
+
+      {/* Panel colapsable del PeriodHeader */}
+      <PeriodHeaderPanel
+        isOpen={periodHeaderOpen}
+        onPrev={() => navegarPeriodo(-1)}
+        onNext={() => navegarPeriodo(1)}
+        onToday={irHoy}
       />
 
       <div className={componentStyles.layout.page}>

@@ -29,9 +29,10 @@ import {
   getNombreVisible,
   useEffectiveUser,
   formatLocalDate,
-  parseLocalDate
+  parseLocalDate,
+  isoWeekNumberLocal
 } from "../components/utils/helpers";
-import WeekNavigator from "../components/common/WeekNavigator";
+import { usePeriodHeaderState, PeriodHeaderButton, PeriodHeaderPanel } from "../components/common/PeriodHeader";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "../components/study/sessionSequence";
 import TimelineProgreso from "../components/estudio/TimelineProgreso";
 import ModalCancelar from "../components/estudio/ModalCancelar";
@@ -85,6 +86,10 @@ function HoyPageContent() {
     const lunes = startOfMonday(new Date());
     setSemanaActualISO(formatLocalDate(lunes));
   };
+
+  // Estado del PeriodHeader
+  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState(true);
+
   const [asignacionSeleccionadaId, setAsignacionSeleccionadaId] = useState(null); // Para múltiples asignaciones
   const [sesionSeleccionada, setSesionSeleccionada] = useState(0);
   const [sesionesConResumenExpandido, setSesionesConResumenExpandido] = useState(new Set());
@@ -858,17 +863,6 @@ function HoyPageContent() {
     setMostrarItinerario(false);
   };
 
-  const formatearSemana = (lunesISO) => {
-    const lunes = parseLocalDate(lunesISO);
-    const domingo = new Date(lunes);
-    domingo.setDate(lunes.getDate() + 6);
-
-    const diaLunes = lunes.getDate();
-    const diaDomingo = domingo.getDate();
-    const mes = lunes.toLocaleDateString('es-ES', { month: 'short' });
-
-    return `Semana ${diaLunes}–${diaDomingo} ${mes}`;
-  };
 
   const tipoColors = {
     CA: componentStyles.status.badgeDefault, // brand -> default
@@ -2085,31 +2079,57 @@ function HoyPageContent() {
         icon={PlayCircle}
         title="Estudiar Ahora"
         subtitle="Plan de estudio semanal"
-        filters={
-          <WeekNavigator 
-            mondayISO={semanaActualISO}
-            onPrev={() => cambiarSemana(-1)}
-            onNext={() => cambiarSemana(1)}
-            onToday={irSemanaActual}
-          >
-            {/* Barra de contexto: pieza / plan / alumno dentro del WeekNavigator */}
-            {asignacionActiva && (
-              <div className="flex items-center gap-2 flex-wrap text-sm">
-                <Music className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
-                <span className="font-semibold text-[var(--color-text-primary)]">{asignacionActiva.piezaSnapshot?.nombre}</span>
-                <span className="text-[var(--color-text-secondary)]">·</span>
-                <Target className="w-4 h-4 text-[var(--color-info)] shrink-0" />
-                <span className="text-[var(--color-text-primary)]">{asignacionActiva.plan?.nombre}</span>
-                <span className="text-[var(--color-text-secondary)]">·</span>
-                <User className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />
-                <span className="font-medium text-[var(--color-text-primary)]">{getNombreVisible(alumnoActual)}</span>
-              </div>
-            )}
-          </WeekNavigator>
+        actions={
+          (() => {
+            const lunesSemana = parseLocalDate(semanaActualISO);
+            const domingoSemana = new Date(lunesSemana);
+            domingoSemana.setDate(lunesSemana.getDate() + 6);
+            const numeroSemana = isoWeekNumberLocal(lunesSemana);
+            const labelSemana = `Semana ${numeroSemana}`;
+            const rangeTextSemana = `${lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} – ${domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+            
+            return (
+              <PeriodHeaderButton
+                label={labelSemana}
+                rangeText={rangeTextSemana}
+                isOpen={periodHeaderOpen}
+                onToggle={togglePeriodHeader}
+              />
+            );
+          })()
         }
       />
 
+      {/* Panel colapsable del PeriodHeader */}
+      {(() => {
+        const lunesSemana = parseLocalDate(semanaActualISO);
+        const domingoSemana = new Date(lunesSemana);
+        domingoSemana.setDate(lunesSemana.getDate() + 6);
+        
+        return (
+          <PeriodHeaderPanel
+            isOpen={periodHeaderOpen}
+            onPrev={() => cambiarSemana(-1)}
+            onNext={() => cambiarSemana(1)}
+            onToday={irSemanaActual}
+          />
+        );
+      })()}
+
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
+        {/* Barra de contexto: pieza / plan / alumno en el body */}
+        {asignacionActiva && (
+          <div className="flex items-center gap-2 flex-wrap text-sm">
+            <Music className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
+            <span className="font-semibold text-[var(--color-text-primary)]">{asignacionActiva.piezaSnapshot?.nombre}</span>
+            <span className="text-[var(--color-text-secondary)]">·</span>
+            <Target className="w-4 h-4 text-[var(--color-info)] shrink-0" />
+            <span className="text-[var(--color-text-primary)]">{asignacionActiva.plan?.nombre}</span>
+            <span className="text-[var(--color-text-secondary)]">·</span>
+            <User className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />
+            <span className="font-medium text-[var(--color-text-primary)]">{getNombreVisible(alumnoActual)}</span>
+          </div>
+        )}
 
         {!asignacionActiva || !semanaDelPlan ? (
           <Card className="border-dashed border-2">

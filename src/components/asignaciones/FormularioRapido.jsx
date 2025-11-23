@@ -288,9 +288,9 @@ export default function FormularioRapido({ onClose }) {
     <>
       <div className="fixed inset-0 bg-black/40 z-[80]" onClick={onClose} />
       
-      <div className="fixed inset-0 z-[90] flex items-center justify-center pointer-events-none p-4 overflow-y-auto" role="dialog" aria-modal="true">
+      <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto" role="dialog" aria-modal="true">
         <div 
-          className="bg-[var(--color-surface-elevated)] w-full max-w-4xl max-h-[92vh] shadow-card rounded-[var(--radius-modal)] flex flex-col pointer-events-auto my-8"
+          className="bg-[var(--color-surface-elevated)] w-full max-w-4xl max-h-[92vh] shadow-card rounded-[var(--radius-modal)] flex flex-col pointer-events-auto my-8 relative z-[110]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -430,12 +430,13 @@ export default function FormularioRapido({ onClose }) {
                       <CardTitle className="text-base text-[var(--color-text-primary)]">Fecha de inicio</CardTitle>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-2">
+                  <CardContent className="space-y-2 relative" style={{ zIndex: 120 }}>
                     <Input
                       type="date"
                       value={formData.fechaSeleccionada}
                       onChange={(e) => setFormData({ ...formData, fechaSeleccionada: e.target.value })}
-                      className={componentStyles.controls.inputDefault}
+                      className={`${componentStyles.controls.inputDefault} relative`}
+                      style={{ zIndex: 130, position: 'relative' }}
                     />
                     {formData.fechaSeleccionada && formData.semanaInicioISO && (
                       <Alert className="border-[var(--color-info)]/20 bg-[var(--color-info)]/10 app-panel">
