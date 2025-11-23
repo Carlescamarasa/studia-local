@@ -504,15 +504,17 @@ function AsignacionesPageContent() {
         return (
           <div>
             <p className="text-sm">{a.plan?.nombre || '-'}</p>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="mt-1">
               {semanaActual ? (
                 <>
                   <p className="text-xs text-ui/80">
                     Semana {semanaActual} de {numSemanas}
                   </p>
-                  <span className="text-xs font-mono text-[var(--color-text-secondary)]" title={`Semana ${semanaActual} de ${numSemanas}`}>
-                    {indicador}
-                  </span>
+                  <div className="mt-1">
+                    <span className="text-xs font-mono text-[var(--color-text-secondary)] whitespace-nowrap" title={`Semana ${semanaActual} de ${numSemanas}`}>
+                      {indicador}
+                    </span>
+                  </div>
                 </>
               ) : (
                 <p className="text-xs text-ui/60">{numSemanas || 0} semanas</p>
