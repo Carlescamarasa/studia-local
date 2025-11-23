@@ -34,11 +34,18 @@ export async function inviteUserByEmail(
     throw new Error('Faltan VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY');
   }
 
+  // Obtener token de sesión
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error('No hay sesión activa. Por favor, inicia sesión de nuevo.');
+  }
+
   const res = await fetch(`${supabaseUrl}/functions/v1/invite-user`, {
     method: 'POST',
     headers: {
+      'Authorization': `Bearer ${session.access_token}`,
       'Content-Type': 'application/json',
-      apikey: supabaseAnonKey,
+      'apikey': supabaseAnonKey,
     },
     body: JSON.stringify({ email, ...extraPayload }),
   });
@@ -46,7 +53,7 @@ export async function inviteUserByEmail(
   const body = await res.json().catch(() => ({}));
 
   if (!res.ok || body.success === false) {
-    throw new Error(body.message || 'No se pudo enviar la invitación');
+    throw new Error(body.message || body.error || 'No se pudo enviar la invitación');
   }
 
   return body;
