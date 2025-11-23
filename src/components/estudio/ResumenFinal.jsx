@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { shouldIgnoreHotkey } from "@/utils/hotkeys";
 
 const EmojiCalidad = ({ nivel }) => {
   const emojis = {
@@ -71,6 +72,38 @@ export default function ResumenFinal({
   const [previewIndex, setPreviewIndex] = useState(0);
   
   const pendientes = totalEjercicios - completados.size - omitidos.size;
+
+  // Hotkeys para ResumenFinal: 1-4 para valoración rápida, Ctrl+Enter para guardar
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e) => {
+      // No procesar si está en un campo editable (notas, etc.)
+      if (shouldIgnoreHotkey(e)) return;
+
+      // Teclas 1-4: valoración rápida
+      if (['1', '2', '3', '4'].includes(e.key)) {
+        e.preventDefault();
+        const nivel = parseInt(e.key);
+        setCalidad(nivel);
+        return;
+      }
+
+      // Ctrl+Enter: guardar feedback y cerrar
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!guardado && !uploadingVideo) {
+          handleGuardarFeedback();
+        }
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [open, calidad, guardado, uploadingVideo]);
   
   const handleGuardarFeedback = async () => {
     let finalMediaLinks = [...mediaLinks];

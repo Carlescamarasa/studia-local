@@ -3,6 +3,8 @@ import { componentStyles } from "@/design/componentStyles";
 import { Menu, X, Info } from "lucide-react";
 import { useSidebar } from "@/components/ui/SidebarState";
 import { Button } from "@/components/ui/button";
+import { HotkeysModalButton } from "@/hooks/useHotkeysModal.jsx";
+import { useLocation } from "react-router-dom";
 
 /**
  * PageHeader - Componente unificado para headers de página
@@ -187,11 +189,11 @@ export default function PageHeader({
               <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl flex-1 min-w-0`}>{title}</h1>
             )}
             {/* Acciones siempre a la derecha en zona 1 */}
-            {actions && (
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto relative z-10" style={{ pointerEvents: 'auto' }}>
-                {actions}
-              </div>
-            )}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto relative z-10" style={{ pointerEvents: 'auto' }}>
+              {actions}
+              {/* Botón de hotkeys discreto - siempre visible en el header (en modo estudio, hoy.jsx maneja su propio botón) */}
+              <HotkeysModalButton />
+            </div>
           </div>
           {/* Segunda fila: Subtítulo - SOLO en desktop (md+) */}
           {subtitle && (

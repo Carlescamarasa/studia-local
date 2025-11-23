@@ -46,6 +46,8 @@ import { componentStyles } from "@/design/componentStyles";
 import MediaEmbed from "../components/common/MediaEmbed";
 import { MediaIcon, getMediaLabel } from "../components/common/MediaEmbed";
 import { resolveMedia, MediaKind } from "../components/utils/media";
+import { shouldIgnoreHotkey } from "@/utils/hotkeys";
+import { useHotkeysModal } from "@/hooks/useHotkeysModal.jsx";
 
 import RequireRole from "@/components/auth/RequireRole";
 
@@ -69,6 +71,7 @@ export default function HoyPage() {
 function HoyPageContent() {
   const navigate = useNavigate();
   const { closeSidebar, abierto, toggleSidebar } = useSidebar();
+  const { setShowHotkeysModal } = useHotkeysModal();
 
   const [semanaActualISO, setSemanaActualISO] = useState(() => {
     return calcularLunesSemanaISO(new Date());
@@ -102,7 +105,6 @@ function HoyPageContent() {
   const [omitidos, setOmitidos] = useState(new Set());
   const [pantallaCompleta, setPantallaCompleta] = useState(false);
   const [mostrarItinerario, setMostrarItinerario] = useState(false);
-  const [mostrarAyuda, setMostrarAyuda] = useState(false);
   const [mostrarModalCancelar, setMostrarModalCancelar] = useState(false);
   const [rondasExpandidasItinerario, setRondasExpandidasItinerario] = useState(new Set());
   const [cronometroPausadoPorModal, setCronometroPausadoPorModal] = useState(false);
@@ -540,7 +542,7 @@ function HoyPageContent() {
 
   // Pausar/reanudar cronómetro cuando se abren/cierran modales
   useEffect(() => {
-    const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || mostrarAyuda || mediaFullscreen || reportModalAbierto;
+    const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || mediaFullscreen || reportModalAbierto;
     
     if (hayModalAbierto && cronometroActivo && !cronometroPausadoPorModal) {
       // Pausar el cronómetro
@@ -559,7 +561,7 @@ function HoyPageContent() {
       setCronometroActiva(true);
       setCronometroPausadoPorModal(false);
     }
-  }, [mostrarModalCancelar, mostrarItinerario, mostrarAyuda, mediaFullscreen, reportModalAbierto, cronometroActivo, cronometroPausadoPorModal, sesionActiva, sesionFinalizada, timestampInicio]);
+  }, [mostrarModalCancelar, mostrarItinerario, mediaFullscreen, reportModalAbierto, cronometroActivo, cronometroPausadoPorModal, sesionActiva, sesionFinalizada, timestampInicio]);
 
   const empezarSesion = async (sesion, sesionIdxProp) => {
     // Actualizar bloques con mediaLinks actuales de la base de datos
@@ -638,6 +640,49 @@ function HoyPageContent() {
     setTimestampUltimoPausa(null);
     setTiempoAcumuladoAntesPausa(0);
   };
+
+  // Listener para el hotkey global Ctrl+Alt+S "Studia ahora"
+  // DEBE estar después de la declaración de empezarSesion
+  useEffect(() => {
+    const handleStartStudySession = async () => {
+      // Verificar que no hay sesión activa
+      if (sesionActiva) return;
+      
+      // Verificar que hay asignación activa y semana del plan
+      if (!asignacionActiva || !semanaDelPlan) {
+        toast.info('No tienes asignaciones activas. Habla con tu profesor.');
+        return;
+      }
+      
+      // Verificar que hay sesiones disponibles
+      if (!semanaDelPlan.sesiones || semanaDelPlan.sesiones.length === 0) {
+        toast.info('No hay sesiones disponibles para esta semana.');
+        return;
+      }
+      
+      // Seleccionar automáticamente la primera sesión si no hay ninguna seleccionada
+      // o si la seleccionada no es válida
+      const primeraSesionIdx = 0;
+      const primeraSesion = semanaDelPlan.sesiones[primeraSesionIdx];
+      
+      if (!primeraSesion) {
+        toast.info('No hay sesiones disponibles para esta semana.');
+        return;
+      }
+      
+      // Asegurar que la sesión esté seleccionada
+      setSesionSeleccionada(primeraSesionIdx);
+      
+      // Iniciar la primera sesión automáticamente
+      await empezarSesion(primeraSesion, primeraSesionIdx);
+    };
+
+    window.addEventListener('start-study-session', handleStartStudySession);
+    
+    return () => {
+      window.removeEventListener('start-study-session', handleStartStudySession);
+    };
+  }, [asignacionActiva, semanaDelPlan, sesionActiva, empezarSesion, setSesionSeleccionada]);
 
   const cerrarSesion = () => {
     setCronometroActiva(false);
@@ -761,7 +806,7 @@ function HoyPageContent() {
 
     const handleKeyDown = (e) => {
       // No procesar si hay un modal abierto (excepto para cerrar modales)
-      const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || mostrarAyuda || mediaFullscreen || reportModalAbierto;
+      const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || mediaFullscreen || reportModalAbierto;
       
       // Permitir Escape siempre para cerrar modales
       if (e.key === 'Escape') {
@@ -770,8 +815,6 @@ function HoyPageContent() {
           setMediaFullscreen(null);
         } else if (mostrarItinerario) {
           setMostrarItinerario(false);
-        } else if (mostrarAyuda) {
-          setMostrarAyuda(false);
         } else if (mostrarModalCancelar) {
           setMostrarModalCancelar(false);
         } else if (sesionActiva && !sesionFinalizada) {
@@ -796,17 +839,17 @@ function HoyPageContent() {
       // Permitir '?' para toggle de ayuda siempre (incluso cuando está abierto, excepto con modal de reporte)
       if (e.key === '?') {
         e.preventDefault();
-        setMostrarAyuda(prev => !prev);
+        setShowHotkeysModal(prev => !prev);
         return;
       }
 
       // Si hay un modal abierto, no procesar otros atajos
       if (hayModalAbierto) return;
 
-      // No procesar si está en un input o textarea
-      if (e.target.matches('input, textarea, select')) return;
-      
+      // Usar helper centralizado para detectar campos editables
+      if (shouldIgnoreHotkey(e)) return;
 
+      // Espacio: play/pause del reproductor de audio
       if (e.code === 'Space' || e.key === ' ') {
         e.preventDefault();
         const listaEjecucion = aplanarSesion(sesionActiva);
@@ -815,14 +858,43 @@ function HoyPageContent() {
           togglePlayPausa();
         }
       }
+      
+      // Flecha izquierda: ejercicio anterior
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (indiceActual > 0) {
+          handleAnterior();
+        }
+      }
+      
+      // Flecha derecha: ejercicio siguiente
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const listaEjecucion = aplanarSesion(sesionActiva);
+        if (indiceActual < listaEjecucion.length - 1) {
+          omitirYAvanzar(); // O usar completarYAvanzar según lógica
+        }
+      }
+      
+      // Tecla O: completar ejercicio actual (OK)
+      if (e.key === 'o' || e.key === 'O') {
+        e.preventDefault();
+        completarYAvanzar();
+      }
+      
+      // Enter: también completar ejercicio (mantener compatibilidad)
       if (e.key === 'Enter') {
         e.preventDefault();
         completarYAvanzar();
       }
+      
+      // Tecla N: omitir ejercicio (mantener compatibilidad)
       if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         omitirYAvanzar();
       }
+      
+      // Tecla P: ejercicio anterior (mantener compatibilidad)
       if (e.key === 'p' || e.key === 'P') {
         e.preventDefault();
         handleAnterior();
@@ -834,7 +906,7 @@ function HoyPageContent() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown, true);
     };
-  }, [sesionActiva, sesionFinalizada, indiceActual, mediaFullscreen, mostrarItinerario, mostrarAyuda, mostrarModalCancelar, togglePlayPausa, completarYAvanzar, omitirYAvanzar, handleAnterior, reportModalAbierto]);
+  }, [sesionActiva, sesionFinalizada, indiceActual, mediaFullscreen, mostrarItinerario, mostrarModalCancelar, togglePlayPausa, completarYAvanzar, omitirYAvanzar, handleAnterior, reportModalAbierto, setShowHotkeysModal]);
 
   const handleCancelar = () => {
     setMostrarModalCancelar(true);
@@ -1346,7 +1418,7 @@ function HoyPageContent() {
                   <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand touch-manipulation" onClick={() => setMostrarItinerario(true)} aria-label="Mostrar índice de ejercicios">
                     <List className="w-5 h-5 sm:w-4 sm:h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand touch-manipulation" onClick={() => setMostrarAyuda(true)} aria-label="Mostrar ayuda de atajos">
+                  <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand touch-manipulation" onClick={() => setShowHotkeysModal(true)} aria-label="Mostrar atajos de teclado">
                     <HelpCircle className="w-5 h-5 sm:w-4 sm:h-4" />
                   </Button>
                   <Button 
@@ -2022,42 +2094,6 @@ function HoyPageContent() {
           </Dialog>
         )}
 
-        {/* Panel de ayuda - Dialog central mediano */}
-        <Dialog open={mostrarAyuda} onOpenChange={setMostrarAyuda}>
-          <DialogContent size="md" className="max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>⌨️ Atajos de Teclado</DialogTitle>
-            </DialogHeader>
-            <div className="pt-4 space-y-2">
-              <div className={`${componentStyles.layout.grid2} gap-2 text-sm`}>
-                <div className="flex items-center gap-2 min-h-[40px]">
-                  <kbd className="kbd">Espacio</kbd>
-                  <span className="text-xs">Play/Pausa</span>
-                </div>
-                <div className="flex items-center gap-2 min-h-[40px]">
-                  <kbd className="kbd">Enter</kbd>
-                  <span className="text-xs">Completar</span>
-                </div>
-                <div className="flex items-center gap-2 min-h-[40px]">
-                  <kbd className="kbd">N</kbd>
-                  <span className="text-xs">Omitir</span>
-                </div>
-                <div className="flex items-center gap-2 min-h-[40px]">
-                  <kbd className="kbd">P</kbd>
-                  <span className="text-xs">Anterior</span>
-                </div>
-                <div className="flex items-center gap-2 min-h-[40px]">
-                  <kbd className="kbd">Esc</kbd>
-                  <span className="text-xs">Cancelar</span>
-                </div>
-                <div className="flex items-center gap-2 min-h-[40px]">
-                  <kbd className="kbd">I</kbd>
-                  <span className="text-xs">Índice</span>
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
 
         {/* Modal cancelar */}
         {mostrarModalCancelar && (
@@ -2077,7 +2113,7 @@ function HoyPageContent() {
       {/* Header con estilo unificado */}
       <PageHeader
         icon={PlayCircle}
-        title="Estudiar Ahora"
+        title="Studia ahora"
         subtitle="Plan de estudio semanal"
         actions={
           (() => {

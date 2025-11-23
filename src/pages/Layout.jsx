@@ -52,6 +52,9 @@ import ReportErrorButton from "@/components/common/ReportErrorButton";
 import { useQuery } from "@tanstack/react-query";
 import { listErrorReports } from "@/api/errorReportsAPI";
 import { Badge } from "@/components/ds";
+import { shouldIgnoreHotkey } from "@/utils/hotkeys";
+import HotkeysModal from "@/components/common/HotkeysModal";
+import { HotkeysModalProvider, useHotkeysModal } from "@/hooks/useHotkeysModal.jsx";
 
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
@@ -663,11 +666,25 @@ function LayoutContent() {
   );
 }
 
-/* Wrapper con providers del estado del sidebar */
+// Componente interno que usa el hook para el modal
+function HotkeysModalWrapper() {
+  const { showHotkeysModal, setShowHotkeysModal } = useHotkeysModal();
+  return (
+    <HotkeysModal 
+      open={showHotkeysModal} 
+      onOpenChange={setShowHotkeysModal} 
+    />
+  );
+}
+
+/* Wrapper con providers del estado del sidebar y hotkeys modal */
 export default function Layout() {
   return (
-    <SidebarProvider>
-      <LayoutContent />
-    </SidebarProvider>
+    <HotkeysModalProvider>
+      <SidebarProvider>
+        <LayoutContent />
+        <HotkeysModalWrapper />
+      </SidebarProvider>
+    </HotkeysModalProvider>
   );
 }

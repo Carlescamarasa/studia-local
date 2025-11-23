@@ -541,64 +541,72 @@ export default function PerfilModal({
     updateUserMutation.mutate(dataToSave);
   };
 
+  // Cambiar contraseña usando resetPasswordForEmail (envía email para restablecer contraseña)
   const changePasswordMutation = useMutation({
-    mutationFn: async ({ currentPassword, newPassword }) => {
-      // Nota: Supabase permite cambiar la contraseña del usuario autenticado
-      // sin verificar la contraseña actual si hay sesión activa.
-      // Por simplicidad, aquí solo actualizamos la contraseña si hay sesión activa.
+    mutationFn: async () => {
+      // Obtener el email del usuario autenticado
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('No hay sesión activa. Por favor, inicia sesión de nuevo.');
+      if (!session?.user?.email) {
+        throw new Error('No hay sesión activa o no se pudo obtener el email. Por favor, inicia sesión de nuevo.');
       }
 
-      // Actualizar contraseña
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword.trim(),
+      // Usar el mismo patrón que userAdmin.ts para construir la URL de redirect
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      let redirectUrl;
+      
+      if (supabaseUrl) {
+        // Usar la URL de Supabase como base (más confiable)
+        redirectUrl = `${new URL(supabaseUrl).origin}/reset-password`;
+      } else {
+        // Fallback si no hay VITE_SUPABASE_URL
+        redirectUrl = `${window.location.origin}/reset-password`;
+      }
+      
+      if (import.meta.env.DEV) {
+        log.debug('[PerfilModal] Enviando email de restablecimiento a:', session.user.email);
+        log.debug('[PerfilModal] URL de redirect:', redirectUrl);
+      }
+
+      // Enviar email para restablecer contraseña
+      const { error } = await supabase.auth.resetPasswordForEmail(session.user.email, {
+        redirectTo: redirectUrl,
       });
 
       if (error) {
+        if (import.meta.env.DEV) {
+          log.error('[PerfilModal] Error al enviar email de restablecimiento:', error);
+        }
         throw error;
       }
 
-      return { success: true };
+      return { success: true, email: session.user.email };
     },
-    onSuccess: () => {
-      setPasswordResult({ success: true, message: '✅ Contraseña actualizada correctamente' });
+    onSuccess: (data) => {
+      const email = data?.email || targetUser?.email || effectiveUser?.email || 'tu correo';
+      setPasswordResult({ 
+        success: true, 
+        message: `✅ Te hemos enviado un correo a ${email} para cambiar tu contraseña.` 
+      });
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      toast.success('Contraseña actualizada correctamente');
+      toast.success('Te hemos enviado un correo para cambiar tu contraseña.');
     },
     onError: (error) => {
-      log.error('[PerfilModal] Error al actualizar contraseña:', error);
-      setPasswordResult({ success: false, message: `❌ Error: ${error.message || 'No se pudo actualizar la contraseña'}` });
-      toast.error(`Error al actualizar la contraseña: ${error.message || 'Error desconocido'}`);
+      log.error('[PerfilModal] Error al enviar email de restablecimiento:', error);
+      const errorMessage = error.message || 'No se pudo enviar el correo';
+      setPasswordResult({ 
+        success: false, 
+        message: `❌ Error: ${errorMessage}` 
+      });
+      toast.error(`Error al enviar el correo: ${errorMessage}`);
     },
   });
 
   const handleChangePassword = async () => {
     setPasswordResult(null);
 
-    if (!passwordData.newPassword || !passwordData.confirmPassword) {
-      setPasswordResult({ success: false, message: '❌ Completa todos los campos' });
-      toast.error('Completa todos los campos');
-      return;
-    }
-
-    if (passwordData.newPassword.length < 6) {
-      setPasswordResult({ success: false, message: '❌ La contraseña debe tener al menos 6 caracteres' });
-      toast.error('La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
-
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordResult({ success: false, message: '❌ Las contraseñas no coinciden' });
-      toast.error('Las contraseñas no coinciden');
-      return;
-    }
-
-    changePasswordMutation.mutate({
-      currentPassword: passwordData.currentPassword,
-      newPassword: passwordData.newPassword,
-    });
+    // No necesitamos validar campos ya que solo enviamos el email
+    // El usuario establecerá la nueva contraseña desde el email
+    changePasswordMutation.mutate();
   };
 
   const roleLabels = {
@@ -1163,70 +1171,24 @@ export default function PerfilModal({
                     )}
 
                     <div className="space-y-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="currentPassword" className="block text-sm text-[var(--color-text-primary)]">Contraseña actual</Label>
-                        <Input
-                          id="currentPassword"
-                          type="password"
-                          value={passwordData.currentPassword}
-                          onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                          placeholder="••••••••"
-                          className={componentStyles.controls.inputDefault}
-                          disabled={changePasswordMutation.isPending}
-                        />
-                        <p className="text-xs text-[var(--color-text-secondary)]">Opcional si hay sesión activa</p>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label htmlFor="newPassword" className="block text-sm text-[var(--color-text-primary)]">Nueva contraseña</Label>
-                        <Input
-                          id="newPassword"
-                          type="password"
-                          value={passwordData.newPassword}
-                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                          placeholder="••••••••"
-                          className={componentStyles.controls.inputDefault}
-                          disabled={changePasswordMutation.isPending}
-                        />
-                        <p className="text-xs text-[var(--color-text-secondary)]">Mínimo 6 caracteres</p>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label htmlFor="confirmPassword" className="block text-sm text-[var(--color-text-primary)]">Repetir contraseña</Label>
-                        <Input
-                          id="confirmPassword"
-                          type="password"
-                          value={passwordData.confirmPassword}
-                          onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                          placeholder="••••••••"
-                          className={componentStyles.controls.inputDefault}
-                          disabled={changePasswordMutation.isPending}
-                        />
-                      </div>
+                      <Alert variant="info" className={componentStyles.containers.panelBase}>
+                        <AlertDescription className="text-xs sm:text-sm">
+                          Para cambiar tu contraseña, te enviaremos un correo con un enlace seguro. 
+                          Desde ese enlace podrás establecer una nueva contraseña.
+                        </AlertDescription>
+                      </Alert>
 
                       <div className="flex gap-2 pt-1">
                         <Button
                           onClick={handleChangePassword}
                           loading={changePasswordMutation.isPending}
-                          loadingText="Actualizando..."
-                          disabled={!passwordData.newPassword || !passwordData.confirmPassword}
+                          loadingText="Enviando correo..."
+                          disabled={changePasswordMutation.isPending}
                           size="sm"
                           className={componentStyles.buttons.primary + " flex-1"}
                         >
                           <Lock className="w-4 h-4 mr-2" />
-                          Actualizar contraseña
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-                            setPasswordResult(null);
-                          }}
-                          disabled={changePasswordMutation.isPending}
-                          size="sm"
-                          className={componentStyles.buttons.outline}
-                        >
-                          Limpiar
+                          Cambiar contraseña
                         </Button>
                       </div>
                     </div>

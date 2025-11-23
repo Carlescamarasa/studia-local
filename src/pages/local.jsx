@@ -120,7 +120,7 @@ export default function LocalPage() {
       { title: 'Estadísticas', url: '/estadisticas', icon: Activity },
     ],
     ESTU: [
-      { title: 'Estudiar Ahora', url: '/hoy', icon: PlayCircle },
+      { title: 'Studia ahora', url: '/hoy', icon: PlayCircle },
       { title: 'Mi Semana', url: '/semana', icon: Calendar },
       { title: 'Mis Estadísticas', url: '/estadisticas', icon: Activity },
     ],

@@ -321,7 +321,7 @@ function SemanaPageContent() {
                 className={`${componentStyles.buttons.primary} h-10 shadow-sm`}
               >
                 <PlayCircle className="w-4 h-4 mr-2" />
-                Ir a Estudiar Ahora
+                Ir a Studia ahora
               </Button>
             </CardContent>
           </Card>
@@ -455,7 +455,7 @@ function SemanaPageContent() {
                   className={`${componentStyles.buttons.primary} w-full md:w-auto h-12 shadow-sm`}
                 >
                   <PlayCircle className="w-5 h-5 mr-2" />
-                  Ir a Estudiar Ahora
+                  Ir a Studia ahora
                 </Button>
               </div>
 

@@ -1936,7 +1936,7 @@ export default function TestSeedPage() {
           { title: "Agenda", url: "/agenda" },
         ],
         ESTU: [
-          { title: "Estudiar Ahora", url: "/hoy" },
+          { title: "Studia ahora", url: "/hoy" },
           { title: "Mi Semana", url: "/semana" },
           { title: "Mis Estadísticas", url: "/estadisticas" },
         ],
