@@ -244,11 +244,11 @@ export default function UnifiedTable({
           )}
 
           {selectable && selectedItems.size > 0 && bulkActions && (
-            <div className="sticky bottom-0 left-0 right-0 border-t border-[var(--color-border-default)] bg-[var(--color-surface-default)]/95 backdrop-blur px-4 py-2 flex flex-wrap items-center justify-between gap-2 shadow-[0_-4px_12px_rgba(15,23,42,0.08)] z-20">
-              <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+            <div className="sticky bottom-0 left-0 right-0 border-t border-[var(--color-border-default)] bg-[var(--color-surface-elevated)]/95 backdrop-blur px-3 sm:px-4 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-2 shadow-[0_-4px_12px_rgba(0,0,0,0.15)] z-20">
+              <span className="text-xs sm:text-sm font-semibold text-[var(--color-text-primary)] shrink-0">
                 {selectedItems.size} {selectedItems.size === 1 ? 'elemento seleccionado' : 'elementos seleccionados'}
               </span>
-              <div className="flex gap-2 flex-wrap">
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto">
                 {bulkActions.map((action, idx) => (
                   <Button
                     key={idx}
@@ -258,10 +258,26 @@ export default function UnifiedTable({
                       action.onClick(Array.from(selectedItems));
                       setSelectedItems(new Set());
                     }}
-                    className="h-9 text-xs"
+                    className={cn(
+                      "h-8 sm:h-9 text-xs",
+                      "px-2 sm:px-3",
+                      isMobile && action.icon 
+                        ? "flex items-center justify-center w-full" 
+                        : "justify-center sm:justify-start"
+                    )}
+                    title={action.label}
                   >
-                    {action.icon && <action.icon className="w-4 h-4 mr-2" />}
-                    {action.label}
+                    {action.icon && (
+                      <action.icon className={cn(
+                        "w-4 h-4 shrink-0",
+                        !isMobile && "mr-2"
+                      )} />
+                    )}
+                    {(!isMobile || !action.icon) && (
+                      <span className="text-[10px] sm:text-xs truncate">
+                        {action.label}
+                      </span>
+                    )}
                   </Button>
                 ))}
               </div>
@@ -348,7 +364,7 @@ export default function UnifiedTable({
                     "bg-[var(--color-surface-default)]",
                     "px-3 py-2 flex flex-col gap-1",
                     "transition-all hover:shadow-sm",
-                    isSelected && "border-l-4 border-l-[hsl(var(--brand-500))] bg-[hsl(var(--brand-50))]",
+                    isSelected && "border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]",
                     isClickable && "cursor-pointer"
                   )}
                   onClick={isClickable ? handleCardClick : undefined}
@@ -408,11 +424,11 @@ export default function UnifiedTable({
           )}
 
           {selectable && selectedItems.size > 0 && bulkActions && (
-            <div className="sticky bottom-0 left-0 right-0 border-t border-[var(--color-border-default)] bg-[var(--color-surface-default)]/95 backdrop-blur px-4 py-2 flex flex-wrap items-center justify-between gap-2 shadow-[0_-4px_12px_rgba(15,23,42,0.08)] z-20">
-              <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+            <div className="sticky bottom-0 left-0 right-0 border-t border-[var(--color-border-default)] bg-[var(--color-surface-elevated)]/95 backdrop-blur px-3 sm:px-4 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-2 shadow-[0_-4px_12px_rgba(0,0,0,0.15)] z-20">
+              <span className="text-xs sm:text-sm font-semibold text-[var(--color-text-primary)] shrink-0">
                 {selectedItems.size} {selectedItems.size === 1 ? 'elemento seleccionado' : 'elementos seleccionados'}
               </span>
-              <div className="flex gap-2 flex-wrap">
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto">
                 {bulkActions.map((action, idx) => (
                   <Button
                     key={idx}
@@ -422,10 +438,26 @@ export default function UnifiedTable({
                       action.onClick(Array.from(selectedItems));
                       setSelectedItems(new Set());
                     }}
-                    className="h-9 text-xs"
+                    className={cn(
+                      "h-8 sm:h-9 text-xs",
+                      "px-2 sm:px-3",
+                      isMobile && action.icon 
+                        ? "flex items-center justify-center w-full" 
+                        : "justify-center sm:justify-start"
+                    )}
+                    title={action.label}
                   >
-                    {action.icon && <action.icon className="w-4 h-4 mr-2" />}
-                    {action.label}
+                    {action.icon && (
+                      <action.icon className={cn(
+                        "w-4 h-4 shrink-0",
+                        !isMobile && "mr-2"
+                      )} />
+                    )}
+                    {(!isMobile || !action.icon) && (
+                      <span className="text-[10px] sm:text-xs truncate">
+                        {action.label}
+                      </span>
+                    )}
                   </Button>
                 ))}
               </div>

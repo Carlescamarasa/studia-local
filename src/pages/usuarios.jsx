@@ -39,6 +39,7 @@ function UsuariosPageContent() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [estadoFilter, setEstadoFilter] = useState('all'); // all | activo | invitacion_pendiente | bloqueado
   const [profesorFilter, setProfesorFilter] = useState('all');
   const [nivelFilter, setNivelFilter] = useState('all');
   const [profesorAsignadoFilter, setProfesorAsignadoFilter] = useState('all');
@@ -279,8 +280,25 @@ function UsuariosPageContent() {
 
   let usuariosFiltrados = usuarios;
 
+  // Filtro de rol
   if (roleFilter !== 'all') {
     usuariosFiltrados = usuariosFiltrados.filter(u => u.rolPersonalizado === roleFilter);
+  }
+
+  // Filtro de estado
+  if (estadoFilter !== 'all') {
+    if (estadoFilter === 'activo') {
+      usuariosFiltrados = usuariosFiltrados.filter(u => (u.isActive !== false && u.is_active !== false));
+    } else if (estadoFilter === 'invitacion_pendiente') {
+      // Asumir que usuarios sin sesión activa o con isActive = null pueden estar pendientes
+      // Esto es una aproximación, ajustar según lógica de negocio
+      usuariosFiltrados = usuariosFiltrados.filter(u => {
+        // Si el usuario no tiene isActive definido o está en un estado intermedio
+        return u.isActive === null || u.isActive === undefined;
+      });
+    } else if (estadoFilter === 'bloqueado') {
+      usuariosFiltrados = usuariosFiltrados.filter(u => (u.isActive === false || u.is_active === false));
+    }
   }
 
   if (profesorFilter !== 'all') {
@@ -386,110 +404,142 @@ function UsuariosPageContent() {
       <PageHeader
         icon={Users}
         title="Usuarios"
-        subtitle="Gestiona usuarios del sistema"
+        subtitle="Gestiona alumnos, profesores y admins"
         actions={
-          <div className="flex gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <Button
               onClick={() => setIsInviteUserModalOpen(true)}
-              variant="outline"
-              className={componentStyles.buttons.secondary}
+              variant="ghost"
+              size="sm"
+              className="text-xs sm:text-sm h-8 sm:h-9"
             >
-              <Send className="w-4 h-4 mr-2" />
-              Invitar usuario
+              <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+              <span className="hidden sm:inline">Invitar usuario</span>
+              <span className="sm:hidden">Invitar</span>
             </Button>
             <Button
               onClick={() => setIsCreateUserModalOpen(true)}
-              className={componentStyles.buttons.primary}
+              variant="primary"
+              size="sm"
+              className="text-xs sm:text-sm h-8 sm:h-9"
             >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Crear usuario
+              <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+              <span className="hidden sm:inline">+ Crear usuario</span>
+              <span className="sm:hidden">+ Crear</span>
             </Button>
           </div>
         }
         filters={
-          <div className="flex gap-3 flex-wrap">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ui/80" />
+          <>
+            {/* Search - Primera fila en mobile, inline en desktop */}
+            <div className="relative flex-1 min-w-[200px] sm:min-w-[250px] w-full sm:w-auto order-1 sm:order-none">
+              <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--color-text-muted)]" />
               <Input
-                placeholder="Buscar usuario..."
+                placeholder="Buscar usuario…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pl-9 pr-9 ${componentStyles.controls.inputDefault}`}
+                className={`w-full pl-8 sm:pl-9 pr-8 sm:pr-9 h-8 sm:h-9 text-xs sm:text-sm ${componentStyles.controls.inputDefault}`}
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ui/80 hover:text-ui"
+                  className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
                   aria-label="Limpiar búsqueda"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               )}
             </div>
             
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className={`w-40 ${componentStyles.controls.selectDefault}`}>
-                <SelectValue placeholder="Rol" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los roles</SelectItem>
-                <SelectItem value="ADMIN">Administradores</SelectItem>
-                <SelectItem value="PROF">Profesores</SelectItem>
-                <SelectItem value="ESTU">Estudiantes</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Chips de filtros - Segunda fila en mobile, inline en desktop */}
+            <div className="flex gap-1.5 flex-wrap order-2 sm:order-none w-full sm:w-auto">
+              {/* Filtro de Rol */}
+              <div className="flex gap-1.5 items-center">
+                <span className="text-xs text-[var(--color-text-secondary)] hidden sm:inline">Rol:</span>
+                <Button
+                  variant={roleFilter === 'all' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => setRoleFilter('all')}
+                  className="text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3"
+                >
+                  Todos
+                </Button>
+                <Button
+                  variant={roleFilter === 'ESTU' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => setRoleFilter('ESTU')}
+                  className="text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3"
+                >
+                  Alumno
+                </Button>
+                <Button
+                  variant={roleFilter === 'PROF' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => setRoleFilter('PROF')}
+                  className="text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3"
+                >
+                  Profesor
+                </Button>
+                <Button
+                  variant={roleFilter === 'ADMIN' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => setRoleFilter('ADMIN')}
+                  className="text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3"
+                >
+                  Admin
+                </Button>
+              </div>
 
-            {roleFilter === 'ESTU' && profesores.length > 0 && (
-              <Select value={profesorFilter} onValueChange={setProfesorFilter}>
-                <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
-                  <SelectValue placeholder="Profesor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los profesores</SelectItem>
-                  {profesores.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{getNombreVisible(p)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+              {/* Separador visual */}
+              <div className="hidden sm:block w-px h-6 bg-[var(--color-border-default)] mx-0.5" />
 
-            {roleFilter === 'ESTU' && (
-              <Select value={nivelFilter} onValueChange={setNivelFilter}>
-                <SelectTrigger className={`w-40 ${componentStyles.controls.selectDefault}`}>
-                  <SelectValue placeholder="Nivel" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los niveles</SelectItem>
-                  <SelectItem value="principiante">Principiante</SelectItem>
-                  <SelectItem value="intermedio">Intermedio</SelectItem>
-                  <SelectItem value="avanzado">Avanzado</SelectItem>
-                  <SelectItem value="profesional">Profesional</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-
-            {roleFilter === 'ESTU' && (
-              <Select value={profesorAsignadoFilter} onValueChange={setProfesorAsignadoFilter}>
-                <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
-                  <SelectValue placeholder="Profesor asignado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="with">Con profesor</SelectItem>
-                  <SelectItem value="without">Sin profesor</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+              {/* Filtro de Estado */}
+              <div className="flex gap-1.5 items-center">
+                <span className="text-xs text-[var(--color-text-secondary)] hidden sm:inline">Estado:</span>
+                <Button
+                  variant={estadoFilter === 'all' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => setEstadoFilter('all')}
+                  className="text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3"
+                >
+                  Todos
+                </Button>
+                <Button
+                  variant={estadoFilter === 'activo' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => setEstadoFilter('activo')}
+                  className="text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3"
+                >
+                  Activo
+                </Button>
+                <Button
+                  variant={estadoFilter === 'invitacion_pendiente' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => setEstadoFilter('invitacion_pendiente')}
+                  className="text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3"
+                >
+                  Invitación pendiente
+                </Button>
+                <Button
+                  variant={estadoFilter === 'bloqueado' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => setEstadoFilter('bloqueado')}
+                  className="text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3"
+                >
+                  Bloqueado
+                </Button>
+              </div>
+            </div>
+          </>
         }
       />
 
       <div className={componentStyles.layout.page}>
-        <Card className={componentStyles.containers.cardBase}>
-          <CardHeader>
-            <CardTitle className="text-lg">{usuariosFiltrados.length} usuarios</CardTitle>
+        <Card className={`${componentStyles.containers.cardBase} compact-card`}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">{usuariosFiltrados.length} usuarios</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-2">
             <UnifiedTable
               columns={columns}
               data={usuariosFiltrados}
