@@ -150,12 +150,10 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (e) {
-    console.error('Error en invite-user:', e);
     return new Response(
       JSON.stringify({
         success: false,
         message: e.message || 'Error interno en invite-user',
-        error: e.toString(),
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

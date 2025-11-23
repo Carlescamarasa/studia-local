@@ -391,6 +391,17 @@ function LayoutContent() {
         return { nuevos: 0, enRevision: 0 };
       }
       
+      // Verificar que haya sesión activa antes de hacer la petición
+      try {
+        const { data: { session } } = await localDataClient.auth.getSession();
+        if (!session?.access_token) {
+          return { nuevos: 0, enRevision: 0 };
+        }
+      } catch (sessionError) {
+        // Si no hay sesión, no intentar hacer la petición
+        return { nuevos: 0, enRevision: 0 };
+      }
+      
       try {
         const [nuevos, enRevision] = await Promise.all([
           listErrorReports({ status: 'nuevo' }),
@@ -402,13 +413,24 @@ function LayoutContent() {
           enRevision: Array.isArray(enRevision) ? enRevision.length : 0
         };
       } catch (error) {
+        // Ignorar errores CORS o de red silenciosamente
+        // Estos pueden ocurrir si la sesión expiró o hay problemas de conectividad
+        if (error?.message?.includes('CORS') || 
+            error?.message?.includes('NetworkError') ||
+            error?.code === 'PGRST301' || 
+            error?.status === 401 ||
+            error?.status === 403) {
+          return { nuevos: 0, enRevision: 0 };
+        }
+        // Solo loguear errores inesperados
         console.error('[Layout] Error obteniendo conteos de reportes:', error);
         return { nuevos: 0, enRevision: 0 };
       }
     },
-    enabled: Boolean(userRole) && userRole === 'ADMIN',
+    enabled: Boolean(userRole) && userRole === 'ADMIN' && Boolean(user),
     refetchInterval: 30000, // Refrescar cada 30 segundos
     staleTime: 10000, // Considerar datos frescos por 10 segundos
+    retry: false, // No reintentar si falla (evita spam de errores)
   });
   
   // Debug: verificar el rol calculado (desactivado para reducir logs)

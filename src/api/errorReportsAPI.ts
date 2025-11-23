@@ -84,28 +84,37 @@ export async function listErrorReports(filters?: {
   category?: string;
   userId?: string;
 }): Promise<ErrorReport[]> {
-    let query = supabase
-      .from('error_reports')
-      .select('*')
-      .order('created_at', { ascending: false });
+  // Verificar sesión antes de hacer la petición
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error('No hay sesión activa');
+  }
 
-    if (filters?.status) {
-      query = query.eq('status', filters.status);
-    }
-    if (filters?.category) {
-      query = query.eq('category', filters.category);
-    }
-    if (filters?.userId) {
-      query = query.eq('user_id', filters.userId);
-    }
+  let query = supabase
+    .from('error_reports')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-    const { data, error } = await query;
+  if (filters?.status) {
+    query = query.eq('status', filters.status);
+  }
+  if (filters?.category) {
+    query = query.eq('category', filters.category);
+  }
+  if (filters?.userId) {
+    query = query.eq('user_id', filters.userId);
+  }
 
-    if (error) {
-    console.error('[errorReportsAPI] Error listando reportes:', {
-      error: error?.message || error,
-      code: error?.code,
-    });
+  const { data, error } = await query;
+
+  if (error) {
+    // No loguear errores CORS o de autenticación (son esperados si la sesión expiró)
+    if (error.code !== 'PGRST301' && error.status !== 401 && error.status !== 403) {
+      console.error('[errorReportsAPI] Error listando reportes:', {
+        error: error?.message || error,
+        code: error?.code,
+      });
+    }
     throw error;
   }
 

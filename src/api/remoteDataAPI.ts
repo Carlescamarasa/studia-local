@@ -455,9 +455,6 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
     // Obtener token de sesión
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
-      if (import.meta.env.DEV) {
-        console.warn('[getEmailsForUsers] No hay sesión activa');
-      }
       // Si no hay sesión, solo devolver email del usuario autenticado si coincide
       const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
       if (user && user.id && userIds.includes(user.id)) {
@@ -471,19 +468,12 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
     
     if (!supabaseUrl) {
-      if (import.meta.env.DEV) {
-        console.warn('[getEmailsForUsers] VITE_SUPABASE_URL no está configurada');
-      }
       // Fallback: solo email del usuario autenticado
       const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
       if (user && user.id && userIds.includes(user.id)) {
         emailMap.set(user.id, user.email || '');
       }
       return emailMap;
-    }
-
-    if (import.meta.env.DEV) {
-      console.debug('[getEmailsForUsers] Llamando a Edge Function con', userIds.length, 'userIds');
     }
 
     const headers: Record<string, string> = {
@@ -511,40 +501,16 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
             emailMap.set(userId, email as string);
           }
         }
-        if (import.meta.env.DEV) {
-          console.debug('[getEmailsForUsers] Emails obtenidos:', emailMap.size, 'de', userIds.length);
-        }
-      } else {
-        if (import.meta.env.DEV) {
-          console.warn('[getEmailsForUsers] Respuesta sin success o emails:', data);
-        }
       }
     } else {
-      // Si falla, loguear el error y usar fallback
-      const errorText = await response.text();
-      let errorData;
-      try {
-        errorData = JSON.parse(errorText);
-      } catch {
-        errorData = { error: errorText };
-      }
-      
-      console.error('[getEmailsForUsers] Error al llamar a Edge Function:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData,
-        url: `${supabaseUrl}/functions/v1/get-user-emails`,
-      });
-      
-      // Usar fallback: solo email del usuario autenticado
+      // Si falla, usar fallback: solo email del usuario autenticado
       const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
       if (user && user.id && userIds.includes(user.id)) {
         emailMap.set(user.id, user.email || '');
       }
     }
   } catch (error) {
-    // Si falla, loguear y usar fallback: solo email del usuario autenticado
-    console.error('[getEmailsForUsers] Excepción al obtener emails:', error);
+    // Si falla, usar fallback: solo email del usuario autenticado
     try {
       const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
       if (user && user.id && userIds.includes(user.id)) {
@@ -552,9 +518,6 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
       }
     } catch (e) {
       // Ignorar si no hay usuario autenticado
-      if (import.meta.env.DEV) {
-        console.warn('[getEmailsForUsers] No se pudo obtener usuario autenticado:', e);
-      }
     }
   }
 
