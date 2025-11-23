@@ -487,7 +487,7 @@ export default function PlanEditor({ plan, onClose }) {
   const effectiveUser = useEffectiveUser();
   const [formData, setFormData] = useState({
     nombre: '',
-    focoGeneral: '',
+    focoGeneral: 'GEN',
     objetivoSemanalPorDefecto: '',
     piezaId: '',
     semanas: [],
@@ -509,7 +509,7 @@ export default function PlanEditor({ plan, onClose }) {
     if (plan) {
       setFormData({
         nombre: plan.nombre || '',
-        focoGeneral: plan.focoGeneral || '',
+        focoGeneral: plan.focoGeneral || 'GEN',
         objetivoSemanalPorDefecto: plan.objetivoSemanalPorDefecto || '',
         piezaId: plan.piezaId || '',
         semanas: plan.semanas || [],
@@ -960,7 +960,7 @@ export default function PlanEditor({ plan, onClose }) {
                     modal={false}
                   >
                     <SelectTrigger id="foco" className={`w-full ${componentStyles.controls.selectDefault}`}>
-                      <SelectValue placeholder="Selecciona foco..." />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent 
                       position="popper" 
@@ -969,7 +969,6 @@ export default function PlanEditor({ plan, onClose }) {
                       sideOffset={4}
                       className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                     >
-                      <SelectItem value={null}>Sin foco específico</SelectItem>
                       {Object.entries(focoLabels).map(([key, label]) => (
                         <SelectItem key={key} value={key}>{label}</SelectItem>
                       ))}
