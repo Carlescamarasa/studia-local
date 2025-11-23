@@ -22,6 +22,7 @@ function EstudiantesPageContent() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [nivelFilter, setNivelFilter] = useState('all');
+  const [showAllStudents, setShowAllStudents] = useState(false); // Por defecto solo mis estudiantes
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
 
@@ -82,8 +83,25 @@ function EstudiantesPageContent() {
     });
   }, [usuarios, asignaciones, userIdActual]);
 
+  // Todos los estudiantes (sin filtrar por profesor)
+  const todosLosEstudiantes = useMemo(() => {
+    return usuarios.filter(u => u.rolPersonalizado === 'ESTU');
+  }, [usuarios]);
+
+  // Crear mapa de profesores para obtener nombres rápidamente
+  const profesoresMap = useMemo(() => {
+    const map = new Map();
+    usuarios
+      .filter(u => u.rolPersonalizado === 'PROF' || u.rolPersonalizado === 'ADMIN')
+      .forEach(prof => {
+        map.set(prof.id, getNombreVisible(prof));
+      });
+    return map;
+  }, [usuarios]);
+
   // Aplicar filtros adicionales
-  let estudiantesFiltrados = misEstudiantes;
+  // Si showAllStudents es true, usar todosLosEstudiantes, sino usar misEstudiantes
+  let estudiantesFiltrados = showAllStudents ? todosLosEstudiantes : misEstudiantes;
 
   if (nivelFilter !== 'all') {
     estudiantesFiltrados = estudiantesFiltrados.filter(u => u.nivel === nivelFilter);
@@ -108,6 +126,27 @@ function EstudiantesPageContent() {
           <p className="text-xs text-ui/80">{u.email}</p>
         </div>
       ),
+    },
+    {
+      key: 'profesor',
+      label: 'Profesor',
+      render: (u) => {
+        const profesorId = u.profesorAsignadoId;
+        if (!profesorId) {
+          return <span className="text-xs text-ui/80">-</span>;
+        }
+        const profesorNombre = profesoresMap.get(profesorId);
+        return (
+          <span className="text-sm text-[var(--color-text-primary)]">
+            {profesorNombre || '-'}
+          </span>
+        );
+      },
+      sortValue: (u) => {
+        const profesorId = u.profesorAsignadoId;
+        if (!profesorId) return '';
+        return profesoresMap.get(profesorId) || '';
+      },
     },
     {
       key: 'nivel',
@@ -167,6 +206,14 @@ function EstudiantesPageContent() {
                 <SelectItem value="profesional">Profesional</SelectItem>
               </SelectContent>
             </Select>
+
+            <Button
+              variant={showAllStudents ? "outline" : "default"}
+              onClick={() => setShowAllStudents(!showAllStudents)}
+              className={showAllStudents ? componentStyles.buttons.secondary : componentStyles.buttons.primary}
+            >
+              {showAllStudents ? "Mis estudiantes" : "Ver todos"}
+            </Button>
           </div>
         }
       />
@@ -180,7 +227,73 @@ function EstudiantesPageContent() {
             <UnifiedTable
               columns={columns}
               data={estudiantesFiltrados}
-              selectable={false}
+              selectable={true}
+              bulkActions={[
+                {
+                  label: 'Enviar enlace mágico',
+                  icon: Mail,
+                  onClick: async (selectedIds) => {
+                    const estudiantesSeleccionados = estudiantesFiltrados.filter(u => selectedIds.includes(u.id));
+                    const conEmail = estudiantesSeleccionados.filter(u => u.email);
+                    
+                    if (conEmail.length === 0) {
+                      toast.error('Ninguno de los estudiantes seleccionados tiene email');
+                      return;
+                    }
+
+                    let successCount = 0;
+                    let errorCount = 0;
+
+                    for (const estudiante of conEmail) {
+                      try {
+                        await sendMagicLink(estudiante.id, estudiante.email);
+                        successCount++;
+                      } catch (error) {
+                        errorCount++;
+                      }
+                    }
+
+                    if (successCount > 0) {
+                      toast.success(`${successCount} enlace${successCount !== 1 ? 's' : ''} mágico${successCount !== 1 ? 's' : ''} enviado${successCount !== 1 ? 's' : ''}`);
+                    }
+                    if (errorCount > 0) {
+                      toast.error(`${errorCount} error${errorCount !== 1 ? 'es' : ''} al enviar`);
+                    }
+                  },
+                },
+                {
+                  label: 'Enviar recuperación de contraseña',
+                  icon: KeyRound,
+                  onClick: async (selectedIds) => {
+                    const estudiantesSeleccionados = estudiantesFiltrados.filter(u => selectedIds.includes(u.id));
+                    const conEmail = estudiantesSeleccionados.filter(u => u.email);
+                    
+                    if (conEmail.length === 0) {
+                      toast.error('Ninguno de los estudiantes seleccionados tiene email');
+                      return;
+                    }
+
+                    let successCount = 0;
+                    let errorCount = 0;
+
+                    for (const estudiante of conEmail) {
+                      try {
+                        await sendResetPassword(estudiante.id, estudiante.email);
+                        successCount++;
+                      } catch (error) {
+                        errorCount++;
+                      }
+                    }
+
+                    if (successCount > 0) {
+                      toast.success(`${successCount} email${successCount !== 1 ? 's' : ''} de recuperación enviado${successCount !== 1 ? 's' : ''}`);
+                    }
+                    if (errorCount > 0) {
+                      toast.error(`${errorCount} error${errorCount !== 1 ? 'es' : ''} al enviar`);
+                    }
+                  },
+                },
+              ]}
               getRowActions={(u) => {
                 const actions = [
                   {
@@ -241,7 +354,7 @@ function EstudiantesPageContent() {
                 setSelectedUserId(u.id);
                 setIsPerfilModalOpen(true);
               }}
-              emptyMessage="No tienes estudiantes asignados"
+              emptyMessage={showAllStudents ? "No hay estudiantes" : "No tienes estudiantes asignados"}
               emptyIcon={Users}
             />
           </CardContent>
