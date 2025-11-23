@@ -57,9 +57,34 @@ serve(async (req) => {
       .eq('id', user.id)
       .single();
 
-    if (profileError || !profile || profile.role !== 'ADMIN') {
+    if (profileError) {
+      console.error('Error al leer perfil:', profileError);
       return new Response(
-        JSON.stringify({ error: 'Solo administradores pueden obtener emails de usuarios' }),
+        JSON.stringify({ 
+          error: 'Error al verificar permisos',
+          details: profileError.message 
+        }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!profile) {
+      return new Response(
+        JSON.stringify({ error: 'Perfil no encontrado' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Normalizar el rol (trim y uppercase) para comparación
+    const userRole = profile.role ? String(profile.role).trim().toUpperCase() : '';
+    
+    if (userRole !== 'ADMIN') {
+      console.error('Usuario no es ADMIN. Rol actual:', userRole, 'User ID:', user.id);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Solo administradores pueden obtener emails de usuarios',
+          role: userRole 
+        }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

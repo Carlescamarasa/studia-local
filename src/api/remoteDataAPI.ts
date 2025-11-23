@@ -463,6 +463,35 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
       return emailMap;
     }
 
+    // Verificar que el usuario sea ADMIN antes de llamar a la Edge Function
+    // Esto evita llamadas innecesarias y errores 403
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser?.id) {
+        const { data: currentProfile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', currentUser.id)
+          .single();
+        
+        const userRole = currentProfile?.role ? String(currentProfile.role).trim().toUpperCase() : '';
+        if (userRole !== 'ADMIN') {
+          // No es ADMIN, usar fallback
+          if (currentUser.id && userIds.includes(currentUser.id)) {
+            emailMap.set(currentUser.id, currentUser.email || '');
+          }
+          return emailMap;
+        }
+      }
+    } catch (roleCheckError) {
+      // Si falla la verificación de rol, usar fallback
+      const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
+      if (user && user.id && userIds.includes(user.id)) {
+        emailMap.set(user.id, user.email || '');
+      }
+      return emailMap;
+    }
+
     // Llamar a la Edge Function para obtener emails
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -503,7 +532,7 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
         }
       }
     } else {
-      // Si falla, usar fallback: solo email del usuario autenticado
+      // Si falla (403, etc.), usar fallback silenciosamente
       const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
       if (user && user.id && userIds.includes(user.id)) {
         emailMap.set(user.id, user.email || '');
