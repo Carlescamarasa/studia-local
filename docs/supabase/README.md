@@ -1,5 +1,7 @@
 # Guía de Tablas Supabase - Studia
 
+> **Nota**: Este documento se mantiene como referencia técnica específica de Supabase. Para documentación general de arquitectura, consulta [docs/ARQUITECTURA.md](../ARQUITECTURA.md).
+
 Este documento describe las tablas de Supabase y sus campos para la aplicación Studia.
 
 ## Tablas
@@ -42,7 +44,7 @@ Almacena los ejercicios/bloques de práctica.
 **Campos principales:**
 - `id` (TEXT, PK)
 - `nombre` (TEXT)
-- `code` (TEXT, UNIQUE) - Código único (ej: CA-0001)
+- `code` (TEXT, UNIQUE) - Código único (ej: CA-0001) - **Importante para importación**
 - `tipo` (TEXT: 'CA', 'CB', 'TC', 'TM', 'FM', 'VC', 'AD')
 - `duracion_seg` (INTEGER)
 - `instrucciones` (TEXT, nullable)
@@ -100,11 +102,13 @@ Almacena las asignaciones de práctica con snapshots embebidos.
 - `estado` (TEXT: 'borrador', 'publicada', 'archivada')
 - `foco` (TEXT: 'GEN', 'LIG', 'RIT', 'ART', 'S&A')
 - `notas` (TEXT, nullable)
-- `plan` (JSONB) - Snapshot completo del plan
+- `plan` (JSONB) - Snapshot completo del plan (para preservar versiones históricas)
 - `pieza_snapshot` (JSONB) - Snapshot completo de la pieza
 - `created_at`, `updated_at` (TIMESTAMPTZ)
 
 **Script SQL**: `docs/supabase/schema-asignaciones.sql`
+
+**Nota importante**: Los snapshots (`plan`, `pieza_snapshot`) permiten que las asignaciones funcionen incluso si se eliminan o modifican las piezas/planes originales.
 
 ---
 
@@ -213,6 +217,8 @@ Almacena los feedbacks semanales de profesores a estudiantes.
   - Profesores pueden leer registros de sus estudiantes
   - Admins tienen acceso completo
 
+**Para más detalles sobre RLS y seguridad**, consulta [docs/ARQUITECTURA.md](../ARQUITECTURA.md).
+
 ---
 
 ## Instalación
@@ -250,4 +256,3 @@ Para migrar datos desde localStorage a Supabase:
 - Las relaciones se mantienen por ID (no hay FKs estrictas inicialmente)
 - Los snapshots en `asignaciones` permiten versionado histórico
 - La estructura anidada en `planes.semanas` se mantiene como JSONB para flexibilidad
-
