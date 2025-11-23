@@ -140,25 +140,6 @@ export function matchesCombo(event, combo, useCmdOnMac = false) {
   const hasAlt = event.altKey || (event.getModifierState && event.getModifierState('Alt'));
   const hasShift = event.shiftKey || (event.getModifierState && event.getModifierState('Shift'));
   
-  // DEBUG temporal: Log para todos los hotkeys que no funcionan
-  if (isMac && needsMod && (hasCtrl || hasMeta || hasAlt)) {
-    const mainKey = parts.find(p => !['mod', 'alt', 'shift'].includes(p));
-    if (mainKey) {
-      console.log('[matchesCombo]', {
-        combo,
-        mainKey,
-        key,
-        code,
-        hasCtrl,
-        hasMeta,
-        hasAlt,
-        hasShift,
-        needsMod,
-        needsAlt,
-        useCmdOnMac,
-      });
-    }
-  }
   
   if (needsMod) {
     if (isMac && useCmdOnMac) {
@@ -192,13 +173,55 @@ export function matchesCombo(event, combo, useCmdOnMac = false) {
   // Verificar alt
   if (needsAlt !== hasAlt) return false;
 
-  // Verificar shift
-  const needsShift = parts.includes('shift');
-  if (needsShift !== hasShift) return false;
-
-  // Verificar la tecla principal
+  // Verificar la tecla principal (antes de verificar shift, porque "?" y "/" pueden necesitar shift pero no tenerlo en el combo)
   const mainKey = parts.find(p => !['mod', 'alt', 'shift'].includes(p));
   if (!mainKey) return false;
+  
+  // Extraer codeKey temprano para usarlo en los casos especiales
+  // code tiene formato "KeyM", "KeyE", etc. - extraer la letra
+  let codeKey = null;
+  if (code && code.startsWith('Key')) {
+    codeKey = code.substring(3).toLowerCase();
+  } else if (code && code.startsWith('Digit')) {
+    codeKey = code.substring(5);
+  }
+  
+  // Manejo especial para '?' - se genera con Shift+/, así que requiere Shift pero lo capturamos como '?' simple
+  // DEBE estar ANTES de la verificación general de shift
+  if (mainKey === '?' && !needsMod && !needsAlt) {
+    // Verificar que sea '?' (que viene de Shift+/) y que Shift esté presionado
+    // Pero que NO haya otros modificadores
+    if (key === '?' || (key === '/' && hasShift)) {
+      // Asegurar que no haya otros modificadores no deseados, pero Shift sí es requerido para '?'
+      return !hasCtrl && !hasMeta && !hasAlt && hasShift;
+    }
+    return false;
+  }
+  
+  // Manejo especial para '/' con mod (mod+/) - DEBE estar ANTES de la verificación general de shift
+  // En algunos teclados, '/' se genera con Shift+7, así que también aceptamos eso
+  if (mainKey === '/' && needsMod && !needsAlt) {
+    // Verificar que sea '/' o que sea '7' con Shift (Shift+7 produce '/')
+    const isSlash = key === '/' || code === 'slash' || code === 'numpaddivide' || codeKey === '/';
+    const isShift7 = (key === '7' || code === 'Digit7') && hasShift && !hasAlt;
+    
+    if (isSlash || isShift7) {
+      // Para Shift+7, necesitamos Shift, pero para '/' directo no
+      if (isShift7) {
+        // Shift+7: necesita Shift pero no otros modificadores excepto mod
+        // Ya verificamos mod arriba, solo falta verificar que no haya Alt
+        return !hasAlt;
+      } else {
+        // '/' directo: no necesita Shift ni Alt
+        return !hasAlt && !hasShift;
+      }
+    }
+    return false;
+  }
+
+  // Verificar shift (después de la lógica especial de "?" y "/")
+  const needsShift = parts.includes('shift');
+  if (needsShift !== hasShift) return false;
 
   // Mapeo de teclas especiales
   const keyMap = {
@@ -243,6 +266,12 @@ export function matchesCombo(event, combo, useCmdOnMac = false) {
     '∫': 'i',  // Alt+I
     'ª': 'a',  // Alt+A (alternativo)
     'º': 'o',  // Alt+O (alternativo)
+    '¬': 'l',  // Alt+L
+    'œ': 'q',  // Alt+Q
+    'Œ': 'q',  // Alt+Q (mayúscula)
+    '~': 'n',  // Alt+N (puede variar según teclado)
+    'ñ': 'n',  // Alt+N (en algunos teclados)
+    'Ñ': 'n',  // Alt+N (mayúscula)
   };
 
   // Normalizar tecla principal
@@ -258,68 +287,27 @@ export function matchesCombo(event, combo, useCmdOnMac = false) {
     normalizedEventKey = macAltCharMap[key];
   }
   
-  // También intentar usar code como fallback (code siempre es la tecla física)
-  // code tiene formato "KeyM", "KeyE", etc. - extraer la letra
-  let codeKey = null;
-  if (code && code.startsWith('Key')) {
-    codeKey = code.substring(3).toLowerCase();
-  } else if (code && code.startsWith('Digit')) {
-    codeKey = code.substring(5);
-  }
-  
   // Comparar la tecla principal con la tecla del evento
-  // Usar codeKey como fuente principal de verdad (siempre es la tecla física)
+  // codeKey ya fue extraído arriba para los casos especiales
+  // PRIORIZAR codeKey porque siempre es la tecla física (más confiable en Mac con Alt)
   // key puede ser un carácter especial en Mac con Alt, pero code siempre es correcto
   let keyMatches = false;
   let codeMatches = false;
   
   // Primero intentar con codeKey (más confiable, especialmente en Mac con Alt)
+  // codeKey siempre es la tecla física, así que comparamos directamente con mainKey
   if (codeKey) {
-    codeMatches = (normalizedMainKey === codeKey || mainKey === codeKey);
+    // codeKey es la letra física (ej: 't', 'q', 'l', 'n')
+    // mainKey es lo que esperamos (ej: 't', 'q', 'l', 'n')
+    codeMatches = (mainKey.toLowerCase() === codeKey);
   }
   
-  // Luego intentar con key normalizado
+  // Luego intentar con key normalizado (por si codeKey no está disponible)
   if (!codeMatches) {
+    // normalizedEventKey ya tiene el mapeo de caracteres especiales aplicado
     keyMatches = (normalizedMainKey === normalizedEventKey || mainKey === normalizedEventKey);
   }
   
-  // DEBUG temporal: Log para ver qué está pasando con la comparación
-  if (isMac && needsMod && needsAlt && (hasCtrl || hasMeta || hasAlt)) {
-    console.log('[matchesCombo] Comparación:', {
-      combo,
-      mainKey,
-      normalizedMainKey,
-      key,
-      normalizedEventKey,
-      code,
-      codeKey,
-      keyMatches,
-      codeMatches,
-      '¿Pasa modificadores?': hasCtrl && hasAlt && !hasMeta,
-      'Resultado final': codeMatches || keyMatches,
-    });
-  }
-  
-  // Manejo especial para '/' con mod (mod+/)
-  if (mainKey === '/' && needsMod && !needsAlt && !needsShift) {
-    // Verificar que sea '/' y que mod esté presionado (sin otros modificadores)
-    if (key === '/' || code === 'slash' || code === 'numpaddivide' || codeKey === '/') {
-      // Verificar que no haya otros modificadores no deseados
-      return !hasAlt && !hasShift;
-    }
-    return false;
-  }
-  
-  // Manejo especial para '?' - se genera con Shift+/, así que requiere Shift pero lo capturamos como '?' simple
-  if (mainKey === '?' && !needsMod && !needsAlt && !needsShift) {
-    // Verificar que sea '?' (que viene de Shift+/) y que Shift esté presionado
-    // Pero que NO haya otros modificadores
-    if (key === '?' || (key === '/' && hasShift)) {
-      // Asegurar que no haya otros modificadores no deseados, pero Shift sí es requerido para '?'
-      return !hasCtrl && !hasMeta && !hasAlt && hasShift;
-    }
-    return false;
-  }
   
   // Para teclas simples (una sola letra, número o '/' sin modificadores especiales)
   if (mainKey.length === 1 && !needsMod && !needsAlt && !needsShift && mainKey !== '?' && mainKey !== '/') {

@@ -434,10 +434,7 @@ function LayoutContent() {
     retry: false, // No reintentar si falla (evita spam de errores)
   });
   
-  // Debug: verificar el rol calculado (desactivado para reducir logs)
-  // if (process.env.NODE_ENV === 'development') {
-  //   console.log('[Layout] Rol efectivo:', userRole, 'EffectiveUser:', effectiveUser?.rolPersonalizado, 'AppRole:', appRole);
-  // }
+  // Debug: verificar el rol calculado (desactivado)
 
   if (isLoading) {
     return (
@@ -491,9 +488,6 @@ function LayoutContent() {
           error?.message?.includes('JWT expired') ||
           error?.status === 403) {
         // No mostrar error si simplemente no hay sesión
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[Layout] No hay sesión activa al cerrar sesión, continuando con limpieza...');
-        }
       } else {
       console.error("Error al cerrar sesión:", error);
       }

@@ -108,7 +108,7 @@ Estos atajos son iguales en Windows y Mac.
 | Mostrar/ocultar índice de ejercicios  | `I`           |
 | Abrir diálogo de salir de sesión | `Esc`                |
 
-**Nota**: Estos atajos solo funcionan durante una sesión de estudio activa.  
+**Nota**: Estos atajos solo funcionan durante una sesión de estudio activa.
 
 En modo estudio, la app bloquea el comportamiento de scroll de `Espacio` y `Esc` para que no interfieran con el navegador.
 
