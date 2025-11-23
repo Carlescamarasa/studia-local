@@ -2,12 +2,18 @@ import React, { useState, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronUp, ChevronDown, FileText } from "lucide-react";
+import { ChevronUp, ChevronDown, FileText, MoreVertical } from "lucide-react";
 import RowActionsMenu from "@/components/common/RowActionsMenu";
 import TablePagination from "@/components/common/TablePagination";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 /**
  * Helper function to check if a raw value should be considered "empty"
@@ -111,11 +117,21 @@ export default function UnifiedTable({
   const hasActions = (rowActions && typeof rowActions === 'function') || getRowActions;
   
   // Verificar si solo hay una acción para todos los items (si es así, ocultar columna de acciones)
-  const sampleActions = data.length > 0 && hasActions 
-    ? (getRowActions ? getRowActions(data[0]) : (rowActions ? rowActions(data[0]) : []))
-    : [];
-  const hasOnlyOneAction = sampleActions.length === 1;
-  const shouldHideActionsColumn = hasOnlyOneAction;
+  // Pero solo ocultar si TODOS los items tienen exactamente 1 acción
+  let hasOnlyOneAction = false;
+  let shouldHideActionsColumn = false;
+  
+  if (data.length > 0 && hasActions) {
+    // Verificar acciones para todos los items, no solo el primero
+    const allActionsCounts = data.map(item => {
+      const actions = getRowActions ? getRowActions(item) : (rowActions ? rowActions(item) : []);
+      return actions.length;
+    });
+    
+    // Solo ocultar si TODOS los items tienen exactamente 1 acción
+    hasOnlyOneAction = allActionsCounts.every(count => count === 1) && allActionsCounts[0] === 1;
+    shouldHideActionsColumn = hasOnlyOneAction;
+  }
 
   // Preparar columnas para mobile: filtrar ocultas y determinar columna primaria
   const mobileColumns = useMemo(() => {
@@ -176,9 +192,43 @@ export default function UnifiedTable({
                     </TableHead>
                   ))}
                   {hasActions && !shouldHideActionsColumn && <TableHead className="w-10 py-2 px-3"></TableHead>}
+                  {selectable && bulkActions && selectedItems.size > 0 && (
+                    <TableHead className="w-12 py-2 px-3">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            aria-label="Acciones masivas"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                          {bulkActions.map((action, idx) => (
+                            <DropdownMenuItem
+                              key={idx}
+                              onClick={() => {
+                                action.onClick(Array.from(selectedItems));
+                                setSelectedItems(new Set());
+                              }}
+                              className="cursor-pointer"
+                            >
+                              {action.icon && <action.icon className="mr-2 h-4 w-4" />}
+                              {action.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
-              <TableBody zebra>
+              <TableBody 
+                zebra
+                className={selectable && selectedItems.size > 0 ? "pb-16" : ""}
+              >
                 {displayData.map((item) => {
                   const actions = getRowActions ? getRowActions(item) : (rowActions ? rowActions(item) : []);
                   const isSelected = selectedItems.has(item[keyField]);
@@ -218,7 +268,7 @@ export default function UnifiedTable({
                       ))}
                       {hasActions && !shouldHideActionsColumn && (
                         <TableCell className="text-right py-2 px-3" onClick={(e) => e.stopPropagation()}>
-                          <div className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 flex justify-end">
+                          <div className="flex justify-end">
                             <RowActionsMenu actions={actions} />
                           </div>
                         </TableCell>

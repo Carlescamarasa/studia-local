@@ -233,7 +233,12 @@ function EstudiantesPageContent() {
                   label: 'Enviar enlace mágico',
                   icon: Mail,
                   onClick: async (selectedIds) => {
+                    console.log('[BulkAction] IDs seleccionados:', selectedIds);
+                    console.log('[BulkAction] Estudiantes filtrados:', estudiantesFiltrados.map(u => ({ id: u.id, email: u.email })));
+                    
                     const estudiantesSeleccionados = estudiantesFiltrados.filter(u => selectedIds.includes(u.id));
+                    console.log('[BulkAction] Estudiantes encontrados:', estudiantesSeleccionados.map(u => ({ id: u.id, email: u.email })));
+                    
                     const conEmail = estudiantesSeleccionados.filter(u => u.email);
                     
                     if (conEmail.length === 0) {
@@ -246,9 +251,11 @@ function EstudiantesPageContent() {
 
                     for (const estudiante of conEmail) {
                       try {
+                        console.log('[BulkAction] Enviando magic link a:', { id: estudiante.id, email: estudiante.email });
                         await sendMagicLink(estudiante.id, estudiante.email);
                         successCount++;
                       } catch (error) {
+                        console.error('[BulkAction] Error enviando magic link:', error);
                         errorCount++;
                       }
                     }
@@ -265,7 +272,12 @@ function EstudiantesPageContent() {
                   label: 'Enviar recuperación de contraseña',
                   icon: KeyRound,
                   onClick: async (selectedIds) => {
+                    console.log('[BulkAction] IDs seleccionados:', selectedIds);
+                    console.log('[BulkAction] Estudiantes filtrados:', estudiantesFiltrados.map(u => ({ id: u.id, email: u.email })));
+                    
                     const estudiantesSeleccionados = estudiantesFiltrados.filter(u => selectedIds.includes(u.id));
+                    console.log('[BulkAction] Estudiantes encontrados:', estudiantesSeleccionados.map(u => ({ id: u.id, email: u.email })));
+                    
                     const conEmail = estudiantesSeleccionados.filter(u => u.email);
                     
                     if (conEmail.length === 0) {
@@ -278,9 +290,11 @@ function EstudiantesPageContent() {
 
                     for (const estudiante of conEmail) {
                       try {
+                        console.log('[BulkAction] Enviando reset password a:', { id: estudiante.id, email: estudiante.email });
                         await sendResetPassword(estudiante.id, estudiante.email);
                         successCount++;
                       } catch (error) {
+                        console.error('[BulkAction] Error enviando reset password:', error);
                         errorCount++;
                       }
                     }
@@ -307,6 +321,7 @@ function EstudiantesPageContent() {
                 ];
 
                 // Añadir acciones de email solo para usuarios con email
+                // Estas acciones coinciden con las bulk actions disponibles
                 if (u.email) {
                   actions.push(
                     {
@@ -316,6 +331,7 @@ function EstudiantesPageContent() {
                       onClick: async () => {
                         try {
                           await sendMagicLink(u.id, u.email);
+                          toast.success('Enlace mágico enviado correctamente');
                         } catch (error) {
                           // Error ya manejado en el hook
                         }
@@ -328,6 +344,7 @@ function EstudiantesPageContent() {
                       onClick: async () => {
                         try {
                           await sendResetPassword(u.id, u.email);
+                          toast.success('Email de recuperación enviado correctamente');
                         } catch (error) {
                           // Error ya manejado en el hook
                         }

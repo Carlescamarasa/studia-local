@@ -53,7 +53,7 @@ import { useQuery } from "@tanstack/react-query";
 import { listErrorReports } from "@/api/errorReportsAPI";
 import { Badge } from "@/components/ds";
 import { SupportTicketsBadge } from "@/components/common/SupportTicketsBadge";
-import { shouldIgnoreHotkey, matchesHotkey, getHotkeyById, HOTKEYS_CONFIG } from "@/utils/hotkeys";
+import { shouldIgnoreHotkey, matchesHotkey, getHotkeyById, HOTKEYS_CONFIG, isMac } from "@/utils/hotkeys";
 import HotkeysModal from "@/components/common/HotkeysModal";
 import { HotkeysModalProvider, useHotkeysModal } from "@/hooks/useHotkeysModal.jsx";
 

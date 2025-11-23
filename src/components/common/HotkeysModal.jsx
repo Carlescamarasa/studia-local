@@ -24,11 +24,12 @@ export default function HotkeysModal({ open, onOpenChange }) {
 
   // Obtener hotkeys desde la configuración única - mostrar primary y alt si existe
   const formatHotkeyDisplay = (hotkey) => {
-    let texto = formatShortcut(hotkey.primary);
+    const useCmdOnMac = hotkey.useCmdOnMac || false;
+    let texto = formatShortcut(hotkey.primary, useCmdOnMac);
     // Si hay alias (máximo 1), mostrarlo también
     if (hotkey.aliases && hotkey.aliases.length > 0) {
       const alias = hotkey.aliases[0]; // Solo mostrar el primero si hay más de uno
-      texto += ` o ${formatShortcut(alias)}`;
+      texto += ` o ${formatShortcut(alias, useCmdOnMac)}`;
     }
     return texto;
   };

@@ -1,123 +1,144 @@
-# Atajos de Teclado - Studia
+# Atajos de Teclado
 
-Referencia completa de atajos de teclado disponibles en la aplicación.
+Referencia completa de atajos de teclado disponibles en Studia.
 
-## Importante
+## Convenciones
 
-### Convenciones de Teclas
+### Mac vs Windows/Linux
 
-- **`mod`** = `Ctrl` en Windows/Linux, `⌘` (Cmd) en Mac
-- **`alt`** = `Alt` en Windows/Linux, `⌥` (Option) en Mac
-- **`shift`** = `Shift` en ambas plataformas, mostrado como `⇧`
+- **Windows/Linux**: usa `Ctrl` y `Alt`.
 
-### Reglas Generales
+- **Mac**:
 
-- Los atajos **NO** se activan cuando estás escribiendo en un campo de texto (inputs, textareas, campos editables)
-- Algunos atajos solo funcionan en contextos específicos (modo estudio, feedback, etc.)
-- Los atajos están organizados por contexto de uso, no por rol
+  - Para los atajos propios de Studia usamos `Ctrl` y `⌥` (Option/Alt).
 
-### Combinaciones Reservadas
+  - Dejamos `⌘` (Cmd) para atajos del sistema y del navegador.
 
-Algunas combinaciones pueden entrar en conflicto con atajos del navegador:
-- `mod+alt+C` podría abrir las herramientas de desarrollador en algunos navegadores
-- `mod+alt+I` podría abrir las herramientas de desarrollador en algunos navegadores
-- Si un atajo no funciona, verifica que no estés en un campo de texto y que no haya conflictos con extensiones del navegador
+- En las tablas:
 
-## 1. Globales (Todos los Usuarios)
+  - `Ctrl + Alt + X` (Windows/Linux) ↔ `Ctrl + ⌥ + X` (Mac) indican la misma acción.
 
-Atajos disponibles en cualquier momento (excepto cuando estás escribiendo en campos de texto).
+### Reglas Importantes
 
-| Función | Windows/Linux | Mac | Roles |
-|---------|---------------|-----|-------|
-| Abrir/cerrar menú lateral | `Ctrl + M` | `⌘ + M` | Todos |
-| Alternar tema claro/oscuro | `Ctrl + Shift + D` | `⌘ + ⇧ + D` | Todos |
-| Mostrar/ocultar panel de atajos | `Ctrl + /` o `?` | `⌘ + /` o `?` | Todos |
-| Cerrar sesión | `Ctrl + Alt + L` | `⌘ + ⌥ + L` | Todos |
+- Los atajos **NO** se activan cuando estás escribiendo en un campo de texto (inputs, textareas, etc.), salvo donde se indique lo contrario.
 
-## 2. Navegación por Rol
+- Algunos atajos solo funcionan en contextos específicos (modo estudio, feedback, etc.).
 
-### 2.1 Navegación - Alumno
+---
 
-| Función | Windows/Linux | Mac |
-|---------|---------------|-----|
-| Ir a Studia ahora | `Ctrl + Alt + S` | `⌘ + ⌥ + S` |
-| Ir a Mi Semana | `Ctrl + Alt + M` | `⌘ + ⌥ + M` |
-| Ir a Mis Estadísticas | `Ctrl + Alt + E` | `⌘ + ⌥ + E` |
-| Ir a Calendario | `Ctrl + Alt + C` | `⌘ + ⌥ + C` |
-| Ir a Centro de dudas | `Ctrl + Alt + H` | `⌘ + ⌥ + H` |
+## Atajos Globales (Todos los Usuarios)
 
-### 2.2 Navegación - Profesor/Admin
+| Función                         | Windows/Linux         | Mac                  |
+|---------------------------------|-----------------------|----------------------|
+| Abrir/cerrar menú lateral       | `Ctrl + Alt + M`      | `Ctrl + ⌥ + M`       |
+| Alternar tema claro/oscuro     | `Ctrl + Alt + T`      | `Ctrl + ⌥ + T`       |
+| Mostrar/ocultar panel de atajos| `Ctrl + /` o `?`      | `Ctrl + /` o `?`     |
+| Cerrar sesión                   | `Ctrl + Alt + L`      | `Ctrl + ⌥ + L`       |
 
-| Función | Windows/Linux | Mac |
-|---------|---------------|-----|
-| Ir a Asignaciones | `Ctrl + Alt + A` | `⌘ + ⌥ + A` |
-| Ir a Agenda | `Ctrl + Alt + G` | `⌘ + ⌥ + G` |
-| Ir a Plantillas | `Ctrl + Alt + P` | `⌘ + ⌥ + P` |
-| Ir a Estadísticas | `Ctrl + Alt + E` | `⌘ + ⌥ + E` |
-| Ir a Calendario | `Ctrl + Alt + C` | `⌘ + ⌥ + C` |
+---
 
-### 2.3 Navegación - Solo Admin
+## Navegación - Alumno
 
-| Función | Windows/Linux | Mac |
-|---------|---------------|-----|
-| Ir a Usuarios | `Ctrl + Alt + U` | `⌘ + ⌥ + U` |
-| Ir a Importar y Exportar | `Ctrl + Alt + I` | `⌘ + ⌥ + I` |
-| Ir a Panel de Diseño | `Ctrl + Alt + O` | `⌘ + ⌥ + O` |
+| Función             | Windows/Linux         | Mac                  |
+|---------------------|-----------------------|----------------------|
+| Ir a **Studia ahora** (inicio) | `Ctrl + Alt + S`      | `Ctrl + ⌥ + S`       |
+| Ir a **Mi Semana**              | `Ctrl + Alt + W`      | `Ctrl + ⌥ + W`       |
+| Ir a **Mis Estadísticas**      | `Ctrl + Alt + E`      | `Ctrl + ⌥ + E`       |
+| Ir a **Calendario**            | `Ctrl + Alt + C`      | `Ctrl + ⌥ + C`       |
+| Ir a **Centro de dudas**       | `Ctrl + Alt + Q`      | `Ctrl + ⌥ + Q`       |
 
-## 3. Crear Elementos
+> Nota: Cambiamos Mi Semana a `W` (Week/Semana) y Centro de dudas a `Q` (Question) para evitar conflictos con atajos de extensiones (`Ctrl + Alt + H` - LastPass/Evernote).
 
-Atajo contextual que crea el elemento apropiado según la página en la que te encuentres.
+---
 
-| Función | Windows/Linux | Mac | Contexto |
-|---------|---------------|-----|----------|
-| Crear nuevo elemento | `Ctrl + N` | `⌘ + N` | Contextual |
+## Navegación - Profesor/Admin
 
-**Ejemplos**:
-- En **Asignaciones**: crea una nueva asignación
-- En **Plantillas** → Piezas: crea una nueva pieza
-- En **Plantillas** → Ejercicios: crea un nuevo ejercicio
-- En **Plantillas** → Planes: crea un nuevo plan
-- En **Usuarios**: crea un nuevo usuario
+| Función            | Windows/Linux         | Mac                  |
+|--------------------|-----------------------|----------------------|
+| Ir a **Asignaciones**   | `Ctrl + Alt + A`      | `Ctrl + ⌥ + A`       |
+| Ir a **Agenda**         | `Ctrl + Alt + G`      | `Ctrl + ⌥ + G`       |
+| Ir a **Plantillas**     | `Ctrl + Alt + P`      | `Ctrl + ⌥ + P`       |
+| Ir a **Estadísticas**   | `Ctrl + Alt + E`      | `Ctrl + ⌥ + E`       |
+| Ir a **Calendario**     | `Ctrl + Alt + C`      | `Ctrl + ⌥ + C`       |
 
-## 4. Modo Estudio (Solo Alumno)
+> Nota: Las letras se mantienen coherentes con la navegación de alumno (`E` = Estadísticas, `C` = Calendario).
 
-Atajos disponibles durante una sesión de estudio activa.
+---
 
-| Función | Windows/Linux | Mac |
-|---------|---------------|-----|
-| Ejercicio anterior | `←` | `←` |
-| Siguiente ejercicio | `→` | `→` |
-| Pausar/reanudar audio | `Espacio` | `Espacio` |
-| Marcar ejercicio como completado (OK) | `Enter` | `Enter` |
-| Mostrar/ocultar índice de ejercicios | `I` | `I` |
-| Abrir diálogo de salir de sesión | `Esc` | `Esc` |
+## Navegación - Solo Admin
 
-**Nota**: Estos atajos solo funcionan cuando hay una sesión de estudio activa. Si no estás en modo estudio, estos atajos no harán nada.
+| Función                 | Windows/Linux         | Mac                  |
+|-------------------------|-----------------------|----------------------|
+| Ir a **Usuarios**             | `Ctrl + Alt + U`      | `Ctrl + ⌥ + U`       |
+| Ir a **Importar y Exportar**  | `Ctrl + Alt + I`      | `Ctrl + ⌥ + I`       |
+| Ir a **Panel de Diseño**      | `Ctrl + Alt + O`      | `Ctrl + ⌥ + O`       |
 
-## 5. Feedback de Sesión (Solo Alumno)
+---
 
-Atajos disponibles en el modal de feedback al finalizar una sesión.
+## Crear Elementos
 
-| Función | Windows/Linux | Mac |
-|---------|---------------|-----|
-| Valoración: Muy difícil | `1` | `1` |
-| Valoración: Difícil | `2` | `2` |
-| Valoración: Bien | `3` | `3` |
-| Valoración: Excelente | `4` | `4` |
-| Finalizar sesión (enviar feedback) | `Ctrl + Enter` | `⌘ + Enter` |
-| Cerrar modal de feedback | `Esc` | `Esc` |
+| Función                         | Windows/Linux         | Mac                  |
+|---------------------------------|-----------------------|----------------------|
+| Crear nuevo elemento (contextual) | `Ctrl + Alt + N`    | `Ctrl + ⌥ + N`       |
 
-**Nota**: Los atajos de valoración (1-4) funcionan incluso si el modal tiene el foco en un campo de texto, para permitir valoración rápida.
+**Nota**: Este atajo es contextual:
 
-## 6. Agenda/Feedback Semanal (Profesor)
+- En **Asignaciones**: crea una nueva asignación.
 
-Atajos disponibles en la página de Agenda cuando estás dando feedback semanal a estudiantes.
+- En **Plantillas** → Piezas: crea una nueva pieza.
 
-**Nota**: Actualmente no hay atajos de teclado específicos para la agenda/feedback semanal. Se usan los controles de la interfaz (botones, formularios, etc.).
+- En **Plantillas** → Ejercicios: crea un nuevo ejercicio.
 
-## 7. Tickets/Soporte
+- En **Plantillas** → Planes: crea un nuevo plan.
 
-Atajos disponibles en las páginas de Centro de Dudas (alumno) y Tickets de Alumnos (profesor/admin).
+- En **Usuarios**: crea un nuevo usuario.
 
-**Nota**: Actualmente no hay atajos de teclado específicos para tickets/soporte. Se usan los controles de la interfaz (botones, formularios, etc.).
+---
 
+## Modo Estudio (Solo Alumno)
+
+Estos atajos son iguales en Windows y Mac.
+
+| Función                         | Tecla                 |
+|---------------------------------|-----------------------|
+| Ejercicio anterior              | `←` (Flecha izquierda)|
+| Siguiente ejercicio             | `→` (Flecha derecha)  |
+| Pausar/reanudar audio           | `Espacio`             |
+| Marcar ejercicio como completado (OK) | `Enter`       |
+| Mostrar/ocultar índice de ejercicios  | `I`           |
+| Abrir diálogo de salir de sesión | `Esc`                |
+
+**Nota**: Estos atajos solo funcionan durante una sesión de estudio activa.  
+
+En modo estudio, la app bloquea el comportamiento de scroll de `Espacio` y `Esc` para que no interfieran con el navegador.
+
+---
+
+## Feedback de Sesión (Solo Alumno)
+
+| Función                         | Windows/Linux          | Mac                    |
+|---------------------------------|------------------------|------------------------|
+| Valoración: Muy difícil         | `1`                    | `1`                    |
+| Valoración: Difícil             | `2`                    | `2`                    |
+| Valoración: Bien                | `3`                    | `3`                    |
+| Valoración: Excelente           | `4`                    | `4`                    |
+| Finalizar sesión (enviar feedback) | `Ctrl + Enter`     | `⌘ + Enter`            |
+| Cerrar modal de feedback        | `Esc`                  | `Esc`                  |
+
+**Nota**:
+
+- Las teclas `1–4` funcionan incluso si el modal tiene el foco en un campo de texto, para permitir valoración rápida.
+
+- `Ctrl + Enter` / `⌘ + Enter` solo se capturan dentro del contexto del modal de feedback.
+
+---
+
+## Consejos para usuarios
+
+- Si un atajo **no funciona**, comprueba:
+
+  - Que no estés escribiendo en un campo de texto.
+
+  - Que no tengas extensiones con atajos que se solapen (por ejemplo, gestores de contraseñas con `Ctrl + Alt + ...`).
+
+- Si usas extensiones como Vimium o similares, puede que tengas que desactivarlas en `studia.app` para que los atajos de Studia funcionen correctamente.

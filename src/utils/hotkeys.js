@@ -67,15 +67,28 @@ export function shouldIgnoreHotkey(event) {
 
 /**
  * Formatea un shortcut para mostrar en la UI
- * Ejemplo: "mod+alt+s" → "⌘ ⌥ S" (Mac) o "Ctrl+Alt+S" (Windows/Linux)
+ * Ejemplo: "mod+alt+s" → "Ctrl ⌥ S" (Mac) o "Ctrl+Alt+S" (Windows/Linux)
+ * 
+ * NOTA: En Mac, para los atajos propios de Studia usamos Ctrl+⌥ en lugar de ⌘+⌥
+ * La única excepción es feedback-submit que usa ⌘+Enter
  * 
  * @param {string} combo - Combinación de teclas en formato "mod+alt+s"
+ * @param {boolean} useCmdOnMac - Si es true, usa ⌘ en Mac (solo para feedback-submit)
  * @returns {string} - Combinación formateada para mostrar
  */
-export function formatShortcut(combo) {
+export function formatShortcut(combo, useCmdOnMac = false) {
   const parts = combo.split('+').map(p => p.trim());
+  const hasAlt = parts.includes('alt');
   const formatted = parts.map(p => {
-    if (p === 'mod') return isMac ? '⌘' : 'Ctrl';
+    if (p === 'mod') {
+      // En Mac, para atajos propios de Studia usamos Ctrl en lugar de ⌘
+      // Excepto si useCmdOnMac es true (solo para feedback-submit)
+      if (isMac && useCmdOnMac) {
+        return '⌘';
+      }
+      // En Mac y Windows/Linux, mostramos "Ctrl" para los atajos propios de Studia
+      return 'Ctrl';
+    }
     if (p === 'alt') return isMac ? '⌥' : 'Alt';
     if (p === 'shift') return isMac ? '⇧' : 'Shift';
     // Teclas especiales
@@ -102,28 +115,86 @@ export function formatShortcut(combo) {
 /**
  * Verifica si un evento de teclado coincide con una combinación de teclas
  * 
+ * NOTA: En Mac, para los atajos propios de Studia usamos Ctrl+⌥ en lugar de ⌘+⌥
+ * La única excepción es feedback-submit que usa ⌘+Enter
+ * 
  * @param {KeyboardEvent} event - El evento de teclado
  * @param {string} combo - Combinación de teclas en formato "mod+alt+s"
+ * @param {boolean} useCmdOnMac - Si es true, usa ⌘ en Mac (solo para feedback-submit)
  * @returns {boolean} - true si el evento coincide con la combinación
  */
-export function matchesCombo(event, combo) {
+export function matchesCombo(event, combo, useCmdOnMac = false) {
   const parts = combo.split('+').map(p => p.trim().toLowerCase());
   const key = event.key?.toLowerCase();
   const code = event.code?.toLowerCase();
   
-  // Verificar mod (Ctrl en Windows/Linux, Cmd en Mac)
+  // Verificar mod
+  // En Mac: para atajos propios de Studia usamos Ctrl, excepto si useCmdOnMac es true
+  // En Windows/Linux: siempre usamos Ctrl
   const needsMod = parts.includes('mod');
-  const hasMod = isMac ? event.metaKey : event.ctrlKey;
-  if (needsMod && !hasMod) return false;
-  if (!needsMod && (event.ctrlKey || event.metaKey)) return false;
+  const needsAlt = parts.includes('alt');
+  
+  // Usar getModifierState como alternativa más confiable en algunos navegadores
+  const hasCtrl = event.ctrlKey || (event.getModifierState && event.getModifierState('Control'));
+  const hasMeta = event.metaKey || (event.getModifierState && event.getModifierState('Meta'));
+  const hasAlt = event.altKey || (event.getModifierState && event.getModifierState('Alt'));
+  const hasShift = event.shiftKey || (event.getModifierState && event.getModifierState('Shift'));
+  
+  // DEBUG temporal: Log para todos los hotkeys que no funcionan
+  if (isMac && needsMod && (hasCtrl || hasMeta || hasAlt)) {
+    const mainKey = parts.find(p => !['mod', 'alt', 'shift'].includes(p));
+    if (mainKey) {
+      console.log('[matchesCombo]', {
+        combo,
+        mainKey,
+        key,
+        code,
+        hasCtrl,
+        hasMeta,
+        hasAlt,
+        hasShift,
+        needsMod,
+        needsAlt,
+        useCmdOnMac,
+      });
+    }
+  }
+  
+  if (needsMod) {
+    if (isMac && useCmdOnMac) {
+      // Caso especial: feedback-submit usa ⌘ en Mac
+      if (!hasMeta) return false;
+      // No debe haber Ctrl presionado
+      if (hasCtrl) return false;
+    } else if (isMac && needsAlt) {
+      // En Mac, para mod+alt SOLO aceptamos Ctrl+Alt (Control+Option)
+      // NO aceptamos Cmd+Alt porque queremos priorizar Control
+      if (!hasCtrl) return false;
+      // Rechazamos si hay Meta (Cmd) presionado
+      if (hasMeta) return false;
+    } else if (isMac) {
+      // En Mac, para mod sin alt también usamos Ctrl (no Cmd)
+      // Solo aceptamos Ctrl, no Meta
+      if (!hasCtrl) return false;
+      // Rechazamos si hay Meta (Cmd) presionado
+      if (hasMeta) return false;
+    } else {
+      // Windows/Linux: siempre Ctrl
+      if (!hasCtrl) return false;
+      // No debe haber Cmd presionado (aunque no debería haber en Windows/Linux)
+      if (hasMeta) return false;
+    }
+  } else {
+    // Si no necesita mod, no debe haber ni Ctrl ni Cmd
+    if (hasCtrl || hasMeta) return false;
+  }
 
   // Verificar alt
-  const needsAlt = parts.includes('alt');
-  if (needsAlt !== event.altKey) return false;
+  if (needsAlt !== hasAlt) return false;
 
   // Verificar shift
   const needsShift = parts.includes('shift');
-  if (needsShift !== event.shiftKey) return false;
+  if (needsShift !== hasShift) return false;
 
   // Verificar la tecla principal
   const mainKey = parts.find(p => !['mod', 'alt', 'shift'].includes(p));
@@ -143,18 +214,98 @@ export function matchesCombo(event, combo) {
     '?': '?',
   };
 
+  // Mapeo de caracteres especiales producidos por Alt en Mac a sus teclas base
+  // En Mac, Alt+M produce µ, Alt+E produce €, etc.
+  const macAltCharMap = {
+    'µ': 'm',  // Alt+M
+    '€': 'e',  // Alt+E
+    '§': 's',  // Alt+S
+    '¶': 'p',  // Alt+P
+    '®': 'r',  // Alt+R
+    '™': 't',  // Alt+T
+    '©': 'c',  // Alt+C
+    '∞': 'o',  // Alt+O
+    '≈': 'x',  // Alt+X
+    '÷': '/',  // Alt+/
+    '≠': '=',  // Alt+=
+    '≤': '<',  // Alt+<
+    '≥': '>',  // Alt+>
+    '∑': 'w',  // Alt+W
+    '∏': 'p',  // Alt+P
+    'π': 'p',  // Alt+P (alternativo)
+    'Ω': 'z',  // Alt+Z
+    'å': 'a',  // Alt+A
+    'ß': 's',  // Alt+S (alternativo)
+    '∂': 'd',  // Alt+D
+    'ƒ': 'f',  // Alt+F
+    '∆': 'j',  // Alt+J
+    '√': 'v',  // Alt+V
+    '∫': 'i',  // Alt+I
+    'ª': 'a',  // Alt+A (alternativo)
+    'º': 'o',  // Alt+O (alternativo)
+  };
+
   // Normalizar tecla principal
   const normalizedMainKey = keyMap[mainKey] || mainKey;
   
   // Normalizar tecla del evento
-  const normalizedEventKey = keyMap[key] || key;
+  // Si estamos en Mac y hay Alt presionado, puede que key sea un carácter especial
+  // En ese caso, intentamos mapearlo o usar code
+  let normalizedEventKey = keyMap[key] || key;
+  
+  // Si key es un carácter especial de Alt en Mac, mapearlo a la tecla base
+  if (isMac && hasAlt && macAltCharMap[key]) {
+    normalizedEventKey = macAltCharMap[key];
+  }
+  
+  // También intentar usar code como fallback (code siempre es la tecla física)
+  // code tiene formato "KeyM", "KeyE", etc. - extraer la letra
+  let codeKey = null;
+  if (code && code.startsWith('Key')) {
+    codeKey = code.substring(3).toLowerCase();
+  } else if (code && code.startsWith('Digit')) {
+    codeKey = code.substring(5);
+  }
+  
+  // Comparar la tecla principal con la tecla del evento
+  // Usar codeKey como fuente principal de verdad (siempre es la tecla física)
+  // key puede ser un carácter especial en Mac con Alt, pero code siempre es correcto
+  let keyMatches = false;
+  let codeMatches = false;
+  
+  // Primero intentar con codeKey (más confiable, especialmente en Mac con Alt)
+  if (codeKey) {
+    codeMatches = (normalizedMainKey === codeKey || mainKey === codeKey);
+  }
+  
+  // Luego intentar con key normalizado
+  if (!codeMatches) {
+    keyMatches = (normalizedMainKey === normalizedEventKey || mainKey === normalizedEventKey);
+  }
+  
+  // DEBUG temporal: Log para ver qué está pasando con la comparación
+  if (isMac && needsMod && needsAlt && (hasCtrl || hasMeta || hasAlt)) {
+    console.log('[matchesCombo] Comparación:', {
+      combo,
+      mainKey,
+      normalizedMainKey,
+      key,
+      normalizedEventKey,
+      code,
+      codeKey,
+      keyMatches,
+      codeMatches,
+      '¿Pasa modificadores?': hasCtrl && hasAlt && !hasMeta,
+      'Resultado final': codeMatches || keyMatches,
+    });
+  }
   
   // Manejo especial para '/' con mod (mod+/)
   if (mainKey === '/' && needsMod && !needsAlt && !needsShift) {
     // Verificar que sea '/' y que mod esté presionado (sin otros modificadores)
-    if (key === '/' || code === 'slash' || code === 'numpaddivide') {
+    if (key === '/' || code === 'slash' || code === 'numpaddivide' || codeKey === '/') {
       // Verificar que no haya otros modificadores no deseados
-      return !event.altKey && !event.shiftKey;
+      return !hasAlt && !hasShift;
     }
     return false;
   }
@@ -163,9 +314,9 @@ export function matchesCombo(event, combo) {
   if (mainKey === '?' && !needsMod && !needsAlt && !needsShift) {
     // Verificar que sea '?' (que viene de Shift+/) y que Shift esté presionado
     // Pero que NO haya otros modificadores
-    if (key === '?' || (key === '/' && event.shiftKey)) {
+    if (key === '?' || (key === '/' && hasShift)) {
       // Asegurar que no haya otros modificadores no deseados, pero Shift sí es requerido para '?'
-      return !event.ctrlKey && !event.metaKey && !event.altKey && event.shiftKey;
+      return !hasCtrl && !hasMeta && !hasAlt && hasShift;
     }
     return false;
   }
@@ -175,19 +326,26 @@ export function matchesCombo(event, combo) {
     // Comparar directamente
     if (mainKey === key) {
       // Asegurar que no haya modificadores no deseados (incluyendo Shift para teclas normales)
-      return !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey;
+      return !hasCtrl && !hasMeta && !hasAlt && !hasShift;
     }
   }
+  
+  // Para todas las demás teclas, verificar si hay match
+  if (!keyMatches && !codeMatches) {
+    return false;
+  }
 
-  // Comparar teclas normalizadas (para teclas especiales como arrows, escape, etc.)
-  return normalizedMainKey === normalizedEventKey || mainKey === key;
+  // Si llegamos aquí, la tecla coincide (keyMatches o codeMatches)
+  // Ya verificamos los modificadores arriba, así que retornamos true
+  return true;
 }
 
 /**
  * Configuración única de hotkeys siguiendo normas de diseño:
  * - 1 acción = 1 atajo principal (primary)
  * - Opcionalmente 1 alias si hay razón muy buena
- * - Usar 'mod' para unificar ⌘/Ctrl (no duplicar por plataforma)
+ * - En Mac: usar Ctrl+⌥ para atajos propios de Studia (no ⌘)
+ * - Excepción: feedback-submit usa ⌘+Enter en Mac
  * 
  * Formato:
  * - id: identificador único
@@ -196,13 +354,14 @@ export function matchesCombo(event, combo) {
  * - aliases: array opcional con máximo 1 alias (ej: ["arrowright"])
  * - description: descripción para mostrar en el modal de ayuda
  * - roles: array de roles que pueden usar este hotkey (["ESTU", "PROF", "ADMIN"])
+ * - useCmdOnMac: opcional, si es true usa ⌘ en Mac (solo para feedback-submit)
  */
 export const HOTKEYS_CONFIG = [
   // Navegación general
   {
     id: 'toggle-sidebar',
     scope: 'global',
-    primary: 'mod+m',
+    primary: 'mod+alt+m',
     aliases: [],
     description: 'Abrir/cerrar menú lateral',
     roles: ['ESTU', 'PROF', 'ADMIN'],
@@ -210,7 +369,7 @@ export const HOTKEYS_CONFIG = [
   {
     id: 'toggle-theme',
     scope: 'global',
-    primary: 'mod+shift+d',
+    primary: 'mod+alt+t',
     aliases: [],
     description: 'Alternar tema claro/oscuro',
     roles: ['ESTU', 'PROF', 'ADMIN'],
@@ -243,7 +402,7 @@ export const HOTKEYS_CONFIG = [
   {
     id: 'go-week',
     scope: 'global',
-    primary: 'mod+alt+m',
+    primary: 'mod+alt+w',
     aliases: [],
     description: 'Ir a Mi Semana',
     roles: ['ESTU'],
@@ -267,7 +426,7 @@ export const HOTKEYS_CONFIG = [
   {
     id: 'go-support',
     scope: 'global',
-    primary: 'mod+alt+h',
+    primary: 'mod+alt+q',
     aliases: [],
     description: 'Ir a Centro de dudas',
     roles: ['ESTU'],
@@ -338,11 +497,11 @@ export const HOTKEYS_CONFIG = [
     description: 'Ir a Panel de Diseño',
     roles: ['ADMIN'],
   },
-  // Crear elementos - patrón: mod+n (no mod+alt+n)
+  // Crear elementos - patrón: mod+alt+n
   {
     id: 'create-new',
     scope: 'create',
-    primary: 'mod+n',
+    primary: 'mod+alt+n',
     aliases: [],
     description: 'Crear nuevo elemento (contextual según la página)',
     roles: ['ESTU', 'PROF', 'ADMIN'],
@@ -436,6 +595,7 @@ export const HOTKEYS_CONFIG = [
     aliases: [],
     description: 'Finalizar sesión (enviar feedback)',
     roles: ['ESTU'],
+    useCmdOnMac: true, // Excepción: usa ⌘+Enter en Mac
   },
   {
     id: 'feedback-close',
@@ -472,7 +632,8 @@ export function getHotkeyCombos(hotkey) {
 export function matchesHotkey(event, hotkey) {
   if (!hotkey) return false;
   const combos = getHotkeyCombos(hotkey);
-  return combos.some(combo => matchesCombo(event, combo));
+  const useCmdOnMac = hotkey.useCmdOnMac || false;
+  return combos.some(combo => matchesCombo(event, combo, useCmdOnMac));
 }
 
 /**
@@ -497,3 +658,4 @@ export function getHotkeysForRole(role, scope = 'global') {
 export function getHotkeyById(id) {
   return HOTKEYS_CONFIG.find(hk => hk.id === id) || null;
 }
+

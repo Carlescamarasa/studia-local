@@ -115,12 +115,16 @@ export default function PerfilModal({
   const { data: targetUser, isLoading, refetch: refetchTargetUser } = useQuery({
     queryKey: ['targetUser', userId],
     queryFn: async () => {
-      if (userId && effectiveUser?.rolPersonalizado === 'ADMIN') {
-        // Buscar usuario específico por ID
+      // Si hay userId, buscar ese usuario específico (tanto ADMIN como PROF pueden hacerlo)
+      if (userId) {
         const users = await localDataClient.entities.User.list();
-        return users.find(u => u.id === userId);
+        const foundUser = users.find(u => u.id === userId);
+        if (foundUser) {
+          return foundUser;
+        }
       }
-      // Para el usuario actual, intentar obtener desde la lista completa para asegurar datos actualizados
+      
+      // Si no hay userId o no se encontró, usar el usuario actual
       const users = await localDataClient.entities.User.list();
       const userFromList = users.find(u => {
         // Buscar por ID o email para asegurar que encontramos el usuario correcto
@@ -159,6 +163,62 @@ export default function PerfilModal({
         log.warn('[PerfilModal] Error al cargar profesor asignado:', error);
       }
     },
+  });
+
+  // Obtener email del usuario objetivo usando la Edge Function get-user-emails
+  // Esto es necesario porque los emails no vienen en la lista de usuarios para PROF/ADMIN
+  const targetUserId = targetUser?.id;
+  const { data: targetUserEmail } = useQuery({
+    queryKey: ['targetUserEmail', targetUserId],
+    queryFn: async () => {
+      if (!targetUserId) return null;
+      
+      // Si el targetUser ya tiene email válido, usarlo directamente
+      if (targetUser?.email && targetUser.email.trim() && targetUser.email.includes('@')) {
+        return targetUser.email;
+      }
+
+      // Si no tiene email válido, intentar obtenerlo desde la Edge Function
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return null;
+
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
+        if (!supabaseUrl) return null;
+
+        const headers = {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        };
+        
+        if (supabaseAnonKey) {
+          headers['apikey'] = supabaseAnonKey;
+        }
+
+        const response = await fetch(`${supabaseUrl}/functions/v1/get-user-emails`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ userIds: [targetUserId] }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.emails && data.emails[targetUserId]) {
+            return data.emails[targetUserId];
+          }
+        } else {
+          log.warn('[PerfilModal] Error en respuesta de get-user-emails:', response.status, response.statusText);
+        }
+      } catch (error) {
+        log.warn('[PerfilModal] Error obteniendo email del usuario:', error);
+      }
+      
+      return null;
+    },
+    enabled: !!targetUserId && open, // Ejecutar siempre que haya targetUserId y el modal esté abierto
+    retry: false,
   });
 
   const getNombreCompleto = (user) => {
@@ -316,9 +376,13 @@ export default function PerfilModal({
         allUsersLength: allUsers?.length,
       });
 
+      // Usar email del query si está disponible, sino usar el del targetUser
+      // Priorizar el email del query porque viene de la Edge Function y es más confiable
+      const emailToUse = targetUserEmail || (targetUser.email && targetUser.email.trim() && targetUser.email.includes('@') ? targetUser.email : '') || '';
+
       setEditedData({
         nombreCompleto: targetUser.full_name || targetUser.nombreCompleto || getNombreCompleto(targetUser),
-        email: targetUser.email || '',
+        email: emailToUse,
         rolPersonalizado: targetUser.rolPersonalizado || 'ESTU',
         profesorAsignadoId: profesorAsignadoIdValue,
         nivel: targetUser.nivel || null,
@@ -327,7 +391,7 @@ export default function PerfilModal({
       });
       setSaveResult(null);
     }
-  }, [targetUser, open]);
+  }, [targetUser, open, targetUserEmail]); // Añadir targetUserEmail como dependencia para actualizar cuando cambie
 
   const updateUserMutation = useMutation({
     mutationFn: async (data) => {
