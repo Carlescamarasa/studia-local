@@ -1,5 +1,5 @@
 // Edge Function para obtener emails de usuarios desde auth.users
-// Solo disponible para ADMIN
+// Disponible para ADMIN (todos los usuarios) y PROF (solo alumnos asignados con tickets)
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -50,7 +50,7 @@ serve(async (req) => {
       );
     }
 
-    // Verificar que el usuario sea ADMIN
+    // Verificar que el usuario sea ADMIN o PROF
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
@@ -78,20 +78,73 @@ serve(async (req) => {
     // Normalizar el rol (trim y uppercase) para comparación
     const userRole = profile.role ? String(profile.role).trim().toUpperCase() : '';
     
-    if (userRole !== 'ADMIN') {
-      console.error('Usuario no es ADMIN. Rol actual:', userRole, 'User ID:', user.id);
+    // Parsear el body de la petición
+    const body = await req.json();
+    const { userIds } = body;
+
+    // Si es PROF, verificar que los userIds solicitados sean alumnos asignados
+    if (userRole === 'PROF') {
+      if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+        return new Response(
+          JSON.stringify({ error: 'userIds debe ser un array no vacío' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Obtener alumnos asignados a este profesor
+      const { data: alumnos, error: alumnosError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('profesor_asignado_id', user.id)
+        .eq('role', 'ESTU')
+        .in('id', userIds);
+
+      if (alumnosError) {
+        console.error('Error al verificar alumnos asignados:', alumnosError);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Error al verificar alumnos asignados',
+            details: alumnosError.message 
+          }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const alumnoIds = new Set(alumnos?.map(a => a.id) || []);
+
+      // Filtrar userIds: solo permitir aquellos que son alumnos asignados
+      const filteredUserIds = userIds.filter(id => alumnoIds.has(id));
+      
+      if (filteredUserIds.length === 0) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'No tienes permisos para obtener emails de estos usuarios. Solo puedes obtener emails de tus alumnos asignados.',
+            role: userRole 
+          }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (filteredUserIds.length !== userIds.length) {
+        console.warn('Algunos userIds fueron filtrados:', {
+          original: userIds,
+          filtered: filteredUserIds,
+        });
+      }
+      
+      // Reemplazar userIds con los filtrados
+      userIds.length = 0;
+      userIds.push(...filteredUserIds);
+    } else if (userRole !== 'ADMIN') {
+      console.error('Usuario no es ADMIN ni PROF. Rol actual:', userRole, 'User ID:', user.id);
       return new Response(
         JSON.stringify({ 
-          error: 'Solo administradores pueden obtener emails de usuarios',
+          error: 'Solo administradores y profesores pueden obtener emails de usuarios',
           role: userRole 
         }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Parsear el body de la petición
-    const body = await req.json();
-    const { userIds } = body;
 
     if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
       return new Response(

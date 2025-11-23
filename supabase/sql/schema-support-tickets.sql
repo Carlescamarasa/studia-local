@@ -81,12 +81,27 @@ CREATE TRIGGER trigger_update_support_tickets_updated_at
 
 CREATE OR REPLACE FUNCTION update_ticket_ultima_respuesta()
 RETURNS TRIGGER AS $$
+DECLARE
+  respuesta_de TEXT;
 BEGIN
+  -- Mapear rol_autor a ultima_respuesta_de
+  -- El CHECK constraint solo permite 'alumno' o 'profesor'
+  -- Si es 'admin', lo tratamos como 'profesor' para el propósito de ultima_respuesta_de
+  IF NEW.rol_autor = 'admin' THEN
+    respuesta_de := 'profesor';
+  ELSIF NEW.rol_autor IN ('alumno', 'profesor') THEN
+    respuesta_de := NEW.rol_autor;
+  ELSE
+    -- Fallback: si el rol no es reconocido, usar 'profesor'
+    respuesta_de := 'profesor';
+  END IF;
+  
   UPDATE support_tickets
   SET 
-    ultima_respuesta_de = NEW.rol_autor,
+    ultima_respuesta_de = respuesta_de,
     updated_at = NOW()
   WHERE id = NEW.ticket_id;
+  
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -142,7 +157,7 @@ CREATE POLICY "Alumnos pueden actualizar sus propios tickets"
   );
 
 -- Profesores pueden ver TODOS los tickets (no solo los asignados)
-DROP POLICY IF EXISTS "Profesores pueden ver tickets asignados" ON support_tickets;
+DROP POLICY IF EXISTS "Profesores pueden ver todos los tickets" ON support_tickets;
 CREATE POLICY "Profesores pueden ver todos los tickets"
   ON support_tickets
   FOR SELECT
@@ -155,7 +170,7 @@ CREATE POLICY "Profesores pueden ver todos los tickets"
   );
 
 -- Profesores pueden actualizar cualquier ticket
-DROP POLICY IF EXISTS "Profesores pueden actualizar tickets asignados" ON support_tickets;
+DROP POLICY IF EXISTS "Profesores pueden actualizar tickets" ON support_tickets;
 CREATE POLICY "Profesores pueden actualizar tickets"
   ON support_tickets
   FOR UPDATE
@@ -220,7 +235,7 @@ CREATE POLICY "Alumnos pueden crear mensajes en sus tickets"
   );
 
 -- Profesores pueden ver mensajes de TODOS los tickets
-DROP POLICY IF EXISTS "Profesores pueden ver mensajes de tickets asignados" ON support_mensajes;
+DROP POLICY IF EXISTS "Profesores pueden ver mensajes de todos los tickets" ON support_mensajes;
 CREATE POLICY "Profesores pueden ver mensajes de todos los tickets"
   ON support_mensajes
   FOR SELECT
@@ -233,7 +248,7 @@ CREATE POLICY "Profesores pueden ver mensajes de todos los tickets"
   );
 
 -- Profesores pueden crear mensajes en cualquier ticket
-DROP POLICY IF EXISTS "Profesores pueden crear mensajes en tickets asignados" ON support_mensajes;
+DROP POLICY IF EXISTS "Profesores pueden crear mensajes en cualquier ticket" ON support_mensajes;
 CREATE POLICY "Profesores pueden crear mensajes en cualquier ticket"
   ON support_mensajes
   FOR INSERT

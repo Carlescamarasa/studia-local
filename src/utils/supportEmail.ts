@@ -125,11 +125,34 @@ export function buildSupportEmailBodyHTML(
  * 
  * TODO: Integrar con proveedor de email real (SendGrid/Postmark/SES)
  * 
+ * VARIABLES DE ENTORNO NECESARIAS:
+ * 
+ * Para SendGrid:
+ *   - SENDGRID_API_KEY: API key de SendGrid
+ *   - Configurar en: Deno.env (Edge Function) o import.meta.env (cliente)
+ * 
+ * Para Postmark:
+ *   - POSTMARK_API_KEY: API key de Postmark
+ *   - Configurar en: Deno.env (Edge Function) o import.meta.env (cliente)
+ * 
+ * Para AWS SES:
+ *   - AWS_ACCESS_KEY_ID: Access key de AWS
+ *   - AWS_SECRET_ACCESS_KEY: Secret key de AWS
+ *   - AWS_REGION: Región de SES (ej: 'us-east-1')
+ *   - Configurar en: Deno.env (Edge Function)
+ * 
+ * Para Resend:
+ *   - RESEND_API_KEY: API key de Resend
+ *   - Configurar en: Deno.env (Edge Function) o import.meta.env (cliente)
+ * 
+ * NOTA: Si se implementa en Edge Function, usar Deno.env.get('VARIABLE_NAME')
+ *       Si se implementa en cliente, usar import.meta.env.VITE_VARIABLE_NAME
+ * 
  * Ejemplo de integración con SendGrid:
  * ```typescript
  * import sgMail from '@sendgrid/mail';
  * 
- * sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+ * sgMail.setApiKey(Deno.env.get('SENDGRID_API_KEY') || '');
  * 
  * await sgMail.send({
  *   to: toEmail,
@@ -144,7 +167,7 @@ export function buildSupportEmailBodyHTML(
  * ```typescript
  * import { ServerClient } from 'postmark';
  * 
- * const client = new ServerClient(process.env.POSTMARK_API_KEY);
+ * const client = new ServerClient(Deno.env.get('POSTMARK_API_KEY') || '');
  * 
  * await client.sendEmail({
  *   From: 'soporte@mi-dominio.com',
@@ -161,21 +184,52 @@ async function sendEmailViaProvider(
   bodyText: string,
   bodyHTML?: string
 ): Promise<void> {
-  // STUB: Por ahora solo loguea
-  // TODO: Integrar con proveedor de email real
-  console.log('[supportEmail] STUB - Email que se enviaría:', {
+  // Log antes de enviar con información completa
+  console.log('[supportEmail] Preparando envío de email:', {
     to: toEmail,
     subject,
-    bodyText: bodyText.substring(0, 100) + '...',
+    bodyTextLength: bodyText.length,
+    bodyHTMLLength: bodyHTML?.length || 0,
+    bodyTextPreview: bodyText.substring(0, 150) + (bodyText.length > 150 ? '...' : ''),
+    timestamp: new Date().toISOString(),
   });
+
+  // STUB: Por ahora solo loguea
+  // TODO: Integrar con proveedor de email real
+  // 
+  // IMPORTANTE: Esta función NO envía emails realmente. Es solo un stub para desarrollo.
+  // Para producción, necesitas:
+  // 1. Crear una Edge Function en Supabase (ej: send-support-email)
+  // 2. Configurar un proveedor de email (SendGrid, Postmark, Resend, SES)
+  // 3. Implementar la lógica de envío en la Edge Function
+  // 4. Llamar a la Edge Function desde aquí en lugar de sendEmailViaProvider
+  console.warn('[supportEmail] ⚠️ STUB MODE - Email NO se está enviando realmente.');
+  console.warn('[supportEmail] Para enviar emails reales, implementa una Edge Function con un proveedor de email.');
 
   // Simular delay de red
   await new Promise(resolve => setTimeout(resolve, 100));
+
+  // Log de éxito simulado
+  console.log('[supportEmail] Email enviado exitosamente (STUB):', {
+    to: toEmail,
+    subject,
+    timestamp: new Date().toISOString(),
+  });
 
   // En producción, descomentar y usar el proveedor real:
   // throw new Error('sendEmailViaProvider no implementado. Integra con SendGrid/Postmark/SES.');
 }
 
+/**
+ * Envía un email de respuesta de soporte al alumno
+ * 
+ * @param ticketId - ID del ticket
+ * @param ticketTitulo - Título del ticket
+ * @param alumnoEmail - Email del alumno
+ * @param mensajeTexto - Texto del mensaje del PROF/ADMIN
+ * @param autorNombre - Nombre del autor (PROF/ADMIN)
+ * @param ticketUrl - URL opcional del ticket en la web
+ */
 /**
  * Envía un email de respuesta de soporte al alumno
  * 
@@ -194,8 +248,19 @@ export async function sendSupportEmailResponse(
   autorNombre: string,
   ticketUrl?: string
 ): Promise<void> {
+  console.log('[supportEmail] Iniciando envío de email de respuesta:', {
+    ticketId,
+    ticketTitulo,
+    alumnoEmail,
+    autorNombre,
+    mensajeLength: mensajeTexto.length,
+    timestamp: new Date().toISOString(),
+  });
+
   if (!alumnoEmail) {
-    throw new Error('Email del alumno requerido');
+    const error = new Error('Email del alumno requerido');
+    console.error('[supportEmail] Error de validación:', error);
+    throw error;
   }
 
   const subject = formatSupportEmailSubject(ticketId, ticketTitulo);
@@ -204,9 +269,24 @@ export async function sendSupportEmailResponse(
 
   try {
     await sendEmailViaProvider(alumnoEmail, subject, bodyText, bodyHTML);
+    console.log('[supportEmail] Email de respuesta enviado correctamente:', {
+      ticketId,
+      alumnoEmail,
+      timestamp: new Date().toISOString(),
+    });
   } catch (error) {
-    // Log error pero no lanzar excepción para no bloquear el flujo
-    console.error('[supportEmail] Error enviando email de respuesta:', error);
+    // Log error con detalles completos
+    console.error('[supportEmail] Error enviando email de respuesta:', {
+      ticketId,
+      alumnoEmail,
+      subject,
+      error: error instanceof Error ? {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      } : error,
+      timestamp: new Date().toISOString(),
+    });
     throw error; // Re-lanzar para que el caller pueda manejarlo si lo desea
   }
 }

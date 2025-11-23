@@ -52,6 +52,7 @@ import ReportErrorButton from "@/components/common/ReportErrorButton";
 import { useQuery } from "@tanstack/react-query";
 import { listErrorReports } from "@/api/errorReportsAPI";
 import { Badge } from "@/components/ds";
+import { SupportTicketsBadge } from "@/components/common/SupportTicketsBadge";
 import { shouldIgnoreHotkey, matchesHotkey, getHotkeyById, HOTKEYS_CONFIG } from "@/utils/hotkeys";
 import HotkeysModal from "@/components/common/HotkeysModal";
 import { HotkeysModalProvider, useHotkeysModal } from "@/hooks/useHotkeysModal.jsx";
@@ -590,6 +591,7 @@ function LayoutContent() {
                   {groupItems.map((item) => {
                     const isActive = location.pathname === item.url;
                     const isReportes = item.url === '/reportes';
+                    const isSoporte = item.url === '/soporte-prof';
                     const nuevos = reportCounts?.nuevos || 0;
                     const enRevision = reportCounts?.enRevision || 0;
                     const totalCount = isReportes ? (nuevos + enRevision) : 0;
@@ -628,6 +630,7 @@ function LayoutContent() {
                             )}
                           </div>
                         )}
+                        {isSoporte && <SupportTicketsBadge />}
                         {isActive && <ChevronRight className="w-4 h-4 ml-auto shrink-0" />}
                       </Link>
                     );

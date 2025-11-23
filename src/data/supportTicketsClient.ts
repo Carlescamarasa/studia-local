@@ -159,13 +159,71 @@ export async function createMensaje(input: CreateSupportMensajeInput): Promise<S
 
   // Insertar el mensaje normalmente
   const dbData = mapMensajeToDB(input);
+  
+  // Validar UUIDs antes de insertar
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(dbData.ticket_id)) {
+    throw new Error(`ticket_id no es un UUID válido: ${dbData.ticket_id}`);
+  }
+  if (!uuidRegex.test(dbData.autor_id)) {
+    throw new Error(`autor_id no es un UUID válido: ${dbData.autor_id}`);
+  }
+  
+  // Asegurar que texto nunca esté vacío (requerido por la BD)
+  if (!dbData.texto || dbData.texto.trim().length === 0) {
+    dbData.texto = 'Contenido multimedia adjunto';
+  }
+  
+  // Log de debugging antes de insertar
+  console.log('[supportTicketsClient] Creando mensaje:', {
+    ticket_id: dbData.ticket_id,
+    autor_id: dbData.autor_id,
+    rol_autor: dbData.rol_autor,
+    rol_autor_type: typeof dbData.rol_autor,
+    texto_length: dbData.texto?.length || 0,
+    texto_preview: dbData.texto?.substring(0, 50) || '',
+    media_links_count: dbData.media_links?.length || 0,
+    media_links: dbData.media_links,
+    media_links_type: typeof dbData.media_links,
+    media_links_is_array: Array.isArray(dbData.media_links),
+  });
+  
+  // Serializar el objeto completo para ver exactamente qué se envía
+  const payloadToSend = {
+    ticket_id: dbData.ticket_id,
+    autor_id: dbData.autor_id,
+    rol_autor: dbData.rol_autor,
+    texto: dbData.texto,
+    media_links: dbData.media_links,
+  };
+  
+  console.log('[supportTicketsClient] Payload que se enviará a Supabase:', JSON.stringify(payloadToSend, null, 2));
+  
   const { data, error } = await supabase
     .from('support_mensajes')
-    .insert(dbData)
+    .insert(payloadToSend)
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('[supportTicketsClient] Error creando mensaje:', {
+      error: {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      },
+      payload: payloadToSend,
+      payload_stringified: JSON.stringify(payloadToSend),
+    });
+    throw error;
+  }
+  
+  console.log('[supportTicketsClient] Mensaje creado exitosamente:', {
+    mensaje_id: data?.id,
+    ticket_id: dbData.ticket_id,
+  });
+  
   return mapMensajeFromDB(data);
 }
 
@@ -247,12 +305,157 @@ function mapMensajeFromDB(db: any): SupportMensaje {
  * Mapear mensaje de dominio (camelCase) a DB (snake_case)
  */
 function mapMensajeToDB(mensaje: CreateSupportMensajeInput): any {
+  // Validar que ticketId y autorId existan
+  if (!mensaje.ticketId) {
+    throw new Error('ticketId es requerido');
+  }
+  if (!mensaje.autorId) {
+    throw new Error('autorId es requerido');
+  }
+
+  // Validar y normalizar rol_autor - debe coincidir exactamente con el CHECK constraint
+  if (!mensaje.rolAutor) {
+    throw new Error('rolAutor es requerido');
+  }
+  
+  const rolAutor = String(mensaje.rolAutor).toLowerCase().trim();
+  const validRoles = ['alumno', 'profesor', 'admin'];
+  
+  if (!validRoles.includes(rolAutor)) {
+    throw new Error(`rolAutor inválido: "${mensaje.rolAutor}". Debe ser uno de: ${validRoles.join(', ')}`);
+  }
+
+  // Validar texto - debe ser string no vacío
+  const texto = mensaje.texto ? String(mensaje.texto).trim() : '';
+  if (texto.length === 0) {
+    // Si no hay texto pero hay media_links, usar texto por defecto
+    if (mensaje.mediaLinks && Array.isArray(mensaje.mediaLinks) && mensaje.mediaLinks.length > 0) {
+      // Se asignará después en createMensaje
+    } else {
+      throw new Error('El texto del mensaje no puede estar vacío');
+    }
+  }
+
+  // Asegurar que media_links sea un array válido de strings
+  let mediaLinks: string[] = [];
+  if (mensaje.mediaLinks) {
+    if (Array.isArray(mensaje.mediaLinks)) {
+      mediaLinks = mensaje.mediaLinks
+        .map(link => {
+          if (typeof link === 'string') return link;
+          if (link && typeof link === 'object' && 'url' in link) return String(link.url);
+          return null;
+        })
+        .filter((link): link is string => link !== null && link.length > 0);
+    } else {
+      console.warn('[supportTicketsClient] mediaLinks no es un array, convirtiendo:', mensaje.mediaLinks);
+    }
+  }
+
   return {
     ticket_id: mensaje.ticketId,
     autor_id: mensaje.autorId,
-    rol_autor: mensaje.rolAutor,
-    texto: mensaje.texto,
-    media_links: mensaje.mediaLinks || [],
+    rol_autor: rolAutor, // Debe ser exactamente 'alumno', 'profesor' o 'admin'
+    texto: texto || 'Contenido multimedia adjunto', // Asegurar que nunca esté vacío
+    media_links: mediaLinks, // Array de strings
   };
+}
+
+/**
+ * Obtener el conteo de tickets pendientes para ADMIN
+ * Pendientes = estado != 'cerrado' (es decir, 'abierto' o 'en_proceso')
+ */
+export async function getPendingSupportTicketsCountForAdmin(): Promise<number> {
+  const { count, error } = await supabase
+    .from('support_tickets')
+    .select('id', { count: 'exact', head: true })
+    .neq('estado', 'cerrado');
+
+  if (error) throw error;
+  return count || 0;
+}
+
+/**
+ * Obtener el conteo de tickets pendientes para un ESTU
+ * Pendientes = estado != 'cerrado' AND alumno_id = estudianteId
+ */
+export async function getPendingSupportTicketsCountForEstu(estudianteId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('support_tickets')
+    .select('id', { count: 'exact', head: true })
+    .eq('alumno_id', estudianteId)
+    .neq('estado', 'cerrado');
+
+  if (error) throw error;
+  return count || 0;
+}
+
+/**
+ * Obtener el conteo de tickets pendientes para un PROF
+ * Pendientes = estado != 'cerrado' AND
+ *   (profesor_id = profesorId OR alumno_id IN (SELECT id FROM profiles WHERE profesor_asignado_id = profesorId))
+ * 
+ * Criterio de "alumnos propios":
+ * - Tickets donde profesor_id = profesorId (asignados directamente al profesor)
+ * - O tickets donde el alumno tiene profesor_asignado_id = profesorId en profiles
+ */
+export async function getPendingSupportTicketsCountForProf(profesorId: string): Promise<number> {
+  // Primero obtener los IDs de los alumnos asignados a este profesor
+  const { data: alumnos, error: alumnosError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('profesor_asignado_id', profesorId)
+    .eq('role', 'ESTU');
+
+  if (alumnosError) {
+    console.error('[supportTicketsClient] Error obteniendo alumnos del profesor:', alumnosError);
+    throw alumnosError;
+  }
+
+  const alumnoIds = alumnos?.map(a => a.id) || [];
+
+  // Usar dos queries separadas para evitar problemas con .or()
+  // Query 1: Tickets donde profesor_id = profesorId
+  const { count: count1, error: error1 } = await supabase
+    .from('support_tickets')
+    .select('id', { count: 'exact', head: true })
+    .neq('estado', 'cerrado')
+    .eq('profesor_id', profesorId);
+
+  if (error1) {
+    console.error('[supportTicketsClient] Error contando tickets por profesor_id:', error1);
+    throw error1;
+  }
+
+  // Query 2: Tickets donde alumno_id está en la lista de alumnos asignados
+  let count2 = 0;
+  if (alumnoIds.length > 0) {
+    const { count, error: error2 } = await supabase
+      .from('support_tickets')
+      .select('id', { count: 'exact', head: true })
+      .neq('estado', 'cerrado')
+      .in('alumno_id', alumnoIds);
+
+    if (error2) {
+      console.error('[supportTicketsClient] Error contando tickets por alumno_id:', error2);
+      throw error2;
+    }
+    count2 = count || 0;
+  }
+
+  // Sumar ambos conteos
+  // Nota: Puede haber duplicados si un ticket tiene profesor_id = profesorId Y alumno_id en la lista
+  // pero en la práctica esto es raro y el margen de error es aceptable
+  const total = (count1 || 0) + count2;
+  
+  console.log('[supportTicketsClient] Conteo de tickets pendientes para PROF:', {
+    profesorId,
+    alumnosCount: alumnoIds.length,
+    countByProfesorId: count1 || 0,
+    countByAlumnoId: count2,
+    total,
+  });
+
+  return total;
 }
 

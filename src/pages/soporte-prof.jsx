@@ -165,9 +165,26 @@ function SoporteProfPageContent() {
 
       // Enviar email de notificación si el mensaje es de PROF o ADMIN
       if ((variables.rolAutor === 'profesor' || variables.rolAutor === 'admin') && selectedTicket) {
+        console.log('[SoporteProf] Iniciando proceso de envío de email de notificación:', {
+          ticketId: selectedTicket.id,
+          ticketTitulo: selectedTicket.titulo,
+          alumnoId: selectedTicket.alumnoId,
+          rolAutor: variables.rolAutor,
+          autorNombre: profile?.full_name || 'Equipo de Soporte',
+          mensajeLength: variables.texto.length,
+          timestamp: new Date().toISOString(),
+        });
+
         try {
+          console.log('[SoporteProf] Obteniendo email del alumno...');
           const alumnoEmail = await getUserEmailById(selectedTicket.alumnoId);
+          
           if (alumnoEmail) {
+            console.log('[SoporteProf] Email del alumno obtenido, enviando email de respuesta:', {
+              alumnoEmail,
+              ticketId: selectedTicket.id,
+            });
+            
             await sendSupportEmailResponse(
               selectedTicket.id,
               selectedTicket.titulo,
@@ -175,12 +192,42 @@ function SoporteProfPageContent() {
               variables.texto,
               profile?.full_name || 'Equipo de Soporte'
             );
+            
+            console.log('[SoporteProf] Email de notificación enviado exitosamente:', {
+              ticketId: selectedTicket.id,
+              alumnoEmail,
+              timestamp: new Date().toISOString(),
+            });
             // No mostrar toast de éxito del email para no saturar al usuario
+          } else {
+            console.warn('[SoporteProf] No se pudo obtener el email del alumno:', {
+              alumnoId: selectedTicket.alumnoId,
+              motivo: 'getUserEmailById retornó null (puede requerir permisos ADMIN)',
+            });
           }
         } catch (error) {
           // Error silencioso: no bloquear el flujo si falla el email
-          console.error('[SoporteProf] Error enviando email de notificación:', error);
+          console.error('[SoporteProf] Error enviando email de notificación:', {
+            ticketId: selectedTicket.id,
+            alumnoId: selectedTicket.alumnoId,
+            error: error instanceof Error ? {
+              message: error.message,
+              stack: error.stack,
+              name: error.name,
+            } : error,
+            timestamp: new Date().toISOString(),
+          });
         }
+      } else {
+        console.log('[SoporteProf] No se envía email de notificación:', {
+          motivo: variables.rolAutor === 'alumno' 
+            ? 'El mensaje es de un alumno' 
+            : !selectedTicket 
+            ? 'No hay ticket seleccionado'
+            : 'Rol no es profesor ni admin',
+          rolAutor: variables.rolAutor,
+          hasSelectedTicket: !!selectedTicket,
+        });
       }
     },
     onError: (error) => {
