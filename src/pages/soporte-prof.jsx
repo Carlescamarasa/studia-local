@@ -34,6 +34,7 @@ import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
 import MediaPreviewModal from "@/components/common/MediaPreviewModal";
 import { useAuth } from "@/auth/AuthProvider";
+import { sendSupportEmailResponse, getUserEmailById } from "@/utils/supportEmail";
 
 function SoporteProfPageContent() {
   const { user, profile } = useAuth();
@@ -154,13 +155,33 @@ function SoporteProfPageContent() {
   // Mutación para crear mensaje
   const createMensajeMutation = useMutation({
     mutationFn: createMensaje,
-    onSuccess: () => {
+    onSuccess: async (mensaje, variables) => {
       queryClient.invalidateQueries({ queryKey: ['support-mensajes', selectedTicketId] });
       queryClient.invalidateQueries({ queryKey: ['support-ticket', selectedTicketId] });
       queryClient.invalidateQueries({ queryKey: ['support-tickets-prof'] });
       setMessageText("");
       setVideoFile(null);
       toast.success('Mensaje enviado');
+
+      // Enviar email de notificación si el mensaje es de PROF o ADMIN
+      if ((variables.rolAutor === 'profesor' || variables.rolAutor === 'admin') && selectedTicket) {
+        try {
+          const alumnoEmail = await getUserEmailById(selectedTicket.alumnoId);
+          if (alumnoEmail) {
+            await sendSupportEmailResponse(
+              selectedTicket.id,
+              selectedTicket.titulo,
+              alumnoEmail,
+              variables.texto,
+              profile?.full_name || 'Equipo de Soporte'
+            );
+            // No mostrar toast de éxito del email para no saturar al usuario
+          }
+        } catch (error) {
+          // Error silencioso: no bloquear el flujo si falla el email
+          console.error('[SoporteProf] Error enviando email de notificación:', error);
+        }
+      }
     },
     onError: (error) => {
       toast.error(`Error al enviar mensaje: ${error.message}`);

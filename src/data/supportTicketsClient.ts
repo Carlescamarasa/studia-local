@@ -138,8 +138,26 @@ export async function getMensajesByTicket(ticketId: string): Promise<SupportMens
 
 /**
  * Crear un nuevo mensaje
+ * 
+ * Si el ticket está cerrado y el mensaje es de un alumno propietario,
+ * reabre automáticamente el ticket.
  */
 export async function createMensaje(input: CreateSupportMensajeInput): Promise<SupportMensaje> {
+  // Verificar si el ticket está cerrado y si debemos reabrirlo
+  if (input.rolAutor === 'alumno') {
+    const ticket = await getTicketById(input.ticketId);
+    
+    if (ticket && ticket.estado === 'cerrado' && input.autorId === ticket.alumnoId) {
+      // Reabrir el ticket automáticamente
+      await updateTicket({
+        id: ticket.id,
+        estado: 'abierto',
+        cerradoAt: null
+      });
+    }
+  }
+
+  // Insertar el mensaje normalmente
   const dbData = mapMensajeToDB(input);
   const { data, error } = await supabase
     .from('support_mensajes')

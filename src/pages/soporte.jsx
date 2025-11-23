@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
+import { Card, CardContent, CardHeader, CardTitle, Alert, AlertDescription } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -423,8 +423,18 @@ function SoportePageContent() {
                 )}
 
                 {/* Formulario de respuesta */}
-                {selectedTicket && selectedTicket.estado !== 'cerrado' && (
+                {selectedTicket && (
                   <div className="border-t border-[var(--color-border-default)] pt-6 mt-6 space-y-4">
+                    {/* Banner de advertencia si el ticket está cerrado y el usuario es el propietario */}
+                    {selectedTicket.estado === 'cerrado' && selectedTicket.alumnoId === user?.id && (
+                      <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
+                        <AlertCircle className="h-4 w-4 text-[var(--color-info)]" />
+                        <AlertDescription className="text-sm text-[var(--color-text-primary)]">
+                          Este ticket está cerrado. Si envías un nuevo mensaje, se reabrirá automáticamente.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
                     <div className="space-y-2">
                       <Label htmlFor="message-text">Tu mensaje</Label>
                       <Textarea
