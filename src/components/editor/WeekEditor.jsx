@@ -58,11 +58,11 @@ export default function WeekEditor({ semana, onSave, onClose }) {
   const modalContent = (
     <>
       <div 
-        className="fixed inset-0 bg-black/40 z-[100]"
+        className="fixed inset-0 bg-black/40 z-[125]"
         onClick={onClose}
       />
       
-      <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
+      <div className="fixed inset-0 z-[130] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
         <Card 
           className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col pointer-events-auto shadow-card rounded-[var(--radius-modal)] app-card my-8"
           onClick={(e) => e.stopPropagation()}

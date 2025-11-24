@@ -306,7 +306,7 @@ export function matchesCombo(event, combo, useCmdOnMac = false) {
   if (!codeMatches) {
     // normalizedEventKey ya tiene el mapeo de caracteres especiales aplicado
     keyMatches = (normalizedMainKey === normalizedEventKey || mainKey === normalizedEventKey);
-  }
+    }
   
   
   // Para teclas simples (una sola letra, número o '/' sin modificadores especiales)
@@ -317,7 +317,7 @@ export function matchesCombo(event, combo, useCmdOnMac = false) {
       return !hasCtrl && !hasMeta && !hasAlt && !hasShift;
     }
   }
-  
+
   // Para todas las demás teclas, verificar si hay match
   if (!keyMatches && !codeMatches) {
     return false;

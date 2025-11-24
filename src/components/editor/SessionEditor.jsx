@@ -662,11 +662,11 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
   const modalContent = (
     <>
       <div 
-        className="fixed inset-0 bg-black/40 z-[100]"
+        className="fixed inset-0 bg-black/40 z-[125]"
         onClick={onClose}
       />
       
-      <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
+      <div className="fixed inset-0 z-[130] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
         <div 
           className="w-full max-w-6xl my-8 overflow-hidden flex flex-col max-h-[92vh] pointer-events-auto shadow-card rounded-[var(--radius-modal)] bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)]"
           onClick={(e) => e.stopPropagation()}
@@ -843,7 +843,15 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
 
             <Card className="app-panel">
               <CardHeader>
-                <CardTitle className="text-lg text-[var(--color-text-primary)]">Biblioteca de Ejercicios</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg text-[var(--color-text-primary)]">Biblioteca de Ejercicios</CardTitle>
+                  <button
+                    onClick={() => setEditingEjercicio({ ejercicio: null, piezaSnapshot: piezaSnapshot || pieza })}
+                    className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:underline transition-colors cursor-pointer"
+                  >
+                    Crear Ejercicio
+                  </button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex gap-2 flex-wrap">

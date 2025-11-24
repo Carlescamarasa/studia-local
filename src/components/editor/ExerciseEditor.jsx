@@ -314,11 +314,11 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot }) {
   const modalContent = (
     <>
       <div 
-        className="fixed inset-0 bg-black/40 z-[100]"
+        className="fixed inset-0 bg-black/40 z-[135]"
         onClick={() => onClose(null)}
       />
       
-      <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
+      <div className="fixed inset-0 z-[140] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
         <div 
           className="bg-[var(--color-surface-elevated)] w-full max-w-3xl max-h-[92vh] shadow-card rounded-[var(--radius-modal)] flex flex-col pointer-events-auto my-8 border border-[var(--color-border-default)]"
           onClick={(e) => e.stopPropagation()}

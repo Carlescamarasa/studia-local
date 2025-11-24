@@ -167,29 +167,32 @@ export default function PageHeader({
       <div className="px-2 sm:px-3 md:px-6 py-1.5 sm:py-2 md:py-2.5 border-b border-[var(--color-border-default)]" style={{ position: 'relative', zIndex: 1 }}>
         <div className="max-w-7xl mx-auto">
           {/* Primera fila: Botón menú (mobile) + Icono + Título + Acciones (derecha) */}
-          <div className="flex items-center gap-2 sm:gap-2 md:gap-3 mb-1 md:mb-1.5" style={{ position: 'relative', zIndex: 1, pointerEvents: 'auto' }}>
-            {/* Botón de menú solo en mobile */}
-            {showMenuButton && (
-              <button
-                onClick={toggleSidebar}
-                className="lg:hidden hover:bg-[var(--color-surface-muted)] active:bg-[var(--color-surface-muted)]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 p-2 rounded-[var(--btn-radius,0.25rem)] transition-all min-h-[40px] min-w-[40px] h-10 w-10 flex items-center justify-center shrink-0 touch-manipulation -ml-1 relative z-10"
-                aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
-                aria-controls="sidebar"
-                aria-expanded={abierto}
-                type="button"
-                style={{ pointerEvents: 'auto' }}
-              >
-                {abierto ? <X className="w-5 h-5 pointer-events-none" /> : <Menu className="w-5 h-5 pointer-events-none" />}
-              </button>
-            )}
-            {Icon && (
-              <Icon className={iconClass} />
-            )}
-            {title && (
-              <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl flex-1 min-w-0`}>{title}</h1>
-            )}
-            {/* Acciones siempre a la derecha en zona 1 */}
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto relative z-10" style={{ pointerEvents: 'auto' }}>
+          <div className="flex items-center gap-2 sm:gap-2 md:gap-3 mb-1 md:mb-1.5 flex-wrap" style={{ position: 'relative', zIndex: 1, pointerEvents: 'auto' }}>
+            {/* Primera línea: Botón menú (mobile) + Icono + Título */}
+            <div className="flex items-center gap-2 sm:gap-2 md:gap-3 flex-1 min-w-0">
+              {/* Botón de menú solo en mobile */}
+              {showMenuButton && (
+                <button
+                  onClick={toggleSidebar}
+                  className="lg:hidden hover:bg-[var(--color-surface-muted)] active:bg-[var(--color-surface-muted)]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 p-2 rounded-[var(--btn-radius,0.25rem)] transition-all min-h-[40px] min-w-[40px] h-10 w-10 flex items-center justify-center shrink-0 touch-manipulation -ml-1 relative z-10"
+                  aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
+                  aria-controls="sidebar"
+                  aria-expanded={abierto}
+                  type="button"
+                  style={{ pointerEvents: 'auto' }}
+                >
+                  {abierto ? <X className="w-5 h-5 pointer-events-none" /> : <Menu className="w-5 h-5 pointer-events-none" />}
+                </button>
+              )}
+              {Icon && (
+                <Icon className={iconClass} />
+              )}
+              {title && (
+                <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl flex-1 min-w-0`}>{title}</h1>
+              )}
+            </div>
+            {/* Segunda línea (cuando se estrecha): Acciones a la derecha */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto justify-end sm:justify-start relative z-10" style={{ pointerEvents: 'auto' }}>
               {actions}
               {/* Botón de hotkeys discreto - siempre visible en el header (en modo estudio, hoy.jsx maneja su propio botón) */}
               <HotkeysModalButton />
