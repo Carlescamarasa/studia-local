@@ -392,29 +392,22 @@ function LayoutContent() {
         return { nuevos: 0, enRevision: 0 };
       }
       
-      // Verificar que haya sesión activa antes de hacer la petición
       try {
-        const { data: { session } } = await localDataClient.auth.getSession();
-        if (!session?.access_token) {
-          return { nuevos: 0, enRevision: 0 };
-        }
-      } catch (sessionError) {
-        // Si no hay sesión, no intentar hacer la petición
-        return { nuevos: 0, enRevision: 0 };
-      }
-      
-      try {
-        const [nuevos, enRevision] = await Promise.all([
-          listErrorReports({ status: 'nuevo' }),
-          listErrorReports({ status: 'en_revision' })
-        ]);
+        // Usar la misma lógica que la página de reportes: traer todos y filtrar
+        // Esto asegura que contamos igual que la vista de reportes
+        const allReports = await listErrorReports();
         
-        const result = {
-          nuevos: Array.isArray(nuevos) ? nuevos.length : 0,
-          enRevision: Array.isArray(enRevision) ? enRevision.length : 0
+        // Filtrar excluyendo 'resuelto', igual que cuando statusFilter = 'active'
+        const activeReports = allReports.filter(r => r.status !== 'resuelto');
+        
+        // Contar por estado
+        const nuevos = activeReports.filter(r => r.status === 'nuevo').length;
+        const enRevision = activeReports.filter(r => r.status === 'en_revision').length;
+        
+        return {
+          nuevos,
+          enRevision
         };
-        
-        return result;
       } catch (error) {
         // Ignorar errores CORS o de red silenciosamente
         // Estos pueden ocurrir si la sesión expiró o hay problemas de conectividad
