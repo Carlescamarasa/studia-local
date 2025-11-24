@@ -18,11 +18,6 @@ import { Badge } from '@/components/ds';
 export function SupportTicketsBadge() {
   const { total, unread, isLoading, error } = usePendingSupportTicketsCount();
 
-  // Log para debugging
-  if (error) {
-    console.warn('[SupportTicketsBadge] Error obteniendo conteo:', error);
-  }
-
   // Si hay error, no mostrar badge (fallback silencioso)
   if (error) {
     return null;
@@ -32,14 +27,6 @@ export function SupportTicketsBadge() {
   if (isLoading) {
     return null;
   }
-
-  // Log del conteo obtenido
-  console.log('[SupportTicketsBadge] Conteo de tickets pendientes:', {
-    total,
-    unread,
-    isLoading,
-    willShow: total > 0,
-  });
 
   // Si no hay tickets pendientes, no mostrar badge
   if (total === 0) {

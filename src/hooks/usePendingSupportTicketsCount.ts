@@ -25,14 +25,8 @@ export function usePendingSupportTicketsCount() {
   const { data: counts = { total: 0, unread: 0 }, isLoading, error } = useQuery({
     queryKey: ['pending-support-tickets-counts', appRole, user?.id],
     queryFn: async () => {
-      console.log('[usePendingSupportTicketsCount] Iniciando conteo:', {
-        userId: user?.id,
-        appRole,
-      });
-
       // Si no hay usuario o rol, retornar 0
       if (!user?.id || !appRole) {
-        console.log('[usePendingSupportTicketsCount] Sin usuario o rol, retornando 0');
         return { total: 0, unread: 0 };
       }
 
@@ -41,25 +35,16 @@ export function usePendingSupportTicketsCount() {
 
         // ADMIN: contar todos los tickets pendientes
         if (appRole === 'ADMIN') {
-          console.log('[usePendingSupportTicketsCount] Contando para ADMIN');
           result = await getPendingSupportTicketsCountsForAdmin();
         }
         // PROF: contar tickets pendientes de sus alumnos
         else if (appRole === 'PROF') {
-          console.log('[usePendingSupportTicketsCount] Contando para PROF:', { profesorId: user.id });
           result = await getPendingSupportTicketsCountsForProf(user.id);
         }
         // ESTU: contar tickets pendientes del estudiante
         else if (appRole === 'ESTU') {
-          console.log('[usePendingSupportTicketsCount] Contando para ESTU:', { estudianteId: user.id });
           result = await getPendingSupportTicketsCountsForEstu(user.id);
         }
-
-        console.log('[usePendingSupportTicketsCount] Conteo obtenido:', {
-          appRole,
-          total: result.total,
-          unread: result.unread,
-        });
 
         return result;
       } catch (err) {

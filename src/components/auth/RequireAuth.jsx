@@ -19,10 +19,7 @@ export default function RequireAuth({ children }) {
     // Verificar inmediatamente al montar solo si no se ha verificado recientemente
     const now = Date.now();
     if (!lastCheckRef.current || (now - lastCheckRef.current) > 60000) { // Solo si pasó más de 1 minuto
-      if (import.meta.env.DEV) {
-        console.log('[RequireAuth] Verificación inicial de sesión');
-      }
-    checkSession?.();
+      checkSession?.();
       lastCheckRef.current = now;
     }
 

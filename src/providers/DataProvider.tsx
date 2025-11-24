@@ -20,10 +20,8 @@ export function DataProvider({ children }) {
   
   const api = useMemo(() => {
     if (dataSource === 'remote') {
-      console.log('[DataProvider] Usando fuente de datos remota (Supabase)');
       return createRemoteDataAPI();
     } else {
-      console.log('[DataProvider] Usando fuente de datos local (localStorage)');
       return createLocalDataAPI();
     }
   }, [dataSource]);

@@ -254,10 +254,6 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let isMounted = true;
     
-    if (import.meta.env.DEV) {
-      console.log('[AuthProvider] Montando componente, iniciando carga de sesión');
-    }
-
     // Obtener sesión inicial
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (!isMounted) return;
@@ -315,9 +311,6 @@ export function AuthProvider({ children }) {
       
       // Solo cargar perfil si hay sesión y usuario, y no está ya cargado
       if (session?.user?.id) {
-        if (import.meta.env.DEV) {
-          console.log('[AuthProvider] Sesión inicial obtenida, userId:', session.user.id);
-        }
         // Cargar perfil inicial (loading será true hasta que termine)
         await fetchProfile(session.user.id, true);
       } else {
@@ -434,9 +427,6 @@ export function AuthProvider({ children }) {
         });
       } else if (session?.user?.id && !userIdChanged) {
         // Mismo usuario, no recargar perfil
-        if (import.meta.env.DEV) {
-          console.log('[AuthProvider] onAuthStateChange: mismo usuario, perfil ya cargado, omitiendo');
-        }
       }
     });
 

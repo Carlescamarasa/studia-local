@@ -409,15 +409,18 @@ function LayoutContent() {
           listErrorReports({ status: 'en_revision' })
         ]);
         
-        return {
+        const result = {
           nuevos: Array.isArray(nuevos) ? nuevos.length : 0,
           enRevision: Array.isArray(enRevision) ? enRevision.length : 0
         };
+        
+        return result;
       } catch (error) {
         // Ignorar errores CORS o de red silenciosamente
         // Estos pueden ocurrir si la sesión expiró o hay problemas de conectividad
         if (error?.message?.includes('CORS') || 
             error?.message?.includes('NetworkError') ||
+            error?.message?.includes('No hay sesión activa') ||
             error?.code === 'PGRST301' || 
             error?.status === 401 ||
             error?.status === 403) {
