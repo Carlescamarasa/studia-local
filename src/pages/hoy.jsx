@@ -1115,12 +1115,15 @@ function HoyPageContent() {
 
     // Calcular porcentaje del tiempo del ejercicio actual
     const porcentajeEjercicio = ejercicioActual?.duracionSeg > 0 
-      ? Math.min((tiempoActual / ejercicioActual.duracionSeg) * 100, 100)
+      ? (tiempoActual / ejercicioActual.duracionSeg) * 100
       : 0;
+    const porcentajeEjercicioLimitado = Math.min(porcentajeEjercicio, 100);
     const tiempoRestante = ejercicioActual?.duracionSeg > 0
       ? Math.max(0, ejercicioActual.duracionSeg - tiempoActual)
       : 0;
     const excedido = tiempoActual > (ejercicioActual?.duracionSeg || 0);
+    // Verificar si está en rango de warning (90-100%)
+    const enRangoWarning = !excedido && porcentajeEjercicio >= 90 && porcentajeEjercicio <= 100;
 
     // Calcular información de rondas para el stepper
     const totalRondas = sesionActiva?.rondas?.length || 0;
@@ -1183,13 +1186,16 @@ function HoyPageContent() {
                   
             {/* Barra de progreso - SIEMPRE en el borde superior, de lado a lado, MISMO grosor en expandido y colapsado */}
                   {!isAD && ejercicioActual?.duracionSeg > 0 && (
-              <div className="w-full bg-[var(--color-border-default)]/30 rounded-full h-2 md:h-2.5 overflow-hidden">
+              <div className={cn(
+                "w-full rounded-full h-2 md:h-2.5 overflow-hidden transition-all duration-300",
+                enRangoWarning ? 'bg-[var(--color-warning)]/20 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 'bg-[var(--color-border-default)]/30'
+              )}>
                       <div
                         className={cn(
                           "h-full transition-all duration-300",
-                          excedido ? 'bg-[var(--color-danger)]' : porcentajeEjercicio >= 75 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-primary)]'
+                          excedido ? 'bg-[var(--color-danger)]' : enRangoWarning ? 'bg-[var(--color-warning)] animate-warning-glow' : 'bg-[var(--color-primary)]'
                         )}
-                        style={{ width: `${Math.min(porcentajeEjercicio, 100)}%` }}
+                        style={{ width: `${porcentajeEjercicioLimitado}%` }}
                       />
                     </div>
                   )}
@@ -1201,12 +1207,12 @@ function HoyPageContent() {
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <Clock className={cn(
                     "w-4 h-4 shrink-0",
-                    excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
+                    excedido ? "text-[var(--color-danger)]" : enRangoWarning ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
                   )} />
                   <div className="flex flex-col min-w-0">
                     <div className={cn(
                       "text-base font-mono font-bold tabular-nums leading-tight",
-                      excedido ? "text-[var(--color-danger)]" : porcentajeEjercicio >= 75 ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
+                      excedido ? "text-[var(--color-danger)]" : enRangoWarning ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
                     )}>
                       {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
                 </div>
@@ -1220,18 +1226,19 @@ function HoyPageContent() {
                 
                 {/* Centro: Controles - Solo visible cuando expandido */}
                 {!timerCollapsed && (
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {/* Anterior */}
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {/* Atrás */}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleAnterior}
                   disabled={indiceActual === 0}
-                      className="h-9 w-9 p-0 rounded-lg"
+                      className="h-9 flex-[0.5] min-w-0 rounded-lg"
                   title="Anterior (P)"
                   aria-label="Ejercicio anterior"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-4 h-4 mr-1.5 shrink-0" />
+                  <span className="truncate">Atrás</span>
                 </Button>
 
                     {/* Play/Pause */}
@@ -1240,7 +1247,7 @@ function HoyPageContent() {
                         variant="outline"
                     size="sm"
                     onClick={togglePlayPausa}
-                        className="h-9 w-9 p-0 rounded-lg"
+                        className="h-9 w-9 p-0 rounded-lg shrink-0"
                     title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
                     aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
                   >
@@ -1256,25 +1263,26 @@ function HoyPageContent() {
                 <Button
                   variant="primary"
                   onClick={completarYAvanzar}
-                      className="h-9 px-3 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm rounded-lg focus-brand shadow-sm text-white"
+                      className="h-9 flex-[0.5] min-w-0 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm rounded-lg focus-brand shadow-sm text-white"
                   title="Completar (Enter)"
                   aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
                 >
-                      <CheckCircle className="w-4 h-4 mr-1" />
-                  {isUltimo ? 'Finalizar' : 'OK'}
+                      <CheckCircle className="w-4 h-4 mr-1.5 shrink-0" />
+                  <span className="truncate">{isUltimo ? 'Finalizar' : 'OK'}</span>
                 </Button>
 
-                    {/* Siguiente */}
+                    {/* Saltar */}
                     {!isUltimo && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={omitirYAvanzar}
-                        className="h-9 w-9 p-0 rounded-lg"
+                        className="h-9 flex-[0.5] min-w-0 rounded-lg"
                   title="Omitir y pasar (N)"
                   aria-label="Omitir ejercicio"
                 >
-                  <ChevronsRight className="w-4 h-4" />
+                  <ChevronsRight className="w-4 h-4 mr-1.5 shrink-0" />
+                  <span className="truncate">Saltar</span>
                 </Button>
                     )}
               </div>
@@ -1737,26 +1745,27 @@ function HoyPageContent() {
 
             {/* Controles principales - Distribución 19-2-29-2-29-2-19 con gaps */}
             <div className="flex items-center w-full gap-[2%] mb-2">
-              {/* Navegación: Atrás - 19% */}
+              {/* Navegación: Atrás - 50% */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleAnterior}
                 disabled={indiceActual === 0}
-                className="h-12 md:h-14 flex-[0.19] rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
+                className="h-12 md:h-14 flex-[0.5] min-w-0 rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
                 title="Anterior (P)"
                 aria-label="Ejercicio anterior"
               >
-                <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+                <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 mr-2 shrink-0" />
+                <span className="truncate">Atrás</span>
               </Button>
 
-              {/* Control principal: Play/Pause - 29% */}
+              {/* Control principal: Play/Pause - Solo si no es AD */}
               {!isAD && (
                 <Button
                   variant="primary"
                   size="sm"
                   onClick={togglePlayPausa}
-                  className="h-12 md:h-14 flex-[0.29] rounded-xl focus-brand shadow-sm hover:shadow-md transition-all"
+                  className="h-12 md:h-14 w-12 md:w-14 shrink-0 rounded-xl focus-brand shadow-sm hover:shadow-md transition-all"
                   title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
                   aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
                 >
@@ -1764,33 +1773,36 @@ function HoyPageContent() {
                 </Button>
               )}
 
-              {/* Acciones de ejercicio: Completar - 29% */}
+              {/* Acciones de ejercicio: Completar - 50% */}
               <Button
                 variant="primary"
                 onClick={completarYAvanzar}
                 className={cn(
-                  "h-12 md:h-14 flex-[0.29] bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-base md:text-lg rounded-xl focus-brand shadow-sm hover:shadow-md transition-all text-white",
-                  isAD && "flex-[0.58]"
+                  "h-12 md:h-14 flex-[0.5] min-w-0 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-base md:text-lg rounded-xl focus-brand shadow-sm hover:shadow-md transition-all text-white",
+                  isAD && "flex-[1]"
                 )}
                 title="Completar (Enter)"
                 aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
               >
-                <CheckCircle className="w-5 h-5 md:w-6 md:h-6 mr-2" />
-                {isUltimo ? 'Finalizar' : 'OK'}
+                <CheckCircle className="w-5 h-5 md:w-6 md:h-6 mr-2 shrink-0" />
+                <span className="truncate">{isUltimo ? 'Finalizar' : 'OK'}</span>
               </Button>
 
-              {/* Acciones de ejercicio: Saltar - 19% */}
+              {/* Acciones de ejercicio: Saltar - 50% */}
+              {!isUltimo && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={omitirYAvanzar}
                 disabled={isUltimo}
-                className="h-12 md:h-14 flex-[0.19] rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
+                className="h-12 md:h-14 flex-[0.5] min-w-0 rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
                 title="Omitir y pasar (N)"
                 aria-label="Omitir ejercicio"
               >
-                <ChevronsRight className="w-5 h-5 md:w-6 md:h-6" />
+                <ChevronsRight className="w-5 h-5 md:w-6 md:h-6 mr-2 shrink-0" />
+                <span className="truncate">Saltar</span>
               </Button>
+              )}
             </div>
 
             {/* Progreso de sesión - Compacto */}

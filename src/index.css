@@ -679,6 +679,20 @@ button:focus-visible {
   animation: pulse-1s 1s ease-in-out 1;
 }
 
+/* Animación warning-glow: resplandor sutil y lento para el warning */
+@keyframes warning-glow {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+  }
+}
+
+.animate-warning-glow {
+  animation: warning-glow 1s ease-in-out infinite;
+}
+
 /* ============================================================================
  * BADGES - Estilos para badges del Design System
  * ============================================================================
