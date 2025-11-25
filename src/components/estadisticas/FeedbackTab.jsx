@@ -14,8 +14,9 @@ import { formatLocalDate, parseLocalDate } from "./utils";
  * @param {Array} props.feedbacks - Array de feedbacks
  * @param {boolean} props.isEstu - Si es estudiante
  * @param {Function} props.onEditFeedback - Callback para editar feedback
+ * @param {Function} props.puedeEditar - Función que determina si se puede editar un feedback (opcional)
  */
-export default function FeedbackTab({ feedbacks, isEstu, onEditFeedback }) {
+export default function FeedbackTab({ feedbacks, isEstu, onEditFeedback, puedeEditar }) {
   const isMobile = useIsMobile();
 
   const columns = [
@@ -65,23 +66,29 @@ export default function FeedbackTab({ feedbacks, isEstu, onEditFeedback }) {
         ),
       },
     ]),
-    {
-      key: 'actions',
-      label: 'Acciones',
-      sortable: false,
-      render: (f) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onEditFeedback(f);
-          }}
-          className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] flex items-center gap-1 text-sm"
-        >
-          <Edit className="w-4 h-4" />
-          {isMobile ? '' : 'Editar'}
-        </button>
-      ),
-    },
+    ...(puedeEditar && onEditFeedback ? [
+      {
+        key: 'actions',
+        label: 'Acciones',
+        sortable: false,
+        render: (f) => {
+          const puedeEditarEste = puedeEditar(f);
+          if (!puedeEditarEste) return null;
+          return (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditFeedback(f);
+              }}
+              className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] flex items-center gap-1 text-sm"
+            >
+              <Edit className="w-4 h-4" />
+              {isMobile ? '' : 'Editar'}
+            </button>
+          );
+        },
+      },
+    ] : []),
   ];
 
   return (

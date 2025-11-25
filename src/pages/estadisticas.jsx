@@ -1141,6 +1141,10 @@ function EstadisticasPageContent() {
             feedbacks={isEstu ? feedbackProfesor : feedbacksParaProfAdmin}
             isEstu={isEstu}
             onEditFeedback={(f) => setFeedbackDrawer(f)}
+            puedeEditar={(f) => {
+              // Solo ADMIN y PROF pueden editar, y solo el profesor creador o un ADMIN
+              return (isAdmin || isProf) && (isAdmin || f.profesorId === userIdActual);
+            }}
           />
         )}
 
@@ -1540,7 +1544,8 @@ function EstadisticasPageContent() {
                             return feedbackProfesor.slice(startIndex, endIndex);
                           })().map(f => {
                           const profesor = usuarios.find(u => u.id === f.profesorId);
-                          const puedeEditar = isAdmin || f.profesorId === userIdActual;
+                          // Solo ADMIN y PROF pueden editar, y solo el profesor creador o un ADMIN
+                          const puedeEditar = (isAdmin || isProf) && (isAdmin || f.profesorId === userIdActual);
                           const fechaSemana = f.semanaInicioISO ? parseLocalDate(f.semanaInicioISO) : null;
                           const fechaFormateada = fechaSemana ? fechaSemana.toLocaleDateString('es-ES', { 
                             weekday: 'short',
@@ -1616,7 +1621,8 @@ function EstadisticasPageContent() {
                     {feedbacksParaProfAdmin.map(f => {
                       const alumno = usuarios.find(u => u.id === f.alumnoId);
                       const profesor = usuarios.find(u => u.id === f.profesorId);
-                      const puedeEditar = isAdmin || f.profesorId === userIdActual;
+                      // Solo ADMIN y PROF pueden editar, y solo el profesor creador o un ADMIN
+                      const puedeEditar = (isAdmin || isProf) && (isAdmin || f.profesorId === userIdActual);
                       const fechaSemana = f.semanaInicioISO ? parseLocalDate(f.semanaInicioISO) : null;
                       const fechaFormateada = fechaSemana ? fechaSemana.toLocaleDateString('es-ES', { 
                         weekday: 'short',
