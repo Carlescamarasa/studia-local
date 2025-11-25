@@ -183,52 +183,120 @@ export default function ImportExportPage() {
   const importarEjerciciosCSV = async (data) => {
     const results = { created: 0, updated: 0, skipped: 0, errors: [] };
     
+    // Rastrear códigos generados durante esta importación para evitar duplicados
+    const codigosGenerados = new Map(); // tipo -> Set de códigos generados
+    
+    // Función para generar código considerando los ya generados en este lote
+    const generateCodeConRastreo = (tipo) => {
+      // Obtener códigos existentes en BD y los generados en este lote
+      const ejerciciosDeTipo = bloques.filter(e => e.code?.startsWith(`${tipo}-`));
+      const codigosEnLote = codigosGenerados.get(tipo) || new Set();
+      
+      // Encontrar el máximo número entre BD y lote actual
+      let maxNum = 0;
+      
+      // Buscar en BD
+      ejerciciosDeTipo.forEach(e => {
+        const match = e.code.match(/\d+/);
+        if (match) {
+          const num = parseInt(match[0]);
+          if (num > maxNum) maxNum = num;
+        }
+      });
+      
+      // Buscar en códigos generados en este lote
+      codigosEnLote.forEach(code => {
+        const match = code.match(/\d+/);
+        if (match) {
+          const num = parseInt(match[0]);
+          if (num > maxNum) maxNum = num;
+        }
+      });
+      
+      // Generar nuevo código
+      const nuevoCode = `${tipo}-${String(maxNum + 1).padStart(4, '0')}`;
+      
+      // Registrar en el lote
+      if (!codigosGenerados.has(tipo)) {
+        codigosGenerados.set(tipo, new Set());
+      }
+      codigosGenerados.get(tipo).add(nuevoCode);
+      
+      return nuevoCode;
+    };
+    
     for (const row of data) {
       try {
         // Ignorar columnas 'id' si existen (no usar IDs externos)
-        const { id, code, nombre, tipo, duracion_objetivo_seg } = row;
+        const { id, code, nombre, tipo, duracion_objetivo_seg, instrucciones, indicadorLogro, mediaLinks } = row;
         
-        if (!code || !nombre || !tipo) {
-          results.errors.push(`Fila ${data.indexOf(row) + 1}: Faltan campos obligatorios (code, nombre, tipo)`);
+        if (!nombre || !tipo) {
+          results.errors.push(`Fila ${data.indexOf(row) + 1}: Faltan campos obligatorios (nombre, tipo)`);
           continue;
         }
 
         // Validar tipo
         const tiposValidos = ['CA', 'CB', 'TC', 'TM', 'FM', 'VC', 'AD'];
-        if (!tiposValidos.includes(tipo.toUpperCase())) {
-          results.errors.push(`${code}: Tipo "${tipo}" no válido. Debe ser uno de: ${tiposValidos.join(', ')}`);
+        const tipoNormalizado = tipo.toUpperCase();
+        if (!tiposValidos.includes(tipoNormalizado)) {
+          results.errors.push(`${nombre || `Fila ${data.indexOf(row) + 1}`}: Tipo "${tipo}" no válido. Debe ser uno de: ${tiposValidos.join(', ')}`);
           continue;
         }
 
+        // Generar código automáticamente si no se proporciona
+        let codeFinal = code?.trim();
+        if (!codeFinal) {
+          codeFinal = generateCodeConRastreo(tipoNormalizado);
+        } else {
+          // Si se proporciona un código, también registrarlo para evitar duplicados
+          if (codeFinal.startsWith(`${tipoNormalizado}-`)) {
+            if (!codigosGenerados.has(tipoNormalizado)) {
+              codigosGenerados.set(tipoNormalizado, new Set());
+            }
+            codigosGenerados.get(tipoNormalizado).add(codeFinal);
+          }
+        }
+
+        // Parsear mediaLinks (separados por |)
+        let mediaLinksArray = [];
+        if (mediaLinks) {
+          mediaLinksArray = mediaLinks.split('|')
+            .map(url => url.trim())
+            .filter(url => url.length > 0);
+        }
+
         // Buscar si ya existe un ejercicio con ese code
-        const existe = bloques.find(b => b.code === code);
+        const existe = bloques.find(b => b.code === codeFinal);
         
         if (existe) {
-          // Si existe, actualizar (opción elegida: actualizar en lugar de ignorar)
+          // Si existe, actualizar
           await localDataClient.entities.Bloque.update(existe.id, {
             nombre,
-            tipo: tipo.toUpperCase(),
+            tipo: tipoNormalizado,
             duracionSeg: parseInt(duracion_objetivo_seg || '0', 10) || 0,
+            instrucciones: instrucciones || existe.instrucciones || '',
+            indicadorLogro: indicadorLogro || existe.indicadorLogro || '',
+            mediaLinks: mediaLinksArray.length > 0 ? mediaLinksArray : (existe.mediaLinks || []),
           });
           results.updated++;
         } else {
           // Si no existe, crear nuevo
           await localDataClient.entities.Bloque.create({
-            code,
+            code: codeFinal,
             nombre,
-            tipo: tipo.toUpperCase(),
+            tipo: tipoNormalizado,
             duracionSeg: parseInt(duracion_objetivo_seg || '0', 10) || 0,
-            instrucciones: '',
-            indicadorLogro: '',
+            instrucciones: instrucciones || '',
+            indicadorLogro: indicadorLogro || '',
             materialesRequeridos: [],
-            mediaLinks: [],
+            mediaLinks: mediaLinksArray,
             elementosOrdenados: [],
             profesorId: effectiveUser.id,
           });
           results.created++;
         }
       } catch (error) {
-        results.errors.push(`${row.code || `Fila ${data.indexOf(row) + 1}`}: ${error.message}`);
+        results.errors.push(`${row.nombre || row.code || `Fila ${data.indexOf(row) + 1}`}: ${error.message}`);
       }
     }
     

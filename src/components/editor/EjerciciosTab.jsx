@@ -280,10 +280,10 @@ export default function EjerciciosTab() {
 
       {showEditor && (
         <ExerciseEditor
-          bloque={ejercicioActual} // Keep original name 'ejercicioActual'
+          ejercicio={ejercicioActual}
           onClose={() => {
             setShowEditor(false);
-            setEjercicioActual(null); // Keep original name 'ejercicioActual'
+            setEjercicioActual(null);
           }}
         />
       )}
