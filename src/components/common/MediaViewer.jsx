@@ -2,6 +2,8 @@ import React, { useEffect } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createPortal } from "react-dom";
+import MediaEmbed from "./MediaEmbed";
+import { MediaKind } from "../utils/media";
 
 export default function MediaViewer({ media, onClose }) {
   useEffect(() => {
@@ -24,7 +26,21 @@ export default function MediaViewer({ media, onClose }) {
   if (!media) return null;
 
   const renderContent = () => {
+    // Si el media tiene un kind de MediaKind (YouTube, Vimeo, etc.), usar MediaEmbed
+    if (media.kind === MediaKind.YOUTUBE || 
+        media.kind === MediaKind.VIMEO || 
+        media.kind === MediaKind.SOUNDCLOUD || 
+        media.kind === MediaKind.DRIVE) {
+      return (
+        <div className="w-[90vw] max-w-4xl">
+          <MediaEmbed url={media.originalUrl || media.url} />
+        </div>
+      );
+    }
+
+    // Para tipos básicos, usar el renderizado original
     switch (media.kind) {
+      case MediaKind.IMAGE:
       case 'image':
         return (
           <img 
@@ -37,6 +53,7 @@ export default function MediaViewer({ media, onClose }) {
             }}
           />
         );
+      case MediaKind.VIDEO:
       case 'video':
         return (
           <video 
@@ -51,6 +68,7 @@ export default function MediaViewer({ media, onClose }) {
             Tu navegador no soporta video.
           </video>
         );
+      case MediaKind.AUDIO:
       case 'audio':
         return (
           <div className="media-viewer-bg p-8">
@@ -67,6 +85,7 @@ export default function MediaViewer({ media, onClose }) {
             </audio>
           </div>
         );
+      case MediaKind.PDF:
       case 'pdf':
         return (
           <iframe 
@@ -79,6 +98,14 @@ export default function MediaViewer({ media, onClose }) {
           />
         );
       default:
+        // Si tiene una URL pero no se reconoce el tipo, intentar usar MediaEmbed
+        if (media.originalUrl || media.url) {
+          return (
+            <div className="w-[90vw] max-w-4xl">
+              <MediaEmbed url={media.originalUrl || media.url} />
+            </div>
+          );
+        }
         return <p className="text-[var(--color-text-primary)]">Tipo de medio no soportado</p>;
     }
   };

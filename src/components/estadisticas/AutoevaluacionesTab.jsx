@@ -25,8 +25,11 @@ const getCalificacionBadge = (cal) => {
  * @param {Object} props
  * @param {Array} props.registros - Array de registros de sesión
  * @param {Array} props.usuarios - Array de usuarios para mostrar nombres
+ * @param {string} props.userIdActual - ID del usuario actual
+ * @param {string} props.userRole - Rol del usuario actual
+ * @param {Function} props.onMediaClick - Callback para abrir medialinks (opcional)
  */
-export default function AutoevaluacionesTab({ registros, usuarios }) {
+export default function AutoevaluacionesTab({ registros, usuarios, userIdActual, userRole, onMediaClick }) {
   const isMobile = useIsMobile();
   const [calificacionFilter, setCalificacionFilter] = useState('all');
   const [soloConNotas, setSoloConNotas] = useState(false);
@@ -171,6 +174,9 @@ export default function AutoevaluacionesTab({ registros, usuarios }) {
         onOpenChange={setModalSesionOpen}
         registroSesion={registroSesionSeleccionado}
         usuarios={usuarios}
+        userIdActual={userIdActual}
+        userRole={userRole}
+        onMediaClick={onMediaClick}
       />
     </>
   );

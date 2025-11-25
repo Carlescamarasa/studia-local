@@ -22,7 +22,7 @@ import { displayName, useEffectiveUser, resolveUserIdActual } from "../component
 import MultiSelect from "../components/ui/MultiSelect";
 import MediaLinksBadges from "../components/common/MediaLinksBadges";
 import MediaLinksInput from "../components/common/MediaLinksInput";
-import MediaViewer from "../components/common/MediaViewer";
+import MediaPreviewModal from "../components/common/MediaPreviewModal";
 import { resolveMedia } from "../components/utils/media";
 import RequireRole from "@/components/auth/RequireRole";
 import Tabs from "@/components/ds/Tabs";
@@ -84,7 +84,9 @@ function EstadisticasPageContent() {
   const [calificacionFilter, setCalificacionFilter] = useState('all');
   const [soloConNotas, setSoloConNotas] = useState(false);
   const [searchEjercicio, setSearchEjercicio] = useState('');
-  const [viewingMedia, setViewingMedia] = useState(null);
+  const [showMediaModal, setShowMediaModal] = useState(false);
+  const [selectedMediaLinks, setSelectedMediaLinks] = useState([]);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
   const [feedbackDrawer, setFeedbackDrawer] = useState(null);
   const [modalSesionOpen, setModalSesionOpen] = useState(false);
   const [registroSesionSeleccionado, setRegistroSesionSeleccionado] = useState(null);
@@ -588,6 +590,15 @@ function EstadisticasPageContent() {
       });
     }
     
+    // Agregar nombre del estudiante a cada feedback
+    resultado = resultado.map(f => {
+      const alumno = usuarios.find(u => u.id === f.alumnoId);
+      return {
+        ...f,
+        alumnoNombre: alumno ? displayName(alumno) : f.alumnoId || 'N/A'
+      };
+    });
+    
     // Ordenar: primero por alumno, luego por fecha descendente
     resultado.sort((a, b) => {
       if (a.alumnoId !== b.alumnoId) {
@@ -599,7 +610,7 @@ function EstadisticasPageContent() {
     });
     
     return resultado;
-  }, [feedbacksSemanal, alumnosSeleccionados, profesoresSeleccionados, periodoInicio, periodoFin, isEstu]);
+  }, [feedbacksSemanal, alumnosSeleccionados, profesoresSeleccionados, periodoInicio, periodoFin, isEstu, usuarios]);
 
   // Mutación para actualizar feedback
   const actualizarFeedbackMutation = useMutation({
@@ -653,26 +664,34 @@ function EstadisticasPageContent() {
     actualizarFeedbackMutation.mutate({ id: feedbackDrawer.id, data });
   };
 
+  // Normalizar media links: acepta strings u objetos con url
+  const normalizeMediaLinks = (rawLinks) => {
+    if (!rawLinks || !Array.isArray(rawLinks)) return [];
+    return rawLinks
+      .map((raw) => {
+        if (typeof raw === 'string') return raw;
+        if (raw && typeof raw === 'object' && raw.url) return raw.url;
+        if (raw && typeof raw === 'object' && raw.href) return raw.href;
+        if (raw && typeof raw === 'object' && raw.link) return raw.link;
+        return '';
+      })
+      .filter((url) => typeof url === 'string' && url.length > 0);
+  };
+
   // Función para manejar clicks en medialinks
-  // MediaLinksBadges pasa un índice, pero MediaViewer espera un objeto {url, kind}
   const handleMediaClick = (mediaLinks, index) => {
-    if (!mediaLinks || !Array.isArray(mediaLinks) || index < 0 || index >= mediaLinks.length) {
-      return;
-    }
+    if (!mediaLinks || !Array.isArray(mediaLinks) || mediaLinks.length === 0) return;
     
-    const url = typeof mediaLinks[index] === 'string' 
-      ? mediaLinks[index] 
-      : (mediaLinks[index]?.url || '');
+    // Normalizar media links
+    const normalizedLinks = normalizeMediaLinks(mediaLinks);
+    if (normalizedLinks.length === 0) return;
     
-    if (!url) return;
+    // Asegurar que el índice esté dentro del rango
+    const safeIndex = Math.max(0, Math.min(index, normalizedLinks.length - 1));
     
-    const media = resolveMedia(url);
-    setViewingMedia({
-      url: media.originalUrl || url,
-      kind: media.kind,
-      embedUrl: media.embedUrl,
-      title: media.title,
-    });
+    setSelectedMediaLinks(normalizedLinks);
+    setSelectedMediaIndex(safeIndex);
+    setShowMediaModal(true);
   };
 
   // Atajos de teclado para el drawer de feedback
@@ -712,7 +731,7 @@ function EstadisticasPageContent() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       // No procesar si hay un modal o drawer abierto
-      if (modalSesionOpen || feedbackDrawer || viewingMedia) return;
+      if (modalSesionOpen || feedbackDrawer || showMediaModal) return;
       
       // No procesar si está en un input o textarea
       if (e.target.matches('input, textarea, select')) return;
@@ -736,7 +755,7 @@ function EstadisticasPageContent() {
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigate, location.state, modalSesionOpen, feedbackDrawer, viewingMedia]);
+  }, [navigate, location.state, modalSesionOpen, feedbackDrawer, showMediaModal]);
 
   const tipoLabels = {
     CA: 'Calentamiento A',
@@ -1133,6 +1152,9 @@ function EstadisticasPageContent() {
           <AutoevaluacionesTab
             registros={registrosFiltradosUnicos}
             usuarios={usuarios}
+            userIdActual={userIdActual}
+            userRole={effectiveUser?.rolPersonalizado}
+            onMediaClick={(mediaLinks, index) => handleMediaClick(mediaLinks, index)}
           />
         )}
 
@@ -1145,6 +1167,7 @@ function EstadisticasPageContent() {
               // Solo ADMIN y PROF pueden editar, y solo el profesor creador o un ADMIN
               return (isAdmin || isProf) && (isAdmin || f.profesorId === userIdActual);
             }}
+            onMediaClick={(mediaLinks, index) => handleMediaClick(mediaLinks, index)}
           />
         )}
 
@@ -1691,10 +1714,16 @@ function EstadisticasPageContent() {
         )}
       </div>
 
-      {viewingMedia && (
-        <MediaViewer 
-          media={viewingMedia}
-          onClose={() => setViewingMedia(null)}
+      {showMediaModal && selectedMediaLinks.length > 0 && (
+        <MediaPreviewModal
+          urls={selectedMediaLinks}
+          initialIndex={selectedMediaIndex || 0}
+          open={showMediaModal}
+          onClose={() => {
+            setShowMediaModal(false);
+            setSelectedMediaLinks([]);
+            setSelectedMediaIndex(0);
+          }}
         />
       )}
 
@@ -1787,6 +1816,9 @@ function EstadisticasPageContent() {
         onOpenChange={setModalSesionOpen}
         registroSesion={registroSesionSeleccionado}
         usuarios={usuarios}
+        userIdActual={userIdActual}
+        userRole={effectiveUser?.rolPersonalizado}
+        onMediaClick={(mediaLinks, index) => handleMediaClick(mediaLinks, index)}
       />
     </div>
   );

@@ -15,8 +15,9 @@ import { formatLocalDate, parseLocalDate } from "./utils";
  * @param {boolean} props.isEstu - Si es estudiante
  * @param {Function} props.onEditFeedback - Callback para editar feedback
  * @param {Function} props.puedeEditar - Función que determina si se puede editar un feedback (opcional)
+ * @param {Function} props.onMediaClick - Callback para abrir medialinks (opcional)
  */
-export default function FeedbackTab({ feedbacks, isEstu, onEditFeedback, puedeEditar }) {
+export default function FeedbackTab({ feedbacks, isEstu, onEditFeedback, puedeEditar, onMediaClick }) {
   const isMobile = useIsMobile();
 
   const columns = [
@@ -48,7 +49,10 @@ export default function FeedbackTab({ feedbacks, isEstu, onEditFeedback, puedeEd
           </p>
           {f.mediaLinks && f.mediaLinks.length > 0 && (
             <div className="mt-1">
-              <MediaLinksBadges mediaLinks={f.mediaLinks} />
+              <MediaLinksBadges 
+                mediaLinks={f.mediaLinks}
+                onMediaClick={onMediaClick ? (index) => onMediaClick(f.mediaLinks, index) : undefined}
+              />
             </div>
           )}
         </div>

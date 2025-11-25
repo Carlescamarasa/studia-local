@@ -14,7 +14,7 @@ import MediaLinksBadges from "../common/MediaLinksBadges";
 import { componentStyles } from "@/design/componentStyles";
 import { Clock, User, Calendar, CheckCircle, XCircle, PlayCircle, Star, BookOpen, Trash2 } from "lucide-react";
 
-export default function ModalSesion({ open, onOpenChange, registroSesion, usuarios, userIdActual, userRole, onDelete }) {
+export default function ModalSesion({ open, onOpenChange, registroSesion, usuarios, userIdActual, userRole, onDelete, onMediaClick }) {
   if (!registroSesion) return null;
 
   const alumno = usuarios.find(u => u.id === registroSesion.alumnoId);
@@ -172,6 +172,7 @@ export default function ModalSesion({ open, onOpenChange, registroSesion, usuari
                 mediaLinks={registroSesion.mediaLinks}
                 compact={true}
                 maxDisplay={5}
+                onMediaClick={onMediaClick ? (index) => onMediaClick(registroSesion.mediaLinks, index) : undefined}
               />
             </div>
           )}
