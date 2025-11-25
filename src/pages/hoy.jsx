@@ -1480,7 +1480,7 @@ function HoyPageContent() {
           className="max-w-[900px] md:max-w-[1000px] mx-auto p-4 md:p-6"
         >
           <Card className="app-card shadow-md">
-            <CardContent className="p-4 md:p-6 space-y-6">
+            <CardContent className="p-3 md:p-4 lg:p-6 space-y-3 md:space-y-4">
           {isAD && (
             <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-primary)] bg-[var(--color-primary-soft)]`}>
               <AlertTriangle className="h-4 w-4 text-[var(--color-primary)]" />
@@ -1492,16 +1492,16 @@ function HoyPageContent() {
 
               {/* Objetivo de logro */}
           {ejercicioActual.indicadorLogro && (
-                <div className="border-b border-[var(--color-border-default)] pb-4">
-                  <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-info)] mb-2`}>💡 Objetivo de logro</p>
-                  <p className={`${componentStyles.typography.bodyText} text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed`}>{ejercicioActual.indicadorLogro}</p>
+                <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4">
+                  <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-info)] mb-1.5 md:mb-2`}>💡 Objetivo de logro</p>
+                  <p className="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed">{ejercicioActual.indicadorLogro}</p>
                 </div>
           )}
 
               {/* Instrucciones */}
           {ejercicioActual.instrucciones && (
-                <div className="border-b border-[var(--color-border-default)] pb-4">
-                  <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] mb-2`}>📋 Instrucciones</p>
+                <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4">
+                  <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] mb-1.5 md:mb-2`}>📋 Instrucciones</p>
                   <p className="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed">
                   {ejercicioActual.instrucciones}
                 </p>
@@ -1510,8 +1510,8 @@ function HoyPageContent() {
 
               {/* Material de la pieza */}
           {!isAD && (isFM ? elementosFM.length > 0 : ((ejercicioActual.media && Object.keys(ejercicioActual.media).length > 0) || (ejercicioActual.mediaLinks && ejercicioActual.mediaLinks.length > 0))) && (
-                <div className="border-b border-[var(--color-border-default)] pb-4 last:border-b-0">
-                  <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] mb-3`}>
+                <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4 last:border-b-0">
+                  <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] mb-2 md:mb-3`}>
                     {isFM ? '🎼 Material de la Pieza' : '📎 Material'}
                   </p>
                   <div className="space-y-4">
