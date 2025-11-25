@@ -51,6 +51,7 @@ import { shouldIgnoreHotkey } from "@/utils/hotkeys";
 import { useHotkeysModal } from "@/hooks/useHotkeysModal.jsx";
 
 import RequireRole from "@/components/auth/RequireRole";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // --- Helpers de fechas locales (para formateo de semana) ---
 const startOfMonday = (date) => {
@@ -1339,41 +1340,51 @@ function HoyPageContent() {
             {/* Fila secundaria - Solo en modo expandido: Breadcrumb de ejercicios */}
             {!timerCollapsed && sesionActiva && listaEjecucion.length > 0 && (
               <div className="max-w-5xl mx-auto px-4 pb-3 border-t border-[var(--color-border-default)]/50 pt-2">
-                <div className="flex items-center gap-1.5 pb-2 overflow-x-auto scrollbar-hide">
-                  {listaEjecucion.map((ej, idx) => {
-                    const isActive = idx === indiceActual;
-                    const isCompleted = completados.has(idx);
-                    const isOmitted = omitidos.has(idx);
-                    
-                    // Formatear label: código corto
-                    let label = ej.tipo;
-                    if (ej.esRonda && ej.rondaIdx !== undefined && ej.repeticion !== undefined) {
-                      label = `${ej.tipo} R${ej.rondaIdx + 1}-${ej.repeticion}`;
-                    }
-                    
-                    return (
-                      <React.Fragment key={idx}>
-                        {idx > 0 && <ChevronRight className="w-3 h-3 text-[var(--color-text-muted)] shrink-0" />}
-                        <div
-                          className={cn(
-                            "px-2 py-0.5 rounded text-xs font-medium shrink-0 transition-all whitespace-nowrap flex items-center gap-1",
-                            isActive 
-                              ? "bg-[var(--color-primary)] text-white shadow-sm" 
-                              : isCompleted
-                              ? "bg-[var(--color-success)]/20 text-[var(--color-success)] border border-[var(--color-success)]/30"
-                              : isOmitted
-                              ? "bg-[var(--color-warning)]/20 text-[var(--color-warning)] border border-[var(--color-warning)]/30"
-                              : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] border border-[var(--color-border-default)]"
-                          )}
-                          title={ej.nombre || `${ej.tipo}${ej.esRonda ? ` - Ronda ${ej.rondaIdx + 1}, Repetición ${ej.repeticion}/${ej.totalRepeticiones}` : ''}`}
-                        >
-                          {isCompleted && <CheckCircle className="w-3 h-3" />}
-                          <span>{label}</span>
-                        </div>
-                      </React.Fragment>
-                    );
-                  })}
-                </div>
+                <TooltipProvider>
+                  <div className="flex items-center gap-1.5 pb-2 overflow-x-auto scrollbar-hide">
+                    {listaEjecucion.map((ej, idx) => {
+                      const isActive = idx === indiceActual;
+                      const isCompleted = completados.has(idx);
+                      const isOmitted = omitidos.has(idx);
+                      
+                      // Formatear label: código corto
+                      let label = ej.tipo;
+                      if (ej.esRonda && ej.rondaIdx !== undefined && ej.repeticion !== undefined) {
+                        label = `${ej.tipo} R${ej.rondaIdx + 1}-${ej.repeticion}`;
+                      }
+                      
+                      const nombreEjercicio = ej.nombre || `${ej.tipo}${ej.esRonda ? ` - Ronda ${ej.rondaIdx + 1}, Repetición ${ej.repeticion}/${ej.totalRepeticiones}` : ''}`;
+                      
+                      return (
+                        <React.Fragment key={idx}>
+                          {idx > 0 && <ChevronRight className="w-3 h-3 text-[var(--color-text-muted)] shrink-0" />}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div
+                                className={cn(
+                                  "px-2 py-0.5 rounded text-xs font-medium shrink-0 transition-all whitespace-nowrap flex items-center gap-1 cursor-default",
+                                  isActive 
+                                    ? "bg-[var(--color-primary)] text-white shadow-sm" 
+                                    : isCompleted
+                                    ? "bg-[var(--color-success)]/20 text-[var(--color-success)] border border-[var(--color-success)]/30"
+                                    : isOmitted
+                                    ? "bg-[var(--color-warning)]/20 text-[var(--color-warning)] border border-[var(--color-warning)]/30"
+                                    : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] border border-[var(--color-border-default)]"
+                                )}
+                              >
+                                {isCompleted && <CheckCircle className="w-3 h-3" />}
+                                <span>{label}</span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">{nombreEjercicio}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                </TooltipProvider>
                 {/* Nombre corto del ejercicio actual (opcional) */}
                 {ejercicioActual?.nombre && (
                   <div className="px-2">
@@ -1706,42 +1717,52 @@ function HoyPageContent() {
         <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-card z-30 pb-[env(safe-area-inset-bottom,0px)]">
           <div className="max-w-5xl mx-auto px-3 py-2">
             {/* Breadcrumb compacto */}
-            <div className="flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide -mx-3 px-3">
-              {listaEjecucion.slice(Math.max(0, indiceActual - 2), Math.min(listaEjecucion.length, indiceActual + 3)).map((ej, idx) => {
-                const realIdx = Math.max(0, indiceActual - 2) + idx;
-                const isActive = realIdx === indiceActual;
-                const isCompleted = completados.has(realIdx);
-                const isOmitted = omitidos.has(realIdx);
-                
-                // Formatear label para el breadcrumb
-                let label = ej.tipo;
-                if (ej.esRonda && ej.rondaIdx !== undefined && ej.repeticion !== undefined) {
-                  // Mostrar: "TC R1-2" donde R1 es la ronda y 2 es la repetición actual
-                  label = `${ej.tipo} R${ej.rondaIdx + 1}-${ej.repeticion}`;
-                }
-                
-                return (
-                  <React.Fragment key={realIdx}>
-                    {idx > 0 && <ChevronRight className="w-3 h-3 text-[var(--color-text-muted)] shrink-0" />}
-                    <div
-                      className={cn(
-                        "px-2 py-0.5 rounded text-xs font-medium shrink-0 transition-all whitespace-nowrap",
-                        isActive 
-                          ? "bg-[var(--color-primary)] text-white shadow-sm" 
-                          : isCompleted
-                          ? "bg-[var(--color-success)]/20 text-[var(--color-success)] border border-[var(--color-success)]/30"
-                          : isOmitted
-                          ? "bg-[var(--color-warning)]/20 text-[var(--color-warning)] border border-[var(--color-warning)]/30"
-                          : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] border border-[var(--color-border-default)]"
-                      )}
-                      title={ej.nombre || `${ej.tipo}${ej.esRonda ? ` - Ronda ${ej.rondaIdx + 1}, Repetición ${ej.repeticion}/${ej.totalRepeticiones}` : ''}`}
-                    >
-                      {label}
-                    </div>
-                  </React.Fragment>
-                );
-              })}
-            </div>
+            <TooltipProvider>
+              <div className="flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide -mx-3 px-3">
+                {listaEjecucion.slice(Math.max(0, indiceActual - 2), Math.min(listaEjecucion.length, indiceActual + 3)).map((ej, idx) => {
+                  const realIdx = Math.max(0, indiceActual - 2) + idx;
+                  const isActive = realIdx === indiceActual;
+                  const isCompleted = completados.has(realIdx);
+                  const isOmitted = omitidos.has(realIdx);
+                  
+                  // Formatear label para el breadcrumb
+                  let label = ej.tipo;
+                  if (ej.esRonda && ej.rondaIdx !== undefined && ej.repeticion !== undefined) {
+                    // Mostrar: "TC R1-2" donde R1 es la ronda y 2 es la repetición actual
+                    label = `${ej.tipo} R${ej.rondaIdx + 1}-${ej.repeticion}`;
+                  }
+                  
+                  const nombreEjercicio = ej.nombre || `${ej.tipo}${ej.esRonda ? ` - Ronda ${ej.rondaIdx + 1}, Repetición ${ej.repeticion}/${ej.totalRepeticiones}` : ''}`;
+                  
+                  return (
+                    <React.Fragment key={realIdx}>
+                      {idx > 0 && <ChevronRight className="w-3 h-3 text-[var(--color-text-muted)] shrink-0" />}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div
+                            className={cn(
+                              "px-2 py-0.5 rounded text-xs font-medium shrink-0 transition-all whitespace-nowrap cursor-default",
+                              isActive 
+                                ? "bg-[var(--color-primary)] text-white shadow-sm" 
+                                : isCompleted
+                                ? "bg-[var(--color-success)]/20 text-[var(--color-success)] border border-[var(--color-success)]/30"
+                                : isOmitted
+                                ? "bg-[var(--color-warning)]/20 text-[var(--color-warning)] border border-[var(--color-warning)]/30"
+                                : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] border border-[var(--color-border-default)]"
+                            )}
+                          >
+                            {label}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">{nombreEjercicio}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
 
             {/* Controles principales - Distribución 19-2-29-2-29-2-19 con gaps */}
             <div className="flex items-center w-full gap-[2%] mb-2">
