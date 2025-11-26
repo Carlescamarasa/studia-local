@@ -311,53 +311,55 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
           {/* Contenido del medio */}
           <div className="relative flex-1 overflow-y-auto">
             <div className="p-4 lg:p-6">
-              {/* Navegación - Solo si hay múltiples medios */}
-              {hasMultiple && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handlePrevious}
-                    className="absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-[var(--color-surface-elevated)]/95 hover:bg-[var(--color-surface-elevated)] shadow-card text-[var(--color-text-primary)]"
-                    aria-label="Anterior"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleNext}
-                    className="absolute right-2 lg:right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-[var(--color-surface-elevated)]/95 hover:bg-[var(--color-surface-elevated)] shadow-card text-[var(--color-text-primary)]"
-                    aria-label="Siguiente"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </Button>
-                </>
-              )}
-
               {/* Medio */}
               <div className="w-full">
                 <MediaEmbed url={currentUrl} />
               </div>
             </div>
 
-            {/* Indicadores (si hay múltiples) */}
-            {hasMultiple && normalizedUrls.length <= 10 && (
-              <div className="px-4 lg:px-6 pb-4">
-                <div className="flex gap-2 justify-center flex-wrap">
-                  {normalizedUrls.map((url, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setCurrentIndex(idx)}
-                      className={`h-2 rounded-full transition-all ${
-                        idx === currentIndex 
-                          ? 'bg-[var(--color-primary)] w-6' 
-                          : 'bg-[var(--color-border-default)] hover:bg-[var(--color-border-strong)] w-2'
-                      }`}
-                      aria-label={`Ir a medio ${idx + 1}`}
-                    />
-                  ))}
+            {/* Navegación e indicadores (si hay múltiples) */}
+            {hasMultiple && (
+              <div className="px-4 lg:px-6 pb-3 border-t border-[var(--color-border-default)] pt-3">
+                <div className="flex items-center justify-center gap-3">
+                  {/* Botón Anterior */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handlePrevious}
+                    className="h-8 w-8 rounded-lg"
+                    aria-label="Anterior"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  
+                  {/* Indicadores */}
+                  {normalizedUrls.length <= 10 && (
+                    <div className="flex gap-1.5 items-center">
+                      {normalizedUrls.map((url, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setCurrentIndex(idx)}
+                          className={`h-1.5 rounded-full transition-all ${
+                            idx === currentIndex 
+                              ? 'bg-[var(--color-primary)] w-6' 
+                              : 'bg-[var(--color-border-default)] hover:bg-[var(--color-border-strong)] w-1.5'
+                          }`}
+                          aria-label={`Ir a medio ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Botón Siguiente */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleNext}
+                    className="h-8 w-8 rounded-lg"
+                    aria-label="Siguiente"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             )}
