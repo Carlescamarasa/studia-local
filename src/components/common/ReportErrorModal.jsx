@@ -14,6 +14,8 @@ import { componentStyles } from '@/design/componentStyles';
 import { supabase } from '@/lib/supabaseClient';
 import { createErrorReport } from '@/api/errorReportsAPI';
 import ScreenshotEditor from './ScreenshotEditor';
+import MediaUploadSection from './MediaUploadSection';
+import { uploadVideoToYouTube } from '@/utils/uploadVideoToYouTube';
 
 const CATEGORIES = [
   {
@@ -68,6 +70,11 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   const recordingTimerRef = useRef(null);
   
   const [isEditing, setIsEditing] = useState(false);
+
+  // Estados para video y mediaLinks
+  const [videoFile, setVideoFile] = useState(null);
+  const [mediaLinks, setMediaLinks] = useState([]);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
 
   // Capturar logs recientes de la consola
   const captureConsoleLogs = () => {
@@ -332,8 +339,45 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         audioUrl = await uploadAudio(audioRecording.blob);
       }
 
+      // Subir video si existe
+      let videoUrl = null;
+      if (videoFile) {
+        setUploadingVideo(true);
+        try {
+          const uploadResult = await uploadVideoToYouTube(videoFile, {
+            contexto: 'error_report',
+            user_id: user?.id,
+            user_nombre: user?.email || 'Usuario',
+            comentarios: description.trim() || undefined,
+          });
+
+          if (uploadResult.ok && uploadResult.videoUrl) {
+            videoUrl = uploadResult.videoUrl;
+          } else {
+            throw new Error(uploadResult.error || 'Error al subir el vídeo');
+          }
+        } catch (error) {
+          console.error('[ReportErrorModal] Error subiendo vídeo:', error);
+          toast.error(`Error al subir el vídeo: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+          setUploadingVideo(false);
+          setIsSubmitting(false);
+          return;
+        } finally {
+          setUploadingVideo(false);
+        }
+      }
+
       // Capturar contexto (usar la función memoizada)
       const context = captureContext();
+      
+      // Agregar mediaLinks al contexto (video + enlaces multimedia manuales)
+      const finalMediaLinks = [...mediaLinks];
+      if (videoUrl) {
+        finalMediaLinks.push(videoUrl);
+      }
+      if (finalMediaLinks.length > 0) {
+        context.mediaLinks = finalMediaLinks;
+      }
 
       // Crear reporte usando la API
       console.log('[ReportErrorModal] Enviando reporte...', {
@@ -366,6 +410,8 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       setScreenshot(null);
       setAudioRecording(null);
       setRecordingTime(0);
+      setVideoFile(null);
+      setMediaLinks([]);
       onOpenChange(false);
     } catch (error) {
       console.error('[ReportErrorModal] Error enviando reporte:', {
@@ -712,6 +758,17 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
               </div>
             )}
           </div>
+
+          {/* Video y enlaces multimedia */}
+          <MediaUploadSection
+            videoFile={videoFile}
+            setVideoFile={setVideoFile}
+            mediaLinks={mediaLinks}
+            setMediaLinks={setMediaLinks}
+            uploadingVideo={uploadingVideo}
+            disabled={isSubmitting}
+            videoId="video-error-report"
+          />
         </div>
 
         <DialogFooter>
@@ -725,7 +782,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || !category || !description.trim()}
+            disabled={isSubmitting || uploadingVideo || !category || !description.trim()}
             className={`${componentStyles.buttons.primary} gap-2`}
           >
             {isSubmitting ? (

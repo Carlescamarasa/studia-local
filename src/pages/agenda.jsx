@@ -18,10 +18,11 @@ import { toast } from "sonner";
 import { displayName, calcularLunesSemanaISO, calcularOffsetSemanas, useEffectiveUser, resolveUserIdActual, isoWeekNumberLocal } from "../components/utils/helpers";
 import { shouldIgnoreHotkey } from "@/utils/hotkeys";
 import { usePeriodHeaderState, PeriodHeaderButton, PeriodHeaderPanel } from "../components/common/PeriodHeader";
-import MediaLinksInput from "../components/common/MediaLinksInput";
 import MediaLinksBadges from "../components/common/MediaLinksBadges";
 import MediaViewer from "../components/common/MediaViewer";
 import MediaPreviewModal from "../components/common/MediaPreviewModal";
+import MediaUploadSection from "../components/common/MediaUploadSection";
+import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
 import RequireRole from "@/components/auth/RequireRole";
 import SessionContentView from "../components/study/SessionContentView";
 import { calcularTiempoSesion } from "../components/study/sessionSequence";
@@ -59,6 +60,7 @@ function AgendaPageContent() {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [feedbackDrawer, setFeedbackDrawer] = useState(null);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [viewingMedia, setViewingMedia] = useState(null);
   const [showMediaPreview, setShowMediaPreview] = useState(false);
   const [previewUrls, setPreviewUrls] = useState([]);
@@ -341,6 +343,7 @@ function AgendaPageContent() {
         alumnoId: existente.alumnoId,
         notaProfesor: existente.notaProfesor || '',
         mediaLinks: existente.mediaLinks || [],
+        videoFile: null,
         existingId: existente.id,
       });
     } else {
@@ -348,6 +351,7 @@ function AgendaPageContent() {
         alumnoId: alumno.id,
         notaProfesor: '',
         mediaLinks: [],
+        videoFile: null,
         existingId: null,
       });
     }
@@ -359,12 +363,44 @@ function AgendaPageContent() {
       return;
     }
 
+    let finalMediaLinks = [...(feedbackDrawer.mediaLinks || [])];
+
+    // Subir video si existe
+    if (feedbackDrawer.videoFile) {
+      setUploadingVideo(true);
+      try {
+        const alumno = usuarios.find(u => u.id === feedbackDrawer.alumnoId);
+        const uploadResult = await uploadVideoToYouTube(feedbackDrawer.videoFile, {
+          contexto: 'feedback_profesor',
+          profesor_id: userIdActual,
+          profesor_nombre: effectiveUser?.full_name || effectiveUser?.email || 'Profesor',
+          alumno_id: feedbackDrawer.alumnoId,
+          alumno_nombre: alumno ? displayName(alumno) : feedbackDrawer.alumnoId,
+          semana_inicio_iso: semanaActualISO,
+          comentarios: feedbackDrawer.notaProfesor.trim() || undefined,
+        });
+
+        if (uploadResult.ok && uploadResult.videoUrl) {
+          finalMediaLinks.push(uploadResult.videoUrl);
+        } else {
+          throw new Error(uploadResult.error || 'Error al subir el vídeo');
+        }
+      } catch (error) {
+        console.error('[agenda.jsx] Error subiendo vídeo:', error);
+        toast.error(`Error al subir el vídeo: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+        setUploadingVideo(false);
+        return;
+      } finally {
+        setUploadingVideo(false);
+      }
+    }
+
     const data = {
       alumnoId: feedbackDrawer.alumnoId,
       profesorId: userIdActual,
       semanaInicioISO: semanaActualISO,
       notaProfesor: feedbackDrawer.notaProfesor.trim(),
-      mediaLinks: feedbackDrawer.mediaLinks || [],
+      mediaLinks: finalMediaLinks,
     };
 
 
@@ -1250,10 +1286,15 @@ function AgendaPageContent() {
                   </p>
                 </div>
 
-                <MediaLinksInput
-                  value={feedbackDrawer.mediaLinks}
-                  onChange={(links) => setFeedbackDrawer({...feedbackDrawer, mediaLinks: links})}
+                <MediaUploadSection
+                  videoFile={feedbackDrawer.videoFile}
+                  setVideoFile={(file) => setFeedbackDrawer({...feedbackDrawer, videoFile: file})}
+                  mediaLinks={feedbackDrawer.mediaLinks || []}
+                  setMediaLinks={(links) => setFeedbackDrawer({...feedbackDrawer, mediaLinks: links})}
+                  uploadingVideo={uploadingVideo}
+                  disabled={crearFeedbackMutation.isPending || actualizarFeedbackMutation.isPending}
                   onPreview={(idx) => handlePreviewMedia(idx, feedbackDrawer.mediaLinks)}
+                  videoId="video-feedback-agenda"
                 />
               </div>
 
@@ -1265,7 +1306,7 @@ function AgendaPageContent() {
                   <Button 
                     variant="primary"
                     onClick={guardarFeedback} 
-                    disabled={crearFeedbackMutation.isPending || actualizarFeedbackMutation.isPending} 
+                    disabled={crearFeedbackMutation.isPending || actualizarFeedbackMutation.isPending || uploadingVideo} 
                     className={`flex-1 ${componentStyles.buttons.primary}`}
                   >
                     <Save className="w-4 h-4 mr-2" />
