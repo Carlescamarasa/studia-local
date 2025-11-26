@@ -233,11 +233,7 @@ function EstudiantesPageContent() {
                   label: 'Enviar enlace mágico',
                   icon: Mail,
                   onClick: async (selectedIds) => {
-                    console.log('[BulkAction] IDs seleccionados:', selectedIds);
-                    console.log('[BulkAction] Estudiantes filtrados:', estudiantesFiltrados.map(u => ({ id: u.id, email: u.email })));
-                    
                     const estudiantesSeleccionados = estudiantesFiltrados.filter(u => selectedIds.includes(u.id));
-                    console.log('[BulkAction] Estudiantes encontrados:', estudiantesSeleccionados.map(u => ({ id: u.id, email: u.email })));
                     
                     const conEmail = estudiantesSeleccionados.filter(u => u.email);
                     
@@ -251,7 +247,6 @@ function EstudiantesPageContent() {
 
                     for (const estudiante of conEmail) {
                       try {
-                        console.log('[BulkAction] Enviando magic link a:', { id: estudiante.id, email: estudiante.email });
                         await sendMagicLink(estudiante.id, estudiante.email);
                         successCount++;
                       } catch (error) {
@@ -272,11 +267,7 @@ function EstudiantesPageContent() {
                   label: 'Enviar recuperación de contraseña',
                   icon: KeyRound,
                   onClick: async (selectedIds) => {
-                    console.log('[BulkAction] IDs seleccionados:', selectedIds);
-                    console.log('[BulkAction] Estudiantes filtrados:', estudiantesFiltrados.map(u => ({ id: u.id, email: u.email })));
-                    
                     const estudiantesSeleccionados = estudiantesFiltrados.filter(u => selectedIds.includes(u.id));
-                    console.log('[BulkAction] Estudiantes encontrados:', estudiantesSeleccionados.map(u => ({ id: u.id, email: u.email })));
                     
                     const conEmail = estudiantesSeleccionados.filter(u => u.email);
                     
@@ -290,7 +281,6 @@ function EstudiantesPageContent() {
 
                     for (const estudiante of conEmail) {
                       try {
-                        console.log('[BulkAction] Enviando reset password a:', { id: estudiante.id, email: estudiante.email });
                         await sendResetPassword(estudiante.id, estudiante.email);
                         successCount++;
                       } catch (error) {

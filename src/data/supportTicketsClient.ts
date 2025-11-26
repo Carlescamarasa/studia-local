@@ -174,20 +174,6 @@ export async function createMensaje(input: CreateSupportMensajeInput): Promise<S
     dbData.texto = 'Contenido multimedia adjunto';
   }
   
-  // Log de debugging antes de insertar
-  console.log('[supportTicketsClient] Creando mensaje:', {
-    ticket_id: dbData.ticket_id,
-    autor_id: dbData.autor_id,
-    rol_autor: dbData.rol_autor,
-    rol_autor_type: typeof dbData.rol_autor,
-    texto_length: dbData.texto?.length || 0,
-    texto_preview: dbData.texto?.substring(0, 50) || '',
-    media_links_count: dbData.media_links?.length || 0,
-    media_links: dbData.media_links,
-    media_links_type: typeof dbData.media_links,
-    media_links_is_array: Array.isArray(dbData.media_links),
-  });
-  
   // Serializar el objeto completo para ver exactamente qué se envía
   const payloadToSend = {
     ticket_id: dbData.ticket_id,
@@ -196,8 +182,6 @@ export async function createMensaje(input: CreateSupportMensajeInput): Promise<S
     texto: dbData.texto,
     media_links: dbData.media_links,
   };
-  
-  console.log('[supportTicketsClient] Payload que se enviará a Supabase:', JSON.stringify(payloadToSend, null, 2));
   
   const { data, error } = await supabase
     .from('support_mensajes')
@@ -218,11 +202,6 @@ export async function createMensaje(input: CreateSupportMensajeInput): Promise<S
     });
     throw error;
   }
-  
-  console.log('[supportTicketsClient] Mensaje creado exitosamente:', {
-    mensaje_id: data?.id,
-    ticket_id: dbData.ticket_id,
-  });
   
   return mapMensajeFromDB(data);
 }
@@ -405,7 +384,6 @@ export async function getPendingSupportTicketsCountsForAdmin(): Promise<{ total:
  * Pendientes = estado != 'cerrado' AND alumno_id = estudianteId
  */
 export async function getPendingSupportTicketsCountForEstu(estudianteId: string): Promise<number> {
-  console.log('[supportTicketsClient] Contando tickets pendientes para ESTU:', { estudianteId });
   
   const { count, error } = await supabase
     .from('support_tickets')
@@ -426,11 +404,6 @@ export async function getPendingSupportTicketsCountForEstu(estudianteId: string)
     throw error;
   }
   
-  console.log('[supportTicketsClient] Conteo obtenido para ESTU:', {
-    estudianteId,
-    count: count || 0,
-  });
-  
   return count || 0;
 }
 
@@ -439,7 +412,6 @@ export async function getPendingSupportTicketsCountForEstu(estudianteId: string)
  * No leídos = tickets donde la última respuesta es del profesor (el estudiante debe leer/responder)
  */
 export async function getPendingSupportTicketsCountsForEstu(estudianteId: string): Promise<{ total: number; unread: number }> {
-  console.log('[supportTicketsClient] Contando tickets pendientes (total y no leídos) para ESTU:', { estudianteId });
   
   // Total pendientes
   const { count: total, error: totalError } = await supabase
@@ -465,12 +437,6 @@ export async function getPendingSupportTicketsCountsForEstu(estudianteId: string
     console.error('[supportTicketsClient] Error contando tickets no leídos para ESTU:', unreadError);
     throw unreadError;
   }
-  
-  console.log('[supportTicketsClient] Conteo obtenido para ESTU:', {
-    estudianteId,
-    total: total || 0,
-    unread: unread || 0,
-  });
   
   return { total: total || 0, unread: unread || 0 };
 }
@@ -532,14 +498,6 @@ export async function getPendingSupportTicketsCountForProf(profesorId: string): 
   // Nota: Puede haber duplicados si un ticket tiene profesor_id = profesorId Y alumno_id en la lista
   // pero en la práctica esto es raro y el margen de error es aceptable
   const total = (count1 || 0) + count2;
-  
-  console.log('[supportTicketsClient] Conteo de tickets pendientes para PROF:', {
-    profesorId,
-    alumnosCount: alumnoIds.length,
-    countByProfesorId: count1 || 0,
-    countByAlumnoId: count2,
-    total,
-  });
 
   return total;
 }
@@ -622,13 +580,6 @@ export async function getPendingSupportTicketsCountsForProf(profesorId: string):
   }
 
   const unread = (unread1 || 0) + unread2;
-
-  console.log('[supportTicketsClient] Conteo de tickets pendientes (total y no leídos) para PROF:', {
-    profesorId,
-    alumnosCount: alumnoIds.length,
-    total,
-    unread,
-  });
 
   return { total, unread };
 }

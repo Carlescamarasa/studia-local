@@ -24,6 +24,7 @@ import {
   Bug,
   MessageSquare,
   HelpCircle,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ds";
@@ -56,6 +57,7 @@ import { SupportTicketsBadge } from "@/components/common/SupportTicketsBadge";
 import { shouldIgnoreHotkey, matchesHotkey, getHotkeyById, HOTKEYS_CONFIG, isMac } from "@/utils/hotkeys";
 import HotkeysModal from "@/components/common/HotkeysModal";
 import { HotkeysModalProvider, useHotkeysModal } from "@/hooks/useHotkeysModal.jsx";
+import { useAppVersion } from "@/hooks/useAppVersion";
 
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
@@ -69,6 +71,7 @@ const navigationByRole = {
     { title: "Estadísticas", url: "/estadisticas", icon: Activity, group: "Profesor" },
     { title: "Reportes", url: "/reportes", icon: Bug, group: "Admin" },
     { title: "Panel de Diseño", url: "/design", icon: Palette, group: "Admin" },
+    { title: "Versión y Registro", url: "/admin/version", icon: Tag, group: "Admin" },
     { title: "Tests & Seeds", url: "/testseed", icon: Settings, group: "Admin" },
     { title: "Importar y Exportar", url: "/import-export", icon: FileDown, group: "Admin" },
   ],
@@ -113,6 +116,7 @@ function LayoutContent() {
   const toggleLockRef = useRef(0);
   const headerToggleButtonRef = useRef(null);
   const { design, setDesignPartial } = useDesign();
+  const { currentVersion } = useAppVersion();
 
   const appName = getAppName();
 
@@ -455,6 +459,7 @@ function LayoutContent() {
     '/semana': ['ESTU'],
     '/estadisticas': ['ESTU', 'PROF', 'ADMIN'],
     '/design': ['ADMIN'],
+    '/admin/version': ['ADMIN'],
     '/testseed': ['ADMIN'],
     '/import-export': ['ADMIN'],
     '/soporte': ['ESTU'],
@@ -730,7 +735,15 @@ function LayoutContent() {
           {/* Footer global - centrado con nombre de app */}
           <footer className="border-t border-[var(--color-border-default)] bg-card text-xs text-[var(--color-text-secondary)] mt-auto">
             <div className="max-w-7xl mx-auto px-4 py-4 md:py-5 flex flex-wrap items-center justify-center gap-2 text-center">
-              <span>{appName} © {new Date().getFullYear()}</span>
+              <span>
+                {appName}
+                {currentVersion?.version && (
+                  <span className="ml-1.5 text-[var(--color-text-secondary)]">
+                    {currentVersion.version}
+                  </span>
+                )}
+                {' '}© {new Date().getFullYear()}
+              </span>
               <span className="opacity-40">-</span>
               <a
                 href="https://latrompetasonara.com"

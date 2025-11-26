@@ -380,14 +380,6 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       }
 
       // Crear reporte usando la API
-      console.log('[ReportErrorModal] Enviando reporte...', {
-        userId: user?.id || null,
-        category,
-        description: description.trim(),
-        hasScreenshot: !!screenshotUrl,
-        hasAudio: !!audioUrl,
-      });
-      
       const report = await createErrorReport({
         userId: user?.id || null,
         category: category,
@@ -396,8 +388,6 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         audioUrl: audioUrl,
         context: context,
       });
-
-      console.log('[ReportErrorModal] Reporte creado exitosamente:', report.id);
 
       toast.success('✅ Reporte enviado correctamente. ¡Gracias por tu ayuda!');
       
@@ -474,7 +464,6 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   // Escuchar eventos para abrir modal
   useEffect(() => {
     const handleOpenReport = (event) => {
-      console.log('[ReportErrorModal] Evento open-error-report recibido:', event.detail);
       if (event.detail?.error) {
         const errorMessage = event.detail.error?.message || event.detail.error?.toString || String(event.detail.error || '');
         setCategory(event.detail.category || 'algo_no_funciona');

@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import RequireAuth from "@/components/auth/RequireAuth";
 
 // Lazy load de páginas para code-splitting
@@ -35,6 +35,7 @@ const DebugSubidaYT = lazy(() => import("@/pages/debug/DebugSubidaYTPage.jsx"));
 const Soporte = lazy(() => import("@/pages/soporte.jsx"));
 const SoporteProf = lazy(() => import("@/pages/soporte-prof.jsx"));
 const Ayuda = lazy(() => import("@/pages/ayuda.jsx"));
+const AppVersion = lazy(() => import("@/pages/admin/AppVersion.jsx"));
 
 // Componente de carga
 const PageLoader = () => (
@@ -97,6 +98,8 @@ export default function AppRouter() {
           <Route path="soporte" element={<Soporte />} />
           <Route path="soporte-prof" element={<SoporteProf />} />
           <Route path="ayuda" element={<Ayuda />} />
+          <Route path="version" element={<Navigate to="/admin/version" replace />} />
+          <Route path="admin/version" element={<AppVersion />} />
         </Route>
       </Routes>
     </Suspense>

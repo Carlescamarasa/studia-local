@@ -76,26 +76,16 @@ export function AuthProvider({ children }) {
 
     // Evitar múltiples llamadas simultáneas para el mismo usuario
     if (fetchingProfileRef.current && lastProfileUserIdRef.current === userId) {
-      if (import.meta.env.DEV) {
-        console.log('[AuthProvider] fetchProfile ya en progreso para userId:', userId);
-      }
       return;
     }
 
     // Evitar llamadas si ya tenemos el perfil cargado para este usuario
     if (lastProfileUserIdRef.current === userId && authState.profile?.id === userId) {
-      if (import.meta.env.DEV) {
-        console.log('[AuthProvider] Perfil ya cargado para userId:', userId);
-      }
       return;
     }
 
     fetchingProfileRef.current = true;
     lastProfileUserIdRef.current = userId;
-
-    if (import.meta.env.DEV) {
-      console.log(`[AuthProvider] ${isInitialLoad ? 'Carga inicial' : 'Refetch'} de perfil para userId:`, userId);
-    }
 
     try {
       // Petición específica a la tabla profiles
@@ -190,7 +180,6 @@ export function AuthProvider({ children }) {
       }));
       
       if (import.meta.env.DEV) {
-        console.log('[AuthProvider] Perfil cargado exitosamente para userId:', userId);
       }
       
       fetchingProfileRef.current = false;
@@ -360,7 +349,6 @@ export function AuthProvider({ children }) {
             // Solo recargar perfil si el usuario cambió (muy raro en TOKEN_REFRESHED)
             if (session.user.id && lastProfileUserIdRef.current !== session.user.id) {
               if (import.meta.env.DEV) {
-                console.log('[AuthProvider] TOKEN_REFRESHED: usuario cambió, recargando perfil');
               }
               fetchProfile(session.user.id, false).catch(err => {
                 if (import.meta.env.DEV) {
@@ -418,7 +406,6 @@ export function AuthProvider({ children }) {
       // Obtener perfil solo si el usuario cambió (nuevo login)
       if (session?.user?.id && userIdChanged) {
         if (import.meta.env.DEV) {
-          console.log('[AuthProvider] onAuthStateChange: usuario cambió, cargando perfil:', session.user.id);
         }
         fetchProfile(session.user.id, !authState.initialProfileLoaded).catch(err => {
           if (import.meta.env.DEV) {
@@ -561,7 +548,6 @@ export function AuthProvider({ children }) {
         // Solo recargar perfil si cambió el usuario (muy raro en verificación periódica)
         if (session?.user?.id && lastProfileUserIdRef.current !== session.user.id) {
           if (import.meta.env.DEV) {
-            console.log('[AuthProvider] Verificación periódica: usuario cambió, recargando perfil');
           }
           fetchProfile(session.user.id, false).catch(err => {
             if (import.meta.env.DEV) {
