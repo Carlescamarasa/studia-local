@@ -33,6 +33,7 @@ import {
 import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
 import MediaPreviewModal from "@/components/common/MediaPreviewModal";
+import MediaUploadSection from "@/components/common/MediaUploadSection";
 import { useAuth } from "@/auth/AuthProvider";
 
 function SoporteProfPageContent() {
@@ -45,6 +46,7 @@ function SoporteProfPageContent() {
   const [searchText, setSearchText] = useState("");
   const [messageText, setMessageText] = useState("");
   const [videoFile, setVideoFile] = useState(null);
+  const [mediaLinks, setMediaLinks] = useState([]);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(null);
   const [selectedMediaLinks, setSelectedMediaLinks] = useState([]);
@@ -160,6 +162,7 @@ function SoporteProfPageContent() {
       queryClient.invalidateQueries({ queryKey: ['support-tickets-prof'] });
       setMessageText("");
       setVideoFile(null);
+      setMediaLinks([]);
       toast.success('Mensaje enviado');
     },
     onError: (error) => {
@@ -180,15 +183,15 @@ function SoporteProfPageContent() {
   const handleSendMessage = async () => {
     if (!selectedTicketId || !user || !profile) return;
 
-    if (!messageText.trim() && !videoFile) {
-      toast.error('Por favor, escribe un mensaje o adjunta un vídeo');
+    if (!messageText.trim() && !videoFile && mediaLinks.length === 0) {
+      toast.error('Por favor, escribe un mensaje o adjunta contenido multimedia');
       return;
     }
 
     setUploadingVideo(true);
 
     try {
-      let mediaLinks = [];
+      let finalMediaLinks = [...mediaLinks]; // Incluir enlaces multimedia manuales
 
       // Si hay vídeo, subirlo primero
       if (videoFile) {
@@ -203,7 +206,7 @@ function SoporteProfPageContent() {
           });
 
           if (uploadResult.ok && uploadResult.videoUrl) {
-            mediaLinks.push(uploadResult.videoUrl);
+            finalMediaLinks.push(uploadResult.videoUrl);
           } else {
             throw new Error(uploadResult.error || 'Error al subir el vídeo');
           }
@@ -220,8 +223,8 @@ function SoporteProfPageContent() {
         ticketId: selectedTicketId,
         autorId: user.id,
         rolAutor: isAdmin ? 'admin' : 'profesor', // ADMIN usa 'admin', PROF usa 'profesor'
-        texto: messageText.trim() || (videoFile ? 'Vídeo adjunto' : ''),
-        mediaLinks,
+        texto: messageText.trim() || (videoFile || mediaLinks.length > 0 ? 'Contenido multimedia adjunto' : ''),
+        mediaLinks: finalMediaLinks,
       });
     } catch (error) {
       console.error('[SoporteProf] Error enviando mensaje:', error);
@@ -567,37 +570,18 @@ function SoporteProfPageContent() {
                         className={componentStyles.controls.inputDefault}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="video-file">Vídeo (opcional)</Label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          id="video-file"
-                          type="file"
-                          accept="video/*"
-                          onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-                          className={componentStyles.controls.inputDefault}
-                          disabled={uploadingVideo}
-                        />
-                        {videoFile && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setVideoFile(null)}
-                            disabled={uploadingVideo}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                      {videoFile && (
-                        <p className="text-xs text-[var(--color-text-secondary)]">
-                          Archivo seleccionado: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
-                        </p>
-                      )}
-                    </div>
+                    <MediaUploadSection
+                      videoFile={videoFile}
+                      setVideoFile={setVideoFile}
+                      mediaLinks={mediaLinks}
+                      setMediaLinks={setMediaLinks}
+                      uploadingVideo={uploadingVideo}
+                      disabled={createMensajeMutation.isPending}
+                      videoId="video-file"
+                    />
                     <Button
                       onClick={handleSendMessage}
-                      disabled={uploadingVideo || createMensajeMutation.isPending || (!messageText.trim() && !videoFile)}
+                      disabled={uploadingVideo || createMensajeMutation.isPending || (!messageText.trim() && !videoFile && mediaLinks.length === 0)}
                       className={componentStyles.buttons.primary}
                     >
                       {uploadingVideo || createMensajeMutation.isPending ? (

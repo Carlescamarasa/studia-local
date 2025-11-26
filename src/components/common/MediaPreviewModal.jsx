@@ -155,25 +155,26 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
   // Modo AUDIO compacto
   if (isAudio) {
     return createPortal(
-      <div
-        className="fixed top-0 right-0 bottom-0 z-[100] flex items-center justify-center"
-        style={{
-          left: leftOffset,
-          width: widthCalc,
-        }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="media-preview-title"
-      >
-        {/* Overlay transparente para audio */}
+      <>
+        {/* Overlay transparente para audio - Fixed para cubrir toda la pantalla */}
         <div
-          className="absolute inset-0 bg-transparent"
+          className="fixed inset-0 bg-transparent z-[120]"
           onClick={handleOverlayClick}
           aria-hidden="true"
         />
+        <div
+          className="fixed top-0 right-0 bottom-0 z-[130] flex items-center justify-center pointer-events-none"
+          style={{
+            left: leftOffset,
+            width: widthCalc,
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="media-preview-title"
+        >
 
         {/* Tarjeta compacta para audio */}
-        <div className="relative z-10 mx-auto w-full max-w-md px-4">
+        <div className="relative z-10 mx-auto w-full max-w-md px-4 pointer-events-auto">
           <div className="bg-[var(--color-surface-elevated)]/95 backdrop-blur-sm rounded-2xl shadow-card border border-[var(--color-border-default)] p-6">
             {/* Header */}
             <div className="flex items-center justify-between gap-4 mb-4">
@@ -246,32 +247,34 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
             </div>
           </div>
         </div>
-      </div>,
+      </div>
+    </>,
       document.body
     );
   }
 
   // Modo VIDEO/IMAGEN (fondo oscuro)
   return createPortal(
-    <div
-      className="fixed top-0 right-0 bottom-0 z-[100] flex items-center justify-center"
-      style={{
-        left: leftOffset,
-        width: widthCalc,
-      }}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="media-preview-title"
-    >
-      {/* Overlay oscuro para video/imagen */}
+    <>
+      {/* Overlay oscuro para video/imagen - Fixed para cubrir toda la pantalla */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[120]"
         onClick={handleOverlayClick}
         aria-hidden="true"
       />
+      <div
+        className="fixed top-0 right-0 bottom-0 z-[130] flex items-center justify-center pointer-events-none"
+        style={{
+          left: leftOffset,
+          width: widthCalc,
+        }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="media-preview-title"
+      >
 
       {/* Contenedor del modal */}
-      <div className="relative z-10 mx-auto w-full max-w-[1100px] px-4 lg:px-6 flex items-center justify-center max-h-[95vh]">
+      <div className="relative z-10 mx-auto w-full max-w-[1100px] px-4 lg:px-6 flex items-center justify-center max-h-[95vh] pointer-events-auto">
         <div className="bg-[var(--color-surface-elevated)] rounded-2xl shadow-card w-full max-h-full overflow-hidden flex flex-col border border-[var(--color-border-default)]">
           {/* Header con título y botón de cierre */}
           <div className="px-4 lg:px-6 py-4 border-b border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] sticky top-0 z-20 flex items-center justify-between gap-4 shrink-0">
@@ -373,7 +376,8 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
           </div>
         </div>
       </div>
-    </div>,
+      </div>
+    </>,
     document.body
   );
 }

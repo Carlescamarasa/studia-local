@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, XCircle, Clock, RotateCcw, Home, Upload, X, Loader2, HelpCircle } from "lucide-react";
-import MediaLinksInput from "../common/MediaLinksInput";
+import { CheckCircle, XCircle, Clock, RotateCcw, Home, Loader2 } from "lucide-react";
 import MediaPreviewModal from "../common/MediaPreviewModal";
+import MediaUploadSection from "../common/MediaUploadSection";
 import { componentStyles } from "@/design/componentStyles";
 import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
 import { toast } from "sonner";
@@ -18,12 +17,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { shouldIgnoreHotkey } from "@/utils/hotkeys";
 
 const EmojiCalidad = ({ nivel }) => {
@@ -70,31 +63,8 @@ export default function ResumenFinal({
   const [guardado, setGuardado] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
-  const videoFileInputRef = useRef(null);
-  const dropzoneRef = useRef(null);
   
   const pendientes = totalEjercicios - completados.size - omitidos.size;
-  
-  // Handlers para drag & drop de video
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      const file = files[0];
-      if (file.type.startsWith('video/')) {
-        setVideoFile(file);
-      } else {
-        toast.error('❌ Solo se aceptan archivos de video');
-      }
-    }
-  };
 
   // Hotkeys para ResumenFinal: 1-4 para valoración rápida, Ctrl+Enter para guardar
   useEffect(() => {
@@ -266,109 +236,17 @@ export default function ResumenFinal({
                 />
               </section>
 
-              {/* Input de subida de vídeo */}
-              <section className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-medium text-[var(--color-text-primary)]">Subir vídeo (opcional)</h3>
-                  <TooltipProvider delayDuration={300} skipDelayDuration={0}>
-                    <Tooltip delayDuration={300}>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-5 w-5 p-0 shrink-0"
-                          aria-label="Información sobre privacidad del vídeo"
-                        >
-                          <HelpCircle className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent 
-                        side="right" 
-                        className="max-w-xs z-[130]"
-                        onPointerDownOutside={(e) => e.preventDefault()}
-                        sideOffset={8}
-                      >
-                        <p className="text-xs">
-                          El vídeo se subirá a una cuenta de YouTube oculta. Solo tú y tu profesor podréis acceder mediante el enlace compartido.
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <p className="text-xs text-[var(--color-text-secondary)] break-words">
-                  Por ejemplo, un fragmento de la sesión, una duda o tu progreso.
-                </p>
-                <div
-                  ref={dropzoneRef}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                  className={cn(
-                    "border-2 border-dashed rounded-xl p-6 text-center transition-colors",
-                    videoFile ? "border-[var(--color-success)] bg-[var(--color-success)]/10" : "border-[var(--color-border-default)] bg-[var(--color-surface-muted)]/50 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5",
-                    (uploadingVideo || guardado) && "opacity-50 pointer-events-none"
-                  )}
-                >
-                  <Upload className="w-12 h-12 mx-auto mb-3 text-[var(--color-text-secondary)]" />
-                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
-                    {videoFile ? videoFile.name : 'Arrastra un archivo aquí o haz clic para seleccionar'}
-                  </p>
-                  {videoFile && (
-                    <p className="text-xs text-[var(--color-text-secondary)] mb-4">
-                      {(videoFile.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  )}
-                  {!videoFile && (
-                    <p className="text-xs text-[var(--color-text-secondary)] mb-4">
-                      Formato: Video (máx. 500MB)
-                    </p>
-                  )}
-                  <Input
-                    ref={videoFileInputRef}
-                    id="video-sesion"
-                    type="file"
-                    accept="video/*"
-                    onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-                    className="hidden"
-                    disabled={uploadingVideo || guardado}
-                  />
-                  <div className="flex items-center justify-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => videoFileInputRef.current?.click()}
-                      disabled={uploadingVideo || guardado}
-                      className={cn("text-xs h-9", componentStyles.buttons.outline)}
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      {videoFile ? 'Cambiar archivo' : 'Seleccionar archivo'}
-                    </Button>
-                    {videoFile && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setVideoFile(null);
-                          if (videoFileInputRef.current) videoFileInputRef.current.value = '';
-                        }}
-                        disabled={uploadingVideo || guardado}
-                        className="text-xs h-9"
-                      >
-                        <X className="w-4 h-4 mr-2" />
-                        Eliminar
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </section>
-
-              {/* Input manual de mediaLinks (para URLs directas) */}
-              <section className="space-y-1">
-              <MediaLinksInput
-                value={mediaLinks}
-                onChange={setMediaLinks}
+              {/* Input de subida de vídeo y enlaces multimedia */}
+              <MediaUploadSection
+                videoFile={videoFile}
+                setVideoFile={setVideoFile}
+                mediaLinks={mediaLinks}
+                setMediaLinks={setMediaLinks}
+                uploadingVideo={uploadingVideo}
+                disabled={guardado}
                 onPreview={handlePreview}
+                videoId="video-sesion"
               />
-              </section>
             </div>
             
             {/* Footer: Botones finales */}
