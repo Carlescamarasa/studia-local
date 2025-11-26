@@ -37,12 +37,35 @@ export default function ResetPasswordPage() {
       return; // Permitir acceso
     }
 
-    // Si no está autenticado, requiere el hash del email de recuperación
+    // Si no está autenticado, verificar si hay token de recuperación
     const hash = window.location.hash;
-    if (!hash || !hash.includes('access_token')) {
-      toast.error('Enlace inválido o expirado. Solicita un nuevo enlace de recuperación.');
-      setTimeout(() => navigate('/login'), 3000);
+    const hasHash = hash && hash.length > 1; // Hash existe y no está vacío
+    
+    // Si hay hash, Supabase está procesando el token de recuperación
+    // NO redirigir - Supabase procesará el token automáticamente
+    // El AuthProvider detectará el cambio y actualizará el estado
+    if (hasHash) {
+      // Verificar también si hay sesión (Supabase puede haber procesado el token ya)
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        // Si hay sesión, no hacer nada - el componente se actualizará
+        // Si no hay sesión, el token se está procesando, esperar
+      });
+      return; // No redirigir si hay hash
     }
+    
+    // Si NO hay hash, verificar si hay sesión (puede que Supabase ya procesó el token)
+    // Esperar un momento para dar tiempo a que cualquier proceso termine
+    const errorTimer = setTimeout(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      // Si hay sesión, no redirigir - el usuario se actualizará pronto
+      if (!session && !user) {
+        // No hay sesión ni usuario ni hash - el enlace es inválido
+        toast.error('Enlace inválido o expirado. Solicita un nuevo enlace de recuperación.');
+        setTimeout(() => navigate('/login'), 3000);
+      }
+    }, 2000);
+    
+    return () => clearTimeout(errorTimer);
   }, [navigate, user, authLoading]);
 
   const validatePassword = (pwd) => {
