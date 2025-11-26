@@ -319,30 +319,30 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
 
             {/* Navegación e indicadores (si hay múltiples) */}
             {hasMultiple && (
-              <div className="px-4 lg:px-6 pb-3 border-t border-[var(--color-border-default)] pt-3">
-                <div className="flex items-center justify-center gap-3">
+              <div className="px-4 lg:px-6 pb-2 border-t border-[var(--color-border-default)] pt-2">
+                <div className="flex items-center justify-center gap-2">
                   {/* Botón Anterior */}
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={handlePrevious}
-                    className="h-8 w-8 rounded-lg"
+                    className="h-7 w-7 rounded-md"
                     aria-label="Anterior"
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    <ChevronLeft className="w-3.5 h-3.5" />
                   </Button>
                   
                   {/* Indicadores */}
                   {normalizedUrls.length <= 10 && (
-                    <div className="flex gap-1.5 items-center">
+                    <div className="flex gap-1 items-center">
                       {normalizedUrls.map((url, idx) => (
                         <button
                           key={idx}
                           onClick={() => setCurrentIndex(idx)}
-                          className={`h-1.5 rounded-full transition-all ${
+                          className={`h-1 rounded-full transition-all ${
                             idx === currentIndex 
-                              ? 'bg-[var(--color-primary)] w-6' 
-                              : 'bg-[var(--color-border-default)] hover:bg-[var(--color-border-strong)] w-1.5'
+                              ? 'bg-[var(--color-primary)] w-5' 
+                              : 'bg-[var(--color-border-default)] hover:bg-[var(--color-border-strong)] w-1'
                           }`}
                           aria-label={`Ir a medio ${idx + 1}`}
                         />
@@ -355,10 +355,10 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                     variant="ghost"
                     size="icon"
                     onClick={handleNext}
-                    className="h-8 w-8 rounded-lg"
+                    className="h-7 w-7 rounded-md"
                     aria-label="Siguiente"
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-3.5 h-3.5" />
                   </Button>
                 </div>
               </div>
