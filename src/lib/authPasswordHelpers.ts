@@ -7,15 +7,29 @@ import { supabase } from '@/lib/supabaseClient';
 
 /**
  * Obtiene la URL de redirect para reset password
- * Reutiliza el mismo patrón que se usa en el resto de la app
+ * IMPORTANTE: Debe usar la URL completa de la aplicación (ej: http://studia.latrompetasonara.com/reset-password)
+ * NO debe usar la URL de Supabase
  */
 function getResetPasswordRedirectUrl(): string {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  if (supabaseUrl) {
-    return `${new URL(supabaseUrl).origin}/reset-password`;
+  // Prioridad 1: Variable de entorno específica para la URL de la app
+  // Ejemplo: VITE_APP_URL=http://studia.latrompetasonara.com
+  const appUrl = import.meta.env.VITE_APP_URL;
+  if (appUrl) {
+    // Asegurar que termine con /reset-password
+    const baseUrl = appUrl.endsWith('/') ? appUrl.slice(0, -1) : appUrl;
+    return `${baseUrl}/reset-password`;
   }
-  // Fallback si no hay VITE_SUPABASE_URL
-  return `${window.location.origin}/reset-password`;
+  
+  // Prioridad 2: Usar window.location.origin (URL actual de la aplicación)
+  // Esto funciona bien en desarrollo y producción si la app está en el mismo dominio
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}/reset-password`;
+  }
+  
+  // Fallback: retornar una URL relativa
+  // Supabase usará el dominio configurado en el Dashboard si no hay redirectTo absoluto
+  console.warn('[authPasswordHelpers] No se encontró VITE_APP_URL ni window.location, usando fallback relativo');
+  return '/reset-password';
 }
 
 /**

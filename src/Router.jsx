@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import RequireAuth from "@/components/auth/RequireAuth";
+import PublicRoute from "@/components/auth/PublicRoute";
 
 // Lazy load de páginas para code-splitting
 const IndexPage = lazy(() => import("@/pages/index.jsx"));
@@ -52,8 +53,8 @@ export default function AppRouter() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Rutas públicas */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
         
         {/* Ruta de debug - accesible sin autenticación para facilitar depuración */}
         {process.env.NODE_ENV === 'development' && (

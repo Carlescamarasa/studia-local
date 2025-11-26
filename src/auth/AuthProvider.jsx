@@ -746,8 +746,21 @@ export function AuthProvider({ children }) {
 
   // Función para recuperar contraseña
   const resetPassword = useCallback(async (email) => {
+    // Usar la misma lógica que authPasswordHelpers para consistencia
+    const appUrl = import.meta.env.VITE_APP_URL;
+    let redirectTo;
+    
+    if (appUrl) {
+      const baseUrl = appUrl.endsWith('/') ? appUrl.slice(0, -1) : appUrl;
+      redirectTo = `${baseUrl}/reset-password`;
+    } else if (typeof window !== 'undefined') {
+      redirectTo = `${window.location.origin}/reset-password`;
+    } else {
+      redirectTo = '/reset-password';
+    }
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo,
     });
 
     if (error) {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,8 @@ import { Lock, CheckCircle } from 'lucide-react';
 import logoLTS from '@/assets/Logo_LTS.png';
 import { getAppName } from '@/components/utils/appMeta';
 import { log } from '@/utils/log';
+import { createPageUrl } from '@/utils';
+import { roleHome } from '@/components/auth/roleMap';
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -19,18 +22,28 @@ export default function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const navigate = useNavigate();
+  const { user, loading: authLoading, appRole } = useAuth();
   const appName = getAppName();
   const { design } = useDesign();
   const primaryColor = design?.colors?.primary || '#fd9840';
 
   useEffect(() => {
-    // Verificar que hay un hash de token en la URL
+    // Esperar a que termine de cargar la autenticación
+    if (authLoading) return;
+
+    // Si el usuario está autenticado, permitir acceso sin hash
+    // (para cambiar contraseña desde el perfil o cuando ya está logueado)
+    if (user) {
+      return; // Permitir acceso
+    }
+
+    // Si no está autenticado, requiere el hash del email de recuperación
     const hash = window.location.hash;
     if (!hash || !hash.includes('access_token')) {
       toast.error('Enlace inválido o expirado. Solicita un nuevo enlace de recuperación.');
       setTimeout(() => navigate('/login'), 3000);
     }
-  }, [navigate]);
+  }, [navigate, user, authLoading]);
 
   const validatePassword = (pwd) => {
     // Mínimo 6 caracteres (requisito de Supabase)
@@ -69,9 +82,17 @@ export default function ResetPasswordPage() {
       setIsSuccess(true);
       toast.success('Contraseña actualizada correctamente');
 
-      // Redirigir al login después de 2 segundos
+      // Redirigir según el estado de autenticación
       setTimeout(() => {
-        navigate('/login', { replace: true });
+        if (user) {
+          // Si el usuario está autenticado, redirigir a su página de inicio según su rol
+          const targetPage = roleHome[appRole] || roleHome.ESTU;
+          const pageName = targetPage.replace(/^\//, '');
+          navigate(createPageUrl(pageName), { replace: true });
+        } else {
+          // Si no está autenticado (vino desde email de recuperación), redirigir a login
+          navigate('/login', { replace: true });
+        }
       }, 2000);
     } catch (error) {
       log.error('Error al actualizar contraseña:', error);

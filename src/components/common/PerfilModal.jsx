@@ -669,6 +669,106 @@ export default function PerfilModal({
     changePasswordMutation.mutate();
   };
 
+  // Cambiar contraseña directamente (solo para el propio usuario)
+  const updatePasswordMutation = useMutation({
+    mutationFn: async ({ currentPassword, newPassword }) => {
+      if (!isEditingOwnProfile) {
+        throw new Error('Solo puedes cambiar tu propia contraseña directamente.');
+      }
+      
+      // Obtener el email del usuario actual
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.email) {
+        throw new Error('No se pudo obtener la información de la sesión.');
+      }
+
+      // Verificar la contraseña actual intentando hacer signIn
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: session.user.email,
+        password: currentPassword.trim(),
+      });
+
+      if (signInError) {
+        if (signInError.message?.includes('Invalid login credentials') || 
+            signInError.message?.includes('Email not confirmed')) {
+          throw new Error('La contraseña actual es incorrecta.');
+        }
+        throw signInError;
+      }
+      
+      // Si la contraseña actual es correcta, actualizar a la nueva
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword.trim(),
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return { success: true };
+    },
+    onSuccess: () => {
+      setPasswordResult({ 
+        success: true, 
+        message: '✅ Contraseña actualizada correctamente.'
+      });
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      toast.success('Contraseña actualizada correctamente');
+    },
+    onError: (error) => {
+      log.error('[PerfilModal] Error al actualizar contraseña:', error);
+      const errorMessage = error.message || 'No se pudo actualizar la contraseña';
+      setPasswordResult({ 
+        success: false, 
+        message: `❌ Error: ${errorMessage}` 
+      });
+      toast.error(`Error al actualizar la contraseña: ${errorMessage}`);
+    },
+  });
+
+  const handleUpdatePassword = async (e) => {
+    e.preventDefault();
+    setPasswordResult(null);
+
+    // Validaciones
+    if (!passwordData.currentPassword.trim()) {
+      setPasswordResult({ 
+        success: false, 
+        message: '❌ Por favor, introduce tu contraseña actual.' 
+      });
+      return;
+    }
+
+    if (!passwordData.newPassword.trim()) {
+      setPasswordResult({ 
+        success: false, 
+        message: '❌ Por favor, introduce una nueva contraseña.' 
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      setPasswordResult({ 
+        success: false, 
+        message: '❌ La contraseña debe tener al menos 6 caracteres.' 
+      });
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordResult({ 
+        success: false, 
+        message: '❌ Las contraseñas no coinciden.' 
+      });
+      return;
+    }
+
+    updatePasswordMutation.mutate({ 
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword 
+    });
+  };
+
   const roleLabels = {
     ADMIN: 'Administrador',
     PROF: 'Profesor',
@@ -1225,7 +1325,7 @@ export default function PerfilModal({
                         <h3 className="text-base font-semibold text-[var(--color-text-primary)]">Seguridad</h3>
                       </div>
                       <p className="text-sm text-[var(--color-text-secondary)] ml-7">
-                        Puedes enviarte un enlace de cambio de contraseña a tu correo.
+                        Cambia tu contraseña directamente o solicita un enlace por correo.
                       </p>
                     </div>
                     
@@ -1240,29 +1340,87 @@ export default function PerfilModal({
                       </Alert>
                     )}
 
-                    <div className="space-y-3">
-                      <Alert variant="info" className={componentStyles.containers.panelBase}>
-                        <AlertDescription className="text-xs sm:text-sm">
-                          Para cambiar tu contraseña, te enviaremos un correo con un enlace seguro. 
-                          Desde ese enlace podrás establecer una nueva contraseña.
-                        </AlertDescription>
-                      </Alert>
+                    <form onSubmit={handleUpdatePassword} className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="currentPassword" className={componentStyles.form.fieldLabel}>
+                          Contraseña actual
+                        </Label>
+                        <Input
+                          id="currentPassword"
+                          type="password"
+                          placeholder="••••••••"
+                          value={passwordData.currentPassword}
+                          onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                          required
+                          disabled={updatePasswordMutation.isPending}
+                          autoComplete="current-password"
+                          className={componentStyles.controls.inputDefault}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="newPassword" className={componentStyles.form.fieldLabel}>
+                          Nueva contraseña
+                        </Label>
+                        <Input
+                          id="newPassword"
+                          type="password"
+                          placeholder="••••••••"
+                          value={passwordData.newPassword}
+                          onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                          required
+                          disabled={updatePasswordMutation.isPending}
+                          autoComplete="new-password"
+                          className={componentStyles.controls.inputDefault}
+                        />
+                        <p className="text-xs text-[var(--color-text-secondary)]">Mínimo 6 caracteres</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword" className={componentStyles.form.fieldLabel}>
+                          Confirmar contraseña
+                        </Label>
+                        <Input
+                          id="confirmPassword"
+                          type="password"
+                          placeholder="••••••••"
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                          required
+                          disabled={updatePasswordMutation.isPending}
+                          autoComplete="new-password"
+                          className={componentStyles.controls.inputDefault}
+                        />
+                      </div>
 
                       <div className="flex gap-2 pt-1">
                         <Button
-                          onClick={handleChangePassword}
-                          loading={changePasswordMutation.isPending}
-                          loadingText="Enviando correo..."
-                          disabled={changePasswordMutation.isPending}
-                          variant="danger"
+                          type="submit"
+                          loading={updatePasswordMutation.isPending}
+                          loadingText="Actualizando..."
+                          disabled={updatePasswordMutation.isPending}
+                          variant="default"
                           size="sm"
-                          className={componentStyles.buttons.danger + " flex-1"}
+                          className={componentStyles.buttons.primary + " flex-1"}
                         >
                           <Lock className="w-4 h-4 mr-2" />
-                          Enviar enlace de cambio de contraseña
+                          Actualizar contraseña
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={handleChangePassword}
+                          loading={changePasswordMutation.isPending}
+                          loadingText="Enviando..."
+                          disabled={changePasswordMutation.isPending || updatePasswordMutation.isPending}
+                          variant="outline"
+                          size="sm"
+                          className={componentStyles.buttons.secondary + " flex-1"}
+                        >
+                          <Mail className="w-4 h-4 mr-2" />
+                          Enviar enlace por email
                         </Button>
                       </div>
-                    </div>
+                    </form>
                   </div>
                 )}
 

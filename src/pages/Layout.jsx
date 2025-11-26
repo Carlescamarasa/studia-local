@@ -336,18 +336,28 @@ function LayoutContent() {
     return () => (document.body.style.overflow = "");
   }, [abierto, isMobile]);
 
+  // Rutas públicas que no deben redirigir a login
+  const publicRoutes = ['/login', '/reset-password'];
+  const isPublicRoute = publicRoutes.includes(location.pathname);
+
   // Detectar cuando la sesión caduca y redirigir al login
   useEffect(() => {
+    // No redirigir si estamos en una ruta pública
+    if (isPublicRoute) return;
+    
     // Solo verificar si no está cargando y no hay usuario
-    if (!authLoading && !user && location.pathname !== '/login') {
+    if (!authLoading && !user) {
       // La sesión caducó o no hay usuario autenticado
       // RequireAuth debería manejar esto, pero esto es un respaldo
       navigate('/login', { replace: true });
     }
-  }, [user, authLoading, location.pathname, navigate]);
+  }, [user, authLoading, location.pathname, navigate, isPublicRoute]);
 
   // Verificación proactiva de sesión usando checkSession
   useEffect(() => {
+    // No verificar si estamos en una ruta pública
+    if (isPublicRoute) return;
+    
     // Solo verificar si hay usuario (si no hay usuario, RequireAuth ya maneja la redirección)
     if (!user || authLoading || !checkSession) {
       return;
@@ -357,7 +367,7 @@ function LayoutContent() {
     const sessionCheckInterval = setInterval(async () => {
       try {
         const isValid = await checkSession();
-        if (!isValid && location.pathname !== '/login') {
+        if (!isValid) {
           // Sesión inválida - redirigir
           navigate('/login', { replace: true });
         }
@@ -367,9 +377,7 @@ function LayoutContent() {
           if (handleAuthError) {
             await handleAuthError(error);
           }
-          if (location.pathname !== '/login') {
-            navigate('/login', { replace: true });
-          }
+          navigate('/login', { replace: true });
         }
       }
     }, 2 * 60 * 1000); // 2 minutos
@@ -377,7 +385,7 @@ function LayoutContent() {
     return () => {
       clearInterval(sessionCheckInterval);
     };
-  }, [user, authLoading, location.pathname, navigate, checkSession, handleAuthError]);
+  }, [user, authLoading, location.pathname, navigate, checkSession, handleAuthError, isPublicRoute]);
 
   const onMenuItemClick = () => {
     if (isMobile) closeSidebar();
