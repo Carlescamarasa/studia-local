@@ -93,10 +93,10 @@ serve(async (req) => {
     });
 
     // Intentar invitar al usuario
-    // Helper centralizado para redirectTo
-    const getResetPasswordRedirectUrl = () => {
+    // Helper centralizado para redirectTo - usar página de invitación
+    const getInvitationRedirectUrl = () => {
       const baseUrl = new URL(supabaseUrl).origin;
-      return `${baseUrl}/reset-password`;
+      return `${baseUrl}/invitation`;
     };
 
     // Si el usuario ya existe, inviteUserByEmail puede fallar, pero eso está bien
@@ -105,7 +105,7 @@ serve(async (req) => {
       email,
       { 
         data: extra,
-        redirectTo: getResetPasswordRedirectUrl(),
+        redirectTo: getInvitationRedirectUrl(),
       }
     );
 
@@ -140,7 +140,7 @@ serve(async (req) => {
               type: 'invite',
               email: email,
               options: {
-                redirectTo: getResetPasswordRedirectUrl(),
+                redirectTo: getInvitationRedirectUrl(),
               },
             });
 

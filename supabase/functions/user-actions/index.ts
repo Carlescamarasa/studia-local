@@ -168,6 +168,10 @@ serve(async (req) => {
       const baseUrl = new URL(supabaseUrl).origin;
       return `${baseUrl}/reset-password`;
     };
+    const getInvitationRedirectUrl = () => {
+      const baseUrl = new URL(supabaseUrl).origin;
+      return `${baseUrl}/invitation`;
+    };
     const redirectUrl = getResetPasswordRedirectUrl();
     let result;
     let error;
@@ -201,10 +205,11 @@ serve(async (req) => {
 
       case 'resend_invitation':
         // Reenviar invitación usando inviteUserByEmail (envía email automáticamente)
+        // Usar URL de invitación en lugar de reset-password
         const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
           targetUser.email!,
           {
-            redirectTo: redirectUrl,
+            redirectTo: getInvitationRedirectUrl(),
           }
         );
         if (inviteError) {

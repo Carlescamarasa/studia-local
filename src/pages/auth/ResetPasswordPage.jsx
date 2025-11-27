@@ -15,7 +15,7 @@ import { getAppName } from '@/components/utils/appMeta';
 import { log } from '@/utils/log';
 import { createPageUrl } from '@/utils';
 import { roleHome } from '@/components/auth/roleMap';
-import { validatePasswordStrength } from '../utils/validation';
+import { validatePasswordStrength } from './utils/validation';
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');

@@ -31,6 +31,7 @@ const Layout = lazy(() => import("@/pages/Layout.jsx"));
 const QAVisualPage = lazy(() => import("@/pages/qa-visual.jsx"));
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage.jsx"));
 const ResetPasswordPage = lazy(() => import("@/pages/auth/ResetPasswordPage.jsx"));
+const InvitationPage = lazy(() => import("@/pages/auth/InvitationPage.jsx"));
 const DebugFormularioRapido = lazy(() => import("@/pages/DebugFormularioRapido.jsx"));
 const DebugSubidaYT = lazy(() => import("@/pages/debug/DebugSubidaYTPage.jsx"));
 const Soporte = lazy(() => import("@/pages/soporte.jsx"));
@@ -55,6 +56,7 @@ export default function AppRouter() {
         {/* Rutas públicas */}
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
+        <Route path="/invitation" element={<PublicRoute><InvitationPage /></PublicRoute>} />
         
         {/* Ruta de debug - accesible sin autenticación para facilitar depuración */}
         {process.env.NODE_ENV === 'development' && (

@@ -87,10 +87,12 @@ export function getResetPasswordRedirectUrl(): string {
 
 /**
  * Genera la URL de redirección para invitaciones
- * @returns {string} URL completa para invitaciones (actualmente igual a reset password)
+ * @returns {string} URL completa para invitaciones
  */
 export function getInvitationRedirectUrl(): string {
-  return getResetPasswordRedirectUrl();
+  const baseUrl = getAppBaseUrl();
+  const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  return `${cleanBaseUrl}/invitation`;
 }
 
 /**
