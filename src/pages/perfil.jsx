@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ds";
 import { Badge } from "@/components/ds";
@@ -12,40 +11,48 @@ import { Alert, AlertDescription } from "@/components/ds";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   User, ArrowLeft, Mail, Shield, Target, Music,
-  Save, Edit, AlertCircle, CheckCircle
+  Save, Edit, AlertCircle, CheckCircle, Sun, Moon, Monitor, KeyRound, Lock
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { displayName } from "../components/utils/helpers";
+import { displayName, useEffectiveUser } from "../components/utils/helpers";
 import { useSearchParams } from "react-router-dom";
 import MediaLinksInput from "@/components/common/MediaLinksInput";
+import PageHeader from "@/components/ds/PageHeader";
+import { LoadingSpinner } from "@/components/ds";
+import { componentStyles } from "@/design/componentStyles";
+import { useDesign } from "@/components/design/DesignProvider";
+import { sendPasswordResetEmailFor } from "@/lib/authPasswordHelpers";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function PerfilPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const userIdParam = searchParams.get('userId');
+  const { design, setDesignPartial } = useDesign();
   
   const [editedData, setEditedData] = useState(null);
   const [saveResult, setSaveResult] = useState(null);
+  const [passwordResult, setPasswordResult] = useState(null);
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
   const { data: allUsers } = useQuery({
     queryKey: ['allUsers'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
     enabled: true,
   });
 
   const { data: targetUser, isLoading } = useQuery({
     queryKey: ['targetUser', userIdParam],
     queryFn: async () => {
-      if (userIdParam && currentUser?.rolPersonalizado === 'ADMIN') {
-        const users = await base44.entities.User.list();
+      if (userIdParam && effectiveUser?.rolPersonalizado === 'ADMIN') {
+        const users = await localDataClient.entities.User.list();
         return users.find(u => u.id === userIdParam);
       }
-      return currentUser;
+      return effectiveUser;
     },
     enabled: true,
   });
@@ -73,10 +80,16 @@ export default function PerfilPage() {
 
   const updateUserMutation = useMutation({
     mutationFn: async (data) => {
-      if (targetUser?.id === currentUser?.id) {
-        await base44.auth.updateMe(data);
+      if (!targetUser || !targetUser.id) {
+        throw new Error('No se puede actualizar: usuario no encontrado');
+      }
+      
+      if (targetUser.id === effectiveUser?.id) {
+        // Actualizar perfil propio
+        return await localDataClient.auth.updateMe(data);
       } else {
-        await base44.entities.User.update(targetUser.id, data);
+        // Actualizar perfil de otro usuario (solo admins)
+        return await localDataClient.entities.User.update(targetUser.id, data);
       }
     },
     onSuccess: async () => {
@@ -88,7 +101,7 @@ export default function PerfilPage() {
       setSaveResult({ success: true, message: '✅ Usuario actualizado correctamente.' });
       toast.success('Perfil actualizado correctamente.');
 
-      if (targetUser?.id === currentUser?.id && editedData.rolPersonalizado !== currentUser.rolPersonalizado) {
+      if (targetUser?.id === effectiveUser?.id && editedData.rolPersonalizado !== effectiveUser.rolPersonalizado) {
         setTimeout(() => {
           const mainPages = {
             ADMIN: '/usuarios',
@@ -124,7 +137,7 @@ export default function PerfilPage() {
       }
     }
 
-    const isChangingOwnRole = targetUser?.id === currentUser?.id && editedData.rolPersonalizado !== currentUser?.rolPersonalizado;
+    const isChangingOwnRole = targetUser?.id === effectiveUser?.id && editedData.rolPersonalizado !== effectiveUser?.rolPersonalizado;
     
     if (isChangingOwnRole) {
       if (!window.confirm('¿Estás seguro de cambiar tu propio rol? Esto modificará tu acceso y navegación en la aplicación.')) {
@@ -156,119 +169,119 @@ export default function PerfilPage() {
     updateUserMutation.mutate(dataToSave);
   };
 
+
   const roleLabels = {
     ADMIN: 'Administrador',
     PROF: 'Profesor',
     ESTU: 'Estudiante',
   };
 
-  const isEditingOwnProfile = targetUser?.id === currentUser?.id;
-  const canEditRole = currentUser?.rolPersonalizado === 'ADMIN';
-  const canEditProfesor = (currentUser?.rolPersonalizado === 'ADMIN' || currentUser?.rolPersonalizado === 'PROF') 
+  const isEditingOwnProfile = targetUser?.id === effectiveUser?.id;
+  const canEditRole = effectiveUser?.rolPersonalizado === 'ADMIN';
+  const canEditProfesor = (effectiveUser?.rolPersonalizado === 'ADMIN' || effectiveUser?.rolPersonalizado === 'PROF') 
                           && targetUser?.rolPersonalizado === 'ESTU';
   const isEstudiante = targetUser?.rolPersonalizado === 'ESTU';
   const isProfesor = targetUser?.rolPersonalizado === 'PROF';
 
   if (isLoading || !editedData) {
     return (
-      <div className="flex items-center justify-center min-h-[80vh]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-600">Cargando perfil...</p>
-        </div>
-      </div>
+      <LoadingSpinner 
+        size="xl" 
+        variant="centered" 
+        text="Cargando perfil..." 
+      />
     );
   }
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto">
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="icon-tile">
-            <User className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-title">
-              {isEditingOwnProfile ? 'Mi Perfil' : `Perfil de ${getNombreCompleto(targetUser)}`}
-            </h1>
-            <p className="text-subtitle">
-              {isEditingOwnProfile ? 'Edita tu información personal' : 'Edita la información del usuario'}
-            </p>
-          </div>
-        </div>
+      <PageHeader
+        title={isEditingOwnProfile ? 'Mi Perfil' : `Perfil de ${getNombreCompleto(targetUser)}`}
+        subtitle={isEditingOwnProfile ? 'Edita tu información personal' : 'Edita la información del usuario'}
+      />
+
+      <div className="mb-6">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(-1)}
+          className={componentStyles.buttons.ghost}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Atrás
+        </Button>
       </div>
 
       {saveResult && (
-        <Alert className={`mb-6 app-panel ${saveResult.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
-          <AlertDescription className={saveResult.success ? 'text-green-800' : 'text-red-800'}>
+        <Alert className={`mb-6 ${componentStyles.containers.panelBase} ${saveResult.success ? 'border-[var(--color-success)] bg-[var(--color-success)]/10' : 'border-[var(--color-danger)] bg-[var(--color-danger)]/10'}`}>
+          <AlertDescription className={saveResult.success ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}>
             {saveResult.success ? <CheckCircle className="w-4 h-4 inline mr-2" /> : <AlertCircle className="w-4 h-4 inline mr-2" />}
             {saveResult.message}
           </AlertDescription>
         </Alert>
       )}
 
-      <Card className="app-card">
+      <Card className={componentStyles.containers.cardBase}>
         <CardContent className="pt-6 space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className={componentStyles.layout.grid2}>
             <div className="space-y-2">
-              <Label htmlFor="nombreCompleto">Nombre Completo *</Label>
+              <Label htmlFor="nombreCompleto" className="text-[var(--color-text-primary)]">Nombre Completo *</Label>
               <Input
                 id="nombreCompleto"
                 value={editedData.nombreCompleto}
                 onChange={(e) => setEditedData({ ...editedData, nombreCompleto: e.target.value })}
                 placeholder="Nombre y apellidos"
-                className="app-panel focus-brand"
+                className={componentStyles.controls.inputDefault}
               />
-              <p className="text-xs text-muted">Este es el nombre visible en toda la aplicación</p>
+              <p className="text-xs text-[var(--color-text-primary)]">Este es el nombre visible en toda la aplicación</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-[var(--color-text-primary)]">Email</Label>
               <Input
                 id="email"
                 type="email"
                 value={editedData.email}
                 disabled
-                className="bg-muted cursor-not-allowed app-panel"
+                className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
               />
-              <p className="text-xs text-muted">El email no se puede modificar</p>
+              <p className="text-xs text-[var(--color-text-primary)]">El email no se puede modificar</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">Rol en el Sistema</Label>
+              <Label htmlFor="role" className="text-[var(--color-text-primary)]">Rol en el Sistema</Label>
               {canEditRole ? (
                 <div className="space-y-2">
                   <Select
                     value={editedData.rolPersonalizado}
                     onValueChange={(value) => setEditedData({ ...editedData, rolPersonalizado: value })}
                   >
-                    <SelectTrigger id="role" className="app-panel focus-brand">
+                    <SelectTrigger id="role" className={componentStyles.controls.selectDefault}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ADMIN">
                         <div className="flex items-center gap-2">
-                          <Shield className="w-4 h-4 text-purple-600" />
+                          <Shield className="w-4 h-4 text-[var(--color-accent)]" />
                           Administrador
                         </div>
                       </SelectItem>
                       <SelectItem value="PROF">
                         <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-blue-600" />
+                          <User className="w-4 h-4 text-[var(--color-info)]" />
                           Profesor
                         </div>
                       </SelectItem>
                       <SelectItem value="ESTU">
                         <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-green-600" />
+                          <User className="w-4 h-4 text-[var(--color-success)]" />
                           Estudiante
                         </div>
                       </SelectItem>
                     </SelectContent>
                   </Select>
                   {editedData.rolPersonalizado === 'ADMIN' && targetUser?.rolPersonalizado === 'ADMIN' && (
-                    <p className="text-xs text-amber-700 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
+                    <p className={`${componentStyles.typography.smallMetaText} flex items-center gap-1`}>
+                      <AlertCircle className="w-3 h-3 text-[var(--color-warning)]" />
                       Verifica que no sea el último administrador antes de cambiar
                     </p>
                   )}
@@ -279,22 +292,22 @@ export default function PerfilPage() {
                     id="role"
                     value={roleLabels[editedData.rolPersonalizado]}
                     disabled
-                    className="bg-muted cursor-not-allowed app-panel"
+                    className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
                   />
-                  <p className="text-xs text-muted mt-1">Solo administradores pueden cambiar roles</p>
+                  <p className="text-xs mt-1 text-[var(--color-text-primary)]">Solo administradores pueden cambiar roles</p>
                 </div>
               )}
             </div>
 
             {isEstudiante && (
               <div className="space-y-2">
-                <Label htmlFor="profesorAsignado">Profesor Asignado</Label>
+                <Label htmlFor="profesorAsignado" className="text-[var(--color-text-primary)]">Profesor Asignado</Label>
                 {canEditProfesor ? (
                   <Select
                     value={editedData.profesorAsignadoId}
                     onValueChange={(value) => setEditedData({ ...editedData, profesorAsignadoId: value })}
                   >
-                    <SelectTrigger id="profesorAsignado" className="app-panel focus-brand">
+                    <SelectTrigger id="profesorAsignado" className={componentStyles.controls.selectDefault}>
                       <SelectValue placeholder="Sin asignar" />
                     </SelectTrigger>
                     <SelectContent>
@@ -311,34 +324,34 @@ export default function PerfilPage() {
                     id="profesorAsignado"
                     value={editedData.profesorAsignadoId ? getNombreCompleto(allUsers?.find(u => u.id === editedData.profesorAsignadoId)) : 'Sin asignar'}
                     disabled
-                    className="bg-muted cursor-not-allowed app-panel"
+                    className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
                   />
                 )}
-                <p className="text-xs text-muted">
+                <p className="text-xs text-[var(--color-text-primary)]">
                   {canEditProfesor ? 'Asigna un profesor a este estudiante' : 'Solo administradores y profesores pueden editar'}
                 </p>
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="telefono">Teléfono</Label>
+              <Label htmlFor="telefono" className="text-[var(--color-text-primary)]">Teléfono</Label>
               <Input
                 id="telefono"
                 type="tel"
                 value={editedData.telefono}
                 onChange={(e) => setEditedData({ ...editedData, telefono: e.target.value })}
                 placeholder="Ej: +34 600 000 000"
-                className="app-panel focus-brand"
+                className={componentStyles.controls.inputDefault}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="nivel">Nivel Técnico</Label>
+              <Label htmlFor="nivel" className="text-[var(--color-text-primary)]">Nivel Técnico</Label>
               <Select
                 value={editedData.nivel}
                 onValueChange={(value) => setEditedData({ ...editedData, nivel: value })}
               >
-                <SelectTrigger id="nivel" className="app-panel focus-brand">
+                <SelectTrigger id="nivel" className={componentStyles.controls.selectDefault}>
                   <SelectValue placeholder="Seleccionar nivel" />
                 </SelectTrigger>
                 <SelectContent>
@@ -350,52 +363,161 @@ export default function PerfilPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {isEditingOwnProfile && (
+              <div className="space-y-2">
+                <Label htmlFor="theme" className="text-[var(--color-text-primary)]">Tema de la Aplicación</Label>
+                <Select
+                  value={design?.theme || 'system'}
+                  onValueChange={(value) => {
+                    setDesignPartial('theme', value);
+                    toast.success(`Tema cambiado a ${value === 'system' ? 'Predeterminado' : value === 'dark' ? 'Oscuro' : 'Claro'}`);
+                  }}
+                >
+                  <SelectTrigger id="theme" className={componentStyles.controls.selectDefault}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">
+                      <div className="flex items-center gap-2">
+                        <Sun className="w-4 h-4" />
+                        Claro
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="dark">
+                      <div className="flex items-center gap-2">
+                        <Moon className="w-4 h-4" />
+                        Oscuro
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="system">
+                      <div className="flex items-center gap-2">
+                        <Monitor className="w-4 h-4" />
+                        Predeterminado (Sistema)
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  {design?.theme === 'system' 
+                    ? 'Sigue la preferencia de tu sistema operativo'
+                    : design?.theme === 'dark'
+                    ? 'Tema oscuro activado'
+                    : 'Tema claro activado'}
+                </p>
+              </div>
+            )}
           </div>
 
           {isProfesor && (
-            <div className="pt-6 border-t border-ui">
+            <div className="pt-6 border-t border-[var(--color-border-default)]">
               <MediaLinksInput
                 value={editedData.mediaLinks}
                 onChange={(links) => setEditedData({ ...editedData, mediaLinks: links })}
               />
-              <p className="text-xs text-muted mt-2">
+              <p className="text-xs mt-2 text-[var(--color-text-primary)]">
                 Enlaces multimedia personales (videos demostrativos, recursos, etc.)
               </p>
             </div>
           )}
 
-          <div className="pt-4 border-t border-ui">
+          <div className="pt-4 border-t border-[var(--color-border-default)]">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-muted">
-                <p>ID de usuario: <span className="font-mono">{targetUser?.id}</span></p>
-                <p>Registrado: {targetUser?.created_date ? new Date(targetUser.created_date).toLocaleDateString('es-ES') : '-'}</p>
+              <div className={`text-sm ${componentStyles.typography.smallMetaText}`}>
+                <p className="text-[var(--color-text-primary)]">ID de usuario: <span className="font-mono text-[var(--color-text-secondary)]">{targetUser?.id}</span></p>
+                <p className="text-[var(--color-text-primary)]">Registrado: <span className="text-[var(--color-text-secondary)]">{targetUser?.created_date ? new Date(targetUser.created_date).toLocaleDateString('es-ES') : '-'}</span></p>
               </div>
-              <Button
-                onClick={handleSave}
-                disabled={updateUserMutation.isPending}
-                className="btn-primary h-10 rounded-xl shadow-sm focus-brand"
-              >
-                {updateUserMutation.isPending ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Guardando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Guardar Cambios
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleSave}
+                  loading={updateUserMutation.isPending}
+                  loadingText="Guardando..."
+                  className={componentStyles.buttons.primary}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Guardar Cambios
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Sección de Seguridad - Cambio de contraseña */}
+      {isEditingOwnProfile && (
+        <Card className={componentStyles.containers.cardBase + " mt-6"}>
+          <CardHeader className="border-b border-[var(--color-border-default)]">
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-[var(--color-primary)]" />
+              Seguridad
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-4">
+            {passwordResult && (
+              <Alert className={`${componentStyles.containers.panelBase} ${passwordResult.success ? 'border-[var(--color-success)] bg-[var(--color-success)]/10' : 'border-[var(--color-danger)] bg-[var(--color-danger)]/10'}`}>
+                <AlertDescription className={passwordResult.success ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}>
+                  {passwordResult.success ? <CheckCircle className="w-4 h-4 inline mr-2" /> : <AlertCircle className="w-4 h-4 inline mr-2" />}
+                  {passwordResult.message}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <p className="text-sm text-[var(--color-text-secondary)] mb-4">
+              Puedes enviarte un enlace de cambio de contraseña a tu correo.
+            </p>
+
+            <div className="space-y-3">
+              <Alert variant="info" className={componentStyles.containers.panelBase}>
+                <AlertDescription className="text-xs sm:text-sm">
+                  Para cambiar tu contraseña, te enviaremos un correo con un enlace seguro. 
+                  Desde ese enlace podrás establecer una nueva contraseña.
+                </AlertDescription>
+              </Alert>
+
+              <div className="flex gap-2 pt-1">
+                <Button
+                  onClick={async () => {
+                    setPasswordResult(null);
+                    try {
+                      const { data: { session } } = await supabase.auth.getSession();
+                      if (!session?.user?.email) {
+                        throw new Error('No hay sesión activa o no se pudo obtener el email. Por favor, inicia sesión de nuevo.');
+                      }
+                      await sendPasswordResetEmailFor(session.user.email);
+                      setPasswordResult({ 
+                        success: true, 
+                        message: `✅ Te hemos enviado un correo a ${session.user.email} para cambiar tu contraseña.` 
+                      });
+                      toast.success('Te hemos enviado un correo para cambiar tu contraseña.');
+                    } catch (error) {
+                      const errorMessage = error.message || 'No se pudo enviar el correo';
+                      setPasswordResult({ 
+                        success: false, 
+                        message: `❌ Error: ${errorMessage}` 
+                      });
+                      toast.error(`Error al enviar el correo: ${errorMessage}`);
+                      if (import.meta.env.DEV) {
+                        console.error('[Perfil] Error al enviar email de restablecimiento:', error);
+                      }
+                    }
+                  }}
+                  variant="danger"
+                  size="sm"
+                  className={componentStyles.buttons.danger + " flex-1"}
+                >
+                  <Lock className="w-4 h-4 mr-2" />
+                  Enviar enlace de cambio de contraseña
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {canEditRole && isEditingOwnProfile && (
-        <Alert className="mt-6 app-panel border-brand-200 bg-brand-50">
-          <AlertCircle className="h-4 w-4 text-brand-600" />
-          <AlertDescription className="text-brand-800">
+        <Alert className={`mt-6 ${componentStyles.containers.panelBase} border-[var(--color-warning)]/20 bg-[var(--color-warning)]/10`}>
+          <AlertCircle className="h-4 w-4 text-[var(--color-warning)]" />
+          <AlertDescription className="text-[var(--color-warning)]">
             <strong>Advertencia:</strong> Si cambias tu propio rol, tu acceso y navegación en la aplicación se actualizarán automáticamente.
           </AlertDescription>
         </Alert>

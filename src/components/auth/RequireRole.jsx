@@ -1,53 +1,48 @@
-import React, { useEffect } from "react";
-import { getCurrentUser } from "@/api/localDataClient";
-import { useNavigate, useLocation } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { roleHome } from "./roleMap";
+import React from "react";
+import { useAuth } from "@/auth/AuthProvider";
+import { Card, CardContent } from "@/components/ds";
+import { Shield } from "lucide-react";
+import { componentStyles } from "@/design/componentStyles";
+import { getEffectiveRole, useEffectiveUser } from "@/components/utils/helpers";
 
 /**
  * Componente guard que valida acceso por rol.
- * Si el usuario no tiene uno de los roles permitidos, redirige a su home sin mostrar "Acceso denegado".
- * Respeta simulación de usuario desde sessionStorage.
+ * Si el usuario no tiene uno de los roles permitidos, muestra mensaje de "Acceso denegado".
  */
 export default function RequireRole({ children, anyOf = [] }) {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { appRole, loading } = useAuth();
+  const effectiveUser = useEffectiveUser();
 
-  // Usar getCurrentUser() local en lugar de useQuery
-  const currentUser = getCurrentUser();
+  // Esperar a que termine de cargar
+  if (loading) {
+    return null;
+  }
 
-  useEffect(() => {
-    if (!currentUser) return;
-
-    // Detectar simulación
-    const simulatingUser = sessionStorage.getItem('simulatingUser');
-    const effectiveRole = simulatingUser 
-      ? JSON.parse(simulatingUser).rolPersonalizado 
-      : currentUser.rolPersonalizado;
-
-    // Verificar si el rol está permitido
-    if (!anyOf.includes(effectiveRole)) {
-      const targetHome = roleHome[effectiveRole] || roleHome.ESTU;
-      const targetPath = targetHome.replace(/^\//, '');
-      
-      // Evitar bucle: no redirigir si ya estamos en nuestro home
-      if (location.pathname !== targetHome) {
-        navigate(createPageUrl(targetPath), { replace: true });
-      }
-    }
-  }, [currentUser, anyOf, navigate, location.pathname]);
-
-  // Detectar rol efectivo
-  const simulatingUser = sessionStorage.getItem('simulatingUser');
-  const effectiveRole = simulatingUser 
-    ? JSON.parse(simulatingUser).rolPersonalizado 
-    : currentUser?.rolPersonalizado;
+  // Usar la función unificada para obtener el rol efectivo
+  const effectiveRole = getEffectiveRole({ appRole, currentUser: effectiveUser });
 
   // Si tiene acceso, renderizar children
   if (anyOf.includes(effectiveRole)) {
     return <>{children}</>;
   }
 
-  // Si no tiene acceso, no renderizar nada (la redirección ya se hizo en useEffect)
-  return null;
+  // Si no tiene acceso, mostrar mensaje de error
+  return (
+    <div className="flex items-center justify-center min-h-screen w-full" style={{ zIndex: 1 }}>
+      <Card className={`max-w-md ${componentStyles.containers.cardBase} border-[var(--color-danger)]`}>
+        <CardContent className="pt-6 text-center space-y-4">
+          <Shield className={`w-16 h-16 mx-auto ${componentStyles.empty.emptyIcon} text-[var(--color-danger)]`} />
+          <div>
+            <h3 className={`${componentStyles.typography.sectionTitle} mb-2`}>Acceso Denegado</h3>
+            <p className={componentStyles.typography.bodyText}>
+              No tienes permisos para acceder a esta página.
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Rol actual: {effectiveRole || 'sin rol'} | Roles permitidos: {anyOf.join(', ')}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

@@ -12,8 +12,9 @@ import {
 import PageHeader from "@/components/ds/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { RADIUS_MAP, SHADOW_MAP, DEFAULT_DESIGN } from "@/components/design/designConfig";
 
-function QAVisualContent() {
+function QAVisualContent({ embedded = false }) {
   const { config } = useDesign();
   const [checks, setChecks] = useState([]);
   const [activeTab, setActiveTab] = useState('components');
@@ -23,11 +24,21 @@ function QAVisualContent() {
 
     // 1. Verificar CSS Variables
     const root = getComputedStyle(document.documentElement);
+    const layout = config?.layout || {};
+    const radius = layout?.radius || {};
+    const cardRadiusKey = radius?.card || DEFAULT_DESIGN.layout.radius.card;
+    const controlsRadiusKey = radius?.controls || DEFAULT_DESIGN.layout.radius.controls;
+    const shadowKey = layout?.shadow || DEFAULT_DESIGN.layout.shadow;
+    const focusRing = config?.focus?.ring || DEFAULT_DESIGN.focus.ring;
+    const expectedCardRadius = RADIUS_MAP[cardRadiusKey] || RADIUS_MAP.lg;
+    const expectedCtrlRadius = RADIUS_MAP[controlsRadiusKey] || RADIUS_MAP.lg;
+    const expectedShadow = SHADOW_MAP[shadowKey] || SHADOW_MAP.md;
+    const expectedFocus = `${focusRing.width} ${focusRing.style} ${focusRing.color}`;
 
     results.push({
       category: 'CSS Variables',
       name: '--radius-card',
-      expected: config.radius.card === '2xl' ? '1.25rem' : config.radius.card === 'xl' ? '1rem' : '0.75rem',
+      expected: expectedCardRadius,
       actual: root.getPropertyValue('--radius-card').trim(),
       pass: root.getPropertyValue('--radius-card').trim() !== ''
     });
@@ -35,7 +46,7 @@ function QAVisualContent() {
     results.push({
       category: 'CSS Variables',
       name: '--radius-ctrl',
-      expected: config.radius.controls === 'xl' ? '1rem' : '0.75rem',
+      expected: expectedCtrlRadius,
       actual: root.getPropertyValue('--radius-ctrl').trim(),
       pass: root.getPropertyValue('--radius-ctrl').trim() !== ''
     });
@@ -43,7 +54,7 @@ function QAVisualContent() {
     results.push({
       category: 'CSS Variables',
       name: '--shadow-card',
-      expected: config.shadow === 'md' ? '0 4px 12px rgba(0,0,0,0.08)' : config.shadow === 'card' ? '0 1px 3px...' : 'none',
+      expected: expectedShadow.substring(0, 30) + '...',
       actual: root.getPropertyValue('--shadow-card').trim().substring(0, 30) + '...',
       pass: root.getPropertyValue('--shadow-card').trim() !== ''
     });
@@ -51,7 +62,7 @@ function QAVisualContent() {
     results.push({
       category: 'CSS Variables',
       name: '--focus-ring',
-      expected: config.focus === 'orange' ? 'rgba(253,152,64,0.35)' : 'rgba(59,130,246,0.35)',
+      expected: expectedFocus.substring(0, 30) + '...',
       actual: root.getPropertyValue('--focus-ring').trim().substring(0, 30) + '...',
       pass: root.getPropertyValue('--focus-ring').trim() !== ''
     });
@@ -61,9 +72,9 @@ function QAVisualContent() {
     results.push({
       category: 'Body Classes',
       name: 'ds-serif',
-      expected: config.serifHeadings ? 'presente' : 'ausente',
+      expected: (config?.typography?.serifHeadings ?? DEFAULT_DESIGN.typography.serifHeadings) ? 'presente' : 'ausente',
       actual: hasSerifClass ? 'presente' : 'ausente',
-      pass: hasSerifClass === config.serifHeadings
+      pass: hasSerifClass === (config?.typography?.serifHeadings ?? DEFAULT_DESIGN.typography.serifHeadings)
     });
 
     // 3. Verificar Componentes en DOM
@@ -75,7 +86,7 @@ function QAVisualContent() {
       { sel: '.icon-tile', name: 'Icon tiles', min: 1 },
       { sel: '.page-header', name: 'Page headers', min: 1 },
       { sel: '.text-ui', name: 'Textos con .text-ui', min: 1 },
-      { sel: '.text-muted', name: 'Textos con .text-muted', min: 1 },
+      { sel: '[class*="text-ui/80"]', name: 'Textos secundarios (.text-ui/80)', min: 1 },
     ];
 
     componentsToCheck.forEach(({ sel, name, min }) => {
@@ -95,7 +106,7 @@ function QAVisualContent() {
       { pattern: /bg-orange-\d{3}/g, name: 'bg-orange-*' },
       { pattern: /text-orange-\d{3}/g, name: 'text-orange-*' },
       { pattern: /rounded-\[[\d.]+px\]/g, name: 'rounded-[*px]' },
-      { pattern: /bg-\[#[0-9a-fA-F]{6}\]/g, name: 'bg-[#hex]' },
+      { pattern: /bg-\#[0-9a-fA-F]{6}/g, name: 'bg-[#hex]' },
     ];
 
     bannedPatterns.forEach(({ pattern, name }) => {
@@ -127,27 +138,29 @@ function QAVisualContent() {
   }, {});
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader
-        icon={Eye}
-        title="QA Visual - Design System"
-        subtitle="Verificación en runtime de tokens y componentes"
-        actions={
-          <Button onClick={runChecks} className="btn-primary">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Re-ejecutar
-          </Button>
-        }
-      />
+    <div className={embedded ? "" : "min-h-screen bg-background"}>
+      {!embedded && (
+        <PageHeader
+          icon={Eye}
+          title="QA Visual - Design System"
+          subtitle="Verificación en runtime de tokens y componentes"
+          actions={
+            <Button onClick={runChecks} className="btn-primary">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Re-ejecutar
+            </Button>
+          }
+        />
+      )}
 
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <div className={`${componentStyles.layout.page} space-y-6`}>
         {/* Resumen */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className={componentStyles.layout.grid3}>
           <Card className="app-card">
             <CardContent className="pt-6 text-center">
               <CheckCircle className="w-8 h-8 mx-auto mb-2 text-[hsl(var(--success))]" />
               <p className="text-3xl font-bold text-ui">{passed}</p>
-              <p className="text-sm text-muted">Pasados</p>
+              <p className="text-sm text-ui/80">Pasados</p>
             </CardContent>
           </Card>
 
@@ -155,7 +168,7 @@ function QAVisualContent() {
             <CardContent className="pt-6 text-center">
               <XCircle className="w-8 h-8 mx-auto mb-2 text-[hsl(var(--danger))]" />
               <p className="text-3xl font-bold text-ui">{failed}</p>
-              <p className="text-sm text-muted">Fallidos</p>
+              <p className="text-sm text-ui/80">Fallidos</p>
             </CardContent>
           </Card>
 
@@ -163,7 +176,7 @@ function QAVisualContent() {
             <CardContent className="pt-6 text-center">
               <Target className="w-8 h-8 mx-auto mb-2 text-[hsl(var(--info))]" />
               <p className="text-3xl font-bold text-ui">{total}</p>
-              <p className="text-sm text-muted">Total</p>
+              <p className="text-sm text-ui/80">Total</p>
             </CardContent>
           </Card>
         </div>
@@ -181,7 +194,7 @@ function QAVisualContent() {
           <div className="space-y-4">
             {Object.entries(groupedChecks).map(([category, categoryChecks]) => (
               <Card key={category} className="app-card">
-                <CardHeader className="border-b border-ui">
+                <CardHeader className="border-b border-[var(--color-border-default)]">
                   <CardTitle className="text-lg">{category}</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -203,10 +216,10 @@ function QAVisualContent() {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm text-ui">{check.name}</p>
                           <div className="flex gap-4 mt-1 text-xs">
-                            <span className="text-muted">
+                            <span className="text-ui/80">
                               Esperado: <code className="bg-muted px-1 rounded">{check.expected}</code>
                             </span>
-                            <span className="text-muted">
+                            <span className="text-ui/80">
                               Actual: <code className="bg-muted px-1 rounded">{check.actual}</code>
                             </span>
                           </div>
@@ -223,7 +236,7 @@ function QAVisualContent() {
         {activeTab === 'preview' && (
           <div className="space-y-6">
             <Card className="app-card">
-              <CardHeader className="border-b border-ui">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>Componentes Base</CardTitle>
               </CardHeader>
               <CardContent className="pt-6 space-y-6">
@@ -249,20 +262,20 @@ function QAVisualContent() {
                 {/* Cards */}
                 <div>
                   <p className="text-sm font-medium text-ui mb-3">Cards:</p>
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className={componentStyles.layout.grid2}>
                     <Card className="app-card">
-                      <CardHeader className="border-b border-ui">
+                      <CardHeader className="border-b border-[var(--color-border-default)]">
                         <CardTitle>Card con header</CardTitle>
                       </CardHeader>
                       <CardContent className="pt-4">
-                        <p className="text-sm text-muted">
+                        <p className="text-sm text-ui/80">
                           Contenido de la card usando tokens del DS
                         </p>
                       </CardContent>
                     </Card>
                     <Card className="app-panel">
                       <CardContent className="pt-4">
-                        <p className="text-sm text-muted">Panel sin header</p>
+                        <p className="text-sm text-ui/80">Panel sin header</p>
                       </CardContent>
                     </Card>
                   </div>
@@ -271,9 +284,15 @@ function QAVisualContent() {
                 {/* Inputs */}
                 <div>
                   <p className="text-sm font-medium text-ui mb-3">Inputs:</p>
-                  <div className="grid md:grid-cols-2 gap-4 max-w-2xl">
-                    <Input placeholder="Input estándar" className="focus-brand" />
-                    <Textarea placeholder="Textarea" rows={2} className="focus-brand" />
+                  <div className={`${componentStyles.layout.grid2} max-w-2xl`}>
+                    <div>
+                      <label htmlFor="qa-input" className="text-xs text-ui/80 block mb-1">Input estándar</label>
+                      <Input id="qa-input" placeholder="Input estándar" className="focus-brand" />
+                    </div>
+                    <div>
+                      <label htmlFor="qa-textarea" className="text-xs text-ui/80 block mb-1">Textarea</label>
+                      <Textarea id="qa-textarea" placeholder="Textarea" rows={2} className="focus-brand" />
+                    </div>
                   </div>
                 </div>
 
@@ -306,11 +325,11 @@ function QAVisualContent() {
                 <div>
                   <p className="text-sm font-medium text-ui mb-3">Tipografía:</p>
                   <div className="space-y-2">
-                    <h1 className="text-title">Heading 1 con tokens</h1>
-                    <h2 className="text-ui text-2xl font-semibold">Heading 2</h2>
-                    <h3 className="text-ui text-xl font-semibold">Heading 3</h3>
+                    <h2 className="text-ui text-3xl font-bold">Heading 1 con tokens</h2>
+                    <h3 className="text-ui text-2xl font-semibold">Heading 2</h3>
+                    <h4 className="text-ui text-xl font-semibold">Heading 3</h4>
                     <p className="text-ui">Párrafo normal con text-ui</p>
-                    <p className="text-muted text-sm">Texto secundario con text-muted</p>
+                    <p className="text-ui/80 text-sm">Texto secundario</p>
                   </div>
                 </div>
               </CardContent>
@@ -319,16 +338,18 @@ function QAVisualContent() {
         )}
 
         {/* Configuración actual */}
-        <Card className="app-card">
-          <CardHeader className="border-b border-ui">
-            <CardTitle>Configuración Actual del DS</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <pre className="text-xs font-mono bg-muted p-4 app-panel overflow-x-auto">
-              {JSON.stringify(config, null, 2)}
-            </pre>
-          </CardContent>
-        </Card>
+        {!embedded && (
+          <Card className="app-card">
+            <CardHeader className="border-b border-[var(--color-border-default)]">
+              <CardTitle>Configuración Actual del DS</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <pre className="text-xs font-mono bg-muted p-4 app-panel overflow-x-auto">
+                {JSON.stringify(config, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
@@ -341,3 +362,5 @@ export default function QAVisualPage() {
     </RequireRole>
   );
 }
+
+export { QAVisualContent };

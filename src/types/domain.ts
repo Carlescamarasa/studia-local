@@ -1,0 +1,359 @@
+/**
+ * Tipos de dominio para Studia
+ * 
+ * Estos tipos representan las entidades de negocio de la aplicación
+ * y son compartidos entre LocalDataProvider y RemoteDataProvider (futuro).
+ */
+
+/**
+ * Roles de usuario en el sistema
+ */
+export type UserRole = 'ADMIN' | 'PROF' | 'ESTU';
+
+/**
+ * Usuario de Studia
+ * 
+ * Representa un usuario del sistema (administrador, profesor o estudiante).
+ * Este tipo es el contrato compartido entre el modelo local y el remoto (Supabase).
+ * 
+ * @property id - Identificador único del usuario (UUID en Supabase, string en local)
+ * @property email - Email del usuario (se sincroniza con auth.users.email en Supabase)
+ * @property full_name - Nombre completo del usuario
+ * @property role - Rol del usuario: ADMIN, PROF o ESTU
+ * @property profesor_asignado_id - ID del profesor asignado (solo para estudiantes, nullable)
+ * @property is_active - Indica si el usuario está activo
+ * @property created_at - Fecha de creación del usuario (ISO string)
+ * @property updated_at - Fecha de última actualización (ISO string)
+ * 
+ * Notas:
+ * - Los campos `first_name` y `last_name` del modelo local se pueden derivar de `full_name` si es necesario
+ * - El campo `nombreCompleto` del modelo local es equivalente a `full_name`
+ * - El campo `rolPersonalizado` del modelo local se mapea a `role`
+ * - El campo `estado` del modelo local se mapea a `is_active` (true si "activo")
+ * - El campo `fechaRegistro` del modelo local se mapea a `created_at`
+ */
+export interface StudiaUser {
+  id: string;
+  email: string;
+  full_name: string;
+  role: UserRole;
+  profesor_asignado_id: string | null;
+  is_active: boolean;
+  created_at: string; // ISO 8601 string
+  updated_at: string; // ISO 8601 string
+}
+
+/**
+ * Tipo auxiliar para crear un usuario (sin campos auto-generados)
+ */
+export type CreateStudiaUserInput = Omit<StudiaUser, 'id' | 'created_at' | 'updated_at'>;
+
+/**
+ * Tipo auxiliar para actualizar un usuario (todos los campos opcionales excepto id)
+ */
+export type UpdateStudiaUserInput = Partial<Omit<StudiaUser, 'id' | 'created_at'>> & {
+  id: string;
+};
+
+/**
+ * Elemento de una pieza (partitura, audio, video, etc.)
+ */
+export interface PiezaElemento {
+  nombre: string;
+  mediaLinks: string[];
+}
+
+/**
+ * Pieza musical
+ * 
+ * Representa una pieza musical que los estudiantes practican.
+ */
+export interface Pieza {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  nivel: 'principiante' | 'intermedio' | 'avanzado';
+  tiempoObjetivoSeg: number;
+  elementos: PiezaElemento[];
+  profesorId: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreatePiezaInput = Omit<Pieza, 'id' | 'created_at' | 'updated_at'>;
+export type UpdatePiezaInput = Partial<Omit<Pieza, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Bloque/Ejercicio de práctica
+ * 
+ * Representa un ejercicio o bloque que forma parte de una sesión de práctica.
+ */
+export interface Bloque {
+  id: string;
+  nombre: string;
+  code: string;
+  tipo: 'CA' | 'CB' | 'TC' | 'TM' | 'FM' | 'VC' | 'AD';
+  duracionSeg: number;
+  instrucciones?: string;
+  indicadorLogro?: string;
+  materialesRequeridos: string[];
+  mediaLinks: string[];
+  elementosOrdenados: string[];
+  piezaRefId?: string | null;
+  profesorId: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreateBloqueInput = Omit<Bloque, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateBloqueInput = Partial<Omit<Bloque, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Bloque dentro de una sesión (con datos embebidos)
+ */
+export interface SesionBloque {
+  id?: string;
+  code: string;
+  nombre: string;
+  tipo: 'CA' | 'CB' | 'TC' | 'TM' | 'FM' | 'VC' | 'AD';
+  duracionSeg: number;
+  [key: string]: any; // Permite campos adicionales del bloque original
+}
+
+/**
+ * Ronda dentro de una sesión
+ */
+export interface SesionRonda {
+  id?: string;
+  nombre?: string;
+  bloques: SesionBloque[];
+  [key: string]: any;
+}
+
+/**
+ * Sesión dentro de una semana
+ */
+export interface PlanSesion {
+  id?: string;
+  nombre: string;
+  foco?: string;
+  bloques: SesionBloque[];
+  rondas: SesionRonda[];
+  [key: string]: any;
+}
+
+/**
+ * Semana dentro de un plan
+ */
+export interface PlanSemana {
+  id?: string;
+  nombre: string;
+  foco?: string;
+  objetivo?: string;
+  sesiones: PlanSesion[];
+  [key: string]: any;
+}
+
+/**
+ * Plan de práctica
+ * 
+ * Representa un plan de práctica con estructura anidada de semanas, sesiones y bloques.
+ */
+export interface Plan {
+  id: string;
+  nombre: string;
+  focoGeneral: 'GEN' | 'LIG' | 'RIT' | 'ART' | 'S&A';
+  objetivoSemanalPorDefecto?: string;
+  piezaId: string;
+  profesorId: string;
+  semanas: PlanSemana[];
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreatePlanInput = Omit<Plan, 'id' | 'created_at' | 'updated_at'>;
+export type UpdatePlanInput = Partial<Omit<Plan, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Snapshot de una pieza embebido en una asignación
+ */
+export interface PiezaSnapshot {
+  nombre: string;
+  descripcion?: string;
+  nivel: string;
+  tiempoObjetivoSeg: number;
+  elementos: PiezaElemento[];
+}
+
+/**
+ * Asignación de práctica
+ * 
+ * Representa una asignación de práctica que un profesor hace a un estudiante.
+ */
+export interface Asignacion {
+  id: string;
+  alumnoId: string;
+  profesorId: string;
+  piezaId: string;
+  semanaInicioISO: string; // YYYY-MM-DD
+  estado: 'borrador' | 'publicada' | 'archivada';
+  foco: 'GEN' | 'LIG' | 'RIT' | 'ART' | 'S&A';
+  notas?: string | null;
+  plan: Plan; // Snapshot completo del plan
+  piezaSnapshot: PiezaSnapshot; // Snapshot completo de la pieza
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreateAsignacionInput = Omit<Asignacion, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateAsignacionInput = Partial<Omit<Asignacion, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Registro de sesión de práctica
+ * 
+ * Representa un registro de una sesión de práctica realizada por un estudiante.
+ */
+export interface RegistroSesion {
+  id: string;
+  asignacionId: string;
+  alumnoId: string;
+  profesorAsignadoId: string;
+  semanaIdx: number;
+  sesionIdx: number;
+  inicioISO: string; // ISO 8601
+  finISO?: string | null; // ISO 8601
+  duracionRealSeg: number;
+  duracionObjetivoSeg: number;
+  bloquesTotales: number;
+  bloquesCompletados: number;
+  bloquesOmitidos: number;
+  finalizada: boolean;
+  finAnticipado: boolean;
+  motivoFin?: string | null;
+  calificacion?: number | null; // 1-4
+  notas?: string | null;
+  mediaLinks?: string[]; // Array de URLs de medios (YouTube, etc.)
+  dispositivo?: string;
+  versionSchema?: string;
+  piezaNombre?: string;
+  planNombre?: string;
+  semanaNombre?: string;
+  sesionNombre?: string;
+  foco?: string;
+  created_at: string;
+}
+
+export type CreateRegistroSesionInput = Omit<RegistroSesion, 'id' | 'created_at'>;
+export type UpdateRegistroSesionInput = Partial<Omit<RegistroSesion, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Registro de bloque ejecutado
+ * 
+ * Representa un registro detallado de un bloque ejecutado en una sesión.
+ */
+export interface RegistroBloque {
+  id: string;
+  registroSesionId: string;
+  asignacionId: string;
+  alumnoId: string;
+  semanaIdx: number;
+  sesionIdx: number;
+  ordenEjecucion: number;
+  tipo: 'CA' | 'CB' | 'TC' | 'TM' | 'FM' | 'VC' | 'AD';
+  code: string;
+  nombre: string;
+  duracionObjetivoSeg: number;
+  duracionRealSeg: number;
+  estado: 'completado' | 'omitido';
+  iniciosPausa: number;
+  inicioISO: string; // ISO 8601
+  finISO?: string | null; // ISO 8601
+  created_at: string;
+}
+
+export type CreateRegistroBloqueInput = Omit<RegistroBloque, 'id' | 'created_at'>;
+export type UpdateRegistroBloqueInput = Partial<Omit<RegistroBloque, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Feedback semanal
+ * 
+ * Representa un feedback que un profesor da a un estudiante cada semana.
+ */
+export interface FeedbackSemanal {
+  id: string;
+  alumnoId: string;
+  profesorId: string;
+  semanaInicioISO: string; // YYYY-MM-DD
+  notaProfesor: string;
+  mediaLinks: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreateFeedbackSemanalInput = Omit<FeedbackSemanal, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateFeedbackSemanalInput = Partial<Omit<FeedbackSemanal, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Evento del calendario
+ * 
+ * Representa un evento importante del calendario (encuentro, masterclass, colectiva, etc.)
+ * que puede ser creado por ADMIN o PROF y es visible para los roles especificados.
+ */
+export interface EventoCalendario {
+  id: string;
+  titulo: string;
+  descripcion?: string | null;
+  fechaInicio: string; // YYYY-MM-DD (legacy, mantenido para compatibilidad)
+  fechaFin?: string | null; // YYYY-MM-DD (legacy, mantenido para compatibilidad)
+  start_at?: string | null; // ISO timestamp con hora (ej. 2024-01-15T18:00:00Z)
+  end_at?: string | null; // ISO timestamp con hora (ej. 2024-01-15T20:00:00Z)
+  all_day?: boolean; // true si es evento de todo el día
+  tipo: 'encuentro' | 'masterclass' | 'colectiva' | 'otro';
+  creadoPorId: string; // ID del usuario que creó el evento
+  visiblePara: UserRole[]; // Roles que pueden verlo
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreateEventoCalendarioInput = Omit<EventoCalendario, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateEventoCalendarioInput = Partial<Omit<EventoCalendario, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Ticket de soporte
+ * 
+ * Representa un ticket de soporte/duda entre un alumno y un profesor.
+ */
+export interface SupportTicket {
+  id: string;
+  alumnoId: string;
+  profesorId: string | null;
+  estado: 'abierto' | 'en_proceso' | 'cerrado';
+  tipo: 'duda_general' | 'tecnica' | 'pieza' | 'ritmo' | 'sonido' | 'otro' | null;
+  titulo: string;
+  created_at: string;
+  updated_at: string;
+  cerradoAt: string | null;
+  ultimaRespuestaDe: 'alumno' | 'profesor' | null;
+}
+
+export type CreateSupportTicketInput = Omit<SupportTicket, 'id' | 'created_at' | 'updated_at' | 'cerradoAt' | 'ultimaRespuestaDe'>;
+export type UpdateSupportTicketInput = Partial<Omit<SupportTicket, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Mensaje dentro de un ticket de soporte
+ * 
+ * Representa un mensaje (texto + media_links) dentro de un ticket.
+ */
+export interface SupportMensaje {
+  id: string;
+  ticketId: string;
+  autorId: string;
+  rolAutor: 'alumno' | 'profesor' | 'admin';
+  texto: string;
+  mediaLinks: string[]; // Array de URLs
+  created_at: string;
+}
+
+export type CreateSupportMensajeInput = Omit<SupportMensaje, 'id' | 'created_at'>;
+export type UpdateSupportMensajeInput = Partial<Omit<SupportMensaje, 'id' | 'created_at'>> & { id: string };
+

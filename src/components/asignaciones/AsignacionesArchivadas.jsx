@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { RotateCcw, Trash2, Search, Archive } from "lucide-react";
 import { toast } from "sonner";
+import { displayName, displayNameById } from "@/components/utils/helpers";
 
 export default function AsignacionesArchivadas() {
   const queryClient = useQueryClient();
@@ -15,18 +16,18 @@ export default function AsignacionesArchivadas() {
   const { data: asignaciones = [], isLoading } = useQuery({
     queryKey: ['asignaciones-archivadas'],
     queryFn: async () => {
-      const all = await base44.entities.Asignacion.list('-created_date');
+      const all = await localDataClient.entities.Asignacion.list('-created_at');
       return all.filter(a => a.estado === 'cerrada');
     },
   });
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
   });
 
   const reabrirMutation = useMutation({
-    mutationFn: (id) => base44.entities.Asignacion.update(id, { estado: 'borrador' }),
+    mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'borrador' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones-archivadas'] });
       queryClient.invalidateQueries({ queryKey: ['asignaciones-activas'] });
@@ -35,7 +36,7 @@ export default function AsignacionesArchivadas() {
   });
 
   const eliminarMutation = useMutation({
-    mutationFn: (id) => base44.entities.Asignacion.delete(id),
+    mutationFn: (id) => localDataClient.entities.Asignacion.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones-archivadas'] });
       toast.success('✅ Asignación eliminada');
@@ -44,10 +45,14 @@ export default function AsignacionesArchivadas() {
 
   const filteredAsignaciones = asignaciones.filter(a => {
     const alumno = usuarios.find(u => u.id === a.alumnoId);
+    const alumnoNombreBase = alumno ? displayName(alumno) : '';
+    const alumnoNombreSnap = a.alumno?.nombreCompleto || a.alumno?.full_name || '';
+    const alumnoNombre = (alumnoNombreBase || alumnoNombreSnap).toLowerCase();
+    const term = searchTerm.toLowerCase();
     return (
-      alumno?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.piezaSnapshot?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.plan?.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
+      alumnoNombre.includes(term) ||
+      (a.piezaSnapshot?.nombre || '').toLowerCase().includes(term) ||
+      (a.plan?.nombre || '').toLowerCase().includes(term)
     );
   });
 
@@ -88,7 +93,11 @@ export default function AsignacionesArchivadas() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <h4 className="font-semibold truncate">{alumno?.full_name || 'Estudiante'}</h4>
+                            <h4 className="font-semibold truncate">
+                              {alumno
+                                ? displayName(alumno)
+                                : displayNameById(asignacion.alumnoId)}
+                            </h4>
                             <Badge variant="secondary">Cerrada</Badge>
                           </div>
                           <div className="space-y-1 text-sm text-muted">

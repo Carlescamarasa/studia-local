@@ -1,28 +1,22 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
-import { Music } from "lucide-react";
+import PageHeader from "@/components/ds/PageHeader";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function PiezasPage() {
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="icon-tile">
-            <Music className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Piezas Musicales</h1>
-            <p className="text-gray-500">Gestiona tu biblioteca de piezas</p>
-          </div>
-        </div>
-      </div>
+    <div className={componentStyles.layout.page}>
+      <PageHeader
+        title="Piezas Musicales"
+        subtitle="Gestiona tu biblioteca de piezas"
+      />
 
-      <Card className="app-card">
+      <Card className={componentStyles.containers.cardBase}>
         <CardHeader>
           <CardTitle>Próximamente</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-600">
+          <p className={componentStyles.typography.bodyText}>
             Aquí podrás crear y editar piezas musicales con todos sus elementos.
           </p>
         </CardContent>

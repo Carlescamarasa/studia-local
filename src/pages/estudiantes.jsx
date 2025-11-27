@@ -1,517 +1,383 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
+import React, { useState, useEffect, useMemo } from "react";
+import { localDataClient } from "@/api/localDataClient";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Users, Search, MessageSquare, TrendingUp,
-  Clock, Star, X, Save, AlertCircle, Edit, UserCog
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { Users, Search, X } from "lucide-react";
 import { toast } from "sonner";
-import { displayName, calcularLunesSemanaISO, formatLocalDate, parseLocalDate } from "../components/utils/helpers";
-import UnifiedTable from "@/components/tables/UnifiedTable";
-import MediaLinksInput from "../components/common/MediaLinksInput";
-import MediaPreviewModal from "../components/common/MediaPreviewModal";
+import { useNavigate } from "react-router-dom";
 import RequireRole from "@/components/auth/RequireRole";
+import UnifiedTable from "@/components/tables/UnifiedTable";
+import { getNombreVisible, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from "@/components/ds/PageHeader";
+import { componentStyles } from "@/design/componentStyles";
+import PerfilModal from "@/components/common/PerfilModal";
+import { useUserActions } from "@/pages/auth/hooks/useUserActions";
+import { Mail, KeyRound, UserPlus as UserPlusIcon } from "lucide-react";
 
 function EstudiantesPageContent() {
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showFeedbackDrawer, setShowFeedbackDrawer] = useState(false);
-  const [selectedAlumno, setSelectedAlumno] = useState(null);
-  const [feedbackData, setFeedbackData] = useState({
-    semanaInicioISO: calcularLunesSemanaISO(formatLocalDate(new Date())),
-    notaProfesor: '',
-    mediaLinks: [],
-  });
-  const [showMediaPreview, setShowMediaPreview] = useState(false);
-  const [previewUrls, setPreviewUrls] = useState([]);
-  const [previewIndex, setPreviewIndex] = useState(0);
+  const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [nivelFilter, setNivelFilter] = useState('all');
+  const [showAllStudents, setShowAllStudents] = useState(false); // Por defecto solo mis estudiantes
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
+  const { sendMagicLink, sendResetPassword, resendInvitation } = useUserActions();
 
-  const isProf = currentUser?.rolPersonalizado === 'PROF';
-  const isAdmin = currentUser?.rolPersonalizado === 'ADMIN';
-  const isAdminOrProf = isAdmin || isProf;
-
-  const { data: asignaciones = [], isLoading: loadingAsignaciones } = useQuery({
-    queryKey: ['asignacionesProfesor', currentUser?.id],
+  const { data: usuarios = [], isLoading } = useQuery({
+    queryKey: ['users'],
     queryFn: async () => {
-      const allAsignaciones = await base44.entities.Asignacion.list();
-      return allAsignaciones;
-    },
-    enabled: !!currentUser,
-  });
-
-  const { data: usuariosAdmin = [] } = useQuery({
-    queryKey: ['usersAdmin'],
-    queryFn: async () => {
-      const users = await base44.entities.User.list();
+      const users = await localDataClient.entities.User.list();
       return users;
     },
-    enabled: isAdmin,
+    staleTime: 0,
+    cacheTime: 0,
   });
 
-  const { data: registros = [] } = useQuery({
-    queryKey: ['registrosSesion'],
-    queryFn: () => base44.entities.RegistroSesion.list('-inicioISO'),
-  });
-
-  const { data: feedbacksExistentes = [] } = useQuery({
-    queryKey: ['feedbacksSemanal'],
-    queryFn: () => base44.entities.FeedbackSemanal.list('-created_date'),
-  });
-
-  const guardarFeedbackMutation = useMutation({
-    mutationFn: async (data) => {
-      const feedbackExistente = feedbacksExistentes.find(
-        f => f.alumnoId === selectedAlumno.id &&
-             f.semanaInicioISO === data.semanaInicioISO
-      );
-
-      if (feedbackExistente) {
-        return base44.entities.FeedbackSemanal.update(feedbackExistente.id, data);
-      }
-      return base44.entities.FeedbackSemanal.create(data);
+  const { data: asignaciones = [] } = useQuery({
+    queryKey: ['asignaciones'],
+    queryFn: async () => {
+      const asignaciones = await localDataClient.entities.Asignacion.list();
+      return asignaciones;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] });
-      toast.success('✅ Feedback guardado');
-      setShowFeedbackDrawer(false);
-      setSelectedAlumno(null);
-    },
+    staleTime: 0,
+    cacheTime: 0,
   });
 
-  const estudiantes = useMemo(() => {
-    if (!currentUser) return [];
-
-    if (isAdmin && usuariosAdmin.length > 0) {
-      const estudiantesAdmin = usuariosAdmin.filter(u => u.rolPersonalizado === 'ESTU');
-      return estudiantesAdmin;
-    }
-
-    if (isProf || isAdmin) {
-      const misAsignaciones = asignaciones.filter(a =>
-        a.profesorId === currentUser.id &&
-        (a.estado === 'publicada' || a.estado === 'en_curso' || a.estado === 'borrador')
-      );
-
-      const alumnosMap = new Map();
-
-      misAsignaciones.forEach(asig => {
-        if (!alumnosMap.has(asig.alumnoId)) {
-          const alumnoInfo = {
-            id: asig.alumnoId,
-            email: asig.alumnoId,
-            nombreCompleto: null,
-            full_name: null,
-            rolPersonalizado: 'ESTU',
-            profesorAsignadoId: currentUser.id,
-          };
-
-          if (asig.alumno) {
-            alumnoInfo.email = asig.alumno.email || asig.alumnoId;
-            alumnoInfo.nombreCompleto = asig.alumno.nombreCompleto || asig.alumno.full_name;
-            alumnoInfo.full_name = asig.alumno.full_name;
-          }
-
-          alumnosMap.set(asig.alumnoId, alumnoInfo);
-        }
-      });
-
-      return Array.from(alumnosMap.values());
-    }
-
-    return [];
-  }, [currentUser, usuariosAdmin, asignaciones, isProf, isAdmin]);
-
-  const filteredEstudiantes = useMemo(() => {
-    if (!searchTerm.trim()) return estudiantes;
-
-    const term = searchTerm.toLowerCase();
-    return estudiantes.filter(e => {
-      const nombre = displayName(e).toLowerCase();
-      const email = (e.email || '').toLowerCase();
-      const id = (e.id || '').toLowerCase();
-      return nombre.includes(term) || email.includes(term) || id.includes(term);
-    });
-  }, [estudiantes, searchTerm]);
-
-  const calcularEstadisticasSemana = (alumnoId, semanaISO) => {
-    const registrosAlumno = registros.filter(r => {
-      if (r.alumnoId !== alumnoId) return false;
-      if (!r.inicioISO) return false;
-      const registroSemana = calcularLunesSemanaISO(r.inicioISO.split('T')[0]);
-      return registroSemana === semanaISO;
-    });
-
-    const minutosReales = Math.floor(
-      registrosAlumno.reduce((sum, r) => sum + (r.duracionRealSeg || 0), 0) / 60
-    );
-
-    const conCalificacion = registrosAlumno.filter(r =>
-      r.calificacion !== undefined && r.calificacion !== null
-    );
-    const calidadMedia = conCalificacion.length > 0
-      ? (conCalificacion.reduce((sum, r) => sum + r.calificacion, 0) / conCalificacion.length).toFixed(1)
-      : 0;
-
-    return { minutosReales, calidadMedia, sesionesRealizadas: registrosAlumno.length };
-  };
-
-  const simularAlumno = (alumno) => {
-    sessionStorage.setItem('originalUser', JSON.stringify(currentUser));
-    sessionStorage.setItem('simulatingUser', JSON.stringify(alumno));
-    sessionStorage.setItem('originalPath', window.location.pathname);
-    navigate(createPageUrl('hoy'), { replace: true });
-    window.location.reload();
-  };
-
-  const handleAbrirFeedback = (alumno) => {
-    setSelectedAlumno(alumno);
-    const hoy = formatLocalDate(new Date());
-    const semanaActual = calcularLunesSemanaISO(hoy);
-
-    const feedbackExistente = feedbacksExistentes.find(
-      f => f.alumnoId === alumno.id && f.semanaInicioISO === semanaActual
-    );
-
-    setFeedbackData({
-      semanaInicioISO: semanaActual,
-      notaProfesor: feedbackExistente?.notaProfesor || '',
-      mediaLinks: feedbackExistente?.mediaLinks || [],
-    });
-    setShowFeedbackDrawer(true);
-  };
-
-  const handleGuardarFeedback = () => {
-    if (!selectedAlumno) return;
-
-    if (!feedbackData.notaProfesor?.trim()) {
-      toast.error('❌ Debes escribir un comentario');
-      return;
-    }
-
-    const asignacionAlumno = asignaciones.find(a =>
-      a.alumnoId === selectedAlumno.id &&
-      a.estado !== 'cerrada'
-    );
-
-    guardarFeedbackMutation.mutate({
-      alumnoId: selectedAlumno.id,
-      profesorId: currentUser.id,
-      asignacionId: asignacionAlumno?.id || null,
-      semanaInicioISO: feedbackData.semanaInicioISO,
-      notaProfesor: feedbackData.notaProfesor.trim(),
-      mediaLinks: feedbackData.mediaLinks || [],
-    });
-  };
-
-  const handlePreviewMedia = (index, urls) => {
-    setPreviewUrls(urls);
-    setPreviewIndex(index);
-    setShowMediaPreview(true);
-  };
-
+  // Invalidar query al montar el componente
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      const active = document.activeElement;
-      const inInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(active?.tagName) || active?.isContentEditable;
+    queryClient.invalidateQueries({ queryKey: ['users'] });
+    queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
+  }, [queryClient]);
 
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k' && !inInput) {
-        e.preventDefault();
-        document.querySelector('input[placeholder*="Buscar"]')?.focus();
-      }
+  // Resolver ID de usuario actual (puede ser UUID de Supabase o ID de BD)
+  const userIdActual = useMemo(() => {
+    return resolveUserIdActual(effectiveUser, usuarios);
+  }, [effectiveUser, usuarios]);
 
-      if (showFeedbackDrawer) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-          e.preventDefault();
-          handleGuardarFeedback();
+  // Filtrar estudiantes del profesor actual
+  // Incluir estudiantes que tienen:
+  // 1. profesorAsignadoId === userIdActual
+  // 2. O que tienen asignaciones con profesorId === userIdActual
+  const misEstudiantes = useMemo(() => {
+    if (!userIdActual) return [];
+    
+    // Obtener IDs de estudiantes que tienen asignaciones con este profesor
+    const estudiantesIdsDeAsignaciones = new Set(
+      asignaciones
+        .filter(a => a.profesorId === userIdActual)
+        .map(a => a.alumnoId)
+    );
+    
+    // Filtrar estudiantes
+    return usuarios.filter(u => {
+      if (u.rolPersonalizado !== 'ESTU') return false;
+      
+      // Incluir si tiene profesorAsignadoId o si tiene asignaciones
+      return u.profesorAsignadoId === userIdActual || estudiantesIdsDeAsignaciones.has(u.id);
+    });
+  }, [usuarios, asignaciones, userIdActual]);
+
+  // Todos los estudiantes (sin filtrar por profesor)
+  const todosLosEstudiantes = useMemo(() => {
+    return usuarios.filter(u => u.rolPersonalizado === 'ESTU');
+  }, [usuarios]);
+
+  // Crear mapa de profesores para obtener nombres rápidamente
+  const profesoresMap = useMemo(() => {
+    const map = new Map();
+    usuarios
+      .filter(u => u.rolPersonalizado === 'PROF' || u.rolPersonalizado === 'ADMIN')
+      .forEach(prof => {
+        map.set(prof.id, getNombreVisible(prof));
+      });
+    return map;
+  }, [usuarios]);
+
+  // Aplicar filtros adicionales
+  // Si showAllStudents es true, usar todosLosEstudiantes, sino usar misEstudiantes
+  let estudiantesFiltrados = showAllStudents ? todosLosEstudiantes : misEstudiantes;
+
+  if (nivelFilter !== 'all') {
+    estudiantesFiltrados = estudiantesFiltrados.filter(u => u.nivel === nivelFilter);
+  }
+
+  if (searchTerm) {
+    const term = searchTerm.toLowerCase();
+    estudiantesFiltrados = estudiantesFiltrados.filter(u => {
+      const nombre = getNombreVisible(u).toLowerCase();
+      const email = (u.email || '').toLowerCase();
+      return nombre.includes(term) || email.includes(term);
+    });
+  }
+
+  const columns = [
+    {
+      key: 'nombre',
+      label: 'Estudiante',
+      render: (u) => (
+        <div>
+          <p className="font-medium text-sm">{getNombreVisible(u)}</p>
+          <p className="text-xs text-ui/80">{u.email}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'profesor',
+      label: 'Profesor',
+      render: (u) => {
+        const profesorId = u.profesorAsignadoId;
+        if (!profesorId) {
+          return <span className="text-xs text-ui/80">-</span>;
         }
-        if ((e.ctrlKey || e.metaKey) && e.key === '.') {
-          e.preventDefault();
-          setShowFeedbackDrawer(false);
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showFeedbackDrawer]);
-
-  const semanaActual = calcularLunesSemanaISO(formatLocalDate(new Date()));
-  const estadisticasAlumnos = filteredEstudiantes.map(alumno => {
-    const stats = calcularEstadisticasSemana(alumno.id, semanaActual);
-    return { ...alumno, ...stats };
-  });
+        const profesorNombre = profesoresMap.get(profesorId);
+        return (
+          <span className="text-sm text-[var(--color-text-primary)]">
+            {profesorNombre || '-'}
+          </span>
+        );
+      },
+      sortValue: (u) => {
+        const profesorId = u.profesorAsignadoId;
+        if (!profesorId) return '';
+        return profesoresMap.get(profesorId) || '';
+      },
+    },
+    {
+      key: 'nivel',
+      label: 'Nivel',
+      render: (u) => {
+        const nivelLabels = {
+          principiante: 'Principiante',
+          intermedio: 'Intermedio',
+          avanzado: 'Avanzado',
+          profesional: 'Profesional',
+        };
+        return u.nivel ? (
+          <Badge variant="info">{nivelLabels[u.nivel] || u.nivel}</Badge>
+        ) : (
+          <span className="text-xs text-ui/80">-</span>
+        );
+      },
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
         icon={Users}
         title="Mis Estudiantes"
-        subtitle="Gestiona el progreso y feedback de tus estudiantes"
+        subtitle="Gestiona y visualiza información de tus estudiantes"
         filters={
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-            <Input
-              placeholder="Buscar estudiantes... (Ctrl/⌘+K)"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-10 rounded-xl border-ui focus-brand"
-            />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ui"
-                aria-label="Limpiar búsqueda"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+          <div className="flex gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ui/80" />
+              <Input
+                placeholder="Buscar estudiante..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={`w-full pl-9 pr-9 ${componentStyles.controls.inputDefault}`}
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ui/80 hover:text-ui"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            
+            <Select value={nivelFilter} onValueChange={setNivelFilter}>
+              <SelectTrigger className={`w-40 ${componentStyles.controls.selectDefault}`}>
+                <SelectValue placeholder="Nivel" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los niveles</SelectItem>
+                <SelectItem value="principiante">Principiante</SelectItem>
+                <SelectItem value="intermedio">Intermedio</SelectItem>
+                <SelectItem value="avanzado">Avanzado</SelectItem>
+                <SelectItem value="profesional">Profesional</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant={showAllStudents ? "outline" : "default"}
+              onClick={() => setShowAllStudents(!showAllStudents)}
+              className={showAllStudents ? componentStyles.buttons.secondary : componentStyles.buttons.primary}
+            >
+              {showAllStudents ? "Mis estudiantes" : "Ver todos"}
+            </Button>
           </div>
         }
       />
 
-      <div className="max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8">
-        <Card className="app-card">
+      <div className={componentStyles.layout.page}>
+        <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
-            <CardTitle className="text-lg">
-              Estudiantes ({estadisticasAlumnos.length})
-            </CardTitle>
+            <CardTitle className="text-lg">{estudiantesFiltrados.length} estudiante{estudiantesFiltrados.length !== 1 ? 's' : ''}</CardTitle>
           </CardHeader>
           <CardContent>
-            {loadingAsignaciones ? (
-              <div className="text-center py-12">
-                <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-muted">Cargando estudiantes...</p>
-              </div>
-            ) : estadisticasAlumnos.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="w-16 h-16 mx-auto mb-4 icon-empty" />
-                <p className="text-muted mb-2">
-                  {searchTerm ? 'No se encontraron estudiantes' : 'No tienes estudiantes asignados'}
-                </p>
-                {!searchTerm && isProf && (
-                  <Alert className="mt-4 rounded-xl border-amber-200 bg-amber-50 text-left max-w-lg mx-auto">
-                    <AlertCircle className="h-4 w-4 text-amber-700" />
-                    <AlertDescription className="text-sm">
-                      <strong className="text-amber-900">¿Dónde están mis estudiantes?</strong>
-                      <ul className="list-disc list-inside mt-2 space-y-1 text-xs text-amber-800">
-                        <li>Necesitas tener <strong>asignaciones activas</strong> creadas para tus alumnos</li>
-                        <li>Las asignaciones deben estar en estado: <strong>publicada, en curso o borrador</strong></li>
-                        <li>Revisa la consola del navegador para logs de diagnóstico (F12 → Console)</li>
-                      </ul>
-                      <div className="mt-3 p-2 bg-amber-100 rounded-lg text-xs font-mono text-amber-900">
-                        📊 Asignaciones encontradas: {asignaciones.filter(a => a.profesorId === currentUser?.id).length}
-                      </div>
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-            ) : (
-              <UnifiedTable
-                columns={[
-                  {
-                    key: 'nombre',
-                    label: 'Estudiante',
-                    sortable: true,
-                    render: (e) => (
-                      <div className="min-w-0">
-                        <p className="font-semibold truncate">{displayName(e)}</p>
-                        <p className="text-xs text-muted truncate">{e.email}</p>
-                      </div>
-                    ),
-                    sortValue: (e) => displayName(e)
+            <UnifiedTable
+              columns={columns}
+              data={estudiantesFiltrados}
+              selectable={true}
+              bulkActions={[
+                {
+                  label: 'Enviar enlace mágico',
+                  icon: Mail,
+                  onClick: async (selectedIds) => {
+                    const estudiantesSeleccionados = estudiantesFiltrados.filter(u => selectedIds.includes(u.id));
+                    
+                    const conEmail = estudiantesSeleccionados.filter(u => u.email);
+                    
+                    if (conEmail.length === 0) {
+                      toast.error('Ninguno de los estudiantes seleccionados tiene email');
+                      return;
+                    }
+
+                    let successCount = 0;
+                    let errorCount = 0;
+
+                    for (const estudiante of conEmail) {
+                      try {
+                        await sendMagicLink(estudiante.id, estudiante.email);
+                        successCount++;
+                      } catch (error) {
+                        console.error('[BulkAction] Error enviando magic link:', error);
+                        errorCount++;
+                      }
+                    }
+
+                    if (successCount > 0) {
+                      toast.success(`${successCount} enlace${successCount !== 1 ? 's' : ''} mágico${successCount !== 1 ? 's' : ''} enviado${successCount !== 1 ? 's' : ''}`);
+                    }
+                    if (errorCount > 0) {
+                      toast.error(`${errorCount} error${errorCount !== 1 ? 'es' : ''} al enviar`);
+                    }
                   },
-                  {
-                    key: 'minutos',
-                    label: 'Min. Semana',
-                    sortable: true,
-                    render: (e) => (
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-blue-600 shrink-0" />
-                        <span className="font-medium">{e.minutosReales} min</span>
-                      </div>
-                    ),
-                    sortValue: (e) => e.minutosReales
+                },
+                {
+                  label: 'Enviar recuperación de contraseña',
+                  icon: KeyRound,
+                  onClick: async (selectedIds) => {
+                    const estudiantesSeleccionados = estudiantesFiltrados.filter(u => selectedIds.includes(u.id));
+                    
+                    const conEmail = estudiantesSeleccionados.filter(u => u.email);
+                    
+                    if (conEmail.length === 0) {
+                      toast.error('Ninguno de los estudiantes seleccionados tiene email');
+                      return;
+                    }
+
+                    let successCount = 0;
+                    let errorCount = 0;
+
+                    for (const estudiante of conEmail) {
+                      try {
+                        await sendResetPassword(estudiante.id, estudiante.email);
+                        successCount++;
+                      } catch (error) {
+                        console.error('[BulkAction] Error enviando reset password:', error);
+                        errorCount++;
+                      }
+                    }
+
+                    if (successCount > 0) {
+                      toast.success(`${successCount} email${successCount !== 1 ? 's' : ''} de recuperación enviado${successCount !== 1 ? 's' : ''}`);
+                    }
+                    if (errorCount > 0) {
+                      toast.error(`${errorCount} error${errorCount !== 1 ? 'es' : ''} al enviar`);
+                    }
                   },
+                },
+              ]}
+              getRowActions={(u) => {
+                const actions = [
                   {
-                    key: 'calidad',
-                    label: 'Calidad Media',
-                    sortable: true,
-                    render: (e) => (
-                      <div className="flex items-center gap-2">
-                        <Star className="w-4 h-4 text-amber-500 shrink-0" />
-                        <span className="font-medium">{e.calidadMedia}/4</span>
-                      </div>
-                    ),
-                    sortValue: (e) => parseFloat(e.calidadMedia)
-                  }
-                ]}
-                data={estadisticasAlumnos}
-                getRowActions={(alumno) => [
-                  {
-                    id: 'view',
-                    label: 'Dar feedback',
-                    icon: <MessageSquare className="w-4 h-4" />,
-                    onClick: () => handleAbrirFeedback(alumno),
+                    id: 'edit',
+                    label: 'Editar perfil',
+                    onClick: () => {
+                      setSelectedUserId(u.id);
+                      setIsPerfilModalOpen(true);
+                    },
                   },
-                  ...(isAdminOrProf && alumno.id !== currentUser?.id ? [{
-                    id: 'impersonate',
-                    label: 'Ver como estudiante',
-                    onClick: () => simularAlumno(alumno),
-                  }] : []),
-                ]}
-                keyField="id"
-                emptyMessage="No hay estudiantes"
-              />
-            )}
+                ];
+
+                // Añadir acciones de email solo para usuarios con email
+                // Estas acciones coinciden con las bulk actions disponibles
+                if (u.email) {
+                  actions.push(
+                    {
+                      id: 'magic_link',
+                      label: 'Enviar enlace mágico',
+                      icon: Mail,
+                      onClick: async () => {
+                        try {
+                          await sendMagicLink(u.id, u.email);
+                          toast.success('Enlace mágico enviado correctamente');
+                        } catch (error) {
+                          // Error ya manejado en el hook
+                        }
+                      },
+                    },
+                    {
+                      id: 'reset_password',
+                      label: 'Enviar recuperación de contraseña',
+                      icon: KeyRound,
+                      onClick: async () => {
+                        try {
+                          await sendResetPassword(u.id, u.email);
+                          toast.success('Email de recuperación enviado correctamente');
+                        } catch (error) {
+                          // Error ya manejado en el hook
+                        }
+                      },
+                    },
+                    {
+                      id: 'resend_invitation',
+                      label: 'Reenviar invitación',
+                      icon: UserPlusIcon,
+                      onClick: async () => {
+                        try {
+                          await resendInvitation(u.id, u.email);
+                        } catch (error) {
+                          // Error ya manejado en el hook
+                        }
+                      },
+                    }
+                  );
+                }
+
+                return actions;
+              }}
+              onRowClick={(u) => {
+                setSelectedUserId(u.id);
+                setIsPerfilModalOpen(true);
+              }}
+              emptyMessage={showAllStudents ? "No hay estudiantes" : "No tienes estudiantes asignados"}
+              emptyIcon={Users}
+            />
           </CardContent>
         </Card>
       </div>
 
-      {showFeedbackDrawer && selectedAlumno && (
-        <>
-          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowFeedbackDrawer(false)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-end pointer-events-none overflow-hidden">
-            <div
-              className="bg-card w-full max-w-2xl h-full shadow-card flex flex-col animate-in slide-in-from-right pointer-events-auto overflow-hidden rounded-l-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="border-b border-ui px-6 py-4 flex items-center justify-between bg-blue-600 sticky top-0 z-10">
-                <div className="flex items-center gap-3 text-white">
-                  <MessageSquare className="w-6 h-6" />
-                  <div>
-                    <h2 className="text-xl font-bold">Feedback Semanal</h2>
-                    <p className="text-sm text-white/90">{displayName(selectedAlumno)}</p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowFeedbackDrawer(false)}
-                  className="text-white hover:bg-white/20 h-9 w-9 rounded-xl focus-brand"
-                  aria-label="Cerrar drawer"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                <div>
-                  <Label htmlFor="semana">Semana (Lunes inicio)</Label>
-                  <Input
-                    id="semana"
-                    type="date"
-                    value={feedbackData.semanaInicioISO}
-                    onChange={(e) => {
-                      const nuevaSemana = calcularLunesSemanaISO(e.target.value);
-                      setFeedbackData({ ...feedbackData, semanaInicioISO: nuevaSemana });
-                    }}
-                    className="h-10 rounded-xl border-ui focus-brand"
-                  />
-                  <p className="text-xs text-muted mt-1">
-                    Semana ISO: {parseLocalDate(feedbackData.semanaInicioISO).toLocaleDateString('es-ES', {
-                      weekday: 'long', day: 'numeric', month: 'long'
-                    })}
-                  </p>
-                </div>
-
-                <Card className="app-card border-blue-200 bg-blue-50">
-                  <CardContent className="pt-4">
-                    <h3 className="font-semibold mb-3 text-blue-900">Resumen de la Semana</h3>
-                    {(() => {
-                      const stats = calcularEstadisticasSemana(selectedAlumno.id, feedbackData.semanaInicioISO);
-                      return (
-                        <div className="grid grid-cols-3 gap-3">
-                          <div className="text-center">
-                            <Clock className="w-5 h-5 mx-auto mb-1 text-blue-600" />
-                            <p className="text-lg font-bold text-blue-900">{stats.minutosReales}</p>
-                            <p className="text-xs text-blue-700">Minutos</p>
-                          </div>
-                          <div className="text-center">
-                            <TrendingUp className="w-5 h-5 mx-auto mb-1 text-blue-600" />
-                            <p className="text-lg font-bold text-blue-900">{stats.sesionesRealizadas}</p>
-                            <p className="text-xs text-blue-700">Sesiones</p>
-                          </div>
-                          <div className="text-center">
-                            <Star className="w-5 h-5 mx-auto mb-1 text-blue-600" />
-                            <p className="text-lg font-bold text-blue-900">{stats.calidadMedia}/4</p>
-                            <p className="text-xs text-blue-700">Calidad</p>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
-
-                <div>
-                  <Label htmlFor="notas">Observaciones del profesor *</Label>
-                  <Textarea
-                    id="notas"
-                    value={feedbackData.notaProfesor}
-                    onChange={(e) => setFeedbackData({ ...feedbackData, notaProfesor: e.target.value })}
-                    placeholder="Comentarios sobre el progreso, áreas de mejora, logros destacados..."
-                    rows={8}
-                    className="resize-none rounded-xl border-ui focus-brand"
-                  />
-                  <p className="text-xs text-muted mt-1">
-                    Escribe observaciones sobre el progreso del estudiante esta semana
-                  </p>
-                </div>
-
-                <MediaLinksInput
-                  value={feedbackData.mediaLinks}
-                  onChange={(links) => setFeedbackData({...feedbackData, mediaLinks: links})}
-                  onPreview={(idx) => handlePreviewMedia(idx, feedbackData.mediaLinks)}
-                />
-              </div>
-
-              <div className="border-t border-ui px-6 py-4 bg-muted sticky bottom-0">
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowFeedbackDrawer(false)}
-                    className="flex-1 h-10 rounded-xl"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={handleGuardarFeedback}
-                    disabled={guardarFeedbackMutation.isPending}
-                    className="flex-1 h-10 rounded-xl btn-primary shadow-sm focus-brand"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {guardarFeedbackMutation.isPending ? 'Guardando...' : 'Guardar'}
-                  </Button>
-                </div>
-                <p className="text-xs text-center text-muted mt-2">
-                  Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar
-                </p>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {showMediaPreview && (
-        <MediaPreviewModal
-          urls={previewUrls}
-          initialIndex={previewIndex}
-          open={showMediaPreview}
-          onClose={() => setShowMediaPreview(false)}
-        />
-      )}
+      <PerfilModal
+        open={isPerfilModalOpen}
+        onOpenChange={(open) => {
+          setIsPerfilModalOpen(open);
+          if (!open) {
+            setSelectedUserId(null);
+          }
+        }}
+        userId={selectedUserId}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useDesign } from "@/components/design/DesignProvider";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Alert, AlertDescription } from "@/components/ds";
 import { Button } from "@/components/ui/button";
@@ -15,20 +15,61 @@ import RequireRole from "@/components/auth/RequireRole";
 import PageHeader from "@/components/ds/PageHeader";
 import { runDesignAudit, QUICK_PROFILES, parseAuditSpec, runAudit } from "@/components/utils/auditor";
 import Tabs from "@/components/ds/Tabs";
-import { getAllPresets, saveCustomPreset, deleteCustomPreset, isBuiltInPreset, exportCustomPresets, importCustomPresets } from "@/components/design/DesignPresets";
+import { getAllPresets, saveCustomPreset, deleteCustomPreset, exportCustomPresets, importCustomPresets } from "@/components/design/DesignPresets";
+import { QAVisualContent } from "@/pages/qa-visual.jsx";
+import { componentStyles } from "@/design/componentStyles";
+
+function LayoutValuesDebug() {
+  const [values, setValues] = useState({});
+  
+  useEffect(() => {
+    const updateValues = () => {
+      const root = getComputedStyle(document.documentElement);
+      setValues({
+        maxWidth: root.getPropertyValue('--page-max-width').trim() || 'no definido',
+        paddingX: root.getPropertyValue('--page-padding-x').trim() || 'no definido',
+        paddingY: root.getPropertyValue('--page-padding-y').trim() || 'no definido',
+        gapX: root.getPropertyValue('--grid-gap-x').trim() || 'no definido',
+        gapY: root.getPropertyValue('--grid-gap-y').trim() || 'no definido',
+      });
+    };
+    updateValues();
+    // Actualizar cuando cambie el diseño
+    const interval = setInterval(updateValues, 500);
+    return () => clearInterval(interval);
+  }, []);
+  
+  return (
+    <div className="mt-4 p-3 bg-[var(--color-surface-muted)] rounded-lg text-xs">
+      <p className="font-semibold mb-2">Valores de Layout Actuales (CSS vars):</p>
+      <div className="space-y-1 font-mono">
+        <div>--page-max-width: <span className="text-[var(--color-primary)]">{values.maxWidth}</span></div>
+        <div>--page-padding-x: <span className="text-[var(--color-primary)]">{values.paddingX}</span></div>
+        <div>--page-padding-y: <span className="text-[var(--color-primary)]">{values.paddingY}</span></div>
+        <div>--grid-gap-x: <span className="text-[var(--color-primary)]">{values.gapX}</span></div>
+        <div>--grid-gap-y: <span className="text-[var(--color-primary)]">{values.gapY}</span></div>
+      </div>
+    </div>
+  );
+}
 
 function LabeledRow({ label, children }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3 border-b border-ui last:border-0">
-      <Label className="text-sm text-ui font-medium">{label}</Label>
+    <div className="flex items-center justify-between gap-4 py-3 border-b border-[var(--color-border-default)] last:border-0">
+      <Label className="text-sm text-[var(--color-text-primary)] font-medium">{label}</Label>
       <div>{children}</div>
     </div>
   );
 }
 
-function DesignPageContent() {
-  const { config, setConfig, reset } = useDesign();
+function DesignPageContent({ embedded = false }) {
+  const { design, setDesign, setDesignPartial, resetDesign, exportDesign, importDesign, loadPreset, currentPresetId, setPresetId, basePresets } = useDesign();
+  // Aliases para compatibilidad
+  const config = design;
+  const setConfig = setDesign;
+  const reset = resetDesign;
   const [activeSection, setActiveSection] = useState('presets');
+  const [qaTabsValue, setQaTabsValue] = useState('one');
   const [qaOutput, setQaOutput] = useState('');
   const [qaRunning, setQaRunning] = useState(false);
   const [auditReport, setAuditReport] = useState(null);
@@ -55,7 +96,24 @@ function DesignPageContent() {
     }));
   }, []);
 
-  const allPresets = useMemo(() => getAllPresets(), [config]);
+  // Combinar presets base (desde BasePresets.ts) con presets personalizados
+  const customPresets = useMemo(() => getAllPresets(), [config]);
+  const allPresets = useMemo(() => {
+    // Convertir basePresets a formato compatible con la UI
+    const basePresetsMap = {};
+    if (basePresets && Array.isArray(basePresets)) {
+      basePresets.forEach(preset => {
+        basePresetsMap[preset.id] = {
+          name: preset.label,
+          description: preset.description,
+          config: preset.design,
+          isBase: true, // Marcar como preset base
+        };
+      });
+    }
+    // Combinar con presets personalizados
+    return { ...basePresetsMap, ...customPresets };
+  }, [basePresets, customPresets]);
 
   const handleCopyConfig = useCallback(() => {
     try {
@@ -94,14 +152,23 @@ function DesignPageContent() {
   }, [presetName, presetDescription, config]);
 
   const handleLoadPreset = useCallback((presetId) => {
-    const preset = allPresets[presetId];
-    if (preset) {
-      setConfig(preset.config);
-      toast.success('✅ Preset cargado');
+    // Verificar si es un preset base
+    const basePreset = basePresets?.find(p => p.id === presetId);
+    if (basePreset) {
+      // Cargar preset base usando setPresetId
+      setPresetId(presetId);
+      toast.success('✅ Preset base cargado');
+      return;
+    }
+    
+    // Si no es base, intentar cargar como preset personalizado
+    const result = loadPreset(presetId);
+    if (result.success) {
+      toast.success('✅ Preset personalizado cargado');
     } else {
       toast.error('❌ Preset no encontrado');
     }
-  }, [allPresets, setConfig]);
+  }, [loadPreset, basePresets, setPresetId]);
 
   const handleDeletePreset = useCallback((presetId) => {
     if (!window.confirm('¿Eliminar este preset?')) return;
@@ -199,7 +266,7 @@ function DesignPageContent() {
         { sel: '.page-header', name: 'PageHeader' },
         { sel: 'button', name: 'Botones' },
         { sel: '.btn-primary', name: 'Botones primary' },
-        { sel: '.segmented', name: 'Tabs segmentadas' },
+        { sel: '[data-testid="tabs-segmented"]', name: 'Tabs segmentadas' },
         { sel: '[data-sidebar-abierto]', name: 'Sidebar state' },
       ];
       
@@ -306,27 +373,14 @@ function DesignPageContent() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={embedded ? "" : "min-h-screen bg-background"}>
       <PageHeader
         icon={Palette}
         title="Panel de Diseño"
-        subtitle="Ajusta tokens visuales en tiempo real sin tocar código"
+        subtitle="Herramienta interna para ajustar tokens visuales y presets del sistema"
       />
 
-      <div className="max-w-5xl mx-auto p-6 space-y-6">
-        <Card className="app-card border-blue-200 bg-blue-50">
-          <CardContent className="pt-4">
-            <div className="flex items-start gap-3">
-              <Settings className="w-5 h-5 text-blue-600 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-sm text-blue-900">
-                  <strong>Modo runtime:</strong> Los cambios se guardan en <code className="bg-blue-100 px-1 rounded">localStorage</code> y se aplican mediante CSS variables. Útil para probar variantes sin deployar código.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className={componentStyles.layout.page}>
         <div className="flex justify-center">
           <Tabs
             value={activeSection}
@@ -334,8 +388,6 @@ function DesignPageContent() {
             items={[
               { value: 'presets', label: 'Presets' },
               { value: 'controls', label: 'Controles' },
-              { value: 'audit', label: 'Auditoría' },
-              { value: 'qa', label: 'QA' },
               { value: 'preview', label: 'Preview' },
             ]}
           />
@@ -344,21 +396,23 @@ function DesignPageContent() {
         {activeSection === 'presets' && (
           <>
             <Card className="app-card">
-              <CardHeader className="border-b border-ui">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
                 <div className="flex items-center justify-between">
                   <CardTitle>Presets Disponibles</CardTitle>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       onClick={() => setShowImportExportModal(true)}
-                      className="h-9 rounded-xl shadow-sm"
+                      size="sm"
+                      className="h-8 rounded-xl"
                     >
                       <FileCode className="w-4 h-4 mr-2" />
                       Importar/Exportar
                     </Button>
                     <Button
                       onClick={() => setShowSavePresetModal(true)}
-                      className="btn-primary h-9 rounded-xl shadow-sm"
+                      size="sm"
+                      className="btn-primary h-8 rounded-xl"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Guardar Como...
@@ -366,49 +420,173 @@ function DesignPageContent() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-4">
-                <div className="grid md:grid-cols-2 gap-3">
-                  {Object.entries(allPresets).map(([id, preset]) => {
-                    const isActive = JSON.stringify(config) === JSON.stringify(preset.config);
-                    const isBuiltIn = isBuiltInPreset(id);
-                    
-                    return (
-                      <Card 
-                        key={id}
-                        className={`app-panel cursor-pointer transition-all ${
-                          isActive ? 'border-[hsl(var(--brand-500))] bg-[hsl(var(--brand-50))]' : 'hover:bg-muted'
-                        }`}
-                        onClick={() => handleLoadPreset(id)}
-                      >
-                        <CardContent className="pt-4">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-ui flex items-center gap-2">
-                                {preset.name}
-                                {isActive && <Badge className="badge-primary">Activo</Badge>}
-                                {isBuiltIn && <Badge className="badge-outline text-[10px]">Built-in</Badge>}
-                              </h4>
-                              <p className="text-xs text-muted mt-1">{preset.description}</p>
-                            </div>
-                            {!isBuiltIn && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeletePreset(id);
-                                }}
-                                className="h-8 w-8 p-0 text-[hsl(var(--danger))] hover:bg-[hsl(var(--danger))]/10 rounded-xl"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
+              <CardContent className="pt-4 text-[var(--color-text-primary)]">
+                {/* Presets Base */}
+                {basePresets && basePresets.length > 0 && (
+                  <div className="mb-4">
+                    <h3 className="text-xs font-semibold text-[var(--color-text-secondary)] mb-3 uppercase tracking-wide">
+                      Presets Base
+                    </h3>
+                    <div className={componentStyles.layout.grid2}>
+                      {basePresets.map((preset) => {
+                        const isActive = currentPresetId === preset.id;
+                        
+                        return (
+                          <Card 
+                            key={preset.id}
+                            className={`app-panel cursor-pointer transition-all border ${
+                              isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
+                            }`}
+                            onClick={() => handleLoadPreset(preset.id)}
+                          >
+                            <CardContent className="p-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="font-semibold text-sm text-[var(--color-text-primary)] truncate">
+                                      {preset.label}
+                                    </h4>
+                                    {isActive && (
+                                      <Badge className="badge-primary text-[10px] px-1.5 py-0.5 shrink-0">Activo</Badge>
+                                    )}
+                                    <Badge className="badge-outline text-[10px] px-1.5 py-0.5 shrink-0">Base</Badge>
+                                  </div>
+                                  <p className="text-xs text-[var(--color-text-secondary)] line-clamp-2">{preset.description}</p>
+                                </div>
+                                {!isActive && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleLoadPreset(preset.id);
+                                    }}
+                                    className="h-7 px-2 text-xs shrink-0"
+                                  >
+                                    Activar
+                                  </Button>
+                                )}
+                              </div>
+                              <div className="flex gap-2 mt-3">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      const json = JSON.stringify(preset.design || config, null, 2);
+                                      navigator.clipboard.writeText(json);
+                                      toast.success('✅ Preset exportado al portapapeles');
+                                    } catch (err) {
+                                      toast.error('❌ Error al exportar');
+                                    }
+                                  }}
+                                  className="h-7 px-2 text-xs flex-1"
+                                >
+                                  <Download className="w-3 h-3 mr-1" />
+                                  Exportar
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Presets Personalizados */}
+                {Object.keys(customPresets).length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-xs font-semibold text-[var(--color-text-secondary)] mb-3 uppercase tracking-wide">
+                      Presets Personalizados
+                    </h3>
+                    <div className={componentStyles.layout.grid2}>
+                      {Object.entries(customPresets).map(([id, preset]) => {
+                        const isActive = JSON.stringify(config) === JSON.stringify(preset.config);
+                        
+                        return (
+                          <Card 
+                            key={id}
+                            className={`app-panel cursor-pointer transition-all border ${
+                              isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
+                            }`}
+                            onClick={() => handleLoadPreset(id)}
+                          >
+                            <CardContent className="p-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="font-semibold text-sm text-[var(--color-text-primary)] truncate">
+                                      {preset.name}
+                                    </h4>
+                                    {isActive && (
+                                      <Badge className="badge-primary text-[10px] px-1.5 py-0.5 shrink-0">Activo</Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-[var(--color-text-secondary)] line-clamp-2">{preset.description || 'Sin descripción'}</p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeletePreset(id);
+                                  }}
+                                  className="h-7 w-7 p-0 shrink-0"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                              <div className="flex gap-2 mt-3">
+                                {!isActive && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleLoadPreset(id);
+                                    }}
+                                    className="h-7 px-2 text-xs flex-1"
+                                  >
+                                    Activar
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      const presetData = customPresets[id];
+                                      const json = JSON.stringify({ id, name: presetData.name, description: presetData.description, config: presetData.config }, null, 2);
+                                      navigator.clipboard.writeText(json);
+                                      toast.success('✅ Preset exportado al portapapeles');
+                                    } catch (err) {
+                                      toast.error('❌ Error al exportar');
+                                    }
+                                  }}
+                                  className="h-7 px-2 text-xs flex-1"
+                                >
+                                  <Download className="w-3 h-3 mr-1" />
+                                  Exportar
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mensaje si no hay presets personalizados */}
+                {Object.keys(customPresets).length === 0 && basePresets && basePresets.length > 0 && (
+                  <div className="text-center py-6 text-sm text-[var(--color-text-secondary)] border-t border-[var(--color-border-default)] mt-6">
+                    <p>No hay presets personalizados guardados.</p>
+                    <p className="mt-1 text-xs">Usa "Guardar Como..." para crear uno nuevo.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -417,17 +595,17 @@ function DesignPageContent() {
                 <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowSavePresetModal(false)} />
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
                   <Card className="w-full max-w-md pointer-events-auto app-card">
-                    <CardHeader className="border-b border-ui">
+                    <CardHeader className="border-b border-[var(--color-border-default)]">
                       <CardTitle>Guardar Preset</CardTitle>
                     </CardHeader>
-                    <CardContent className="pt-4 space-y-4">
+                    <CardContent className="pt-4 space-y-4 text-[var(--color-text-primary)]">
                       <div>
                         <Label htmlFor="preset-name">Nombre del Preset</Label>
                         <Input
                           id="preset-name"
                           value={presetName}
                           onChange={(e) => setPresetName(e.target.value)}
-                          className="focus-brand"
+                          className={componentStyles.controls.inputDefault}
                         />
                       </div>
                       <div>
@@ -437,7 +615,7 @@ function DesignPageContent() {
                           value={presetDescription}
                           onChange={(e) => setPresetDescription(e.target.value)}
                           rows={3}
-                          className="focus-brand"
+                          className={componentStyles.controls.inputDefault}
                         />
                       </div>
                       <div className="flex gap-2">
@@ -471,7 +649,7 @@ function DesignPageContent() {
                 <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowImportExportModal(false)} />
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
                   <Card className="w-full max-w-md pointer-events-auto app-card">
-                    <CardHeader className="border-b border-ui flex items-center justify-between">
+                    <CardHeader className="border-b border-[var(--color-border-default)] flex items-center justify-between">
                       <CardTitle>Importar/Exportar Presets</CardTitle>
                       <Button
                         variant="ghost"
@@ -482,7 +660,7 @@ function DesignPageContent() {
                         <X className="w-4 h-4" />
                       </Button>
                     </CardHeader>
-                    <CardContent className="pt-4 space-y-4">
+                    <CardContent className="pt-4 space-y-4 text-[var(--color-text-primary)]">
                       <div className="space-y-2">
                         <Label htmlFor="export-json">Exportar presets personalizados:</Label>
                         <Textarea
@@ -490,14 +668,14 @@ function DesignPageContent() {
                           value={exportCustomPresets()}
                           readOnly
                           rows={6}
-                          className="font-mono text-xs focus-brand"
+                          className={`font-mono text-xs ${componentStyles.controls.inputDefault}`}
                         />
                         <Button onClick={handleExportPresets} className="w-full btn-secondary">
                           <Copy className="w-4 h-4 mr-2" />
                           Copiar al portapapeles
                         </Button>
                       </div>
-                      <div className="space-y-2 pt-4 border-t border-ui">
+                      <div className="space-y-2 pt-4 border-t border-[var(--color-border-default)]">
                         <Label htmlFor="import-json">Importar presets (pegar JSON aquí):</Label>
                         <Textarea
                           id="import-json"
@@ -508,7 +686,7 @@ function DesignPageContent() {
                           }}
                           placeholder="Pega el JSON de presets aquí..."
                           rows={6}
-                          className="font-mono text-xs focus-brand"
+                          className={`font-mono text-xs ${componentStyles.controls.inputDefault}`}
                         />
                         {importError && (
                           <Alert variant="danger">
@@ -528,11 +706,11 @@ function DesignPageContent() {
             )}
 
             <Card className="app-card">
-              <CardHeader className="border-b border-ui">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>Configuración Actual</CardTitle>
               </CardHeader>
-              <CardContent className="pt-4">
-                <pre className="text-xs font-mono bg-muted p-4 rounded-xl border border-ui overflow-x-auto">
+                    <CardContent className="pt-4 text-[var(--color-text-primary)]">
+                <pre className="text-xs font-mono bg-[var(--color-surface-muted)] p-4 rounded-xl border border-[var(--color-border-default)] overflow-x-auto">
                   {JSON.stringify(config, null, 2)}
                 </pre>
               </CardContent>
@@ -543,93 +721,714 @@ function DesignPageContent() {
         {activeSection === 'controls' && (
           <>
             <Card className="app-card">
-              <CardHeader className="border-b border-ui">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>Controles de Diseño</CardTitle>
               </CardHeader>
-              <CardContent className="divide-y divide-ui">
-                <LabeledRow label="Títulos con Serif">
-                  <Switch 
-                    checked={config.serifHeadings} 
-                    onCheckedChange={(v) => setConfig({ ...config, serifHeadings: !!v })} 
-                  />
-                </LabeledRow>
+              <CardContent className="divide-y divide-[var(--color-border-default)] text-[var(--color-text-primary)]">
+                {/* Tipografía */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Tipografía</h3>
+                  <LabeledRow label="Títulos con Serif">
+                    <Switch 
+                      checked={design?.typography?.serifHeadings || false} 
+                      onCheckedChange={(v) => setDesignPartial('typography.serifHeadings', !!v)} 
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Tamaño Base (px)">
+                    <Input
+                      type="number"
+                      value={design?.typography?.fontSizeBase || 16}
+                      onChange={(e) => setDesignPartial('typography.fontSizeBase', parseInt(e.target.value) || 16)}
+                      className={`w-32 ${componentStyles.controls.inputDefault}`}
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Escala de Tamaño">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={design?.typography?.fontSizeScale || 1.25}
+                      onChange={(e) => setDesignPartial('typography.fontSizeScale', parseFloat(e.target.value) || 1.25)}
+                      className={`w-32 ${componentStyles.controls.inputDefault}`}
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Fuente Base">
+                    <Input
+                      type="text"
+                      value={design?.typography?.fontFamilyBase || 'Raleway, system-ui, -apple-system, sans-serif'}
+                      onChange={(e) => setDesignPartial('typography.fontFamilyBase', e.target.value)}
+                      className={`w-64 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Fuente Títulos">
+                    <Input
+                      type="text"
+                      value={design?.typography?.fontFamilyHeadings || 'Inter, system-ui, -apple-system, sans-serif'}
+                      onChange={(e) => setDesignPartial('typography.fontFamilyHeadings', e.target.value)}
+                      className={`w-64 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Interlineado Tight">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={design?.typography?.lineHeight?.tight || 1.25}
+                      onChange={(e) => setDesignPartial('typography.lineHeight.tight', parseFloat(e.target.value) || 1.25)}
+                      className={`w-32 ${componentStyles.controls.inputDefault}`}
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Interlineado Normal">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={design?.typography?.lineHeight?.normal || 1.5}
+                      onChange={(e) => setDesignPartial('typography.lineHeight.normal', parseFloat(e.target.value) || 1.5)}
+                      className={`w-32 ${componentStyles.controls.inputDefault}`}
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Interlineado Relaxed">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={design?.typography?.lineHeight?.relaxed || 1.75}
+                      onChange={(e) => setDesignPartial('typography.lineHeight.relaxed', parseFloat(e.target.value) || 1.75)}
+                      className={`w-32 ${componentStyles.controls.inputDefault}`}
+                    />
+                  </LabeledRow>
+                </div>
 
-                <LabeledRow label="Radio de Cards">
-                  <Select 
-                    value={config.radius.card} 
-                    onValueChange={(v) => setConfig({ ...config, radius: { ...config.radius, card: v } })}
-                  >
-                    <SelectTrigger className="w-48 h-9 rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="lg">lg (12px)</SelectItem>
-                      <SelectItem value="xl">xl (16px)</SelectItem>
-                      <SelectItem value="2xl">2xl (20px)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </LabeledRow>
+                {/* Layout */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Layout</h3>
+                  <LabeledRow label="Radio Global">
+                    <Select 
+                      value={design?.layout?.radius?.global || 'lg'} 
+                      onValueChange={(v) => setDesignPartial('layout.radius.global', v)}
+                    >
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">none (0px)</SelectItem>
+                        <SelectItem value="sm">sm (4px)</SelectItem>
+                        <SelectItem value="md">md (8px)</SelectItem>
+                        <SelectItem value="lg">lg (12px)</SelectItem>
+                        <SelectItem value="xl">xl (16px)</SelectItem>
+                        <SelectItem value="2xl">2xl (20px)</SelectItem>
+                        <SelectItem value="3xl">3xl (24px)</SelectItem>
+                        <SelectItem value="full">full (9999px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
+                  <LabeledRow label="Radio de Cards">
+                    <Select 
+                      value={design?.layout?.radius?.card || 'lg'} 
+                      onValueChange={(v) => setDesignPartial('layout.radius.card', v)}
+                    >
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">none (0px)</SelectItem>
+                        <SelectItem value="sm">sm (4px)</SelectItem>
+                        <SelectItem value="md">md (8px)</SelectItem>
+                        <SelectItem value="lg">lg (12px)</SelectItem>
+                        <SelectItem value="xl">xl (16px)</SelectItem>
+                        <SelectItem value="2xl">2xl (20px)</SelectItem>
+                        <SelectItem value="3xl">3xl (24px)</SelectItem>
+                        <SelectItem value="full">full (9999px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
+                  <LabeledRow label="Radio de Controles">
+                    <Select 
+                      value={design?.layout?.radius?.controls || 'lg'} 
+                      onValueChange={(v) => setDesignPartial('layout.radius.controls', v)}
+                    >
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">none (0px)</SelectItem>
+                        <SelectItem value="sm">sm (4px)</SelectItem>
+                        <SelectItem value="md">md (8px)</SelectItem>
+                        <SelectItem value="lg">lg (12px)</SelectItem>
+                        <SelectItem value="xl">xl (16px)</SelectItem>
+                        <SelectItem value="2xl">2xl (20px)</SelectItem>
+                        <SelectItem value="3xl">3xl (24px)</SelectItem>
+                        <SelectItem value="full">full (9999px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
+                  <LabeledRow label="Radio de Pills">
+                    <Select 
+                      value={design?.layout?.radius?.pill || 'lg'} 
+                      onValueChange={(v) => setDesignPartial('layout.radius.pill', v)}
+                    >
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">none (0px)</SelectItem>
+                        <SelectItem value="sm">sm (4px)</SelectItem>
+                        <SelectItem value="md">md (8px)</SelectItem>
+                        <SelectItem value="lg">lg (12px)</SelectItem>
+                        <SelectItem value="xl">xl (16px)</SelectItem>
+                        <SelectItem value="2xl">2xl (20px)</SelectItem>
+                        <SelectItem value="3xl">3xl (24px)</SelectItem>
+                        <SelectItem value="full">full (9999px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
+                  <LabeledRow label="Radio de Modales">
+                    <Select 
+                      value={design?.layout?.radius?.modal || 'xl'} 
+                      onValueChange={(v) => setDesignPartial('layout.radius.modal', v)}
+                    >
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">none (0px)</SelectItem>
+                        <SelectItem value="sm">sm (4px)</SelectItem>
+                        <SelectItem value="md">md (8px)</SelectItem>
+                        <SelectItem value="lg">lg (12px)</SelectItem>
+                        <SelectItem value="xl">xl (16px)</SelectItem>
+                        <SelectItem value="2xl">2xl (20px)</SelectItem>
+                        <SelectItem value="3xl">3xl (24px)</SelectItem>
+                        <SelectItem value="full">full (9999px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
+                  <LabeledRow label="Sombras">
+                    <Select 
+                      value={design?.layout?.shadow || 'md'} 
+                      onValueChange={(v) => setDesignPartial('layout.shadow', v)}
+                    >
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Ninguna</SelectItem>
+                        <SelectItem value="sm">Small</SelectItem>
+                        <SelectItem value="card">Card (sutil)</SelectItem>
+                        <SelectItem value="md">Medium</SelectItem>
+                        <SelectItem value="lg">Large</SelectItem>
+                        <SelectItem value="xl">Extra Large</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
+                  <LabeledRow label="Densidad">
+                    <Select 
+                      value={design?.layout?.density || 'normal'} 
+                      onValueChange={(v) => setDesignPartial('layout.density', v)}
+                    >
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="compact">Compact</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="spacious">Spacious</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
+                </div>
 
-                <LabeledRow label="Radio de Controles">
-                  <Select 
-                    value={config.radius.controls} 
-                    onValueChange={(v) => setConfig({ ...config, radius: { ...config.radius, controls: v } })}
-                  >
-                    <SelectTrigger className="w-48 h-9 rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="lg">lg (12px)</SelectItem>
-                      <SelectItem value="xl">xl (16px)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </LabeledRow>
+                {/* Colores Principales */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Colores Principales</h3>
+                  <LabeledRow label="Color Primario">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.primary || '#4F46E5'}
+                        onChange={(e) => setDesignPartial('colors.primary', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.primary || '#4F46E5'}
+                        onChange={(e) => setDesignPartial('colors.primary', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Color Primario Soft">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.primarySoft || '#EEF2FF'}
+                        onChange={(e) => setDesignPartial('colors.primarySoft', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.primarySoft || '#EEF2FF'}
+                        onChange={(e) => setDesignPartial('colors.primarySoft', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Color Secundario">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.secondary || '#6366F1'}
+                        onChange={(e) => setDesignPartial('colors.secondary', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.secondary || '#6366F1'}
+                        onChange={(e) => setDesignPartial('colors.secondary', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Color Accent">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.accent || '#F97316'}
+                        onChange={(e) => setDesignPartial('colors.accent', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.accent || '#F97316'}
+                        onChange={(e) => setDesignPartial('colors.accent', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                </div>
 
-                <LabeledRow label="Sombras">
-                  <Select 
-                    value={config.shadow} 
-                    onValueChange={(v) => setConfig({ ...config, shadow: v })}
-                  >
-                    <SelectTrigger className="w-48 h-9 rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Ninguna</SelectItem>
-                      <SelectItem value="card">Card (sutil)</SelectItem>
-                      <SelectItem value="md">Medium</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </LabeledRow>
+                {/* Colores de Estado */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Colores de Estado</h3>
+                  <LabeledRow label="Success">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.success || '#10B981'}
+                        onChange={(e) => setDesignPartial('colors.success', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.success || '#10B981'}
+                        onChange={(e) => setDesignPartial('colors.success', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Warning">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.warning || '#F59E0B'}
+                        onChange={(e) => setDesignPartial('colors.warning', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.warning || '#F59E0B'}
+                        onChange={(e) => setDesignPartial('colors.warning', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Danger">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.danger || '#EF4444'}
+                        onChange={(e) => setDesignPartial('colors.danger', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.danger || '#EF4444'}
+                        onChange={(e) => setDesignPartial('colors.danger', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Info">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.info || '#3B82F6'}
+                        onChange={(e) => setDesignPartial('colors.info', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.info || '#3B82F6'}
+                        onChange={(e) => setDesignPartial('colors.info', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                </div>
 
-                <LabeledRow label="Densidad">
-                  <Select 
-                    value={config.density} 
-                    onValueChange={(v) => setConfig({ ...config, density: v })}
-                  >
-                    <SelectTrigger className="w-48 h-9 rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="comfortable">Comfortable</SelectItem>
-                      <SelectItem value="compact">Compact</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </LabeledRow>
+                {/* Colores de Superficie */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Colores de Superficie</h3>
+                  <LabeledRow label="Background">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.background || '#FFFFFF'}
+                        onChange={(e) => setDesignPartial('colors.background', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.background || '#FFFFFF'}
+                        onChange={(e) => setDesignPartial('colors.background', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Surface">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.surface || '#F9FAFB'}
+                        onChange={(e) => setDesignPartial('colors.surface', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.surface || '#F9FAFB'}
+                        onChange={(e) => setDesignPartial('colors.surface', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Surface Elevated">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.surfaceElevated || '#FFFFFF'}
+                        onChange={(e) => setDesignPartial('colors.surfaceElevated', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.surfaceElevated || '#FFFFFF'}
+                        onChange={(e) => setDesignPartial('colors.surfaceElevated', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Surface Muted">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.surfaceMuted || '#F3F4F6'}
+                        onChange={(e) => setDesignPartial('colors.surfaceMuted', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.surfaceMuted || '#F3F4F6'}
+                        onChange={(e) => setDesignPartial('colors.surfaceMuted', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                </div>
 
-                <LabeledRow label="Focus Ring">
-                  <Select 
-                    value={config.focus} 
-                    onValueChange={(v) => setConfig({ ...config, focus: v })}
-                  >
-                    <SelectTrigger className="w-48 h-9 rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="orange">Orange (brand)</SelectItem>
-                      <SelectItem value="system">System (blue)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </LabeledRow>
+                {/* Colores de Texto */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Colores de Texto</h3>
+                  <LabeledRow label="Texto Primario">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.text?.primary || '#111827'}
+                        onChange={(e) => setDesignPartial('colors.text.primary', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.text?.primary || '#111827'}
+                        onChange={(e) => setDesignPartial('colors.text.primary', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Texto Secundario">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.text?.secondary || '#6B7280'}
+                        onChange={(e) => setDesignPartial('colors.text.secondary', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.text?.secondary || '#6B7280'}
+                        onChange={(e) => setDesignPartial('colors.text.secondary', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Texto Muted">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.text?.muted || '#9CA3AF'}
+                        onChange={(e) => setDesignPartial('colors.text.muted', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.text?.muted || '#9CA3AF'}
+                        onChange={(e) => setDesignPartial('colors.text.muted', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Texto Inverse">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.text?.inverse || '#FFFFFF'}
+                        onChange={(e) => setDesignPartial('colors.text.inverse', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.text?.inverse || '#FFFFFF'}
+                        onChange={(e) => setDesignPartial('colors.text.inverse', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                </div>
+
+                {/* Colores de Borde */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Colores de Borde</h3>
+                  <LabeledRow label="Borde Default">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.border?.default || '#E5E7EB'}
+                        onChange={(e) => setDesignPartial('colors.border.default', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.border?.default || '#E5E7EB'}
+                        onChange={(e) => setDesignPartial('colors.border.default', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Borde Muted">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.border?.muted || '#F3F4F6'}
+                        onChange={(e) => setDesignPartial('colors.border.muted', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.border?.muted || '#F3F4F6'}
+                        onChange={(e) => setDesignPartial('colors.border.muted', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Borde Strong">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="color"
+                        value={design?.colors?.border?.strong || '#D1D5DB'}
+                        onChange={(e) => setDesignPartial('colors.border.strong', e.target.value)}
+                        className={`w-16 ${componentStyles.controls.inputDefault}`}
+                      />
+                      <Input
+                        type="text"
+                        value={design?.colors?.border?.strong || '#D1D5DB'}
+                        onChange={(e) => setDesignPartial('colors.border.strong', e.target.value)}
+                        className={`w-32 font-mono text-xs ${componentStyles.controls.inputDefault}`}
+                      />
+                    </div>
+                  </LabeledRow>
+                </div>
+
+                {/* Componentes */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Componentes</h3>
+                  <LabeledRow label="Radio de Botones">
+                    <Select 
+                      value={design?.components?.button?.radius || 'lg'} 
+                      onValueChange={(v) => setDesignPartial('components.button.radius', v)}
+                    >
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">none (0px)</SelectItem>
+                        <SelectItem value="sm">sm (4px)</SelectItem>
+                        <SelectItem value="md">md (8px)</SelectItem>
+                        <SelectItem value="lg">lg (12px)</SelectItem>
+                        <SelectItem value="xl">xl (16px)</SelectItem>
+                        <SelectItem value="2xl">2xl (20px)</SelectItem>
+                        <SelectItem value="3xl">3xl (24px)</SelectItem>
+                        <SelectItem value="full">full (9999px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
+                  <LabeledRow label="Padding Botón SM">
+                    <Input
+                      type="text"
+                      value={design?.components?.button?.padding?.sm || '0.375rem 0.75rem'}
+                      onChange={(e) => setDesignPartial('components.button.padding.sm', e.target.value)}
+                      className="w-48 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Padding Botón MD">
+                    <Input
+                      type="text"
+                      value={design?.components?.button?.padding?.md || '0.5rem 1rem'}
+                      onChange={(e) => setDesignPartial('components.button.padding.md', e.target.value)}
+                      className="w-48 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Padding Botón LG">
+                    <Input
+                      type="text"
+                      value={design?.components?.button?.padding?.lg || '0.75rem 1.5rem'}
+                      onChange={(e) => setDesignPartial('components.button.padding.lg', e.target.value)}
+                      className="w-48 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Radio de Inputs">
+                    <Select 
+                      value={design?.components?.input?.radius || 'lg'} 
+                      onValueChange={(v) => setDesignPartial('components.input.radius', v)}
+                    >
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">none (0px)</SelectItem>
+                        <SelectItem value="sm">sm (4px)</SelectItem>
+                        <SelectItem value="md">md (8px)</SelectItem>
+                        <SelectItem value="lg">lg (12px)</SelectItem>
+                        <SelectItem value="xl">xl (16px)</SelectItem>
+                        <SelectItem value="2xl">2xl (20px)</SelectItem>
+                        <SelectItem value="3xl">3xl (24px)</SelectItem>
+                        <SelectItem value="full">full (9999px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
+                  <LabeledRow label="Padding de Inputs">
+                    <Input
+                      type="text"
+                      value={design?.components?.input?.padding || '0.5rem 0.75rem'}
+                      onChange={(e) => setDesignPartial('components.input.padding', e.target.value)}
+                      className="w-48 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Radio de Cards">
+                    <Select 
+                      value={design?.components?.card?.radius || 'lg'} 
+                      onValueChange={(v) => setDesignPartial('components.card.radius', v)}
+                    >
+                      <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">none (0px)</SelectItem>
+                        <SelectItem value="sm">sm (4px)</SelectItem>
+                        <SelectItem value="md">md (8px)</SelectItem>
+                        <SelectItem value="lg">lg (12px)</SelectItem>
+                        <SelectItem value="xl">xl (16px)</SelectItem>
+                        <SelectItem value="2xl">2xl (20px)</SelectItem>
+                        <SelectItem value="3xl">3xl (24px)</SelectItem>
+                        <SelectItem value="full">full (9999px)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </LabeledRow>
+                  <LabeledRow label="Ancho Sidebar">
+                    <Input
+                      type="text"
+                      value={design?.components?.sidebar?.width || '16rem'}
+                      onChange={(e) => setDesignPartial('components.sidebar.width', e.target.value)}
+                      className="w-32 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Ancho Sidebar Colapsado">
+                    <Input
+                      type="text"
+                      value={design?.components?.sidebar?.widthCollapsed || '4rem'}
+                      onChange={(e) => setDesignPartial('components.sidebar.widthCollapsed', e.target.value)}
+                      className="w-32 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Altura Header">
+                    <Input
+                      type="text"
+                      value={design?.components?.header?.height || '4rem'}
+                      onChange={(e) => setDesignPartial('components.header.height', e.target.value)}
+                      className="w-32 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                </div>
+
+                {/* Focus */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Focus y Accesibilidad</h3>
+                  <LabeledRow label="Ancho Ring Focus">
+                    <Input
+                      type="text"
+                      value={design?.focus?.ring?.width || '2px'}
+                      onChange={(e) => setDesignPartial('focus.ring.width', e.target.value)}
+                      className="w-32 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                  <LabeledRow label="Color Ring Focus">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="text"
+                        value={design?.focus?.ring?.color || 'rgba(79, 70, 229, 0.5)'}
+                        onChange={(e) => setDesignPartial('focus.ring.color', e.target.value)}
+                        className="w-48 h-9 rounded-xl font-mono text-xs"
+                      />
+                    </div>
+                  </LabeledRow>
+                  <LabeledRow label="Offset Ring Focus">
+                    <Input
+                      type="text"
+                      value={design?.focus?.ring?.offset || '2px'}
+                      onChange={(e) => setDesignPartial('focus.ring.offset', e.target.value)}
+                      className="w-32 h-9 rounded-xl font-mono text-xs"
+                    />
+                  </LabeledRow>
+                </div>
+
+                {/* Brand Hue (compatibilidad) */}
+                <div className="py-2">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Brand (Compatibilidad)</h3>
+                  <LabeledRow label="Brand Hue">
+                    <Input
+                      type="number"
+                      min="0"
+                      max="360"
+                      value={design?.brandHue || 26}
+                      onChange={(e) => setDesignPartial('brandHue', parseInt(e.target.value) || 26)}
+                      className={`w-32 ${componentStyles.controls.inputDefault}`}
+                    />
+                  </LabeledRow>
+                </div>
               </CardContent>
             </Card>
 
@@ -642,13 +1441,70 @@ function DesignPageContent() {
                 <Copy className="w-4 h-4 mr-2" />
                 Copiar JSON de Configuración
               </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  const json = exportDesign();
+                  navigator.clipboard.writeText(json);
+                  toast.success('✅ Diseño exportado al portapapeles');
+                }} 
+                className="h-10 rounded-xl"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Exportar Diseño
+              </Button>
             </div>
+            
+            <Card className="app-card">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
+                <CardTitle>Importar Diseño</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-4">
+                <Textarea
+                  placeholder="Pega aquí el JSON del diseño a importar..."
+                  rows={6}
+                  className="font-mono text-xs focus-brand"
+                  onChange={(e) => {
+                    try {
+                      const result = importDesign(e.target.value);
+                      if (result.success) {
+                        toast.success('✅ Diseño importado');
+                        e.target.value = '';
+                      } else {
+                        toast.error('❌ Error: ' + result.error);
+                      }
+                    } catch (err) {
+                      // Solo importar cuando sea JSON válido completo
+                    }
+                  }}
+                />
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    const json = prompt('Pega el JSON del diseño:');
+                    if (json) {
+                      const result = importDesign(json);
+                      if (result.success) {
+                        toast.success('✅ Diseño importado');
+                      } else {
+                        toast.error('❌ Error: ' + result.error);
+                      }
+                    }
+                  }} 
+                  className="h-10 rounded-xl"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Importar desde JSON
+                </Button>
+              </CardContent>
+            </Card>
           </>
         )}
 
-        {activeSection === 'audit' && (
+        {/* Auditoría y QA: funcionalidad mantenida pero oculta en UI simplificada */}
+        {false && activeSection === 'audit' && (
           <Card className="app-card">
-            <CardHeader className="border-b border-ui">
+            <CardHeader className="border-b border-[var(--color-border-default)]">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <Scan className="w-5 h-5" />
@@ -682,17 +1538,17 @@ function DesignPageContent() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-4">
+                    <CardContent className="pt-4 text-[var(--color-text-primary)]">
               {auditReport ? (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <Card className="bg-slate-50 rounded-lg p-3 border border-ui">
-                      <div className="text-xs text-muted uppercase tracking-wide">Archivos escaneados</div>
-                      <div className="text-2xl font-bold text-ui">{auditReport?.summary?.filesScanned || 0}</div>
+                  <div className={componentStyles.layout.grid2}>
+                    <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
+                      <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Archivos escaneados</div>
+                      <div className="text-2xl font-bold text-[var(--color-text-primary)]">{auditReport?.summary?.filesScanned || 0}</div>
                     </Card>
-                    <Card className="bg-slate-50 rounded-lg p-3 border border-ui">
-                      <div className="text-xs text-muted uppercase tracking-wide">Problemas encontrados</div>
-                      <div className="text-2xl font-bold text-ui">{auditReport?.summary?.totalIssues || 0}</div>
+                    <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
+                      <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Problemas encontrados</div>
+                      <div className="text-2xl font-bold text-[var(--color-text-primary)]">{auditReport?.summary?.totalIssues || 0}</div>
                     </Card>
                   </div>
 
@@ -704,39 +1560,39 @@ function DesignPageContent() {
                   )}
 
                   {(auditReport?.summary?.totalIssues || 0) > 0 && auditReport?.summary?.issues && (
-                    <div className="grid md:grid-cols-2 gap-3">
+                    <div className={componentStyles.layout.grid2}>
                       {Object.entries(auditReport.summary.issues).map(([k, v]) => (
-                        <Card key={k} className="bg-white rounded-lg p-3 border border-ui">
-                          <div className="text-xs uppercase tracking-wide text-muted mb-1">{k}</div>
-                          <div className="text-xl font-semibold text-ui">{v}</div>
+                        <Card key={k} className="bg-[var(--color-surface-elevated)] rounded-lg p-3 border border-[var(--color-border-default)]">
+                          <div className="text-xs uppercase tracking-wide text-[var(--color-text-secondary)] mb-1">{k}</div>
+                          <div className="text-xl font-semibold text-[var(--color-text-primary)]">{v}</div>
                         </Card>
                       ))}
                     </div>
                   )}
 
                   {auditReport?.issues && (
-                    <details className="rounded-xl border border-ui p-4 bg-slate-50">
-                      <summary className="cursor-pointer font-medium text-ui">Detalles por categoría</summary>
+                  <details className="rounded-xl border border-[var(--color-border-default)] p-4 bg-[var(--color-surface-muted)]">
+                      <summary className="cursor-pointer font-medium text-[var(--color-text-primary)]">Detalles por categoría</summary>
                       <div className="mt-4 space-y-4 max-h-[420px] overflow-auto">
                         {Object.entries(auditReport.issues).map(([bucket, items]) => (
                           items.length > 0 && (
-                            <Card key={bucket} className="bg-white rounded-lg p-3 border border-ui">
-                              <div className="mb-3 font-semibold text-ui flex items-center justify-between">
+                            <Card key={bucket} className="bg-[var(--color-surface-elevated)] rounded-lg p-3 border border-[var(--color-border-default)]">
+                              <div className="mb-3 font-semibold text-[var(--color-text-primary)] flex items-center justify-between">
                                 <span>{bucket}</span>
-                                <Badge className="bg-red-50 text-red-800 border-red-200 rounded-full">
+                                <Badge className={`rounded-full ${componentStyles.status.badgeDanger}`}>
                                   {items.length}
                                 </Badge>
                               </div>
                               <ul className="space-y-2 text-sm">
                                 {items.slice(0, 50).map((it, idx) => (
-                                  <li key={idx} className="border-l-2 border-brand-200 pl-3 py-1">
-                                    <div className="text-[11px] text-muted">{it.file}:{it.line}</div>
-                                    <div className="font-mono text-xs text-ui bg-slate-50 p-1 rounded mt-1">{it.snippet}</div>
+                                  <li key={idx} className="border-l-2 border-[var(--color-primary)]/30 pl-3 py-1">
+                                    <div className="text-[11px] text-[var(--color-text-secondary)]">{it.file}:{it.line}</div>
+                                    <div className="font-mono text-xs text-[var(--color-text-primary)] bg-[var(--color-surface-muted)] p-1 rounded mt-1">{it.snippet}</div>
                                   </li>
                                 ))}
                               </ul>
                               {items.length > 50 && (
-                                <div className="text-xs text-muted mt-3 text-center">
+                                <div className="text-xs text-[var(--color-text-secondary)] mt-3 text-center">
                                   +{items.length - 50} más (usa "Copiar JSON" para ver todo)
                                 </div>
                               )}
@@ -753,7 +1609,7 @@ function DesignPageContent() {
                   </Button>
                 </div>
               ) : (
-                <p className="text-sm text-muted">
+                <p className="text-sm text-[var(--color-text-secondary)]">
                   Selecciona un perfil y pulsa "Ejecutar Auditoría" para analizar estilos y clases en todo el proyecto.
                 </p>
               )}
@@ -761,100 +1617,300 @@ function DesignPageContent() {
           </Card>
         )}
 
-        {activeSection === 'qa' && (
-          <Card className="app-card">
-            <CardHeader className="border-b border-ui">
-              <CardTitle>QA Rápido (Dev)</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-6">
-              <p className="text-sm text-muted">
-                Pruebas integradas para detectar problemas comunes de diseño y accesibilidad.
-              </p>
-
-              <div className="flex gap-2 flex-wrap">
-                <Button 
-                  variant="outline" 
-                  onClick={handleVisualSmoke}
-                  disabled={qaRunning}
-                  className="h-10 rounded-xl"
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  Visual Smoke
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleA11yQuick}
-                  disabled={qaRunning}
-                  className="h-10 rounded-xl"
-                >
-                  <Shield className="w-4 h-4 mr-2" />
-                  A11y Quick-Check
-                </Button>
-              </div>
-
-              {qaOutput && (
-                <div className="bg-muted rounded-xl p-4 border border-ui">
-                  <pre className="text-xs text-ui whitespace-pre-wrap font-mono overflow-x-auto max-h-96">
-                    {qaOutput}
-                  </pre>
+        {activeSection === 'qa' && false && (
+          <>
+            <Card className="app-card">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
+                <CardTitle>QA Rápido (Dev)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6 pt-6 text-[var(--color-text-primary)]">
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  Pruebas integradas para detectar problemas comunes de diseño y accesibilidad.
+                </p>
+                {/* Fixtures visibles para QA: aseguran detección por selectores del test */}
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Acciones rápidas</h4>
+                    <div className="flex items-center gap-3">
+                    <Button
+                      className="btn-primary h-8 rounded-xl shadow-sm px-3"
+                      onClick={() => toast.success('✅ Botón Primary funcionando')}
+                      aria-label="Probar botón Primary QA"
+                    >
+                      Primary (QA)
+                    </Button>
+                    <Badge>QA</Badge>
+                  </div>
+                  </div>
+                  <div className="app-panel p-3 rounded-xl border border-[var(--color-border-muted)]">
+                    <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Componentes de prueba</h4>
+                    <div className="text-sm text-[var(--color-text-secondary)]">Panel QA</div>
+                  </div>
+                  <div className="icon-tile" aria-hidden />
+                  <div>
+                    <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Pestañas de ejemplo</h4>
+                  <Tabs
+                    value={qaTabsValue}
+                    onChange={setQaTabsValue}
+                    items={[
+                      { value: 'one', label: 'Uno' },
+                      { value: 'two', label: 'Dos' },
+                    ]}
+                    variant="segmented"
+                  />
+                    <div className="mt-3 text-sm text-[var(--color-text-secondary)]">
+                      {qaTabsValue === 'one' ? (
+                        <span>Contenido de la pestaña “Uno”: texto de ejemplo.</span>
+                      ) : (
+                        <span>Contenido de la pestaña “Dos”: texto de ejemplo alternativo.</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+
+                <div className="flex gap-2 flex-wrap">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleVisualSmoke}
+                    disabled={qaRunning}
+                    className="h-10 rounded-xl"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Visual Smoke
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleA11yQuick}
+                    disabled={qaRunning}
+                    className="h-10 rounded-xl"
+                  >
+                    <Shield className="w-4 h-4 mr-2" />
+                    A11y Quick-Check
+                  </Button>
+                </div>
+
+                {qaOutput && (
+                  <div className="bg-[var(--color-surface-muted)] rounded-xl p-4 border border-[var(--color-border-default)]">
+                    <pre className="text-xs text-[var(--color-text-primary)] whitespace-pre-wrap font-mono overflow-x-auto max-h-96">
+                      {qaOutput}
+                    </pre>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="app-card">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
+                <CardTitle>QA Visual - Design System</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <QAVisualContent embedded />
+              </CardContent>
+            </Card>
+          </>
         )}
 
         {activeSection === 'preview' && (
-          <Card className="app-card">
-            <CardHeader className="border-b border-ui">
-              <CardTitle>Preview de Componentes</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-6">
-              <div className="space-y-3">
+          <>
+            {/* Selector de Preset Base */}
+            <Card className="app-card">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
+                <CardTitle>Selector de Estilo Base</CardTitle>
+              </CardHeader>
+                    <CardContent className="pt-4 text-[var(--color-text-primary)]">
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium text-[var(--color-text-primary)] mb-2 block">
+                      Preset de Estilo:
+                    </Label>
+                    <Select
+                      value={currentPresetId || 'studia'}
+                      onValueChange={setPresetId}
+                    >
+                      <SelectTrigger className="w-full h-10 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {basePresets && basePresets.length > 0 ? (
+                          basePresets.map((preset) => (
+                            <SelectItem key={preset.id} value={preset.id}>
+                              <div>
+                                <div className="font-medium">{preset.label}</div>
+                                <div className="text-xs text-[var(--color-text-secondary)]">{preset.description}</div>
+                              </div>
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="default" disabled>
+                            No hay presets disponibles
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {/* Debug: mostrar información de presets */}
+                  <div className="mt-4 p-3 bg-[var(--color-surface-muted)] rounded-lg text-xs">
+                    <p className="font-semibold mb-2">Presets disponibles ({basePresets?.length || 0}):</p>
+                    <div className="space-y-1 font-mono text-[10px]">
+                      {basePresets?.map(p => (
+                        <div key={p.id} className={currentPresetId === p.id ? 'text-[var(--color-primary)] font-bold' : ''}>
+                          {p.id} - {p.label}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Debug: mostrar valores de layout actuales */}
+                  <LayoutValuesDebug />
+                  {currentPresetId && basePresets && (
+                    <div className="p-3 rounded-xl bg-[var(--color-surface-muted)] border border-[var(--color-border-default)]">
+                      <p className="text-xs text-[var(--color-text-secondary)]">
+                        <strong>Preset activo:</strong> {basePresets.find(p => p.id === currentPresetId)?.label || currentPresetId}
+                      </p>
+                      <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+                        {basePresets.find(p => p.id === currentPresetId)?.description}
+                      </p>
+                      <p className="text-xs text-[var(--color-text-muted)] mt-2">
+                        💡 El color de marca (primary) es siempre <code className="bg-[var(--color-primary-soft)] px-1 rounded">#fd9840</code> en todos los presets.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Preview de Componentes */}
+            <Card className="app-card">
+              <CardHeader className="border-b border-[var(--color-border-default)]">
+                <CardTitle>Preview de Componentes</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6 pt-6 text-[var(--color-text-primary)]">
+                {/* PageHeader */}
                 <div>
-                  <p className="text-sm font-medium text-ui mb-2">Botones:</p>
-                  <div className="flex gap-2 flex-wrap">
-                    <Button className="btn-primary h-10 rounded-xl shadow-sm">Primary</Button>
-                    <Button variant="outline" className="h-10 rounded-xl">Outline</Button>
-                    <Button variant="ghost" className="h-10 rounded-xl">Ghost</Button>
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">PageHeader:</p>
+                  <div className={componentStyles.containers.cardBase + " p-4"}>
+                    <h1 className={componentStyles.typography.pageTitle}>Título de Página</h1>
+                    <p className={componentStyles.typography.pageSubtitle}>Subtítulo descriptivo del contenido</p>
                   </div>
                 </div>
 
+                {/* Botones */}
                 <div>
-                  <p className="text-sm font-medium text-ui mb-2">Cards anidadas:</p>
-                  <Card className="app-panel">
-                    <CardContent className="pt-4">
-                      <p className="text-sm text-muted">Panel interno con radius variable</p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-ui mb-2">Icon tile:</p>
-                  <div className="icon-tile">
-                    <Palette className="w-5 h-5" />
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Botones (todas las variantes):</p>
+                  <div className="flex flex-wrap gap-3">
+                    <Button className={componentStyles.buttons.primary}>Primary</Button>
+                    <Button className={componentStyles.buttons.secondary}>Secondary</Button>
+                    <Button className={componentStyles.buttons.outline}>Outline</Button>
+                    <Button className={componentStyles.buttons.ghost}>Ghost</Button>
+                    <Button className={componentStyles.buttons.danger}>Danger</Button>
                   </div>
                 </div>
 
+                {/* Cards y Paneles */}
                 <div>
-                  <p className="text-sm font-medium text-ui mb-2">Badges:</p>
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Cards y Paneles:</p>
+                  <div className={componentStyles.layout.grid2}>
+                    <Card className={componentStyles.containers.cardBase}>
+                      <CardHeader>
+                        <CardTitle className={componentStyles.typography.cardTitle}>Card Base</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className={componentStyles.typography.bodyText}>Contenido de card base con shadow suave</p>
+                      </CardContent>
+                    </Card>
+                    <Card className={componentStyles.containers.cardElevated}>
+                      <CardHeader>
+                        <CardTitle className={componentStyles.typography.cardTitle}>Card Elevated</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className={componentStyles.typography.bodyText}>Card elevada con shadow más marcada</p>
+                      </CardContent>
+                    </Card>
+                    <Card className={componentStyles.containers.cardMetric}>
+                      <CardContent className="pt-4 text-center">
+                        <p className="text-3xl font-bold text-[var(--color-text-primary)]">198</p>
+                        <p className={componentStyles.typography.smallMetaText}>Métrica destacada</p>
+                      </CardContent>
+                    </Card>
+                    <Card className={componentStyles.containers.panelBase}>
+                      <CardContent className="pt-4">
+                        <p className={componentStyles.typography.bodyText}>Panel base con borde sutil</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Inputs y Controles */}
+                <div>
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Inputs y Controles:</p>
+                  <div className="space-y-3 max-w-md">
+                    <Input
+                      placeholder="Input por defecto"
+                      className={componentStyles.controls.inputDefault}
+                    />
+                    <Input
+                      placeholder="Input pequeño"
+                      className={componentStyles.controls.inputSm}
+                    />
+                    <Input
+                      placeholder="Input underline"
+                      className={componentStyles.controls.inputUnderline}
+                    />
+                    <Select>
+                      <SelectTrigger className={componentStyles.controls.selectDefault}>
+                        <SelectValue placeholder="Select por defecto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Opción 1</SelectItem>
+                        <SelectItem value="2">Opción 2</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Tabs */}
+                <div>
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Tabs:</p>
+                  <Tabs
+                    value="tab1"
+                    onChange={() => {}}
+                    items={[
+                      { value: 'tab1', label: 'Tab 1' },
+                      { value: 'tab2', label: 'Tab 2' },
+                    ]}
+                    variant="segmented"
+                  />
+                </div>
+
+                {/* Badges y Estados */}
+                <div>
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Badges y Estados:</p>
                   <div className="flex flex-wrap gap-2">
-                    <Badge className="bg-slate-100 text-slate-800 border-slate-200 rounded-full">GEN</Badge>
-                    <Badge className="bg-blue-100 text-blue-800 border-blue-200 rounded-full">LIG</Badge>
-                    <Badge className="bg-purple-100 text-purple-800 border-purple-200 rounded-full">RIT</Badge>
-                    <Badge className="bg-green-100 text-green-800 border-green-200 rounded-full">ART</Badge>
-                    <Badge className="bg-brand-100 text-brand-800 border-brand-200 rounded-full">S&A</Badge>
+                    <Badge className={componentStyles.status.badgeDefault}>Default</Badge>
+                    <Badge className={componentStyles.status.badgeInfo}>Info</Badge>
+                    <Badge className={componentStyles.status.badgeSuccess}>Success</Badge>
+                    <Badge className={componentStyles.status.badgeWarning}>Warning</Badge>
+                    <Badge className={componentStyles.status.badgeDanger}>Danger</Badge>
                   </div>
                 </div>
 
-                <div>
-                  <p className="text-sm font-medium text-ui mb-2">Focus ring:</p>
-                  <Button variant="outline" className="h-10 rounded-xl focus-brand">
-                    Enfócame con Tab
-                  </Button>
+                {/* Verificación de Color de Marca */}
+                <div className="p-4 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary-soft)]">
+                  <p className="text-sm font-semibold text-[var(--color-text-primary)] mb-2">✅ Verificación de Color de Marca</p>
+                  <p className="text-xs text-[var(--color-text-secondary)]">
+                    El color primary debe ser siempre <code className="bg-[var(--color-surface-elevated)]/50 px-1 rounded">#fd9840</code> en todos los presets.
+                    Este badge usa <code>var(--color-primary)</code> y <code>var(--color-primary-soft)</code>.
+                  </p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <div className="w-12 h-12 rounded-lg" style={{ backgroundColor: '#fd9840' }} />
+                    <div className="text-xs text-[var(--color-text-secondary)]">
+                      <div>Primary: <code>#fd9840</code></div>
+                      <div>Primary Soft: <code>var(--color-primary-soft)</code></div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </>
         )}
       </div>
     </div>
@@ -868,3 +1924,5 @@ export default function DesignPage() {
     </RequireRole>
   );
 }
+
+export { DesignPageContent };

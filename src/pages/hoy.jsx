@@ -1,40 +1,66 @@
-
 import React, { useState, useEffect, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ds/Button"; // Updated import path
 import { Badge } from "@/components/ds";
-import { Alert, AlertDescription } from "@/components/ds";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ds";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   PlayCircle, Calendar, Target, Music, Clock, Layers,
-  ChevronRight, ChevronLeft, AlertTriangle, ChevronDown,
+  ChevronRight, ChevronLeft, ChevronsRight, AlertTriangle, ChevronDown, ChevronUp,
   Play, Pause, X, List, HelpCircle,
   Maximize2, Minimize2, CheckCircle, XCircle,
-  SkipForward
+  SkipForward, Shuffle, Menu, User
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { cn } from "@/lib/utils";
 import {
   calcularLunesSemanaISO,
   calcularOffsetSemanas,
   calcularTiempoSesion,
   aplanarSesion,
-  getNombreVisible
+  getNombreVisible,
+  useEffectiveUser,
+  formatLocalDate,
+  parseLocalDate,
+  isoWeekNumberLocal
 } from "../components/utils/helpers";
+import { usePeriodHeaderState, PeriodHeaderButton, PeriodHeaderPanel } from "../components/common/PeriodHeader";
+import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "../components/study/sessionSequence";
 import TimelineProgreso from "../components/estudio/TimelineProgreso";
 import ModalCancelar from "../components/estudio/ModalCancelar";
 import ResumenFinal from "../components/estudio/ResumenFinal";
+import SessionContentView from "../components/study/SessionContentView";
+import ReportErrorButtonInTimer from "../components/common/ReportErrorButtonInTimer";
 import { toast } from "sonner";
 import { useSidebar } from "@/components/ui/SidebarState";
+import PageHeader from "@/components/ds/PageHeader";
+import { componentStyles } from "@/design/componentStyles";
+import MediaEmbed from "../components/common/MediaEmbed";
+import { MediaIcon, getMediaLabel } from "../components/common/MediaEmbed";
+import { resolveMedia, MediaKind } from "../components/utils/media";
+import { shouldIgnoreHotkey } from "@/utils/hotkeys";
+import { useHotkeysModal } from "@/hooks/useHotkeysModal.jsx";
 
 import RequireRole from "@/components/auth/RequireRole";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // --- Helpers de fechas locales (para formateo de semana) ---
-const pad2 = (n) => String(n).padStart(2, "0");
-const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-const parseLocalDate = (s) => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const startOfMonday = (date) => {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dow = d.getDay();
+  const diff = dow === 0 ? -6 : 1 - dow;
+  d.setDate(d.getDate() + diff);
+  return d;
+};
 
 export default function HoyPage() {
   return (
@@ -46,26 +72,67 @@ export default function HoyPage() {
 
 function HoyPageContent() {
   const navigate = useNavigate();
-  const { closeSidebar } = useSidebar();
+  const { closeSidebar, abierto, toggleSidebar } = useSidebar();
+  const { setShowHotkeysModal } = useHotkeysModal();
 
   const [semanaActualISO, setSemanaActualISO] = useState(() => {
     return calcularLunesSemanaISO(new Date());
   });
+  
+  const cambiarSemana = (direccion) => {
+    const base = parseLocalDate(semanaActualISO);
+    base.setDate(base.getDate() + (direccion * 7));
+    const lunes = startOfMonday(base);
+    const nextISO = formatLocalDate(lunes);
+    if (nextISO !== semanaActualISO) setSemanaActualISO(nextISO);
+  };
+  
+  const irSemanaActual = () => {
+    const lunes = startOfMonday(new Date());
+    setSemanaActualISO(formatLocalDate(lunes));
+  };
+
+  // Estado del PeriodHeader
+  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState();
+
+  const [asignacionSeleccionadaId, setAsignacionSeleccionadaId] = useState(null); // Para múltiples asignaciones
   const [sesionSeleccionada, setSesionSeleccionada] = useState(0);
-  const [planDesplegado, setPlanDesplegado] = useState(false);
+  const [sesionesConResumenExpandido, setSesionesConResumenExpandido] = useState(new Set());
   const [sesionActiva, setSesionActiva] = useState(null);
   const [indiceActual, setIndiceActual] = useState(0);
   const [tiempoActual, setTiempoActual] = useState(0);
   const [cronometroActivo, setCronometroActiva] = useState(false);
+  const [timerCollapsed, setTimerCollapsed] = useState(false); // Timer compacto/expandido
   const [completados, setCompletados] = useState(new Set());
   const [omitidos, setOmitidos] = useState(new Set());
   const [pantallaCompleta, setPantallaCompleta] = useState(false);
   const [mostrarItinerario, setMostrarItinerario] = useState(false);
-  const [mostrarAyuda, setMostrarAyuda] = useState(false);
   const [mostrarModalCancelar, setMostrarModalCancelar] = useState(false);
+  const [rondasExpandidasItinerario, setRondasExpandidasItinerario] = useState(new Set());
+  const [cronometroPausadoPorModal, setCronometroPausadoPorModal] = useState(false);
   const [sesionFinalizada, setSesionFinalizada] = useState(false);
   const [datosFinal, setDatosFinal] = useState(null);
   const [mediaFullscreen, setMediaFullscreen] = useState(null);
+  const [mediaModal, setMediaModal] = useState(null); // Para el popup de materiales
+  const [reportModalAbierto, setReportModalAbierto] = useState(false);
+
+  // Estado para la posición del timer arrastrable
+  const [timerPosition, setTimerPosition] = useState(() => {
+    const saved = localStorage.getItem('timer-position');
+    if (saved) {
+      try {
+        const { top, left } = JSON.parse(saved);
+        return { top, left };
+      } catch (e) {
+        // Si hay error, usar valores por defecto
+      }
+    }
+    // Valores por defecto: esquina superior derecha
+    return { top: 16, left: null, right: 16 };
+  });
+  const [isDraggingTimer, setIsDraggingTimer] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const timerRef = useRef(null);
 
   const [registroSesionId, setRegistroSesionId] = useState(null);
   const [timestampInicio, setTimestampInicio] = useState(null);
@@ -76,38 +143,108 @@ function HoyPageContent() {
 
   const sidebarCerradoRef = useRef(false);
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
   });
 
-  const simulatingUser = sessionStorage.getItem('simulatingUser') ?
-    JSON.parse(sessionStorage.getItem('simulatingUser')) : null;
+  // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
+  // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD
+  const alumnoActual = usuarios.find(u => {
+    if (effectiveUser?.email && u.email) {
+      return u.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim();
+    }
+    return u.id === effectiveUser?.id;
+  }) || effectiveUser;
 
-  const userIdActual = simulatingUser?.id || currentUser?.id;
-  const isSimulacion = !!simulatingUser;
-  const alumnoActual = usuarios.find(u => u.id === userIdActual) || currentUser;
+  // Usar el ID del usuario de la base de datos, no el de Supabase Auth
+  const userIdActual = alumnoActual?.id || effectiveUser?.id;
 
-  const { data: asignaciones = [] } = useQuery({
+
+  const { data: asignacionesRaw = [] } = useQuery({
     queryKey: ['asignaciones'],
-    queryFn: () => base44.entities.Asignacion.list(),
+    queryFn: () => localDataClient.entities.Asignacion.list(),
   });
 
-  const asignacionActiva = asignaciones.find(a => {
+  // Cargar bloques actuales para actualizar mediaLinks
+  const { data: bloquesActuales = [] } = useQuery({
+    queryKey: ['bloques'],
+    queryFn: async () => {
+      const bloques = await localDataClient.entities.Bloque.list();
+      return bloques;
+    },
+  });
+
+  // Filtrar y validar asignaciones
+  const asignaciones = asignacionesRaw.filter(a => {
+    // Validar que tiene alumnoId válido
+    if (!a.alumnoId) {
+      return false;
+    }
+    const alumno = usuarios.find(u => u.id === a.alumnoId);
+    if (!alumno) {
+      // Si es el usuario actual pero no está en la lista de usuarios, permitir la asignación
+      // Esto puede pasar si los usuarios aún no se han cargado completamente
+      if (a.alumnoId === userIdActual) {
+        // Continuar con la validación del plan y semanas
+      } else {
+        return false;
+      }
+    }
+    
+    // Validar que tiene plan y semanas
+    if (!a.plan || !Array.isArray(a.plan.semanas) || a.plan.semanas.length === 0) {
+      return false;
+    }
+    
+    // Validar que tiene semanaInicioISO válida
+    if (!a.semanaInicioISO || typeof a.semanaInicioISO !== 'string') {
+      return false;
+    }
+    
+    return true;
+  });
+
+
+  // Filtrar asignaciones activas (que tienen semana válida para la semana actual)
+  const asignacionesActivas = asignaciones.filter(a => {
     if (a.alumnoId !== userIdActual) return false;
     if (a.estado !== 'publicada' && a.estado !== 'en_curso') return false;
-    const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
-    return offset >= 0 && offset < (a.plan?.semanas?.length || 0);
+    try {
+      const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
+      const tieneSemanaValida = offset >= 0 && offset < (a.plan?.semanas?.length || 0);
+      return tieneSemanaValida;
+    } catch (error) {
+      return false;
+    }
   });
 
-  const semanaDelPlan = asignacionActiva ?
-    asignacionActiva.plan?.semanas?.[calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO)] :
-    null;
+  // Determinar asignación activa: si hay selección, usarla; sino, la primera
+  const asignacionActiva = asignacionSeleccionadaId 
+    ? asignacionesActivas.find(a => a.id === asignacionSeleccionadaId)
+    : asignacionesActivas[0] || null;
 
-  const semanaIdx = asignacionActiva ?
-    calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO) : 0;
+  // Si no hay selección y hay asignaciones, seleccionar la primera automáticamente
+  useEffect(() => {
+    if (!asignacionSeleccionadaId && asignacionesActivas.length > 0) {
+      setAsignacionSeleccionadaId(asignacionesActivas[0].id);
+    }
+  }, [asignacionesActivas.length, asignacionSeleccionadaId]);
+
+  // Calcular semanaDelPlan de forma más robusta
+  let semanaDelPlan = null;
+  let semanaIdx = 0;
+  
+  if (asignacionActiva) {
+    try {
+      semanaIdx = calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO);
+      semanaDelPlan = asignacionActiva.plan?.semanas?.[semanaIdx] || null;
+    } catch (error) {
+      semanaDelPlan = null;
+    }
+  }
 
   useEffect(() => {
     if (sesionActiva && !sesionFinalizada && !sidebarCerradoRef.current) {
@@ -118,6 +255,110 @@ function HoyPageContent() {
       sidebarCerradoRef.current = false;
     }
   }, [sesionActiva, sesionFinalizada, closeSidebar]);
+
+  // Notificar cuando el timer está visible o no
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('timer-state-change', {
+      detail: { visible: !!sesionActiva }
+    }));
+    
+    return () => {
+      // Notificar cuando el timer se oculta
+      window.dispatchEvent(new CustomEvent('timer-state-change', {
+        detail: { visible: false }
+      }));
+    };
+  }, [sesionActiva]);
+
+  // useEffect para manejar el arrastre del timer
+  useEffect(() => {
+    if (!isDraggingTimer) return;
+
+    const handleMouseMove = (e) => {
+      const newLeft = e.clientX - dragOffset.x;
+      const newTop = e.clientY - dragOffset.y;
+
+      // Limitar a los bordes de la ventana
+      const maxLeft = window.innerWidth - (timerRef.current?.offsetWidth || 200);
+      const maxTop = window.innerHeight - (timerRef.current?.offsetHeight || 100);
+      const minLeft = 0;
+      const minTop = 0;
+
+      const clampedLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
+      const clampedTop = Math.max(minTop, Math.min(maxTop, newTop));
+
+      const newPosition = { top: clampedTop, left: clampedLeft, right: null };
+      setTimerPosition(newPosition);
+      
+      // Guardar en localStorage
+      localStorage.setItem('timer-position', JSON.stringify({ top: clampedTop, left: clampedLeft }));
+    };
+
+    const handleTouchMove = (e) => {
+      const touch = e.touches[0];
+      const newLeft = touch.clientX - dragOffset.x;
+      const newTop = touch.clientY - dragOffset.y;
+
+      // Limitar a los bordes de la ventana
+      const maxLeft = window.innerWidth - (timerRef.current?.offsetWidth || 200);
+      const maxTop = window.innerHeight - (timerRef.current?.offsetHeight || 100);
+      const minLeft = 0;
+      const minTop = 0;
+
+      const clampedLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
+      const clampedTop = Math.max(minTop, Math.min(maxTop, newTop));
+
+      const newPosition = { top: clampedTop, left: clampedLeft, right: null };
+      setTimerPosition(newPosition);
+      
+      // Guardar en localStorage
+      localStorage.setItem('timer-position', JSON.stringify({ top: clampedTop, left: clampedLeft }));
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingTimer(false);
+    };
+
+    const handleTouchEnd = () => {
+      setIsDraggingTimer(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isDraggingTimer, dragOffset]);
+
+  // Handlers para arrastrar el timer (usando useCallback para mantener referencias estables)
+  const handleTimerMouseDown = React.useCallback((e) => {
+    if (!timerRef.current) return;
+    const rect = timerRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+    setIsDraggingTimer(true);
+    e.preventDefault();
+  }, []);
+
+  const handleTimerTouchStart = React.useCallback((e) => {
+    if (!timerRef.current) return;
+    const touch = e.touches[0];
+    const rect = timerRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top,
+    });
+    setIsDraggingTimer(true);
+    e.preventDefault();
+  }, []);
 
   useEffect(() => {
     if (!cronometroActivo || !sesionActiva || sesionFinalizada) {
@@ -160,7 +401,7 @@ function HoyPageContent() {
   }, [cronometroActivo, sesionActiva, indiceActual, sesionFinalizada, timestampInicio, tiempoAcumuladoAntesPausa]);
 
   const guardarRegistroSesion = async (esFinal = false) => {
-    if (isSimulacion || !asignacionActiva || !sesionActiva) return;
+    if (!asignacionActiva || !sesionActiva) return;
 
     const listaEjecucion = aplanarSesion(sesionActiva);
     const tiempoPrevisto = listaEjecucion
@@ -197,9 +438,9 @@ function HoyPageContent() {
 
     try {
       if (registroSesionId) {
-        await base44.entities.RegistroSesion.update(registroSesionId, dataRegistro);
+        await localDataClient.entities.RegistroSesion.update(registroSesionId, dataRegistro);
       } else {
-        const nuevoRegistro = await base44.entities.RegistroSesion.create(dataRegistro);
+        const nuevoRegistro = await localDataClient.entities.RegistroSesion.create(dataRegistro);
         setRegistroSesionId(nuevoRegistro.id);
       }
     } catch (error) {
@@ -213,7 +454,7 @@ function HoyPageContent() {
   };
 
   const guardarRegistroBloque = async (indice, estado, duracionReal = 0) => {
-    if (isSimulacion || !registroSesionId || !sesionActiva) return;
+    if (!registroSesionId || !sesionActiva) return;
 
     const listaEjecucion = aplanarSesion(sesionActiva);
     const bloque = listaEjecucion[indice];
@@ -238,7 +479,7 @@ function HoyPageContent() {
     };
 
     try {
-      await base44.entities.RegistroBloque.create(dataBloque);
+      await localDataClient.entities.RegistroBloque.create(dataBloque);
     } catch (error) {
       colaOfflineRef.current.push({
         tipo: 'bloque',
@@ -248,38 +489,8 @@ function HoyPageContent() {
     }
   };
 
-  useEffect(() => {
-    if (!sesionActiva || sesionFinalizada || isSimulacion) return;
-
-    if (!heartbeatIntervalRef.current) {
-      heartbeatIntervalRef.current = setInterval(() => {
-        guardarRegistroSesion(false);
-      }, 15000);
-    }
-
-    return () => {
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-        heartbeatIntervalRef.current = null;
-      }
-    };
-  }, [sesionActiva, sesionFinalizada, tiempoActual, completados, omitidos, registroSesionId, isSimulacion]);
-
-  useEffect(() => {
-    const handlePageHide = () => {
-      if (sesionActiva && !sesionFinalizada && !isSimulacion && registroSesionId) {
-        guardarRegistroSesion(false);
-      }
-    };
-
-    window.addEventListener('pagehide', handlePageHide);
-    window.addEventListener('beforeunload', handlePageHide);
-
-    return () => {
-      window.removeEventListener('pagehide', handlePageHide);
-      window.removeEventListener('beforeunload', handlePageHide);
-    };
-  }, [sesionActiva, sesionFinalizada, registroSesionId, tiempoActual, completados, omitidos, isSimulacion]);
+  // NOTA: Eliminados los useEffect que actualizaban el registro periódicamente
+  // El registro solo se actualiza una vez al final cuando el usuario presiona "Finalizar" en ResumenFinal
 
   useEffect(() => {
     if (!sesionActiva || sesionFinalizada) return;
@@ -302,57 +513,88 @@ function HoyPageContent() {
     }
   }, [indiceActual, sesionActiva, sesionFinalizada]);
 
+
+  // Expandir todas las rondas por defecto cuando se abre el panel de itinerario
   useEffect(() => {
-    if (!sesionActiva || sesionFinalizada) return;
+    if (mostrarItinerario && sesionActiva) {
+      const S = ensureRondaIds(sesionActiva);
+      const secuencia = getSecuencia(S);
+      const todasLasRondas = new Set(
+        secuencia
+          .filter(item => item.kind === 'RONDA' && item.id)
+          .map(item => item.id)
+      );
+      setRondasExpandidasItinerario(todasLasRondas);
+    }
+  }, [mostrarItinerario, sesionActiva]);
 
-    const handleKeyDown = (e) => {
-      if (e.target.matches('input, textarea')) return;
-      if ((e.metaKey || e.ctrlKey) && e.key === 'm') return;
-
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        if (mediaFullscreen) {
-          setMediaFullscreen(null);
-        } else {
-          setMostrarModalCancelar(true);
-        }
-      }
-      if (e.code === 'Space') {
-        e.preventDefault();
-        const listaEjecucion = aplanarSesion(sesionActiva);
-        const ejercicioActual = listaEjecucion[indiceActual];
-        if (ejercicioActual?.tipo !== 'AD') {
-          togglePlayPausa();
-        }
-      }
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        completarYAvanzar();
-      }
-      if (e.key === 'n') {
-        e.preventDefault();
-        omitirYAvanzar();
-      }
-      if (e.key === 'p') {
-        e.preventDefault();
-        handleAnterior();
-      }
-      if (e.key === 'i') {
-        e.preventDefault();
-        setMostrarItinerario(prev => !prev);
-      }
-      if (e.key === '?') {
-        e.preventDefault();
-        setMostrarAyuda(prev => !prev);
-      }
+  // Escuchar eventos del modal de reportes
+  useEffect(() => {
+    const handleReportModalOpened = () => setReportModalAbierto(true);
+    const handleReportModalClosed = () => setReportModalAbierto(false);
+    
+    window.addEventListener('report-modal-opened', handleReportModalOpened);
+    window.addEventListener('report-modal-closed', handleReportModalClosed);
+    
+    return () => {
+      window.removeEventListener('report-modal-opened', handleReportModalOpened);
+      window.removeEventListener('report-modal-closed', handleReportModalClosed);
     };
+  }, []);
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [sesionActiva, indiceActual, sesionFinalizada, mostrarItinerario, mostrarAyuda, mediaFullscreen]);
+  // Pausar/reanudar cronómetro cuando se abren/cierran modales
+  useEffect(() => {
+    const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || mediaFullscreen || reportModalAbierto;
+    
+    if (hayModalAbierto && cronometroActivo && !cronometroPausadoPorModal) {
+      // Pausar el cronómetro
+      const ahora = Date.now();
+      const tiempoDesdeInicio = timestampInicio ? Math.floor((ahora - timestampInicio) / 1000) : 0;
+      setTiempoAcumuladoAntesPausa(prev => prev + tiempoDesdeInicio);
+      setTimestampUltimoPausa(ahora);
+      setTimestampInicio(null);
+      setCronometroActiva(false);
+      setCronometroPausadoPorModal(true);
+    } else if (!hayModalAbierto && cronometroPausadoPorModal && sesionActiva && !sesionFinalizada) {
+      // Reanudar el cronómetro
+      const ahora = Date.now();
+      setTimestampInicio(ahora);
+      setTimestampUltimoPausa(null);
+      setCronometroActiva(true);
+      setCronometroPausadoPorModal(false);
+    }
+  }, [mostrarModalCancelar, mostrarItinerario, mediaFullscreen, reportModalAbierto, cronometroActivo, cronometroPausadoPorModal, sesionActiva, sesionFinalizada, timestampInicio]);
 
   const empezarSesion = async (sesion, sesionIdxProp) => {
-    setSesionActiva(sesion);
+    // Actualizar bloques con mediaLinks actuales de la base de datos
+    const sesionActualizada = {
+      ...sesion,
+      bloques: (sesion.bloques || []).map(bloqueSnapshot => {
+        // Buscar el bloque actual en la base de datos por código
+        const bloqueActual = bloquesActuales.find(b => b.code === bloqueSnapshot.code);
+        if (bloqueActual) {
+          // Actualizar con mediaLinks y otras propiedades actualizadas
+          // Priorizar mediaLinks del bloque actual si existe y no está vacío
+          const mediaLinksFinal = (bloqueActual.mediaLinks && bloqueActual.mediaLinks.length > 0) 
+            ? bloqueActual.mediaLinks 
+            : (bloqueSnapshot.mediaLinks && bloqueSnapshot.mediaLinks.length > 0)
+              ? bloqueSnapshot.mediaLinks
+              : [];
+          
+          return {
+            ...bloqueSnapshot,
+            mediaLinks: mediaLinksFinal,
+            // Mantener otras propiedades actualizadas si existen
+            instrucciones: bloqueActual.instrucciones || bloqueSnapshot.instrucciones,
+            indicadorLogro: bloqueActual.indicadorLogro || bloqueSnapshot.indicadorLogro,
+            materialesRequeridos: bloqueActual.materialesRequeridos || bloqueSnapshot.materialesRequeridos || [],
+          };
+        }
+        return bloqueSnapshot;
+      })
+    };
+    
+    setSesionActiva(sesionActualizada);
     setIndiceActual(0);
     setTiempoActual(0);
     setCronometroActiva(false);
@@ -361,47 +603,88 @@ function HoyPageContent() {
     setSesionFinalizada(false);
     setDatosFinal(null);
 
-    if (!isSimulacion) {
-      const ahora = new Date().toISOString();
-      const listaEjecucion = aplanarSesion(sesion);
-      const tiempoPrevisto = listaEjecucion
-        .filter(e => e.tipo !== 'AD')
-        .reduce((sum, e) => sum + (e.duracionSeg || 0), 0);
+    const ahora = new Date().toISOString();
+    const listaEjecucion = aplanarSesion(sesionActualizada);
+    const tiempoPrevisto = listaEjecucion
+      .filter(e => e.tipo !== 'AD')
+      .reduce((sum, e) => sum + (e.duracionSeg || 0), 0);
 
-      try {
-        const nuevoRegistro = await base44.entities.RegistroSesion.create({
-          asignacionId: asignacionActiva.id,
-          alumnoId: userIdActual,
-          profesorAsignadoId: alumnoActual?.profesorAsignadoId || null,
-          semanaIdx: semanaIdx,
-          sesionIdx: sesionIdxProp,
-          inicioISO: ahora,
-          duracionRealSeg: 0,
-          duracionObjetivoSeg: tiempoPrevisto,
-          bloquesTotales: listaEjecucion.length,
-          bloquesCompletados: 0,
-          bloquesOmitidos: 0,
-          finalizada: false,
-          finAnticipado: false,
-          dispositivo: navigator.userAgent,
-          versionSchema: "1.0",
-          piezaNombre: asignacionActiva.piezaSnapshot?.nombre || '',
-          planNombre: asignacionActiva.plan?.nombre || '',
-          semanaNombre: semanaDelPlan?.nombre || '',
-          sesionNombre: sesion.nombre || '',
-          foco: sesion.foco || 'GEN',
-        });
-        setRegistroSesionId(nuevoRegistro.id);
-      } catch (error) {
-        console.error("Error creando registro:", error);
-      }
+    try {
+      const nuevoRegistro = await localDataClient.entities.RegistroSesion.create({
+        asignacionId: asignacionActiva.id,
+        alumnoId: userIdActual,
+        profesorAsignadoId: alumnoActual?.profesorAsignadoId || null,
+        semanaIdx: semanaIdx,
+        sesionIdx: sesionIdxProp,
+        inicioISO: ahora,
+        duracionRealSeg: 0,
+        duracionObjetivoSeg: tiempoPrevisto,
+        bloquesTotales: listaEjecucion.length,
+        bloquesCompletados: 0,
+        bloquesOmitidos: 0,
+        finalizada: false,
+        finAnticipado: false,
+        dispositivo: navigator.userAgent,
+        versionSchema: "1.0",
+        piezaNombre: asignacionActiva.piezaSnapshot?.nombre || '',
+        planNombre: asignacionActiva.plan?.nombre || '',
+        semanaNombre: semanaDelPlan?.nombre || '',
+        sesionNombre: sesion.nombre || '',
+        foco: sesion.foco || 'GEN',
+      });
+      setRegistroSesionId(nuevoRegistro.id);
+    } catch (error) {
+      // Error silencioso - el usuario puede continuar sin registro
     }
 
-    const ahora = Date.now();
-    setTimestampInicio(ahora);
+    const timestampInicio = Date.now();
+    setTimestampInicio(timestampInicio);
     setTimestampUltimoPausa(null);
     setTiempoAcumuladoAntesPausa(0);
   };
+
+  // Listener para el hotkey global Ctrl+Alt+S "Studia ahora"
+  // DEBE estar después de la declaración de empezarSesion
+  useEffect(() => {
+    const handleStartStudySession = async () => {
+      // Verificar que no hay sesión activa
+      if (sesionActiva) return;
+      
+      // Verificar que hay asignación activa y semana del plan
+      if (!asignacionActiva || !semanaDelPlan) {
+        toast.info('No tienes asignaciones activas. Habla con tu profesor.');
+        return;
+      }
+      
+      // Verificar que hay sesiones disponibles
+      if (!semanaDelPlan.sesiones || semanaDelPlan.sesiones.length === 0) {
+        toast.info('No hay sesiones disponibles para esta semana.');
+        return;
+      }
+      
+      // Seleccionar automáticamente la primera sesión si no hay ninguna seleccionada
+      // o si la seleccionada no es válida
+      const primeraSesionIdx = 0;
+      const primeraSesion = semanaDelPlan.sesiones[primeraSesionIdx];
+      
+      if (!primeraSesion) {
+        toast.info('No hay sesiones disponibles para esta semana.');
+        return;
+      }
+      
+      // Asegurar que la sesión esté seleccionada
+      setSesionSeleccionada(primeraSesionIdx);
+      
+      // Iniciar la primera sesión automáticamente
+      await empezarSesion(primeraSesion, primeraSesionIdx);
+    };
+
+    window.addEventListener('start-study-session', handleStartStudySession);
+    
+    return () => {
+      window.removeEventListener('start-study-session', handleStartStudySession);
+    };
+  }, [asignacionActiva, semanaDelPlan, sesionActiva, empezarSesion, setSesionSeleccionada]);
 
   const cerrarSesion = () => {
     setCronometroActiva(false);
@@ -475,7 +758,7 @@ function HoyPageContent() {
     setCompletados(newCompletados);
     setOmitidos(newOmitidos);
 
-    await guardarRegistroSesion(false);
+    // NO actualizar registro de sesión aquí - solo se actualiza al final en ResumenFinal
 
     toast.info("⏭️ Ejercicio omitido");
 
@@ -504,7 +787,7 @@ function HoyPageContent() {
     setCompletados(newCompletados);
     setOmitidos(newOmitidos);
 
-    await guardarRegistroSesion(false);
+    // NO actualizar registro de sesión aquí - solo se actualiza al final en ResumenFinal
 
     if (indiceActual === listaEjecucion.length - 1) {
       setSesionFinalizada(true);
@@ -519,14 +802,123 @@ function HoyPageContent() {
     }
   };
 
+  // Manejo de atajos de teclado - debe estar después de las definiciones de funciones
+  useEffect(() => {
+    if (!sesionActiva || sesionFinalizada) return;
+
+    const handleKeyDown = (e) => {
+      // No procesar si hay un modal abierto (excepto para cerrar modales)
+      const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || mediaFullscreen || reportModalAbierto;
+      
+      // Permitir Escape siempre para cerrar modales
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (mediaFullscreen) {
+          setMediaFullscreen(null);
+        } else if (mostrarItinerario) {
+          setMostrarItinerario(false);
+        } else if (mostrarModalCancelar) {
+          setMostrarModalCancelar(false);
+        } else if (sesionActiva && !sesionFinalizada) {
+          // Si no hay modales abiertos y hay sesión activa, abrir modal de cancelar
+          setMostrarModalCancelar(true);
+        }
+        return;
+      }
+
+      // Si el modal de reporte está abierto, no permitir ningún hotkey (excepto Escape)
+      if (reportModalAbierto) {
+        return;
+      }
+
+      // Permitir 'I' para toggle del índice siempre (incluso cuando está abierto, excepto con modal de reporte)
+      if (e.key === 'i' || e.key === 'I') {
+        e.preventDefault();
+        setMostrarItinerario(prev => !prev);
+        return;
+      }
+
+      // Permitir '?' para toggle de ayuda siempre (incluso cuando está abierto, excepto con modal de reporte)
+      if (e.key === '?') {
+        e.preventDefault();
+        setShowHotkeysModal(prev => !prev);
+        return;
+      }
+
+      // Si hay un modal abierto, no procesar otros atajos
+      if (hayModalAbierto) return;
+
+      // Usar helper centralizado para detectar campos editables
+      if (shouldIgnoreHotkey(e)) return;
+
+      // Espacio: play/pause del reproductor de audio
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        const listaEjecucion = aplanarSesion(sesionActiva);
+        const ejercicioActual = listaEjecucion[indiceActual];
+        if (ejercicioActual?.tipo !== 'AD') {
+          togglePlayPausa();
+        }
+      }
+      
+      // Flecha izquierda: ejercicio anterior
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (indiceActual > 0) {
+          handleAnterior();
+        }
+      }
+      
+      // Flecha derecha: ejercicio siguiente
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const listaEjecucion = aplanarSesion(sesionActiva);
+        if (indiceActual < listaEjecucion.length - 1) {
+          omitirYAvanzar(); // O usar completarYAvanzar según lógica
+        }
+      }
+      
+      // Tecla O: completar ejercicio actual (OK)
+      if (e.key === 'o' || e.key === 'O') {
+        e.preventDefault();
+        completarYAvanzar();
+      }
+      
+      // Enter: también completar ejercicio (mantener compatibilidad)
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        completarYAvanzar();
+      }
+      
+      // Tecla N: omitir ejercicio (mantener compatibilidad)
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        omitirYAvanzar();
+      }
+      
+      // Tecla P: ejercicio anterior (mantener compatibilidad)
+      if (e.key === 'p' || e.key === 'P') {
+        e.preventDefault();
+        handleAnterior();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [sesionActiva, sesionFinalizada, indiceActual, mediaFullscreen, mostrarItinerario, mostrarModalCancelar, togglePlayPausa, completarYAvanzar, omitirYAvanzar, handleAnterior, reportModalAbierto, setShowHotkeysModal]);
+
   const handleCancelar = () => {
     setMostrarModalCancelar(true);
   };
 
   const guardarYSalir = async () => {
-    await guardarRegistroSesion(false);
+    // NO actualizar registro aquí - solo se actualiza al final en ResumenFinal cuando el usuario presiona "Finalizar"
     setMostrarModalCancelar(false);
-    cerrarSesion();
+    // Finalizar la sesión para mostrar el feedback en lugar de cerrar directamente
+    setSesionFinalizada(true);
   };
 
   const salirSinGuardar = () => {
@@ -545,26 +937,15 @@ function HoyPageContent() {
     setMostrarItinerario(false);
   };
 
-  const formatearSemana = (lunesISO) => {
-    const lunes = parseLocalDate(lunesISO);
-    const domingo = new Date(lunes);
-    domingo.setDate(lunes.getDate() + 6);
-
-    const diaLunes = lunes.getDate();
-    const diaDomingo = domingo.getDate();
-    const mes = lunes.toLocaleDateString('es-ES', { month: 'short' });
-
-    return `Semana ${diaLunes}–${diaDomingo} ${mes}`;
-  };
 
   const tipoColors = {
-    CA: 'bg-brand-100 text-brand-800 border-brand-300',
-    CB: 'bg-blue-100 text-blue-800 border-blue-300',
-    TC: 'bg-purple-100 text-purple-800 border-purple-300',
-    TM: 'bg-green-100 text-green-800 border-green-300',
-    FM: 'bg-pink-100 text-pink-800 border-pink-300',
-    VC: 'bg-cyan-100 text-cyan-800 border-cyan-300',
-    AD: 'bg-gray-100 text-gray-800 border-gray-300',
+    CA: componentStyles.status.badgeDefault, // brand -> default
+    CB: componentStyles.status.badgeInfo,
+    TC: componentStyles.status.badgeDefault, // purple -> default
+    TM: componentStyles.status.badgeSuccess,
+    FM: componentStyles.status.badgeDefault, // pink -> default
+    VC: componentStyles.status.badgeInfo, // cyan -> info
+    AD: componentStyles.status.badgeDefault,
   };
 
   const focoLabels = {
@@ -576,11 +957,11 @@ function HoyPageContent() {
   };
 
   const focoColors = {
-    GEN: 'bg-gray-100 text-gray-800',
-    LIG: 'bg-blue-100 text-blue-800',
-    RIT: 'bg-purple-100 text-purple-800',
-    ART: 'bg-green-100 text-green-800',
-    'S&A': 'bg-brand-100 text-brand-800',
+    GEN: componentStyles.status.badgeDefault,
+    LIG: componentStyles.status.badgeInfo,
+    RIT: componentStyles.status.badgeDefault, // purple -> default
+    ART: componentStyles.status.badgeSuccess,
+    'S&A': componentStyles.status.badgeDefault, // brand -> default
   };
 
   // Resumen final
@@ -600,22 +981,53 @@ function HoyPageContent() {
         totalEjercicios={listaEjecucion.length}
         onGuardarYSalir={cerrarSesion}
         onReiniciar={reiniciarSesion}
+        open={sesionFinalizada}
+        onOpenChange={(open) => {
+          if (!open) {
+            // Si se cierra el modal sin guardar, cerrar la sesión
+            cerrarSesion();
+          }
+        }}
         onCalidadNotas={async (calidad, notas, mediaLinks) => {
           setDatosFinal(prev => ({ ...prev, calidad, notas, mediaLinks }));
 
-          if (!isSimulacion && registroSesionId) {
+          if (registroSesionId) {
             try {
-              await base44.entities.RegistroSesion.update(registroSesionId, {
-                calificacion: calidad,
-                notas: notas,
+              // Actualizar el registro de sesión con todos los datos finales
+              // Esta es la ÚNICA actualización del registro de sesión (además de la creación inicial)
+              const listaEjecucion = aplanarSesion(sesionActiva);
+              const updateData = {
+                finISO: new Date().toISOString(),
+                duracionRealSeg: Math.min(tiempoActual, 18000),
+                bloquesCompletados: completados.size,
+                bloquesOmitidos: omitidos.size,
+                calificacion: calidad || null,
+                notas: (notas && notas.trim()) ? notas.trim() : null,
                 mediaLinks: mediaLinks || [],
                 finalizada: true,
-              });
+                finAnticipado: false,
+                motivoFin: null,
+              };
+              
+              // Verificar que el registro existe antes de actualizar
+              const registroExistente = await localDataClient.entities.RegistroSesion.get(registroSesionId);
+              
+              if (!registroExistente) {
+                return;
+              }
+              
+              await localDataClient.entities.RegistroSesion.update(registroSesionId, updateData);
             } catch (error) {
-              console.error("Error guardando feedback:", error);
+              // Mostrar error al usuario
+              toast.error('Error al guardar el feedback. Inténtalo de nuevo.');
+              throw error; // Re-lanzar para que ResumenFinal pueda manejarlo
             }
           }
         }}
+        userId={userIdActual}
+        userProfile={alumnoActual}
+        registroSesionId={registroSesionId}
+        profesorAsignadoId={asignacionActiva?.profesorId || null}
       />
     );
   }
@@ -623,7 +1035,68 @@ function HoyPageContent() {
   // Player activo
   if (sesionActiva) {
     const listaEjecucion = aplanarSesion(sesionActiva);
+    
+    // Validar si la sesión está vacía
+    if (!listaEjecucion || listaEjecucion.length === 0) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Alert className={`max-w-2xl ${componentStyles.containers.panelBase} border-[var(--color-warning)] bg-[var(--color-warning)]/10`}>
+            <AlertTriangle className="h-5 w-5 text-[var(--color-warning)]" />
+            <AlertTitle className={`${componentStyles.typography.sectionTitle} text-[var(--color-warning)]`}>
+              Sesión vacía
+            </AlertTitle>
+            <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-text-primary)] mt-2`}>
+              Esta sesión no tiene ejercicios. Elige otra sesión, descansa o contacta con tu profesor.
+            </AlertDescription>
+            <div className="mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setSesionActiva(null)}
+                className="rounded-xl focus-brand"
+              >
+                Volver a la lista
+              </Button>
+            </div>
+          </Alert>
+        </div>
+      );
+    }
+
+    // Validar que el índice esté dentro del rango
+    const indiceValido = Math.max(0, Math.min(indiceActual, listaEjecucion.length - 1));
+    if (indiceActual !== indiceValido) {
+      setIndiceActual(indiceValido);
+      return null; // Renderizará de nuevo con el índice corregido
+    }
+
     const ejercicioActual = listaEjecucion[indiceActual];
+    
+    // Validar que ejercicioActual existe (doble validación)
+    if (!ejercicioActual) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Alert className={`max-w-2xl ${componentStyles.containers.panelBase} border-[var(--color-danger)] bg-[var(--color-danger)]/10`}>
+            <AlertTriangle className="h-5 w-5 text-[var(--color-danger)]" />
+            <AlertTitle className={`${componentStyles.typography.sectionTitle} text-[var(--color-danger)]`}>
+              Error al cargar el ejercicio
+            </AlertTitle>
+            <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-text-primary)] mt-2`}>
+              No se pudo cargar el ejercicio actual. Por favor, vuelve a la lista de sesiones.
+            </AlertDescription>
+            <div className="mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setSesionActiva(null)}
+                className="rounded-xl focus-brand"
+              >
+                Volver a la lista
+              </Button>
+            </div>
+          </Alert>
+        </div>
+      );
+    }
+
     const progreso = ((indiceActual + 1) / listaEjecucion.length) * 100;
     const isAD = ejercicioActual?.tipo === 'AD';
     const isFM = ejercicioActual?.tipo === 'FM';
@@ -641,120 +1114,454 @@ function HoyPageContent() {
       .filter(e => e.tipo !== 'AD')
       .reduce((sum, e) => sum + (e.duracionSeg || 0), 0);
 
+    // Calcular porcentaje del tiempo del ejercicio actual
+    const porcentajeEjercicio = ejercicioActual?.duracionSeg > 0 
+      ? (tiempoActual / ejercicioActual.duracionSeg) * 100
+      : 0;
+    const porcentajeEjercicioLimitado = Math.min(porcentajeEjercicio, 100);
+    const tiempoRestante = ejercicioActual?.duracionSeg > 0
+      ? Math.max(0, ejercicioActual.duracionSeg - tiempoActual)
+      : 0;
+    const excedido = tiempoActual > (ejercicioActual?.duracionSeg || 0);
+    // Verificar si está en rango de warning (90-100%)
+    const enRangoWarning = !excedido && porcentajeEjercicio >= 90 && porcentajeEjercicio <= 100;
+
+    // Calcular información de rondas para el stepper
+    const totalRondas = sesionActiva?.rondas?.length || 0;
+    const rondaActual = ejercicioActual?.esRonda ? (ejercicioActual.rondaIdx + 1) : null;
+    const repeticionActual = ejercicioActual?.esRonda ? ejercicioActual.repeticion : null;
+    const totalRepeticiones = ejercicioActual?.esRonda ? ejercicioActual.totalRepeticiones : null;
+
+    // Componente del stepper de rondas
+    const RoundStepper = ({ compact = false }) => {
+      if (!ejercicioActual?.esRonda || totalRondas === 0) return null;
+
     return (
-      <div className="min-h-screen bg-background" style={{ paddingBottom: '160px' }}>
-        {/* Header del Player */}
-        <div className="bg-card border-b px-4 py-4 lg:sticky lg:top-0 z-10 shadow-card">
-          <div className="max-w-5xl mx-auto">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-600 rounded-xl flex items-center justify-center shadow-card">
-                  <PlayCircle className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-xl md:text-2xl font-bold text-ui truncate">
-                    {ejercicioActual.nombre}
-                  </h2>
-                  {ejercicioActual.esRonda && (
-                    <p className="text-xs text-muted">
-                      Ronda {ejercicioActual.rondaIdx + 1} • Rep {ejercicioActual.repeticion}/{ejercicioActual.totalRepeticiones}
-                    </p>
+        <div className="flex flex-col items-center gap-1.5 shrink-0">
+          {/* Stepper visual: mini cápsulas */}
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: totalRondas }).map((_, idx) => {
+              const rondaNum = idx + 1;
+              const isActive = rondaNum === rondaActual;
+              return (
+                <div
+                  key={idx}
+                  className={cn(
+                    "h-2 w-2 rounded-full transition-all duration-300",
+                    isActive
+                      ? "bg-[var(--color-primary)]"
+                      : "border border-[var(--color-border-default)]/50 bg-transparent"
                   )}
+                  title={`Ronda ${rondaNum}`}
+                />
+              );
+            })}
+                          </div>
+          {/* Texto "Ronda X de Y" */}
+          <span className="text-[10px] sm:text-xs text-[var(--color-text-secondary)] font-medium tabular-nums">
+            Ronda {rondaActual} de {totalRondas}
+            {repeticionActual && totalRepeticiones && (
+              <span className="text-[var(--color-text-tertiary)]"> • Rep {repeticionActual}/{totalRepeticiones}</span>
+            )}
+                          </span>
+                        </div>
+      );
+    };
+
+    return (
+      <div className="bg-background transition-all duration-300 ease-in-out" style={{ 
+        paddingBottom: timerCollapsed ? '80px' : '150px'
+      }}>
+        {/* Timer dock inferior fijo - Una única barra con dos filas */}
+        {sesionActiva && (
+                          <div
+                            className={cn(
+              "fixed bottom-0 left-0 right-0 z-[30] bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-[0_-4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 ease-in-out",
+              timerCollapsed ? "h-[80px]" : "min-h-[80px]"
+            )}
+          >
+            {/* Botón de reporte - Posicionado absolutamente, separación constante */}
+            <div className="absolute right-4 bottom-full mb-4 z-[50]">
+              <ReportErrorButtonInTimer />
+                  </div>
+                  
+            {/* Barra de progreso - SIEMPRE en el borde superior, de lado a lado, MISMO grosor en expandido y colapsado */}
+                  {!isAD && ejercicioActual?.duracionSeg > 0 && (
+              <div className={cn(
+                "w-full rounded-full h-2 md:h-2.5 overflow-hidden transition-all duration-300",
+                enRangoWarning ? 'bg-[var(--color-warning)]/20 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 'bg-[var(--color-border-default)]/30'
+              )}>
+                      <div
+                        className={cn(
+                          "h-full transition-all duration-300",
+                          excedido ? 'bg-[var(--color-danger)]' : enRangoWarning ? 'bg-[var(--color-warning)] animate-warning-glow' : 'bg-[var(--color-primary)]'
+                        )}
+                        style={{ width: `${porcentajeEjercicioLimitado}%` }}
+                      />
+                    </div>
+                  )}
+            
+            {/* Fila principal - Siempre visible (tanto expandido como colapsado) */}
+            <div className="max-w-5xl mx-auto px-4 py-2">
+              <div className="flex items-center justify-between gap-3">
+                {/* Izquierda: Tiempo */}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <Clock className={cn(
+                    "w-4 h-4 shrink-0",
+                    excedido ? "text-[var(--color-danger)]" : enRangoWarning ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]"
+                  )} />
+                  <div className="flex flex-col min-w-0">
+                    <div className={cn(
+                      "text-base font-mono font-bold tabular-nums leading-tight",
+                      excedido ? "text-[var(--color-danger)]" : enRangoWarning ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]"
+                    )}>
+                      {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
                 </div>
+                    {!isAD && ejercicioActual?.duracionSeg > 0 && (
+                      <div className="text-[10px] text-[var(--color-text-secondary)] font-mono tabular-nums leading-tight">
+                        / {Math.floor(ejercicioActual.duracionSeg / 60)}:{String((ejercicioActual.duracionSeg % 60)).padStart(2, '0')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Centro: Controles - Solo visible cuando expandido */}
+                {!timerCollapsed && (
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {/* Atrás */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAnterior}
+                  disabled={indiceActual === 0}
+                      className="h-9 flex-[0.5] min-w-0 rounded-lg"
+                  title="Anterior (P)"
+                  aria-label="Ejercicio anterior"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1.5 shrink-0" />
+                  <span className="truncate">Atrás</span>
+                </Button>
+
+                    {/* Play/Pause */}
+                {!isAD && (
+                  <Button
+                        variant="outline"
+                    size="sm"
+                    onClick={togglePlayPausa}
+                        className="h-9 w-9 p-0 rounded-lg shrink-0"
+                    title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
+                    aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
+                  >
+                        {cronometroActivo ? (
+                          <Pause className="w-4 h-4" />
+                        ) : (
+                          <Play className="w-4 h-4" />
+                        )}
+                  </Button>
+                )}
+
+                    {/* OK - Botón primario */}
+                <Button
+                  variant="primary"
+                  onClick={completarYAvanzar}
+                      className="h-9 flex-[0.5] min-w-0 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm rounded-lg focus-brand shadow-sm text-white"
+                  title="Completar (Enter)"
+                  aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
+                >
+                      <CheckCircle className="w-4 h-4 mr-1.5 shrink-0" />
+                  <span className="truncate">{isUltimo ? 'Finalizar' : 'OK'}</span>
+                </Button>
+
+                    {/* Saltar */}
+                    {!isUltimo && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={omitirYAvanzar}
+                        className="h-9 flex-[0.5] min-w-0 rounded-lg"
+                  title="Omitir y pasar (N)"
+                  aria-label="Omitir ejercicio"
+                >
+                  <ChevronsRight className="w-4 h-4 mr-1.5 shrink-0" />
+                  <span className="truncate">Saltar</span>
+                </Button>
+                    )}
               </div>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-xl focus-brand" onClick={() => setMostrarItinerario(true)} aria-label="Mostrar índice de ejercicios">
-                  <List className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-xl focus-brand" onClick={() => setMostrarAyuda(true)} aria-label="Mostrar ayuda de atajos">
-                  <HelpCircle className="w-4 h-4" />
-                </Button>
+                )}
+                
+                {/* OK en modo compacto (cuando colapsado) */}
+                {timerCollapsed && (
+                  <Button
+                    variant="primary"
+                    onClick={completarYAvanzar}
+                    className="h-9 px-4 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm rounded-lg focus-brand shadow-sm text-white"
+                    title="Completar (Enter)"
+                    aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-1" />
+                    {isUltimo ? 'Finalizar' : 'OK'}
+                  </Button>
+                )}
+                
+                {/* Derecha: Pill de progreso + Botón colapsar/expandir */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Pill de progreso */}
+                  {sesionActiva && listaEjecucion.length > 0 && (
+                    <div className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-xs transition-all",
+                      "bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30",
+                      "text-[var(--color-primary)]"
+                    )}>
+                      <Target className="w-3.5 h-3.5" />
+                      <span className="font-mono tabular-nums">
+                        {indiceActual + 1}<span className="text-[var(--color-text-secondary)] font-normal">/{listaEjecucion.length}</span>
+                      </span>
+            </div>
+                  )}
+                  
+                  {/* Botón colapsar/expandir */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTimerCollapsed(!timerCollapsed)}
+                    className="h-9 w-9 p-0"
+                    aria-label={timerCollapsed ? "Expandir timer" : "Colapsar timer"}
+                  >
+                    {timerCollapsed ? (
+                      <ChevronUp className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
+            
+            {/* Fila secundaria - Solo en modo expandido: Breadcrumb de ejercicios */}
+            {!timerCollapsed && sesionActiva && listaEjecucion.length > 0 && (
+              <div className="max-w-5xl mx-auto px-4 pb-3 border-t border-[var(--color-border-default)]/50 pt-2">
+                <TooltipProvider>
+                  <div className="flex items-center gap-1.5 pb-2 overflow-x-auto scrollbar-hide">
+                    {listaEjecucion.map((ej, idx) => {
+                      const isActive = idx === indiceActual;
+                      const isCompleted = completados.has(idx);
+                      const isOmitted = omitidos.has(idx);
+                      
+                      // Formatear label: código corto
+                      let label = ej.tipo;
+                      if (ej.esRonda && ej.rondaIdx !== undefined && ej.repeticion !== undefined) {
+                        label = `${ej.tipo} R${ej.rondaIdx + 1}-${ej.repeticion}`;
+                      }
+                      
+                      const nombreEjercicio = ej.nombre || `${ej.tipo}${ej.esRonda ? ` - Ronda ${ej.rondaIdx + 1}, Repetición ${ej.repeticion}/${ej.totalRepeticiones}` : ''}`;
+                      
+                      return (
+                        <React.Fragment key={idx}>
+                          {idx > 0 && <ChevronRight className="w-3 h-3 text-[var(--color-text-muted)] shrink-0" />}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div
+                                className={cn(
+                                  "px-2 py-0.5 rounded text-xs font-medium shrink-0 transition-all whitespace-nowrap flex items-center gap-1 cursor-default",
+                                  isActive 
+                                    ? "bg-[var(--color-primary)] text-white shadow-sm" 
+                                    : isCompleted
+                                    ? "bg-[var(--color-success)]/20 text-[var(--color-success)] border border-[var(--color-success)]/30"
+                                    : isOmitted
+                                    ? "bg-[var(--color-warning)]/20 text-[var(--color-warning)] border border-[var(--color-warning)]/30"
+                                    : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] border border-[var(--color-border-default)]"
+                                )}
+                              >
+                                {isCompleted && <CheckCircle className="w-3 h-3" />}
+                                <span>{label}</span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">{nombreEjercicio}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                </TooltipProvider>
+                {/* Nombre corto del ejercicio actual (opcional) */}
+                {ejercicioActual?.nombre && (
+                  <div className="px-2">
+                    <span className="text-xs text-[var(--color-text-secondary)] truncate block">
+                      {ejercicioActual.nombre}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
-            {/* Breadcrumbs */}
-            <div className="flex items-center gap-2 flex-wrap text-xs text-muted">
-              <Music className="w-3 h-3 text-brand-700" />
-              <span className="font-medium">{asignacionActiva.piezaSnapshot?.nombre}</span>
-              <span className="text-muted">•</span>
-              <Target className="w-3 h-3 text-blue-600" />
-              <span>{asignacionActiva.plan?.nombre}</span>
-              <span className="text-muted">•</span>
-              <Badge className={focoColors[sesionActiva.foco]} variant="outline">
-                {focoLabels[sesionActiva.foco]}
-              </Badge>
+        {/* Header del Player */}
+        <div className="page-header header-modern lg:sticky lg:top-0 z-10">
+          <div className="px-2 sm:px-3 md:px-6 py-1 sm:py-1.5 md:py-2">
+            <div className="max-w-5xl mx-auto">
+              <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 mb-0 sm:mb-0.5 md:mb-1">
+                <PlayCircle className="w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 text-[var(--color-primary)]" />
+                <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl flex-1 min-w-0`}>
+                  <span className="truncate block">{ejercicioActual?.nombre || 'Ejercicio sin nombre'}</span>
+                  {ejercicioActual?.esRonda && (
+                    <div className="flex items-center gap-2 mt-1">
+                      {/* Stepper visual: mini cápsulas */}
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalRondas }).map((_, idx) => {
+                          const rondaNum = idx + 1;
+                          const isActive = rondaNum === rondaActual;
+                          return (
+                            <div
+                              key={idx}
+                              className={cn(
+                                "h-1.5 w-1.5 rounded-full transition-all duration-300",
+                                isActive
+                                  ? "bg-[var(--color-primary)]"
+                                  : "border border-[var(--color-border-default)]/50 bg-transparent"
+                              )}
+                              title={`Ronda ${rondaNum}`}
+                            />
+                          );
+                        })}
+                      </div>
+                      {/* Texto "Ronda X de Y" */}
+                      <span className="text-xs sm:text-sm text-[var(--color-text-secondary)] font-normal tabular-nums">
+                        Ronda {rondaActual} de {totalRondas} • Rep {repeticionActual}/{totalRepeticiones}
+                    </span>
+                    </div>
+                  )}
+                </h1>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand touch-manipulation" onClick={() => setMostrarItinerario(true)} aria-label="Mostrar índice de ejercicios">
+                    <List className="w-5 h-5 sm:w-4 sm:h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand touch-manipulation" onClick={() => setShowHotkeysModal(true)} aria-label="Mostrar atajos de teclado">
+                    <HelpCircle className="w-5 h-5 sm:w-4 sm:h-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)] transition-colors touch-manipulation" 
+                    onClick={handleCancelar}
+                    aria-label="Salir del modo estudio"
+                    title="Salir (Esc)"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Breadcrumbs */}
+              <div className="hidden sm:flex items-center mb-0.5 md:mb-1">
+                <div className="w-8 md:w-12 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className={`${componentStyles.typography.pageSubtitle} text-xs sm:text-sm md:text-base flex items-center gap-2 flex-wrap`}>
+                    <Music className="w-3 h-3 text-[var(--color-primary)] shrink-0" />
+                    <span className="font-medium">{asignacionActiva.piezaSnapshot?.nombre}</span>
+                    <span className="text-[var(--color-text-secondary)]">•</span>
+                    <Target className="w-3 h-3 text-[var(--color-info)] shrink-0" />
+                    <span>{asignacionActiva.plan?.nombre}</span>
+                    <span className="text-[var(--color-text-secondary)]">•</span>
+                    <Badge className={focoColors[sesionActiva.foco]} variant="outline">
+                      {focoLabels[sesionActiva.foco]}
+                    </Badge>
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Contenido del ejercicio */}
-        <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
+        {/* Contenido del ejercicio - Tarjeta principal unificada */}
+        <div 
+          className="max-w-[900px] md:max-w-[1000px] mx-auto p-4 md:p-6"
+        >
+          <Card className="app-card shadow-md">
+            <CardContent className="p-3 md:p-4 lg:p-6 space-y-3 md:space-y-4">
           {isAD && (
-            <Alert className="border-brand-200 bg-brand-50">
-              <AlertTriangle className="h-4 w-4 text-brand-600" />
-              <AlertDescription className="text-brand-800 text-sm">
+            <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-primary)] bg-[var(--color-primary-soft)]`}>
+              <AlertTriangle className="h-4 w-4 text-[var(--color-primary)]" />
+              <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-text-primary)]`}>
                 Este ejercicio no suma tiempo real
               </AlertDescription>
             </Alert>
           )}
 
+              {/* Objetivo de logro */}
           {ejercicioActual.indicadorLogro && (
-            <Card className="border-blue-200 bg-blue-50">
-              <CardContent className="pt-4">
-                <p className="text-sm font-semibold text-blue-900 mb-1">💡 Objetivo de logro</p>
-                <p className="text-sm text-blue-800">{ejercicioActual.indicadorLogro}</p>
-              </CardContent>
-            </Card>
+                <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4">
+                  <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-info)] mb-1.5 md:mb-2`}>💡 Objetivo de logro</p>
+                  <p className="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed">{ejercicioActual.indicadorLogro}</p>
+                </div>
           )}
 
+              {/* Instrucciones */}
           {ejercicioActual.instrucciones && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">📋 Instrucciones</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-ui whitespace-pre-wrap leading-relaxed">
+                <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4">
+                  <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] mb-1.5 md:mb-2`}>📋 Instrucciones</p>
+                  <p className="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed">
                   {ejercicioActual.instrucciones}
                 </p>
-              </CardContent>
-            </Card>
+                </div>
           )}
 
-          {!isAD && (isFM ? elementosFM.length > 0 : (ejercicioActual.media && Object.keys(ejercicioActual.media).length > 0)) && (
-            <Card className={isFM ? "border-pink-200" : ""}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className={`text-base ${isFM ? "text-pink-800" : ""}`}>
+              {/* Material de la pieza */}
+          {!isAD && (isFM ? elementosFM.length > 0 : ((ejercicioActual.media && Object.keys(ejercicioActual.media).length > 0) || (ejercicioActual.mediaLinks && ejercicioActual.mediaLinks.length > 0))) && (
+                <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4 last:border-b-0">
+                  <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] mb-2 md:mb-3`}>
                     {isFM ? '🎼 Material de la Pieza' : '📎 Material'}
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
+                  </p>
+                  <div className="space-y-4">
                 {isFM ? (
                   elementosFM.map((elemento, idx) => (
-                    <div key={idx} className="border rounded-lg p-3 bg-pink-50/30 space-y-2">
-                      <h3 className="font-semibold text-sm text-pink-900">{elemento.nombre}</h3>
+                    <div key={idx} className={`border rounded-lg p-3 bg-[var(--color-accent)]/10 space-y-2`}>
+                      <h3 className={`${componentStyles.typography.cardTitle} text-[var(--color-accent)]`}>{elemento.nombre}</h3>
+
+                      {/* Mostrar mediaLinks como iconos (excepto audio que va embedido) */}
+                      {elemento.mediaLinks && elemento.mediaLinks.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {elemento.mediaLinks.map((url, urlIdx) => {
+                            const media = resolveMedia(url);
+                            // Audio y SoundCloud: embedidos directamente (solo en modo estudio)
+                            if (media.kind === MediaKind.AUDIO || media.kind === MediaKind.SOUNDCLOUD) {
+                              return (
+                                <div key={urlIdx} className="w-full">
+                                  <MediaEmbed url={url} className="w-full" />
+                                </div>
+                              );
+                            }
+                            // Resto: abrir modal pantalla completa (modo estudio)
+                            return (
+                              <Button
+                                key={urlIdx}
+                                type="button"
+                                variant="outline"
+                                onClick={() => setMediaModal(url)}
+                                className="flex items-center justify-center p-2 h-10 w-10 border border-[var(--color-border-default)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-elevated)] transition-colors flex-shrink-0"
+                                aria-label={`Abrir ${getMediaLabel(url)} en pantalla completa`}
+                              >
+                                <MediaIcon url={url} className="w-5 h-5" />
+                                <span className="sr-only">{getMediaLabel(url)}</span>
+                              </Button>
+                            );
+                          })}
+                        </div>
+                      )}
 
                       {elemento.media?.pdf && (
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="text-xs font-medium text-ui">📄 PDF</p>
+                        <div className="md:col-span-1">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setMediaFullscreen({ tipo: 'pdf', url: elemento.media.pdf, nombre: elemento.nombre })}
-                              className="h-7 text-xs rounded-xl"
-                              aria-label="Ver PDF en pantalla completa"
+                            onClick={() => setMediaModal(elemento.media.pdf)}
+                            className="w-full h-10 text-sm rounded-lg"
+                            aria-label="Ver partitura (PDF) en pantalla completa"
                             >
-                              <Maximize2 className="w-3 h-3 mr-1" />
-                              Pantalla completa
+                            📄 Ver partitura (PDF)
                             </Button>
-                          </div>
-                          <iframe
-                            src={elemento.media.pdf}
-                            className="w-full h-80 rounded-lg border"
-                            title={elemento.nombre}
-                          />
                         </div>
                       )}
 
@@ -791,26 +1598,67 @@ function HoyPageContent() {
                   ))
                 ) : (
                   <>
+                    {/* Audio y PDF: grid 2 columnas en desktop, stacked en mobile */}
+                    {(ejercicioActual.mediaLinks && ejercicioActual.mediaLinks.some(url => {
+                          const media = resolveMedia(url);
+                      return media.kind === MediaKind.AUDIO || media.kind === MediaKind.SOUNDCLOUD;
+                    })) || ejercicioActual.media?.pdf ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {/* Audio / SoundCloud: embedidos directamente */}
+                        {ejercicioActual.mediaLinks && ejercicioActual.mediaLinks
+                          .filter(url => {
+                            const media = resolveMedia(url);
+                            return media.kind === MediaKind.AUDIO || media.kind === MediaKind.SOUNDCLOUD;
+                          })
+                          .map((url, urlIdx) => (
+                            <div key={urlIdx} className="md:col-span-1 w-full">
+                                <MediaEmbed url={url} className="w-full" />
+                              </div>
+                          ))}
+                        
+                        {/* PDF: botón grande - abre modal pantalla completa */}
                     {ejercicioActual.media?.pdf && (
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-xs font-medium text-ui">📄 PDF</p>
+                          <div className="md:col-span-1">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setMediaFullscreen({ tipo: 'pdf', url: ejercicioActual.media.pdf, nombre: 'Material' })}
-                            className="h-7 text-xs rounded-xl"
-                            aria-label="Ver PDF en pantalla completa"
+                              onClick={() => setMediaModal(ejercicioActual.media.pdf)}
+                              className="w-full h-10 text-sm rounded-lg"
+                              aria-label="Ver partitura (PDF) en pantalla completa"
                           >
-                            <Maximize2 className="w-3 h-3 mr-1" />
-                            Pantalla completa
+                              📄 Ver partitura (PDF)
                           </Button>
                         </div>
-                        <iframe
-                          src={ejercicioActual.media.pdf}
-                          className="w-full h-80 rounded-lg border"
-                          title="Material PDF"
-                        />
+                        )}
+                      </div>
+                    ) : null}
+
+                    {/* Otros media links (vídeos, etc.): iconos clickeables - abren modal */}
+                    {ejercicioActual.mediaLinks && ejercicioActual.mediaLinks
+                      .filter(url => {
+                        const media = resolveMedia(url);
+                        return media.kind !== MediaKind.AUDIO && media.kind !== MediaKind.SOUNDCLOUD;
+                      })
+                      .length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {ejercicioActual.mediaLinks
+                          .filter(url => {
+                            const media = resolveMedia(url);
+                            return media.kind !== MediaKind.AUDIO && media.kind !== MediaKind.SOUNDCLOUD;
+                          })
+                          .map((url, urlIdx) => (
+                            <Button
+                              key={urlIdx}
+                              type="button"
+                              variant="outline"
+                              onClick={() => setMediaModal(url)}
+                              className="flex items-center justify-center p-2 h-10 w-10 border border-[var(--color-border-default)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-elevated)] transition-colors flex-shrink-0"
+                              aria-label={`Abrir ${getMediaLabel(url)} en pantalla completa`}
+                            >
+                              <MediaIcon url={url} className="w-5 h-5" />
+                              <span className="sr-only">{getMediaLabel(url)}</span>
+                            </Button>
+                          ))}
                       </div>
                     )}
 
@@ -845,129 +1693,158 @@ function HoyPageContent() {
                     )}
                   </>
                 )}
-              </CardContent>
-            </Card>
+                  </div>
+                </div>
           )}
 
+              {/* Materiales Requeridos */}
           {ejercicioActual.materialesRequeridos && ejercicioActual.materialesRequeridos.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">🎒 Materiales Requeridos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="list-disc list-inside space-y-1 text-sm text-ui">
+                <div className="pt-4">
+                  <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] mb-2`}>🎒 Materiales Requeridos</p>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-[var(--color-text-primary)]">
                   {ejercicioActual.materialesRequeridos.map((material, idx) => (
                     <li key={idx}>{material}</li>
                   ))}
                 </ul>
+                </div>
+              )}
               </CardContent>
             </Card>
-          )}
         </div>
 
-        {/* Footer de controles */}
+        {/* Footer de controles - Oculto (controles ahora en timer flotante) */}
+        {false && (
         <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-card z-30 pb-[env(safe-area-inset-bottom,0px)]">
-          <div className="max-w-5xl mx-auto px-3 py-3">
-            {/* Barra de progreso de tiempo */}
-            <div className="mb-3">
-              <TimelineProgreso
-                tiempoActual={tiempoActual}
-                tiempoObjetivo={tiempoTotalPrevisto}
-              />
-            </div>
+          <div className="max-w-5xl mx-auto px-3 py-2">
+            {/* Breadcrumb compacto */}
+            <TooltipProvider>
+              <div className="flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide -mx-3 px-3">
+                {listaEjecucion.slice(Math.max(0, indiceActual - 2), Math.min(listaEjecucion.length, indiceActual + 3)).map((ej, idx) => {
+                  const realIdx = Math.max(0, indiceActual - 2) + idx;
+                  const isActive = realIdx === indiceActual;
+                  const isCompleted = completados.has(realIdx);
+                  const isOmitted = omitidos.has(realIdx);
+                  
+                  // Formatear label para el breadcrumb
+                  let label = ej.tipo;
+                  if (ej.esRonda && ej.rondaIdx !== undefined && ej.repeticion !== undefined) {
+                    // Mostrar: "TC R1-2" donde R1 es la ronda y 2 es la repetición actual
+                    label = `${ej.tipo} R${ej.rondaIdx + 1}-${ej.repeticion}`;
+                  }
+                  
+                  const nombreEjercicio = ej.nombre || `${ej.tipo}${ej.esRonda ? ` - Ronda ${ej.rondaIdx + 1}, Repetición ${ej.repeticion}/${ej.totalRepeticiones}` : ''}`;
+                  
+                  return (
+                    <React.Fragment key={realIdx}>
+                      {idx > 0 && <ChevronRight className="w-3 h-3 text-[var(--color-text-muted)] shrink-0" />}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div
+                            className={cn(
+                              "px-2 py-0.5 rounded text-xs font-medium shrink-0 transition-all whitespace-nowrap cursor-default",
+                              isActive 
+                                ? "bg-[var(--color-primary)] text-white shadow-sm" 
+                                : isCompleted
+                                ? "bg-[var(--color-success)]/20 text-[var(--color-success)] border border-[var(--color-success)]/30"
+                                : isOmitted
+                                ? "bg-[var(--color-warning)]/20 text-[var(--color-warning)] border border-[var(--color-warning)]/30"
+                                : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] border border-[var(--color-border-default)]"
+                            )}
+                          >
+                            {label}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">{nombreEjercicio}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
 
-            {/* Controles principales */}
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={handleCancelar}
-                className="h-11 px-3 min-w-[44px] rounded-xl focus-brand"
-                title="Cancelar sesión (Esc)"
-                aria-label="Cancelar sesión"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-
+            {/* Controles principales - Distribución 19-2-29-2-29-2-19 con gaps */}
+            <div className="flex items-center w-full gap-[2%] mb-2">
+              {/* Navegación: Atrás - 50% */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleAnterior}
                 disabled={indiceActual === 0}
-                className="h-11 px-3 min-w-[44px] rounded-xl focus-brand"
+                className="h-12 md:h-14 flex-[0.5] min-w-0 rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
                 title="Anterior (P)"
                 aria-label="Ejercicio anterior"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 mr-2 shrink-0" />
+                <span className="truncate">Atrás</span>
               </Button>
 
+              {/* Control principal: Play/Pause - Solo si no es AD */}
               {!isAD && (
-                <>
-                  <div className="flex items-center gap-1.5 bg-muted rounded-lg px-3 py-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-mono font-semibold text-ui">
-                      {Math.floor(tiempoActual / 60)}:{String(tiempoActual % 60).padStart(2, '0')}
-                    </span>
-                  </div>
-
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={togglePlayPausa}
-                    className="h-11 px-4 min-w-[44px] rounded-xl focus-brand shadow-sm"
-                    title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
-                    aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
-                  >
-                    {cronometroActivo ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-                  </Button>
-                </>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={togglePlayPausa}
+                  className="h-12 md:h-14 w-12 md:w-14 shrink-0 rounded-xl focus-brand shadow-sm hover:shadow-md transition-all"
+                  title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
+                  aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
+                >
+                  {cronometroActivo ? <Pause className="w-5 h-5 md:w-6 md:h-6" /> : <Play className="w-5 h-5 md:w-6 md:h-6" />}
+                </Button>
               )}
 
+              {/* Acciones de ejercicio: Completar - 50% */}
               <Button
                 variant="primary"
                 onClick={completarYAvanzar}
-                className="h-11 px-5 bg-[hsl(var(--success))] hover:bg-[hsl(var(--success)/0.9)] min-w-[90px] font-semibold rounded-xl focus-brand shadow-sm text-white"
+                className={cn(
+                  "h-12 md:h-14 flex-[0.5] min-w-0 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-base md:text-lg rounded-xl focus-brand shadow-sm hover:shadow-md transition-all text-white",
+                  isAD && "flex-[1]"
+                )}
                 title="Completar (Enter)"
                 aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
               >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                {isUltimo ? 'Finalizar' : 'OK'}
+                <CheckCircle className="w-5 h-5 md:w-6 md:h-6 mr-2 shrink-0" />
+                <span className="truncate">{isUltimo ? 'Finalizar' : 'OK'}</span>
               </Button>
 
+              {/* Acciones de ejercicio: Saltar - 50% */}
+              {!isUltimo && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={omitirYAvanzar}
                 disabled={isUltimo}
-                className="h-11 px-3 min-w-[44px] rounded-xl focus-brand"
+                className="h-12 md:h-14 flex-[0.5] min-w-0 rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
                 title="Omitir y pasar (N)"
                 aria-label="Omitir ejercicio"
               >
-                <SkipForward className="w-4 h-4" />
+                <ChevronsRight className="w-5 h-5 md:w-6 md:h-6 mr-2 shrink-0" />
+                <span className="truncate">Saltar</span>
               </Button>
+              )}
             </div>
 
-            {/* Info de progreso */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs text-muted">
-                <span>Bloque {indiceActual + 1}/{listaEjecucion.length}</span>
-                <span>{completados.size} ✓ • {omitidos.size} omitidos</span>
+            {/* Progreso de sesión - Compacto */}
+            <div className="mt-2 space-y-0.5">
+              <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
+                <span>{indiceActual + 1}/{listaEjecucion.length}</span>
+                <span>{completados.size}✓ {omitidos.size}⏭</span>
               </div>
-              <div className="bg-muted rounded-full h-1.5 overflow-hidden">
+              <div className="bg-[var(--color-border-default)]/30 rounded-full h-1 overflow-hidden">
                 <div
-                  className={`h-full transition-all duration-300 ${
-                    progreso <= 85 ? 'bg-[hsl(var(--success))]' : progreso <= 100 ? 'bg-amber-500' : 'bg-red-500'
-                  }`}
+                  className={cn(
+                    "h-full transition-all duration-300",
+                    progreso <= 85 ? 'bg-[var(--color-success)]' : progreso <= 100 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-danger)]'
+                  )}
                   style={{ width: `${Math.min(progreso, 100)}%` }}
                 />
               </div>
-
-              <p className="text-center text-xs text-muted">
-                Espacio: ⏯ • Enter: ✓ • N: omitir • P: ← • Esc: cancelar • Ctrl/Cmd+M: menú
-              </p>
             </div>
           </div>
         </div>
+        )}
 
         {/* Media fullscreen */}
         {mediaFullscreen && (
@@ -1014,97 +1891,246 @@ function HoyPageContent() {
           </>
         )}
 
-        {/* Panel de itinerario */}
-        {mostrarItinerario && (
-          <>
-            <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setMostrarItinerario(false)} />
-            <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-card shadow-card z-50 overflow-y-auto">
-              <div className="sticky top-0 bg-card border-b px-4 py-3 flex items-center justify-between">
-                <h3 className="text-base font-bold">Índice de Ejercicios</h3>
-                <Button variant="ghost" size="sm" onClick={() => setMostrarItinerario(false)} className="h-8 w-8 p-0 rounded-xl focus-brand" aria-label="Cerrar índice">
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="p-3 space-y-2">
-                {listaEjecucion.map((ej, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => navegarA(idx)}
-                    className={`w-full text-left p-3 rounded-lg border transition-all min-h-[52px] focus-brand ${
-                      idx === indiceActual
-                        ? 'bg-brand-500 text-white border-brand-500 shadow-sm'
-                        : completados.has(idx)
-                        ? 'bg-green-50 border-green-200'
-                        : omitidos.has(idx)
-                        ? 'bg-muted border-border'
-                        : 'hover:bg-muted border-border'
-                    }`}
-                    aria-label={`Ir a ejercicio ${idx + 1}: ${ej.nombre}`}
+        {/* Modal de pantalla completa para recursos multimedia (modo estudio) */}
+        {mediaModal && (
+          <div 
+            className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-0 md:p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setMediaModal(null);
+              }
+            }}
+          >
+            <div className="w-full h-full md:w-[95vw] md:h-[95vh] md:max-w-7xl bg-[var(--color-surface-elevated)] md:rounded-2xl shadow-2xl flex flex-col">
+              {/* Header del modal */}
+              <div className="flex items-center justify-between p-4 md:p-6 border-b border-[var(--color-border-default)] shrink-0">
+                <h2 className="text-lg md:text-xl font-semibold text-[var(--color-text-primary)]">
+                  Recurso multimedia
+                </h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMediaModal(null)}
+                  className="h-9 w-9 p-0"
+                    aria-label="Cerrar"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold min-w-[24px]">#{idx + 1}</span>
-                      <Badge variant="outline" className={`${tipoColors[ej.tipo]} text-xs border`}>
-                        {ej.tipo}
-                      </Badge>
-                      <span className="flex-1 text-sm font-medium truncate">{ej.nombre}</span>
-                      {completados.has(idx) && <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />}
-                      {omitidos.has(idx) && <XCircle className="w-4 h-4 text-muted-foreground shrink-0" />}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Panel de ayuda */}
-        {mostrarAyuda && (
-          <>
-            <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setMostrarAyuda(false)} />
-            <Card className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md z-50 max-h-[80vh] overflow-y-auto">
-              <CardHeader className="border-b pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">⌨️ Atajos de Teclado</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={() => setMostrarAyuda(false)} className="h-8 w-8 p-0 rounded-xl focus-brand" aria-label="Cerrar ayuda">
-                    <X className="w-4 h-4" />
+                    <X className="w-5 h-5" />
                   </Button>
                 </div>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-2">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="flex items-center gap-2 min-h-[40px]">
-                    <kbd className="kbd">Espacio</kbd>
-                    <span className="text-xs">Play/Pausa</span>
-                  </div>
-                  <div className="flex items-center gap-2 min-h-[40px]">
-                    <kbd className="kbd">Enter</kbd>
-                    <span className="text-xs">Completar</span>
-                  </div>
-                  <div className="flex items-center gap-2 min-h-[40px]">
-                    <kbd className="kbd">N</kbd>
-                    <span className="text-xs">Omitir</span>
-                  </div>
-                  <div className="flex items-center gap-2 min-h-[40px]">
-                    <kbd className="kbd">P</kbd>
-                    <span className="text-xs">Anterior</span>
-                  </div>
-                  <div className="flex items-center gap-2 min-h-[40px]">
-                    <kbd className="kbd">Esc</kbd>
-                    <span className="text-xs">Cancelar</span>
-                  </div>
-                  <div className="flex items-center gap-2 min-h-[40px]">
-                    <kbd className="kbd">I</kbd>
-                    <span className="text-xs">Índice</span>
-                  </div>
-                  <div className="flex items-center gap-2 min-h-[40px] col-span-2">
-                    <kbd className="kbd">Ctrl/Cmd+M</kbd>
-                    <span className="text-xs">Mostrar/Ocultar Menú</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </>
+              {/* Contenido del modal */}
+              <div className="flex-1 overflow-auto p-4 md:p-6 min-h-0">
+                <MediaEmbed url={mediaModal} className="w-full h-full min-h-[400px]" />
+                {/* Enlace de emergencia si el embed falla (especialmente para PDFs) */}
+                <div className="mt-4 text-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(mediaModal, "_blank", "noopener,noreferrer")}
+                    className="text-xs"
+                  >
+                    Abrir en nueva pestaña
+                  </Button>
+              </div>
+              </div>
+            </div>
+          </div>
         )}
+
+        {/* Panel de itinerario - Dialog central mediano */}
+        {sesionActiva && (
+          <Dialog open={mostrarItinerario} onOpenChange={setMostrarItinerario}>
+            <DialogContent size="md" className="max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Índice de Ejercicios</DialogTitle>
+                <DialogDescription className="sr-only">
+                  Lista de ejercicios de la sesión actual
+                </DialogDescription>
+              </DialogHeader>
+              <div className="p-3 space-y-2">
+                {(() => {
+                  const S = ensureRondaIds(sesionActiva);
+                  const secuencia = getSecuencia(S);
+                  const bloquesMap = mapBloquesByCode(S);
+                  
+                  // Crear mapeo de posiciones en listaEjecucion para cada elemento de la secuencia
+                  let contadorLista = 0;
+                  const mapeoPosiciones = new Map();
+                  
+                  secuencia.forEach((item) => {
+                    if (item.kind === 'BLOQUE') {
+                      mapeoPosiciones.set(`bloque-${item.code}`, contadorLista);
+                      contadorLista++;
+                    } else if (item.kind === 'RONDA') {
+                      const ronda = S.rondas.find(r => r.id === item.id);
+                      if (ronda) {
+                        const posicionesRonda = [];
+                        for (let rep = 0; rep < ronda.repeticiones; rep++) {
+                          ronda.bloques.forEach(() => {
+                            posicionesRonda.push(contadorLista);
+                            contadorLista++;
+                          });
+                        }
+                        mapeoPosiciones.set(`ronda-${item.id}`, posicionesRonda);
+                      }
+                    }
+                  });
+
+                  return secuencia.map((item, seqIdx) => {
+                    if (item.kind === 'BLOQUE') {
+                      const posicion = mapeoPosiciones.get(`bloque-${item.code}`);
+                      const ej = bloquesMap.get(item.code);
+                      if (!ej) return null;
+                      
+                      const estaActivo = posicion === indiceActual;
+                      const estaCompletado = completados.has(posicion);
+                      const estaOmitido = omitidos.has(posicion);
+                      
+                      return (
+                        <button
+                          key={`bloque-${item.code}-${seqIdx}`}
+                          onClick={() => navegarA(posicion)}
+                          className={`w-full text-left p-3 rounded-lg border transition-all min-h-[52px] ${
+                            estaActivo
+                              ? 'bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border-[var(--color-primary)] shadow-sm'
+                              : estaCompletado
+                              ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]'
+                              : estaOmitido
+                              ? 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]'
+                              : 'bg-[var(--color-surface)] border-[var(--color-border-strong)] hover:bg-[var(--color-surface-muted)]'
+                          }`}
+                          aria-label={`Ir a ejercicio ${posicion + 1}: ${ej.nombre}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold min-w-[24px] text-[var(--color-text-primary)]">#{posicion + 1}</span>
+                            <Badge variant="outline" className={`${tipoColors[ej.tipo]} text-xs border`}>
+                              {ej.tipo}
+                            </Badge>
+                            <span className="flex-1 text-sm font-medium truncate text-[var(--color-text-primary)]">{ej.nombre}</span>
+                            {estaCompletado && <CheckCircle className="w-4 h-4 text-[var(--color-success)] shrink-0" />}
+                            {estaOmitido && <XCircle className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />}
+                          </div>
+                        </button>
+                      );
+                    } else if (item.kind === 'RONDA') {
+                      const ronda = S.rondas.find(r => r.id === item.id);
+                      if (!ronda) return null;
+                      
+                      const posicionesRonda = mapeoPosiciones.get(`ronda-${item.id}`) || [];
+                      const estaExpandida = rondasExpandidasItinerario.has(item.id);
+                      
+                      // Verificar si alguna posición de la ronda está activa
+                      const tieneActivo = posicionesRonda.includes(indiceActual);
+                      const tieneCompletado = posicionesRonda.some(p => completados.has(p));
+                      const tieneOmitido = posicionesRonda.some(p => omitidos.has(p));
+                      
+                      return (
+                        <div key={`ronda-${item.id}-${seqIdx}`} className="space-y-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRondasExpandidasItinerario(prev => {
+                                const next = new Set(prev);
+                                if (next.has(item.id)) {
+                                  next.delete(item.id);
+                                } else {
+                                  next.add(item.id);
+                                }
+                                return next;
+                              });
+                            }}
+                            className={`w-full text-left p-3 rounded-lg border transition-all ${
+                              tieneActivo
+                                ? 'bg-[var(--color-primary-soft)] border-[var(--color-primary)] shadow-sm'
+                                : tieneCompletado
+                                ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]'
+                                : tieneOmitido
+                                ? 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]'
+                                : 'bg-[var(--color-primary-soft)] border-[var(--color-primary)]/30'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              {estaExpandida ? (
+                                <ChevronDown className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
+                              )}
+                              <Badge className="bg-[var(--color-primary)] text-[var(--color-text-inverse)] text-xs">Ronda</Badge>
+                              <span className="text-xs text-[var(--color-text-secondary)]">× {ronda.repeticiones} repeticiones</span>
+                              <span className="text-xs text-[var(--color-text-secondary)]">({ronda.bloques.length} ejercicios)</span>
+                              {ronda.aleatoria && (
+                                <Badge variant="outline" className="text-[10px] border-[var(--color-primary)]/40 text-[var(--color-primary)] bg-[var(--color-primary-soft)] flex items-center gap-1">
+                                  <Shuffle className="w-3 h-3" />
+                                  aleatorio
+                                </Badge>
+                              )}
+                            </div>
+                          </button>
+                          
+                          {estaExpandida && (
+                            <div className="ml-4 space-y-1 border-l-2 border-[var(--color-primary)]/30 pl-3">
+                              {posicionesRonda.map((posicion, idx) => {
+                                // Determinar qué bloque y repetición corresponde a esta posición
+                                const bloqueIdx = idx % ronda.bloques.length;
+                                const repeticionIdx = Math.floor(idx / ronda.bloques.length);
+                                const code = ronda.bloques[bloqueIdx];
+                                
+                                const ej = bloquesMap.get(code);
+                                if (!ej) return null;
+                                
+                                const estaActivo = posicion === indiceActual;
+                                const estaCompletado = completados.has(posicion);
+                                const estaOmitido = omitidos.has(posicion);
+                                
+                                return (
+                                  <button
+                                    key={`ronda-${item.id}-pos-${posicion}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navegarA(posicion);
+                                    }}
+                                    className={`w-full text-left p-2 rounded-lg border transition-all ${
+                                      estaActivo
+                                        ? 'bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border-[var(--color-primary)] shadow-sm'
+                                        : estaCompletado
+                                        ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]'
+                                        : estaOmitido
+                                        ? 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]'
+                                        : 'bg-[var(--color-surface)] border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
+                                    }`}
+                                    aria-label={`Ir a ejercicio ${posicion + 1}: ${ej.nombre}`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs font-bold min-w-[24px] text-[var(--color-text-primary)]">#{posicion + 1}</span>
+                                      <Badge variant="outline" className={`${tipoColors[ej.tipo]} text-xs border`}>
+                                        {ej.tipo}
+                                      </Badge>
+                                      <span className="flex-1 text-sm font-medium truncate text-[var(--color-text-primary)]">
+                                        {ej.nombre}
+                                        {ronda.repeticiones > 1 && (
+                                          <span className="text-xs text-[var(--color-text-secondary)] ml-1">
+                                            (Rep {repeticionIdx + 1})
+                                          </span>
+                                        )}
+                                      </span>
+                                      {estaCompletado && <CheckCircle className="w-4 h-4 text-[var(--color-success)] shrink-0" />}
+                                      {estaOmitido && <XCircle className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />}
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    return null;
+                  });
+                })()}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
 
         {/* Modal cancelar */}
         {mostrarModalCancelar && (
@@ -1122,49 +2148,80 @@ function HoyPageContent() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header con estilo unificado */}
-      <div className="bg-card border-b sticky top-0 z-10 shadow-card">
-        <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 md:py-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-600 rounded-xl flex items-center justify-center shadow-card">
-              <PlayCircle className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl md:text-3xl font-bold text-ui">Estudiar Ahora</h1>
-              <p className="text-sm text-muted hidden md:block">
-                Plan de estudio para {formatearSemana(semanaActualISO)}
-              </p>
-            </div>
-          </div>
+      <PageHeader
+        icon={PlayCircle}
+        title="Studia ahora"
+        subtitle="Plan de estudio semanal"
+        actions={
+          (() => {
+            const lunesSemana = parseLocalDate(semanaActualISO);
+            const domingoSemana = new Date(lunesSemana);
+            domingoSemana.setDate(lunesSemana.getDate() + 6);
+            const numeroSemana = isoWeekNumberLocal(lunesSemana);
+            const labelSemana = `Semana ${numeroSemana}`;
+            const rangeTextSemana = `${lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} – ${domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+            
+            return (
+              <PeriodHeaderButton
+                label={labelSemana}
+                rangeText={rangeTextSemana}
+                isOpen={periodHeaderOpen}
+                onToggle={togglePeriodHeader}
+              />
+            );
+          })()
+        }
+      />
 
-          {asignacionActiva && (
-            <div className="flex items-center gap-2 flex-wrap text-sm text-ui bg-brand-50 rounded-xl p-3 border border-brand-200">
-              <Music className="w-4 h-4 text-brand-700" />
-              <span className="font-semibold">{asignacionActiva.piezaSnapshot?.nombre}</span>
-              <span className="text-muted">•</span>
-              <Target className="w-4 h-4 text-blue-600" />
-              <span>{asignacionActiva.plan?.nombre}</span>
-              <span className="text-muted">•</span>
-              <span className="font-medium">{getNombreVisible(alumnoActual)}</span>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Panel colapsable del PeriodHeader */}
+      {(() => {
+        const lunesSemana = parseLocalDate(semanaActualISO);
+        const domingoSemana = new Date(lunesSemana);
+        domingoSemana.setDate(lunesSemana.getDate() + 6);
+        
+        return (
+          <PeriodHeaderPanel
+            isOpen={periodHeaderOpen}
+            onPrev={() => cambiarSemana(-1)}
+            onNext={() => cambiarSemana(1)}
+            onToday={irSemanaActual}
+          />
+        );
+      })()}
 
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
+        {/* Barra de contexto: pieza / plan / alumno en el body */}
+        {asignacionActiva && (
+          <div className="flex items-center gap-2 flex-wrap text-sm">
+            <Music className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
+            <span className="font-semibold text-[var(--color-text-primary)]">{asignacionActiva.piezaSnapshot?.nombre}</span>
+            <span className="text-[var(--color-text-secondary)]">·</span>
+            <Target className="w-4 h-4 text-[var(--color-info)] shrink-0" />
+            <span className="text-[var(--color-text-primary)]">{asignacionActiva.plan?.nombre}</span>
+            <span className="text-[var(--color-text-secondary)]">·</span>
+            <User className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />
+            <span className="font-medium text-[var(--color-text-primary)]">{getNombreVisible(alumnoActual)}</span>
+          </div>
+        )}
+
         {!asignacionActiva || !semanaDelPlan ? (
           <Card className="border-dashed border-2">
             <CardContent className="text-center py-16">
-              <Target className="w-20 h-20 mx-auto mb-4 icon-empty" />
-              <h2 className="text-xl font-semibold text-ui mb-2">
+              <Target className={`w-20 h-20 mx-auto mb-4 ${componentStyles.empty.emptyIcon}`} />
+              <h2 className={`${componentStyles.typography.pageTitle} mb-2`}>
                 No tienes estudio esta semana
               </h2>
-              <p className="text-sm text-muted mb-4">
+              <p className={`${componentStyles.empty.emptyText} mb-4`}>
                 Consulta con tu profesor para obtener asignaciones
               </p>
               <Button
                 variant="outline"
-                onClick={() => navigate(createPageUrl('estadisticas'))}
-                className="rounded-xl focus-brand"
+                onClick={() => {
+                  navigate(createPageUrl('estadisticas'), {
+                    state: { from: 'hoy' }
+                  });
+                }}
+                className={`${componentStyles.buttons.outline} focus-brand`}
               >
                 Ver mi historial y estadísticas →
               </Button>
@@ -1172,100 +2229,285 @@ function HoyPageContent() {
           </Card>
         ) : (
           <>
-            <Card className="border-2 border-brand-200">
-              <CardContent className="pt-4">
-                <div className="flex items-start gap-3">
-                  <div className="pt-1 cursor-pointer" onClick={() => setPlanDesplegado(!planDesplegado)}>
-                    {planDesplegado ? (
-                      <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                    ) : (
-                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                    )}
+            {/* Si hay múltiples asignaciones, mostrarlas como tarjetas en columna */}
+            {asignacionesActivas.length > 1 ? (
+              <div className="space-y-4">
+                {asignacionesActivas.map((asignacion) => {
+                  const offsetAsignacion = calcularOffsetSemanas(asignacion.semanaInicioISO, semanaActualISO);
+                  const semanaAsignacion = asignacion.plan?.semanas?.[offsetAsignacion] || null;
+                  const isSelected = asignacionSeleccionadaId === asignacion.id || (!asignacionSeleccionadaId && asignacion.id === asignacionesActivas[0]?.id);
+                  
+                  if (!semanaAsignacion) return null;
+                  
+                  return (
+                    <Card key={asignacion.id} className={`border-l-4 ${isSelected ? 'border-[var(--color-primary)]' : 'border-[var(--color-border-default)]'}`}>
+                      <CardContent className="p-4">
+                        {/* Header de asignación */}
+              <div className="mb-3">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <Music className="w-4 h-4 text-[var(--color-primary)]" />
+                            <span className="font-semibold text-[var(--color-text-primary)]">{asignacion.piezaSnapshot?.nombre}</span>
+                            <span className="text-[var(--color-text-secondary)]">·</span>
+                            <Target className="w-4 h-4 text-[var(--color-info)]" />
+                            <span className="text-[var(--color-text-primary)]">{asignacion.plan?.nombre}</span>
+                          </div>
+                          <h2 className={`text-base font-bold text-[var(--color-text-primary)] font-headings`}>{semanaAsignacion.nombre}</h2>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <Badge className={focoColors[semanaAsignacion.foco]}>
+                              {focoLabels[semanaAsignacion.foco]}
+                  </Badge>
+                  <span className="text-sm text-[var(--color-text-secondary)]">
+                              ({semanaAsignacion.sesiones?.length || 0} sesiones)
+                  </span>
+                </div>
+                          {semanaAsignacion.objetivo && (
+                            <p className="text-sm text-[var(--color-text-secondary)] italic mt-1">"{semanaAsignacion.objetivo}"</p>
+                )}
+              </div>
+
+                        {/* Sesiones - siempre visibles */}
+                        {semanaAsignacion.sesiones && (
+                          <div className="space-y-2">
+                            {semanaAsignacion.sesiones.map((sesion, sesionIdx) => {
+                              const tiempoTotal = calcularTiempoSesion(sesion);
+                              const minutos = Math.floor(tiempoTotal / 60);
+                              const segundos = tiempoTotal % 60;
+                              const resumenExpandido = sesionesConResumenExpandido.has(`${asignacion.id}-${sesionIdx}`);
+
+                              const toggleResumen = (e) => {
+                                e.stopPropagation();
+                                setSesionesConResumenExpandido(prev => {
+                                  const next = new Set(prev);
+                                  const key = `${asignacion.id}-${sesionIdx}`;
+                                  if (next.has(key)) {
+                                    next.delete(key);
+                                  } else {
+                                    next.add(key);
+                                  }
+                                  return next;
+                                });
+                              };
+
+                              return (
+                                <div
+                                  key={sesionIdx}
+                                  className={`border rounded-lg p-3 cursor-pointer hover:shadow-sm transition-all ${
+                                    sesionSeleccionada === sesionIdx && isSelected
+                                      ? `border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm`
+                                      : `border-[var(--color-border-default)] bg-[var(--color-surface-default)] hover:bg-[var(--color-surface-muted)]`
+                                  }`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setAsignacionSeleccionadaId(asignacion.id);
+                                    setSesionSeleccionada(sesionIdx);
+                                  }}
+                                >
+                                  <div className="space-y-3">
+                                    {/* Header de la sesión: chip + tiempo + foco */}
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <Badge variant="outline" className="text-xs px-2 py-0.5 bg-[var(--color-surface-muted)]">
+                                        {sesion.nombre}
+                                      </Badge>
+                                      <Badge
+                                        variant="outline"
+                                        className={`text-xs px-2 py-0.5 ${componentStyles.status.badgeSuccess}`}
+                                      >
+                                        <Clock className="w-3 h-3 mr-1" />
+                                        {minutos}:{String(segundos).padStart(2, '0')} min
+                                      </Badge>
+                                      <Badge className={`${focoColors[sesion.foco]} text-xs px-2 py-0.5`} variant="outline">
+                                        Foco: {focoLabels[sesion.foco]}
+                                      </Badge>
+                                    </div>
+
+                                    {/* Botón para desplegar/colapsar ejercicios */}
+              <button
+                                      className={`w-full flex items-center gap-2 p-1.5 rounded-lg transition-colors ${
+                                        resumenExpandido ? 'bg-[var(--color-surface-muted)]' : 'hover:bg-[var(--color-surface-muted)]'
+                                      }`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleResumen(e);
+                                      }}
+              >
+                                      {resumenExpandido ? (
+                  <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                )}
+                                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                                        {resumenExpandido ? 'Ocultar ejercicios' : 'Ver ejercicios'}
+                </span>
+              </button>
+
+                                    {/* Resumen expandido */}
+                                    {resumenExpandido && (
+                                      <div className="border-t border-[var(--color-border-default)] pt-2" onClick={(e) => e.stopPropagation()}>
+                                        <SessionContentView sesion={sesion} compact />
+                                      </div>
+                                    )}
+
+                                    {/* Botón de iniciar práctica (solo si está seleccionada) */}
+                                    {sesionSeleccionada === sesionIdx && isSelected && (
+                                      <div className="pt-2 border-t border-[var(--color-border-default)] flex justify-center" onClick={(e) => e.stopPropagation()}>
+                                        <Button
+                                          variant="primary"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            empezarSesion(sesion, sesionIdx);
+                                          }}
+                                          size="lg"
+                                          className={`${componentStyles.buttons.primary} w-full md:w-auto h-12 shadow-sm`}
+                                        >
+                                          <PlayCircle className="w-5 h-5 mr-2" />
+                                          Studia ahora
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              /* Una sola asignación: mostrar como antes pero sin toggle de sesiones */
+              <div className="border-l-4 border-[var(--color-primary)] bg-[var(--color-primary-soft)]/50 rounded-r-lg p-3">
+                {/* Información de la semana - siempre visible */}
+                <div className="mb-3">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h2 className={`text-base font-bold text-[var(--color-text-primary)] font-headings`}>{semanaDelPlan.nombre}</h2>
+                    <Badge className={focoColors[semanaDelPlan.foco]}>
+                      {focoLabels[semanaDelPlan.foco]}
+                    </Badge>
+                    <span className="text-sm text-[var(--color-text-secondary)]">
+                      ({semanaDelPlan.sesiones?.length || 0} sesiones)
+                    </span>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h2 className="font-bold text-xl">{semanaDelPlan.nombre}</h2>
-                      <Badge className={focoColors[semanaDelPlan.foco]}>
-                        {focoLabels[semanaDelPlan.foco]}
-                      </Badge>
-                      <span className="text-sm text-muted">
-                        ({semanaDelPlan.sesiones?.length || 0} sesiones)
-                      </span>
-                    </div>
-                    {semanaDelPlan.objetivo && (
-                      <p className="text-sm text-muted italic mt-1">"{semanaDelPlan.objetivo}"</p>
-                    )}
-                  </div>
+                  {semanaDelPlan.objetivo && (
+                    <p className="text-sm text-[var(--color-text-secondary)] italic mt-1">"{semanaDelPlan.objetivo}"</p>
+                  )}
                 </div>
 
-                {planDesplegado && semanaDelPlan.sesiones && (
-                  <div className="ml-8 mt-4 space-y-2">
+                {/* Sesiones - siempre visibles */}
+                {semanaDelPlan.sesiones && (
+                <div className="space-y-2">
                     {semanaDelPlan.sesiones.map((sesion, sesionIdx) => {
                       const tiempoTotal = calcularTiempoSesion(sesion);
                       const minutos = Math.floor(tiempoTotal / 60);
                       const segundos = tiempoTotal % 60;
+                      const resumenExpandido = sesionesConResumenExpandido.has(sesionIdx);
+
+                      const toggleResumen = (e) => {
+                        e.stopPropagation();
+                        setSesionesConResumenExpandido(prev => {
+                          const next = new Set(prev);
+                          if (next.has(sesionIdx)) {
+                            next.delete(sesionIdx);
+                          } else {
+                            next.add(sesionIdx);
+                          }
+                          return next;
+                        });
+                      };
 
                       return (
-                        <Card
+                        <div
                           key={sesionIdx}
-                          className={`border-2 cursor-pointer hover:shadow-sm transition-all ${
+                          className={`border rounded-lg p-3 cursor-pointer hover:shadow-sm transition-all ${
                             sesionSeleccionada === sesionIdx
-                              ? 'border-brand-500 bg-brand-50 shadow-sm'
-                              : 'border-blue-200 bg-blue-50/30'
+                              ? `border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm`
+                              : `border-[var(--color-border-default)] bg-[var(--color-surface-default)] hover:bg-[var(--color-surface-muted)]`
                           }`}
                           onClick={(e) => {
                             e.stopPropagation();
                             setSesionSeleccionada(sesionIdx);
                           }}
                         >
-                          <CardContent className="pt-4 pb-4">
-                            <div className="flex items-start gap-3">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 flex-wrap mb-2">
-                                  <PlayCircle className="w-4 h-4 text-blue-600" />
-                                  <span className="font-semibold text-base">{sesion.nombre}</span>
+                          <div className="space-y-3">
+                            {/* Header de la sesión: chip + tiempo + foco */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant="outline" className="text-xs px-2 py-0.5 bg-[var(--color-surface-muted)]">
+                                {sesion.nombre}
+                              </Badge>
                                   <Badge
                                     variant="outline"
-                                    className="text-xs bg-green-50 border-green-300 text-green-800"
+                                className={`text-xs px-2 py-0.5 ${componentStyles.status.badgeSuccess}`}
                                   >
-                                    ⏱ {minutos}:{String(segundos).padStart(2, '0')} min
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    {minutos}:{String(segundos).padStart(2, '0')} min
                                   </Badge>
-                                  <Badge className={focoColors[sesion.foco]} variant="outline">
-                                    {focoLabels[sesion.foco]}
+                              <Badge className={`${focoColors[sesion.foco]} text-xs px-2 py-0.5`} variant="outline">
+                                Foco: {focoLabels[sesion.foco]}
                                   </Badge>
-                                </div>
-
-                                {sesionSeleccionada === sesionIdx && (
-                                  <div className="mt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
-                                    <Button
-                                      variant="primary"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        empezarSesion(sesion, sesionIdx);
-                                      }}
-                                      size="lg"
-                                      className="w-full h-14 text-lg font-bold shadow-card rounded-xl focus-brand"
-                                    >
-                                      <PlayCircle className="w-6 h-6 mr-2" />
-                                      Iniciar Práctica
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
                             </div>
-                          </CardContent>
-                        </Card>
+
+                            {/* Botón para desplegar/colapsar ejercicios */}
+                            <button
+                              className={`w-full flex items-center gap-2 p-1.5 rounded-lg transition-colors ${
+                                resumenExpandido ? 'bg-[var(--color-surface-muted)]' : 'hover:bg-[var(--color-surface-muted)]'
+                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleResumen(e);
+                              }}
+                            >
+                              {resumenExpandido ? (
+                                <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                              )}
+                              <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                                {resumenExpandido ? 'Ocultar ejercicios' : 'Ver ejercicios'}
+                              </span>
+                            </button>
+
+                            {/* Resumen expandido */}
+                            {resumenExpandido && (
+                              <div className="border-t border-[var(--color-border-default)] pt-2" onClick={(e) => e.stopPropagation()}>
+                                <SessionContentView sesion={sesion} compact />
+                              </div>
+                            )}
+
+                            {/* Botón de iniciar práctica (solo si está seleccionada) */}
+                            {sesionSeleccionada === sesionIdx && (
+                              <div className="pt-2 border-t border-[var(--color-border-default)] flex justify-center" onClick={(e) => e.stopPropagation()}>
+                                <Button
+                                  variant="primary"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    empezarSesion(sesion, sesionIdx);
+                                  }}
+                                  size="lg"
+                                  className={`${componentStyles.buttons.primary} w-full md:w-auto h-12 shadow-sm`}
+                                >
+                                  <PlayCircle className="w-5 h-5 mr-2" />
+                                  Iniciar Práctica
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       );
                     })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </div>
+              )}
+            </div>
+            )}
 
             <div className="flex items-center justify-center pt-4 border-t">
               <Button
                 variant="outline"
-                onClick={() => navigate(createPageUrl('estadisticas'))}
+                onClick={() => {
+                  navigate(createPageUrl('estadisticas'), {
+                    state: { from: 'hoy' }
+                  });
+                }}
                 className="rounded-xl focus-brand"
               >
                 Ver Historial y estadísticas →
@@ -1277,3 +2519,4 @@ function HoyPageContent() {
     </div>
   );
 }
+

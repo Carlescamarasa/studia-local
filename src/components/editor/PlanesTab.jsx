@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,9 +11,12 @@ import { Plus, BookOpen, Edit, Copy, Trash2 } from "lucide-react";
 import PlanEditor from "./PlanEditor";
 import { toast } from "sonner";
 import UnifiedTable from "@/components/tables/UnifiedTable";
+import { componentStyles } from "@/design/componentStyles";
+import { useEffectiveUser } from "@/components/utils/helpers";
 
 export default function PlanesTab() {
   const queryClient = useQueryClient();
+  const effectiveUser = useEffectiveUser();
   const [searchTerm, setSearchTerm] = useState("");
   const [focoFilter, setFocoFilter] = useState('all');
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -21,11 +24,11 @@ export default function PlanesTab() {
 
   const { data: planes = [], isLoading } = useQuery({
     queryKey: ['planes'],
-    queryFn: () => base44.entities.Plan.list('-created_date'),
+    queryFn: () => localDataClient.entities.Plan.list('-created_at'),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Plan.delete(id),
+    mutationFn: (id) => localDataClient.entities.Plan.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['planes'] });
       toast.success('✅ Plan eliminado');
@@ -37,12 +40,13 @@ export default function PlanesTab() {
       const copia = {
         ...plan,
         nombre: `${plan.nombre} (copia)`,
+        profesorId: effectiveUser?.id,
       };
       delete copia.id;
       delete copia.created_date;
       delete copia.updated_date;
       delete copia.created_by;
-      return base44.entities.Plan.create(copia);
+      return localDataClient.entities.Plan.create(copia);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['planes'] });
@@ -100,10 +104,10 @@ export default function PlanesTab() {
             placeholder="Buscar planes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 min-w-[200px] h-10 rounded-xl"
+            className={`flex-1 min-w-[200px] ${componentStyles.controls.inputDefault}`}
           />
           <Select value={focoFilter} onValueChange={setFocoFilter}>
-            <SelectTrigger className="w-full md:w-48 h-10 rounded-xl">
+            <SelectTrigger className={`w-full md:w-48 ${componentStyles.controls.selectDefault}`}>
               <SelectValue placeholder="Todos los focos" />
             </SelectTrigger>
             <SelectContent>
@@ -114,7 +118,7 @@ export default function PlanesTab() {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={handleCreate} className="w-full md:w-auto btn-primary h-10 rounded-xl shadow-sm">
+        <Button onClick={handleCreate} className={`w-full md:w-auto ${componentStyles.buttons.primary}`}>
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Plan
         </Button>
@@ -125,12 +129,12 @@ export default function PlanesTab() {
           <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
         </div>
       ) : filteredPlanes.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed rounded-lg">
-          <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <p className="text-gray-500 mb-2">
+        <div className="text-center py-12 border-2 border-dashed border-[var(--color-border-default)] rounded-[var(--radius-card)]">
+          <BookOpen className="w-16 h-16 mx-auto mb-4 text-[var(--color-text-secondary)]" />
+          <p className="text-[var(--color-text-secondary)] mb-2">
             {searchTerm || focoFilter !== 'all' ? 'No se encontraron planes' : 'Aún no hay planes'}
           </p>
-          <Button onClick={handleCreate} variant="outline" className="mt-2 rounded-xl">
+          <Button onClick={handleCreate} variant="outline" className={`mt-2 ${componentStyles.buttons.outline}`}>
             <Plus className="w-4 h-4 mr-2" />
             Crear el primero
           </Button>
@@ -143,15 +147,43 @@ export default function PlanesTab() {
                 { key: 'nombre', label: 'Nombre', sortable: true, render: (p) => <span className="font-medium">{p.nombre}</span> },
                 { key: 'foco', label: 'Foco', sortable: true, render: (p) => p.focoGeneral ? (
                   <Badge variant={focoVariants[p.focoGeneral]}>{focoLabels[p.focoGeneral]}</Badge>
-                ) : <span className="text-muted">—</span>, sortValue: (p) => p.focoGeneral },
-                { key: 'semanas', label: 'Semanas', sortable: true, render: (p) => <span className="text-sm text-muted">{p.semanas?.length || 0}</span>, sortValue: (p) => p.semanas?.length || 0 }
+                ) : <span className="text-[var(--color-text-secondary)]">—</span>, sortValue: (p) => p.focoGeneral },
+                { key: 'semanas', label: 'Semanas', sortable: true, render: (p) => <span className="text-sm text-[var(--color-text-secondary)]">{p.semanas?.length || 0}</span>, sortValue: (p) => p.semanas?.length || 0 }
               ]}
               data={filteredPlanes}
+              selectable={true}
+              bulkActions={[
+                {
+                  id: 'duplicate',
+                  label: 'Duplicar',
+                  icon: Copy,
+                  onClick: (ids) => {
+                    const planesParaDuplicar = filteredPlanes.filter(p => ids.includes(p.id));
+                    planesParaDuplicar.forEach(p => handleDuplicate(p));
+                  },
+                },
+                {
+                  id: 'delete',
+                  label: 'Eliminar',
+                  icon: Trash2,
+                  onClick: (ids) => {
+                    if (window.confirm(`¿Eliminar ${ids.length} plan${ids.length > 1 ? 'es' : ''}?`)) {
+                      ids.forEach(id => {
+                        const plan = filteredPlanes.find(p => p.id === id);
+                        if (plan) {
+                          deleteMutation.mutate(plan.id);
+                        }
+                      });
+                    }
+                  },
+                },
+              ]}
               getRowActions={(p) => [ // Changed from 'actions' to 'getRowActions' and updated structure
                 { id: 'edit', label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => handleEdit(p) },
                 { id: 'duplicate', label: 'Duplicar', icon: <Copy className="w-4 h-4" />, onClick: () => handleDuplicate(p) },
                 { id: 'delete', label: 'Eliminar', icon: <Trash2 className="w-4 h-4" />, onClick: () => handleDelete(p) }
               ]}
+              onRowClick={(p) => handleEdit(p)}
               keyField="id"
             />
           </div>
@@ -162,43 +194,46 @@ export default function PlanesTab() {
                 <CardContent className="pt-4">
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
+                      <div 
+                        className="flex-1 min-w-0 cursor-pointer"
+                        onClick={() => handleEdit(plan)}
+                      >
                         {plan.focoGeneral && (
                           <Badge variant={focoVariants[plan.focoGeneral]} className="mb-2"> {/* Changed to variant */}
                             {focoLabels[plan.focoGeneral]}
                           </Badge>
                         )}
                         <h3 className="font-semibold text-base mb-1">{plan.nombre}</h3>
-                        <p className="text-xs text-muted"> {/* Changed text color */}
+                        <p className="text-xs text-[var(--color-text-secondary)]">
                           {plan.semanas?.length || 0} semanas
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex gap-2 pt-2 border-t border-ui"> {/* Added border-ui */}
+                    <div className="flex gap-2 pt-2 border-t border-[var(--color-border-default)]"> {/* Reemplazado a tokens */}
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         onClick={() => handleEdit(plan)}
-                        className="flex-1 btn-secondary h-10" // Changed className
+                        className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
+                        aria-label="Editar plan"
                       >
-                        <Edit className="w-4 h-4 mr-1" />
-                        Editar
+                        <Edit className="w-4 h-4" />
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         onClick={() => handleDuplicate(plan)}
-                        className="flex-1 btn-secondary h-10" // Changed className
+                        className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
+                        aria-label="Duplicar plan"
                       >
-                        <Copy className="w-4 h-4 mr-1" />
-                        Duplicar
+                        <Copy className="w-4 h-4" />
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(plan)}
-                        className="btn-danger h-10 px-3" // Changed className
+                        className={`${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle} px-3`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

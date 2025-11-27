@@ -1,8 +1,7 @@
 
-import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import React, { useState, useEffect, useMemo } from "react";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 // Updated Card, Badge, Alert paths from @/components/ui to @/components/ds
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ui/button";
@@ -22,10 +21,12 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 // Preserving all helper functions and components used in the original file
-import { getNombreVisible, formatLocalDate, parseLocalDate, startOfMonday } from "../components/utils/helpers";
+import { getNombreVisible, formatLocalDate, parseLocalDate, startOfMonday, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
 import { calcularTiempoSesion } from "../components/study/sessionSequence";
 import SessionContentView from "../components/study/SessionContentView";
 import PageHeader from "@/components/ds/PageHeader";
+import { LoadingSpinner } from "@/components/ds";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function AsignacionDetallePage() {
   const queryClient = useQueryClient();
@@ -38,12 +39,12 @@ export default function AsignacionDetallePage() {
   const urlParams = new URLSearchParams(window.location.search);
   const asignacionId = urlParams.get('id');
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
   const { data: asignacion, isLoading } = useQuery({
     queryKey: ['asignacion', asignacionId],
     queryFn: async () => {
-      const result = await base44.entities.Asignacion.list();
+      const result = await localDataClient.entities.Asignacion.list();
       return result.find(a => a.id === asignacionId);
     },
     enabled: !!asignacionId,
@@ -51,16 +52,21 @@ export default function AsignacionDetallePage() {
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
   });
+
+  // Resolver ID de usuario actual de la BD
+  const userIdActual = useMemo(() => {
+    return resolveUserIdActual(effectiveUser, usuarios);
+  }, [effectiveUser, usuarios]);
 
   const { data: piezas = [] } = useQuery({
     queryKey: ['piezas'],
-    queryFn: () => base44.entities.Pieza.list(),
+    queryFn: () => localDataClient.entities.Pieza.list(),
   });
 
   const cerrarMutation = useMutation({
-    mutationFn: () => base44.entities.Asignacion.update(asignacionId, { estado: 'cerrada' }),
+    mutationFn: () => localDataClient.entities.Asignacion.update(asignacionId, { estado: 'cerrada' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignacion', asignacionId] });
       toast.success('✅ Asignación cerrada');
@@ -68,7 +74,7 @@ export default function AsignacionDetallePage() {
   });
 
   const publicarMutation = useMutation({
-    mutationFn: () => base44.entities.Asignacion.update(asignacionId, { estado: 'publicada' }),
+    mutationFn: () => localDataClient.entities.Asignacion.update(asignacionId, { estado: 'publicada' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignacion', asignacionId] });
       toast.success('✅ Asignación publicada');
@@ -90,36 +96,127 @@ export default function AsignacionDetallePage() {
         }
       }
       
-      return base44.entities.Asignacion.update(asignacionId, data);
+      return localDataClient.entities.Asignacion.update(asignacionId, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignacion', asignacionId] });
       toast.success('✅ Cambios guardados');
       setShowEditDrawer(false);
     },
+    onError: (error) => {
+      console.error('[asignacion-detalle.jsx] Error al actualizar asignación:', error);
+      let errorMsg = '❌ Error al guardar cambios. Inténtalo de nuevo.';
+      
+      // Mensajes específicos según el tipo de error
+      if (error?.code === 'PGRST204' || error?.code === '406') {
+        errorMsg = '❌ Error 406: El servidor rechazó la actualización. El campo "plan" no puede actualizarse directamente. Solo se pueden actualizar: notas, foco, estado, semanaInicioISO y piezaId.';
+      } else if (error?.code === 'PGRST301' || error?.code === '23503') {
+        errorMsg = '❌ Error de integridad: Verifica que la pieza (piezaId) exista en la base de datos.';
+      } else if (error?.code === '42501' || error?.status === 403) {
+        errorMsg = '❌ Error de permisos: No tienes permisos para actualizar esta asignación. Verifica tu rol de usuario.';
+      } else if (error?.message) {
+        errorMsg = `❌ Error: ${error.message}`;
+      }
+      
+      toast.error(errorMsg);
+    },
   });
 
   const calcularLunesSemanaISO = (fecha) => {
-    const date = parseLocalDate(fecha);
-    return formatLocalDate(startOfMonday(date));
+    if (!fecha) return formatLocalDate(startOfMonday(new Date()));
+    try {
+      const date = parseLocalDate(fecha);
+      return formatLocalDate(startOfMonday(date));
+    } catch (error) {
+      return formatLocalDate(startOfMonday(new Date()));
+    }
   };
 
+  // Actualizar semanaInicioISO cuando cambia fechaSeleccionada
+  useEffect(() => {
+    if (editData?.fechaSeleccionada) {
+      const lunes = calcularLunesSemanaISO(editData.fechaSeleccionada);
+      setEditData(prev => ({ ...prev, semanaInicioISO: lunes }));
+    }
+  }, [editData?.fechaSeleccionada]);
+
+  // Verificar si el usuario puede editar el profesor asignado
+  const puedeEditarProfesor = useMemo(() => {
+    if (!asignacion || !effectiveUser) return false;
+    const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
+    if (isAdmin) return true;
+    
+    // Si es profesor, solo puede editar si es su asignación
+    const isProf = effectiveUser?.rolPersonalizado === 'PROF';
+    if (isProf) {
+      // Verificar si el profesorId de la asignación coincide con el ID del usuario actual
+      // (considerando posibles desincronizaciones entre auth y BD)
+      return asignacion.profesorId === userIdActual || asignacion.profesorId === effectiveUser?.id;
+    }
+    
+    return false;
+  }, [asignacion, effectiveUser, userIdActual]);
+
+  // Obtener lista de profesores disponibles
+  const profesoresDisponibles = useMemo(() => {
+    return usuarios
+      .filter(u => u.rolPersonalizado === 'PROF')
+      .map(p => ({
+        value: p.id,
+        label: getNombreVisible(p),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [usuarios]);
+
   const handleEditarInformacion = () => {
+    if (!asignacion) return;
+    // Usar semanaInicioISO si existe, sino usar la fecha actual
+    const fechaInicial = asignacion.semanaInicioISO 
+      ? asignacion.semanaInicioISO 
+      : formatLocalDate(new Date());
+    
+    console.log('Inicializando edición con fecha:', fechaInicial, 'de asignación:', asignacion.semanaInicioISO);
+    
     setEditData({
       piezaId: asignacion.piezaId,
-      fechaSeleccionada: asignacion.semanaInicioISO,
+      fechaSeleccionada: fechaInicial,
+      semanaInicioISO: fechaInicial,
       foco: asignacion.foco || 'GEN',
       notas: asignacion.notas || '',
+      profesorId: asignacion.profesorId || null,
     });
     setShowEditDrawer(true);
   };
 
+  // Atajos de teclado para el modal de edición
+  useEffect(() => {
+    if (!showEditDrawer) return;
+
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === '.') {
+        e.preventDefault();
+        setShowEditDrawer(false);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleGuardarEdicion();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showEditDrawer, editData]);
+
   const handleGuardarEdicion = () => {
+    if (!editData) {
+      toast.error('❌ Error: No hay datos para guardar');
+      return;
+    }
     if (!editData.piezaId) {
       toast.error('❌ Debes seleccionar una pieza');
       return;
     }
-    if (!editData.fechaSeleccionada) {
+    if (!editData.fechaSeleccionada || editData.fechaSeleccionada.trim() === '') {
       toast.error('❌ Debes seleccionar una fecha');
       return;
     }
@@ -130,13 +227,47 @@ export default function AsignacionDetallePage() {
       }
     }
 
+    const semanaInicioISO = calcularLunesSemanaISO(editData.fechaSeleccionada);
+    if (!semanaInicioISO) {
+      toast.error('❌ Error al calcular la fecha de inicio');
+      return;
+    }
+
+    // Validar foco: solo valores permitidos
+    const focoPermitidos = ['GEN', 'LIG', 'RIT', 'ART', 'S&A'];
+    const foco = editData.foco || 'GEN';
+    if (!focoPermitidos.includes(foco)) {
+      toast.error(`❌ Valor de foco no válido. Debe ser uno de: ${focoPermitidos.join(', ')}`);
+      return;
+    }
+
+    // Validar notas: string o null (no puede ser undefined)
+    const notas = editData.notas && editData.notas.trim() !== '' 
+      ? editData.notas.trim() 
+      : null;
+
     const dataToSave = {
       piezaId: editData.piezaId,
-      semanaInicioISO: calcularLunesSemanaISO(editData.fechaSeleccionada),
-      foco: editData.foco || 'GEN',
-      notas: editData.notas || null,
+      semanaInicioISO: semanaInicioISO,
+      foco: foco,
+      notas: notas, // null si está vacío
     };
 
+    // Incluir profesorId solo si el usuario tiene permisos para cambiarlo
+    if (puedeEditarProfesor && editData.profesorId !== undefined) {
+      // Validar que el profesorId existe en la lista de profesores
+      const profesorExiste = profesoresDisponibles.some(p => p.value === editData.profesorId);
+      if (!profesorExiste && editData.profesorId !== null) {
+        toast.error('❌ El profesor seleccionado no es válido');
+        return;
+      }
+      dataToSave.profesorId = editData.profesorId || null;
+    }
+
+    // Campos permitidos en update: notas, foco, estado, semanaInicioISO, piezaId, piezaSnapshot (solo si piezaId cambió), profesorId (solo si tiene permisos)
+    // Campos PROHIBIDOS en update: plan (solo se actualiza en create completo)
+
+    console.log('Guardando asignación con datos:', dataToSave);
     editarMutation.mutate(dataToSave);
   };
 
@@ -170,18 +301,18 @@ export default function AsignacionDetallePage() {
   };
 
   const focoColors = {
-    GEN: 'bg-slate-100 text-slate-800 border-slate-200',
-    LIG: 'bg-blue-100 text-blue-800 border-blue-200',
-    RIT: 'bg-purple-100 text-purple-800 border-purple-200',
-    ART: 'bg-green-100 text-green-800 border-green-200',
-    'S&A': 'bg-brand-100 text-brand-800 border-brand-200',
+    GEN: componentStyles.status.badgeDefault,
+    LIG: componentStyles.status.badgeInfo,
+    RIT: componentStyles.status.badgeDefault, // Usar default para púrpura
+    ART: componentStyles.status.badgeSuccess,
+    'S&A': componentStyles.status.badgeDefault, // Usar default para brand
   };
 
   const estadoColors = {
-    borrador: 'bg-slate-100 text-slate-800',
-    publicada: 'bg-green-100 text-green-800',
-    en_curso: 'bg-blue-100 text-blue-800',
-    cerrada: 'bg-amber-100 text-amber-800',
+    borrador: componentStyles.status.badgeDefault,
+    publicada: componentStyles.status.badgeSuccess,
+    en_curso: componentStyles.status.badgeInfo,
+    cerrada: componentStyles.status.badgeWarning,
   };
 
   const estadoLabels = {
@@ -193,27 +324,26 @@ export default function AsignacionDetallePage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted">Cargando asignación...</p>
-        </div>
-      </div>
+      <LoadingSpinner 
+        size="xl" 
+        variant="fullPage" 
+        text="Cargando asignación..." 
+      />
     );
   }
 
   if (!asignacion) {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
-        <Card className="max-w-md app-card">
+        <Card className={`max-w-md ${componentStyles.containers.cardBase}`}>
           <CardContent className="pt-6 text-center space-y-4">
-            <Shield className="w-16 h-16 mx-auto text-red-500" />
+            <Shield className={`w-16 h-16 mx-auto ${componentStyles.empty.emptyIcon} text-[var(--color-danger)]`} />
             <div>
-              <h2 className="font-semibold text-lg text-ui mb-2">Asignación No Encontrada</h2>
-              <p className="text-muted">No tienes acceso a esta asignación o no existe.</p>
-              <Button onClick={() => navigate(createPageUrl('asignaciones'))} className="mt-4 btn-primary h-10 rounded-xl shadow-sm">
+              <h2 className="text-lg md:text-xl font-semibold text-[var(--color-text-primary)] mb-2 font-headings">Asignación No Encontrada</h2>
+              <p className="text-sm md:text-base text-[var(--color-text-primary)]">No tienes acceso a esta asignación o no existe.</p>
+              <Button onClick={() => navigate(-1)} className={`mt-4 ${componentStyles.buttons.primary}`}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Volver a Asignaciones
+                Volver
               </Button>
             </div>
           </CardContent>
@@ -222,10 +352,14 @@ export default function AsignacionDetallePage() {
     );
   }
 
+  if (!asignacion) {
+    return null; // Early return si asignacion es undefined
+  }
+
   const alumno = usuarios.find(u => u.id === asignacion.alumnoId);
   const isCerrada = asignacion.estado === 'cerrada';
   const isBorrador = asignacion.estado === 'borrador';
-  const isAdminOrProf = currentUser?.rolPersonalizado === 'ADMIN' || currentUser?.rolPersonalizado === 'PROF';
+  const isAdminOrProf = effectiveUser?.rolPersonalizado === 'ADMIN' || effectiveUser?.rolPersonalizado === 'PROF';
 
   return (
     <div className="min-h-screen bg-background">
@@ -233,315 +367,395 @@ export default function AsignacionDetallePage() {
         icon={Target}
         title="Detalle de Asignación"
         subtitle={`Estudiante: ${getNombreVisible(alumno)}`}
-        actions={
-          <div className="flex gap-2 flex-wrap">
-            <Button variant="ghost" onClick={() => navigate(createPageUrl('asignaciones'))} className="h-10 rounded-xl">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Volver
-            </Button>
-            {isAdminOrProf && (
-              <Button
-                variant="outline"
-                onClick={() => navigate(createPageUrl(`adaptar-asignacion?id=${asignacionId}`))}
-                className="h-10 rounded-xl"
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Adaptar plan
-              </Button>
-            )}
-            {isBorrador && (
-              <Button 
-                onClick={() => publicarMutation.mutate()}
-                disabled={publicarMutation.isPending}
-                className="btn-primary h-10 rounded-xl shadow-sm"
-              >
-                Publicar
-              </Button>
-            )}
-            {!isCerrada && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (window.confirm('¿Cerrar esta asignación?')) {
-                    cerrarMutation.mutate();
-                  }
-                }}
-                disabled={cerrarMutation.isPending}
-                className="h-10 rounded-xl"
-              >
-                <XCircle className="w-4 h-4 mr-2" />
-                Cerrar
-              </Button>
-            )}
-          </div>
-        }
       />
 
-      <div className="max-w-[1600px] mx-auto px-6 md:px-8 mt-4">
-        <Badge className={`rounded-full ${estadoColors[asignacion.estado]}`}>
-          {estadoLabels[asignacion.estado]}
-        </Badge>
-      </div>
-
-      <div className="max-w-[1600px] mx-auto p-6 md:p-8 space-y-6">
-        <Card className="app-card">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Información General</CardTitle>
-            {isAdminOrProf && (
-              <Button variant="outline" size="sm" onClick={handleEditarInformacion} className="h-9 rounded-xl">
-                <Edit className="w-4 h-4 mr-2" />
-                Editar información
+      <div className={`${componentStyles.layout.page} space-y-4`}>
+        <Card className={componentStyles.containers.cardBase}>
+          <CardHeader className="space-y-4">
+            {/* Primera fila: Acciones */}
+            <div className="flex items-center justify-between gap-4">
+              {/* Volver: alineado a la izquierda */}
+              <Button variant="ghost" onClick={() => navigate(-1)} className={componentStyles.buttons.ghost}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Volver
               </Button>
-            )}
+              {/* Resto: alineado a la derecha */}
+              <div className="flex gap-2 flex-wrap items-center">
+                {/* 2. Adaptar Plan */}
+                {isAdminOrProf && (
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(createPageUrl(`adaptar-asignacion?id=${asignacionId}`))}
+                    className={componentStyles.buttons.outline}
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Adaptar plan
+                  </Button>
+                )}
+                {/* 3. Editar Asignación */}
+                {isAdminOrProf && (
+                  <Button variant="outline" size="sm" onClick={handleEditarInformacion} className={componentStyles.buttons.outline}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Editar Asignación
+                  </Button>
+                )}
+                {/* 4. Cerrar */}
+                {!isCerrada && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (window.confirm('¿Cerrar esta asignación?')) {
+                        cerrarMutation.mutate();
+                      }
+                    }}
+                    disabled={cerrarMutation.isPending}
+                    className={componentStyles.buttons.outline}
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Cerrar
+                  </Button>
+                )}
+                {/* 5. Publicada (Badge) */}
+                <Badge className={`rounded-full ${estadoColors[asignacion.estado]}`}>
+                  {estadoLabels[asignacion.estado]}
+                </Badge>
+                {/* Publicar (solo si es borrador) */}
+                {isBorrador && (
+                  <Button 
+                    onClick={() => publicarMutation.mutate()}
+                    disabled={publicarMutation.isPending}
+                    className={componentStyles.buttons.primary}
+                  >
+                    Publicar
+                  </Button>
+                )}
+              </div>
+            </div>
+            {/* Segunda fila: Título */}
+            <CardTitle className="text-[var(--color-text-primary)]">Información General</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-6">
+          <CardContent className="space-y-6">
+            <div className={componentStyles.layout.grid2}>
               <div className="flex items-start gap-3">
-                <div className="icon-tile">
-                  <User className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-lg bg-[var(--color-primary-soft)] border border-[var(--color-primary)]/20 flex items-center justify-center shrink-0">
+                  <User className="w-5 h-5 text-[var(--color-primary)]" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted">Estudiante</p>
-                  <p className="font-medium text-ui">{getNombreVisible(alumno)}</p>
-                  <p className="text-sm text-muted">{alumno?.email}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wide">Estudiante</p>
+                  <p className="text-base md:text-lg font-semibold text-[var(--color-text-primary)] mb-0.5">{getNombreVisible(alumno)}</p>
+                  <p className="text-xs text-[var(--color-text-secondary)]">{alumno?.email}</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-3">
-                <div className="icon-tile">
-                  <Music className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-lg bg-[var(--color-primary-soft)] border border-[var(--color-primary)]/20 flex items-center justify-center shrink-0">
+                  <Music className="w-5 h-5 text-[var(--color-primary)]" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted">Pieza</p>
-                  <p className="font-medium text-ui">{asignacion.piezaSnapshot?.nombre}</p>
-                  <p className="text-sm text-muted">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wide">Pieza</p>
+                  <p className="text-base md:text-lg font-semibold text-[var(--color-text-primary)] mb-0.5">{asignacion.piezaSnapshot?.nombre}</p>
+                  <p className="text-xs text-[var(--color-text-secondary)]">
                     {asignacion.piezaSnapshot?.nivel} • {asignacion.piezaSnapshot?.elementos?.length || 0} elementos
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="icon-tile">
-                  <BookOpen className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-lg bg-[var(--color-primary-soft)] border border-[var(--color-primary)]/20 flex items-center justify-center shrink-0">
+                  <BookOpen className="w-5 h-5 text-[var(--color-primary)]" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted">Plan</p>
-                  <p className="font-medium text-ui">{asignacion.plan?.nombre}</p>
-                  <p className="text-sm text-muted">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wide">Plan</p>
+                  <p className="text-base md:text-lg font-semibold text-[var(--color-text-primary)] mb-0.5">{asignacion.plan?.nombre}</p>
+                  <p className="text-xs text-[var(--color-text-secondary)]">
                     {asignacion.plan?.semanas?.length || 0} semanas
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="icon-tile">
-                  <Calendar className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-lg bg-[var(--color-primary-soft)] border border-[var(--color-primary)]/20 flex items-center justify-center shrink-0">
+                  <Calendar className="w-5 h-5 text-[var(--color-primary)]" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted">Semana de Inicio</p>
-                  <p className="font-medium text-ui">
-                    {parseLocalDate(asignacion.semanaInicioISO).toLocaleDateString('es-ES', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wide">Semana de Inicio</p>
+                  <p className="text-base md:text-lg font-semibold text-[var(--color-text-primary)]">
+                    {asignacion?.semanaInicioISO && typeof asignacion.semanaInicioISO === 'string' && asignacion.semanaInicioISO.trim() !== '' ? (
+                      (() => {
+                        try {
+                          const fecha = parseLocalDate(asignacion.semanaInicioISO);
+                          return fecha.toLocaleDateString('es-ES', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          });
+                        } catch (error) {
+                          console.error('Error parsing fecha:', error, asignacion.semanaInicioISO);
+                          return <span className="text-[var(--color-text-secondary)]">Fecha inválida</span>;
+                        }
+                      })()
+                    ) : (
+                      <span className="text-[var(--color-text-secondary)]">No definida</span>
+                    )}
                   </p>
                 </div>
               </div>
 
               {asignacion.foco && (
                 <div className="flex items-start gap-3">
-                  <div className="icon-tile">
-                    <Settings className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-lg bg-[var(--color-primary-soft)] border border-[var(--color-primary)]/20 flex items-center justify-center shrink-0">
+                    <Settings className="w-5 h-5 text-[var(--color-primary)]" />
                   </div>
-                  <div>
-                    <p className="text-sm text-muted">Foco</p>
-                    <Badge className={`rounded-full ${focoColors[asignacion.foco]}`}>
-                      {focoLabels[asignacion.foco]}
-                    </Badge>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wide">Foco</p>
+                    <div className="mt-0.5">
+                      <Badge className={focoColors[asignacion.foco]}>
+                        {focoLabels[asignacion.foco]}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               )}
+
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[var(--color-primary-soft)] border border-[var(--color-primary)]/20 flex items-center justify-center shrink-0">
+                  <User className="w-5 h-5 text-[var(--color-primary)]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wide">Profesor</p>
+                  {(() => {
+                    const profesor = usuarios.find(u => u.id === asignacion.profesorId);
+                    return profesor ? (
+                      <>
+                        <p className="text-base md:text-lg font-semibold text-[var(--color-text-primary)] mb-0.5">{getNombreVisible(profesor)}</p>
+                        {profesor.email && <p className="text-xs text-[var(--color-text-secondary)]">{profesor.email}</p>}
+                      </>
+                    ) : (
+                      <p className="text-base md:text-lg font-semibold text-[var(--color-text-secondary)]">No asignado</p>
+                    );
+                  })()}
+                </div>
+              </div>
             </div>
 
             {asignacion.notas && (
-              <div className="pt-4 border-t border-ui">
-                <p className="text-sm text-muted mb-2">Notas del Profesor</p>
-                <p className="text-ui whitespace-pre-wrap">{asignacion.notas}</p>
+              <div className="pt-4 border-t border-[var(--color-border-default)]">
+                <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-2 uppercase tracking-wide">Notas del Profesor</p>
+                <p className="text-sm md:text-base text-[var(--color-text-primary)] leading-relaxed">{asignacion.notas}</p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="app-card">
+        <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
-            <CardTitle>Plan de Estudio ({asignacion.plan?.semanas?.length || 0} semanas)</CardTitle>
+            <CardTitle className="text-[var(--color-text-primary)]">Plan de Estudio ({asignacion.plan?.semanas?.length || 0} semanas)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {asignacion.plan?.semanas?.map((semana, semanaIndex) => (
-              <Card 
+              <div
                 key={semanaIndex}
-                className="app-panel cursor-pointer hover:shadow-md transition-all"
+                className="border-l-4 border-[var(--color-primary)] bg-[var(--color-primary-soft)]/50 rounded-r-lg p-3 transition-all hover:bg-[var(--color-primary-soft)] cursor-pointer"
                 onClick={() => toggleSemana(semanaIndex)}
               >
-                <CardContent className="pt-4">
-                  <div className="flex items-start gap-2">
-                    <div className="pt-1">
-                      {expandedSemanas.has(semanaIndex) ? (
-                        <ChevronDown className="w-5 h-5 text-ui" />
-                      ) : (
-                        <ChevronRight className="w-5 h-5 text-ui" />
-                      )}
+                {/* Semana Header */}
+                <div className="flex items-start gap-2">
+                  <button className="pt-1 flex-shrink-0">
+                    {expandedSemanas.has(semanaIndex) ? (
+                      <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                    )}
+                  </button>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h3 className="font-semibold text-base text-[var(--color-text-primary)]">{semana.nombre}</h3>
+                      <Badge className={`rounded-full ${focoColors[semana.foco]}`}>
+                        {focoLabels[semana.foco]}
+                      </Badge>
+                      <span className="text-sm text-[var(--color-text-secondary)]">
+                        ({semana.sesiones?.length || 0} sesiones)
+                      </span>
                     </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <h3 className="font-semibold text-ui">{semana.nombre}</h3>
-                        <Badge className={`rounded-full ${focoColors[semana.foco]}`}>
-                          {focoLabels[semana.foco]}
-                        </Badge>
-                        <span className="text-sm text-muted">
-                          ({semana.sesiones?.length || 0} sesiones)
-                        </span>
-                      </div>
-
-                      {expandedSemanas.has(semanaIndex) && (
-                        <div className="ml-4 mt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
-                          {semana.objetivo && (
-                            <p className="text-sm text-muted italic">"{semana.objetivo}"</p>
-                          )}
-
-                          {semana.sesiones && semana.sesiones.length > 0 && (
-                            <div className="space-y-2">
-                              {semana.sesiones.map((sesion, sesionIndex) => {
-                                const sesionKey = `${semanaIndex}-${sesionIndex}`;
-                                const isExpanded = expandedSesiones.has(sesionKey);
-                                const tiempoTotal = calcularTiempoSesion(sesion);
-                                const tiempoMinutos = Math.floor(tiempoTotal / 60);
-                                const tiempoSegundos = tiempoTotal % 60;
-                                
-                                return (
-                                  <Card 
-                                    key={sesionIndex}
-                                    className="app-panel cursor-pointer hover:shadow-md transition-all"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleSesion(semanaIndex, sesionIndex);
-                                    }}
-                                  >
-                                    <CardContent className="pt-3 pb-3">
-                                      <div className="flex items-start gap-2">
-                                        <div className="pt-1">
-                                          {isExpanded ? (
-                                            <ChevronDown className="w-4 h-4 text-ui" />
-                                          ) : (
-                                            <ChevronRight className="w-4 h-4 text-ui" />
-                                          )}
-                                        </div>
-                                        
-                                        <div className="flex-1">
-                                          <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="font-medium text-sm text-ui">{sesion.nombre}</span>
-                                            <Badge 
-                                              variant="outline" 
-                                              className={`rounded-full text-xs ${
-                                                tiempoTotal > 0 ? 'bg-green-50 border-green-300 text-green-800' : 'bg-slate-50'
-                                              }`}
-                                            >
-                                              ⏱ {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
-                                            </Badge>
-                                            <Badge className={`rounded-full ${focoColors[sesion.foco]}`} variant="outline">
-                                              {focoLabels[sesion.foco]}
-                                            </Badge>
-                                          </div>
-
-                                          {isExpanded && (
-                                            <div className="ml-6 mt-2" onClick={(e) => e.stopPropagation()}>
-                                              <SessionContentView sesion={sesion} />
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    {semana.objetivo && expandedSemanas.has(semanaIndex) && (
+                      <p className="text-sm text-[var(--color-text-secondary)] italic mb-2">"{semana.objetivo}"</p>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+
+                {/* Sesiones - Expandidas */}
+                {expandedSemanas.has(semanaIndex) && semana.sesiones && semana.sesiones.length > 0 && (
+                  <div className="mt-3 space-y-2" onClick={(e) => e.stopPropagation()}>
+                    {semana.sesiones.map((sesion, sesionIndex) => {
+                      const sesionKey = `${semanaIndex}-${sesionIndex}`;
+                      const isExpanded = expandedSesiones.has(sesionKey);
+                      const tiempoTotal = calcularTiempoSesion(sesion);
+                      const tiempoMinutos = Math.floor(tiempoTotal / 60);
+                      const tiempoSegundos = tiempoTotal % 60;
+
+                      return (
+                        <div
+                          key={sesionIndex}
+                          className="ml-4 border-l-2 border-[var(--color-info)]/40 bg-[var(--color-info)]/10 rounded-r-lg p-2.5 transition-all hover:bg-[var(--color-info)]/20 cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSesion(semanaIndex, sesionIndex);
+                          }}
+                        >
+                          {/* Sesión Header */}
+                          <div className="flex items-start gap-2">
+                            <button className="pt-1 flex-shrink-0">
+                              {isExpanded ? (
+                                <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+                              ) : (
+                                <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+                              )}
+                            </button>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <PlayCircle className="w-3.5 h-3.5 text-[var(--color-info)] flex-shrink-0" />
+                                <span className="text-sm font-semibold text-[var(--color-text-primary)]">{sesion.nombre}</span>
+                                <Badge 
+                                  variant="outline" 
+                                  className={tiempoTotal > 0 ? componentStyles.status.badgeSuccess : componentStyles.status.badgeDefault}
+                                >
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
+                                </Badge>
+                                <Badge className={focoColors[sesion.foco]} variant="outline">
+                                  {focoLabels[sesion.foco]}
+                                </Badge>
+                              </div>
+
+                              {isExpanded && (
+                                <div className="ml-2 mt-1.5" onClick={(e) => e.stopPropagation()}>
+                                  <SessionContentView sesion={sesion} />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             ))}
           </CardContent>
         </Card>
       </div>
 
-      {/* Drawer de edición */}
+      {/* Modal de edición */}
       {showEditDrawer && editData && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowEditDrawer(false)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-end pointer-events-none overflow-hidden">
+          <div 
+            className="fixed inset-0 bg-black/40 z-[100]"
+            onClick={() => setShowEditDrawer(false)}
+          />
+          <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
             <div 
-              className="bg-card w-full max-w-2xl h-full shadow-card flex flex-col animate-in slide-in-from-right pointer-events-auto rounded-l-2xl"
+              className="bg-[var(--color-surface-elevated)] w-full max-w-2xl max-h-[95vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-4 border border-[var(--color-border-default)]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="border-b border-ui px-6 py-4 flex items-center justify-between bg-brand-500">
-                <div className="flex items-center gap-3 text-white">
-                  <Edit className="w-6 h-6" />
-                  <h2 className="text-xl font-bold">Editar Información</h2>
+              <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-2xl px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Edit className="w-6 h-6 text-[var(--color-text-primary)]" />
+                    <div>
+                      <h2 className="text-xl font-bold text-[var(--color-text-primary)] font-headings">Editar Asignación</h2>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setShowEditDrawer(false)} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-xl touch-manipulation" aria-label="Cerrar modal">
+                    <X className="w-5 h-5" />
+                  </Button>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setShowEditDrawer(false)} className="text-white hover:bg-white/20 h-9 w-9 rounded-xl" aria-label="Cerrar drawer">
-                  <X className="w-5 h-5" />
-                </Button>
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 <div>
-                  <Label htmlFor="pieza">Pieza *</Label>
-                  <Select value={editData.piezaId} onValueChange={(v) => setEditData({ ...editData, piezaId: v })}>
-                    <SelectTrigger className="h-10 rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]">
+                  <Label htmlFor="pieza" className="text-[var(--color-text-primary)]">Pieza *</Label>
+                  <Select 
+                    value={editData.piezaId} 
+                    onValueChange={(v) => setEditData({ ...editData, piezaId: v })}
+                    modal={false}
+                  >
+                    <SelectTrigger id="pieza" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue placeholder="Selecciona una pieza" />
                     </SelectTrigger>
-                    <SelectContent className="z-[120]" position="popper">
-                      {piezas.map((pieza) => (
-                        <SelectItem key={pieza.id} value={pieza.id}>
-                          {pieza.nombre}
-                        </SelectItem>
-                      ))}
+                    <SelectContent 
+                      position="popper" 
+                      side="bottom" 
+                      align="start" 
+                      sideOffset={4}
+                      className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                    >
+                      {piezas.length === 0 ? (
+                        <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay piezas</div>
+                      ) : (
+                        piezas.map((pieza) => (
+                          <SelectItem key={pieza.id} value={pieza.id}>
+                            {pieza.nombre}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label htmlFor="fecha">Fecha de inicio (cualquier día) *</Label>
+                  <Label htmlFor="fecha" className="text-sm font-medium text-[var(--color-text-primary)]">Fecha de inicio (cualquier día) *</Label>
                   <Input
                     id="fecha"
                     type="date"
-                    value={editData.fechaSeleccionada}
-                    onChange={(e) => setEditData({ ...editData, fechaSeleccionada: e.target.value })}
-                    className="h-10 rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                    value={editData.fechaSeleccionada || ''}
+                    onChange={(e) => {
+                      const nuevaFecha = e.target.value;
+                      setEditData({ ...editData, fechaSeleccionada: nuevaFecha });
+                    }}
+                    className={componentStyles.controls.inputDefault}
                   />
                   {editData.fechaSeleccionada && (
-                    <Alert className="mt-2 rounded-xl border-blue-200 bg-blue-50">
-                      <AlertDescription className="text-xs text-blue-800">
+                    <Alert className={`mt-2 ${componentStyles.containers.panelBase} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
+                      <AlertDescription className="text-xs text-[var(--color-info)]">
                         Se guardará la semana ISO del Lunes{' '}
-                        {parseLocalDate(calcularLunesSemanaISO(editData.fechaSeleccionada)).toLocaleDateString('es-ES')}
+                        {editData.fechaSeleccionada ? (
+                          (() => {
+                            try {
+                              const lunesISO = calcularLunesSemanaISO(editData.fechaSeleccionada);
+                              if (lunesISO && typeof lunesISO === 'string') {
+                                return parseLocalDate(lunesISO).toLocaleDateString('es-ES');
+                              }
+                              return '-';
+                            } catch (error) {
+                              return '-';
+                            }
+                          })()
+                        ) : '-'}
                       </AlertDescription>
                     </Alert>
                   )}
                 </div>
 
                 <div>
-                  <Label htmlFor="foco">Foco</Label>
-                  <Select value={editData.foco} onValueChange={(v) => setEditData({ ...editData, foco: v })}>
-                    <SelectTrigger className="h-10 rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]">
+                  <Label htmlFor="foco" className="text-sm font-medium text-[var(--color-text-primary)]">Foco</Label>
+                  <Select 
+                    value={editData.foco} 
+                    onValueChange={(v) => setEditData({ ...editData, foco: v })}
+                    modal={false}
+                  >
+                    <SelectTrigger id="foco" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue placeholder="Selecciona un foco" />
                     </SelectTrigger>
-                    <SelectContent className="z-[120]" position="popper">
+                    <SelectContent 
+                      position="popper" 
+                      side="bottom" 
+                      align="start" 
+                      sideOffset={4}
+                      className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                    >
                       {Object.entries(focoLabels).map(([key, label]) => (
                         <SelectItem key={key} value={key}>{label}</SelectItem>
                       ))}
@@ -550,30 +764,73 @@ export default function AsignacionDetallePage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="notas">Notas del profesor</Label>
+                  <Label htmlFor="notas" className="text-sm font-medium text-[var(--color-text-primary)]">Notas del profesor</Label>
                   <Textarea
                     id="notas"
                     value={editData.notas}
                     onChange={(e) => setEditData({ ...editData, notas: e.target.value })}
                     placeholder="Comentarios, instrucciones..."
                     rows={4}
-                    className="rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))] resize-none"
+                    className={`${componentStyles.controls.inputDefault} resize-none`}
                   />
                 </div>
+
+                {puedeEditarProfesor && (
+                  <div>
+                    <Label htmlFor="profesor" className="text-sm font-medium text-[var(--color-text-primary)]">Profesor asignado</Label>
+                    <Select 
+                      value={editData.profesorId || ''} 
+                      onValueChange={(v) => setEditData({ ...editData, profesorId: v || null })}
+                      modal={false}
+                    >
+                      <SelectTrigger id="profesor" className={`w-full ${componentStyles.controls.selectDefault}`}>
+                        <SelectValue placeholder="Selecciona un profesor" />
+                      </SelectTrigger>
+                      <SelectContent 
+                        position="popper" 
+                        side="bottom" 
+                        align="start" 
+                        sideOffset={4}
+                        className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                      >
+                        {profesoresDisponibles.length === 0 ? (
+                          <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay profesores disponibles</div>
+                        ) : (
+                          profesoresDisponibles.map((profesor) => (
+                            <SelectItem key={profesor.value} value={profesor.value}>
+                              {profesor.label}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {effectiveUser?.rolPersonalizado === 'PROF' && (
+                      <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+                        Solo puedes cambiar el profesor de tus propias asignaciones.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
-              <div className="border-t border-ui px-6 py-4 bg-muted">
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setShowEditDrawer(false)} className="flex-1 h-10 rounded-xl">
+              <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
+                <div className="flex gap-3 mb-2">
+                  <Button variant="outline" onClick={() => setShowEditDrawer(false)} className={`flex-1 ${componentStyles.buttons.outline}`}>
                     Cancelar
                   </Button>
-                  <Button onClick={handleGuardarEdicion} disabled={editarMutation.isPending} className="flex-1 btn-primary h-10 rounded-xl shadow-sm">
-                    <Save className="w-4 h-4 mr-2" />
-                    {editarMutation.isPending ? 'Guardando...' : 'Guardar'}
+                  <Button onClick={handleGuardarEdicion} disabled={editarMutation.isPending} className={`flex-1 ${componentStyles.buttons.primary}`}>
+                    {editarMutation.isPending ? (
+                      'Guardando...'
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Guardar
+                      </>
+                    )}
                   </Button>
                 </div>
-                <p className="text-xs text-center text-muted mt-2">
-                  Ctrl/⌘+. : cerrar • Ctrl/⌘+Intro : guardar
+                <p className="text-xs text-center text-[var(--color-text-secondary)]">
+                  Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar
                 </p>
               </div>
             </div>

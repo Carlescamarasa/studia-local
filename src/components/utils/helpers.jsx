@@ -1,7 +1,12 @@
+import { localUsers } from "@/local-data/localUsers";
+import { getCurrentUser } from "@/api/localDataClient";
+import { useAuth } from "@/auth/AuthProvider";
+import { useLocalData } from "@/local-data/LocalDataProvider";
+
 /**
  * Obtiene el nombre visible de un usuario según la jerarquía:
- * 1. nombreCompleto (campo personalizado)
- * 2. full_name (nombre completo del sistema, fallback)
+ * 1. full_name (fuente de verdad en profiles)
+ * 2. nombreCompleto (campo derivado, fallback)
  * 3. first_name + last_name
  * 4. name
  * 5. email (parte local antes de @)
@@ -10,14 +15,14 @@
 export function displayName(u) {
   if (!u) return 'Sin nombre';
   
-  // Prioridad 1: nombreCompleto (campo personalizado)
-  if (u.nombreCompleto && u.nombreCompleto.trim()) {
-    return u.nombreCompleto.trim();
-  }
-  
-  // Prioridad 2: full_name del sistema (fallback)
+  // Prioridad 1: full_name (fuente de verdad en profiles)
   if (u.full_name && u.full_name.trim()) {
     return u.full_name.trim();
+  }
+  
+  // Prioridad 2: nombreCompleto (campo derivado, fallback)
+  if (u.nombreCompleto && u.nombreCompleto.trim()) {
+    return u.nombreCompleto.trim();
   }
   
   // Prioridad 3: first_name + last_name
@@ -29,10 +34,32 @@ export function displayName(u) {
     return u.name.trim();
   }
   
-  // Prioridad 5: email (parte local)
+  // Si tenemos solo el id, intentar resolver por ID
+  if (u.id) {
+    const byId = displayNameById(u.id);
+    if (byId && byId !== 'Sin nombre') return byId;
+  }
+  
+  // Prioridad 5: email (parte local o completo si la parte local es un ID)
   if (u.email) {
-    const parteLocal = u.email.split('@')[0];
-    if (parteLocal) return parteLocal;
+    const email = String(u.email);
+    if (email.includes('@')) {
+      const parteLocal = email.split('@')[0];
+      // Evitar IDs tipo Mongo/ObjectId (24 hex) u otros ids crudos
+      const isLikelyId = /^[a-f0-9]{24}$/i.test(parteLocal) || /^u_[a-z0-9_]+$/i.test(parteLocal);
+      if (parteLocal && !isLikelyId) {
+        // Formatear email: "nombre.apellido" o "nombre" de forma más legible
+        const formatted = parteLocal
+          .replace(/[._+-]/g, ' ')
+          .replace(/\b\w/g, l => l.toUpperCase())
+          .trim();
+        return formatted || parteLocal; // Si después de formatear queda vacío, usar parte local
+      }
+      // Si la parte local parece un ID, usar el email completo
+      return email;
+    }
+    // Si no tiene @, usar el email tal cual
+    return email;
   }
   
   return 'Sin nombre';
@@ -40,6 +67,53 @@ export function displayName(u) {
 
 // Alias para compatibilidad con código existente
 export const getNombreVisible = displayName;
+
+/**
+ * Obtiene nombre visible por ID buscando en localUsers como fallback local.
+ */
+export function displayNameById(userId) {
+  if (!userId) return 'Sin nombre';
+  const user = Array.isArray(localUsers) ? localUsers.find(u => u.id === userId) : null;
+  if (user) return displayName(user);
+  // Fallback explícito para IDs conocidos en local
+  if (userId === '6913f9c07890d136d35d0a77') return 'Carles Estudiante';
+  if (userId === '691432b999585b6c94028617') return 'La Trompeta Sonará';
+  return 'Sin nombre';
+}
+
+/**
+ * Formatea minutos a cadena humana: "9 h 42 min" u "42 min" si < 1h
+ * Si las horas son >= 24, muestra formato "D d H h M min"
+ */
+export function formatDurationMinutes(totalMinutes) {
+  const minutes = Math.max(0, Math.floor(totalMinutes || 0));
+  const hours = Math.floor(minutes / 60);
+  const rem = minutes % 60;
+  
+  // Si las horas son >= 24, mostrar formato con días
+  if (hours >= 24) {
+    const dias = Math.floor(hours / 24);
+    const horasRestantes = hours % 24;
+    if (dias > 0 && horasRestantes > 0 && rem > 0) {
+      return `${dias} d ${horasRestantes} h ${rem} min`;
+    }
+    if (dias > 0 && horasRestantes > 0) {
+      return `${dias} d ${horasRestantes} h`;
+    }
+    if (dias > 0 && rem > 0) {
+      return `${dias} d ${rem} min`;
+    }
+    if (dias > 0) {
+      return `${dias} d`;
+    }
+  }
+  
+  // Formato normal para < 24h
+  if (hours <= 0) {
+    return `${rem} min`;
+  }
+  return `${hours} h ${rem} min`;
+}
 
 /**
  * Normaliza texto para búsquedas (minúsculas, sin espacios extras)
@@ -55,6 +129,9 @@ const pad2 = (n) => String(n).padStart(2, "0");
 export const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
 
 export const parseLocalDate = (s) => { 
+  if (!s || typeof s !== 'string') {
+    throw new Error('parseLocalDate: Invalid input');
+  }
   const [y,m,d] = s.split("-").map(Number); 
   return new Date(y, m-1, d); 
 };
@@ -164,4 +241,151 @@ export function aplanarSesion(sesion) {
   });
   
   return listaEjecucion;
+}
+
+/**
+ * Función unificada para obtener el rol efectivo del usuario.
+ * Funciona tanto en modo local como con Supabase.
+ * 
+ * @param {Object} options - Opciones para obtener el rol
+ * @param {string} options.appRole - Rol desde useAuth() (Supabase)
+ * @param {Object} options.currentUser - Usuario desde getCurrentUser() (local)
+ * @returns {string} - Rol efectivo: 'ADMIN', 'PROF' o 'ESTU'
+ */
+export function getEffectiveRole(options = {}) {
+  const { appRole, currentUser } = options;
+  
+  // Priorizar appRole (modo Supabase) sobre currentUser (modo local)
+  // En modo Supabase: usar appRole
+  if (appRole) {
+    return appRole;
+  }
+  
+  // En modo local puro (sin Supabase): usar currentUser
+  if (currentUser?.rolPersonalizado) {
+    return currentUser.rolPersonalizado;
+  }
+  
+  // Fallback: intentar obtener desde getCurrentUser() si no se pasó
+  if (!currentUser && !appRole) {
+    try {
+      const localUser = getCurrentUser();
+      if (localUser?.rolPersonalizado) {
+        return localUser.rolPersonalizado;
+      }
+    } catch (e) {
+      // Ignorar errores
+    }
+  }
+  
+  // Fallback final
+  return "ESTU";
+}
+
+/**
+ * Hook que obtiene el usuario efectivo que funciona en ambos modos (local y Supabase).
+ * 
+ * En modo Supabase: Busca el usuario en datos locales por email del usuario de Supabase.
+ * Si no se encuentra, crea un usuario sintético basado en la información de Supabase.
+ * En modo local: Usa getCurrentUser() directamente.
+ * 
+ * @returns {Object|null} - Usuario efectivo con todas sus propiedades (id, rolPersonalizado, email, etc.) o null si no se encuentra
+ */
+export function useEffectiveUser() {
+  const { user: supabaseUser, appRole } = useAuth();
+  const currentUser = getCurrentUser();
+  const { usuarios, loading: dataLoading } = useLocalData();
+  
+  // Si hay usuario de Supabase, buscar en datos locales por email
+  if (supabaseUser?.email) {
+    const normalizedEmail = supabaseUser.email.toLowerCase().trim();
+    
+    // Buscar en usuarios locales (solo si ya están cargados)
+    if (!dataLoading) {
+      const foundUser = usuarios.find(u => {
+        if (!u.email) return false;
+        return u.email.toLowerCase().trim() === normalizedEmail;
+      });
+      
+      if (foundUser) {
+        return foundUser;
+      }
+    }
+    
+    // Si no se encuentra en datos locales pero hay appRole,
+    // crear un usuario sintético inmediatamente (no esperar a que carguen los datos)
+    // Esto es seguro porque el usuario sintético no depende de los datos locales
+    if (appRole) {
+      // Extraer nombre del email o usar metadata de Supabase
+      const emailParts = supabaseUser.email.split('@')[0];
+      const metadata = supabaseUser.user_metadata || {};
+      const fullName = metadata.full_name || metadata.name || emailParts;
+      const nameParts = fullName.split(' ');
+      const firstName = nameParts[0] || emailParts;
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      return {
+        id: supabaseUser.id,
+        email: supabaseUser.email,
+        rolPersonalizado: appRole,
+        nombreCompleto: fullName,
+        full_name: fullName,
+        first_name: firstName,
+        last_name: lastName,
+        name: fullName,
+        estado: 'activo',
+        fechaRegistro: supabaseUser.created_at || new Date().toISOString(),
+        // Añadir metadata adicional si existe
+        ...(metadata.avatar_url && { avatar_url: metadata.avatar_url }),
+      };
+    }
+    
+    // Si no hay appRole aún, retornar null temporalmente
+    return null;
+  }
+  
+  // En modo local, usar currentUser directamente
+  return currentUser;
+}
+
+/**
+ * Resuelve el ID de usuario actual de la BD usando estrategia prioritaria:
+ * 1. Buscar por ID (UUID en Supabase, string en local) - PRIORITARIO
+ * 2. En modo local: fallback a email si ID no coincide
+ * 
+ * En modo Supabase: effectiveUser.id DEBE ser UUID de auth.users = profiles.id
+ * En modo local: IDs pueden ser strings diferentes, usar email como fallback
+ * 
+ * @param {Object} effectiveUser - Usuario de useEffectiveUser()
+ * @param {Array} usuarios - Lista de usuarios de User.list()
+ * @returns {string|null} - ID del usuario en la BD, o null si no se puede resolver
+ */
+export function resolveUserIdActual(effectiveUser, usuarios = []) {
+  if (!effectiveUser?.id) return null;
+  
+  // Estrategia 1: Buscar por ID directamente (prioritario)
+  // En modo Supabase, effectiveUser.id es UUID de auth.users = profiles.id
+  // En modo local, puede ser string, pero debe coincidir si existe
+  const usuarioActual = usuarios.find(u => u.id === effectiveUser.id);
+  if (usuarioActual) {
+    return usuarioActual.id;
+  }
+  
+  // Estrategia 2: Si no se encuentra y tenemos email, buscar por email
+  // (En modo Supabase, email solo disponible para usuario autenticado)
+  // (En modo local, email puede estar disponible para todos)
+  if (effectiveUser.email) {
+    const normalizedEmail = effectiveUser.email.toLowerCase().trim();
+    const usuarioPorEmail = usuarios.find(u => 
+      u.email && u.email.toLowerCase().trim() === normalizedEmail
+    );
+    if (usuarioPorEmail) {
+      return usuarioPorEmail.id;
+    }
+  }
+  
+  // Fallback: usar effectiveUser.id directamente
+  // En modo Supabase, esto DEBE ser el UUID correcto
+  // En modo local, puede ser necesario usar este ID
+  return effectiveUser.id;
 }

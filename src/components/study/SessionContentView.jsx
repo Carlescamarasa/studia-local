@@ -1,32 +1,55 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { ChevronDown, ChevronRight, Layers } from "lucide-react";
+import { ChevronDown, ChevronRight, Layers, Shuffle } from "lucide-react";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "./sessionSequence";
+import { componentStyles } from "@/design/componentStyles";
 
 const tipoColors = {
-  CA: 'badge-primary',
-  CB: 'badge-info',
-  TC: 'badge-purple',
-  TM: 'badge-success',
-  FM: 'badge-danger',
-  VC: 'badge-info',
-  AD: 'badge-default',
+  CA: componentStyles.status.badgeDefault,
+  CB: componentStyles.status.badgeInfo,
+  TC: componentStyles.status.badgeDefault,
+  TM: componentStyles.status.badgeSuccess,
+  FM: componentStyles.status.badgeDefault,
+  VC: componentStyles.status.badgeInfo,
+  AD: componentStyles.status.badgeDefault,
 };
 
 /**
  * Componente unificado para visualizar el contenido de una sesión
  * Muestra ejercicios y rondas intercalados según la secuencia
- * Rondas colapsadas por defecto
+ * Rondas expandidas por defecto
  */
 export default function SessionContentView({ sesion, compact = false }) {
-  const [expanded, setExpanded] = useState({});
-
   if (!sesion) return null;
 
   const S = ensureRondaIds(sesion);
   const secuencia = getSecuencia(S);
   const bloquesMap = mapBloquesByCode(S);
+
+  // Inicializar todas las rondas como expandidas por defecto
+  const [expanded, setExpanded] = useState(() => {
+    const expandedMap = {};
+    const seq = getSecuencia(ensureRondaIds(sesion));
+    seq.forEach((item) => {
+      if (item.kind === "RONDA" && item.id) {
+        expandedMap[item.id] = true;
+      }
+    });
+    return expandedMap;
+  });
+
+  // Actualizar cuando cambie la sesión
+  React.useEffect(() => {
+    const S = ensureRondaIds(sesion);
+    const seq = getSecuencia(S);
+    const expandedMap = {};
+    seq.forEach((item) => {
+      if (item.kind === "RONDA" && item.id) {
+        expandedMap[item.id] = true;
+      }
+    });
+    setExpanded(expandedMap);
+  }, [sesion]); // Actualizar cuando cambie la sesión
 
   const toggleRonda = (key) => {
     setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
@@ -34,36 +57,32 @@ export default function SessionContentView({ sesion, compact = false }) {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 text-xs text-muted">
-        <Layers className="w-3 h-3" />
+      <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+        <Layers className="w-4 h-4 text-[var(--color-text-secondary)]" />
         <span>
           {(S.bloques?.length || 0)} ejercicios totales • {(S.rondas?.length || 0)} rondas
         </span>
       </div>
 
-      <div className="space-y-1">
+      <div className="ml-2 space-y-1.5">
         {secuencia.map((item, idx) => {
           if (item.kind === "BLOQUE") {
             const ej = bloquesMap.get(item.code);
             if (!ej) {
               return (
-                <div key={`miss-b-${idx}`} className="p-2 app-panel bg-[hsl(var(--danger))]/10 border-[hsl(var(--danger))]/20 text-xs text-[hsl(var(--danger))]">
-                  ⚠️ Ejercicio no encontrado: {item.code}
+                <div key={`miss-b-${idx}`} className={`text-xs text-[var(--color-danger)] p-1`}>
+                  ⚠️ Referencia huérfana: {item.code}
                 </div>
               );
             }
             
             return (
-              <div key={`b-${item.code}-${idx}`} className="flex items-center gap-2 p-2 app-card border-ui text-xs">
-                <Badge variant="outline" className={tipoColors[ej.tipo]}>
+              <div key={`b-${item.code}-${idx}`} className={componentStyles.items.compactItem}>
+                <Badge variant="outline" className={`${tipoColors[ej.tipo]} rounded-full ${componentStyles.typography.compactText}`}>
                   {ej.tipo}
                 </Badge>
-                <span className="flex-1 text-ui">
-                  {ej.nombre} {!compact && <span className="text-muted">({ej.code})</span>}
-                </span>
-                <span className="text-muted">
-                  {Math.floor((ej.duracionSeg || 0) / 60)}:{String((ej.duracionSeg || 0) % 60).padStart(2, '0')}
-                </span>
+                <span className="flex-1 text-[var(--color-text-primary)] font-medium truncate">{ej.nombre}</span>
+                <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0`}>{ej.code}</span>
               </div>
             );
           }
@@ -72,7 +91,7 @@ export default function SessionContentView({ sesion, compact = false }) {
           const r = (S.rondas || []).find(x => x.id === item.id);
           if (!r) {
             return (
-              <div key={`miss-r-${idx}`} className="p-2 app-panel bg-[hsl(var(--danger))]/10 border-[hsl(var(--danger))]/20 text-xs text-[hsl(var(--danger))]">
+              <div key={`miss-r-${idx}`} className={`text-xs text-[var(--color-danger)] p-1`}>
                 ⚠️ Ronda no encontrada
               </div>
             );
@@ -82,60 +101,52 @@ export default function SessionContentView({ sesion, compact = false }) {
           const isOpen = !!expanded[key];
 
           return (
-            <Card 
-              key={`r-${key}`} 
-              className="app-panel border-purple-300 bg-purple-50/50 cursor-pointer hover:bg-purple-100/50 transition-colors"
-              onClick={() => toggleRonda(key)}
-            >
-              <CardContent className="pt-2 pb-2">
-                <div className="flex items-center gap-2">
-                  <div className="pt-0.5">
-                    {isOpen ? (
-                      <ChevronDown className="w-3 h-3 text-purple-600" />
-                    ) : (
-                      <ChevronRight className="w-3 h-3 text-purple-600" />
-                    )}
-                  </div>
-                  <Badge className="bg-purple-600 text-white text-xs badge">Ronda</Badge>
-                  <span className="text-xs text-muted">× {r.repeticiones} repeticiones</span>
-                  <span className="text-xs text-muted">({r.bloques.length} ejercicios)</span>
-                  {r.aleatoria && (
-                    <Badge variant="outline" className="text-[10px] border-purple-400 text-purple-800 bg-purple-100 badge">
-                      🎲 random
-                    </Badge>
+            <div key={`r-${key}`}>
+              <div 
+                className={componentStyles.items.compactItemHover}
+                onClick={() => toggleRonda(key)}
+              >
+                <div className={`flex items-center ${componentStyles.layout.gapCompact} flex-shrink-0`}>
+                  {isOpen ? (
+                    <ChevronDown className="w-3 h-3 text-[var(--color-text-secondary)]" />
+                  ) : (
+                    <ChevronRight className="w-3 h-3 text-[var(--color-text-secondary)]" />
                   )}
+                  <Badge variant="outline" className={`bg-[var(--color-primary)]/10 border-[var(--color-primary)]/30 text-[var(--color-primary)] rounded-full ${componentStyles.typography.compactText} font-semibold`}>
+                    RONDA
+                  </Badge>
                 </div>
+                <span className="flex-1 text-[var(--color-text-primary)] font-medium truncate">
+                  {r.aleatoria && <Shuffle className="w-3 h-3 inline mr-1 text-[var(--color-primary)]" />}
+                  × {r.repeticiones} repeticiones ({r.bloques.length} ejercicios)
+                </span>
+              </div>
 
-                {isOpen && (
-                  <div className="space-y-1 ml-6 mt-2 border-l-2 border-purple-300 pl-3">
-                    {r.bloques.map((code, j) => {
-                      const ej = bloquesMap.get(code);
-                      if (!ej) {
-                        return (
-                          <div key={`r-${key}-${j}`} className="p-1.5 app-panel bg-[hsl(var(--danger))]/10 border-[hsl(var(--danger))]/20 text-xs text-[hsl(var(--danger))]">
-                            ⚠️ {code} no encontrado
-                          </div>
-                        );
-                      }
-                      
+              {isOpen && (
+                <div className="ml-2 mt-1.5 space-y-1">
+                  {r.bloques.map((code, j) => {
+                    const ej = bloquesMap.get(code);
+                    if (!ej) {
                       return (
-                        <div key={`r-${key}-${code}-${j}`} className="flex items-center gap-2 p-1.5 app-card border-ui text-xs">
-                          <Badge variant="outline" className={tipoColors[ej.tipo]}>
-                            {ej.tipo}
-                          </Badge>
-                          <span className="flex-1 text-ui">
-                            {ej.nombre} {!compact && <span className="text-muted">({ej.code})</span>}
-                          </span>
-                          <span className="text-muted">
-                            {Math.floor((ej.duracionSeg || 0) / 60)}:{String((ej.duracionSeg || 0) % 60).padStart(2, '0')}
-                          </span>
+                        <div key={`r-${key}-${j}`} className={`text-xs text-[var(--color-danger)] p-1 ml-2`}>
+                          ⚠️ Referencia huérfana: {code}
                         </div>
                       );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    }
+                    
+                    return (
+                      <div key={`r-${key}-${code}-${j}`} className={`${componentStyles.items.compactItem} ml-2`}>
+                        <Badge variant="outline" className={`${componentStyles.typography.compactText} rounded-full ${tipoColors[ej.tipo]}`}>
+                          {ej.tipo}
+                        </Badge>
+                        <span className="flex-1 text-[var(--color-text-primary)] truncate">{ej.nombre}</span>
+                        <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0`}>{ej.code}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>

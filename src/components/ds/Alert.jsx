@@ -37,7 +37,7 @@ export default function Alert({
     <div
       role="alert"
       className={cn(
-        "relative rounded-xl border p-4",
+        "relative rounded-[var(--radius-card,0.25rem)] border p-4",
         variantClass,
         className
       )}
@@ -53,6 +53,18 @@ export default function Alert({
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * AlertTitle - Componente de título para Alert
+ * Wrapper simple para mantener compatibilidad con shadcn
+ */
+export function AlertTitle({ children, className = "", ...props }) {
+  return (
+    <h5 className={cn("font-semibold text-sm mb-1", className)} {...props}>
+      {children}
+    </h5>
   );
 }
 

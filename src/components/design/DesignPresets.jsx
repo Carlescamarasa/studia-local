@@ -1,87 +1,24 @@
 /**
- * Sistema de Presets del Design System
- * Permite guardar, cargar y gestionar múltiples configuraciones visuales
+ * Sistema de Presets Personalizados del Design System
+ * Permite guardar, cargar y gestionar configuraciones visuales personalizadas
+ * 
+ * NOTA: Los presets base (como 'studia') están definidos en BasePresets.ts
+ * Este archivo solo gestiona presets personalizados guardados en localStorage
  */
-
-export const BUILT_IN_PRESETS = {
-  default: {
-    name: 'Studia Default',
-    description: 'Configuración predeterminada del sistema',
-    config: {
-      brandHue: 26,
-      serifHeadings: true,
-      radius: {
-        card: 'lg',
-        controls: 'lg',
-        pill: 'lg'
-      },
-      shadow: 'md',
-      density: 'compact',
-      focus: 'orange',
-    }
-  },
-  minimal: {
-    name: 'Minimal',
-    description: 'Diseño limpio y minimalista',
-    config: {
-      brandHue: 26,
-      serifHeadings: false,
-      radius: {
-        card: 'lg',
-        controls: 'lg',
-        pill: 'lg'
-      },
-      shadow: 'none',
-      density: 'compact',
-      focus: 'orange',
-    }
-  },
-  comfortable: {
-    name: 'Comfortable',
-    description: 'Espaciado amplio y radios generosos',
-    config: {
-      brandHue: 26,
-      serifHeadings: true,
-      radius: {
-        card: '2xl',
-        controls: 'xl',
-        pill: 'lg'
-      },
-      shadow: 'card',
-      density: 'comfortable',
-      focus: 'orange',
-    }
-  },
-  sharp: {
-    name: 'Sharp',
-    description: 'Esquinas marcadas, alto contraste',
-    config: {
-      brandHue: 26,
-      serifHeadings: false,
-      radius: {
-        card: 'lg',
-        controls: 'lg',
-        pill: 'lg'
-      },
-      shadow: 'md',
-      density: 'compact',
-      focus: 'system',
-    }
-  }
-};
 
 const CUSTOM_PRESETS_KEY = 'studia.design.customPresets.v1';
 
 /**
- * Obtener todos los presets disponibles (built-in + custom)
+ * Obtener todos los presets personalizados disponibles
+ * (Los presets base se obtienen desde BasePresets.ts)
  */
 export function getAllPresets() {
   try {
     const customRaw = localStorage.getItem(CUSTOM_PRESETS_KEY);
     const custom = customRaw ? JSON.parse(customRaw) : {};
-    return { ...BUILT_IN_PRESETS, ...custom };
+    return custom;
   } catch {
-    return BUILT_IN_PRESETS;
+    return {};
   }
 }
 
@@ -121,9 +58,13 @@ export function deleteCustomPreset(id) {
 
 /**
  * Verificar si un preset es built-in (no se puede eliminar)
+ * NOTA: Los presets base están en BasePresets.ts, no aquí
+ * Esta función siempre devuelve false porque aquí solo hay presets personalizados
  */
 export function isBuiltInPreset(id) {
-  return Object.keys(BUILT_IN_PRESETS).includes(id);
+  // Los presets base están en BasePresets.ts, no aquí
+  // Todos los presets aquí son personalizados y se pueden eliminar
+  return false;
 }
 
 /**

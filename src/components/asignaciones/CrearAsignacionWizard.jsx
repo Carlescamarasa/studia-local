@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +15,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { formatLocalDate, parseLocalDate, startOfMonday } from "@/components/utils/helpers";
+import { formatLocalDate, parseLocalDate, startOfMonday, displayName, useEffectiveUser } from "@/components/utils/helpers";
+import { useAuth } from "@/auth/AuthProvider";
 
 export default function CrearAsignacionWizard({ onClose }) {
   const queryClient = useQueryClient();
@@ -36,28 +36,62 @@ export default function CrearAsignacionWizard({ onClose }) {
   const [searchPieza, setSearchPieza] = useState('');
   const [searchPlan, setSearchPlan] = useState('');
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
+  const { user: authUser, authError: authErrorContext } = useAuth();
 
   const { data: estudiantes = [] } = useQuery({
     queryKey: ['estudiantes'],
     queryFn: async () => {
-      const users = await base44.entities.User.list();
+      const users = await localDataClient.entities.User.list();
       return users.filter(u => u.rolPersonalizado === 'ESTU');
     },
   });
 
   const { data: piezas = [] } = useQuery({
     queryKey: ['piezas'],
-    queryFn: () => base44.entities.Pieza.list(),
+    queryFn: () => localDataClient.entities.Pieza.list(),
   });
 
   const { data: planes = [] } = useQuery({
     queryKey: ['planes'],
-    queryFn: () => base44.entities.Plan.list(),
+    queryFn: () => localDataClient.entities.Plan.list(),
   });
 
   const crearAsignacionesMutation = useMutation({
     mutationFn: async (data) => {
+      // Usar usuario del contexto AuthProvider en lugar de llamar directamente a supabase.auth.getUser()
+      // Verificar si hay error de autenticación en el contexto
+      if (authErrorContext) {
+        const isSessionNotFound = authErrorContext.message?.includes('session_not_found') || 
+                                  authErrorContext.status === 403 ||
+                                  authErrorContext.code === 'session_not_found';
+        if (isSessionNotFound) {
+          throw new Error('Sesión expirada. Por favor, vuelve a iniciar sesión.');
+        }
+        throw new Error('Error de autenticación. Por favor, inicia sesión nuevamente.');
+      }
+      
+      // Verificar que hay usuario autenticado
+      if (!authUser && !effectiveUser) {
+        throw new Error('Usuario no autenticado. Por favor, inicia sesión nuevamente.');
+      }
+
+      // Usar authUser.id (del contexto) si está disponible, sino effectiveUser?.id
+      const profesorId = authUser?.id || effectiveUser?.id;
+      
+      if (!profesorId) {
+        throw new Error('No se pudo obtener el ID del profesor. Por favor, inicia sesión nuevamente.');
+      }
+
+      // Logging para depuración
+      console.log('[CrearAsignacionWizard] Creando asignación:', {
+        authUid: authUser.id,
+        effectiveUserId: effectiveUser?.id,
+        profesorId,
+        match: authUser.id === effectiveUser?.id,
+        estudiantesIds: data.estudiantesIds.length,
+      });
+
       const pieza = piezas.find(p => p.id === data.piezaId);
       const plan = planes.find(p => p.id === data.planId);
       
@@ -83,17 +117,34 @@ export default function CrearAsignacionWizard({ onClose }) {
         notas: data.notas || null,
         plan: planCopy,
         piezaSnapshot,
-        profesorId: currentUser?.id,
+        profesorId, // Usar el ID obtenido de auth.uid()
       }));
 
       const results = [];
       for (const asignacion of asignaciones) {
         try {
-          const result = await base44.entities.Asignacion.create(asignacion);
+          const result = await localDataClient.entities.Asignacion.create(asignacion);
           results.push(result);
         } catch (error) {
+          console.error('[CrearAsignacionWizard] Error al crear asignación:', {
+            error: error?.message || error,
+            code: error?.code,
+            status: error?.status,
+            details: error?.details,
+            asignacion,
+          });
+          
           const alumno = estudiantes.find(e => e.id === asignacion.alumnoId);
-          toast.error(`❌ No se pudo crear la asignación para ${alumno?.full_name}`);
+          const errorMessage = error?.message || 'Error desconocido';
+          
+          // Mensajes de error más descriptivos
+          if (error?.code === '42501' || errorMessage.includes('row-level security')) {
+            toast.error(`❌ Error de permisos: No tienes permiso para crear esta asignación. Verifica que estés autenticado correctamente.`);
+          } else if (errorMessage.includes('CORS') || error?.status === null) {
+            toast.error(`❌ Error de CORS: Problema de conexión con el servidor. Verifica tu conexión y configuración de CORS en Supabase.`);
+          } else {
+            toast.error(`❌ No se pudo crear la asignación para ${alumno?.full_name || 'el estudiante'}: ${errorMessage}`);
+          }
         }
       }
       
@@ -134,7 +185,7 @@ export default function CrearAsignacionWizard({ onClose }) {
   }, [formData.fechaSeleccionada]);
 
   const filteredEstudiantes = estudiantes.filter(e =>
-    e.full_name?.toLowerCase().includes(searchEstudiante.toLowerCase()) ||
+    displayName(e).toLowerCase().includes(searchEstudiante.toLowerCase()) ||
     e.email?.toLowerCase().includes(searchEstudiante.toLowerCase())
   );
 
@@ -200,13 +251,13 @@ export default function CrearAsignacionWizard({ onClose }) {
       
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <Card className="w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col pointer-events-auto app-card shadow-card">
-          <CardHeader className="border-b border-ui bg-brand-500 text-white rounded-t-2xl">
+          <CardHeader className="border-b border-[var(--color-border-default)] bg-brand-500 text-white rounded-t-[var(--radius-modal)]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Target className="w-6 h-6" />
                 <CardTitle className="text-xl">Nueva Asignación</CardTitle>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20 h-9 w-9 rounded-xl" aria-label="Cerrar wizard">
+              <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20 h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-[var(--btn-radius)] touch-manipulation" aria-label="Cerrar wizard">
                 <X className="w-5 h-5" />
               </Button>
             </div>
@@ -247,20 +298,26 @@ export default function CrearAsignacionWizard({ onClose }) {
                     placeholder="Buscar por nombre o email..."
                     value={searchEstudiante}
                     onChange={(e) => setSearchEstudiante(e.target.value)}
-                    className="pl-10 h-10 rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                    className="pl-10 h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    data-lt-active="false"
+                    data-gramm="false"
+                    data-form-type="other"
                     aria-label="Buscar estudiantes"
                   />
                 </div>
 
                 {formData.estudiantesIds.length > 0 && (
-                  <Alert className="rounded-xl border-blue-200 bg-blue-50">
-                    <AlertDescription className="text-blue-800">
+                  <Alert className="rounded-[var(--radius-card)] border-[var(--color-info)]/20 bg-[var(--color-info)]/10">
+                    <AlertDescription className="text-[var(--color-info)]">
                       <strong>{formData.estudiantesIds.length} estudiante(s) seleccionado(s)</strong>
                     </AlertDescription>
                   </Alert>
                 )}
 
-                <div className="grid md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                <div className={`${componentStyles.layout.grid2} gap-3 max-h-96 overflow-y-auto`}>
                   {filteredEstudiantes.length === 0 ? (
                     <p className="col-span-2 text-center text-muted py-8">
                       No se encontraron estudiantes
@@ -279,7 +336,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                         <CardContent className="pt-4 flex items-center gap-3">
                           <Checkbox checked={formData.estudiantesIds.includes(estudiante.id)} />
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate text-ui">{estudiante.full_name}</p>
+                            <p className="font-medium truncate text-ui">{displayName(estudiante)}</p>
                             <p className="text-sm text-muted truncate">{estudiante.email}</p>
                           </div>
                         </CardContent>
@@ -308,12 +365,12 @@ export default function CrearAsignacionWizard({ onClose }) {
                     placeholder="Buscar piezas..."
                     value={searchPieza}
                     onChange={(e) => setSearchPieza(e.target.value)}
-                    className="pl-10 h-10 rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                    className="pl-10 h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
                     aria-label="Buscar piezas"
                   />
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                <div className={`${componentStyles.layout.grid2} gap-3 max-h-96 overflow-y-auto`}>
                   {filteredPiezas.length === 0 ? (
                     <p className="col-span-2 text-center text-muted py-8">
                       No se encontraron piezas
@@ -349,8 +406,8 @@ export default function CrearAsignacionWizard({ onClose }) {
                 </div>
 
                 {piezaSeleccionada && (
-                  <Alert className="rounded-xl border-green-200 bg-green-50">
-                    <AlertDescription className="text-green-800">
+                  <Alert className="rounded-[var(--radius-card)] border-[var(--color-success)]/20 bg-[var(--color-success)]/10">
+                    <AlertDescription className="text-[var(--color-success)]">
                       ✅ Pieza seleccionada: <strong>{piezaSeleccionada.nombre}</strong>
                     </AlertDescription>
                   </Alert>
@@ -376,7 +433,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                     placeholder="Buscar planes..."
                     value={searchPlan}
                     onChange={(e) => setSearchPlan(e.target.value)}
-                    className="pl-10 h-10 rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                    className="pl-10 h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
                     aria-label="Buscar planes"
                   />
                 </div>
@@ -423,8 +480,8 @@ export default function CrearAsignacionWizard({ onClose }) {
                 </div>
 
                 {planSeleccionado && (
-                  <Alert className="rounded-xl border-green-200 bg-green-50">
-                    <AlertDescription className="text-green-800">
+                  <Alert className="rounded-[var(--radius-card)] border-[var(--color-success)]/20 bg-[var(--color-success)]/10">
+                    <AlertDescription className="text-[var(--color-success)]">
                       ✅ Plan seleccionado: <strong>{planSeleccionado.nombre}</strong> ({planSeleccionado.semanas?.length || 0} semanas)
                     </AlertDescription>
                   </Alert>
@@ -451,13 +508,13 @@ export default function CrearAsignacionWizard({ onClose }) {
                     type="date"
                     value={formData.fechaSeleccionada}
                     onChange={(e) => setFormData({ ...formData, fechaSeleccionada: e.target.value })}
-                    className="max-w-md h-10 rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
+                    className="max-w-md h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]"
                   />
                 </div>
 
                 {formData.fechaSeleccionada && formData.semanaInicioISO && (
-                  <Alert className="rounded-xl border-blue-200 bg-blue-50 max-w-md">
-                    <AlertDescription className="text-blue-800">
+                  <Alert className="rounded-[var(--radius-card)] border-[var(--color-info)]/20 bg-[var(--color-info)]/10 max-w-md">
+                    <AlertDescription className="text-[var(--color-info)]">
                       <strong>Fecha elegida:</strong> {parseLocalDate(formData.fechaSeleccionada).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                       <br />
                       <strong>Semana ISO guardada:</strong> Del lunes {parseLocalDate(formData.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })} al domingo {parseLocalDate(getDomingoSemana(formData.semanaInicioISO)).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
@@ -488,7 +545,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                 <div>
                   <Label htmlFor="foco">Foco Específico</Label>
                   <Select value={formData.foco} onValueChange={(v) => setFormData({ ...formData, foco: v })}>
-                    <SelectTrigger className="h-10 rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]" aria-label="Seleccionar foco">
+                    <SelectTrigger className="h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]" aria-label="Seleccionar foco">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="z-[120]" position="popper">
@@ -508,11 +565,11 @@ export default function CrearAsignacionWizard({ onClose }) {
                     onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
                     placeholder="Instrucciones adicionales o notas..."
                     rows={4}
-                    className="rounded-xl border-ui focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))] resize-none"
+                    className="rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))] resize-none"
                   />
                 </div>
 
-                <div className="flex items-center space-x-2 p-4 border border-ui rounded-xl app-panel">
+                <div className="flex items-center space-x-2 p-4 border border-[var(--color-border-default)] rounded-[var(--radius-card)] app-panel">
                   <Checkbox
                     id="publicar"
                     checked={formData.publicarAlTerminar}
@@ -528,7 +585,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                   </div>
                 </div>
 
-                <Alert className="rounded-xl border-brand-200 bg-brand-50">
+                <Alert className="rounded-[var(--radius-card)] border-brand-200 bg-brand-50">
                   <AlertDescription className="text-brand-800">
                     <strong>Resumen:</strong>
                     <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
@@ -545,13 +602,13 @@ export default function CrearAsignacionWizard({ onClose }) {
             )}
           </CardContent>
 
-          <div className="border-t border-ui px-6 py-4 bg-muted rounded-b-2xl">
+          <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-muted rounded-b-[var(--radius-modal)]">
             <div className="flex justify-between">
               <Button
                 variant="outline"
                 onClick={() => step === 1 ? onClose() : setStep(step - 1)}
                 disabled={crearAsignacionesMutation.isPending}
-                className="h-10 rounded-xl"
+                className="h-10 rounded-[var(--btn-radius)]"
               >
                 <ChevronLeft className="w-4 h-4 mr-2" />
                 {step === 1 ? 'Cancelar' : 'Anterior'}
@@ -561,7 +618,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                 <Button
                   onClick={() => setStep(step + 1)}
                   disabled={!canProceed()}
-                  className="btn-primary h-10 rounded-xl shadow-sm"
+                  className="btn-primary h-10 rounded-[var(--btn-radius)] shadow-sm"
                 >
                   Siguiente
                   <ChevronRight className="w-4 h-4 ml-2" />
@@ -570,7 +627,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                 <Button
                   onClick={handleFinalizar}
                   disabled={crearAsignacionesMutation.isPending}
-                  className="btn-primary h-10 rounded-xl shadow-sm"
+                  className="btn-primary h-10 rounded-[var(--btn-radius)] shadow-sm"
                 >
                   {crearAsignacionesMutation.isPending ? (
                     'Creando...'

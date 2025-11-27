@@ -15,20 +15,26 @@ import {
   X,
   ChevronRight,
   LogOut,
-  UserCog,
   Edit3,
   PanelLeft,
-  PanelLeftClose,
   FileDown,
   Beaker,
   Layers,
   Palette,
+  Bug,
+  MessageSquare,
+  HelpCircle,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getCurrentUser, setCurrentUser } from "@/api/localDataClient";
+import { LoadingSpinner } from "@/components/ds";
+import SkipLink from "@/components/ds/SkipLink";
+import { setCurrentUser, localDataClient } from "@/api/localDataClient";
 import { useLocalData } from "@/local-data/LocalDataProvider";
 import logoLTS from "@/assets/Logo_LTS.png";
 import RoleBootstrap from "@/components/auth/RoleBootstrap";
+import { useAuth } from "@/auth/AuthProvider";
+import { isAuthError } from "@/lib/authHelpers";
 import { SidebarProvider, useSidebar } from "@/components/ui/SidebarState";
 import {
   Tooltip,
@@ -37,8 +43,21 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getAppName } from "@/components/utils/appMeta";
-import { DesignProvider } from "@/components/design/DesignProvider";
+import { componentStyles } from "@/design/componentStyles";
 import { Outlet } from "react-router-dom";
+import { displayName, getEffectiveRole, useEffectiveUser } from "@/components/utils/helpers";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import PerfilModal from "@/components/common/PerfilModal";
+import { useDesign } from "@/components/design/DesignProvider";
+import ReportErrorButton from "@/components/common/ReportErrorButton";
+import { useQuery } from "@tanstack/react-query";
+import { listErrorReports } from "@/api/errorReportsAPI";
+import { Badge } from "@/components/ds";
+import { SupportTicketsBadge } from "@/components/common/SupportTicketsBadge";
+import { shouldIgnoreHotkey, matchesHotkey, getHotkeyById, HOTKEYS_CONFIG, isMac } from "@/utils/hotkeys";
+import HotkeysModal from "@/components/common/HotkeysModal";
+import { HotkeysModalProvider, useHotkeysModal } from "@/hooks/useHotkeysModal.jsx";
+import { useAppVersion } from "@/hooks/useAppVersion";
 
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
@@ -46,9 +65,13 @@ const navigationByRole = {
     { title: "Usuarios", url: "/usuarios", icon: Users, group: "Planificador" },
     { title: "Asignaciones", url: "/asignaciones", icon: Target, group: "Planificador" },
     { title: "Plantillas", url: "/plantillas", icon: Edit3, group: "Planificador" },
-    { title: "Agenda", url: "/agenda", icon: Calendar, group: "Vista" },
-    { title: "Estadísticas", url: "/estadisticas", icon: Activity, group: "Vista" },
+    { title: "Tickets alumnos", url: "/soporte-prof", icon: MessageSquare, group: "Profesor" },
+    { title: "Agenda", url: "/agenda", icon: Calendar, group: "Profesor" },
+    { title: "Calendario", url: "/calendario", icon: Calendar, group: "Profesor" },
+    { title: "Estadísticas", url: "/estadisticas", icon: Activity, group: "Profesor" },
+    { title: "Reportes", url: "/reportes", icon: Bug, group: "Admin" },
     { title: "Panel de Diseño", url: "/design", icon: Palette, group: "Admin" },
+    { title: "Versión y Registro", url: "/admin/version", icon: Tag, group: "Admin" },
     { title: "Tests & Seeds", url: "/testseed", icon: Settings, group: "Admin" },
     { title: "Importar y Exportar", url: "/import-export", icon: FileDown, group: "Admin" },
   ],
@@ -56,12 +79,16 @@ const navigationByRole = {
     { title: "Mis Estudiantes", url: "/estudiantes", icon: Users, group: "Planificador" },
     { title: "Asignaciones", url: "/asignaciones", icon: Target, group: "Planificador" },
     { title: "Plantillas", url: "/plantillas", icon: Edit3, group: "Planificador" },
-    { title: "Agenda", url: "/agenda", icon: Calendar, group: "Vista" },
-    { title: "Estadísticas", url: "/estadisticas", icon: Activity, group: "Vista" },
+    { title: "Tickets alumnos", url: "/soporte-prof", icon: MessageSquare, group: "Profesor" },
+    { title: "Agenda", url: "/agenda", icon: Calendar, group: "Profesor" },
+    { title: "Calendario", url: "/calendario", icon: Calendar, group: "Profesor" },
+    { title: "Estadísticas", url: "/estadisticas", icon: Activity, group: "Profesor" },
   ],
   ESTU: [
-    { title: "Estudiar Ahora", url: "/hoy", icon: PlayCircle, group: "Estudio" },
+    { title: "Studia ahora", url: "/hoy", icon: PlayCircle, group: "Estudio" },
     { title: "Mi Semana", url: "/semana", icon: Calendar, group: "Estudio" },
+    { title: "Calendario", url: "/calendario", icon: Calendar, group: "Estudio" },
+    { title: "Centro de dudas", url: "/soporte", icon: MessageSquare, group: "Estudio" },
     { title: "Mis Estadísticas", url: "/estadisticas", icon: Activity, group: "Estudio" },
   ],
 };
@@ -81,11 +108,15 @@ function LayoutContent() {
   const navigate = useNavigate();
   const { abierto, toggleSidebar, closeSidebar } = useSidebar();
   const { usuarios } = useLocalData();
+  const { signOut, user, loading: authLoading, checkSession, handleAuthError } = useAuth();
+  const { setShowHotkeysModal } = useHotkeysModal();
 
-  const [simulatingUser, setSimulatingUser] = useState(null);
   const [pointerStart, setPointerStart] = useState({ x: 0, y: 0, id: null });
   const [isMobile, setIsMobile] = useState(false);
   const toggleLockRef = useRef(0);
+  const headerToggleButtonRef = useRef(null);
+  const { design, setDesignPartial } = useDesign();
+  const { currentVersion } = useAppVersion();
 
   const appName = getAppName();
 
@@ -106,8 +137,9 @@ function LayoutContent() {
     safeToggle();
   };
 
-  /* Usuario actual - usar getCurrentUser() local */
-  const currentUser = getCurrentUser();
+  /* Usuario actual - usar useEffectiveUser() unificado */
+  const effectiveUser = useEffectiveUser();
+  const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
   const isLoading = false; // No hay loading en local
 
   /* Detector mobile */
@@ -122,12 +154,6 @@ function LayoutContent() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  /* Simulación */
-  useEffect(() => {
-    const sim = sessionStorage.getItem("simulatingUser");
-    if (sim) setSimulatingUser(JSON.parse(sim));
-  }, [location]);
-
   /* Cerrar sidebar al navegar en mobile */
   useEffect(() => {
     if (isMobile) {
@@ -135,23 +161,134 @@ function LayoutContent() {
     }
   }, [location.pathname, isMobile, closeSidebar]);
 
-  /* Hotkey: Ctrl/⌘ + M - funciona SIEMPRE (incluso con modales) */
+  // A11y: mover foco fuera del sidebar cuando se cierra en mobile
   useEffect(() => {
-    const handleKey = (e) => {
-      const active = document.activeElement;
-      const inEditable =
-        ["INPUT", "TEXTAREA", "SELECT"].includes(active?.tagName) ||
-        active?.isContentEditable;
-      if (inEditable) return;
+    const sidebarEl = document.getElementById("sidebar");
+    const active = document.activeElement;
+    if (isMobile && !abierto && sidebarEl && active && sidebarEl.contains(active)) {
+      headerToggleButtonRef.current?.focus?.();
+    }
+  }, [abierto, isMobile]);
 
-      if ((e.metaKey || e.ctrlKey) && (e.key === "m" || e.key === "M")) {
-        e.preventDefault();
-        safeToggle();
+  // A11y: al abrir el sidebar en mobile, mover el foco al propio sidebar
+  useEffect(() => {
+    if (!isMobile) return;
+    if (abierto) {
+      const sidebarEl = document.getElementById("sidebar");
+      const mainEl = document.querySelector("main");
+      const active = document.activeElement;
+      if (mainEl && active && mainEl.contains(active)) {
+        // Evitar tener foco en un descendiente de un contenedor aria-hidden/inert
+        sidebarEl?.focus?.();
+      }
+    }
+  }, [abierto, isMobile]);
+
+  /* Hotkeys globales */
+  useEffect(() => {
+    const userRole = effectiveUser?.rolPersonalizado || 'ESTU';
+    
+    const handleKey = (e) => {
+      // Usar helper centralizado para detectar campos editables
+      if (shouldIgnoreHotkey(e)) return;
+
+      // Mapeo de IDs de hotkeys a sus acciones
+      const hotkeyActions = {
+        'toggle-sidebar': () => {
+          e.preventDefault();
+          safeToggle();
+        },
+        'toggle-theme': () => {
+          e.preventDefault();
+          const currentTheme = design?.theme || 'light';
+          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+          setDesignPartial('theme', newTheme);
+        },
+        'toggle-hotkeys-modal': () => {
+          e.preventDefault();
+          setShowHotkeysModal(prev => !prev);
+        },
+        'logout': () => {
+          e.preventDefault();
+          if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+            signOut();
+          }
+        },
+        // Navegación
+        'go-studia': () => {
+          e.preventDefault();
+          navigate(createPageUrl('hoy'));
+        },
+        'go-week': () => {
+          e.preventDefault();
+          navigate(createPageUrl('semana'));
+        },
+        'go-stats-estu': () => {
+          e.preventDefault();
+          navigate(createPageUrl('estadisticas'));
+        },
+        'go-calendar-estu': () => {
+          e.preventDefault();
+          navigate(createPageUrl('calendario'));
+        },
+        'go-support': () => {
+          e.preventDefault();
+          navigate(createPageUrl('soporte'));
+        },
+        'go-assignments': () => {
+          e.preventDefault();
+          navigate(createPageUrl('asignaciones'));
+        },
+        'go-agenda': () => {
+          e.preventDefault();
+          navigate(createPageUrl('agenda'));
+        },
+        'go-templates': () => {
+          e.preventDefault();
+          navigate(createPageUrl('plantillas'));
+        },
+        'go-stats-prof': () => {
+          e.preventDefault();
+          navigate(createPageUrl('estadisticas'));
+        },
+        'go-calendar-prof': () => {
+          e.preventDefault();
+          navigate(createPageUrl('calendario'));
+        },
+        'go-users': () => {
+          e.preventDefault();
+          navigate(createPageUrl('usuarios'));
+        },
+        'go-import': () => {
+          e.preventDefault();
+          navigate(createPageUrl('import-export'));
+        },
+        'go-design': () => {
+          e.preventDefault();
+          navigate(createPageUrl('design'));
+        },
+      };
+
+      // Procesar hotkeys globales permitidos para este rol
+      for (const hotkey of HOTKEYS_CONFIG) {
+        if (hotkey.scope !== 'global' || !hotkey.roles.includes(userRole)) {
+          continue;
+        }
+
+        // Verificar si el hotkey coincide (primary o aliases)
+        if (matchesHotkey(e, hotkey)) {
+          const action = hotkeyActions[hotkey.id];
+          if (action) {
+            action();
+            return; // Handler procesó el evento
+          }
+        }
       }
     };
+
     window.addEventListener("keydown", handleKey, { capture: true, passive: false });
     return () => window.removeEventListener("keydown", handleKey, { capture: true });
-  }, []);
+  }, [design, setDesignPartial, safeToggle, navigate, effectiveUser, signOut, setShowHotkeysModal]);
 
   /* Gestos: swipe desde borde para abrir; swipe izq para cerrar */
   useEffect(() => {
@@ -199,24 +336,150 @@ function LayoutContent() {
     return () => (document.body.style.overflow = "");
   }, [abierto, isMobile]);
 
+  // Rutas públicas que no deben redirigir a login
+  const publicRoutes = ['/login', '/reset-password'];
+  const isPublicRoute = publicRoutes.includes(location.pathname);
+
+  // Detectar cuando la sesión caduca y redirigir al login
+  useEffect(() => {
+    // No redirigir si estamos en una ruta pública
+    if (isPublicRoute) return;
+    
+    // Solo verificar si no está cargando y no hay usuario
+    if (!authLoading && !user) {
+      // La sesión caducó o no hay usuario autenticado
+      // RequireAuth debería manejar esto, pero esto es un respaldo
+      navigate('/login', { replace: true });
+    }
+  }, [user, authLoading, location.pathname, navigate, isPublicRoute]);
+
+  // Verificación proactiva de sesión usando checkSession
+  useEffect(() => {
+    // No verificar si estamos en una ruta pública
+    if (isPublicRoute) return;
+    
+    // Solo verificar si hay usuario (si no hay usuario, RequireAuth ya maneja la redirección)
+    if (!user || authLoading || !checkSession) {
+      return;
+    }
+
+    // Verificar sesión periódicamente (cada 2 minutos) como respaldo adicional
+    const sessionCheckInterval = setInterval(async () => {
+      try {
+        const isValid = await checkSession();
+        if (!isValid) {
+          // Sesión inválida - redirigir
+          navigate('/login', { replace: true });
+        }
+      } catch (error) {
+        // Si hay error de autenticación, manejarlo
+        if (error && isAuthError(error)) {
+          if (handleAuthError) {
+            await handleAuthError(error);
+          }
+          navigate('/login', { replace: true });
+        }
+      }
+    }, 2 * 60 * 1000); // 2 minutos
+
+    return () => {
+      clearInterval(sessionCheckInterval);
+    };
+  }, [user, authLoading, location.pathname, navigate, checkSession, handleAuthError, isPublicRoute]);
+
   const onMenuItemClick = () => {
     if (isMobile) closeSidebar();
   };
 
+  // Obtener el rol efectivo usando la función unificada
+  const { appRole } = useAuth();
+  const userRole = getEffectiveRole({ appRole, currentUser: effectiveUser }) || null;
+  
+  // Obtener conteos de reportes para el badge (solo para ADMIN)
+  // IMPORTANTE: Este hook debe estar antes del return condicional
+  const { data: reportCounts } = useQuery({
+    queryKey: ['error-reports-counts'],
+    queryFn: async () => {
+      if (userRole !== 'ADMIN') {
+        return { nuevos: 0, enRevision: 0 };
+      }
+      
+      try {
+        // Usar la misma lógica que la página de reportes: traer todos y filtrar
+        // Esto asegura que contamos igual que la vista de reportes
+        const allReports = await listErrorReports();
+        
+        // Filtrar excluyendo 'resuelto', igual que cuando statusFilter = 'active'
+        const activeReports = allReports.filter(r => r.status !== 'resuelto');
+        
+        // Contar por estado
+        const nuevos = activeReports.filter(r => r.status === 'nuevo').length;
+        const enRevision = activeReports.filter(r => r.status === 'en_revision').length;
+        
+        return {
+          nuevos,
+          enRevision
+        };
+      } catch (error) {
+        // Ignorar errores CORS o de red silenciosamente
+        // Estos pueden ocurrir si la sesión expiró o hay problemas de conectividad
+        if (error?.message?.includes('CORS') || 
+            error?.message?.includes('NetworkError') ||
+            error?.message?.includes('No hay sesión activa') ||
+            error?.code === 'PGRST301' || 
+            error?.status === 401 ||
+            error?.status === 403) {
+          return { nuevos: 0, enRevision: 0 };
+        }
+        // Solo loguear errores inesperados
+        console.error('[Layout] Error obteniendo conteos de reportes:', error);
+        return { nuevos: 0, enRevision: 0 };
+      }
+    },
+    enabled: Boolean(userRole) && userRole === 'ADMIN' && Boolean(user),
+    refetchInterval: 30000, // Refrescar cada 30 segundos
+    staleTime: 10000, // Considerar datos frescos por 10 segundos
+    retry: false, // No reintentar si falla (evita spam de errores)
+  });
+  
+  // Debug: verificar el rol calculado (desactivado)
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[hsl(var(--brand-500))] border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted">Cargando {appName}...</p>
-        </div>
-      </div>
+      <LoadingSpinner 
+        size="xl" 
+        variant="fullPage" 
+        text={`Cargando ${appName}...`}
+      />
     );
   }
+  
+  // Mapeo de URLs a los roles que tienen acceso
+  const pagePermissions = {
+    '/usuarios': ['ADMIN'],
+    '/reportes': ['ADMIN'],
+    '/estudiantes': ['PROF', 'ADMIN'],
+    '/asignaciones': ['PROF', 'ADMIN'],
+    '/plantillas': ['PROF', 'ADMIN'],
+    '/agenda': ['PROF', 'ADMIN'],
+    '/calendario': ['ESTU', 'PROF', 'ADMIN'],
+    '/hoy': ['ESTU'],
+    '/semana': ['ESTU'],
+    '/estadisticas': ['ESTU', 'PROF', 'ADMIN'],
+    '/design': ['ADMIN'],
+    '/admin/version': ['ADMIN'],
+    '/testseed': ['ADMIN'],
+    '/import-export': ['ADMIN'],
+    '/soporte': ['ESTU'],
+    '/soporte-prof': ['PROF', 'ADMIN'],
+  };
 
-  const userRole =
-    simulatingUser?.rolPersonalizado || currentUser?.rolPersonalizado || "ESTU";
-  const items = navigationByRole[userRole] || navigationByRole.ESTU;
+  // Filtrar items del sidebar según los permisos reales de acceso
+  const allItems = navigationByRole[userRole] || navigationByRole.ESTU;
+  const items = allItems.filter(item => {
+    const allowedRoles = pagePermissions[item.url];
+    return allowedRoles && allowedRoles.includes(userRole);
+  });
 
   const grouped = items.reduce((acc, it) => {
     (acc[it.group] ||= []).push(it);
@@ -224,39 +487,49 @@ function LayoutContent() {
   }, {});
 
   const logout = async () => {
-    sessionStorage.removeItem("simulatingUser");
-    sessionStorage.removeItem("originalUser");
-    sessionStorage.removeItem("originalPath");
-    // No llamar a base44.auth.logout() - solo limpiar sessionStorage
-  };
-
-  const stopSimulation = () => {
-    const originalPath = sessionStorage.getItem("originalPath");
-    sessionStorage.removeItem("simulatingUser");
-    sessionStorage.removeItem("originalUser");
-    sessionStorage.removeItem("originalPath");
-    setSimulatingUser(null);
-
-    if (originalPath) {
-      navigate(originalPath, { replace: true });
-    } else {
-      const r = currentUser?.rolPersonalizado;
-      const target = mainPageByRole[r] || "/hoy";
-      navigate(createPageUrl(target.split("/").pop()), { replace: true });
+    try {
+      // Cerrar sesión en Supabase
+      await signOut();
+    } catch (error) {
+      // Si es un error de sesión faltante o expirada, es válido continuar
+      // El objetivo es cerrar sesión y si no hay sesión, ya estamos en el estado deseado
+      if (error?.message?.includes('Auth session missing') || 
+          error?.message?.includes('JWT expired') ||
+          error?.status === 403) {
+        // No mostrar error si simplemente no hay sesión
+      } else {
+      console.error("Error al cerrar sesión:", error);
+      }
     }
+    
+    // Limpiar datos locales siempre (incluso si falló el signOut de Supabase)
+    try {
+      if (localDataClient?.auth?.logout) {
+        await localDataClient.auth.logout();
+      }
+    } catch (localError) {
+      console.warn('[Layout] Error limpiando datos locales:', localError);
+    }
+    
+    // Redirigir a login siempre
+      navigate("/login", { replace: true });
   };
+
+  const [perfilModalOpen, setPerfilModalOpen] = useState(false);
 
   const goProfile = () => {
     if (isMobile) closeSidebar();
-    navigate(createPageUrl("perfil"));
+    setPerfilModalOpen(true);
   };
 
   /* ------------------------------- Render -------------------------------- */
   return (
     <RoleBootstrap>
+      <SkipLink href="#main-content" />
       <div
         className="min-h-screen w-full bg-background"
         data-sidebar-abierto={abierto}
+        id="main-content"
       >
         {/* Overlay mobile */}
         <div
@@ -273,20 +546,26 @@ function LayoutContent() {
         <aside
           id="sidebar"
           aria-label="Menú de navegación"
-          aria-hidden={!abierto && isMobile}
+          aria-hidden={!abierto}
           data-open={abierto}
+          inert={!abierto ? "" : undefined}
+          tabIndex={!abierto ? -1 : undefined}
           className={`
-            bg-card border-r border-ui z-[90] flex flex-col
+            z-[90] flex flex-col sidebar-modern
             transition-transform duration-200 will-change-transform transform-gpu
             fixed inset-y-0 left-0 w-[280px]
+            border-r border-[var(--color-border-strong)]
+            shadow-[1px_0_4px_rgba(0,0,0,0.2)]
             ${abierto ? "translate-x-0" : "-translate-x-full lg:-translate-x-full"}
           `}
           style={{
             transform: abierto ? 'translateX(0)' : 'translateX(-100%)',
+            backgroundColor: 'var(--sidebar-bg)',
+            pointerEvents: !abierto ? 'none' : 'auto',
           }}
         >
           {/* Header del sidebar */}
-          <div className="border-b border-ui p-6">
+          <div className="border-b border-[var(--color-border-default)]/30 p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-card overflow-hidden">
                 <img 
@@ -296,8 +575,8 @@ function LayoutContent() {
                 />
               </div>
               <div>
-                <h2 className="font-bold text-ui text-lg">{appName}</h2>
-                <p className="text-xs text-muted uppercase tracking-wide font-medium">
+                <h2 className="font-bold text-[var(--color-text-primary)] text-lg font-headings">{appName}</h2>
+                <p className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide font-medium">
                   {ROLE_LABEL[userRole] || "Estudiante"}
                 </p>
               </div>
@@ -307,23 +586,55 @@ function LayoutContent() {
           {/* Navegación */}
           <div className="flex-1 overflow-y-auto p-3">
             {Object.entries(grouped).map(([group, groupItems]) => (
-              <div key={group} className="mb-4">
-                <p className="nav-section-title">
+              <div key={group} className="mb-6">
+                <p className={componentStyles.components.menuSectionTitle}>
                   {group}
                 </p>
                 <div className="space-y-1">
                   {groupItems.map((item) => {
                     const isActive = location.pathname === item.url;
+                    const isReportes = item.url === '/reportes';
+                    const isSoporte = item.url === '/soporte-prof' || item.url === '/soporte';
+                    const nuevos = reportCounts?.nuevos || 0;
+                    const enRevision = reportCounts?.enRevision || 0;
+                    const totalCount = isReportes ? (nuevos + enRevision) : 0;
+                    
                     return (
                       <Link
                         key={item.title}
                         to={createPageUrl(item.url.split("/").pop())}
-                        className={isActive ? "nav-item nav-item-active" : "nav-item"}
+                        className={
+                          isActive
+                            ? `${componentStyles.components.menuItem} ${componentStyles.components.menuItemActive}`
+                            : componentStyles.components.menuItem
+                        }
                         onClick={onMenuItemClick}
                       >
-                        <item.icon className="w-5 h-5" />
-                        <span className="font-medium">{item.title}</span>
-                        {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
+                        <div className="relative shrink-0">
+                          <item.icon className="w-5 h-5 text-[var(--color-text-secondary)]" />
+                          {isReportes && totalCount > 0 && (
+                            <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-[var(--color-danger)] rounded-full z-10">
+                              {totalCount > 99 ? '99+' : totalCount}
+                            </span>
+                          )}
+                        </div>
+                        <span className="font-medium flex-1">{item.title}</span>
+                        {isReportes && totalCount > 0 && (
+                          <div className="flex items-center gap-1 ml-2 shrink-0">
+                            {nuevos > 0 && (
+                              <Badge variant="danger" className="text-[10px] px-1.5 py-0 h-5 min-w-[20px] flex items-center justify-center">
+                                {nuevos}
+                              </Badge>
+                            )}
+                            {enRevision > 0 && (
+                              <Badge variant="warning" className="text-[10px] px-1.5 py-0 h-5 min-w-[20px] flex items-center justify-center">
+                                {enRevision}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                        {isSoporte && <SupportTicketsBadge />}
+                        {isActive && <ChevronRight className="w-4 h-4 ml-auto shrink-0" />}
                       </Link>
                     );
                   })}
@@ -333,90 +644,43 @@ function LayoutContent() {
           </div>
 
           {/* Pie del sidebar */}
-          <div className="border-t border-ui p-4 pt-3 space-y-3">
-            {/* Selector de usuario local */}
-            <div className="px-2 py-2 rounded-xl bg-muted border border-ui">
-              <label className="text-[11px] font-medium text-ui mb-1 block">
-                Usuario Local:
-              </label>
-              <select
-                value={currentUser?.id || ''}
-                onChange={(e) => {
-                  setCurrentUser(e.target.value);
-                  window.location.reload();
-                }}
-                className="w-full p-1.5 text-xs rounded-lg bg-card border border-ui text-ui"
-              >
-                {usuarios.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.nombreCompleto || user.full_name} ({ROLE_LABEL[user.rolPersonalizado]})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {simulatingUser && (
-              <div className="px-2 py-2 rounded-xl bg-amber-50 border border-amber-200">
-                <div className="flex items-start gap-2">
-                  <UserCog className="w-4 h-4 text-amber-700 mt-0.5" />
-                  <div className="text-[11px] text-amber-900 leading-snug">
-                    Simulando:{" "}
-                    <span className="font-semibold">{simulatingUser.full_name}</span>
-                    <span className="text-amber-700">
-                      {" "}
-                      ({ROLE_LABEL[simulatingUser.rolPersonalizado]})
-                    </span>
-                    <div className="mt-1">
-                      <button
-                        onClick={stopSimulation}
-                        className="text-[11px] text-amber-700 hover:text-amber-900 underline underline-offset-2"
-                      >
-                        Terminar simulación
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {!isMobile && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={safeToggle}
-                className="w-full justify-start gap-2 text-muted hover:text-ui hover:bg-muted min-h-[44px] h-10 rounded-xl"
-                aria-label="Ocultar menú lateral"
-              >
-                <PanelLeftClose className="w-4 h-4" />
-                Ocultar menú (Ctrl/⌘+M)
-              </Button>
-            )}
-
+          <div className="border-t border-[var(--color-border-default)]/30 p-4 pt-3 space-y-3 text-[var(--color-text-secondary)]">
             <button
               onClick={goProfile}
-              className="flex items-center gap-3 px-2 w-full hover:bg-muted rounded-xl py-2 transition-all cursor-pointer min-h-[44px]"
+              className="flex items-center gap-3 px-2 w-full hover:bg-[var(--color-surface-muted)] rounded-xl py-2 transition-all cursor-pointer min-h-[44px]"
               aria-label="Ver perfil de usuario"
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-[hsl(var(--muted))] to-[hsl(var(--muted-foreground)/0.2)] rounded-full flex items-center justify-center">
-                <span className="text-ui font-semibold text-sm">
-                  {(simulatingUser?.nombreCompleto || simulatingUser?.full_name || currentUser?.nombreCompleto || currentUser?.full_name || "U")
+              <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center">
+                <span className="text-[var(--color-text-primary)] font-semibold text-sm">
+                  {(displayName(effectiveUser || { name: "U" }))
                     .slice(0, 1)
                     .toUpperCase()}
                 </span>
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <p className="font-medium text-ui text-sm truncate">
-                  {simulatingUser?.nombreCompleto || simulatingUser?.full_name || currentUser?.nombreCompleto || currentUser?.full_name || "Usuario"}
+                <p className="font-medium text-[var(--color-text-primary)] text-sm truncate">
+                  {displayName(effectiveUser) || "Usuario"}
                 </p>
-                <p className="text-xs text-muted truncate">{currentUser?.email}</p>
+                <p className="text-xs text-[var(--color-text-secondary)] truncate">{effectiveUser?.email}</p>
               </div>
             </button>
 
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => navigate(createPageUrl('ayuda'))}
+              className={`w-full justify-start gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
+              aria-label="Centro de Ayuda"
+            >
+              <HelpCircle className="w-4 h-4" />
+              Ayuda
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={logout}
-              className="w-full justify-start gap-2 text-muted hover:text-ui hover:bg-muted min-h-[44px] h-10 rounded-xl"
+                className={`w-full justify-start gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
               aria-label="Cerrar sesión"
             >
               <LogOut className="w-4 h-4" />
@@ -432,40 +696,9 @@ function LayoutContent() {
             marginLeft: !isMobile && abierto ? `${SIDEBAR_WIDTH}px` : '0',
           }}
           aria-hidden={isMobile && abierto}
+          inert={isMobile && abierto ? "" : undefined}
+          tabIndex={isMobile && abierto ? -1 : undefined}
         >
-          {/* Header mobile */}
-          <header
-            className="bg-card border-b border-ui px-4 py-3 lg:hidden sticky top-0 z-[70] cursor-pointer active:bg-muted transition-colors"
-            onClick={handleHeaderClick}
-            role="button"
-            aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
-            aria-controls="sidebar"
-            aria-expanded={abierto}
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                safeToggle();
-              }
-            }}
-          >
-            <div className="flex items-center justify-between min-h-[44px]">
-              <button
-                className="hover:bg-muted p-2 rounded-xl transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  safeToggle();
-                }}
-                aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
-                aria-controls="sidebar"
-                aria-expanded={abierto}
-              >
-                {abierto ? <X className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
-              </button>
-              <h1 className="text-base font-bold text-ui">{appName}</h1>
-              <div className="w-11" />
-            </div>
-          </header>
 
           {/* Botón flotante para desktop - solo visible cuando está cerrado */}
           {!isMobile && !abierto && (
@@ -483,12 +716,12 @@ function LayoutContent() {
                       variant="outline"
                       size="sm"
                       onClick={safeToggle}
-                      className="rounded-xl rounded-l-none border-l-0 shadow-card bg-card hover:bg-muted h-12 w-8 px-0"
+                      className="rounded-xl rounded-l-none border-l-0 shadow-card bg-card hover:bg-[var(--color-surface-muted)] h-12 w-8 px-0"
                       aria-label="Mostrar menú (Ctrl/⌘+M)"
                       aria-controls="sidebar"
                       aria-expanded={false}
                     >
-                      <PanelLeft className="w-4 h-4 text-ui" />
+                      <PanelLeft className="w-4 h-4 text-[var(--color-text-primary)]" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="right">
@@ -504,26 +737,52 @@ function LayoutContent() {
             <Outlet />
           </div>
 
+          {/* Botón flotante de reporte de errores */}
+          <ReportErrorButton />
+
           {/* Footer global - centrado con nombre de app */}
-          <footer className="border-t border-ui bg-card text-xs text-muted mt-auto">
-            <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-center gap-2 text-center">
-              <span>{appName} © {new Date().getFullYear()}</span>
+          <footer className="border-t border-[var(--color-border-default)] bg-card text-xs text-[var(--color-text-secondary)] mt-auto">
+            <div className="max-w-7xl mx-auto px-4 py-4 md:py-5 flex flex-wrap items-center justify-center gap-2 text-center">
+              <span>
+                {appName}
+                {currentVersion?.version && (
+                  <span className="ml-1.5 text-[var(--color-text-secondary)]">
+                    {currentVersion.version}
+                  </span>
+                )}
+                {' '}© {new Date().getFullYear()}
+              </span>
               <span className="opacity-40">-</span>
-              <a href="https://latrompetasonara.com" target="_blank" rel="noreferrer" className="hover:underline hover:text-ui transition-colors">
+              <a
+                href="https://latrompetasonara.com"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[var(--color-text-primary)] hover:underline transition-colors"
+              >
                 La Trompeta Sonará
               </a>
               <span className="opacity-40">•</span>
-              <a href="https://instagram.com/latrompetasonara" target="_blank" rel="noreferrer" className="hover:underline hover:text-ui transition-colors">
+              <a
+                href="https://instagram.com/latrompetasonara"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[var(--color-text-primary)] hover:underline transition-colors"
+              >
                 Instagram
               </a>
             </div>
           </footer>
         </main>
       </div>
+      <PerfilModal 
+        open={perfilModalOpen} 
+        onOpenChange={setPerfilModalOpen}
+      />
     </RoleBootstrap>
   );
 }
 
+<<<<<<< HEAD
 /* Wrapper con providers del estado del sidebar y diseño */
 export default function Layout() {
   return (
@@ -532,5 +791,27 @@ export default function Layout() {
         <LayoutContent />
       </SidebarProvider>
     </DesignProvider>
+=======
+// Componente interno que usa el hook para el modal
+function HotkeysModalWrapper() {
+  const { showHotkeysModal, setShowHotkeysModal } = useHotkeysModal();
+  return (
+    <HotkeysModal 
+      open={showHotkeysModal} 
+      onOpenChange={setShowHotkeysModal} 
+    />
+  );
+}
+
+/* Wrapper con providers del estado del sidebar y hotkeys modal */
+export default function Layout() {
+  return (
+    <HotkeysModalProvider>
+      <SidebarProvider>
+        <LayoutContent />
+        <HotkeysModalWrapper />
+      </SidebarProvider>
+    </HotkeysModalProvider>
+>>>>>>> studia-local-sync
   );
 }

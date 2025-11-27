@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { componentStyles } from "@/design/componentStyles";
 
 const pad2 = (n) => String(n).padStart(2, "0");
 const parseLocalDate = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
@@ -14,7 +15,7 @@ const getISOWeekNumber = (date) => {
   return weekNum;
 };
 
-export default function WeekNavigator({ mondayISO, onPrev, onNext, onToday }) {
+export default function WeekNavigator({ mondayISO, onPrev, onNext, onToday, children }) {
   const [debounceTimer, setDebounceTimer] = useState(null);
 
   const handleDebounced = useCallback((action) => {
@@ -56,95 +57,54 @@ export default function WeekNavigator({ mondayISO, onPrev, onNext, onToday }) {
   sunday.setDate(monday.getDate() + 6);
 
   return (
-    <div className="space-y-2">
-      {/* Desktop */}
-      <div className="hidden md:flex items-center justify-center gap-3">
+    <Card className={`rounded-2xl border-[var(--color-border-default)] shadow-sm ${componentStyles.containers.cardBase} p-4 md:p-6 w-full`}>
+      <div className="text-center mb-3 md:mb-4">
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <Calendar className="w-4 h-4 md:w-5 md:h-5 text-[var(--color-primary)]" />
+          <span className="text-sm md:text-base font-semibold text-[var(--color-text-primary)]">Semana {weekNumber}</span>
+        </div>
+        <p className="text-xs md:text-sm text-[var(--color-text-secondary)]">
+          {monday.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — {sunday.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+        </p>
+      </div>
+      
+      <div className="flex gap-2 md:gap-3">
         <Button
           variant="outline"
           size="sm"
           onClick={onPrev}
-          className="h-10 rounded-xl"
+          className={`flex-1 h-9 md:h-10 ${componentStyles.buttons.outline}`}
           aria-label="Semana anterior (←)"
         >
-          <ChevronLeft className="w-4 h-4 mr-1" />
-          Anterior
+          <ChevronLeft className="w-4 h-4" />
+          <span className="hidden md:inline ml-1">Anterior</span>
         </Button>
-
-        <Card className="rounded-2xl border-ui shadow-sm px-6 py-3 min-w-[300px]">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <Calendar className="w-4 h-4 text-brand-500" />
-              <span className="text-sm font-semibold text-ui">Semana {weekNumber}</span>
-            </div>
-            <p className="text-xs text-muted">
-              {monday.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — {sunday.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
-            </p>
-          </div>
-        </Card>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onNext}
-          className="h-10 rounded-xl"
-          aria-label="Semana siguiente (→)"
-        >
-          Siguiente
-          <ChevronRight className="w-4 h-4 ml-1" />
-        </Button>
-
         <Button
           variant="outline"
           size="sm"
           onClick={onToday}
-          className="h-10 rounded-xl"
+          className={`flex-1 h-9 md:h-10 ${componentStyles.buttons.outline}`}
           aria-label="Ir a semana actual (S)"
         >
           Hoy
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onNext}
+          className={`flex-1 h-9 md:h-10 ${componentStyles.buttons.outline}`}
+          aria-label="Semana siguiente (→)"
+        >
+          <span className="hidden md:inline mr-1">Siguiente</span>
+          <ChevronRight className="w-4 h-4" />
+        </Button>
       </div>
-
-      {/* Mobile */}
-      <div className="md:hidden space-y-2">
-        <Card className="rounded-2xl border-ui shadow-sm p-3">
-          <div className="text-center mb-2">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <Calendar className="w-4 h-4 text-brand-500" />
-              <span className="text-sm font-semibold text-ui">Semana {weekNumber}</span>
-            </div>
-            <p className="text-xs text-muted">
-              {monday.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — {sunday.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-            </p>
-          </div>
-          
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onPrev}
-              className="flex-1 h-9 rounded-xl"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onToday}
-              className="flex-1 h-9 rounded-xl"
-            >
-              Hoy
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onNext}
-              className="flex-1 h-9 rounded-xl"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </Card>
-      </div>
-    </div>
+      
+      {children && (
+        <div className="mt-4 pt-4 border-t border-[var(--color-border-default)]">
+          {children}
+        </div>
+      )}
+    </Card>
   );
 }

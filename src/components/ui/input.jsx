@@ -1,15 +1,13 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { useClassTokens } from "@/components/design/useClassTokens"
+import { componentStyles } from "@/design/componentStyles"
 
 const Input = React.forwardRef(({ className, type, ...props }, ref) => {
-  const { control } = useClassTokens();
-  
   return (
     <input
       type={type}
       className={cn(
-        control,
+        componentStyles.controls.inputDefault,
         className
       )}
       ref={ref}

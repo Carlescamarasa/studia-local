@@ -13,6 +13,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { componentStyles } from '@/design/componentStyles';
+
+/**
+ * Normaliza media links: acepta strings u objetos con url/href/link
+ */
+function normalizeMediaLinks(rawLinks) {
+  if (!rawLinks || !Array.isArray(rawLinks)) return [];
+  return rawLinks
+    .map((raw) => {
+      if (typeof raw === 'string') return raw;
+      if (raw && typeof raw === 'object' && raw.url) return raw.url;
+      if (raw && typeof raw === 'object' && raw.href) return raw.href;
+      if (raw && typeof raw === 'object' && raw.link) return raw.link;
+      return '';
+    })
+    .filter((url) => typeof url === 'string' && url.length > 0);
+}
 
 /**
  * Modal con carrusel para previsualizar medios
@@ -21,6 +38,9 @@ import {
  * Modo compacto para audio con control de velocidad
  */
 export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, onClose }) {
+  // Normalizar URLs al recibirlas
+  const normalizedUrls = normalizeMediaLinks(urls);
+  
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const { abierto } = useSidebar();
   const [isMobile, setIsMobile] = useState(false);
@@ -57,11 +77,11 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
       }
 
       // Flechas para navegación (solo si hay múltiples y NO es audio)
-      const currentUrl = urls[currentIndex] || '';
+      const currentUrl = normalizedUrls[currentIndex] || '';
       const media = resolveMedia(currentUrl);
       const isAudio = media.kind === 'audio';
 
-      if (!isAudio && urls.length > 1) {
+      if (!isAudio && normalizedUrls.length > 1) {
         if (e.key === 'ArrowLeft') {
           e.preventDefault();
           handlePrevious();
@@ -74,7 +94,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, currentIndex, urls.length]);
+  }, [open, currentIndex, normalizedUrls.length]);
 
   // Bloquear scroll del body
   useEffect(() => {
@@ -95,19 +115,19 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
     }
   }, [playbackRate, currentIndex]);
 
-  if (!urls || urls.length === 0 || !open) return null;
+  if (!normalizedUrls || normalizedUrls.length === 0 || !open) return null;
 
-  const currentUrl = urls[currentIndex] || '';
+  const currentUrl = normalizedUrls[currentIndex] || '';
   const media = resolveMedia(currentUrl);
-  const hasMultiple = urls.length > 1;
+  const hasMultiple = normalizedUrls.length > 1;
   const isAudio = media.kind === 'audio';
 
   const handlePrevious = () => {
-    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : urls.length - 1));
+    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : normalizedUrls.length - 1));
   };
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev < urls.length - 1 ? prev + 1 : 0));
+    setCurrentIndex((prev) => (prev < normalizedUrls.length - 1 ? prev + 1 : 0));
   };
 
   const handleOpenExternal = () => {
@@ -135,29 +155,30 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
   // Modo AUDIO compacto
   if (isAudio) {
     return createPortal(
-      <div
-        className="fixed top-0 right-0 bottom-0 z-[100] flex items-center justify-center"
-        style={{
-          left: leftOffset,
-          width: widthCalc,
-        }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="media-preview-title"
-      >
-        {/* Overlay transparente para audio */}
+      <>
+        {/* Overlay transparente para audio - Fixed para cubrir toda la pantalla */}
         <div
-          className="absolute inset-0 bg-transparent"
+          className="fixed inset-0 bg-transparent z-[120]"
           onClick={handleOverlayClick}
           aria-hidden="true"
         />
+        <div
+          className="fixed top-0 right-0 bottom-0 z-[130] flex items-center justify-center pointer-events-none"
+          style={{
+            left: leftOffset,
+            width: widthCalc,
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="media-preview-title"
+        >
 
         {/* Tarjeta compacta para audio */}
-        <div className="relative z-10 mx-auto w-full max-w-md px-4">
-          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-card border border-gray-200 p-6">
+        <div className="relative z-10 mx-auto w-full max-w-md px-4 pointer-events-auto">
+          <div className="bg-[var(--color-surface-elevated)]/95 backdrop-blur-sm rounded-2xl shadow-card border border-[var(--color-border-default)] p-6">
             {/* Header */}
             <div className="flex items-center justify-between gap-4 mb-4">
-              <h2 id="media-preview-title" className="font-semibold text-base truncate flex-1">
+              <h2 id="media-preview-title" className={`font-semibold text-base truncate flex-1 ${componentStyles.typography.cardTitle}`}>
                 {getMediaLabel(currentUrl)}
               </h2>
               <div className="flex items-center gap-2 shrink-0">
@@ -165,7 +186,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                   variant="ghost"
                   size="sm"
                   onClick={handleOpenExternal}
-                  className="text-blue-600 hover:text-blue-700 h-8 rounded-xl"
+                  className="text-[var(--color-info)] hover:text-[var(--color-info)]/80 h-8 rounded-xl"
                   aria-label="Abrir en nueva pestaña"
                 >
                   <ExternalLink className="w-4 h-4" />
@@ -174,7 +195,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                   variant="ghost"
                   size="icon"
                   onClick={onClose}
-                  className="h-8 w-8 rounded-xl"
+                  className="h-8 w-8 rounded-xl text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
                   aria-label="Cerrar"
                 >
                   <X className="w-5 h-5" />
@@ -196,7 +217,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
 
               {/* Control de velocidad */}
               <div className="flex items-center gap-3">
-                <label className="text-sm text-gray-600 font-medium shrink-0">
+                <label className={`text-sm font-medium shrink-0 ${componentStyles.typography.smallMetaText} text-[var(--color-text-primary)]`}>
                   Velocidad:
                 </label>
                 <div className="flex gap-1 flex-wrap">
@@ -206,8 +227,8 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                       onClick={() => handlePlaybackRateChange(rate.toString())}
                       className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                         playbackRate === rate
-                          ? 'bg-blue-600 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-sm'
+                          : 'bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)]/20'
                       }`}
                       aria-label={`Velocidad ${rate}x`}
                     >
@@ -219,48 +240,50 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
             </div>
 
             {/* Ayuda de teclado */}
-            <div className="mt-4 text-center border-t pt-3">
-              <p className="text-xs text-gray-500">
+            <div className="mt-4 text-center border-t border-[var(--color-border-default)] pt-3">
+              <p className="text-xs text-[var(--color-text-secondary)]">
                 Ctrl/⌘+. : cerrar
               </p>
             </div>
           </div>
         </div>
-      </div>,
+      </div>
+    </>,
       document.body
     );
   }
 
   // Modo VIDEO/IMAGEN (fondo oscuro)
   return createPortal(
-    <div
-      className="fixed top-0 right-0 bottom-0 z-[100] flex items-center justify-center"
-      style={{
-        left: leftOffset,
-        width: widthCalc,
-      }}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="media-preview-title"
-    >
-      {/* Overlay oscuro para video/imagen */}
+    <>
+      {/* Overlay oscuro para video/imagen - Fixed para cubrir toda la pantalla */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[120]"
         onClick={handleOverlayClick}
         aria-hidden="true"
       />
+      <div
+        className="fixed top-0 right-0 bottom-0 z-[130] flex items-center justify-center pointer-events-none"
+        style={{
+          left: leftOffset,
+          width: widthCalc,
+        }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="media-preview-title"
+      >
 
       {/* Contenedor del modal */}
-      <div className="relative z-10 mx-auto w-full max-w-[1100px] px-4 lg:px-6 flex items-center justify-center max-h-[95vh]">
-        <div className="bg-white rounded-2xl shadow-card w-full max-h-full overflow-hidden flex flex-col">
+      <div className="relative z-10 mx-auto w-full max-w-[1100px] px-4 lg:px-6 flex items-center justify-center max-h-[95vh] pointer-events-auto">
+        <div className="bg-[var(--color-surface-elevated)] rounded-2xl shadow-card w-full max-h-full overflow-hidden flex flex-col border border-[var(--color-border-default)]">
           {/* Header con título y botón de cierre */}
-          <div className="px-4 lg:px-6 py-4 border-b bg-white sticky top-0 z-20 flex items-center justify-between gap-4 shrink-0">
+          <div className="px-4 lg:px-6 py-4 border-b border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] sticky top-0 z-20 flex items-center justify-between gap-4 shrink-0">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <h2 id="media-preview-title" className="font-semibold text-base lg:text-lg truncate">
+              <h2 id="media-preview-title" className={`font-semibold text-base lg:text-lg truncate ${componentStyles.typography.cardTitle}`}>
                 {getMediaLabel(currentUrl)}
               </h2>
               {hasMultiple && (
-                <span className="text-xs lg:text-sm text-gray-500 whitespace-nowrap">
+                <span className="text-xs lg:text-sm text-[var(--color-text-secondary)] whitespace-nowrap">
                   {currentIndex + 1} de {urls.length}
                 </span>
               )}
@@ -270,7 +293,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                 variant="ghost"
                 size="sm"
                 onClick={handleOpenExternal}
-                className="text-blue-600 hover:text-blue-700 h-8 rounded-xl"
+                className="text-[var(--color-info)] hover:text-[var(--color-info)]/80 h-8 rounded-xl"
                 aria-label="Abrir en nueva pestaña"
               >
                 <ExternalLink className="w-4 h-4 mr-1" />
@@ -280,7 +303,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
-                className="h-8 w-8 rounded-xl"
+                className="h-8 w-8 rounded-xl text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
                 aria-label="Cerrar"
               >
                 <X className="w-5 h-5" />
@@ -291,67 +314,70 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
           {/* Contenido del medio */}
           <div className="relative flex-1 overflow-y-auto">
             <div className="p-4 lg:p-6">
-              {/* Navegación - Solo si hay múltiples medios */}
-              {hasMultiple && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handlePrevious}
-                    className="absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/95 hover:bg-white shadow-card"
-                    aria-label="Anterior"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleNext}
-                    className="absolute right-2 lg:right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/95 hover:bg-white shadow-card"
-                    aria-label="Siguiente"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </Button>
-                </>
-              )}
-
               {/* Medio */}
               <div className="w-full">
                 <MediaEmbed url={currentUrl} />
               </div>
             </div>
 
-            {/* Indicadores (si hay múltiples) */}
-            {hasMultiple && urls.length <= 10 && (
-              <div className="px-4 lg:px-6 pb-4">
-                <div className="flex gap-2 justify-center flex-wrap">
-                  {urls.map((url, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setCurrentIndex(idx)}
-                      className={`h-2 rounded-full transition-all ${
-                        idx === currentIndex 
-                          ? 'bg-blue-600 w-6' 
-                          : 'bg-gray-300 hover:bg-gray-400 w-2'
-                      }`}
-                      aria-label={`Ir a medio ${idx + 1}`}
-                    />
-                  ))}
+            {/* Navegación e indicadores (si hay múltiples) */}
+            {hasMultiple && (
+              <div className="px-4 lg:px-6 pb-2 border-t border-[var(--color-border-default)] pt-2">
+                <div className="flex items-center justify-center gap-2">
+                  {/* Botón Anterior */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handlePrevious}
+                    className="h-7 w-7 rounded-md"
+                    aria-label="Anterior"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </Button>
+                  
+                  {/* Indicadores */}
+                  {normalizedUrls.length <= 10 && (
+                    <div className="flex gap-1 items-center">
+                      {normalizedUrls.map((url, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setCurrentIndex(idx)}
+                          className={`h-1 rounded-full transition-all ${
+                            idx === currentIndex 
+                              ? 'bg-[var(--color-primary)] w-5' 
+                              : 'bg-[var(--color-border-default)] hover:bg-[var(--color-border-strong)] w-1'
+                          }`}
+                          aria-label={`Ir a medio ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Botón Siguiente */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleNext}
+                    className="h-7 w-7 rounded-md"
+                    aria-label="Siguiente"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
               </div>
             )}
 
             {/* Ayuda de teclado */}
             <div className="px-4 lg:px-6 pb-4 text-center">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-[var(--color-text-secondary)]">
                 {hasMultiple && 'Usa las flechas ← → para navegar • '}Ctrl/⌘+. : cerrar
               </p>
             </div>
           </div>
         </div>
       </div>
-    </div>,
+      </div>
+    </>,
     document.body
   );
 }

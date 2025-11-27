@@ -1,28 +1,22 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
-import { Calendar } from "lucide-react";
+import PageHeader from "@/components/ds/PageHeader";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function SemanasPage() {
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="icon-tile">
-            <Calendar className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Semanas</h1>
-            <p className="text-gray-500">Organiza semanas dentro de planes</p>
-          </div>
-        </div>
-      </div>
+    <div className={componentStyles.layout.page}>
+      <PageHeader
+        title="Semanas"
+        subtitle="Organiza semanas dentro de planes"
+      />
 
-      <Card className="app-card">
+      <Card className={componentStyles.containers.cardBase}>
         <CardHeader>
           <CardTitle>Próximamente</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-600">
+          <p className={componentStyles.typography.bodyText}>
             Gestiona las semanas que componen tus planes de estudio.
           </p>
         </CardContent>

@@ -1,17 +1,34 @@
 import React from "react";
 import { cn } from "@/lib/utils";
+import { componentStyles } from "@/design/componentStyles";
 
 /**
  * Card - Componente de tarjeta del Design System
  * Capa semántica que aplica clases definidas en globals.css
+ * Usa forwardRef para soportar refs de librerías como @dnd-kit
+ * 
+ * @param {boolean} interactive - Si es true, añade efectos hover y active
  */
-export function Card({ className = "", children, ...props }) {
+export const Card = React.forwardRef(function Card({ 
+  className = "", 
+  children, 
+  interactive = false,
+  ...props 
+}, ref) {
+  const interactiveClasses = interactive 
+    ? `${componentStyles.motion.cardHover} ${componentStyles.motion.cardActive} cursor-pointer`
+    : "";
+
   return (
-    <div className={cn("app-card", className)} {...props}>
+    <div 
+      ref={ref} 
+      className={cn("app-card", interactiveClasses, className)} 
+      {...props}
+    >
       {children}
     </div>
   );
-}
+});
 
 export function CardHeader({ className = "", children, ...props }) {
   return (

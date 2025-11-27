@@ -1,7 +1,6 @@
-import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
-import { getCurrentUser } from "@/api/localDataClient";
+import React, { useState, useMemo } from "react";
+import { localDataClient } from "@/api/localDataClient";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ds/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ds";
 import { Badge } from "@/components/ds";
@@ -9,14 +8,22 @@ import { Alert, AlertDescription } from "@/components/ds";
 import {
   Music, Calendar, Target, PlayCircle, MessageSquare,
   Layers,
-  ChevronLeft, ChevronRight, Home, Clock, CheckCircle2
+  ChevronLeft, ChevronRight, ChevronDown, Home, Clock, CheckCircle2,
+  Star, Trash2, BookOpen
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { calcularLunesSemanaISO, calcularOffsetSemanas, calcularTiempoSesion } from "../components/utils/helpers";
+import { calcularLunesSemanaISO, calcularOffsetSemanas, calcularTiempoSesion, useEffectiveUser, isoWeekNumberLocal } from "../components/utils/helpers";
 import { displayName } from "@/components/utils/helpers";
-import WeekNavigator from "../components/common/WeekNavigator";
+import { usePeriodHeaderState, PeriodHeaderButton, PeriodHeaderPanel } from "../components/common/PeriodHeader";
 import RequireRole from "@/components/auth/RequireRole";
+import PageHeader from "@/components/ds/PageHeader";
+import { componentStyles } from "@/design/componentStyles";
+import { cn } from "@/lib/utils";
+import SessionContentView from "../components/study/SessionContentView";
+import MediaLinksBadges from "@/components/common/MediaLinksBadges";
+import MediaPreviewModal from "@/components/common/MediaPreviewModal";
+import { log } from "@/utils/log";
 
 // --- Helpers de fechas locales ---
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -35,28 +42,46 @@ function SemanaPageContent() {
   const [semanaActualISO, setSemanaActualISO] = useState(() => {
     return calcularLunesSemanaISO(new Date());
   });
+  const [expandedSessions, setExpandedSessions] = useState(new Set());
+  const [showMediaModal, setShowMediaModal] = useState(false);
+  const [selectedMediaLinks, setSelectedMediaLinks] = useState([]);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+  const [tipoFeedbackSemana, setTipoFeedbackSemana] = useState('todos'); // 'todos' | 'profesor' | 'sesiones'
+  const queryClient = useQueryClient();
 
-  const currentUser = getCurrentUser();
+  const effectiveUser = useEffectiveUser();
 
   const { data: asignaciones = [] } = useQuery({
     queryKey: ['asignaciones'],
-    queryFn: () => base44.entities.Asignacion.list(),
+    queryFn: () => localDataClient.entities.Asignacion.list(),
   });
 
   const { data: feedbacksSemanal = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
-    queryFn: () => base44.entities.FeedbackSemanal.list('-created_date'),
+    queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_at'),
   });
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
   });
 
-  const simulatingUser = sessionStorage.getItem('simulatingUser') ? 
-    JSON.parse(sessionStorage.getItem('simulatingUser')) : null;
-  
-  const userIdActual = simulatingUser?.id || currentUser?.id;
+  const { data: registrosSesion = [] } = useQuery({
+    queryKey: ['registrosSesion'],
+    queryFn: () => localDataClient.entities.RegistroSesion.list('-inicioISO'),
+  });
+
+  // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
+  // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD
+  const usuarioActual = usuarios.find(u => {
+    if (effectiveUser?.email && u.email) {
+      return u.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim();
+    }
+    return u.id === effectiveUser?.id;
+  }) || effectiveUser;
+
+  // Usar el ID del usuario de la base de datos, no el de Supabase Auth
+  const userIdActual = usuarioActual?.id || effectiveUser?.id;
 
   const asignacionActiva = asignaciones.find(a => {
     if (a.alumnoId !== userIdActual) return false;
@@ -70,9 +95,133 @@ function SemanaPageContent() {
 
   const semanaDelPlan = asignacionActiva?.plan?.semanas?.[semanaIdx];
 
-  const feedbackSemana = feedbacksSemanal.find(f => 
-    f.alumnoId === userIdActual && f.semanaInicioISO === semanaActualISO
-  );
+  // Buscar todos los feedbacks del profesor para este alumno (no solo semana actual)
+  const feedbacksProfesor = useMemo(() => {
+    return feedbacksSemanal
+      .filter(f => f.alumnoId === userIdActual)
+      .filter(f => f.semanaInicioISO) // Solo los que tienen fecha
+      .sort((a, b) => {
+        // Ordenar por fecha descendente (más reciente primero)
+        const dateA = parseLocalDate(a.semanaInicioISO);
+        const dateB = parseLocalDate(b.semanaInicioISO);
+        return dateB - dateA;
+      });
+  }, [feedbacksSemanal, userIdActual]);
+
+  // Filtrar registros de sesión de este alumno (todas las semanas, no solo la actual)
+  // Solo sesiones válidas: aquellas con calificación (sesiones realmente finalizadas)
+  const registrosSesionesAlumno = useMemo(() => {
+    return registrosSesion
+      .filter(r => r.alumnoId === userIdActual)
+      .filter(r => r.inicioISO) // Solo los que tienen fecha
+      .filter(r => r.calificacion != null) // Solo sesiones válidas (con calificación)
+      .sort((a, b) => {
+        // Ordenar por fecha descendente (más reciente primero)
+        return new Date(b.inicioISO) - new Date(a.inicioISO);
+      });
+  }, [registrosSesion, userIdActual]);
+
+  // Combinar feedbacks y registros, ordenados por fecha, filtrando solo semana actual
+  const itemsCombinados = useMemo(() => {
+    const items = [];
+    const lunesSemana = parseLocalDate(semanaActualISO);
+    const domingoSemana = new Date(lunesSemana);
+    domingoSemana.setDate(domingoSemana.getDate() + 6);
+    domingoSemana.setHours(23, 59, 59, 999);
+    
+    // Agregar feedbacks (solo de la semana actual)
+    feedbacksProfesor.forEach(feedback => {
+      const fechaFeedback = feedback.semanaInicioISO ? parseLocalDate(feedback.semanaInicioISO) : null;
+      if (fechaFeedback && fechaFeedback >= lunesSemana && fechaFeedback <= domingoSemana) {
+        items.push({
+          tipo: 'feedback',
+          fecha: fechaFeedback,
+          fechaISO: feedback.semanaInicioISO,
+          data: feedback,
+        });
+      }
+    });
+    
+    // Agregar registros de sesión (solo de la semana actual)
+    registrosSesionesAlumno.forEach(registro => {
+      if (registro.inicioISO) {
+        const fechaRegistro = parseLocalDate(registro.inicioISO.split('T')[0]);
+        if (fechaRegistro >= lunesSemana && fechaRegistro <= domingoSemana) {
+          items.push({
+            tipo: 'registro',
+            fecha: fechaRegistro,
+            fechaISO: registro.inicioISO,
+            data: registro,
+          });
+        }
+      }
+    });
+    
+    // Ordenar por fecha descendente (más reciente primero)
+    return items.sort((a, b) => b.fecha - a.fecha);
+  }, [feedbacksProfesor, registrosSesionesAlumno, semanaActualISO]);
+
+  // Filtrar items según el tipo seleccionado
+  const itemsFiltrados = useMemo(() => {
+    if (tipoFeedbackSemana === 'todos') {
+      return itemsCombinados;
+    } else if (tipoFeedbackSemana === 'profesor') {
+      return itemsCombinados.filter(item => item.tipo === 'feedback');
+    } else if (tipoFeedbackSemana === 'sesiones') {
+      return itemsCombinados.filter(item => item.tipo === 'registro');
+    }
+    return itemsCombinados;
+  }, [itemsCombinados, tipoFeedbackSemana]);
+
+  // Normalizar media links: acepta strings u objetos con url
+  const normalizeMediaLinks = (rawLinks) => {
+    if (!rawLinks || !Array.isArray(rawLinks)) return [];
+    return rawLinks
+      .map((raw) => {
+        if (typeof raw === 'string') return raw;
+        if (raw && typeof raw === 'object' && raw.url) return raw.url;
+        if (raw && typeof raw === 'object' && raw.href) return raw.href;
+        if (raw && typeof raw === 'object' && raw.link) return raw.link;
+        return '';
+      })
+      .filter((url) => typeof url === 'string' && url.length > 0);
+  };
+
+  const handlePreviewMedia = (index, mediaLinks) => {
+    if (!mediaLinks || !Array.isArray(mediaLinks) || mediaLinks.length === 0) return;
+    
+    // Normalizar media links
+    const normalizedLinks = normalizeMediaLinks(mediaLinks);
+    if (normalizedLinks.length === 0) return;
+    
+    // Asegurar que el índice esté dentro del rango
+    const safeIndex = Math.max(0, Math.min(index, normalizedLinks.length - 1));
+    
+    setSelectedMediaLinks(normalizedLinks);
+    setSelectedMediaIndex(safeIndex);
+    setShowMediaModal(true);
+  };
+
+  const deleteRegistroMutation = useMutation({
+    mutationFn: async (id) => {
+      return await localDataClient.entities.RegistroSesion.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['registrosSesion'] });
+    },
+  });
+
+  const handleDeleteRegistro = async (registro) => {
+    if (!window.confirm('¿Eliminar esta sesión de estudio? Esta acción no se puede deshacer.')) {
+      return;
+    }
+    try {
+      await deleteRegistroMutation.mutateAsync(registro.id);
+    } catch (error) {
+      log.error('Error al eliminar sesión:', error);
+      alert('Error al eliminar la sesión. Por favor, inténtalo de nuevo.');
+    }
+  };
 
   const cambiarSemana = (direccion) => {
     const base = parseLocalDate(semanaActualISO);
@@ -87,6 +236,9 @@ function SemanaPageContent() {
     setSemanaActualISO(formatLocalDate(lunes));
   };
 
+  // Estado del PeriodHeader
+  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState();
+
   const focoLabels = {
     GEN: 'General',
     LIG: 'Ligaduras',
@@ -96,173 +248,399 @@ function SemanaPageContent() {
   };
 
   const focoColors = {
-    GEN: 'bg-gray-100 text-gray-800',
-    LIG: 'bg-blue-100 text-blue-800',
-    RIT: 'bg-purple-100 text-purple-800',
-    ART: 'bg-green-100 text-green-800',
-    'S&A': 'bg-brand-100 text-brand-800',
+    GEN: componentStyles.status.badgeDefault,
+    LIG: componentStyles.status.badgeInfo,
+    RIT: componentStyles.status.badgeDefault,
+    ART: componentStyles.status.badgeSuccess,
+    'S&A': componentStyles.status.badgeDefault,
   };
+
+  const toggleSession = (key) => {
+    setExpandedSessions(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="bg-card border-b sticky top-0 z-10 shadow-card">
-        <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 md:py-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="icon-tile">
-              <Calendar className="w-6 h-6" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl md:text-3xl font-bold text-ui">Mi Semana</h1>
-              <p className="text-sm text-muted hidden md:block">Resumen y planificación semanal</p>
-            </div>
-          </div>
+      <PageHeader
+        icon={Calendar}
+        title="Mi Semana"
+        subtitle="Resumen y planificación semanal"
+        actions={
+          (() => {
+            const lunesSemana = parseLocalDate(semanaActualISO);
+            const domingoSemana = new Date(lunesSemana);
+            domingoSemana.setDate(lunesSemana.getDate() + 6);
+            const numeroSemana = isoWeekNumberLocal(lunesSemana);
+            const labelSemana = `Semana ${numeroSemana}`;
+            const rangeTextSemana = `${lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} – ${domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+            
+            return (
+              <PeriodHeaderButton
+                label={labelSemana}
+                rangeText={rangeTextSemana}
+                isOpen={periodHeaderOpen}
+                onToggle={togglePeriodHeader}
+              />
+            );
+          })()
+        }
+      />
 
-          <WeekNavigator 
-            mondayISO={semanaActualISO}
+      {/* Panel colapsable del PeriodHeader */}
+      {(() => {
+        const lunesSemana = parseLocalDate(semanaActualISO);
+        return (
+          <PeriodHeaderPanel
+            isOpen={periodHeaderOpen}
             onPrev={() => cambiarSemana(-1)}
             onNext={() => cambiarSemana(1)}
             onToday={irSemanaActual}
           />
-        </div>
-      </div>
+        );
+      })()}
 
-      <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-6">
+      <div className={`${componentStyles.layout.page} space-y-4`}>
         {!asignacionActiva || !semanaDelPlan ? (
-          <Card className="border-dashed border-2">
+          <Card className={componentStyles.containers.cardBase}>
             <CardContent className="text-center py-16">
-              <Target className="w-20 h-20 mx-auto mb-4 icon-empty" />
-              <h2 className="text-xl font-semibold text-ui mb-2">
+              <Target className={`w-20 h-20 mx-auto mb-4 ${componentStyles.empty.emptyIcon}`} />
+              <h2 className={`text-xl font-semibold ${componentStyles.typography.pageTitle} mb-2`}>
                 No tienes asignación esta semana
               </h2>
-              <p className="text-sm text-muted mb-4">
+              <p className={`text-sm ${componentStyles.typography.bodyText} mb-4`}>
                 Consulta con tu profesor para obtener un plan de estudio
               </p>
               <Button
                 variant="primary"
                 onClick={() => navigate(createPageUrl('hoy'))}
-                className="h-10 rounded-xl shadow-sm focus-brand"
+                className={`${componentStyles.buttons.primary} h-10 shadow-sm`}
               >
                 <PlayCircle className="w-4 h-4 mr-2" />
-                Ir a Estudiar Ahora
+                Ir a Studia ahora
               </Button>
             </CardContent>
           </Card>
         ) : (
-          <>
-            <Card className="border-2 border-brand-200">
-              <CardHeader>
-                <div className="flex items-start md:items-center justify-between gap-3 flex-col md:flex-row">
-                  <CardTitle className="text-lg md:text-xl">{semanaDelPlan.nombre}</CardTitle>
-                  <Badge className={focoColors[semanaDelPlan.foco]}>
-                    {focoLabels[semanaDelPlan.foco]}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start gap-3 text-sm">
-                  <Music className="w-5 h-5 text-[hsl(var(--brand-600))] mt-0.5 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-muted text-xs">Pieza</p>
-                    <p className="font-semibold text-ui break-words">{asignacionActiva.piezaSnapshot?.nombre}</p>
+          <Card className={componentStyles.containers.cardBase}>
+            <CardHeader>
+              <div className="flex items-start md:items-center justify-between gap-3 flex-col md:flex-row">
+                <CardTitle className={componentStyles.typography.cardTitle}>{semanaDelPlan.nombre}</CardTitle>
+                <Badge className={focoColors[semanaDelPlan.foco]}>
+                  {focoLabels[semanaDelPlan.foco]}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Información de la semana */}
+              <div className="space-y-3">
+                <div className={"flex items-start gap-2 py-1 " + componentStyles.components.toneRowPlan}>
+                  <Music className="w-4 h-4 text-[var(--color-primary)] mt-0.5 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-[var(--color-text-secondary)] font-medium">Pieza</p>
+                    <p className="text-sm break-words text-[var(--color-text-primary)] mt-0.5">
+                      {asignacionActiva.piezaSnapshot?.nombre || '—'}
+                    </p>
                   </div>
                 </div>
                 
-                <div className="flex items-start gap-3 text-sm">
-                  <Target className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-muted text-xs">Plan</p>
-                    <p className="font-semibold text-ui break-words">{asignacionActiva.plan?.nombre}</p>
+                <div className={"flex items-start gap-2 py-1 " + componentStyles.components.toneRowSemana}>
+                  <Target className="w-4 h-4 text-[var(--color-primary)] mt-0.5 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-[var(--color-text-secondary)] font-medium">Semana del Plan</p>
+                    <p className="text-sm break-words text-[var(--color-text-primary)] mt-0.5">
+                      {semanaDelPlan.nombre}
+                    </p>
+                    {semanaDelPlan.objetivo && (
+                      <p className="text-xs text-[var(--color-text-secondary)] italic mt-1 break-words">
+                        "{semanaDelPlan.objetivo}"
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {semanaDelPlan.objetivo && (
-                  <div className="pt-3 border-t">
-                    <p className="text-sm text-muted mb-1">🎯 Objetivo de la semana</p>
-                    <p className="text-sm md::text-base text-ui italic break-words">"{semanaDelPlan.objetivo}"</p>
-                  </div>
-                )}
+              </div>
 
-                {feedbackSemana && feedbackSemana.notaProfesor && (
-                  <div className="pt-3 border-t bg-blue-50 -mx-6 px-6 py-4 -mb-6">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <MessageSquare className="w-4 h-4 text-blue-600 shrink-0" />
-                      <p className="text-sm font-semibold text-blue-900">Feedback del profesor</p>
-                    </div>
-                    <p className="text-sm text-ui italic border-l-2 border-blue-300 pl-3 break-words">
-                      "{feedbackSemana.notaProfesor}"
-                    </p>
-                    <p className="text-xs text-muted mt-2">
-                      {(() => {
-                        const prof = usuarios.find(u => u.id === feedbackSemana.profesorId);
-                        return `Por ${displayName(prof)}`;
-                      })()}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg md:text-xl">Sesiones ({semanaDelPlan.sesiones?.length || 0})</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {semanaDelPlan.sesiones && semanaDelPlan.sesiones.length > 0 ? (
-                  semanaDelPlan.sesiones.map((sesion, idx) => {
-                    const tiempoTotal = calcularTiempoSesion(sesion);
-                    const minutos = Math.floor(tiempoTotal / 60);
-                    const segundos = tiempoTotal % 60;
-                    
-                    return (
-                      <Card key={idx} className="border-blue-200 bg-blue-50/30">
-                        <CardContent className="pt-4">
-                          <div className="space-y-2">
-                            <div className="flex items-start gap-2 flex-wrap">
-                              <PlayCircle className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
-                              <span className="font-semibold text-sm md:text-base flex-1 break-words">{sesion.nombre}</span>
-                            </div>
-                            
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Badge variant="outline" className="text-xs bg-green-50 border-green-300 text-green-800">
-                                ⏱ {minutos}:{String(segundos).padStart(2, '0')} min
-                              </Badge>
-                              <Badge className={focoColors[sesion.foco]} variant="outline">
-                                {focoLabels[sesion.foco]}
-                              </Badge>
-                            </div>
-                            
-                            <div className="flex items-center gap-2 text-xs text-muted">
-                              <Layers className="w-3 h-3 shrink-0" />
-                              <span>
-                                {sesion.bloques?.length || 0} ejercicios
-                                {sesion.rondas && sesion.rondas.length > 0 && `, ${sesion.rondas.length} rondas`}
-                              </span>
+              {/* Separador */}
+              <div className="border-t border-[var(--color-border-default)] pt-4">
+                <h3 className={`${componentStyles.typography.sectionTitle} mb-4`}>
+                  Sesiones ({semanaDelPlan.sesiones?.length || 0})
+                </h3>
+                
+                {/* Lista compacta de sesiones */}
+                {semanaDelPlan.sesiones && semanaDelPlan.sesiones.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Layers className={`w-16 h-16 mx-auto mb-4 ${componentStyles.empty.emptyIcon}`} />
+                    <p className={componentStyles.empty.emptyText}>No hay sesiones planificadas</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {semanaDelPlan.sesiones.map((sesion, sesionIdx) => {
+                      const sesionKey = `sesion-${sesionIdx}`;
+                      const isExpanded = expandedSessions.has(sesionKey);
+                      const tiempoTotal = calcularTiempoSesion(sesion);
+                      const tiempoMinutos = Math.floor(tiempoTotal / 60);
+                      const tiempoSegundos = tiempoTotal % 60;
+
+                      return (
+                        <div
+                          key={sesionIdx}
+                          className="ml-4 border-l-2 border-[var(--color-info)]/40 bg-[var(--color-info)]/10 rounded-r-lg p-2.5 transition-all hover:bg-[var(--color-info)]/20 cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSession(sesionKey);
+                          }}
+                        >
+                          {/* Sesión Header */}
+                          <div className="flex items-start gap-2">
+                            <button className="pt-1 flex-shrink-0">
+                              {isExpanded ? (
+                                <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+                              ) : (
+                                <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+                              )}
+                            </button>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <PlayCircle className="w-3.5 h-3.5 text-[var(--color-info)] flex-shrink-0" />
+                                <span className="text-sm font-medium text-[var(--color-text-primary)]">{sesion.nombre}</span>
+                                <Badge 
+                                  variant="outline" 
+                                  className={tiempoTotal > 0 ? componentStyles.status.badgeSuccess : componentStyles.status.badgeDefault}
+                                >
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
+                                </Badge>
+                                <Badge className={`rounded-full ${focoColors[sesion.foco]}`} variant="outline">
+                                  {focoLabels[sesion.foco]}
+                                </Badge>
+                              </div>
+                              {!isExpanded && (
+                                <div className="flex items-center gap-1.5 mt-1 text-xs text-[var(--color-text-secondary)]">
+                                  <Layers className="w-2.5 h-2.5" />
+                                  <span>
+                                    {sesion.bloques?.length || 0} ejercicios
+                                    {sesion.rondas && sesion.rondas.length > 0 && `, ${sesion.rondas.length} ${sesion.rondas.length === 1 ? 'ronda' : 'rondas'}`}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })
-                ) : (
-                  <p className="text-center text-muted py-8 text-sm">No hay sesiones planificadas</p>
-                )}
-              </CardContent>
-            </Card>
 
-            <div className="flex justify-center pt-4">
-              <Button
-                variant="primary"
-                onClick={() => navigate(createPageUrl('hoy'))}
-                size="lg"
-                className="w-full md:w-auto h-12 rounded-xl shadow-sm focus-brand"
-              >
-                <PlayCircle className="w-5 h-5 mr-2" />
-                Ir a Estudiar Ahora
-              </Button>
-            </div>
-          </>
+                          {/* Contenido expandido */}
+                          {isExpanded && (
+                            <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                              <SessionContentView sesion={sesion} compact />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Botón principal */}
+              <div className="flex justify-center pt-4 border-t border-[var(--color-border-default)]">
+                <Button
+                  variant="primary"
+                  onClick={() => navigate(createPageUrl('hoy'))}
+                  size="lg"
+                  className={`${componentStyles.buttons.primary} w-full md:w-auto h-12 shadow-sm`}
+                >
+                  <PlayCircle className="w-5 h-5 mr-2" />
+                  Ir a Studia ahora
+                </Button>
+              </div>
+
+              {/* Feedback y Registros de Semana Actual - Combinados por fecha */}
+              <div className="pt-4 border-t border-[var(--color-border-default)]">
+                {/* Título arriba de los filtros */}
+                <h3 className={cn(componentStyles.typography.sectionTitle, "mb-3")}>
+                    Semana Actual
+                  </h3>
+                
+                {/* Filtros compactos debajo del título */}
+                <div className="flex gap-1.5 flex-wrap mb-4">
+                    <Button
+                      variant={tipoFeedbackSemana === 'todos' ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setTipoFeedbackSemana('todos')}
+                    className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+                    >
+                      Todos
+                    </Button>
+                    <Button
+                      variant={tipoFeedbackSemana === 'profesor' ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setTipoFeedbackSemana('profesor')}
+                    className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+                    >
+                      Feedback Profesor
+                    </Button>
+                    <Button
+                      variant={tipoFeedbackSemana === 'sesiones' ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setTipoFeedbackSemana('sesiones')}
+                    className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+                    >
+                      Registro Sesiones
+                    </Button>
+                </div>
+
+                {itemsFiltrados.length === 0 ? (
+                  <div className="text-center py-8">
+                    <MessageSquare className={`w-12 h-12 mx-auto mb-3 ${componentStyles.empty.emptyIcon} text-[var(--color-text-secondary)]`} />
+                    <p className={componentStyles.empty.emptyText}>
+                      No hay {tipoFeedbackSemana === 'todos' ? 'feedbacks ni registros de sesiones' : tipoFeedbackSemana === 'profesor' ? 'feedbacks del profesor' : 'registros de sesiones'} esta semana
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {itemsFiltrados.map((item) => {
+                      if (item.tipo === 'feedback') {
+                        const feedback = item.data;
+                        const prof = usuarios.find(u => u.id === feedback.profesorId);
+                        const fechaFormateada = item.fecha.toLocaleDateString('es-ES', { 
+                          day: 'numeric', 
+                          month: 'short', 
+                          year: 'numeric' 
+                        });
+
+                        return (
+                          <div key={`feedback-${feedback.id}`} className="flex items-start gap-2 py-2 px-3 border-l-4 border-l-[var(--color-info)] bg-[var(--color-info)]/5 hover:bg-[var(--color-info)]/10 transition-colors">
+                            <MessageSquare className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
+                                {prof && (
+                                  <span className="text-xs text-[var(--color-text-secondary)]">
+                                    • {displayName(prof)}
+                                  </span>
+                                )}
+                                <span className="text-xs text-[var(--color-text-secondary)]">
+                                  • Semana del {fechaFormateada}
+                                </span>
+                              </div>
+                              {feedback.notaProfesor && (
+                                <p className="text-sm text-[var(--color-text-primary)] italic break-words">
+                                  "{feedback.notaProfesor}"
+                                </p>
+                              )}
+                              {feedback.mediaLinks && feedback.mediaLinks.length > 0 && (
+                                <div className="mt-2">
+                                  <MediaLinksBadges
+                                    mediaLinks={feedback.mediaLinks}
+                                    onMediaClick={(idx) => handlePreviewMedia(idx, feedback.mediaLinks)}
+                                    compact={true}
+                                    maxDisplay={3}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      } else {
+                        const registro = item.data;
+                        const fecha = new Date(registro.inicioISO);
+                        const fechaFormateada = fecha.toLocaleDateString('es-ES', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        });
+
+                        const getCalificacionBadge = (cal) => {
+                          if (!cal || cal <= 0) return null;
+                          const calInt = Math.round(cal);
+                          if (calInt === 1) return componentStyles.status.badgeDanger;
+                          if (calInt === 2) return componentStyles.status.badgeWarning;
+                          if (calInt === 3) return componentStyles.status.badgeInfo;
+                          if (calInt === 4) return componentStyles.status.badgeSuccess;
+                          return componentStyles.status.badgeDefault;
+                        };
+
+                        return (
+                          <div key={`registro-${registro.id}`} className="flex items-start gap-2 py-2 px-3 border-l-4 border-l-[var(--color-success)] bg-[var(--color-success)]/5 hover:bg-[var(--color-success)]/10 transition-colors relative group">
+                            <BookOpen className="w-4 h-4 text-[var(--color-success)] mt-0.5 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <p className="text-xs text-[var(--color-text-secondary)] font-medium">Sesión de estudio</p>
+                                <span className="text-xs text-[var(--color-text-secondary)]">
+                                  • {fechaFormateada}
+                                </span>
+                                {registro.piezaNombre && (
+                                  <span className="text-xs text-[var(--color-text-secondary)]">
+                                    • {registro.piezaNombre}
+                                  </span>
+                                )}
+                                {registro.calificacion && registro.calificacion > 0 && (
+                                  <Badge className={`${getCalificacionBadge(registro.calificacion)} shrink-0 ml-auto`}>
+                                    <Star className="w-3 h-3 mr-1 fill-current" />
+                                    {isNaN(registro.calificacion) ? '0' : Math.round(registro.calificacion)}/4
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-[var(--color-text-primary)] font-semibold mb-1">
+                                {registro.sesionNombre || 'Sesión sin nombre'}
+                              </p>
+                              {registro.notas && registro.notas.trim() && (
+                                <p className="text-sm text-[var(--color-text-primary)] italic break-words mb-2">
+                                  "{registro.notas.trim()}"
+                                </p>
+                              )}
+                              {registro.mediaLinks && Array.isArray(registro.mediaLinks) && registro.mediaLinks.length > 0 && (
+                                <div className="mt-2">
+                                  <MediaLinksBadges
+                                    mediaLinks={registro.mediaLinks}
+                                    onMediaClick={(idx) => handlePreviewMedia(idx, registro.mediaLinks)}
+                                    compact={true}
+                                    maxDisplay={3}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteRegistro(registro)}
+                              disabled={deleteRegistroMutation.isPending}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 h-8 w-8 p-0 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)]"
+                              aria-label="Eliminar sesión"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        );
+                      }
+                    })}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
+
+      {/* Modal de preview de medios */}
+      {showMediaModal && selectedMediaLinks.length > 0 && (
+        <MediaPreviewModal
+          urls={selectedMediaLinks}
+          initialIndex={selectedMediaIndex || 0}
+          open={showMediaModal}
+          onClose={() => {
+            setShowMediaModal(false);
+            setSelectedMediaLinks([]);
+            setSelectedMediaIndex(0);
+          }}
+        />
+      )}
     </div>
   );
 }

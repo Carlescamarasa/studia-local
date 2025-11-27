@@ -89,9 +89,24 @@ export function resolveMedia(urlString) {
 
   // SoundCloud
   if (SOUNDCLOUD_PATTERN.test(url)) {
+    // Limpiar parámetros de tracking de la URL para evitar problemas
+    let cleanUrl = url;
+    try {
+      const urlObj = new URL(url);
+      // Eliminar parámetros de tracking comunes
+      urlObj.searchParams.delete('utm_source');
+      urlObj.searchParams.delete('utm_medium');
+      urlObj.searchParams.delete('utm_campaign');
+      urlObj.searchParams.delete('utm_content');
+      cleanUrl = urlObj.toString();
+    } catch (e) {
+      // Si falla el parsing, usar la URL original
+      cleanUrl = url;
+    }
+    
     return {
       kind: MediaKind.SOUNDCLOUD,
-      embedUrl: `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`,
+      embedUrl: `https://w.soundcloud.com/player/?url=${encodeURIComponent(cleanUrl)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true`,
       originalUrl: url,
       title: 'SoundCloud Audio',
     };
@@ -102,6 +117,31 @@ export function resolveMedia(urlString) {
     const match = url.match(pattern);
     if (match) {
       const fileId = match[1];
+      
+      // Verificar si tiene parámetro format=mp3 o similar para audio
+      const urlLower = url.toLowerCase();
+      if (urlLower.includes('format=mp3') || 
+          urlLower.includes('format=wav') || 
+          urlLower.includes('format=ogg') || 
+          urlLower.includes('format=m4a') || 
+          urlLower.includes('format=aac') || 
+          urlLower.includes('format=flac') ||
+          urlLower.includes('&format=mp3') ||
+          urlLower.includes('&format=wav') ||
+          urlLower.includes('&format=ogg') ||
+          urlLower.includes('&format=m4a') ||
+          urlLower.includes('&format=aac') ||
+          urlLower.includes('&format=flac')) {
+        // Es un archivo de audio desde Google Drive
+        return {
+          kind: MediaKind.AUDIO,
+          embedUrl: url, // Usar la URL completa con el parámetro format
+          originalUrl: url,
+          title: 'Audio File (Google Drive)',
+        };
+      }
+      
+      // Si no es audio, tratarlo como Drive normal
       return {
         kind: MediaKind.DRIVE,
         embedUrl: `https://drive.google.com/file/d/${fileId}/preview`,
@@ -211,11 +251,13 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
       'https://example.com/unknown-link',
     ];
 
+    if (process.env.NODE_ENV === 'development') {
     console.group('🔍 Media Resolution Tests');
     tests.forEach(url => {
       const result = resolveMedia(url);
       console.log(`${url}\n→`, result);
     });
     console.groupEnd();
+    }
   };
 }

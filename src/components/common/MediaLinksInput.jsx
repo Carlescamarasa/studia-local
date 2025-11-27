@@ -1,13 +1,282 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X, Eye, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import { MediaIcon, getMediaLabel } from "./MediaEmbed";
 import { isValidUrl, extractUrlsFromText, normalizeMediaLinks } from "../utils/media";
+import { componentStyles } from "@/design/componentStyles";
 
 const MAX_LINKS = 10;
+
+/**
+ * Hook para obtener el título de una URL
+ * Usa un proxy CORS para evitar problemas de CORS
+ */
+/**
+ * Extrae el ID del archivo de una URL de Google Drive
+ */
+function extractGoogleDriveId(url) {
+  // Formato: drive.google.com/file/d/{id}
+  const fileMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (fileMatch) return fileMatch[1];
+  
+  // Formato: drive.google.com/open?id={id}
+  const openMatch = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+  if (openMatch) return openMatch[1];
+  
+  // Formato: drive.google.com/uc?id={id}
+  const ucMatch = url.match(/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/);
+  if (ucMatch) return ucMatch[1];
+  
+  return null;
+}
+
+/**
+ * Fetch con timeout personalizado y manejo silencioso de errores
+ */
+function fetchWithTimeout(url, options = {}, timeout = 6000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timeoutId))
+    .catch(error => {
+      // Silenciar todos los errores (timeout, CORS, QUIC, etc.)
+      // No lanzar el error, simplemente retornar null
+      if (error.name === 'AbortError' || 
+          error.message?.includes('timeout') ||
+          error.message?.includes('QUIC') ||
+          error.message?.includes('CORS') ||
+          error.message?.includes('Failed to fetch')) {
+        return null;
+      }
+      // Para otros errores, también silenciar
+      return null;
+    });
+}
+
+function usePageTitle(url) {
+  const [title, setTitle] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!url || !isValidUrl(url)) {
+      setTitle(null);
+      setIsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    // Para SoundCloud, YouTube, Vimeo: no intentar obtener título (no es necesario)
+    // El embed funciona sin título y evita problemas de CORS
+    if (url.includes('soundcloud.com') || 
+        url.includes('youtube.com') || 
+        url.includes('youtu.be') || 
+        url.includes('vimeo.com')) {
+      setTitle(null);
+      setIsLoading(false);
+      return;
+    }
+
+    // Para Google Drive, intentar extraer el ID y usar un nombre más descriptivo
+    if (url.includes('drive.google.com')) {
+      const driveId = extractGoogleDriveId(url);
+      if (driveId) {
+        // Usar un nombre descriptivo basado en el ID
+        setTitle(`Archivo de Google Drive (${driveId.substring(0, 8)}...)`);
+        setIsLoading(false);
+        
+        // Intentar obtener el título real en segundo plano (sin bloquear)
+        // pero no mostrar loading mientras tanto
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+        fetchWithTimeout(proxyUrl, {}, 6000)
+          .then(res => {
+            if (cancelled) return null;
+            if (!res || !res.ok) return null;
+            return res.json();
+          })
+          .then(data => {
+            if (!data) return;
+            if (cancelled) return;
+            if (data.contents) {
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(data.contents, 'text/html');
+              
+              let pageTitle = doc.querySelector('title')?.textContent?.trim() || null;
+              
+              if (!pageTitle) {
+                pageTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content')?.trim() || null;
+              }
+              
+              if (!pageTitle) {
+                const driveTitle = doc.querySelector('[data-title]')?.getAttribute('data-title') ||
+                                  doc.querySelector('.docs-title-input')?.value ||
+                                  doc.querySelector('title')?.textContent?.split(' - ')[0]?.trim();
+                if (driveTitle) {
+                  pageTitle = driveTitle;
+                }
+              }
+              
+              if (pageTitle) {
+                pageTitle = pageTitle
+                  .replace(/\s*-\s*Google\s+Docs\s*/i, '')
+                  .replace(/\s*-\s*Google\s+Drive\s*/i, '')
+                  .trim();
+                
+                if (pageTitle && pageTitle.length > 0) {
+                  setTitle(pageTitle);
+                }
+              }
+            }
+          })
+          .catch(() => {
+            // Silenciar errores para Google Drive ya que tenemos un fallback
+            // No loggear errores de timeout, CORS, QUIC, etc.
+          });
+      }
+      
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setIsLoading(true);
+    setTitle(null);
+    
+    // Intentar obtener el título usando un proxy CORS (solo para URLs que no son de servicios conocidos)
+    // Usamos allorigins.win como proxy público (gratuito, sin API key)
+    // Si falla, simplemente no mostramos título (no es crítico)
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    
+    fetchWithTimeout(proxyUrl, {}, 6000)
+      .then(res => {
+        if (cancelled) return null;
+        if (!res || !res.ok) return null;
+        return res.json();
+      })
+      .then(data => {
+        if (!data || cancelled) return;
+        if (data.contents) {
+          // Parsear el HTML para obtener el título
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(data.contents, 'text/html');
+          
+          // Intentar múltiples formas de obtener el título
+          let pageTitle = doc.querySelector('title')?.textContent?.trim() || null;
+          
+          // Si no hay título en <title>, buscar en meta tags
+          if (!pageTitle) {
+            pageTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content')?.trim() || null;
+          }
+          
+          // Limpiar el título (eliminar " - Google Docs" u otros sufijos comunes)
+          if (pageTitle) {
+            pageTitle = pageTitle
+              .replace(/\s*-\s*Google\s+Docs\s*/i, '')
+              .replace(/\s*-\s*Google\s+Drive\s*/i, '')
+              .trim();
+            
+            // Solo establecer si tiene contenido real (no solo espacios)
+            if (pageTitle && pageTitle.length > 0) {
+              setTitle(pageTitle);
+            }
+          }
+        }
+      })
+      .catch((error) => {
+        // Silenciar completamente los errores de CORS, timeout, etc.
+        // No loggear ni mostrar errores - simplemente no mostrar título
+        if (!cancelled) {
+          setTitle(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  return { title, isLoading };
+}
+
+/**
+ * Componente individual para cada enlace multimedia
+ * Permite usar hooks dentro del map
+ */
+function MediaLinkItem({ url, index, isValid, label, onPreview, onRemove }) {
+  const { title, isLoading } = usePageTitle(url);
+  
+  return (
+    <div 
+      className={`flex items-start gap-2 p-2 rounded-lg border transition-colors w-full ${
+        isValid 
+          ? 'bg-[var(--color-surface-elevated)] border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]' 
+          : 'bg-[var(--color-danger)]/10 border-[var(--color-danger)]/20'
+      }`}
+    >
+      <MediaIcon url={url} className="w-4 h-4 shrink-0 text-[var(--color-text-secondary)] mt-0.5" />
+      
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 mb-1 flex-wrap">
+          <Badge variant="outline" className="text-xs shrink-0">
+            {label}
+          </Badge>
+          {!isValid && (
+            <span className="text-xs text-[var(--color-danger)] font-medium shrink-0">Inválido</span>
+          )}
+        </div>
+        {title ? (
+          <>
+            <p className="text-xs font-medium text-[var(--color-text-primary)] break-words mt-0.5" title={title}>
+              {title}
+            </p>
+            <p className="text-xs text-[var(--color-text-muted)] break-all mt-0.5" title={url}>
+              {url}
+            </p>
+          </>
+        ) : (
+          <p className="text-xs text-[var(--color-text-primary)] break-all mt-0.5" title={url}>
+            {isLoading ? 'Cargando título...' : url}
+          </p>
+        )}
+      </div>
+      
+      <div className="flex gap-1 shrink-0 mt-0.5">
+        {isValid && onPreview && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onPreview(index)}
+            className="h-8 w-8 p-0 shrink-0"
+            aria-label="Ver preview"
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => onRemove(index)}
+          className="h-8 w-8 p-0 shrink-0 text-[var(--color-danger)] hover:text-[var(--color-danger)]/80 hover:bg-[var(--color-danger)]/10"
+          aria-label="Eliminar enlace"
+        >
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Componente para entrada y gestión de enlaces multimedia
@@ -62,15 +331,17 @@ export default function MediaLinksInput({ value = [], onChange, onPreview }) {
           placeholder={`https://ejemplo.com/imagen.jpg
 https://youtu.be/VIDEO
 https://soundcloud.com/artist/track
-https://drive.google.com/file/d/ID/view`}
+https://drive.google.com/file/d/ID/view?usp=sharing&format=mp3`}
           rows={4}
-          className="resize-none font-mono text-xs"
+          className={`resize-none font-mono text-xs ${componentStyles.controls.inputDefault}`}
+          autoComplete="off"
+          data-form-type="other"
         />
-        <p className="text-xs text-gray-500 mt-1">
-          Pega una URL por línea. Soporta imágenes, audio, vídeo, PDF, YouTube, Vimeo, SoundCloud y Google Drive.
-        </p>
+        <p className="text-xs text-[var(--color-text-secondary)] mt-1 break-words">
+            Pega una URL por línea. Soporta imágenes, audio, vídeo, PDF, YouTube, Vimeo, SoundCloud y Google Drive.
+          </p>
         {errors.length > 0 && (
-          <div className="flex items-center gap-2 mt-2 text-xs text-red-600">
+          <div className="flex items-center gap-2 mt-2 text-xs text-[var(--color-danger)]">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errors.join(', ')}</span>
           </div>
@@ -90,63 +361,34 @@ https://drive.google.com/file/d/ID/view`}
       </div>
 
       {value.length > 0 && (
-        <div className="border rounded-lg p-3 bg-gray-50 space-y-2">
-          <p className="text-xs font-semibold text-gray-700">
+        <div className="border rounded-lg p-3 bg-[var(--color-surface-muted)] space-y-2 w-full min-w-0 max-w-full overflow-hidden">
+          <p className="text-xs font-semibold text-[var(--color-text-primary)]">
             Enlaces agregados ({value.length}/{MAX_LINKS}):
           </p>
-          <div className="space-y-2">
+          <div className="space-y-2 w-full min-w-0 max-w-full">
             {value.map((url, idx) => {
-              const isValid = isValidUrl(url);
-              const label = getMediaLabel(url);
+              if (!url || typeof url !== 'string') {
+                return null;
+              }
+              
+              const trimmedUrl = url.trim();
+              if (!trimmedUrl) {
+                return null;
+              }
+              
+              const isValid = isValidUrl(trimmedUrl);
+              const label = getMediaLabel(trimmedUrl);
               
               return (
-                <div 
-                  key={idx} 
-                  className={`flex items-center gap-2 p-2 rounded-lg border transition-colors ${
-                    isValid 
-                      ? 'bg-white border-gray-200 hover:border-gray-300' 
-                      : 'bg-red-50 border-red-200'
-                  }`}
-                >
-                  <MediaIcon url={url} className="w-4 h-4 shrink-0 text-gray-600" />
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {label}
-                      </Badge>
-                      {!isValid && (
-                        <span className="text-xs text-red-600 font-medium">Inválido</span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-600 truncate mt-0.5">{url}</p>
-                  </div>
-                  
-                  <div className="flex gap-1 shrink-0">
-                    {isValid && onPreview && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handlePreview(idx)}
-                        className="h-8 w-8 p-0"
-                        aria-label="Ver preview"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    )}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemove(idx)}
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      aria-label="Eliminar enlace"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
+                <MediaLinkItem
+                  key={idx}
+                  url={trimmedUrl}
+                  index={idx}
+                  isValid={isValid}
+                  label={label}
+                  onPreview={handlePreview}
+                  onRemove={handleRemove}
+                />
               );
             })}
           </div>

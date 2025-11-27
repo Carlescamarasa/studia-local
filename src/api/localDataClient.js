@@ -1,5 +1,16 @@
 // src/api/localDataClient.js
 import { localUsers } from '@/local-data/localUsers';
+import { AsignacionesAPI } from '@/data/asignacionesClient';
+import { BloquesAPI } from '@/data/bloquesClient';
+import { FeedbacksSemanalAPI } from '@/data/feedbacksSemanalClient';
+import { PiezasAPI } from '@/data/piezasClient';
+import { PlanesAPI } from '@/data/planesClient';
+import { RegistrosBloqueAPI } from '@/data/registrosBloqueClient';
+import { RegistrosSesionAPI } from '@/data/registrosSesionClient';
+import { UsuariosAPI } from '@/data/usuariosClient';
+import { EventosCalendarioAPI } from '@/data/eventosCalendarioClient';
+import { getStoredUserId, setStoredUserId, clearStoredUserId } from '@/data/authClient';
+import { createRemoteDataAPI } from './remoteDataAPI';
 
 // Referencia global a los datos locales (se inyecta desde LocalDataProvider)
 let localDataRef = {
@@ -10,32 +21,137 @@ let localDataRef = {
   planes: [],
   registrosBloque: [],
   registrosSesion: [],
+  eventosCalendario: [],
   usuarios: localUsers,
+  _loading: true,
 };
 
 // Función para inyectar datos desde LocalDataProvider
 export function setLocalDataRef(data) {
-  localDataRef = data;
+  localDataRef = { ...data, _loading: false };
 }
 
-// Usuario actual (se guarda en localStorage)
-const CURRENT_USER_KEY = 'localCurrentUserId';
-
+// API legada: helpers de usuario actual usados directamente desde varias vistas
 export function getCurrentUser() {
-  const userId = localStorage.getItem(CURRENT_USER_KEY) || localUsers[0]?.id;
-  return localDataRef.usuarios.find(u => u.id === userId) || localUsers[0];
+  // Si hay una sesión de Supabase activa, devolver null
+  // Verificar de forma síncrona si hay una sesión (Supabase guarda en localStorage)
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      // Verificar si hay claves de Supabase en localStorage
+      const hasSupabaseSession = Object.keys(window.localStorage).some(key => 
+        key.startsWith('sb-') && (key.includes('auth-token') || key.includes('auth.refresh'))
+      );
+      
+      if (hasSupabaseSession) {
+        // En modo Supabase, no usar localCurrentUserId
+        return null;
+      }
+    } catch (e) {
+      // Si hay error, continuar con la lógica normal
+    }
+  }
+  
+  // Solo devolver usuario si hay un userId explícitamente almacenado en localStorage
+  // En modo local puro, usar localCurrentUserId
+  const storedUserId = getStoredUserId(null);
+  if (!storedUserId) {
+    return null;
+  }
+  
+  // Buscar el usuario en los datos locales
+  const user = localDataRef.usuarios.find(u => u.id === storedUserId);
+  if (user) return user;
+  
+  // Si no se encuentra, devolver null
+  return null;
 }
 
 export function setCurrentUser(userId) {
-  localStorage.setItem(CURRENT_USER_KEY, userId);
+  setStoredUserId(userId);
 }
 
-// Helper para crear entidades con métodos CRUD
-function createEntityAPI(entityName, dataKey) {
+function resolveCurrentUser() {
+  return getCurrentUser();
+}
+
+// Helper para obtener la API correcta según el modo (con caché)
+let cachedRemoteAPI = null;
+let cachedMode = null;
+function getDataAPI() {
+  // Verificar si hay una sesión de Supabase activa
+  // Si hay sesión, usar modo remoto automáticamente (a menos que VITE_DATA_SOURCE esté explícitamente en 'local')
+  let dataSource = import.meta.env.VITE_DATA_SOURCE;
+  
+  // Si no está configurado explícitamente, detectar automáticamente
+  if (!dataSource) {
+    // Verificar si hay sesión de Supabase en localStorage
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const hasSupabaseSession = Object.keys(window.localStorage).some(key => 
+        key.startsWith('sb-') && key.includes('auth-token')
+      );
+      
+      // Si hay sesión de Supabase, usar modo remoto
+      if (hasSupabaseSession) {
+        dataSource = 'remote';
+      } else {
+        dataSource = 'local';
+      }
+    } else {
+      dataSource = 'local';
+    }
+  }
+  
+  // Si el modo cambió, limpiar el caché
+  if (cachedMode !== dataSource) {
+    cachedRemoteAPI = null;
+    cachedMode = dataSource;
+  }
+  
+  if (dataSource === 'remote') {
+    if (!cachedRemoteAPI) {
+      cachedRemoteAPI = createRemoteDataAPI();
+    }
+    return cachedRemoteAPI;
+  }
+  
+  return null; // null significa usar localDataRef directamente
+}
+
+// Mapeo de nombres de entidades a claves de API
+const entityToAPIKey = {
+  'Asignacion': 'asignaciones',
+  'Bloque': 'bloques',
+  'FeedbackSemanal': 'feedbacksSemanal',
+  'Pieza': 'piezas',
+  'Plan': 'planes',
+  'RegistroBloque': 'registrosBloque',
+  'RegistroSesion': 'registrosSesion',
+  'EventoCalendario': 'eventosCalendario',
+};
+
+// Helper para crear entidades con métodos CRUD apoyadas en la capa de datos
+function createEntityAPI(entityName, dataKey, entityApi) {
+  const apiKey = entityToAPIKey[entityName];
+  
   return {
     list: async (sort = '') => {
-      let data = [...(localDataRef[dataKey] || [])];
-      // Ordenamiento simple (por ahora solo por ID)
+      const api = getDataAPI();
+      if (api && apiKey) {
+        // Modo remote: usar API remota
+        return await api[apiKey].list(sort);
+      }
+      
+      // Modo local: usar código existente
+      // Esperar a que LocalDataProvider haya inyectado datos (máx ~2s)
+      let attempts = 0;
+      const maxAttempts = 40;
+      while (localDataRef._loading && attempts < maxAttempts) {
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise(resolve => setTimeout(resolve, 50));
+        attempts++;
+      }
+
+      let data = [...(await entityApi())];
       if (sort.startsWith('-')) {
         const field = sort.slice(1);
         data.sort((a, b) => {
@@ -47,11 +163,25 @@ function createEntityAPI(entityName, dataKey) {
       return data;
     },
     get: async (id) => {
-      return localDataRef[dataKey]?.find(item => item.id === id) || null;
+      const api = getDataAPI();
+      if (api && apiKey) {
+        // Modo remote: usar API remota
+        return await api[apiKey].get(id);
+      }
+      
+      // Modo local: usar código existente
+      const data = await entityApi();
+      return data.find(item => item.id === id) || null;
     },
     filter: async (filters = {}, limit = null) => {
-      let data = [...(localDataRef[dataKey] || [])];
-      // Filtrado simple
+      const api = getDataAPI();
+      if (api && apiKey) {
+        // Modo remote: usar API remota
+        return await api[apiKey].filter(filters, limit);
+      }
+      
+      // Modo local: usar código existente
+      let data = [...(await entityApi())];
       Object.keys(filters).forEach(key => {
         data = data.filter(item => item[key] === filters[key]);
       });
@@ -59,62 +189,113 @@ function createEntityAPI(entityName, dataKey) {
       return data;
     },
     create: async (data) => {
-      const newItem = {
-        ...data,
-        id: data.id || `${entityName.toLowerCase()}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        created_date: new Date().toISOString(),
-      };
-      localDataRef[dataKey].push(newItem);
-      // Guardar en localStorage para persistencia
-      try {
-        const stored = JSON.parse(localStorage.getItem(`local_${dataKey}`) || "[]");
-        stored.push(newItem);
-        localStorage.setItem(`local_${dataKey}`, JSON.stringify(stored));
-      } catch (e) {
-        console.error('Error guardando en localStorage:', e);
+      const api = getDataAPI();
+      if (api && apiKey) {
+        // Modo remote: usar API remota
+        return await api[apiKey].create(data);
       }
+      
+      // Modo local: usar código existente
+      const apiCreate =
+        entityName === 'Asignacion' ? AsignacionesAPI.createAsignacion :
+        entityName === 'Bloque' ? BloquesAPI.createBloque :
+        entityName === 'FeedbackSemanal' ? FeedbacksSemanalAPI.createFeedbackSemanal :
+        entityName === 'Pieza' ? PiezasAPI.createPieza :
+        entityName === 'Plan' ? PlanesAPI.createPlan :
+        entityName === 'RegistroBloque' ? RegistrosBloqueAPI.createRegistroBloque :
+        entityName === 'RegistroSesion' ? RegistrosSesionAPI.createRegistroSesion :
+        entityName === 'EventoCalendario' ? EventosCalendarioAPI.createEventoCalendario :
+        null;
+
+      if (!apiCreate) {
+        throw new Error(`API create no definida para entidad ${entityName}`);
+      }
+
+      const newItem = await apiCreate(data);
+
+      if (!Array.isArray(localDataRef[dataKey])) {
+        localDataRef[dataKey] = [];
+      }
+      localDataRef[dataKey].push(newItem);
       return newItem;
     },
-    update: async (id, data) => {
-      const index = localDataRef[dataKey].findIndex(item => item.id === id);
-      if (index === -1) throw new Error(`${entityName} no encontrado`);
-      const updated = { ...localDataRef[dataKey][index], ...data };
-      localDataRef[dataKey][index] = updated;
-      // Actualizar localStorage
-      try {
-        const stored = JSON.parse(localStorage.getItem(`local_${dataKey}`) || "[]");
-        const storedIndex = stored.findIndex(item => item.id === id);
-        if (storedIndex !== -1) {
-          stored[storedIndex] = updated;
-          localStorage.setItem(`local_${dataKey}`, JSON.stringify(stored));
-        }
-      } catch (e) {
-        console.error('Error actualizando localStorage:', e);
+    update: async (id, updates) => {
+      const api = getDataAPI();
+      if (api && apiKey) {
+        // Modo remote: usar API remota
+        return await api[apiKey].update(id, updates);
+      }
+      
+      // Modo local: usar código existente
+      const apiUpdate =
+        entityName === 'Asignacion' ? AsignacionesAPI.updateAsignacion :
+        entityName === 'Bloque' ? BloquesAPI.updateBloque :
+        entityName === 'FeedbackSemanal' ? FeedbacksSemanalAPI.updateFeedbackSemanal :
+        entityName === 'Pieza' ? PiezasAPI.updatePieza :
+        entityName === 'Plan' ? PlanesAPI.updatePlan :
+        entityName === 'RegistroBloque' ? RegistrosBloqueAPI.updateRegistroBloque :
+        entityName === 'RegistroSesion' ? RegistrosSesionAPI.updateRegistroSesion :
+        entityName === 'EventoCalendario' ? EventosCalendarioAPI.updateEventoCalendario :
+        null;
+
+      if (!apiUpdate) {
+        throw new Error(`API update no definida para entidad ${entityName}`);
+      }
+
+      const updated = await apiUpdate(id, updates);
+      const index = Array.isArray(localDataRef[dataKey])
+        ? localDataRef[dataKey].findIndex(item => item.id === id)
+        : -1;
+      if (index !== -1) {
+        localDataRef[dataKey][index] = updated;
       }
       return updated;
     },
     delete: async (id) => {
-      const index = localDataRef[dataKey].findIndex(item => item.id === id);
-      if (index === -1) throw new Error(`${entityName} no encontrado`);
-      localDataRef[dataKey].splice(index, 1);
-      // Actualizar localStorage
-      try {
-        const stored = JSON.parse(localStorage.getItem(`local_${dataKey}`) || "[]");
-        const filtered = stored.filter(item => item.id !== id);
-        localStorage.setItem(`local_${dataKey}`, JSON.stringify(filtered));
-      } catch (e) {
-        console.error('Error eliminando de localStorage:', e);
+      const api = getDataAPI();
+      if (api && apiKey) {
+        // Modo remote: usar API remota
+        return await api[apiKey].delete(id);
+      }
+      
+      // Modo local: usar código existente
+      const apiDelete =
+        entityName === 'Asignacion' ? AsignacionesAPI.deleteAsignacion :
+        entityName === 'Bloque' ? BloquesAPI.deleteBloque :
+        entityName === 'FeedbackSemanal' ? FeedbacksSemanalAPI.deleteFeedbackSemanal :
+        entityName === 'Pieza' ? PiezasAPI.deletePieza :
+        entityName === 'Plan' ? PlanesAPI.deletePlan :
+        entityName === 'RegistroBloque' ? RegistrosBloqueAPI.deleteRegistroBloque :
+        entityName === 'RegistroSesion' ? RegistrosSesionAPI.deleteRegistroSesion :
+        entityName === 'EventoCalendario' ? EventosCalendarioAPI.deleteEventoCalendario :
+        null;
+
+      if (!apiDelete) {
+        throw new Error(`API delete no definida para entidad ${entityName}`);
+      }
+
+      await apiDelete(id);
+
+      if (Array.isArray(localDataRef[dataKey])) {
+        localDataRef[dataKey] = localDataRef[dataKey].filter(item => item.id !== id);
       }
       return { success: true };
     },
     bulkCreate: async (items) => {
-      const newItems = items.map(item => ({
-        ...item,
-        id: item.id || `${entityName.toLowerCase()}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        created_date: new Date().toISOString(),
-      }));
-      localDataRef[dataKey].push(...newItems);
-      return newItems;
+      const api = getDataAPI();
+      if (api && apiKey && api[apiKey].bulkCreate) {
+        // Modo remote: usar API remota si tiene bulkCreate
+        return await api[apiKey].bulkCreate(items);
+      }
+      
+      // Modo local o si no hay bulkCreate: crear de forma secuencial
+      const created = [];
+      for (const item of items) {
+        // eslint-disable-next-line no-await-in-loop
+        const newItem = await this.create(item);
+        created.push(newItem);
+      }
+      return created;
     },
   };
 }
@@ -123,10 +304,10 @@ function createEntityAPI(entityName, dataKey) {
 export const localDataClient = {
   auth: {
     me: async () => {
-      return getCurrentUser();
+      return resolveCurrentUser();
     },
     getCurrentUser: () => {
-      return getCurrentUser();
+      return resolveCurrentUser();
     },
     login: async (credentials) => {
       // En modo local, simplemente establecer el usuario si existe
@@ -135,31 +316,164 @@ export const localDataClient = {
         u.id === credentials?.userId
       );
       if (user) {
-        setCurrentUser(user.id);
+        setStoredUserId(user.id);
         return { user, success: true };
       }
       throw new Error('Usuario no encontrado');
     },
     logout: async () => {
-      // No hacer nada en local, solo limpiar sessionStorage
+      // Limpiar sesión local
+      clearStoredUserId();
       sessionStorage.clear();
       return { success: true };
     },
-    updateMe: async (data) => {
-      const currentUser = getCurrentUser();
-      const updated = { ...currentUser, ...data };
-      const index = localDataRef.usuarios.findIndex(u => u.id === currentUser.id);
-      if (index !== -1) {
-        localDataRef.usuarios[index] = updated;
+    updateMe: async (data, effectiveUserId = null) => {
+      // Intentar obtener usuario de forma local primero
+      let currentUser = resolveCurrentUser();
+      let userIdToUse = currentUser?.id;
+      
+      // Si se proporciona effectiveUserId, usarlo (útil en modo Supabase)
+      if (effectiveUserId && !userIdToUse) {
+        userIdToUse = effectiveUserId;
+        // Buscar el usuario en datos locales por ID
+        if (!localDataRef._loading) {
+          const foundUser = localDataRef.usuarios.find(u => u.id === effectiveUserId);
+          if (foundUser) {
+            currentUser = foundUser;
+          }
+        }
       }
-      return updated;
+      
+      // Si no hay usuario local pero estamos en modo Supabase, intentar obtener de Supabase
+      if (!currentUser || !userIdToUse) {
+        try {
+          const { supabase } = await import('@/lib/supabaseClient');
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            // Buscar usuario en datos locales por email
+            const normalizedEmail = session.user.email?.toLowerCase().trim();
+            if (normalizedEmail && !localDataRef._loading) {
+              const foundUser = localDataRef.usuarios.find(u => {
+                if (!u.email) return false;
+                return u.email.toLowerCase().trim() === normalizedEmail;
+              });
+              if (foundUser) {
+                currentUser = foundUser;
+                userIdToUse = foundUser.id;
+              } else {
+                // Si no se encuentra en local pero hay sesión de Supabase, usar el ID de Supabase
+                userIdToUse = session.user.id;
+              }
+            } else if (session.user.id) {
+              // Si no hay email pero hay ID, usar el ID de Supabase
+              userIdToUse = session.user.id;
+            }
+          }
+        } catch (e) {
+          // Si hay error importando supabase, continuar con el flujo normal
+        }
+      }
+      
+      if (!userIdToUse) {
+        throw new Error('No hay usuario autenticado');
+      }
+      
+      const api = getDataAPI();
+      if (api && api.usuarios) {
+        // Modo remote: usar API remota
+        return await api.usuarios.update(userIdToUse, data);
+      }
+      
+      // Modo local: usar código existente
+      if (currentUser) {
+        const updated = { ...currentUser, ...data };
+        const index = localDataRef.usuarios.findIndex(u => u.id === userIdToUse);
+        if (index !== -1) {
+          localDataRef.usuarios[index] = updated;
+          // Persistir también en la capa de datos
+          await UsuariosAPI.updateUsuario(userIdToUse, data);
+        }
+        return updated;
+      } else {
+        // Si no tenemos currentUser pero tenemos userIdToUse, intentar actualizar directamente
+        const index = localDataRef.usuarios.findIndex(u => u.id === userIdToUse);
+        if (index !== -1) {
+          const existingUser = localDataRef.usuarios[index];
+          const updated = { ...existingUser, ...data };
+          localDataRef.usuarios[index] = updated;
+          await UsuariosAPI.updateUsuario(userIdToUse, data);
+          return updated;
+        }
+        throw new Error('No hay usuario autenticado');
+      }
     },
   },
   entities: {
     User: {
-      list: async () => localDataRef.usuarios,
-      get: async (id) => localDataRef.usuarios.find(u => u.id === id),
+      list: async () => {
+        const api = getDataAPI();
+        if (api) {
+          // Modo remote: usar API remota
+          return await api.usuarios.list();
+        }
+        // Modo local: usar código existente
+        // Normalizar usuarios para asegurar que todos tengan nombreCompleto
+        const usuarios = localDataRef.usuarios || [];
+        return usuarios.map(u => {
+          // Si ya tiene nombreCompleto, retornar tal cual
+          if (u.nombreCompleto && u.nombreCompleto.trim()) {
+            return u;
+          }
+          // Generar nombreCompleto desde otros campos
+          let nombreCompleto = null;
+          if (u.full_name && u.full_name.trim()) {
+            nombreCompleto = u.full_name.trim();
+          } else if (u.first_name || u.last_name) {
+            nombreCompleto = [u.first_name, u.last_name].filter(Boolean).join(' ').trim();
+          } else if (u.email) {
+            const emailStr = String(u.email);
+            if (emailStr.includes('@')) {
+              const parteLocal = emailStr.split('@')[0];
+              const isLikelyId = /^[a-f0-9]{24}$/i.test(parteLocal) || /^u_[a-z0-9_]+$/i.test(parteLocal);
+              if (parteLocal && !isLikelyId) {
+                nombreCompleto = parteLocal
+                  .replace(/[._+-]/g, ' ')
+                  .replace(/\b\w/g, l => l.toUpperCase())
+                  .trim() || emailStr;
+              } else {
+                nombreCompleto = emailStr;
+              }
+            } else {
+              nombreCompleto = emailStr;
+            }
+          } else {
+            nombreCompleto = `Usuario ${u.id || 'Nuevo'}`;
+          }
+          // Asegurar que full_name tenga valor si no existe
+          const finalFullName = (u.full_name && u.full_name.trim()) || (nombreCompleto && nombreCompleto.trim()) || '';
+          return {
+            ...u,
+            nombreCompleto: nombreCompleto,
+            full_name: finalFullName, // full_name es la fuente de verdad
+          };
+        });
+      },
+      get: async (id) => {
+        const api = getDataAPI();
+        if (api) {
+          // Modo remote: usar API remota
+          return await api.usuarios.get(id);
+        }
+        // Modo local: usar código existente
+        return localDataRef.usuarios.find(u => u.id === id);
+      },
       filter: async (filters = {}) => {
+        const api = getDataAPI();
+        if (api) {
+          // Modo remote: usar API remota
+          return await api.usuarios.filter(filters);
+        }
+        // Modo local: usar código existente
         let users = [...localDataRef.usuarios];
         Object.keys(filters).forEach(key => {
           users = users.filter(u => u[key] === filters[key]);
@@ -167,34 +481,86 @@ export const localDataClient = {
         return users;
       },
       create: async (data) => {
+        const api = getDataAPI();
+        if (api) {
+          // Modo remote: usar API remota
+          return await api.usuarios.create(data);
+        }
+        // Modo local: usar código existente
+        // Asegurar que el usuario tenga nombreCompleto si no lo tiene
+        let nombreCompleto = data.nombreCompleto;
+        if (!nombreCompleto || !nombreCompleto.trim()) {
+          // Intentar generar nombreCompleto desde otros campos
+          if (data.full_name && data.full_name.trim()) {
+            nombreCompleto = data.full_name.trim();
+          } else if (data.first_name || data.last_name) {
+            nombreCompleto = [data.first_name, data.last_name].filter(Boolean).join(' ').trim();
+          } else if (data.email) {
+            // Extraer nombre del email
+            const emailStr = String(data.email);
+            if (emailStr.includes('@')) {
+              const parteLocal = emailStr.split('@')[0];
+              // Formatear email: "nombre.apellido" o "nombre" de forma más legible
+              nombreCompleto = parteLocal
+                .replace(/[._+-]/g, ' ')
+                .replace(/\b\w/g, l => l.toUpperCase())
+                .trim() || emailStr;
+            } else {
+              nombreCompleto = emailStr;
+            }
+          } else {
+            // Último recurso: generar nombre genérico
+            nombreCompleto = `Usuario ${data.id || 'Nuevo'}`;
+          }
+        }
+        
         const newUser = {
           ...data,
           id: data.id || `u_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          nombreCompleto: nombreCompleto,
+          // Si no tiene full_name, usar nombreCompleto
+          full_name: data.full_name || nombreCompleto,
         };
         localDataRef.usuarios.push(newUser);
+        await UsuariosAPI.createUsuario(newUser);
         return newUser;
       },
       update: async (id, data) => {
+        const api = getDataAPI();
+        if (api) {
+          // Modo remote: usar API remota
+          return await api.usuarios.update(id, data);
+        }
+        // Modo local: usar código existente
         const index = localDataRef.usuarios.findIndex(u => u.id === id);
         if (index === -1) throw new Error('Usuario no encontrado');
         const updated = { ...localDataRef.usuarios[index], ...data };
         localDataRef.usuarios[index] = updated;
+        await UsuariosAPI.updateUsuario(id, data);
         return updated;
       },
       delete: async (id) => {
+        const api = getDataAPI();
+        if (api) {
+          // Modo remote: usar API remota
+          return await api.usuarios.delete(id);
+        }
+        // Modo local: usar código existente
         const index = localDataRef.usuarios.findIndex(u => u.id === id);
         if (index === -1) throw new Error('Usuario no encontrado');
         localDataRef.usuarios.splice(index, 1);
+        await UsuariosAPI.deleteUsuario(id);
         return { success: true };
       },
     },
-    Asignacion: createEntityAPI('Asignacion', 'asignaciones'),
-    Bloque: createEntityAPI('Bloque', 'bloques'),
-    FeedbackSemanal: createEntityAPI('FeedbackSemanal', 'feedbacksSemanal'),
-    Pieza: createEntityAPI('Pieza', 'piezas'),
-    Plan: createEntityAPI('Plan', 'planes'),
-    RegistroBloque: createEntityAPI('RegistroBloque', 'registrosBloque'),
-    RegistroSesion: createEntityAPI('RegistroSesion', 'registrosSesion'),
+    Asignacion: createEntityAPI('Asignacion', 'asignaciones', () => AsignacionesAPI.getAllAsignaciones()),
+    Bloque: createEntityAPI('Bloque', 'bloques', () => BloquesAPI.getAllBloques()),
+    FeedbackSemanal: createEntityAPI('FeedbackSemanal', 'feedbacksSemanal', () => FeedbacksSemanalAPI.getAllFeedbacksSemanal()),
+    Pieza: createEntityAPI('Pieza', 'piezas', () => PiezasAPI.getAllPiezas()),
+    Plan: createEntityAPI('Plan', 'planes', () => PlanesAPI.getAllPlanes()),
+    RegistroBloque: createEntityAPI('RegistroBloque', 'registrosBloque', () => RegistrosBloqueAPI.getAllRegistrosBloque()),
+    RegistroSesion: createEntityAPI('RegistroSesion', 'registrosSesion', () => RegistrosSesionAPI.getAllRegistrosSesion()),
+    EventoCalendario: createEntityAPI('EventoCalendario', 'eventosCalendario', () => EventosCalendarioAPI.getAllEventosCalendario()),
   },
 };
 

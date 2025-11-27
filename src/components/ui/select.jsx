@@ -9,21 +9,29 @@ const SelectGroup = SelectPrimitive.Group
 const SelectValue = SelectPrimitive.Value
 
 const SelectTrigger = React.forwardRef(({ className, children, ...props }, ref) => {
-  const { control } = useClassTokens();
+  let tokens;
+  try {
+    tokens = useClassTokens();
+  } catch (error) {
+    // Si hay error, usar valores por defecto
+    tokens = null;
+  }
+  const control = tokens?.control || 'ctrl-field';
   
   return (
     <SelectPrimitive.Trigger
       ref={ref}
       className={cn(
         control,
-        "[&>span]:line-clamp-1",
+        "flex items-center w-full cursor-pointer",
+        "[&>span]:line-clamp-1 [&>span]:flex-1 [&>span]:text-left [&>span]:pr-2",
         className
       )}
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon asChild>
-        <ChevronDown className="h-4 w-4 opacity-50" />
+      <SelectPrimitive.Icon asChild className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   )
@@ -63,12 +71,13 @@ const SelectContent = React.forwardRef(({ className, children, position = "poppe
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden bg-background text-ui border border-ui shadow-card data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        "relative z-[200] max-h-96 min-w-[8rem] overflow-hidden bg-background text-ui border border-[var(--color-border-default)] shadow-card data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
         "rounded-[var(--radius-ctrl)]",
         position === "popper" &&
           "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
         className
       )}
+      style={{ zIndex: 200 }}
       position={position}
       {...props}
     >
@@ -77,7 +86,7 @@ const SelectContent = React.forwardRef(({ className, children, position = "poppe
         className={cn(
           "p-1",
           position === "popper" &&
-            "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
+            "w-full min-w-[var(--radix-select-trigger-width)]"
         )}
       >
         {children}

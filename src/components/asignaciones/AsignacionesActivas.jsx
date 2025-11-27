@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCurrentUser } from "@/api/localDataClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Eye, Copy, XCircle, Search, Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
+import { displayName, displayNameById } from "@/components/utils/helpers";
 
 export default function AsignacionesActivas() {
   const queryClient = useQueryClient();
@@ -23,18 +24,18 @@ export default function AsignacionesActivas() {
   const { data: asignaciones = [], isLoading } = useQuery({
     queryKey: ['asignaciones-activas'],
     queryFn: async () => {
-      const all = await base44.entities.Asignacion.list('-created_date');
+      const all = await localDataClient.entities.Asignacion.list('-created_at');
       return all.filter(a => a.estado === 'publicada' || a.estado === 'en_curso');
     },
   });
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => localDataClient.entities.User.list(),
   });
 
   const cerrarMutation = useMutation({
-    mutationFn: (id) => base44.entities.Asignacion.update(id, { estado: 'cerrada' }),
+    mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'cerrada' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones-activas'] });
       queryClient.invalidateQueries({ queryKey: ['asignaciones-archivadas'] });
@@ -54,7 +55,7 @@ export default function AsignacionesActivas() {
       delete copia.created_date;
       delete copia.updated_date;
       delete copia.created_by;
-      return base44.entities.Asignacion.create(copia);
+      return localDataClient.entities.Asignacion.create(copia);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones-activas'] });
@@ -64,17 +65,21 @@ export default function AsignacionesActivas() {
 
   const filteredAsignaciones = asignaciones.filter(a => {
     const alumno = usuarios.find(u => u.id === a.alumnoId);
-    const matchSearch = 
-      alumno?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.piezaSnapshot?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.plan?.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
+    const alumnoNombreBase = alumno ? displayName(alumno) : '';
+    const alumnoNombreSnap = a.alumno?.nombreCompleto || a.alumno?.full_name || '';
+    const alumnoNombre = (alumnoNombreBase || alumnoNombreSnap).toLowerCase();
+    const term = searchTerm.toLowerCase();
+    const matchSearch =
+      alumnoNombre.includes(term) ||
+      (a.piezaSnapshot?.nombre || '').toLowerCase().includes(term) ||
+      (a.plan?.nombre || '').toLowerCase().includes(term);
     const matchEstado = estadoFilter === 'all' || a.estado === estadoFilter;
     return matchSearch && matchEstado;
   });
 
   const estadoColors = {
-    publicada: 'bg-green-100 text-green-800',
-    en_curso: 'bg-blue-100 text-blue-800',
+    publicada: 'bg-[var(--color-success)]/10 text-[var(--color-success)] border-[var(--color-success)]/20',
+    en_curso: 'bg-[var(--color-info)]/10 text-[var(--color-info)] border-[var(--color-info)]/20',
   };
 
   const estadoLabels = {
@@ -131,7 +136,11 @@ export default function AsignacionesActivas() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <h4 className="font-semibold truncate">{alumno?.full_name || 'Estudiante'}</h4>
+                            <h4 className="font-semibold truncate">
+                              {alumno
+                                ? displayName(alumno)
+                                : displayNameById(asignacion.alumnoId)}
+                            </h4>
                             <Badge className={estadoColors[asignacion.estado]}>
                               {estadoLabels[asignacion.estado]}
                             </Badge>

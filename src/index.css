@@ -1,6 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Tenor+Sans&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Prevenir overlay del navegador móvil */
+@supports (padding: max(0px)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Ocultar scrollbar en tabs móvil */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Altura del viewport móvil para evitar overlay */
+@supports (height: 100dvh) {
+  html {
+    height: 100dvh;
+    height: -webkit-fill-available;
+  }
+  body {
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+  }
+}
 
 
 /* :root {
@@ -111,38 +146,38 @@ button:focus-visible {
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 0 0% 0%;         /* #000000 - Negro puro */
+    --foreground: 0 0% 100%;       /* #FFFFFF - Texto blanco */
+    --card: 0 0% 7%;                /* #121212 - Card casi negro */
+    --card-foreground: 0 0% 100%;  /* #FFFFFF - Texto blanco */
+    --popover: 0 0% 7%;             /* #121212 - Popover casi negro */
+    --popover-foreground: 0 0% 100%; /* #FFFFFF - Texto blanco */
+    --primary: 28 98% 62%;          /* #fd9840 - Color de marca (naranja) */
+    --primary-foreground: 0 0% 0%; /* #000000 - Texto negro sobre primary */
+    --secondary: 0 0% 4%;           /* #0A0A0A - Casi negro */
+    --secondary-foreground: 0 0% 100%; /* #FFFFFF - Texto blanco */
+    --muted: 0 0% 2%;               /* #050505 - Casi negro */
+    --muted-foreground: 0 0% 60%;  /* #999999 - Texto gris medio */
+    --accent: 28 98% 62%;           /* #fd9840 - Color de marca para acentos */
+    --accent-foreground: 0 0% 0%;  /* #000000 - Texto negro sobre accent */
+    --destructive: 0 72% 51%;       /* #EF4444 - Rojo para acciones destructivas */
+    --destructive-foreground: 0 0% 100%; /* Texto blanco sobre destructive */
+    --border: 0 0% 10%;             /* #1A1A1A - Bordes casi negros */
+    --input: 0 0% 10%;              /* #1A1A1A - Inputs con bordes casi negros */
+    --ring: 28 98% 62%;             /* #fd9840 - Ring en color de marca */
+    --chart-1: 28 98% 62%;          /* Color de marca para charts */
+    --chart-2: 142 76% 36%;         /* Verde para charts */
+    --chart-3: 217 91% 60%;         /* Azul para charts */
+    --chart-4: 38 92% 50%;          /* Ámbar para charts */
+    --chart-5: 0 72% 51%;           /* Rojo para charts */
+    --sidebar-background: 0 0% 4%;  /* #0A0A0A - Sidebar casi negro */
+    --sidebar-foreground: 0 0% 100%; /* #FFFFFF - Texto blanco en sidebar */
+    --sidebar-primary: 28 98% 62%; /* #fd9840 - Color de marca en sidebar */
+    --sidebar-primary-foreground: 0 0% 0%; /* Texto negro sobre primary */
+    --sidebar-accent: 0 0% 7%;      /* #121212 - Accent casi negro en sidebar */
+    --sidebar-accent-foreground: 0 0% 100%; /* Texto blanco */
+    --sidebar-border: 0 0% 10%;    /* #1A1A1A - Bordes casi negros */
+    --sidebar-ring: 28 98% 62%;    /* #fd9840 - Ring en color de marca */
   }
 }
 
@@ -156,3 +191,562 @@ button:focus-visible {
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  /* Tipografía semántica */
+  .text-ui {
+    color: var(--color-text-primary);
+  }
+  .text-muted {
+    color: var(--color-text-secondary);
+  }
+
+  /* Tipografía de marca: Títulos usan Tenor Sans, body usa Raleway */
+  .font-headings {
+    font-family: var(--font-family-headings, "Tenor Sans", system-ui, sans-serif);
+  }
+  .font-base {
+    font-family: var(--font-family-base, "Raleway", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+  }
+  .font-buttons {
+    font-family: "Open Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  /* Controles unificados */
+  .ctrl-field {
+    background-color: var(--ctrl-field-bg, var(--color-surface));
+    color: var(--color-text-primary);
+    border-width: var(--input-border-width, 1px);
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.1); /* Borde más sutil - 30% opacidad */
+    border-radius: var(--ctrl-field-radius, var(--radius-ctrl));
+    padding: var(--input-padding);
+    height: var(--ctrl-field-height, auto);
+    min-height: var(--ctrl-field-height, auto);
+    line-height: 1.5;
+    position: relative; /* Para posicionar iconos absolutos dentro */
+    font-family: inherit;
+    font-size: inherit;
+    transition: border-color 0.3s ease-out, box-shadow 0.3s ease-out;
+  }
+  
+  /* Textarea específico - mejorado para múltiples líneas */
+  .ctrl-field:is(textarea) {
+    min-height: calc(1.5em * 3 + 2 * 0.5rem); /* Mínimo 3 líneas */
+    padding: 0.5rem 0.75rem;
+    resize: vertical;
+    height: auto;
+    width: 100%;
+    font-family: inherit;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    overflow-y: auto;
+  }
+  
+  /* Select específico: ajustar padding para que el icono quede dentro */
+  .ctrl-field[role="combobox"] {
+    padding-right: calc(var(--input-padding, 0.5rem 0.75rem) + 1.5rem);
+  }
+  .ctrl-field::placeholder {
+    color: var(--color-text-secondary);
+    opacity: 0.5; /* Placeholder más sutil - 50% opacidad */
+  }
+  .ctrl-field:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(253, 152, 64, 0.2); /* Focus ring más sutil - 20% opacidad */
+    border-color: var(--color-primary);
+  }
+  .ctrl-field:hover:not(:disabled) {
+    border-color: rgba(0, 0, 0, 0.15); /* Hover más sutil */
+  }
+  .ctrl-field:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Variante underline para controles */
+  .ctrl-field--underline {
+    border: none;
+    border-bottom: 2px solid var(--color-border-strong);
+    border-radius: 0;
+    background-color: transparent;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .ctrl-field--underline:focus-visible {
+    border-bottom-color: var(--color-primary);
+    box-shadow: none;
+  }
+
+  /* Search bar (variante de control field) */
+  .search-field {
+    background-color: var(--search-bg, var(--ctrl-field-bg, var(--color-surface)));
+    border: 1px solid var(--search-border, var(--ctrl-field-border, var(--color-border-default)));
+    border-radius: var(--search-radius, var(--ctrl-field-radius, var(--radius-ctrl)));
+    height: var(--search-height, var(--ctrl-field-height, auto));
+    min-height: var(--search-height, var(--ctrl-field-height, auto));
+    color: var(--color-text-primary);
+    padding: var(--input-padding);
+    line-height: 1.5;
+  }
+  .search-field::placeholder {
+    color: var(--color-text-secondary);
+  }
+  .search-field:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  /* Botones semánticos */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Open Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-weight: 500;
+    transition: all 300ms ease-out;
+    cursor: pointer;
+    border-radius: var(--btn-radius, var(--button-radius));
+    height: var(--btn-height, auto);
+    min-height: var(--btn-height, auto);
+    box-shadow: none; /* Sin sombra por defecto - más minimalista */
+  }
+  .btn:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Sombra solo en hover */
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    color: var(--color-text-inverse);
+    border: 1px solid var(--color-primary);
+    box-shadow: 0 2px 8px rgba(253, 152, 64, 0.3); /* Sombra con color primary */
+  }
+  .btn-primary:hover {
+    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+    border-color: var(--color-secondary);
+    box-shadow: 0 4px 12px rgba(253, 152, 64, 0.4); /* Sombra más intensa en hover */
+  }
+  .btn-secondary {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-default);
+  }
+  .btn-secondary:hover {
+    background-color: var(--color-surface-muted);
+  }
+  .btn-outline {
+    background-color: transparent;
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-strong);
+  }
+  .btn-outline:hover {
+    background-color: var(--color-surface-muted);
+  }
+  .btn-ghost {
+    background-color: transparent;
+    color: var(--color-text-primary);
+    border: 1px solid transparent;
+  }
+  .btn-ghost:hover {
+    background-color: var(--color-surface-muted);
+  }
+  .btn-danger {
+    background-color: var(--color-danger);
+    color: var(--color-text-inverse);
+    border: 1px solid var(--color-danger);
+  }
+  .btn-danger:hover {
+    background-color: var(--color-danger);
+    opacity: 0.9;
+  }
+  .btn-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+  .btn-sm {
+    padding: var(--button-padding-sm);
+    font-size: 0.875rem;
+  }
+  .btn-md {
+    padding: var(--button-padding-md);
+    font-size: 1rem;
+  }
+  .btn-lg {
+    padding: var(--button-padding-lg);
+    font-size: 1.125rem;
+  }
+  .btn-icon {
+    padding: 0.375rem;
+    border-radius: var(--btn-radius, var(--button-radius));
+  }
+
+  /* ============================================================================
+   * CARDS - Sistema unificado basado en tokens CSS
+   * ============================================================================
+   * 
+   * Las clases de card (.app-card, .card-header, .card-content) se apoyan en
+   * CSS vars generadas desde designConfig.ts (components.card.*).
+   * 
+   * Se usa !important en propiedades críticas (radius, padding, shadow) para
+   * anular utilidades Tailwind (rounded-*, p-*, shadow-*) que están en los JSX,
+   * sin necesidad de modificar componentes de dominio.
+   * 
+   * Tokens disponibles:
+   * - --radius-card: radio de las esquinas
+   * - --card-padding-x/y: padding base de la card
+   * - --card-header-padding-x/y: padding específico del header
+   * - --card-content-padding-x/y: padding específico del content
+   * - --card-footer-padding-x/y: padding específico del footer
+   * - --shadow-card: sombra de la card
+   * - --card-gap: gap interno entre elementos
+   * 
+   * Uso recomendado:
+   * - className="app-card" para el contenedor principal
+   * - className="card-header" para el encabezado
+   * - className="card-content" para el contenido
+   * - className="card-footer" para el pie (si existe)
+   * 
+   * El 100% del look (radius, padding, shadow) se controla desde el panel de
+   * diseño/presets sin tocar JSX.
+   */
+
+  .app-card {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    border: 1px solid rgba(0, 0, 0, 0.08); /* Borde más sutil - 20% opacidad */
+    
+    /* Propiedades controladas por tokens - !important para sobreescribir Tailwind */
+    border-radius: var(--radius-card, 0.25rem) !important; /* Fallback a sm (4px) si no existe la variable */
+    padding-inline: var(--card-padding-x) !important;
+    padding-block: var(--card-padding-y) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important; /* Sombra más suave */
+    transition: all 300ms ease-out; /* Transición suave */
+  }
+  
+  .app-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important; /* Sombra más pronunciada en hover */
+    transform: translateY(-1px); /* Elevación sutil en hover */
+  }
+  
+  /* Desactivar hover transform para modales fijos */
+  .app-card[class*="fixed"]:hover {
+    transform: none !important;
+  }
+
+  .card-header {
+    padding-inline: var(--card-header-padding-x) !important;
+    padding-block: var(--card-header-padding-y) !important;
+    border-bottom: 1px solid var(--color-border-muted);
+  }
+
+  .card-content {
+    padding-inline: var(--card-content-padding-x) !important;
+    padding-block: var(--card-content-padding-y) !important;
+  }
+
+  .card-footer {
+    padding-inline: var(--card-footer-padding-x) !important;
+    padding-block: var(--card-footer-padding-y) !important;
+    border-top: 1px solid var(--color-border-muted);
+  }
+
+  /* Legacy: Paneles (mantener solo por compatibilidad con usos directos) */
+  .app-panel {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-muted);
+    border-radius: var(--radius-card);
+  }
+
+  /* ============================================================================
+   * ANIMACIONES CSS - Keyframes para animaciones del Design System
+   * ============================================================================
+   */
+  
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      transform: translateY(8px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-down {
+    from {
+      transform: translateY(-8px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes scale-out {
+    from {
+      transform: scale(1);
+      opacity: 1;
+    }
+    to {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+  }
+
+  @keyframes slide-in-from-bottom {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-in-from-top {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-in-from-left {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slide-in-from-right {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  /* Utilidades de animación */
+  .animate-fade-in {
+    animation: fade-in 200ms ease-out;
+  }
+
+  .animate-fade-out {
+    animation: fade-out 200ms ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 300ms ease-out;
+  }
+
+  .animate-slide-down {
+    animation: slide-down 300ms ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 200ms ease-out;
+  }
+
+  .animate-scale-out {
+    animation: scale-out 200ms ease-out;
+  }
+
+  /* ============================================================================
+   * ACCESIBILIDAD - Skip links y mejoras de focus
+   * ============================================================================
+   */
+  
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 0 0 4px 0;
+    z-index: 1000;
+    font-weight: 600;
+  }
+
+  .skip-link:focus {
+    top: 0;
+  }
+
+  /* Focus visible mejorado */
+  .focus-visible-enhanced:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-ctrl);
+  }
+
+  /* ============================================================================
+   * GLASSMORPHISM - Efectos de vidrio translúcido
+   * ============================================================================
+   */
+  
+  .sidebar-modern {
+    background: var(--sidebar-bg, var(--color-surface-elevated)) !important;
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border-right: 1px solid var(--sidebar-border, var(--color-border-default));
+  }
+
+  .header-modern {
+    position: sticky;
+    top: 0;
+    z-index: 50; /* Por encima del header mobile (z-[70]) pero por debajo de modales (z-[110]) */
+    background: var(--header-bg, var(--color-surface-elevated)) !important;
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border-bottom: 1px solid var(--header-border, var(--color-border-default));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Modo oscuro: reducir glassmorphism y usar fondo más sólido */
+  .dark .sidebar-modern {
+    background: var(--sidebar-bg, var(--color-surface-elevated)) !important;
+    backdrop-filter: blur(8px) saturate(120%);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+  }
+
+  .dark .header-modern {
+    background: var(--header-bg, var(--color-surface-elevated)) !important;
+    backdrop-filter: blur(8px) saturate(120%);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Fallback para navegadores sin soporte de backdrop-filter */
+  @supports not (backdrop-filter: blur(20px)) {
+    .sidebar-modern {
+      background: var(--sidebar-bg, var(--color-surface-elevated)) !important;
+    }
+    .header-modern {
+      background: var(--header-bg, var(--color-surface-elevated)) !important;
+    }
+  }
+}
+
+/* Animación pulse-1s: parpadeo por exactamente 1 segundo */
+@keyframes pulse-1s {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-1s {
+  animation: pulse-1s 1s ease-in-out 1;
+}
+
+/* Animación warning-glow: resplandor sutil y lento para el warning */
+@keyframes warning-glow {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+  }
+}
+
+.animate-warning-glow {
+  animation: warning-glow 1s ease-in-out infinite;
+}
+
+/* ============================================================================
+ * BADGES - Estilos para badges del Design System
+ * ============================================================================
+ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+}
+
+.badge-default {
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-primary);
+}
+
+.badge-primary {
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.badge-success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.badge-warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #F59E0B;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.badge-danger {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.badge-info {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3B82F6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.badge-outline {
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-default);
+}
+
+

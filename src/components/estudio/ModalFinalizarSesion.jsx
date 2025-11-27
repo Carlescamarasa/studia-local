@@ -25,10 +25,10 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
   ];
 
   const calificaciones = [
-    { value: 1, label: "Difícil", emoji: "😰", color: "bg-red-100 border-red-300 text-red-800" },
-    { value: 2, label: "Complicado", emoji: "😕", color: "bg-amber-100 border-amber-300 text-amber-800" },
-    { value: 3, label: "Bien", emoji: "🙂", color: "bg-green-100 border-green-300 text-green-800" },
-    { value: 4, label: "Excelente", emoji: "😄", color: "bg-blue-100 border-blue-300 text-blue-800" },
+    { value: 1, label: "Difícil", emoji: "😰", color: "bg-[var(--color-danger)]/10 border-[var(--color-danger)]/30 text-[var(--color-danger)]" },
+    { value: 2, label: "Complicado", emoji: "😕", color: "bg-[var(--color-warning)]/10 border-[var(--color-warning)]/30 text-[var(--color-warning)]" },
+    { value: 3, label: "Bien", emoji: "🙂", color: "bg-[var(--color-success)]/10 border-[var(--color-success)]/30 text-[var(--color-success)]" },
+    { value: 4, label: "Excelente", emoji: "😄", color: "bg-[var(--color-info)]/10 border-[var(--color-info)]/30 text-[var(--color-info)]" },
   ];
 
   const handlePreview = (index) => {
@@ -59,12 +59,12 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
                   className={`w-full text-left p-3 border rounded-lg transition-colors ${
                     motivo === m.value 
                       ? 'border-brand-500 bg-brand-50' 
-                      : 'border-gray-200 hover:bg-gray-50'
+                      : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      motivo === m.value ? 'border-brand-500 bg-brand-500' : 'border-gray-300'
+                      motivo === m.value ? 'border-brand-500 bg-brand-500' : 'border-[var(--color-border-default)]'
                     }`}>
                       {motivo === m.value && <div className="w-2 h-2 bg-white rounded-full" />}
                     </div>
@@ -77,7 +77,7 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
 
           <div>
             <Label className="text-base mb-3 block">¿Cómo te fue la sesión?</Label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className={`${componentStyles.layout.grid4} gap-2`}>
               {calificaciones.map((cal) => (
                 <button
                   key={cal.value}
@@ -85,7 +85,7 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
                   className={`p-3 border-2 rounded-lg transition-all text-center ${
                     calificacion === cal.value 
                       ? cal.color + ' shadow-sm' 
-                      : 'border-gray-200 hover:bg-gray-50'
+                      : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
                   }`}
                 >
                   <div className="text-2xl mb-1">{cal.emoji}</div>
@@ -113,8 +113,8 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
             onPreview={handlePreview}
           />
           
-          <Alert className="border-blue-200 bg-blue-50">
-            <AlertDescription className="text-blue-800 text-sm">
+          <Alert className="border-[var(--color-info)]/20 bg-[var(--color-info)]/10">
+            <AlertDescription className="text-[var(--color-info)] text-sm">
               Tu progreso y materiales adjuntos se guardarán en el sistema
             </AlertDescription>
           </Alert>

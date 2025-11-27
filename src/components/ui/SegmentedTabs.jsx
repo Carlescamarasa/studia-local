@@ -1,4 +1,6 @@
 import React from "react";
+import { cn } from "@/lib/utils";
+import { componentStyles } from "@/design/componentStyles";
 
 /**
  * SegmentedTabs - Tabs tipo pill conectadas 100% al Design System
@@ -8,7 +10,7 @@ import React from "react";
 export default function SegmentedTabs({ value, onChange, options, className = "" }) {
   return (
     <div 
-      className={`segmented ${className}`} 
+      className={cn(componentStyles.components.tabsSegmentedContainer, className)}
       role="tablist"
       aria-label="Pestañas de navegación"
     >
@@ -18,7 +20,10 @@ export default function SegmentedTabs({ value, onChange, options, className = ""
           <button
             key={option.value}
             onClick={() => onChange(option.value)}
-            className={`segmented-btn ${isActive ? 'segmented-btn-active' : ''}`}
+            className={cn(
+              componentStyles.components.tabsSegmentedButton,
+              isActive && componentStyles.components.tabsSegmentedButtonActive
+            )}
             role="tab"
             aria-selected={isActive}
             aria-current={isActive ? "true" : undefined}
