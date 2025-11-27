@@ -3,6 +3,7 @@
  */
 
 import { supabase } from '@/lib/supabaseClient';
+import { localDataClient } from '@/api/localDataClient';
 
 export interface ErrorReport {
   id: string;
@@ -118,20 +119,33 @@ export async function listErrorReports(filters?: {
     throw error;
   }
 
-  // Obtener nombres de los autores
-  const reportsWithNames = await Promise.all(
-    (data || []).map(async (report) => {
-      if (report.created_by) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', report.created_by)
-          .single();
-        return { ...report, created_by_profile: profile ? { full_name: profile.full_name } : null };
-      }
-      return { ...report, created_by_profile: null };
-    })
-  );
+  // OPTIMIZACIÓN: Obtener todos los perfiles de autores en una sola query
+  const createdByIds = [...new Set((data || []).map(r => r.created_by).filter(Boolean))];
+  let profilesMap = new Map<string, { full_name: string }>();
+  
+  if (createdByIds.length > 0) {
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', createdByIds);
+    
+    if (!profilesError && profilesData) {
+      profilesData.forEach(profile => {
+        if (profile.id) {
+          profilesMap.set(profile.id, { full_name: profile.full_name });
+        }
+      });
+    }
+  }
+
+  // Asociar nombres a los reportes usando el Map
+  const reportsWithNames = (data || []).map(report => {
+    const profile = report.created_by ? profilesMap.get(report.created_by) : null;
+    return {
+      ...report,
+      created_by_profile: profile || null,
+    };
+  });
 
   return reportsWithNames.map(mapToErrorReport);
 }
@@ -155,15 +169,34 @@ export async function getErrorReport(id: string): Promise<ErrorReport | null> {
     throw error;
   }
 
-  // Obtener nombre del autor si existe
+  // OPTIMIZACIÓN: Intentar obtener el perfil desde la caché de usuarios primero
   let reportWithName = { ...data, created_by_profile: null };
   if (data?.created_by) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', data.created_by)
-      .single();
-    reportWithName.created_by_profile = profile ? { full_name: profile.full_name } : null;
+    try {
+      // Intentar obtener desde localDataClient (que usa la caché de remoteDataAPI)
+      const user = await localDataClient.entities.User.get(data.created_by);
+      if (user && user.nombreCompleto) {
+        reportWithName.created_by_profile = { full_name: user.nombreCompleto };
+      } else if (user && user.full_name) {
+        reportWithName.created_by_profile = { full_name: user.full_name };
+      } else {
+        // Fallback: query directa solo si no está en caché
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', data.created_by)
+          .single();
+        reportWithName.created_by_profile = profile ? { full_name: profile.full_name } : null;
+      }
+    } catch (error) {
+      // Si falla, hacer query directa como fallback
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', data.created_by)
+        .single();
+      reportWithName.created_by_profile = profile ? { full_name: profile.full_name } : null;
+    }
   }
 
   return mapToErrorReport(reportWithName);
