@@ -782,16 +782,6 @@ function LayoutContent() {
   );
 }
 
-<<<<<<< HEAD
-/* Wrapper con providers del estado del sidebar y diseño */
-export default function Layout() {
-  return (
-    <DesignProvider>
-      <SidebarProvider>
-        <LayoutContent />
-      </SidebarProvider>
-    </DesignProvider>
-=======
 // Componente interno que usa el hook para el modal
 function HotkeysModalWrapper() {
   const { showHotkeysModal, setShowHotkeysModal } = useHotkeysModal();
@@ -812,6 +802,5 @@ export default function Layout() {
         <HotkeysModalWrapper />
       </SidebarProvider>
     </HotkeysModalProvider>
->>>>>>> studia-local-sync
   );
 }
