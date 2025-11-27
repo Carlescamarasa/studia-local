@@ -78,7 +78,28 @@ function resolveCurrentUser() {
 let cachedRemoteAPI = null;
 let cachedMode = null;
 function getDataAPI() {
-  const dataSource = import.meta.env.VITE_DATA_SOURCE || 'local';
+  // Verificar si hay una sesión de Supabase activa
+  // Si hay sesión, usar modo remoto automáticamente (a menos que VITE_DATA_SOURCE esté explícitamente en 'local')
+  let dataSource = import.meta.env.VITE_DATA_SOURCE;
+  
+  // Si no está configurado explícitamente, detectar automáticamente
+  if (!dataSource) {
+    // Verificar si hay sesión de Supabase en localStorage
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const hasSupabaseSession = Object.keys(window.localStorage).some(key => 
+        key.startsWith('sb-') && key.includes('auth-token')
+      );
+      
+      // Si hay sesión de Supabase, usar modo remoto
+      if (hasSupabaseSession) {
+        dataSource = 'remote';
+      } else {
+        dataSource = 'local';
+      }
+    } else {
+      dataSource = 'local';
+    }
+  }
   
   // Si el modo cambió, limpiar el caché
   if (cachedMode !== dataSource) {

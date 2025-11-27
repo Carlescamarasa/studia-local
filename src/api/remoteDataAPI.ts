@@ -561,21 +561,42 @@ export function createRemoteDataAPI(): AppDataAPI {
     usuarios: {
       list: async () => {
         // Obtener perfiles desde Supabase - INCLUIR EXPLÍCITAMENTE el campo role
-        const { data, error } = await withAuthErrorHandling(
-          supabase
-          .from('profiles')
-            .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at')
-        );
+        // Usar paginación para obtener TODOS los usuarios (Supabase tiene límite por defecto)
+        const PAGE_SIZE = 1000; // Límite máximo de Supabase por página
+        let allData: any[] = [];
+        let from = 0;
+        let hasMore = true;
         
-        if (error) {
-          console.error('[remoteDataAPI] Error al leer profiles:', {
-            error: error?.message || error,
-            code: error?.code,
-            status: error?.status,
-            details: error?.details,
-          });
-          throw error;
+        while (hasMore) {
+          const { data, error, count } = await withAuthErrorHandling(
+            supabase
+              .from('profiles')
+              .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at', { count: 'exact' })
+              .range(from, from + PAGE_SIZE - 1)
+          );
+          
+          if (error) {
+            console.error('[remoteDataAPI] Error al leer profiles:', {
+              error: error?.message || error,
+              code: error?.code,
+              status: error?.status,
+              details: error?.details,
+            });
+            throw error;
+          }
+          
+          if (data && data.length > 0) {
+            allData = allData.concat(data);
+            from += PAGE_SIZE;
+            // Si obtenemos menos registros que PAGE_SIZE, hemos llegado al final
+            // O si el count indica que ya tenemos todos
+            hasMore = data.length === PAGE_SIZE && (count === null || allData.length < count);
+          } else {
+            hasMore = false;
+          }
         }
+        
+        const data = allData;
         
         // Obtener email e ID del usuario autenticado si existe (para comparación)
         let currentUserEmail: string | null = null;
