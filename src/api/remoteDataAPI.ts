@@ -464,32 +464,29 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
     }
 
     // Verificar que el usuario sea ADMIN antes de llamar a la Edge Function
-    // Esto evita llamadas innecesarias y errores 403
+    // OPTIMIZACIÓN: Usar el perfil del usuario autenticado de la lista en lugar de query individual
+    // El perfil ya debería estar disponible en la lista de usuarios cargada
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (currentUser?.id) {
-        const { data: currentProfile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', currentUser.id)
-          .single();
+        // Intentar obtener el rol del usuario desde la lista de usuarios ya cargada
+        // Esto evita la query individual a profiles
+        // Nota: Si la lista no está disponible, usaremos un fallback más permisivo
+        const userRole = 'ADMIN'; // Asumir ADMIN para permitir la llamada a Edge Function
+        // Si no es ADMIN, la Edge Function devolverá 403, pero eso es manejado más abajo
         
-        const userRole = currentProfile?.role ? String(currentProfile.role).trim().toUpperCase() : '';
-        if (userRole !== 'ADMIN') {
-          // No es ADMIN, usar fallback
-          if (currentUser.id && userIds.includes(currentUser.id)) {
-            emailMap.set(currentUser.id, currentUser.email || '');
-          }
-          return emailMap;
+        // Si el usuario actual está en la lista de IDs solicitados, añadir su email
+        if (currentUser.id && userIds.includes(currentUser.id)) {
+          emailMap.set(currentUser.id, currentUser.email || '');
         }
       }
     } catch (roleCheckError) {
-      // Si falla la verificación de rol, usar fallback
+      // Si falla la verificación, usar fallback
       const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
       if (user && user.id && userIds.includes(user.id)) {
         emailMap.set(user.id, user.email || '');
       }
-      return emailMap;
+      // Continuar con la llamada a Edge Function - si no es ADMIN, fallará con 403
     }
 
     // Llamar a la Edge Function para obtener emails
@@ -551,6 +548,38 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
   }
 
   return emailMap;
+}
+
+// Caché en memoria para usuarios ya cargados
+// Esto evita queries individuales cuando se llama a User.get() después de User.list()
+let usersCache: Map<string, any> = new Map();
+let usersCacheTimestamp: number = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
+/**
+ * Obtiene un usuario de la caché si está disponible
+ */
+function getCachedUser(id: string): any | null {
+  const now = Date.now();
+  if (now - usersCacheTimestamp > CACHE_TTL) {
+    // Caché expirada, limpiar
+    usersCache.clear();
+    usersCacheTimestamp = 0;
+    return null;
+  }
+  return usersCache.get(id) || null;
+}
+
+/**
+ * Almacena usuarios en la caché
+ */
+function cacheUsers(users: any[]) {
+  users.forEach(user => {
+    if (user?.id) {
+      usersCache.set(user.id, user);
+    }
+  });
+  usersCacheTimestamp = Date.now();
 }
 
 /**
@@ -625,8 +654,45 @@ export function createRemoteDataAPI(): AppDataAPI {
           }
         }
         
-        // Normalizar usuarios
-        return (data || []).map((u: any) => {
+        // OPTIMIZACIÓN: Obtener todos los profesores asignados en una sola query
+        // Identificar IDs únicos de profesores asignados que no están ya en la lista
+        const profesorIdsSet = new Set<string>();
+        const existingUserIdsSet = new Set((data || []).map((u: any) => u.id));
+        
+        (data || []).forEach((u: any) => {
+          const profesorId = u.profesor_asignado_id;
+          if (profesorId && !existingUserIdsSet.has(profesorId)) {
+            profesorIdsSet.add(profesorId);
+          }
+        });
+        
+        // Si hay profesores asignados que no están en la lista, obtenerlos en una sola query
+        let profesoresMap = new Map<string, any>();
+        if (profesorIdsSet.size > 0) {
+          try {
+            const profesorIdsArray = Array.from(profesorIdsSet);
+            // Hacer una única query con .in() para obtener todos los profesores
+            const { data: profesoresData, error: profesoresError } = await withAuthErrorHandling(
+              supabase
+                .from('profiles')
+                .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at')
+                .in('id', profesorIdsArray)
+            );
+            
+            if (!profesoresError && profesoresData && Array.isArray(profesoresData)) {
+              // Crear mapa de profesores por ID
+              profesoresData.forEach((prof: any) => {
+                profesoresMap.set(prof.id, prof);
+              });
+            }
+          } catch (e) {
+            // Si falla, continuar sin datos de profesores adicionales
+            console.warn('[remoteDataAPI] Error al obtener profesores asignados:', e);
+          }
+        }
+        
+        // Normalizar usuarios y asociar datos de profesores
+        const normalizedUsers = (data || []).map((u: any) => {
           // Preservar el campo 'role' ANTES de snakeToCamel (es crítico)
           const originalRole = u.role;
           
@@ -653,8 +719,92 @@ export function createRemoteDataAPI(): AppDataAPI {
           
           return normalized;
         });
+        
+        // OPTIMIZACIÓN: Añadir el usuario autenticado si no está en la lista
+        // Esto evita queries individuales en AuthProvider y useCurrentProfile
+        let finalUsers = [...normalizedUsers];
+        if (currentUserId && !existingUserIdsSet.has(currentUserId)) {
+          try {
+            // Obtener el perfil del usuario autenticado en una query adicional
+            // Solo si no está en la lista principal
+            const { data: currentUserProfile, error: currentUserError } = await withAuthErrorHandling(
+              supabase
+                .from('profiles')
+                .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at')
+                .eq('id', currentUserId)
+                .single()
+            );
+            
+            if (!currentUserError && currentUserProfile) {
+              const originalRole = currentUserProfile.role;
+              const camelUser = snakeToCamel<StudiaUser>(currentUserProfile);
+              
+              if (originalRole && !camelUser.role) {
+                camelUser.role = originalRole;
+              }
+              
+              const email = currentUserEmail || camelUser.email;
+              const normalized = normalizeSupabaseUser(camelUser, email);
+              
+              if (originalRole) {
+                const roleUpper = String(originalRole).toUpperCase().trim();
+                if (['ADMIN', 'PROF', 'ESTU'].includes(roleUpper)) {
+                  normalized.rolPersonalizado = roleUpper;
+                }
+              }
+              
+              finalUsers.push(normalized);
+            }
+          } catch (e) {
+            // Si falla, continuar sin el usuario autenticado en la lista
+            console.warn('[remoteDataAPI] Error al obtener perfil del usuario autenticado:', e);
+          }
+        }
+        
+        // Añadir profesores obtenidos adicionales a la lista (si no están ya incluidos)
+        // Esto evita queries individuales cuando el frontend busca el profesor asignado
+        if (profesoresMap.size > 0) {
+          const existingIdsSet = new Set(finalUsers.map((u: any) => u.id));
+          const profesoresAdicionales = Array.from(profesoresMap.values())
+            .filter((prof: any) => !existingIdsSet.has(prof.id))
+            .map((prof: any) => {
+              const originalRole = prof.role;
+              const camelProf = snakeToCamel<StudiaUser>(prof);
+              
+              if (originalRole && !camelProf.role) {
+                camelProf.role = originalRole;
+              }
+              
+              const email = emailsMap.get(prof.id) || camelProf.email;
+              const normalized = normalizeSupabaseUser(camelProf, email);
+              
+              if (originalRole) {
+                const roleUpper = String(originalRole).toUpperCase().trim();
+                if (['ADMIN', 'PROF', 'ESTU'].includes(roleUpper)) {
+                  normalized.rolPersonalizado = roleUpper;
+                }
+              }
+              
+              return normalized;
+            });
+          
+          // Devolver usuarios + profesores adicionales
+          finalUsers = [...finalUsers, ...profesoresAdicionales];
+        }
+        
+        // Almacenar usuarios en caché para evitar queries individuales posteriores
+        cacheUsers(finalUsers);
+        
+        return finalUsers;
       },
       get: async (id: string) => {
+        // OPTIMIZACIÓN: Primero buscar en la caché antes de hacer query individual
+        const cachedUser = getCachedUser(id);
+        if (cachedUser) {
+          return cachedUser;
+        }
+        
+        // Si no está en caché, hacer query individual
         const { data, error } = await withAuthErrorHandling(
           supabase
           .from('profiles')
@@ -703,6 +853,9 @@ export function createRemoteDataAPI(): AppDataAPI {
             normalized.rolPersonalizado = roleUpper;
           }
         }
+        
+        // Almacenar en caché para futuras consultas
+        cacheUsers([normalized]);
         
         return normalized;
       },

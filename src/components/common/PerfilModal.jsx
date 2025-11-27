@@ -137,33 +137,12 @@ export default function PerfilModal({
     enabled: open,
   });
 
-  // Cargar el profesor asignado directamente por ID si no está en allUsers
-  // Esto debe estar después de targetUser para evitar TDZ
+  // OPTIMIZACIÓN: El profesor asignado ya debería estar en allUsers gracias a la optimización en usuarios.list()
+  // Solo buscar en allUsers, no hacer query individual
   const profesorAsignadoIdToLoad = targetUser?.profesorAsignadoId || targetUser?.profesor_asignado_id;
-  const { data: profesorAsignadoDirecto, error: profesorAsignadoError } = useQuery({
-    queryKey: ['profesorAsignado', profesorAsignadoIdToLoad],
-    queryFn: async () => {
-      if (!profesorAsignadoIdToLoad) return null;
-      
-      // Verificar si ya está en allUsers antes de hacer la query
-      const yaExiste = allUsers?.find(u => String(u.id).trim() === String(profesorAsignadoIdToLoad).trim());
-      if (yaExiste) return null; // Ya está cargado, no hacer query extra
-      
-      // Intentar cargar el profesor directamente
-      // Si falla (probablemente por RLS), retornará null desde remoteDataAPI
-      const profesor = await localDataClient.entities.User.get(profesorAsignadoIdToLoad);
-      return profesor;
-    },
-    enabled: !!profesorAsignadoIdToLoad && open && !!allUsers, // Solo cargar si allUsers ya está disponible
-    retry: false, // No reintentar si falla por RLS
-    // Silenciar errores 406 (RLS) ya que son esperados
-    onError: (error) => {
-      // Solo loguear si NO es un error 406 (que es esperado por RLS)
-      if (error?.status !== 406 && error?.code !== 'PGRST301') {
-        log.warn('[PerfilModal] Error al cargar profesor asignado:', error);
-      }
-    },
-  });
+  const profesorAsignadoDirecto = profesorAsignadoIdToLoad && allUsers
+    ? allUsers.find(u => String(u.id).trim() === String(profesorAsignadoIdToLoad).trim())
+    : null;
 
   // Obtener email del usuario objetivo usando la Edge Function get-user-emails
   // Esto es necesario porque los emails no vienen en la lista de usuarios para PROF/ADMIN

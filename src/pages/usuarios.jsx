@@ -21,7 +21,7 @@ import FormField from "@/components/ds/FormField";
 import { InviteUserModal } from "@/pages/auth/components/InviteUserModal";
 import { useUserActions } from "@/pages/auth/hooks/useUserActions";
 import { inviteUserByEmail, sendPasswordResetAdmin } from "@/api/userAdmin";
-import { Mail, KeyRound, UserPlus as UserPlusIcon, User, Target, Send, Eye, BarChart3, Pause, Play, MoreVertical, Users as UsersIcon } from "lucide-react";
+import { Mail, KeyRound, UserPlus as UserPlusIcon, User, Target, Send, Eye, BarChart3, Pause, Play, MoreVertical, Users as UsersIcon, Trash2, Pencil } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import {
   Dialog,
@@ -31,6 +31,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import MultiSelect from "@/components/ui/MultiSelect";
 
@@ -56,6 +66,9 @@ function UsuariosPageContent() {
   const [profesorSeleccionadoBulk, setProfesorSeleccionadoBulk] = useState('');
   const [estudiantesSeleccionadosBulk, setEstudiantesSeleccionadosBulk] = useState([]);
   const [profesorParaAsignarAlumnos, setProfesorParaAsignarAlumnos] = useState(null);
+  const [isDeleteUserDialogOpen, setIsDeleteUserDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [bulkUsersToDelete, setBulkUsersToDelete] = useState([]);
 
   const effectiveUser = useEffectiveUser();
   const { sendMagicLink, sendResetPassword, resendInvitation, isLoading: isActionLoading } = useUserActions();
@@ -163,6 +176,52 @@ function UsuariosPageContent() {
     },
     onError: (error) => {
       toast.error(error.message || 'Error al cambiar estado del usuario');
+    },
+  });
+
+  // Mutation para eliminar usuario
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No hay sesión activa');
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl) {
+        throw new Error('VITE_SUPABASE_URL no configurada');
+      }
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/delete-user`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al eliminar usuario');
+      }
+
+      const data = await response.json();
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      // Solo mostrar toast si no es eliminación masiva (se maneja en el diálogo)
+      if (bulkUsersToDelete.length <= 1) {
+        toast.success('Usuario eliminado correctamente');
+        setIsDeleteUserDialogOpen(false);
+        setUserToDelete(null);
+        setBulkUsersToDelete([]);
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al eliminar usuario');
     },
   });
 
@@ -683,12 +742,38 @@ function UsuariosPageContent() {
                     toast.success(`✅ ${ids.length} usuario${ids.length > 1 ? 's' : ''} exportado${ids.length > 1 ? 's' : ''}`);
                   },
                 },
+                // Acción para eliminar usuarios (solo ADMIN, no permitir eliminar a sí mismo)
+                ...(effectiveUser?.rolPersonalizado === 'ADMIN' ? [{
+                  id: 'delete_bulk',
+                  label: 'Eliminar usuarios',
+                  icon: Trash2,
+                  onClick: (ids) => {
+                    const usuariosSeleccionados = usuariosFiltrados.filter(u => ids.includes(u.id));
+                    // Filtrar para no permitir eliminar al usuario actual
+                    const usuariosAEliminar = usuariosSeleccionados.filter(u => u.id !== effectiveUser?.id);
+                    
+                    if (usuariosAEliminar.length === 0) {
+                      toast.error('No puedes eliminar tu propia cuenta');
+                      return;
+                    }
+                    
+                    if (usuariosAEliminar.length < usuariosSeleccionados.length) {
+                      toast.warning('Se excluyó tu propia cuenta de la selección');
+                    }
+                    
+                    // Abrir diálogo de confirmación para eliminación masiva
+                    setBulkUsersToDelete(usuariosAEliminar);
+                    setUserToDelete(usuariosAEliminar[0]); // Usar el primero para compatibilidad
+                    setIsDeleteUserDialogOpen(true);
+                  },
+                }] : []),
               ]}
               getRowActions={(u) => {
                 const actions = [
                   {
                     id: 'edit',
                     label: 'Editar perfil',
+                    icon: <Pencil className="w-4 h-4" />,
                     onClick: () => {
                       setSelectedUserId(u.id);
                       setIsPerfilModalOpen(true);
@@ -697,30 +782,39 @@ function UsuariosPageContent() {
                 ];
 
                 // Añadir acciones de email solo para usuarios con email
+                // Solo mostrar "Enviar invitación" si el usuario NO está activo (pendiente de alta)
                 if (u.email) {
-                  actions.push(
-                    {
-                      id: 'invite',
-                      label: 'Enviar invitación',
-                      icon: <Send className="w-4 h-4" />,
-                      onClick: async () => {
-                        try {
-                          await inviteUserByEmail(u.email, { role: u.rolPersonalizado });
-                          // También enviar reset password
+                  const isActive = u.isActive !== false && u.is_active !== false;
+                  
+                  // Solo mostrar "Enviar invitación" si el usuario no está activo
+                  if (!isActive) {
+                    actions.push(
+                      {
+                        id: 'invite',
+                        label: 'Enviar invitación',
+                        icon: <Send className="w-4 h-4" />,
+                        onClick: async () => {
                           try {
-                            await sendPasswordResetAdmin(u.email);
-                            toast.success('Se han enviado el email de bienvenida y el email para establecer contraseña');
-                          } catch (resetErr) {
-                            toast.warning(
-                              'La invitación se envió correctamente, pero no se pudo enviar el email de cambio de contraseña. ' +
-                              'Puedes reenviarlo desde las acciones del usuario.'
-                            );
+                            await inviteUserByEmail(u.email, { role: u.rolPersonalizado });
+                            // También enviar reset password
+                            try {
+                              await sendPasswordResetAdmin(u.email);
+                              toast.success('Se han enviado el email de bienvenida y el email para establecer contraseña');
+                            } catch (resetErr) {
+                              toast.warning(
+                                'La invitación se envió correctamente, pero no se pudo enviar el email de cambio de contraseña. ' +
+                                'Puedes reenviarlo desde las acciones del usuario.'
+                              );
+                            }
+                          } catch (error) {
+                            toast.error(error.message || 'Error al enviar invitación');
                           }
-                        } catch (error) {
-                          toast.error(error.message || 'Error al enviar invitación');
-                        }
-                      },
-                    },
+                        },
+                      }
+                    );
+                  }
+                  
+                  actions.push(
                     {
                       id: 'reset_password',
                       label: 'Enviar recuperación de contraseña',
@@ -834,6 +928,19 @@ function UsuariosPageContent() {
                     });
                   },
                 });
+
+                // Acción para eliminar usuario (solo ADMIN, no permitir eliminar a sí mismo)
+                if (effectiveUser?.rolPersonalizado === 'ADMIN' && u.id !== effectiveUser?.id) {
+                  actions.push({
+                    id: 'delete_user',
+                    label: 'Eliminar usuario',
+                    icon: <Trash2 className="w-4 h-4" />,
+                    onClick: () => {
+                      setUserToDelete(u);
+                      setIsDeleteUserDialogOpen(true);
+                    },
+                  });
+                }
 
                 return actions;
               }}
@@ -1044,6 +1151,128 @@ function UsuariosPageContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de confirmación para eliminar usuario */}
+      <AlertDialog open={isDeleteUserDialogOpen} onOpenChange={setIsDeleteUserDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {bulkUsersToDelete.length > 1 
+                ? `¿Eliminar ${bulkUsersToDelete.length} usuarios?`
+                : '¿Eliminar usuario?'
+              }
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminarán permanentemente:
+              {bulkUsersToDelete.length > 1 ? (
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  {bulkUsersToDelete.slice(0, 5).map((u) => (
+                    <li key={u.id}>
+                      <strong>{getNombreVisible(u) || u.email}</strong>
+                      {u.email && <span className="text-xs text-ui/60"> ({u.email})</span>}
+                    </li>
+                  ))}
+                  {bulkUsersToDelete.length > 5 && (
+                    <li className="text-ui/60">... y {bulkUsersToDelete.length - 5} más</li>
+                  )}
+                </ul>
+              ) : (
+                <>
+                  <br />
+                  <strong>{userToDelete ? (getNombreVisible(userToDelete) || userToDelete.email) : ''}</strong>
+                  {userToDelete?.email && (
+                    <>
+                      <br />
+                      <span className="text-xs text-ui/60">{userToDelete.email}</span>
+                    </>
+                  )}
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              onClick={() => {
+                setIsDeleteUserDialogOpen(false);
+                setUserToDelete(null);
+                setBulkUsersToDelete([]);
+              }}
+              disabled={deleteUserMutation.isPending}
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (bulkUsersToDelete.length > 1) {
+                  // Eliminación masiva - ejecutar todas las eliminaciones en paralelo
+                  const userIds = bulkUsersToDelete.map(u => u.id);
+                  
+                  // Obtener sesión una sola vez
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session?.access_token) {
+                    toast.error('No hay sesión activa');
+                    return;
+                  }
+                  
+                  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+                  if (!supabaseUrl) {
+                    toast.error('VITE_SUPABASE_URL no configurada');
+                    return;
+                  }
+                  
+                  try {
+                    const results = await Promise.allSettled(
+                      userIds.map(id => 
+                        fetch(`${supabaseUrl}/functions/v1/delete-user`, {
+                          method: 'POST',
+                          headers: {
+                            'Authorization': `Bearer ${session.access_token}`,
+                            'Content-Type': 'application/json',
+                            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+                          },
+                          body: JSON.stringify({ userId: id }),
+                        }).then(async (response) => {
+                          if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.error || 'Error al eliminar usuario');
+                          }
+                          return response.json();
+                        })
+                      )
+                    );
+                    
+                    const successful = results.filter(r => r.status === 'fulfilled').length;
+                    const failed = results.filter(r => r.status === 'rejected').length;
+                    
+                    if (failed > 0) {
+                      const errors = results
+                        .filter(r => r.status === 'rejected')
+                        .map(r => r.reason?.message || 'Error desconocido');
+                      toast.warning(`${successful} eliminado${successful > 1 ? 's' : ''}, ${failed} fallaron: ${errors.join(', ')}`);
+                    } else {
+                      toast.success(`✅ ${userIds.length} usuario${userIds.length > 1 ? 's' : ''} eliminado${userIds.length > 1 ? 's' : ''} correctamente`);
+                    }
+                    
+                    queryClient.invalidateQueries({ queryKey: ['users'] });
+                    setIsDeleteUserDialogOpen(false);
+                    setBulkUsersToDelete([]);
+                    setUserToDelete(null);
+                  } catch (error) {
+                    toast.error(error.message || 'Error al eliminar usuarios');
+                  }
+                } else if (userToDelete?.id) {
+                  // Eliminación individual
+                  deleteUserMutation.mutate(userToDelete.id);
+                }
+              }}
+              disabled={deleteUserMutation.isPending}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {deleteUserMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

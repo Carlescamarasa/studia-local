@@ -267,35 +267,83 @@ serve(async (req) => {
       },
     });
 
-    // Obtener emails de usuarios usando getUserById para cada usuario
-    // Esto es más eficiente que listar todos los usuarios
+    // Crear un Set con los IDs solicitados para búsqueda rápida O(1)
+    const requestedIdsSet = new Set(userIds);
     const emailMap: Record<string, string> = {};
+    
+    // Si ya tenemos todos los emails, no necesitamos seguir buscando
+    let foundCount = 0;
+    const totalRequested = userIds.length;
 
-    // Procesar usuarios en paralelo (máximo 10 a la vez para no sobrecargar)
-    const batchSize = 10;
-    for (let i = 0; i < userIds.length; i += batchSize) {
-      const batch = userIds.slice(i, i + batchSize);
-      
-      // Obtener usuarios en paralelo
-      const promises = batch.map(async (userId: string) => {
-        try {
-          const { data, error } = await adminClient.auth.admin.getUserById(userId);
-          if (!error && data?.user?.email) {
-            return { userId, email: data.user.email };
-          }
-          return null;
-        } catch (e) {
-          console.error(`Error al obtener usuario ${userId}:`, e);
-          return null;
-        }
+    // Usar listUsers() con paginación para obtener todos los usuarios de una vez
+    // Esto evita el problema N+1 de hacer queries individuales
+    let page = 1;
+    const perPage = 1000; // Máximo permitido por Supabase
+    let hasMore = true;
+
+    while (hasMore && foundCount < totalRequested) {
+      const { data, error } = await adminClient.auth.admin.listUsers({
+        page,
+        perPage,
       });
 
-      const results = await Promise.all(promises);
-      for (const result of results) {
-        if (result) {
-          emailMap[result.userId] = result.email;
+      if (error) {
+        console.error(`Error al listar usuarios (página ${page}):`, error);
+        // Si hay error, intentar continuar con la siguiente página o terminar
+        // Dependiendo del tipo de error, podríamos querer fallar completamente
+        if (error.message?.includes('rate limit') || error.status === 429) {
+          // Rate limit - esperar un poco y continuar
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          continue;
+        }
+        // Para otros errores, continuar con la siguiente página
+        page++;
+        if (page > 10) {
+          // Límite de seguridad: no más de 10 páginas
+          console.warn('Límite de páginas alcanzado. Algunos emails pueden no haberse obtenido.');
+          break;
+        }
+        continue;
+      }
+
+      if (!data?.users || data.users.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      // Filtrar usuarios por los IDs solicitados y construir el mapa
+      for (const user of data.users) {
+        if (user.id && requestedIdsSet.has(user.id) && user.email) {
+          emailMap[user.id] = user.email;
+          foundCount++;
+          
+          // Si ya encontramos todos los IDs solicitados, podemos detener la búsqueda
+          if (foundCount >= totalRequested) {
+            hasMore = false;
+            break;
+          }
         }
       }
+
+      // Verificar si hay más páginas
+      // listUsers() devuelve información de paginación en data
+      // Si obtenemos menos usuarios que perPage, hemos llegado al final
+      if (data.users.length < perPage) {
+        hasMore = false;
+      } else {
+        page++;
+        // Límite de seguridad: no más de 10 páginas (10,000 usuarios)
+        if (page > 10) {
+          console.warn('Límite de páginas alcanzado. Algunos emails pueden no haberse obtenido.');
+          hasMore = false;
+        }
+      }
+    }
+
+    // Log para debugging
+    if (foundCount < totalRequested) {
+      const missingIds = userIds.filter(id => !emailMap[id]);
+      console.warn(`No se encontraron todos los emails solicitados. Encontrados: ${foundCount}/${totalRequested}. Faltantes: ${missingIds.length}`);
     }
 
     return new Response(

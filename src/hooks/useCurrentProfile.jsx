@@ -19,48 +19,23 @@ export function useCurrentProfile() {
       }
 
       try {
-        // Primero intentar desde localDataClient (si está disponible)
-        try {
-          const users = await localDataClient.entities.User.list();
-          const localProfile = users.find(u => u.id === effectiveUser.id);
-          if (localProfile) {
-            return localProfile;
-          }
-        } catch (localError) {
-          // Si falla local, continuar con Supabase
-          console.warn('[useCurrentProfile] Error cargando desde local, intentando Supabase:', localError);
+        // OPTIMIZACIÓN: Siempre intentar desde localDataClient primero
+        // El usuario autenticado ya debería estar en la lista gracias a la optimización en usuarios.list()
+        const users = await localDataClient.entities.User.list();
+        const localProfile = users.find(u => u.id === effectiveUser.id);
+        if (localProfile) {
+          return localProfile;
         }
-
-        // Fallback a Supabase profiles table
-        const { data, error: supabaseError } = await supabase
-          .from('profiles')
-          .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at')
-          .eq('id', effectiveUser.id)
-          .single();
-
-        if (supabaseError) {
-          // Si no hay perfil en Supabase, usar datos del effectiveUser
-          if (supabaseError.code === 'PGRST116') {
-            return {
-              id: effectiveUser.id,
-              email: effectiveUser.email,
-              nombreCompleto: effectiveUser.user_metadata?.full_name || effectiveUser.email?.split('@')[0],
-              rolPersonalizado: effectiveUser.user_metadata?.role || 'ESTU',
-              profesorAsignadoId: effectiveUser.user_metadata?.profesor_asignado_id || null,
-              isActive: effectiveUser.user_metadata?.is_active !== false,
-            };
-          }
-          throw supabaseError;
-        }
-
-        // Mapear datos de Supabase a formato esperado
+        
+        // Si no se encuentra en la lista, usar datos del effectiveUser como fallback
+        // Esto puede pasar si el usuario no tiene perfil en la BD aún
         return {
-          id: data.id,
+          id: effectiveUser.id,
           email: effectiveUser.email,
-          nombreCompleto: data.full_name,
-          rolPersonalizado: data.role,
-          profesorAsignadoId: data.profesor_asignado_id,
-          isActive: data.is_active !== false,
+          nombreCompleto: effectiveUser.user_metadata?.full_name || effectiveUser.email?.split('@')[0],
+          rolPersonalizado: effectiveUser.user_metadata?.role || 'ESTU',
+          profesorAsignadoId: effectiveUser.user_metadata?.profesor_asignado_id || null,
+          isActive: effectiveUser.user_metadata?.is_active !== false,
         };
       } catch (error) {
         console.error('[useCurrentProfile] Error cargando perfil:', error);

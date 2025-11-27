@@ -294,7 +294,7 @@ export default function UnifiedTable({
           )}
 
           {selectable && selectedItems.size > 0 && bulkActions && (
-            <div className="sticky bottom-0 left-0 right-0 border-t border-[var(--color-border-default)] bg-[var(--color-surface-elevated)]/95 backdrop-blur px-3 sm:px-4 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-2 shadow-[0_-4px_12px_rgba(0,0,0,0.15)] z-20">
+            <div className="sticky bottom-0 left-0 right-0 w-full border-t border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] px-3 sm:px-4 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-2 shadow-[0_-4px_12px_rgba(0,0,0,0.15)] z-20">
               <span className="text-xs sm:text-sm font-semibold text-[var(--color-text-primary)] shrink-0">
                 {selectedItems.size} {selectedItems.size === 1 ? 'elemento seleccionado' : 'elementos seleccionados'}
               </span>
@@ -309,6 +309,7 @@ export default function UnifiedTable({
                       setSelectedItems(new Set());
                     }}
                     className={cn(
+                      componentStyles.buttons.outline,
                       "h-8 sm:h-9 text-xs",
                       "px-2 sm:px-3",
                       isMobile && action.icon 
@@ -474,7 +475,7 @@ export default function UnifiedTable({
           )}
 
           {selectable && selectedItems.size > 0 && bulkActions && (
-            <div className="sticky bottom-0 left-0 right-0 border-t border-[var(--color-border-default)] bg-[var(--color-surface-elevated)]/95 backdrop-blur px-3 sm:px-4 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-2 shadow-[0_-4px_12px_rgba(0,0,0,0.15)] z-20">
+            <div className="sticky bottom-0 left-0 right-0 w-full border-t border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] px-3 sm:px-4 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-2 shadow-[0_-4px_12px_rgba(0,0,0,0.15)] z-20">
               <span className="text-xs sm:text-sm font-semibold text-[var(--color-text-primary)] shrink-0">
                 {selectedItems.size} {selectedItems.size === 1 ? 'elemento seleccionado' : 'elementos seleccionados'}
               </span>
@@ -489,6 +490,7 @@ export default function UnifiedTable({
                       setSelectedItems(new Set());
                     }}
                     className={cn(
+                      componentStyles.buttons.outline,
                       "h-8 sm:h-9 text-xs",
                       "px-2 sm:px-3",
                       isMobile && action.icon 
