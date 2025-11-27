@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import FormField from '@/components/ds/FormField';
 import { LogIn, Eye, EyeOff } from 'lucide-react';
 import { useLoginForm } from '../hooks/useLoginForm';
+import { normalizeEmail } from '../utils/validation';
 import { authConfig } from '../config/authConfig';
 import { componentStyles } from '@/design/componentStyles';
 
@@ -25,7 +26,7 @@ export function LoginForm({ onSubmit, isLoading, rememberMe, onRememberMeChange,
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm() && !rateLimit.isLocked) {
-      onSubmit(email.trim(), password);
+      onSubmit(normalizeEmail(email), password);
     }
   };
 

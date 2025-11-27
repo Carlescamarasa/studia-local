@@ -1,102 +1,104 @@
 /**
- * Helpers para detectar y manejar errores de autenticación
+ * Helpers centralizados para autenticación
+ * Compatible con frontend (browser) y Edge Functions (Deno)
  */
 
 /**
- * Detecta si un error es un error de autenticación
- * @param error - El error a verificar
- * @returns true si es un error de autenticación
+ * Verifica si un error es un error de autenticación
+ * Detecta errores 401 (Unauthorized) y 403 (Forbidden) de Supabase
+ * @param error - Error a verificar
+ * @returns {boolean} - true si es un error de autenticación
  */
 export function isAuthError(error: any): boolean {
   if (!error) return false;
-
-  // Verificar códigos de estado HTTP
-  if (error.status === 401 || error.status === 403) {
-    return true;
-  }
-
-  // Verificar mensajes de error comunes de Supabase
-  const errorMessage = String(error.message || '').toLowerCase();
-  const authErrorPatterns = [
-    'jwt expired',
-    'auth session missing',
-    'invalid token',
-    'token expired',
-    'session expired',
-    'session_not_found',
-    'unauthorized',
-    'forbidden',
-    'authentication failed',
-  ];
   
-  // Verificar código de error específico de Supabase para session_not_found
-  if (error.code === 'session_not_found' || error.statusCode === 403) {
-    // Verificar también en headers de respuesta si está disponible
-    if (error.response?.headers?.['x-sb-error-code'] === 'session_not_found') {
-      return true;
-    }
-    // Si el mensaje contiene session_not_found o el status es 403, es probablemente un error de sesión
-    if (errorMessage.includes('session_not_found') || error.status === 403) {
-      return true;
-    }
-  }
-
-  if (authErrorPatterns.some(pattern => errorMessage.includes(pattern))) {
+  // Verificar código de estado HTTP
+  const status = error.status || error.code;
+  if (status === 401 || status === 403) {
     return true;
   }
-
-  // Verificar códigos de error de Supabase
-  const errorCode = String(error.code || '').toLowerCase();
-  if (errorCode === 'pgrst301' || errorCode === '42501') {
+  
+  // Verificar mensaje de error
+  const message = error.message?.toLowerCase() || '';
+  if (
+    message.includes('session_not_found') ||
+    message.includes('jwt') ||
+    message.includes('unauthorized') ||
+    message.includes('forbidden') ||
+    message.includes('invalid token') ||
+    message.includes('token expired') ||
+    message.includes('authentication')
+  ) {
     return true;
   }
-
+  
+  // Verificar código de error de Supabase
+  const errorCode = error.code?.toLowerCase() || '';
+  if (
+    errorCode === 'pgrst301' || // No rows returned (pero puede ser RLS)
+    errorCode === '42501' || // Insufficient privilege (PostgreSQL)
+    errorCode === 'PGRST116' // The result contains 0 rows (RLS)
+  ) {
+    // Solo considerar como error de auth si el mensaje sugiere autenticación
+    if (message.includes('permission') || message.includes('policy') || message.includes('row-level security')) {
+      return true;
+    }
+  }
+  
   return false;
 }
 
 /**
- * Maneja errores de autenticación forzando el cierre de sesión y redirigiendo al login
- * @param error - El error de autenticación
- * @param signOut - Función para cerrar sesión
- * @param navigate - Función de navegación (opcional)
+ * Obtiene la URL base de la aplicación
+ * @returns {string} URL base (ej: https://studia.latrompetasonara.com)
  */
-export async function handleAuthError(
-  error: any,
-  signOut: () => Promise<void>,
-  navigate?: (path: string, options?: { replace?: boolean }) => void
-): Promise<void> {
-  if (!isAuthError(error)) {
-    return;
+export function getAppBaseUrl(): string {
+  // Prioridad: variable de entorno > window.location.origin > fallback
+  if (typeof window !== 'undefined') {
+    const envUrl = import.meta.env.VITE_APP_URL;
+    if (envUrl) {
+      return envUrl;
+    }
+    return window.location.origin;
   }
-
-  // Log en desarrollo para debugging
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('[authHelpers] Error de autenticación detectado:', {
-      message: error?.message,
-      code: error?.code,
-      status: error?.status,
-    });
-  }
-
-  try {
-    // Forzar cierre de sesión
-    await signOut();
-  } catch (signOutError) {
-    // Si falla el signOut, continuar de todas formas
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('[authHelpers] Error al cerrar sesión:', signOutError);
+  
+  // Para Edge Functions (Deno)
+  if (typeof Deno !== 'undefined') {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    if (supabaseUrl) {
+      return new URL(supabaseUrl).origin;
     }
   }
-
-  // Redirigir al login si se proporciona navigate
-  if (navigate) {
-    const currentPath = window.location.pathname;
-    if (currentPath !== '/login') {
-      navigate('/login', { replace: true });
-    }
-  }
+  
+  // Fallback
+  return 'https://studia.latrompetasonara.com';
 }
 
+/**
+ * Genera la URL de redirección para reset de contraseña
+ * @returns {string} URL completa de reset password
+ */
+export function getResetPasswordRedirectUrl(): string {
+  const baseUrl = getAppBaseUrl();
+  // Asegurar que no termine con /
+  const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  return `${cleanBaseUrl}/reset-password`;
+}
 
+/**
+ * Genera la URL de redirección para invitaciones
+ * @returns {string} URL completa para invitaciones (actualmente igual a reset password)
+ */
+export function getInvitationRedirectUrl(): string {
+  return getResetPasswordRedirectUrl();
+}
 
-
+/**
+ * Genera la URL de redirección para magic links (OTP)
+ * @returns {string} URL completa para magic links
+ */
+export function getMagicLinkRedirectUrl(): string {
+  const baseUrl = getAppBaseUrl();
+  const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  return `${cleanBaseUrl}/auth/login`;
+}

@@ -4,9 +4,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Obtener origen permitido desde variable de entorno o usar fallback seguro
+const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || 'https://studia.latrompetasonara.com';
+
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': allowedOrigin,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 serve(async (req) => {
@@ -66,7 +70,12 @@ serve(async (req) => {
     }
 
     // Parsear el body
-    const { email, ...extra } = await req.json();
+    let { email, ...extra } = await req.json();
+
+    // Normalizar email a lowercase
+    if (email) {
+      email = email.trim().toLowerCase();
+    }
 
     if (!email) {
       return new Response(
@@ -84,54 +93,90 @@ serve(async (req) => {
     });
 
     // Intentar invitar al usuario
+    // Helper centralizado para redirectTo
+    const getResetPasswordRedirectUrl = () => {
+      const baseUrl = new URL(supabaseUrl).origin;
+      return `${baseUrl}/reset-password`;
+    };
+
     // Si el usuario ya existe, inviteUserByEmail puede fallar, pero eso está bien
     // porque significa que el usuario ya tiene cuenta
     const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       email,
       { 
         data: extra,
-        redirectTo: `${new URL(supabaseUrl).origin}/reset-password`,
+        redirectTo: getResetPasswordRedirectUrl(),
       }
     );
 
     if (error) {
-      // Si el error es que el usuario ya existe, eso está bien - podemos reenviar la invitación
+      // Si el error es que el usuario ya existe, verificar su estado antes de reenviar invitación
       if (error.message?.includes('already registered') || 
           error.message?.includes('already exists') ||
           error.message?.includes('User already registered')) {
-        // El usuario ya existe, intentar generar un link de invitación
+        // Verificar el estado del usuario antes de reenviar invitación
         try {
-          const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-            type: 'invite',
-            email: email,
-            options: {
-              redirectTo: `${new URL(supabaseUrl).origin}/reset-password`,
-            },
-          });
+          const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email);
+          
+          if (existingUser?.user) {
+            const user = existingUser.user;
+            // Verificar si el usuario ya tiene cuenta activa
+            // email_confirmed_at se establece cuando el usuario confirma su email (al establecer contraseña)
+            const hasConfirmedEmail = !!user.email_confirmed_at;
+            
+            if (hasConfirmedEmail) {
+              // Usuario ya tiene cuenta activa, no reenviar invitación
+              return new Response(
+                JSON.stringify({ 
+                  success: false, 
+                  message: 'El usuario ya existe y tiene una cuenta activa. No se puede reenviar la invitación.' 
+                }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+            
+            // Usuario existe pero no tiene cuenta activa, generar link de invitación
+            const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+              type: 'invite',
+              email: email,
+              options: {
+                redirectTo: getResetPasswordRedirectUrl(),
+              },
+            });
 
-          if (linkError) {
+            if (linkError) {
+              return new Response(
+                JSON.stringify({ 
+                  success: false, 
+                  message: `Error al generar link de invitación: ${linkError.message}` 
+                }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+
+            return new Response(
+              JSON.stringify({ 
+                success: true, 
+                message: 'Invitación reenviada al usuario existente',
+                user: linkData 
+              }),
+              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          } else {
+            // Usuario no encontrado a pesar del error
             return new Response(
               JSON.stringify({ 
                 success: false, 
-                message: `El usuario ya existe. Error al generar link de invitación: ${linkError.message}` 
+                message: 'Error al verificar el estado del usuario' 
               }),
               { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
           }
-
-          return new Response(
-            JSON.stringify({ 
-              success: true, 
-              message: 'Invitación reenviada al usuario existente',
-              user: linkData 
-            }),
-            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
         } catch (linkErr) {
           return new Response(
             JSON.stringify({ 
               success: false, 
-              message: `El usuario ya existe. Error: ${linkErr.message || linkErr}` 
+              message: `Error al verificar usuario: ${linkErr.message || linkErr}` 
             }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );

@@ -5,7 +5,7 @@ import FormField from '@/components/ds/FormField';
 import { Mail } from 'lucide-react';
 import { authConfig } from '../config/authConfig';
 import { componentStyles } from '@/design/componentStyles';
-import { validateEmail, isEmpty } from '../utils/validation';
+import { validateEmail, isEmpty, normalizeEmail } from '../utils/validation';
 import { authMessages } from '../config/authMessages';
 
 export function ForgotPasswordForm({ onSubmit, isLoading, initialEmail, onBack }) {
@@ -43,7 +43,7 @@ export function ForgotPasswordForm({ onSubmit, isLoading, initialEmail, onBack }
     e.preventDefault();
     setTouched(true);
     if (validateEmailField(email)) {
-      onSubmit(email.trim());
+      onSubmit(normalizeEmail(email));
     }
   };
 

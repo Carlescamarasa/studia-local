@@ -15,6 +15,7 @@ import { getAppName } from '@/components/utils/appMeta';
 import { log } from '@/utils/log';
 import { createPageUrl } from '@/utils';
 import { roleHome } from '@/components/auth/roleMap';
+import { validatePasswordStrength } from '../utils/validation';
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -68,11 +69,6 @@ export default function ResetPasswordPage() {
     return () => clearTimeout(errorTimer);
   }, [navigate, user, authLoading]);
 
-  const validatePassword = (pwd) => {
-    // Mínimo 6 caracteres (requisito de Supabase)
-    return pwd.length >= 6;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -81,8 +77,15 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    if (!validatePassword(password)) {
-      toast.error('La contraseña debe tener al menos 6 caracteres.');
+    // Validar fortaleza de contraseña
+    const passwordValidation = validatePasswordStrength(password);
+    
+    if (!passwordValidation.valid) {
+      // Mostrar el primer error o todos si son pocos
+      const errorMessage = passwordValidation.errors.length === 1
+        ? passwordValidation.errors[0]
+        : passwordValidation.errors.join('. ');
+      toast.error(errorMessage);
       return;
     }
 
@@ -190,7 +193,7 @@ export default function ResetPasswordPage() {
                   autoComplete="new-password"
                   className={`${componentStyles.controls.inputDefault} w-full`}
                 />
-                <p className="text-xs text-ui/50 mt-1">Mínimo 6 caracteres</p>
+                <p className="text-xs text-ui/50 mt-1">Mínimo 8 caracteres, incluyendo mayúscula, minúscula y número</p>
               </div>
 
               <div className={componentStyles.form.field}>

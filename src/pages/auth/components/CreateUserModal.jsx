@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import FormField from '@/components/ds/FormField';
 import { UserPlus } from 'lucide-react';
 import { useCreateUser } from '../hooks/useCreateUser';
-import { validateEmail, isEmpty } from '../utils/validation';
+import { validateEmail, isEmpty, normalizeEmail } from '../utils/validation';
 import { componentStyles } from '@/design/componentStyles';
 import { toast } from 'sonner';
 
@@ -106,7 +106,7 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }) {
     try {
       // Siempre enviar invitación (sendInvitation: true)
       const result = await createUser({
-        email: email.trim(),
+        email: normalizeEmail(email),
         full_name: fullName.trim(),
         nivel: nivel || null,
         profesor_asignado_id: profesorAsignadoId || null,

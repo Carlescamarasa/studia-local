@@ -4,9 +4,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Obtener origen permitido desde variable de entorno o usar fallback seguro
+const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || 'https://studia.latrompetasonara.com';
+
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': allowedOrigin,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 serve(async (req) => {
@@ -67,7 +71,12 @@ serve(async (req) => {
 
     // Parsear el body de la petición
     const body = await req.json();
-    const { email, full_name, nivel, profesor_asignado_id } = body;
+    let { email, full_name, nivel, profesor_asignado_id } = body;
+
+    // Normalizar email a lowercase
+    if (email) {
+      email = email.trim().toLowerCase();
+    }
 
     // Validar campos requeridos
     if (!email || !full_name) {
@@ -88,8 +97,12 @@ serve(async (req) => {
     let authUser;
     let authError;
 
-    // Obtener la URL base para redirectTo (página de reset password)
-    const redirectUrl = `${new URL(supabaseUrl).origin}/reset-password`;
+    // Helper centralizado para redirectTo
+    const getResetPasswordRedirectUrl = () => {
+      const baseUrl = new URL(supabaseUrl).origin;
+      return `${baseUrl}/reset-password`;
+    };
+    const redirectUrl = getResetPasswordRedirectUrl();
 
     // Siempre usar modo invitación: inviteUserByEmail() crea el usuario Y envía el email automáticamente
     // El email será una invitación para que el usuario establezca su contraseña
@@ -105,20 +118,42 @@ serve(async (req) => {
     authError = error;
 
     if (authError) {
-      // Si el usuario ya existe, intentar obtenerlo
+      // Si el usuario ya existe, verificar su estado antes de reenviar invitación
       if (authError.message?.includes('already registered') || authError.message?.includes('already exists')) {
         const { data: existingUser } = await adminClient.auth.admin.getUserByEmail(email);
         if (existingUser?.user) {
-          authUser = existingUser.user;
+          // Verificar si el usuario ya tiene cuenta activa
+          // email_confirmed_at se establece cuando el usuario confirma su email (al establecer contraseña)
+          const user = existingUser.user;
+          const hasConfirmedEmail = !!user.email_confirmed_at;
+          
+          if (hasConfirmedEmail) {
+            // Usuario ya tiene cuenta activa, no reenviar invitación
+            return new Response(
+              JSON.stringify({ 
+                error: 'El usuario ya existe y tiene una cuenta activa. No se puede reenviar la invitación.' 
+              }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+          
+          // Usuario existe pero no tiene cuenta activa, reenviar invitación
+          authUser = user;
           authError = null;
-          // Reenviar invitación al usuario existente
-          await adminClient.auth.admin.generateLink({
+          const { error: linkError } = await adminClient.auth.admin.generateLink({
             type: 'invite',
             email: email,
             options: {
               redirectTo: redirectUrl,
             },
           });
+          
+          if (linkError) {
+            return new Response(
+              JSON.stringify({ error: `Error al generar link de invitación: ${linkError.message}` }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
         }
       }
     }

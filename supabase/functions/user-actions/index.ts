@@ -4,9 +4,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Obtener origen permitido desde variable de entorno o usar fallback seguro
+const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || 'https://studia.latrompetasonara.com';
+
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': allowedOrigin,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 serve(async (req) => {
@@ -67,7 +71,12 @@ serve(async (req) => {
 
     // Parsear el body de la petición
     const body = await req.json();
-    const { action, userId, email } = body;
+    let { action, userId, email } = body;
+
+    // Normalizar email a lowercase si se proporciona
+    if (email) {
+      email = email.trim().toLowerCase();
+    }
 
     // Validar campos requeridos
     if (!action) {
@@ -106,6 +115,7 @@ serve(async (req) => {
     } else if (email) {
       // No usar getUserByEmail (no existe en v2)
       // Buscar en profiles por email o usar listUsers con filtro
+      // Email ya está normalizado arriba
       const { data: profiles, error: profileError } = await adminClient
         .from('profiles')
         .select('id, email')
@@ -153,8 +163,12 @@ serve(async (req) => {
       }
     }
 
-    // Obtener la URL base para redirectTo
-    const redirectUrl = `${new URL(supabaseUrl).origin}/reset-password`;
+    // Helper centralizado para redirectTo
+    const getResetPasswordRedirectUrl = () => {
+      const baseUrl = new URL(supabaseUrl).origin;
+      return `${baseUrl}/reset-password`;
+    };
+    const redirectUrl = getResetPasswordRedirectUrl();
     let result;
     let error;
 

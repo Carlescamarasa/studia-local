@@ -36,7 +36,7 @@ export function useCreateUser() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: userData.email.trim(),
+          email: userData.email.trim().toLowerCase(),
           full_name: userData.full_name.trim(),
           nivel: userData.nivel || null,
           profesor_asignado_id: userData.profesor_asignado_id || null,

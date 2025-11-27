@@ -26,7 +26,10 @@ export const authConfig = {
     },
     password: {
       required: true,
-      minLength: 6,
+      minLength: 8,
+      requireUppercase: true,
+      requireLowercase: true,
+      requireNumber: true,
       showStrength: false, // Futuro
     },
   },

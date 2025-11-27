@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import FormField from '@/components/ds/FormField';
 import { Mail, Send } from 'lucide-react';
-import { validateEmail, isEmpty } from '../utils/validation';
+import { validateEmail, isEmpty, normalizeEmail } from '../utils/validation';
 import { componentStyles } from '@/design/componentStyles';
 import { toast } from 'sonner';
 import { inviteUserByEmail, sendPasswordResetAdmin } from '@/api/userAdmin';
@@ -74,7 +74,7 @@ export function InviteUserModal({ open, onOpenChange, onSuccess }) {
     setIsLoading(true);
     try {
       // 1. Enviar invitación
-      await inviteUserByEmail(email.trim(), {
+      await inviteUserByEmail(normalizeEmail(email), {
         alias: alias.trim() || undefined,
       });
 
@@ -83,7 +83,7 @@ export function InviteUserModal({ open, onOpenChange, onSuccess }) {
       let resetPasswordError = null;
 
       try {
-        await sendPasswordResetAdmin(email.trim());
+        await sendPasswordResetAdmin(normalizeEmail(email));
         resetPasswordSent = true;
       } catch (resetErr) {
         console.error('Error al enviar reset password:', resetErr);
