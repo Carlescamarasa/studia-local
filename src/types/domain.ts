@@ -274,6 +274,7 @@ export interface RegistroSesion {
   sesionNombre?: string;
   foco?: string;
   created_at: string;
+  registrosBloque?: RegistroBloque[];
 }
 
 export type CreateRegistroSesionInput = Omit<RegistroSesion, 'id' | 'created_at'>;

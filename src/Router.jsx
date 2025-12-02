@@ -57,12 +57,12 @@ export default function AppRouter() {
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
         <Route path="/invitation" element={<PublicRoute><InvitationPage /></PublicRoute>} />
-        
+
         {/* Ruta de debug - accesible sin autenticación para facilitar depuración */}
         {process.env.NODE_ENV === 'development' && (
           <Route path="/debug/formulario-rapido" element={<DebugFormularioRapido />} />
         )}
-        
+
         {/* Rutas protegidas: todas requieren autenticación */}
         <Route
           element={

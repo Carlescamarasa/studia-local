@@ -561,7 +561,79 @@ export const localDataClient = {
     Pieza: createEntityAPI('Pieza', 'piezas', () => PiezasAPI.getAllPiezas()),
     Plan: createEntityAPI('Plan', 'planes', () => PlanesAPI.getAllPlanes()),
     RegistroBloque: createEntityAPI('RegistroBloque', 'registrosBloque', () => RegistrosBloqueAPI.getAllRegistrosBloque()),
-    RegistroSesion: createEntityAPI('RegistroSesion', 'registrosSesion', () => RegistrosSesionAPI.getAllRegistrosSesion()),
+    RegistroSesion: {
+      ...createEntityAPI('RegistroSesion', 'registrosSesion', () => RegistrosSesionAPI.getAllRegistrosSesion()),
+      // Sobrescribir métodos de lectura para incluir registrosBloque anidados
+      list: async (sort = '') => {
+        const api = getDataAPI();
+        if (api) {
+          return await api.registrosSesion.list(sort);
+        }
+
+        // Modo local: join manual
+        // Esperar a que carguen los datos
+        let attempts = 0;
+        while (localDataRef._loading && attempts < 40) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+          attempts++;
+        }
+
+        let sesiones = [...(await RegistrosSesionAPI.getAllRegistrosSesion())];
+        const bloques = localDataRef.registrosBloque || [];
+
+        // Join manual
+        sesiones = sesiones.map(s => ({
+          ...s,
+          registrosBloque: bloques.filter(b => b.registroSesionId === s.id)
+        }));
+
+        if (sort.startsWith('-')) {
+          const field = sort.slice(1);
+          sesiones.sort((a, b) => {
+            if (a[field] < b[field]) return 1;
+            if (a[field] > b[field]) return -1;
+            return 0;
+          });
+        }
+        return sesiones;
+      },
+      get: async (id) => {
+        const api = getDataAPI();
+        if (api) {
+          return await api.registrosSesion.get(id);
+        }
+
+        const sesiones = await RegistrosSesionAPI.getAllRegistrosSesion();
+        const sesion = sesiones.find(s => s.id === id);
+        if (!sesion) return null;
+
+        const bloques = localDataRef.registrosBloque || [];
+        return {
+          ...sesion,
+          registrosBloque: bloques.filter(b => b.registroSesionId === sesion.id)
+        };
+      },
+      filter: async (filters = {}, limit = null) => {
+        const api = getDataAPI();
+        if (api) {
+          return await api.registrosSesion.filter(filters, limit);
+        }
+
+        let sesiones = [...(await RegistrosSesionAPI.getAllRegistrosSesion())];
+        Object.keys(filters).forEach(key => {
+          sesiones = sesiones.filter(s => s[key] === filters[key]);
+        });
+
+        const bloques = localDataRef.registrosBloque || [];
+        sesiones = sesiones.map(s => ({
+          ...s,
+          registrosBloque: bloques.filter(b => b.registroSesionId === s.id)
+        }));
+
+        if (limit) sesiones = sesiones.slice(0, limit);
+        return sesiones;
+      }
+    },
     EventoCalendario: createEntityAPI('EventoCalendario', 'eventosCalendario', () => EventosCalendarioAPI.getAllEventosCalendario()),
     EvaluacionTecnica: createEntityAPI('EvaluacionTecnica', 'evaluaciones', () => EvaluacionesAPI.getEvaluacionesTecnicas()),
   },

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { BookOpen, Clock, Star } from "lucide-react";
 import { getNombreVisible } from "@/components/utils/helpers";
 import { formatearFechaEvento } from "./utils";
@@ -8,6 +8,7 @@ import MediaLinksBadges from "@/components/common/MediaLinksBadges";
 import MediaPreviewModal from "@/components/common/MediaPreviewModal";
 
 export default function EventoSesion({ sesion, usuarios, onClick, variant = 'default' }) {
+  // console.log('EventoSesion rendering:', sesion.id);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [selectedMediaLinks, setSelectedMediaLinks] = useState([]);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
@@ -43,9 +44,18 @@ export default function EventoSesion({ sesion, usuarios, onClick, variant = 'def
     hour: '2-digit',
     minute: '2-digit'
   }) : '';
-  const duracionMin = Math.floor((sesion.duracionRealSeg || 0) / 60);
+
+  // Calcular duración real sumando los bloques si están disponibles
+  const duracionRealSeg = useMemo(() => {
+    if (sesion.registrosBloque && Array.isArray(sesion.registrosBloque)) {
+      return sesion.registrosBloque.reduce((acc, bloque) => acc + (bloque.duracionRealSeg || 0), 0);
+    }
+    return sesion.duracionRealSeg || 0;
+  }, [sesion]);
+
+  const duracionMin = Math.floor(duracionRealSeg / 60);
   const duracionObjetivoMin = Math.floor((sesion.duracionObjetivoSeg || 0) / 60);
-  
+
   const getCalificacionBadge = (cal) => {
     if (!cal || cal <= 0) return null;
     const calInt = Math.round(cal);
@@ -60,7 +70,7 @@ export default function EventoSesion({ sesion, usuarios, onClick, variant = 'def
   if (variant === 'week') {
     const sesionNombre = sesion.sesionNombre || 'Sesión sin nombre';
     const sesionNombreCorto = sesionNombre.length > 20 ? sesionNombre.substring(0, 20) + '…' : sesionNombre;
-    
+
     // Construir línea 2: duración y valoración
     const partesLinea2 = [];
     if (duracionMin > 0) {

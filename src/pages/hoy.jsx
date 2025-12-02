@@ -142,6 +142,7 @@ function HoyPageContent() {
   const [tiempoAcumuladoAntesPausa, setTiempoAcumuladoAntesPausa] = useState(0);
   const heartbeatIntervalRef = useRef(null);
   const colaOfflineRef = useRef([]);
+  const bloquesPendientesRef = useRef([]); // Almacenar bloques en memoria hasta finalizar
 
   const sidebarCerradoRef = useRef(false);
 
@@ -402,68 +403,17 @@ function HoyPageContent() {
     return () => clearInterval(interval);
   }, [cronometroActivo, sesionActiva, indiceActual, sesionFinalizada, timestampInicio, tiempoAcumuladoAntesPausa]);
 
-  const guardarRegistroSesion = async (esFinal = false) => {
-    if (!asignacionActiva || !sesionActiva) return;
-
-    const listaEjecucion = aplanarSesion(sesionActiva);
-    const tiempoPrevisto = listaEjecucion
-      .filter(e => e.tipo !== 'AD')
-      .reduce((sum, e) => sum + (e.duracionSeg || 0), 0);
-
-    const dataRegistro = {
-      asignacionId: asignacionActiva.id,
-      alumnoId: userIdActual,
-      profesorAsignadoId: alumnoActual?.profesorAsignadoId || null,
-      semanaIdx: semanaIdx,
-      sesionIdx: semanaDelPlan?.sesiones?.indexOf(sesionActiva) || 0,
-      inicioISO: timestampInicio ? new Date(timestampInicio).toISOString() : new Date().toISOString(),
-      finISO: esFinal ? new Date().toISOString() : null,
-      duracionRealSeg: Math.min(tiempoActual, 18000),
-      duracionObjetivoSeg: tiempoPrevisto,
-      bloquesTotales: listaEjecucion.length,
-      bloquesCompletados: completados.size,
-      bloquesOmitidos: omitidos.size,
-      finalizada: esFinal,
-      finAnticipado: false,
-      motivoFin: null,
-      calificacion: datosFinal?.calidad || null,
-      notas: datosFinal?.notas || null,
-      mediaLinks: datosFinal?.mediaLinks || [],
-      dispositivo: navigator.userAgent,
-      versionSchema: "1.0",
-      piezaNombre: asignacionActiva.piezaSnapshot?.nombre || '',
-      planNombre: asignacionActiva.plan?.nombre || '',
-      semanaNombre: semanaDelPlan?.nombre || '',
-      sesionNombre: sesionActiva.nombre || '',
-      foco: sesionActiva.foco || 'GEN',
-    };
-
-    try {
-      if (registroSesionId) {
-        await localDataClient.entities.RegistroSesion.update(registroSesionId, dataRegistro);
-      } else {
-        const nuevoRegistro = await localDataClient.entities.RegistroSesion.create(dataRegistro);
-        setRegistroSesionId(nuevoRegistro.id);
-      }
-    } catch (error) {
-      colaOfflineRef.current.push({
-        tipo: 'sesion',
-        data: dataRegistro,
-        id: registroSesionId,
-        timestamp: Date.now(),
-      });
-    }
-  };
+  // NOTA: guardarRegistroSesion eliminado, se reemplaza por finalizarSesion
 
   const guardarRegistroBloque = async (indice, estado, duracionReal = 0) => {
-    if (!registroSesionId || !sesionActiva) return;
+    if (!sesionActiva) return;
 
     const listaEjecucion = aplanarSesion(sesionActiva);
     const bloque = listaEjecucion[indice];
     if (!bloque) return;
 
     const dataBloque = {
-      registroSesionId: registroSesionId,
+      // registroSesionId: se asignará al finalizar
       asignacionId: asignacionActiva.id,
       alumnoId: userIdActual,
       semanaIdx: semanaIdx,
@@ -481,15 +431,9 @@ function HoyPageContent() {
       ppmAlcanzado: ppmAlcanzado,
     };
 
-    try {
-      await localDataClient.entities.RegistroBloque.create(dataBloque);
-    } catch (error) {
-      colaOfflineRef.current.push({
-        tipo: 'bloque',
-        data: dataBloque,
-        timestamp: Date.now(),
-      });
-    }
+    // Guardar en memoria
+    bloquesPendientesRef.current.push(dataBloque);
+    console.log('Bloque guardado en memoria:', dataBloque);
   };
 
   // NOTA: Eliminados los useEffect que actualizaban el registro periódicamente
@@ -607,40 +551,8 @@ function HoyPageContent() {
     setOmitidos(new Set());
     setSesionFinalizada(false);
     setDatosFinal(null);
-
-    const ahora = new Date().toISOString();
-    const listaEjecucion = aplanarSesion(sesionActualizada);
-    const tiempoPrevisto = listaEjecucion
-      .filter(e => e.tipo !== 'AD')
-      .reduce((sum, e) => sum + (e.duracionSeg || 0), 0);
-
-    try {
-      const nuevoRegistro = await localDataClient.entities.RegistroSesion.create({
-        asignacionId: asignacionActiva.id,
-        alumnoId: userIdActual,
-        profesorAsignadoId: alumnoActual?.profesorAsignadoId || null,
-        semanaIdx: semanaIdx,
-        sesionIdx: sesionIdxProp,
-        inicioISO: ahora,
-        duracionRealSeg: 0,
-        duracionObjetivoSeg: tiempoPrevisto,
-        bloquesTotales: listaEjecucion.length,
-        bloquesCompletados: 0,
-        bloquesOmitidos: 0,
-        finalizada: false,
-        finAnticipado: false,
-        dispositivo: navigator.userAgent,
-        versionSchema: "1.0",
-        piezaNombre: asignacionActiva.piezaSnapshot?.nombre || '',
-        planNombre: asignacionActiva.plan?.nombre || '',
-        semanaNombre: semanaDelPlan?.nombre || '',
-        sesionNombre: sesion.nombre || '',
-        foco: sesion.foco || 'GEN',
-      });
-      setRegistroSesionId(nuevoRegistro.id);
-    } catch (error) {
-      // Error silencioso - el usuario puede continuar sin registro
-    }
+    setRegistroSesionId(null); // No hay ID hasta finalizar
+    bloquesPendientesRef.current = []; // Reiniciar bloques pendientes
 
     const timestampInicio = Date.now();
     setTimestampInicio(timestampInicio);
@@ -969,6 +881,83 @@ function HoyPageContent() {
     'S&A': componentStyles.status.badgeDefault, // brand -> default
   };
 
+  const finalizarSesion = async (calidad, notas, mediaLinks) => {
+    if (!asignacionActiva || !sesionActiva) return;
+
+    const listaEjecucion = aplanarSesion(sesionActiva);
+    const tiempoPrevisto = listaEjecucion
+      .filter(e => e.tipo !== 'AD')
+      .reduce((sum, e) => sum + (e.duracionSeg || 0), 0);
+
+    // Calcular duración total real sumando duraciones de bloques completados
+    // Esto asegura consistencia con los bloques guardados
+    const duracionRealTotal = bloquesPendientesRef.current.reduce((acc, b) => acc + (b.duracionRealSeg || 0), 0);
+
+    const dataRegistro = {
+      asignacionId: asignacionActiva.id,
+      alumnoId: userIdActual,
+      profesorAsignadoId: alumnoActual?.profesorAsignadoId || null,
+      semanaIdx: semanaIdx,
+      sesionIdx: semanaDelPlan?.sesiones?.indexOf(sesionActiva) || 0,
+      inicioISO: timestampInicio ? new Date(timestampInicio).toISOString() : new Date().toISOString(),
+      finISO: new Date().toISOString(),
+      duracionRealSeg: duracionRealTotal, // Usar la suma de bloques
+      duracionObjetivoSeg: tiempoPrevisto,
+      bloquesTotales: listaEjecucion.length,
+      bloquesCompletados: completados.size,
+      bloquesOmitidos: omitidos.size,
+      finalizada: true,
+      finAnticipado: false,
+      motivoFin: null,
+      calificacion: calidad,
+      notas: notas,
+      mediaLinks: mediaLinks || [],
+      dispositivo: navigator.userAgent,
+      versionSchema: "1.0",
+      piezaNombre: asignacionActiva.piezaSnapshot?.nombre || '',
+      planNombre: asignacionActiva.plan?.nombre || '',
+      semanaNombre: semanaDelPlan?.nombre || '',
+      sesionNombre: sesionActiva.nombre || '',
+      foco: sesionActiva.foco || 'GEN',
+    };
+
+    try {
+      // 1. Crear la sesión
+      const nuevoRegistro = await localDataClient.entities.RegistroSesion.create(dataRegistro);
+      const nuevoId = nuevoRegistro.id;
+      setRegistroSesionId(nuevoId);
+
+      // 2. Guardar todos los bloques pendientes vinculados a esta sesión
+      const promesasBloques = bloquesPendientesRef.current.map(bloque => {
+        return localDataClient.entities.RegistroBloque.create({
+          ...bloque,
+          registroSesionId: nuevoId
+        });
+      });
+
+      await Promise.all(promesasBloques);
+
+      toast.success("✅ Sesión guardada correctamente");
+
+      // Limpiar cola
+      bloquesPendientesRef.current = [];
+
+    } catch (error) {
+      console.error("Error al guardar sesión:", error);
+      toast.error("❌ Error al guardar la sesión. Se intentará guardar localmente.");
+
+      // En caso de error, guardar en cola offline (implementación simplificada)
+      colaOfflineRef.current.push({
+        tipo: 'sesion_completa',
+        data: {
+          sesion: dataRegistro,
+          bloques: bloquesPendientesRef.current
+        },
+        timestamp: Date.now(),
+      });
+    }
+  };
+
   // Resumen final
   if (sesionActiva && sesionFinalizada) {
     const listaEjecucion = aplanarSesion(sesionActiva);
@@ -995,44 +984,13 @@ function HoyPageContent() {
         }}
         onCalidadNotas={async (calidad, notas, mediaLinks) => {
           setDatosFinal(prev => ({ ...prev, calidad, notas, mediaLinks }));
-
-          if (registroSesionId) {
-            try {
-              // Actualizar el registro de sesión con todos los datos finales
-              // Esta es la ÚNICA actualización del registro de sesión (además de la creación inicial)
-              const listaEjecucion = aplanarSesion(sesionActiva);
-              const updateData = {
-                finISO: new Date().toISOString(),
-                duracionRealSeg: Math.min(tiempoActual, 18000),
-                bloquesCompletados: completados.size,
-                bloquesOmitidos: omitidos.size,
-                calificacion: calidad || null,
-                notas: (notas && notas.trim()) ? notas.trim() : null,
-                mediaLinks: mediaLinks || [],
-                finalizada: true,
-                finAnticipado: false,
-                motivoFin: null,
-              };
-
-              // Verificar que el registro existe antes de actualizar
-              const registroExistente = await localDataClient.entities.RegistroSesion.get(registroSesionId);
-
-              if (!registroExistente) {
-                return;
-              }
-
-              await localDataClient.entities.RegistroSesion.update(registroSesionId, updateData);
-            } catch (error) {
-              // Mostrar error al usuario
-              toast.error('Error al guardar el feedback. Inténtalo de nuevo.');
-              throw error; // Re-lanzar para que ResumenFinal pueda manejarlo
-            }
-          }
+          await finalizarSesion(calidad, notas, mediaLinks);
         }}
+        // Props adicionales para subida de vídeo
         userId={userIdActual}
         userProfile={alumnoActual}
         registroSesionId={registroSesionId}
-        profesorAsignadoId={asignacionActiva?.profesorId || null}
+        profesorAsignadoId={alumnoActual?.profesorAsignadoId}
       />
     );
   }

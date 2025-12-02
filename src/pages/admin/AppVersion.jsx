@@ -82,143 +82,145 @@ function AppVersionPageContent() {
     : 'Sin versión activa';
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
+    <div className="min-h-screen bg-background">
       <PageHeader
         title="Versión de Studia"
         description="Gestiona las versiones y el historial de la aplicación"
       />
 
-      {/* Header con versión actual y acciones */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
-              <Tag className="w-5 h-5 text-[var(--color-primary)]" />
-              <div>
-                <CardTitle className="text-lg">Versión activa</CardTitle>
-                <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-                  Studia {currentVersionDisplay}
-                </p>
+      <div className={componentStyles.layout.page}>
+        {/* Header con versión actual y acciones */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <Tag className="w-5 h-5 text-[var(--color-primary)]" />
+                <div>
+                  <CardTitle className="text-lg">Versión activa</CardTitle>
+                  <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+                    Studia {currentVersionDisplay}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={refresh}
+                  disabled={isLoading}
+                  className={componentStyles.buttons.outline}
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                  Actualizar
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setIsNewVersionModalOpen(true)}
+                  disabled={isCreating}
+                  className={componentStyles.buttons.primary}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nueva versión
+                </Button>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={refresh}
-                disabled={isLoading}
-                className={componentStyles.buttons.outline}
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                Actualizar
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setIsNewVersionModalOpen(true)}
-                disabled={isCreating}
-                className={componentStyles.buttons.primary}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nueva versión
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
+          </CardHeader>
+        </Card>
 
-      {/* Tabla de historial */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Historial de versiones</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <RefreshCw className="w-6 h-6 animate-spin text-[var(--color-text-secondary)]" />
-            </div>
-          ) : history.length === 0 ? (
-            <div className="text-center py-12 text-[var(--color-text-secondary)]">
-              <Tag className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No hay versiones registradas</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Versión</TableHead>
-                    <TableHead>Codename</TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Autor</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {history.map((version) => {
-                    const isActive = currentVersion?.id === version.id;
-                    const author = version.author || {};
+        {/* Tabla de historial */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Historial de versiones</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <RefreshCw className="w-6 h-6 animate-spin text-[var(--color-text-secondary)]" />
+              </div>
+            ) : history.length === 0 ? (
+              <div className="text-center py-12 text-[var(--color-text-secondary)]">
+                <Tag className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No hay versiones registradas</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Versión</TableHead>
+                      <TableHead>Codename</TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Autor</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {history.map((version) => {
+                      const isActive = currentVersion?.id === version.id;
+                      const author = version.author || {};
 
-                    return (
-                      <TableRow key={version.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-[var(--color-text-primary)]">
-                              {version.version}
-                            </span>
-                            {isActive && (
-                              <Badge variant="success" className="text-xs">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Activa
-                              </Badge>
+                      return (
+                        <TableRow key={version.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-[var(--color-text-primary)]">
+                                {version.version}
+                              </span>
+                              {isActive && (
+                                <Badge variant="success" className="text-xs">
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  Activa
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {version.codename ? (
+                              <span className="text-[var(--color-text-secondary)] italic">
+                                "{version.codename}"
+                              </span>
+                            ) : (
+                              <span className="text-[var(--color-text-secondary)]">—</span>
                             )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {version.codename ? (
-                            <span className="text-[var(--color-text-secondary)] italic">
-                              "{version.codename}"
-                            </span>
-                          ) : (
-                            <span className="text-[var(--color-text-secondary)]">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-                            <Calendar className="w-4 h-4" />
-                            {formatDate(version.created_at)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2 text-sm">
-                            <User className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                            <span className="text-[var(--color-text-secondary)]">
-                              {displayName(author) || '—'}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {!isActive && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleActivateVersion(version.id)}
-                              disabled={isActivating}
-                              className={componentStyles.buttons.outline}
-                            >
-                              Activar
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+                              <Calendar className="w-4 h-4" />
+                              {formatDate(version.created_at)}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2 text-sm">
+                              <User className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                              <span className="text-[var(--color-text-secondary)]">
+                                {displayName(author) || '—'}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {!isActive && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleActivateVersion(version.id)}
+                                disabled={isActivating}
+                                className={componentStyles.buttons.outline}
+                              >
+                                Activar
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Modal: Nueva versión */}
       <Dialog open={isNewVersionModalOpen} onOpenChange={setIsNewVersionModalOpen}>

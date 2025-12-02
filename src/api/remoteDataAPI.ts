@@ -1754,6 +1754,7 @@ export function createRemoteDataAPI(): AppDataAPI {
     },
     registrosSesion: {
       list: async (sort?: string) => {
+        // Fetch sessions first
         let query = supabase.from('registros_sesion').select('*');
 
         if (sort) {
@@ -1763,22 +1764,80 @@ export function createRemoteDataAPI(): AppDataAPI {
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
 
-        const { data, error } = await query;
-        if (error) throw error;
-        return (data || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroSesion>(r)));
+        const { data: sessionsData, error: sessionsError } = await query;
+        if (sessionsError) {
+          throw sessionsError;
+        }
+
+        const sessions = (sessionsData || []).map((r: any) => {
+          const camel = snakeToCamel<RegistroSesion>(r);
+          return normalizeISOFields<RegistroSesion>(camel);
+        });
+
+        if (sessions.length === 0) return [];
+
+        // Fetch associated blocks
+        const sessionIds = sessions.map(s => s.id);
+        const { data: blocksData, error: blocksError } = await supabase
+          .from('registros_bloque')
+          .select('*')
+          .in('registro_sesion_id', sessionIds);
+
+        if (blocksError) {
+          // Return sessions without blocks if blocks fetch fails
+          return sessions;
+        }
+
+        const blocks = (blocksData || []).map((b: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(b)));
+
+        // Join blocks to sessions
+        const result = sessions.map(session => {
+          const sessionBlocks = [];
+          for (const b of blocks) {
+            if (b.registroSesionId === session.id) {
+              sessionBlocks.push(b);
+            }
+          }
+          return {
+            ...session,
+            registrosBloque: sessionBlocks
+          };
+        });
+
+        return result;
       },
       get: async (id: string) => {
-        const { data, error } = await supabase
+        const { data: sessionData, error: sessionError } = await supabase
           .from('registros_sesion')
           .select('*')
           .eq('id', id)
           .single();
 
-        if (error) {
-          if (error.code === 'PGRST116') return null;
-          throw error;
+        if (sessionError) {
+          if (sessionError.code === 'PGRST116') return null;
+          throw sessionError;
         }
-        return normalizeISOFields(snakeToCamel<RegistroSesion>(data));
+
+        const camel = snakeToCamel<RegistroSesion>(sessionData);
+        const session = normalizeISOFields<RegistroSesion>(camel);
+
+        // Fetch associated blocks
+        const { data: blocksData, error: blocksError } = await supabase
+          .from('registros_bloque')
+          .select('*')
+          .eq('registro_sesion_id', id);
+
+        if (blocksError) {
+          console.warn('[remoteDataAPI] Error fetching blocks for session:', blocksError);
+          return session;
+        }
+
+        const blocks = (blocksData || []).map((b: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(b)));
+
+        return {
+          ...session,
+          registrosBloque: blocks
+        };
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
         let query = supabase.from('registros_sesion').select('*');
@@ -1792,9 +1851,35 @@ export function createRemoteDataAPI(): AppDataAPI {
           query = query.limit(limit);
         }
 
-        const { data, error } = await query;
-        if (error) throw error;
-        return (data || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroSesion>(r)));
+        const { data: sessionsData, error: sessionsError } = await query;
+        if (sessionsError) throw sessionsError;
+
+        const sessions = (sessionsData || []).map((r: any) => {
+          const camel = snakeToCamel<RegistroSesion>(r);
+          return normalizeISOFields<RegistroSesion>(camel);
+        });
+
+        if (sessions.length === 0) return [];
+
+        // Fetch associated blocks
+        const sessionIds = sessions.map(s => s.id);
+        const { data: blocksData, error: blocksError } = await supabase
+          .from('registros_bloque')
+          .select('*')
+          .in('registro_sesion_id', sessionIds);
+
+        if (blocksError) {
+          console.warn('[remoteDataAPI] Error fetching blocks for sessions:', blocksError);
+          return sessions;
+        }
+
+        const blocks = (blocksData || []).map((b: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(b)));
+
+        // Join blocks to sessions
+        return sessions.map(session => ({
+          ...session,
+          registrosBloque: blocks.filter(b => b.registroSesionId === session.id)
+        }));
       },
       create: async (data) => {
         const snakeData = camelToSnake({

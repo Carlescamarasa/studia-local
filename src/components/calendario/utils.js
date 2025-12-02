@@ -11,15 +11,15 @@ export const formatLocalDate = (d) => {
   if (typeof d === 'string') {
     return d.split('T')[0]; // Si ya es string ISO, tomar solo la fecha
   }
-  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 };
 
 /**
  * Parsea una fecha ISO (YYYY-MM-DD) a objeto Date
  */
 export const parseLocalDate = (s) => {
-  const [y,m,d] = s.split("-").map(Number);
-  return new Date(y, m-1, d);
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d);
 };
 
 /**
@@ -48,7 +48,7 @@ export const endOfSunday = (date) => {
  */
 export const agruparEventosPorDia = (eventos, fechaInicio, fechaFin) => {
   const eventosPorDia = {};
-  
+
   // Inicializar todos los días en el rango
   const fechaActual = new Date(fechaInicio);
   while (fechaActual <= fechaFin) {
@@ -93,7 +93,7 @@ export const agruparEventosPorDia = (eventos, fechaInicio, fechaFin) => {
       const lunesAsignacion = startOfMonday(parseLocalDate(asignacion.semanaInicioISO));
       const totalSemanas = Math.max(1, asignacion.plan.semanas.length); // Mínimo 1 semana
       const totalDias = totalSemanas * 7; // Total de días del plan
-      
+
       // Generar eventos para todas las semanas del plan
       for (let i = 0; i < totalDias; i++) {
         const fecha = new Date(lunesAsignacion);
@@ -110,7 +110,7 @@ export const agruparEventosPorDia = (eventos, fechaInicio, fechaFin) => {
   eventos.eventosImportantes.forEach(evento => {
     const fechaInicio = parseLocalDate(evento.fechaInicio);
     const fechaFin = evento.fechaFin ? parseLocalDate(evento.fechaFin) : fechaInicio;
-    
+
     for (let fecha = new Date(fechaInicio); fecha <= fechaFin; fecha.setDate(fecha.getDate() + 1)) {
       const fechaISO = formatLocalDate(fecha);
       if (eventosPorDia[fechaISO]) {
@@ -127,10 +127,10 @@ export const agruparEventosPorDia = (eventos, fechaInicio, fechaFin) => {
  */
 export const formatearFechaEvento = (fechaISO) => {
   const fecha = parseLocalDate(fechaISO);
-  return fecha.toLocaleDateString('es-ES', { 
-    weekday: 'short', 
-    day: 'numeric', 
-    month: 'short' 
+  return fecha.toLocaleDateString('es-ES', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short'
   });
 };
 
@@ -154,25 +154,25 @@ export const formatearHora = (isoString) => {
 export const getAsignacionWeekIndex = (startDate, totalWeeks, currentDate) => {
   const start = startDate instanceof Date ? startDate : parseLocalDate(startDate);
   const current = currentDate instanceof Date ? currentDate : parseLocalDate(currentDate);
-  
+
   // Normalizar a inicio del día
   const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
   const currentDay = new Date(current.getFullYear(), current.getMonth(), current.getDate());
-  
+
   // Calcular diferencia en días
   const diffTime = currentDay - startDay;
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  
+
   // Si está antes del inicio, retornar -1
   if (diffDays < 0) return -1;
-  
+
   // Calcular índice de semana (0-based)
   // La semana empieza en lunes, así que dividimos por 7
   const weekIndex = Math.floor(diffDays / 7);
-  
+
   // Clamp entre 0 y totalWeeks - 1
   if (weekIndex >= totalWeeks) return -1;
-  
+
   return weekIndex;
 };
 
@@ -191,18 +191,18 @@ export const calcularPatronSemanasAsignacion = (asignacion, currentDate = null) 
 
   // Si no se proporciona currentDate, usar la fecha de inicio (mostrar primera semana activa)
   const fechaActual = currentDate || asignacion.semanaInicioISO;
-  
+
   // Calcular índice de semana actual
   const weekIndex = getAsignacionWeekIndex(asignacion.semanaInicioISO, totalSemanas, fechaActual);
-  
+
   // Si está fuera del rango, no mostrar patrón
   if (weekIndex < 0) return null;
 
   // Generar patrón: ● para la semana actual, ○ para las demás
-  const patron = Array.from({ length: Math.min(totalSemanas, 8) }, (_, i) => 
+  const patron = Array.from({ length: Math.min(totalSemanas, 8) }, (_, i) =>
     i === weekIndex ? '●' : '○'
   );
-  
+
   return patron.join(' ');
 };
 
