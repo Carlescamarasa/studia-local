@@ -1,19 +1,42 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import HabilidadesRadarChart from './HabilidadesRadarChart';
 import EvolucionPPMChart from './EvolucionPPMChart';
 import HabilidadesTrabajadas from './HabilidadesTrabajadas';
 import { useHabilidadesStats, DataSource } from '@/hooks/useHabilidadesStats';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Activity, ClipboardList, Layers } from 'lucide-react';
+import { Activity, ClipboardList, Layers, User } from 'lucide-react';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+// @ts-ignore
+import { displayName } from '../utils/helpers';
 
 interface HabilidadesViewProps {
     alumnoId: string;
+    students?: Array<{ id: string; email?: string;[key: string]: any }>;
+    enableSelection?: boolean;
 }
 
-export default function HabilidadesView({ alumnoId }: HabilidadesViewProps) {
+export default function HabilidadesView({ alumnoId, students = [], enableSelection = false }: HabilidadesViewProps) {
     const [showEvaluaciones, setShowEvaluaciones] = useState(true);
     const [showExperiencia, setShowExperiencia] = useState(true);
-    const { experienceStats, evaluationStats, isLoading } = useHabilidadesStats(alumnoId);
+    const [internalSelectedId, setInternalSelectedId] = useState(alumnoId);
+
+    // Update internal selection if prop changes (e.g. initial load)
+    useEffect(() => {
+        if (alumnoId && !enableSelection) {
+            setInternalSelectedId(alumnoId);
+        }
+    }, [alumnoId, enableSelection]);
+
+    // Use the selected ID for fetching stats
+    const targetId = enableSelection ? internalSelectedId : alumnoId;
+
+    const { experienceStats, evaluationStats, isLoading } = useHabilidadesStats(targetId);
 
     // Determine data for Radar Chart
     const radarData = useMemo(() => {
@@ -46,10 +69,41 @@ export default function HabilidadesView({ alumnoId }: HabilidadesViewProps) {
     // Determine data for List
     const listData = experienceStats.listData;
 
+    // Find selected student name for display
+    const selectedStudent = students.find(s => s.id === internalSelectedId);
+    const selectedStudentName = selectedStudent ? displayName(selectedStudent) : 'Alumno seleccionado';
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h3 className="text-lg font-semibold">Habilidades Maestras</h3>
+                <div className="flex flex-col gap-2">
+                    <h3 className="text-lg font-semibold">Habilidades Maestras</h3>
+                    {enableSelection && (
+                        <div className="w-[300px]">
+                            <Select value={internalSelectedId} onValueChange={setInternalSelectedId}>
+                                <SelectTrigger className="h-9">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                                        <span className="truncate">
+                                            {selectedStudentName}
+                                        </span>
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {students.map((student) => {
+                                        const name = displayName(student);
+                                        const label = student.email ? `${name} (${student.email})` : name;
+                                        return (
+                                            <SelectItem key={student.id} value={student.id}>
+                                                {label}
+                                            </SelectItem>
+                                        );
+                                    })}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+                </div>
 
                 <div className="flex items-center gap-2 bg-muted/50 p-1 rounded-lg">
                     <ToggleGroup type="multiple" value={[showEvaluaciones ? 'evaluaciones' : '', showExperiencia ? 'experiencia' : ''].filter(Boolean)}>
@@ -96,7 +150,7 @@ export default function HabilidadesView({ alumnoId }: HabilidadesViewProps) {
                                 dataKey1="A"
                                 dataKey2={showEvaluaciones && showExperiencia ? "B" : undefined}
                             />
-                            <EvolucionPPMChart alumnoId={alumnoId} />
+                            <EvolucionPPMChart alumnoId={targetId} />
                         </div>
 
                         {showExperiencia && (

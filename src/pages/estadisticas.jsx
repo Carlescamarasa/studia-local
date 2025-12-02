@@ -1128,7 +1128,17 @@ function EstadisticasPageContent() {
         )}
 
         {tabActiva === 'habilidades' && (
-          <HabilidadesView alumnoId={userIdActual} />
+          <HabilidadesView
+            alumnoId={userIdActual}
+            students={
+              isAdmin
+                ? estudiantes
+                : isProf
+                  ? estudiantes.filter(e => estudiantesDelProfesor.includes(e.id))
+                  : []
+            }
+            enableSelection={isAdmin || isProf}
+          />
         )}
 
         {tabActiva === 'tipos' && (
