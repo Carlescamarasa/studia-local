@@ -591,8 +591,6 @@ function HoyPageContent() {
             // Mantener otras propiedades actualizadas si existen
             instrucciones: bloqueActual.instrucciones || bloqueSnapshot.instrucciones,
             indicadorLogro: bloqueActual.indicadorLogro || bloqueSnapshot.indicadorLogro,
-            instrucciones: bloqueActual.instrucciones || bloqueSnapshot.instrucciones,
-            indicadorLogro: bloqueActual.indicadorLogro || bloqueSnapshot.indicadorLogro,
             materialesRequeridos: bloqueActual.materialesRequeridos || bloqueSnapshot.materialesRequeridos || [],
             targetPPMs: bloqueActual.targetPPMs || bloqueSnapshot.targetPPMs || [],
           };
