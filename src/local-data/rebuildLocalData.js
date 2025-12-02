@@ -78,9 +78,9 @@ function isValidUserId(id) {
 export function fixUsers(data) {
   const usuarios = data.usuarios || [];
   const usuariosValidos = localUsers.filter(u => VALID_USER_IDS.includes(u.id));
-  
+
   console.log(`🔧 Reparando usuarios: ${usuarios.length} -> ${usuariosValidos.length}`);
-  
+
   return {
     ...data,
     usuarios: usuariosValidos,
@@ -93,27 +93,27 @@ export function fixUsers(data) {
 export function fixAsignaciones(data) {
   const asignaciones = [...(data.asignaciones || [])];
   let fixed = 0;
-  
+
   asignaciones.forEach(a => {
     let changed = false;
-    
+
     // Corregir alumnoId
     if (!isValidUserId(a.alumnoId)) {
       a.alumnoId = DEFAULT_ESTUDIANTE_ID;
       changed = true;
     }
-    
+
     // Corregir profesorId
     if (!isValidUserId(a.profesorId)) {
       a.profesorId = DEFAULT_PROFESOR_ID;
       changed = true;
     }
-    
+
     if (changed) fixed++;
   });
-  
+
   console.log(`🔧 Reparando asignaciones: ${fixed} referencias corregidas`);
-  
+
   return {
     ...data,
     asignaciones,
@@ -130,7 +130,7 @@ export function fixRegistros(data) {
   let fixedBloque = 0;
   let removedSesion = 0;
   let removedBloque = 0;
-  
+
   // Reparar registros de sesión
   const registrosSesionValidos = registrosSesion.filter(r => {
     // Corregir alumnoId
@@ -138,26 +138,26 @@ export function fixRegistros(data) {
       r.alumnoId = DEFAULT_ESTUDIANTE_ID;
       fixedSesion++;
     }
-    
+
     // Normalizar duraciones
     const duracionReal = safeNumber(r.duracionRealSeg);
     const duracionObjetivo = safeNumber(r.duracionObjetivoSeg);
-    
+
     if (duracionReal !== r.duracionRealSeg || duracionObjetivo !== r.duracionObjetivoSeg) {
       r.duracionRealSeg = duracionReal;
       r.duracionObjetivoSeg = duracionObjetivo;
       fixedSesion++;
     }
-    
+
     // Filtrar registros con duración inválida o muy grande
     if (duracionReal === 0 && duracionObjetivo === 0) {
       removedSesion++;
       return false;
     }
-    
+
     return true;
   });
-  
+
   // Reparar registros de bloques
   const registrosBloqueValidos = registrosBloque.filter(r => {
     // Corregir alumnoId
@@ -165,30 +165,30 @@ export function fixRegistros(data) {
       r.alumnoId = DEFAULT_ESTUDIANTE_ID;
       fixedBloque++;
     }
-    
+
     // Normalizar duraciones
     const duracionReal = safeNumber(r.duracionRealSeg);
     const duracionObjetivo = safeNumber(r.duracionObjetivoSeg);
-    
+
     if (duracionReal !== r.duracionRealSeg || duracionObjetivo !== r.duracionObjetivoSeg) {
       r.duracionRealSeg = duracionReal;
       r.duracionObjetivoSeg = duracionObjetivo;
       fixedBloque++;
     }
-    
+
     // Filtrar registros con duración inválida
     if (duracionReal === 0 && duracionObjetivo === 0) {
       removedBloque++;
       return false;
     }
-    
+
     return true;
   });
-  
+
   console.log(`🔧 Reparando registros:`);
   console.log(`   Sesiones: ${fixedSesion} corregidas, ${removedSesion} eliminadas`);
   console.log(`   Bloques: ${fixedBloque} corregidos, ${removedBloque} eliminados`);
-  
+
   return {
     ...data,
     registrosSesion: registrosSesionValidos,
@@ -202,27 +202,27 @@ export function fixRegistros(data) {
 export function fixFeedbacks(data) {
   const feedbacksSemanal = [...(data.feedbacksSemanal || [])];
   let fixed = 0;
-  
+
   feedbacksSemanal.forEach(f => {
     let changed = false;
-    
+
     // Corregir alumnoId
     if (!isValidUserId(f.alumnoId)) {
       f.alumnoId = DEFAULT_ESTUDIANTE_ID;
       changed = true;
     }
-    
+
     // Corregir profesorId
     if (!isValidUserId(f.profesorId)) {
       f.profesorId = DEFAULT_PROFESOR_ID;
       changed = true;
     }
-    
+
     if (changed) fixed++;
   });
-  
+
   console.log(`🔧 Reparando feedbacks: ${fixed} referencias corregidas`);
-  
+
   return {
     ...data,
     feedbacksSemanal,
@@ -236,39 +236,39 @@ export function normalizeNumbers(data) {
   const registrosSesion = [...(data.registrosSesion || [])];
   const registrosBloque = [...(data.registrosBloque || [])];
   let normalized = 0;
-  
+
   registrosSesion.forEach(r => {
     const originalReal = r.duracionRealSeg;
     const originalObj = r.duracionObjetivoSeg;
-    
+
     r.duracionRealSeg = safeNumber(r.duracionRealSeg);
     r.duracionObjetivoSeg = safeNumber(r.duracionObjetivoSeg);
     r.bloquesTotales = safeNumber(r.bloquesTotales);
     r.bloquesCompletados = safeNumber(r.bloquesCompletados);
     r.bloquesOmitidos = safeNumber(r.bloquesOmitidos);
     r.calificacion = r.calificacion != null ? safeNumber(r.calificacion) : null;
-    
+
     if (originalReal !== r.duracionRealSeg || originalObj !== r.duracionObjetivoSeg) {
       normalized++;
     }
   });
-  
+
   registrosBloque.forEach(r => {
     const originalReal = r.duracionRealSeg;
     const originalObj = r.duracionObjetivoSeg;
-    
+
     r.duracionRealSeg = safeNumber(r.duracionRealSeg);
     r.duracionObjetivoSeg = safeNumber(r.duracionObjetivoSeg);
     r.ordenEjecucion = safeNumber(r.ordenEjecucion);
     r.iniciosPausa = safeNumber(r.iniciosPausa);
-    
+
     if (originalReal !== r.duracionRealSeg || originalObj !== r.duracionObjetivoSeg) {
       normalized++;
     }
   });
-  
+
   console.log(`🔧 Normalizando números: ${normalized} valores corregidos`);
-  
+
   return {
     ...data,
     registrosSesion,
@@ -310,7 +310,7 @@ export async function rebuildAllLocalData(options = {}) {
     // 2. Limpiar datos existentes si se solicita
     if (limpiarExistente) {
       console.log('🧹 Limpiando datos existentes...');
-      ['asignaciones', 'bloques', 'feedbacksSemanal', 'piezas', 'planes', 'registrosBloque', 'registrosSesion'].forEach(key => {
+      ['asignaciones', 'bloques', 'feedbacksSemanal', 'piezas', 'planes', 'registrosBloque', 'registrosSesion', 'evaluacionesTecnicas'].forEach(key => {
         localStorage.removeItem(`local_${key}`);
       });
     }
@@ -770,6 +770,7 @@ export async function rebuildLocalData() {
       planes: JSON.parse(localStorage.getItem('local_planes') || '[]'),
       registrosBloque: JSON.parse(localStorage.getItem('local_registrosBloque') || '[]'),
       registrosSesion: JSON.parse(localStorage.getItem('local_registrosSesion') || '[]'),
+      evaluacionesTecnicas: JSON.parse(localStorage.getItem('local_evaluacionesTecnicas') || '[]'),
     };
 
     console.log(`📊 Datos cargados:`);
@@ -791,6 +792,7 @@ export async function rebuildLocalData() {
     localStorage.setItem('local_registrosSesion', JSON.stringify(repaired.registrosSesion));
     localStorage.setItem('local_registrosBloque', JSON.stringify(repaired.registrosBloque));
     localStorage.setItem('local_feedbacksSemanal', JSON.stringify(repaired.feedbacksSemanal));
+    localStorage.setItem('local_evaluacionesTecnicas', JSON.stringify(repaired.evaluacionesTecnicas || []));
 
     // Actualizar referencia global
     setLocalDataRef({

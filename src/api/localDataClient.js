@@ -9,6 +9,7 @@ import { RegistrosBloqueAPI } from '@/data/registrosBloqueClient';
 import { RegistrosSesionAPI } from '@/data/registrosSesionClient';
 import { UsuariosAPI } from '@/data/usuariosClient';
 import { EventosCalendarioAPI } from '@/data/eventosCalendarioClient';
+import { EvaluacionesAPI } from '@/data/evaluacionesClient';
 import { getStoredUserId, setStoredUserId, clearStoredUserId } from '@/data/authClient';
 import { createRemoteDataAPI } from './remoteDataAPI';
 
@@ -38,10 +39,10 @@ export function getCurrentUser() {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       // Verificar si hay claves de Supabase en localStorage
-      const hasSupabaseSession = Object.keys(window.localStorage).some(key => 
+      const hasSupabaseSession = Object.keys(window.localStorage).some(key =>
         key.startsWith('sb-') && (key.includes('auth-token') || key.includes('auth.refresh'))
       );
-      
+
       if (hasSupabaseSession) {
         // En modo Supabase, no usar localCurrentUserId
         return null;
@@ -50,18 +51,18 @@ export function getCurrentUser() {
       // Si hay error, continuar con la lógica normal
     }
   }
-  
+
   // Solo devolver usuario si hay un userId explícitamente almacenado en localStorage
   // En modo local puro, usar localCurrentUserId
   const storedUserId = getStoredUserId(null);
   if (!storedUserId) {
     return null;
   }
-  
+
   // Buscar el usuario en los datos locales
   const user = localDataRef.usuarios.find(u => u.id === storedUserId);
   if (user) return user;
-  
+
   // Si no se encuentra, devolver null
   return null;
 }
@@ -81,15 +82,15 @@ function getDataAPI() {
   // Verificar si hay una sesión de Supabase activa
   // Si hay sesión, usar modo remoto automáticamente (a menos que VITE_DATA_SOURCE esté explícitamente en 'local')
   let dataSource = import.meta.env.VITE_DATA_SOURCE;
-  
+
   // Si no está configurado explícitamente, detectar automáticamente
   if (!dataSource) {
     // Verificar si hay sesión de Supabase en localStorage
     if (typeof window !== 'undefined' && window.localStorage) {
-      const hasSupabaseSession = Object.keys(window.localStorage).some(key => 
+      const hasSupabaseSession = Object.keys(window.localStorage).some(key =>
         key.startsWith('sb-') && key.includes('auth-token')
       );
-      
+
       // Si hay sesión de Supabase, usar modo remoto
       if (hasSupabaseSession) {
         dataSource = 'remote';
@@ -100,20 +101,20 @@ function getDataAPI() {
       dataSource = 'local';
     }
   }
-  
+
   // Si el modo cambió, limpiar el caché
   if (cachedMode !== dataSource) {
     cachedRemoteAPI = null;
     cachedMode = dataSource;
   }
-  
+
   if (dataSource === 'remote') {
     if (!cachedRemoteAPI) {
       cachedRemoteAPI = createRemoteDataAPI();
     }
     return cachedRemoteAPI;
   }
-  
+
   return null; // null significa usar localDataRef directamente
 }
 
@@ -127,12 +128,13 @@ const entityToAPIKey = {
   'RegistroBloque': 'registrosBloque',
   'RegistroSesion': 'registrosSesion',
   'EventoCalendario': 'eventosCalendario',
+  'EvaluacionTecnica': 'evaluaciones',
 };
 
 // Helper para crear entidades con métodos CRUD apoyadas en la capa de datos
 function createEntityAPI(entityName, dataKey, entityApi) {
   const apiKey = entityToAPIKey[entityName];
-  
+
   return {
     list: async (sort = '') => {
       const api = getDataAPI();
@@ -140,7 +142,7 @@ function createEntityAPI(entityName, dataKey, entityApi) {
         // Modo remote: usar API remota
         return await api[apiKey].list(sort);
       }
-      
+
       // Modo local: usar código existente
       // Esperar a que LocalDataProvider haya inyectado datos (máx ~2s)
       let attempts = 0;
@@ -168,7 +170,7 @@ function createEntityAPI(entityName, dataKey, entityApi) {
         // Modo remote: usar API remota
         return await api[apiKey].get(id);
       }
-      
+
       // Modo local: usar código existente
       const data = await entityApi();
       return data.find(item => item.id === id) || null;
@@ -179,7 +181,7 @@ function createEntityAPI(entityName, dataKey, entityApi) {
         // Modo remote: usar API remota
         return await api[apiKey].filter(filters, limit);
       }
-      
+
       // Modo local: usar código existente
       let data = [...(await entityApi())];
       Object.keys(filters).forEach(key => {
@@ -194,18 +196,18 @@ function createEntityAPI(entityName, dataKey, entityApi) {
         // Modo remote: usar API remota
         return await api[apiKey].create(data);
       }
-      
+
       // Modo local: usar código existente
       const apiCreate =
         entityName === 'Asignacion' ? AsignacionesAPI.createAsignacion :
-        entityName === 'Bloque' ? BloquesAPI.createBloque :
-        entityName === 'FeedbackSemanal' ? FeedbacksSemanalAPI.createFeedbackSemanal :
-        entityName === 'Pieza' ? PiezasAPI.createPieza :
-        entityName === 'Plan' ? PlanesAPI.createPlan :
-        entityName === 'RegistroBloque' ? RegistrosBloqueAPI.createRegistroBloque :
-        entityName === 'RegistroSesion' ? RegistrosSesionAPI.createRegistroSesion :
-        entityName === 'EventoCalendario' ? EventosCalendarioAPI.createEventoCalendario :
-        null;
+          entityName === 'Bloque' ? BloquesAPI.createBloque :
+            entityName === 'FeedbackSemanal' ? FeedbacksSemanalAPI.createFeedbackSemanal :
+              entityName === 'Pieza' ? PiezasAPI.createPieza :
+                entityName === 'Plan' ? PlanesAPI.createPlan :
+                  entityName === 'RegistroBloque' ? RegistrosBloqueAPI.createRegistroBloque :
+                    entityName === 'RegistroSesion' ? RegistrosSesionAPI.createRegistroSesion :
+                      entityName === 'EventoCalendario' ? EventosCalendarioAPI.createEventoCalendario :
+                        null;
 
       if (!apiCreate) {
         throw new Error(`API create no definida para entidad ${entityName}`);
@@ -225,18 +227,18 @@ function createEntityAPI(entityName, dataKey, entityApi) {
         // Modo remote: usar API remota
         return await api[apiKey].update(id, updates);
       }
-      
+
       // Modo local: usar código existente
       const apiUpdate =
         entityName === 'Asignacion' ? AsignacionesAPI.updateAsignacion :
-        entityName === 'Bloque' ? BloquesAPI.updateBloque :
-        entityName === 'FeedbackSemanal' ? FeedbacksSemanalAPI.updateFeedbackSemanal :
-        entityName === 'Pieza' ? PiezasAPI.updatePieza :
-        entityName === 'Plan' ? PlanesAPI.updatePlan :
-        entityName === 'RegistroBloque' ? RegistrosBloqueAPI.updateRegistroBloque :
-        entityName === 'RegistroSesion' ? RegistrosSesionAPI.updateRegistroSesion :
-        entityName === 'EventoCalendario' ? EventosCalendarioAPI.updateEventoCalendario :
-        null;
+          entityName === 'Bloque' ? BloquesAPI.updateBloque :
+            entityName === 'FeedbackSemanal' ? FeedbacksSemanalAPI.updateFeedbackSemanal :
+              entityName === 'Pieza' ? PiezasAPI.updatePieza :
+                entityName === 'Plan' ? PlanesAPI.updatePlan :
+                  entityName === 'RegistroBloque' ? RegistrosBloqueAPI.updateRegistroBloque :
+                    entityName === 'RegistroSesion' ? RegistrosSesionAPI.updateRegistroSesion :
+                      entityName === 'EventoCalendario' ? EventosCalendarioAPI.updateEventoCalendario :
+                        null;
 
       if (!apiUpdate) {
         throw new Error(`API update no definida para entidad ${entityName}`);
@@ -257,18 +259,18 @@ function createEntityAPI(entityName, dataKey, entityApi) {
         // Modo remote: usar API remota
         return await api[apiKey].delete(id);
       }
-      
+
       // Modo local: usar código existente
       const apiDelete =
         entityName === 'Asignacion' ? AsignacionesAPI.deleteAsignacion :
-        entityName === 'Bloque' ? BloquesAPI.deleteBloque :
-        entityName === 'FeedbackSemanal' ? FeedbacksSemanalAPI.deleteFeedbackSemanal :
-        entityName === 'Pieza' ? PiezasAPI.deletePieza :
-        entityName === 'Plan' ? PlanesAPI.deletePlan :
-        entityName === 'RegistroBloque' ? RegistrosBloqueAPI.deleteRegistroBloque :
-        entityName === 'RegistroSesion' ? RegistrosSesionAPI.deleteRegistroSesion :
-        entityName === 'EventoCalendario' ? EventosCalendarioAPI.deleteEventoCalendario :
-        null;
+          entityName === 'Bloque' ? BloquesAPI.deleteBloque :
+            entityName === 'FeedbackSemanal' ? FeedbacksSemanalAPI.deleteFeedbackSemanal :
+              entityName === 'Pieza' ? PiezasAPI.deletePieza :
+                entityName === 'Plan' ? PlanesAPI.deletePlan :
+                  entityName === 'RegistroBloque' ? RegistrosBloqueAPI.deleteRegistroBloque :
+                    entityName === 'RegistroSesion' ? RegistrosSesionAPI.deleteRegistroSesion :
+                      entityName === 'EventoCalendario' ? EventosCalendarioAPI.deleteEventoCalendario :
+                        null;
 
       if (!apiDelete) {
         throw new Error(`API delete no definida para entidad ${entityName}`);
@@ -287,7 +289,7 @@ function createEntityAPI(entityName, dataKey, entityApi) {
         // Modo remote: usar API remota si tiene bulkCreate
         return await api[apiKey].bulkCreate(items);
       }
-      
+
       // Modo local o si no hay bulkCreate: crear de forma secuencial
       const created = [];
       for (const item of items) {
@@ -311,8 +313,8 @@ export const localDataClient = {
     },
     login: async (credentials) => {
       // En modo local, simplemente establecer el usuario si existe
-      const user = localDataRef.usuarios.find(u => 
-        u.email === credentials?.email || 
+      const user = localDataRef.usuarios.find(u =>
+        u.email === credentials?.email ||
         u.id === credentials?.userId
       );
       if (user) {
@@ -331,7 +333,7 @@ export const localDataClient = {
       // Intentar obtener usuario de forma local primero
       let currentUser = resolveCurrentUser();
       let userIdToUse = currentUser?.id;
-      
+
       // Si se proporciona effectiveUserId, usarlo (útil en modo Supabase)
       if (effectiveUserId && !userIdToUse) {
         userIdToUse = effectiveUserId;
@@ -343,7 +345,7 @@ export const localDataClient = {
           }
         }
       }
-      
+
       // Si no hay usuario local pero estamos en modo Supabase, intentar obtener de Supabase
       if (!currentUser || !userIdToUse) {
         try {
@@ -373,17 +375,17 @@ export const localDataClient = {
           // Si hay error importando supabase, continuar con el flujo normal
         }
       }
-      
+
       if (!userIdToUse) {
         throw new Error('No hay usuario autenticado');
       }
-      
+
       const api = getDataAPI();
       if (api && api.usuarios) {
         // Modo remote: usar API remota
         return await api.usuarios.update(userIdToUse, data);
       }
-      
+
       // Modo local: usar código existente
       if (currentUser) {
         const updated = { ...currentUser, ...data };
@@ -513,7 +515,7 @@ export const localDataClient = {
             nombreCompleto = `Usuario ${data.id || 'Nuevo'}`;
           }
         }
-        
+
         const newUser = {
           ...data,
           id: data.id || `u_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -561,6 +563,7 @@ export const localDataClient = {
     RegistroBloque: createEntityAPI('RegistroBloque', 'registrosBloque', () => RegistrosBloqueAPI.getAllRegistrosBloque()),
     RegistroSesion: createEntityAPI('RegistroSesion', 'registrosSesion', () => RegistrosSesionAPI.getAllRegistrosSesion()),
     EventoCalendario: createEntityAPI('EventoCalendario', 'eventosCalendario', () => EventosCalendarioAPI.getAllEventosCalendario()),
+    EvaluacionTecnica: createEntityAPI('EvaluacionTecnica', 'evaluaciones', () => EvaluacionesAPI.getEvaluacionesTecnicas()),
   },
 };
 

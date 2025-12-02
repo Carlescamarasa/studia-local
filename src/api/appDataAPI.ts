@@ -33,6 +33,9 @@ import type {
   EventoCalendario,
   CreateEventoCalendarioInput,
   UpdateEventoCalendarioInput,
+  EvaluacionTecnica,
+  CreateEvaluacionTecnicaInput,
+  UpdateEvaluacionTecnicaInput,
 } from '@/types/domain';
 
 /**
@@ -51,47 +54,52 @@ export interface EntityAPI<T, CreateInput, UpdateInput> {
 /**
  * API de usuarios
  */
-export interface UserAPI extends EntityAPI<StudiaUser, CreateStudiaUserInput, UpdateStudiaUserInput> {}
+export interface UserAPI extends EntityAPI<StudiaUser, CreateStudiaUserInput, UpdateStudiaUserInput> { }
 
 /**
  * API de piezas
  */
-export interface PiezaAPI extends EntityAPI<Pieza, CreatePiezaInput, UpdatePiezaInput> {}
+export interface PiezaAPI extends EntityAPI<Pieza, CreatePiezaInput, UpdatePiezaInput> { }
 
 /**
  * API de bloques
  */
-export interface BloqueAPI extends EntityAPI<Bloque, CreateBloqueInput, UpdateBloqueInput> {}
+export interface BloqueAPI extends EntityAPI<Bloque, CreateBloqueInput, UpdateBloqueInput> { }
 
 /**
  * API de planes
  */
-export interface PlanAPI extends EntityAPI<Plan, CreatePlanInput, UpdatePlanInput> {}
+export interface PlanAPI extends EntityAPI<Plan, CreatePlanInput, UpdatePlanInput> { }
 
 /**
  * API de asignaciones
  */
-export interface AsignacionAPI extends EntityAPI<Asignacion, CreateAsignacionInput, UpdateAsignacionInput> {}
+export interface AsignacionAPI extends EntityAPI<Asignacion, CreateAsignacionInput, UpdateAsignacionInput> { }
 
 /**
  * API de registros de sesión
  */
-export interface RegistroSesionAPI extends EntityAPI<RegistroSesion, CreateRegistroSesionInput, UpdateRegistroSesionInput> {}
+export interface RegistroSesionAPI extends EntityAPI<RegistroSesion, CreateRegistroSesionInput, UpdateRegistroSesionInput> { }
 
 /**
  * API de registros de bloque
  */
-export interface RegistroBloqueAPI extends EntityAPI<RegistroBloque, CreateRegistroBloqueInput, UpdateRegistroBloqueInput> {}
+export interface RegistroBloqueAPI extends EntityAPI<RegistroBloque, CreateRegistroBloqueInput, UpdateRegistroBloqueInput> { }
 
 /**
  * API de feedbacks semanales
  */
-export interface FeedbackSemanalAPI extends EntityAPI<FeedbackSemanal, CreateFeedbackSemanalInput, UpdateFeedbackSemanalInput> {}
+export interface FeedbackSemanalAPI extends EntityAPI<FeedbackSemanal, CreateFeedbackSemanalInput, UpdateFeedbackSemanalInput> { }
 
 /**
  * API de eventos del calendario
  */
-export interface EventoCalendarioAPI extends EntityAPI<EventoCalendario, CreateEventoCalendarioInput, UpdateEventoCalendarioInput> {}
+export interface EventoCalendarioAPI extends EntityAPI<EventoCalendario, CreateEventoCalendarioInput, UpdateEventoCalendarioInput> { }
+
+/**
+ * API de evaluaciones técnicas
+ */
+export interface EvaluacionTecnicaAPI extends EntityAPI<EvaluacionTecnica, CreateEvaluacionTecnicaInput, UpdateEvaluacionTecnicaInput> { }
 
 /**
  * Interfaz principal AppDataAPI
@@ -108,5 +116,6 @@ export interface AppDataAPI {
   registrosBloque: RegistroBloqueAPI;
   feedbacksSemanal: FeedbackSemanalAPI;
   eventosCalendario: EventoCalendarioAPI;
+  evaluaciones: EvaluacionTecnicaAPI;
 }
 

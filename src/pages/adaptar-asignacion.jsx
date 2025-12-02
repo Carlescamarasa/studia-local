@@ -28,12 +28,12 @@ import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "@/components/stu
 import RequireRole from "@/components/auth/RequireRole";
 
 // Componente Sortable para Sesión (similar a PlanEditor pero adaptado)
-function SortableSesionAdaptar({ 
-  id, 
-  sesion, 
-  semanaIndex, 
-  sesionIndex, 
-  expandedSesiones, 
+function SortableSesionAdaptar({
+  id,
+  sesion,
+  semanaIndex,
+  sesionIndex,
+  expandedSesiones,
   expandedEjercicios,
   toggleSesion,
   toggleRonda,
@@ -72,9 +72,8 @@ function SortableSesionAdaptar({
     <div
       ref={setNodeRef}
       style={style}
-      className={`ml-4 border-l-2 border-[var(--color-info)]/40 bg-[var(--color-info)]/10 rounded-r-lg p-2.5 transition-all ${
-        isDragging ? 'shadow-card border-[var(--color-info)] opacity-90' : 'hover:bg-[var(--color-info)]/20'
-      }`}
+      className={`ml-4 border-l-2 border-[var(--color-info)]/40 bg-[var(--color-info)]/10 rounded-r-lg p-2.5 transition-all ${isDragging ? 'shadow-card border-[var(--color-info)] opacity-90' : 'hover:bg-[var(--color-info)]/20'
+        }`}
     >
       <div className="flex items-start gap-2">
         <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing pt-1" onClick={(e) => e.stopPropagation()}>
@@ -125,14 +124,14 @@ function SortableSesionAdaptar({
             const S = ensureRondaIds(sesion);
             const secuencia = getSecuencia(S);
             const bloquesMap = mapBloquesByCode(S);
-            
+
             return (
               <div className="ml-2 space-y-1.5">
                 {secuencia.map((item, seqIdx) => {
                   if (item.kind === 'BLOQUE') {
                     const ejercicio = bloquesMap.get(item.code);
                     if (!ejercicio) return null;
-                    
+
                     return (
                       <div key={`bloque-${item.code}-${seqIdx}`} className={componentStyles.items.compactItem}>
                         <Badge variant="outline" className={`${tipoColors[ejercicio.tipo]} rounded-full ${componentStyles.typography.compactText}`}>
@@ -145,14 +144,14 @@ function SortableSesionAdaptar({
                   } else if (item.kind === 'RONDA') {
                     const ronda = S.rondas.find(r => r.id === item.id);
                     if (!ronda) return null;
-                    
+
                     const rondaIndex = sesion.rondas.findIndex(r => r.id === item.id);
                     const rondaKey = `${semanaIndex}-${sesionIndex}-ronda-${rondaIndex}`;
                     const isRondaExpanded = expandedEjercicios.has(rondaKey);
-                    
+
                     return (
                       <div key={`ronda-${item.id}-${seqIdx}`}>
-                        <div 
+                        <div
                           className={componentStyles.items.compactItemHover}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -283,11 +282,10 @@ function SortableSemanaAdaptar({
     <div
       ref={setNodeRef}
       style={style}
-      className={`border-l-4 border-[var(--color-primary)] bg-[var(--color-primary-soft)]/50 rounded-r-lg p-3 transition-all ${
-        isDragging 
-          ? `${componentStyles.dnd.dragging} ${componentStyles.elevation.level3}` 
+      className={`border-l-4 border-[var(--color-primary)] bg-[var(--color-primary-soft)]/50 rounded-r-lg p-3 transition-all ${isDragging
+          ? `${componentStyles.dnd.dragging} ${componentStyles.elevation.level3}`
           : 'hover:bg-[var(--color-primary-soft)]'
-      }`}
+        }`}
     >
       <div className="flex items-start gap-2">
         <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing pt-1" onClick={(e) => e.stopPropagation()}>
@@ -447,7 +445,7 @@ function AdaptarAsignacionPageContent() {
       if (!found) {
         throw new Error(`Asignación con ID ${asignacionId} no encontrada`);
       }
-      
+
       // Validar que la asignación tiene estructura válida
       if (!found.alumnoId) {
         throw new Error('Asignación sin alumnoId válido');
@@ -455,7 +453,7 @@ function AdaptarAsignacionPageContent() {
       if (!found.plan || !Array.isArray(found.plan.semanas)) {
         throw new Error('Asignación sin plan válido');
       }
-      
+
       return found;
     },
     enabled: !!asignacionId,
@@ -666,10 +664,10 @@ function AdaptarAsignacionPageContent() {
   // Expandir todas las rondas por defecto cuando se expande el contenido de una sesión
   useEffect(() => {
     if (!planData) return;
-    
+
     const nuevasRondasExpandidas = new Set(expandedEjercicios);
     let hayCambios = false;
-    
+
     planData.semanas.forEach((semana, semanaIndex) => {
       semana.sesiones?.forEach((sesion, sesionIndex) => {
         const sesionKey = `${semanaIndex}-${sesionIndex}-ej`;
@@ -684,7 +682,7 @@ function AdaptarAsignacionPageContent() {
         }
       });
     });
-    
+
     if (hayCambios) {
       setExpandedEjercicios(nuevasRondasExpandidas);
     }
@@ -712,7 +710,7 @@ function AdaptarAsignacionPageContent() {
     if (activeId.startsWith('sesion-') && overId.startsWith('sesion-')) {
       const [, activeSemana, activeSesion] = activeId.split('-');
       const [, overSemana, overSesion] = overId.split('-');
-      
+
       if (activeSemana === overSemana) {
         const semanaIndex = parseInt(activeSemana);
         const oldIndex = parseInt(activeSesion);
@@ -793,10 +791,10 @@ function AdaptarAsignacionPageContent() {
 
   if (isLoading) {
     return (
-      <LoadingSpinner 
-        size="xl" 
-        variant="fullPage" 
-        text="Cargando asignación..." 
+      <LoadingSpinner
+        size="xl"
+        variant="fullPage"
+        text="Cargando asignación..."
       />
     );
   }
@@ -828,10 +826,10 @@ function AdaptarAsignacionPageContent() {
 
   if (!planData) {
     return (
-      <LoadingSpinner 
-        size="xl" 
-        variant="fullPage" 
-        text="Cargando plan..." 
+      <LoadingSpinner
+        size="xl"
+        variant="fullPage"
+        text="Cargando plan..."
       />
     );
   }
@@ -906,7 +904,7 @@ function AdaptarAsignacionPageContent() {
               </div>
             ) : (
               <DndProvider onDragEnd={handleDragEnd}>
-                <SortableContext 
+                <SortableContext
                   items={planData.semanas.map((_, i) => `semana-${i}`)}
                   strategy={verticalListSortingStrategy}
                 >
@@ -958,8 +956,12 @@ function AdaptarAsignacionPageContent() {
       {editingSesion && (
         <SessionEditor
           sesion={editingSesion.sesion}
-          piezaSnapshot={asignacion.piezaSnapshot}
-          onSave={(updated) => updateSesion(editingSesion.semanaIndex, editingSesion.sesionIndex, updated)}
+          pieza={null} // En adaptar plan, la pieza es global, pero aquí podríamos pasarla si fuera necesario
+          piezaSnapshot={asignacion?.piezaSnapshot}
+          alumnoId={asignacion?.alumnoId}
+          onSave={(updatedSesion) => {
+            updateSesion(editingSesion.semanaIndex, editingSesion.sesionIndex, updatedSesion);
+          }}
           onClose={() => setEditingSesion(null)}
         />
       )}

@@ -18,6 +18,7 @@ import type {
   RegistroBloque,
   FeedbackSemanal,
   EventoCalendario,
+  EvaluacionTecnica,
 } from '@/types/domain';
 
 /**
@@ -33,15 +34,15 @@ function toSnakeCase(str: string): string {
   // Primero, separar siglas finales (secuencias de mayúsculas al final)
   // Ej: "semanaInicioISO" -> "semanaInicio_ISO"
   let result = str.replace(/([a-z])([A-Z]+)$/g, '$1_$2');
-  
+
   // Luego, insertar _ antes de mayúsculas que siguen a minúsculas o números
   // Esto maneja casos como "semanaInicio" -> "semana_Inicio"
   result = result.replace(/([a-z0-9])([A-Z])/g, '$1_$2');
-  
+
   // Insertar _ antes de mayúsculas que siguen a otras mayúsculas seguidas de minúsculas
   // (ej: "HTTP" seguido de "Request" en "HTTPRequest")
   result = result.replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2');
-  
+
   // Convertir todo a minúsculas
   return result.toLowerCase();
 }
@@ -61,17 +62,17 @@ function normalizeISOFields<T>(obj: any): T {
   if (obj === null || obj === undefined) {
     return obj;
   }
-  
+
   if (Array.isArray(obj)) {
     return obj.map(item => normalizeISOFields(item)) as T;
   }
-  
+
   if (typeof obj !== 'object') {
     return obj;
   }
-  
+
   const result: any = { ...obj };
-  
+
   // Normalizar campos ISO específicos
   if ('inicioIso' in result && !('inicioISO' in result)) {
     result.inicioISO = result.inicioIso;
@@ -81,14 +82,14 @@ function normalizeISOFields<T>(obj: any): T {
     result.finISO = result.finIso;
     delete result.finIso;
   }
-  
+
   // Aplicar recursivamente a propiedades anidadas
   for (const key in result) {
     if (Object.prototype.hasOwnProperty.call(result, key) && typeof result[key] === 'object') {
       result[key] = normalizeISOFields(result[key]);
     }
   }
-  
+
   return result as T;
 }
 
@@ -100,30 +101,30 @@ function normalizeAsignacionISO<T>(obj: any): T {
   if (obj === null || obj === undefined) {
     return obj;
   }
-  
+
   if (Array.isArray(obj)) {
     return obj.map(item => normalizeAsignacionISO(item)) as T;
   }
-  
+
   if (typeof obj !== 'object') {
     return obj;
   }
-  
+
   const result: any = { ...obj };
-  
+
   // Normalizar semanaInicioIso → semanaInicioISO
   if ('semanaInicioIso' in result && !('semanaInicioISO' in result)) {
     result.semanaInicioISO = result.semanaInicioIso;
     delete result.semanaInicioIso;
   }
-  
+
   // Aplicar recursivamente a propiedades anidadas
   for (const key in result) {
     if (Object.prototype.hasOwnProperty.call(result, key) && typeof result[key] === 'object') {
       result[key] = normalizeAsignacionISO(result[key]);
     }
   }
-  
+
   return result as T;
 }
 
@@ -134,15 +135,15 @@ function snakeToCamel<T>(obj: any): T {
   if (obj === null || obj === undefined) {
     return obj;
   }
-  
+
   if (Array.isArray(obj)) {
     return obj.map(item => snakeToCamel(item)) as T;
   }
-  
+
   if (typeof obj !== 'object') {
     return obj;
   }
-  
+
   const result: any = {};
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
@@ -160,15 +161,15 @@ function camelToSnake(obj: any): any {
   if (obj === null || obj === undefined) {
     return obj;
   }
-  
+
   if (Array.isArray(obj)) {
     return obj.map(item => camelToSnake(item));
   }
-  
+
   if (typeof obj !== 'object') {
     return obj;
   }
-  
+
   const result: any = {};
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
@@ -193,14 +194,14 @@ function generateId(prefix: string = 'item'): string {
  * - Si no, y plan existe (legacy) → usar plan (compatibilidad)
  */
 async function resolvePlanForAsignacion(
-  asignacion: any, 
+  asignacion: any,
   planesList?: Plan[]
 ): Promise<Plan | null> {
   // Prioridad 1: plan_adaptado (snapshot adaptado)
   if (asignacion.planAdaptado) {
     return asignacion.planAdaptado;
   }
-  
+
   // Prioridad 2: plan_id (referencia a plantilla)
   if (asignacion.planId) {
     // Si tenemos la lista de planes, buscar ahí primero
@@ -208,7 +209,7 @@ async function resolvePlanForAsignacion(
       const plan = planesList.find(p => p.id === asignacion.planId);
       if (plan) return plan;
     }
-    
+
     // Si no está en la lista, cargar desde BD
     try {
       const { data, error } = await supabase
@@ -216,24 +217,24 @@ async function resolvePlanForAsignacion(
         .select('*')
         .eq('id', asignacion.planId)
         .single();
-      
+
       if (error) {
         if (error.code === 'PGRST116') return null;
         throw error;
       }
-      
+
       return snakeToCamel<Plan>(data);
     } catch (error) {
       console.warn('[resolvePlanForAsignacion] Error al cargar plan por ID:', error);
       return null;
     }
   }
-  
+
   // Prioridad 3: plan (legacy, compatibilidad)
   if (asignacion.plan) {
     return asignacion.plan;
   }
-  
+
   return null;
 }
 
@@ -285,8 +286,8 @@ function normalizeSupabaseUser(user: any, email?: string): any {
   // El campo 'role' viene directamente de Supabase y no se modifica por snakeToCamel
   // Verificar tanto 'role' (directo de Supabase) como 'rolPersonalizado' (ya mapeado)
   const roleValue = user.role || user.rolPersonalizado;
-  const rolPersonalizado = (roleValue && ['ADMIN', 'PROF', 'ESTU'].includes(roleValue.toUpperCase())) 
-    ? roleValue.toUpperCase() 
+  const rolPersonalizado = (roleValue && ['ADMIN', 'PROF', 'ESTU'].includes(roleValue.toUpperCase()))
+    ? roleValue.toUpperCase()
     : 'ESTU';
 
   // Obtener full_name (puede estar como fullName o full_name después de snakeToCamel)
@@ -338,7 +339,7 @@ function normalizeSupabaseUser(user: any, email?: string): any {
   // Obtener profesor_asignado_id - puede estar como profesorAsignadoId (después de snakeToCamel) 
   // o como profesor_asignado_id (directo de Supabase)
   let profesorAsignadoId = user.profesorAsignadoId || user.profesor_asignado_id || null;
-  
+
   // Validar que profesorAsignadoId sea un UUID válido (en Supabase debe ser UUID)
   // Si no es UUID válido, establecer como null para evitar errores
   if (profesorAsignadoId) {
@@ -349,11 +350,11 @@ function normalizeSupabaseUser(user: any, email?: string): any {
       profesorAsignadoId = null;
     }
   }
-  
+
   // Asegurar que full_name siempre tenga un valor si nombreCompleto está disponible
   // full_name es la fuente de verdad, pero si no existe en la BD, usar nombreCompleto generado
   let finalFullName = (fullName && fullName.trim()) || (nombreCompleto && nombreCompleto.trim()) || '';
-  
+
   // Si aún está vacío y hay email, usar email como último recurso para full_name
   if (!finalFullName && email) {
     const emailStr = String(email);
@@ -372,12 +373,12 @@ function normalizeSupabaseUser(user: any, email?: string): any {
       finalFullName = emailStr;
     }
   }
-  
+
   // Si nombreCompleto está vacío pero finalFullName tiene valor, sincronizar
   if (!nombreCompleto && finalFullName) {
     nombreCompleto = finalFullName;
   }
-  
+
   // Retornar usuario normalizado con todos los campos necesarios
   return {
     ...user,
@@ -392,6 +393,8 @@ function normalizeSupabaseUser(user: any, email?: string): any {
     // Estado (mapear isActive a estado si es necesario)
     estado: user.isActive !== false ? 'activo' : 'inactivo',
     isActive: user.isActive !== false,
+    // Mapear nivel_tecnico a nivelTecnico si existe
+    nivelTecnico: user.nivelTecnico || user.nivel_tecnico || 1,
   };
 }
 
@@ -404,21 +407,21 @@ async function withAuthErrorHandling<T>(
 ): Promise<{ data: T | null; error: any }> {
   try {
     const result = await promise;
-    
+
     // Si hay error y es de autenticación, disparar evento
     if (result.error && isAuthError(result.error)) {
       // Disparar evento personalizado para que AuthProvider lo escuche
-      window.dispatchEvent(new CustomEvent('auth-error', { 
-        detail: { error: result.error } 
+      window.dispatchEvent(new CustomEvent('auth-error', {
+        detail: { error: result.error }
       }));
     }
-    
+
     return result;
   } catch (error: any) {
     // Si es un error de autenticación, disparar evento
     if (isAuthError(error)) {
-      window.dispatchEvent(new CustomEvent('auth-error', { 
-        detail: { error } 
+      window.dispatchEvent(new CustomEvent('auth-error', {
+        detail: { error }
       }));
     }
     throw error;
@@ -434,8 +437,8 @@ async function wrapSupabaseCall<T>(operation: () => Promise<T>): Promise<T> {
   } catch (error: any) {
     if (isAuthError(error)) {
       // Disparar evento personalizado para que AuthProvider lo escuche
-      window.dispatchEvent(new CustomEvent('auth-error', { 
-        detail: { error } 
+      window.dispatchEvent(new CustomEvent('auth-error', {
+        detail: { error }
       }));
     }
     throw error;
@@ -448,7 +451,7 @@ async function wrapSupabaseCall<T>(operation: () => Promise<T>): Promise<T> {
  */
 async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>> {
   const emailMap = new Map<string, string>();
-  
+
   if (!userIds || userIds.length === 0) return emailMap;
 
   try {
@@ -474,7 +477,7 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
         // Nota: Si la lista no está disponible, usaremos un fallback más permisivo
         const userRole = 'ADMIN'; // Asumir ADMIN para permitir la llamada a Edge Function
         // Si no es ADMIN, la Edge Function devolverá 403, pero eso es manejado más abajo
-        
+
         // Si el usuario actual está en la lista de IDs solicitados, añadir su email
         if (currentUser.id && userIds.includes(currentUser.id)) {
           emailMap.set(currentUser.id, currentUser.email || '');
@@ -492,7 +495,7 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
     // Llamar a la Edge Function para obtener emails
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
+
     if (!supabaseUrl) {
       // Fallback: solo email del usuario autenticado
       const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
@@ -506,10 +509,25 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
       'Authorization': `Bearer ${session.access_token}`,
       'Content-Type': 'application/json',
     };
-    
+
     // Añadir apikey si está disponible (algunas Edge Functions lo requieren)
     if (supabaseAnonKey) {
       headers['apikey'] = supabaseAnonKey;
+    }
+
+    // Optimización: si solo buscamos el email del usuario actual, no llamar a la función
+    const { data: { user: currentUser } } = await wrapSupabaseCall(() => supabase.auth.getUser());
+
+    // Si solo pedimos el usuario actual
+    if (currentUser && userIds.length === 1 && userIds[0] === currentUser.id) {
+      const map = new Map<string, string>();
+      map.set(currentUser.id, currentUser.email || '');
+      return map;
+    }
+
+    // Si el usuario actual está en la lista, asegurarnos de que lo tenemos en el mapa (por si la función falla o lo filtra)
+    if (currentUser && userIds.includes(currentUser.id)) {
+      emailMap.set(currentUser.id, currentUser.email || '');
     }
 
     const response = await fetch(`${supabaseUrl}/functions/v1/get-user-emails`, {
@@ -595,15 +613,15 @@ export function createRemoteDataAPI(): AppDataAPI {
         let allData: any[] = [];
         let from = 0;
         let hasMore = true;
-        
+
         while (hasMore) {
           const { data, error, count } = await withAuthErrorHandling(
             supabase
               .from('profiles')
-              .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at', { count: 'exact' })
+              .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at, nivel, nivel_tecnico, telefono', { count: 'exact' })
               .range(from, from + PAGE_SIZE - 1)
           );
-          
+
           if (error) {
             console.error('[remoteDataAPI] Error al leer profiles:', {
               error: error?.message || error,
@@ -613,7 +631,7 @@ export function createRemoteDataAPI(): AppDataAPI {
             });
             throw error;
           }
-          
+
           if (data && data.length > 0) {
             allData = allData.concat(data);
             from += PAGE_SIZE;
@@ -624,9 +642,9 @@ export function createRemoteDataAPI(): AppDataAPI {
             hasMore = false;
           }
         }
-        
+
         const data = allData;
-        
+
         // Obtener email e ID del usuario autenticado si existe (para comparación)
         let currentUserEmail: string | null = null;
         let currentUserId: string | null = null;
@@ -637,7 +655,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         } catch (e) {
           // Ignorar si no hay usuario autenticado
         }
-        
+
         // Obtener emails usando función SQL si está disponible, o usar el usuario autenticado
         let emailsMap = new Map<string, string>();
         try {
@@ -653,19 +671,19 @@ export function createRemoteDataAPI(): AppDataAPI {
             emailsMap.set(currentUserId, currentUserEmail);
           }
         }
-        
+
         // OPTIMIZACIÓN: Obtener todos los profesores asignados en una sola query
         // Identificar IDs únicos de profesores asignados que no están ya en la lista
         const profesorIdsSet = new Set<string>();
         const existingUserIdsSet = new Set((data || []).map((u: any) => u.id));
-        
+
         (data || []).forEach((u: any) => {
           const profesorId = u.profesor_asignado_id;
           if (profesorId && !existingUserIdsSet.has(profesorId)) {
             profesorIdsSet.add(profesorId);
           }
         });
-        
+
         // Si hay profesores asignados que no están en la lista, obtenerlos en una sola query
         let profesoresMap = new Map<string, any>();
         if (profesorIdsSet.size > 0) {
@@ -678,7 +696,7 @@ export function createRemoteDataAPI(): AppDataAPI {
                 .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at')
                 .in('id', profesorIdsArray)
             );
-            
+
             if (!profesoresError && profesoresData && Array.isArray(profesoresData)) {
               // Crear mapa de profesores por ID
               profesoresData.forEach((prof: any) => {
@@ -690,25 +708,25 @@ export function createRemoteDataAPI(): AppDataAPI {
             console.warn('[remoteDataAPI] Error al obtener profesores asignados:', e);
           }
         }
-        
+
         // Normalizar usuarios y asociar datos de profesores
         const normalizedUsers = (data || []).map((u: any) => {
           // Preservar el campo 'role' ANTES de snakeToCamel (es crítico)
           const originalRole = u.role;
-          
+
           const camelUser = snakeToCamel<StudiaUser>(u);
-          
+
           // Asegurar que el campo 'role' se preserve explícitamente
           if (originalRole && !camelUser.role) {
             camelUser.role = originalRole;
           }
-          
+
           // Priorizar: email del mapeo, luego del usuario mismo
           const email = emailsMap.get(u.id) || camelUser.email;
-          
+
           // Normalizar usuario
           const normalized = normalizeSupabaseUser(camelUser, email);
-          
+
           // Verificación CRÍTICA: forzar el rol desde el valor original de Supabase
           if (originalRole) {
             const roleUpper = String(originalRole).toUpperCase().trim();
@@ -716,10 +734,10 @@ export function createRemoteDataAPI(): AppDataAPI {
               normalized.rolPersonalizado = roleUpper;
             }
           }
-          
+
           return normalized;
         });
-        
+
         // OPTIMIZACIÓN: Añadir el usuario autenticado si no está en la lista
         // Esto evita queries individuales en AuthProvider y useCurrentProfile
         let finalUsers = [...normalizedUsers];
@@ -734,25 +752,25 @@ export function createRemoteDataAPI(): AppDataAPI {
                 .eq('id', currentUserId)
                 .single()
             );
-            
+
             if (!currentUserError && currentUserProfile) {
               const originalRole = currentUserProfile.role;
               const camelUser = snakeToCamel<StudiaUser>(currentUserProfile);
-              
+
               if (originalRole && !camelUser.role) {
                 camelUser.role = originalRole;
               }
-              
+
               const email = currentUserEmail || camelUser.email;
               const normalized = normalizeSupabaseUser(camelUser, email);
-              
+
               if (originalRole) {
                 const roleUpper = String(originalRole).toUpperCase().trim();
                 if (['ADMIN', 'PROF', 'ESTU'].includes(roleUpper)) {
                   normalized.rolPersonalizado = roleUpper;
                 }
               }
-              
+
               finalUsers.push(normalized);
             }
           } catch (e) {
@@ -760,7 +778,7 @@ export function createRemoteDataAPI(): AppDataAPI {
             console.warn('[remoteDataAPI] Error al obtener perfil del usuario autenticado:', e);
           }
         }
-        
+
         // Añadir profesores obtenidos adicionales a la lista (si no están ya incluidos)
         // Esto evita queries individuales cuando el frontend busca el profesor asignado
         if (profesoresMap.size > 0) {
@@ -770,31 +788,31 @@ export function createRemoteDataAPI(): AppDataAPI {
             .map((prof: any) => {
               const originalRole = prof.role;
               const camelProf = snakeToCamel<StudiaUser>(prof);
-              
+
               if (originalRole && !camelProf.role) {
                 camelProf.role = originalRole;
               }
-              
+
               const email = emailsMap.get(prof.id) || camelProf.email;
               const normalized = normalizeSupabaseUser(camelProf, email);
-              
+
               if (originalRole) {
                 const roleUpper = String(originalRole).toUpperCase().trim();
                 if (['ADMIN', 'PROF', 'ESTU'].includes(roleUpper)) {
                   normalized.rolPersonalizado = roleUpper;
                 }
               }
-              
+
               return normalized;
             });
-          
+
           // Devolver usuarios + profesores adicionales
           finalUsers = [...finalUsers, ...profesoresAdicionales];
         }
-        
+
         // Almacenar usuarios en caché para evitar queries individuales posteriores
         cacheUsers(finalUsers);
-        
+
         return finalUsers;
       },
       get: async (id: string) => {
@@ -803,16 +821,16 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (cachedUser) {
           return cachedUser;
         }
-        
+
         // Si no está en caché, hacer query individual
         const { data, error } = await withAuthErrorHandling(
           supabase
-          .from('profiles')
-          .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at')
-          .eq('id', id)
+            .from('profiles')
+            .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at, nivel, nivel_tecnico, telefono')
+            .eq('id', id)
             .single()
         );
-        
+
         if (error) {
           if (error.code === 'PGRST116') return null; // No encontrado
           // Si es error 406 (Not Acceptable), probablemente es por RLS - devolver null en lugar de lanzar error
@@ -821,17 +839,17 @@ export function createRemoteDataAPI(): AppDataAPI {
           }
           throw error;
         }
-        
+
         // Preservar el campo 'role' ANTES de snakeToCamel
         const originalRole = data.role;
-        
+
         const camelUser = snakeToCamel<StudiaUser>(data);
-        
+
         // Asegurar que el campo 'role' se preserve
         if (originalRole && !camelUser.role) {
           camelUser.role = originalRole;
         }
-        
+
         // Intentar obtener email del usuario autenticado si coincide
         let email: string | undefined = undefined;
         try {
@@ -842,10 +860,10 @@ export function createRemoteDataAPI(): AppDataAPI {
         } catch (e) {
           // Ignorar si no hay usuario autenticado
         }
-        
+
         // Normalizar usuario
         const normalized = normalizeSupabaseUser(camelUser, email);
-        
+
         // Verificación CRÍTICA: forzar el rol desde el valor original de Supabase
         if (originalRole) {
           const roleUpper = String(originalRole).toUpperCase().trim();
@@ -853,27 +871,27 @@ export function createRemoteDataAPI(): AppDataAPI {
             normalized.rolPersonalizado = roleUpper;
           }
         }
-        
+
         // Almacenar en caché para futuras consultas
         cacheUsers([normalized]);
-        
+
         return normalized;
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
-        let query = supabase.from('profiles').select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at');
-        
+        let query = supabase.from('profiles').select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at, nivel, nivel_tecnico, telefono');
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        
+
         if (limit) {
           query = query.limit(limit);
         }
-        
+
         const { data, error } = await withAuthErrorHandling(query);
         if (error) throw error;
-        
+
         // Obtener email e ID del usuario autenticado si existe
         let currentUserEmail: string | null = null;
         let currentUserId: string | null = null;
@@ -884,26 +902,26 @@ export function createRemoteDataAPI(): AppDataAPI {
         } catch (e) {
           // Ignorar si no hay usuario autenticado
         }
-        
+
         return (data || []).map((u: any) => {
           // Preservar el campo 'role' ANTES de snakeToCamel
           const originalRole = u.role;
-          
+
           const camelUser = snakeToCamel<StudiaUser>(u);
-          
+
           // Asegurar que el campo 'role' se preserve
           if (originalRole && !camelUser.role) {
             camelUser.role = originalRole;
           }
-          
+
           // Usar email del usuario autenticado si coincide con el ID, sino usar el del usuario
-          const email = (currentUserId && u.id === currentUserId && currentUserEmail) 
-            ? currentUserEmail 
+          const email = (currentUserId && u.id === currentUserId && currentUserEmail)
+            ? currentUserEmail
             : camelUser.email;
-          
+
           // Normalizar usuario
           const normalized = normalizeSupabaseUser(camelUser, email);
-          
+
           // Verificación CRÍTICA: forzar el rol desde el valor original de Supabase
           if (originalRole) {
             const roleUpper = String(originalRole).toUpperCase().trim();
@@ -911,7 +929,7 @@ export function createRemoteDataAPI(): AppDataAPI {
               normalized.rolPersonalizado = roleUpper;
             }
           }
-          
+
           return normalized;
         });
       },
@@ -919,21 +937,21 @@ export function createRemoteDataAPI(): AppDataAPI {
         const snakeData = camelToSnake(data);
         const { data: result, error } = await withAuthErrorHandling(
           supabase
-          .from('profiles')
-          .insert(snakeData)
-          .select()
+            .from('profiles')
+            .insert(snakeData)
+            .select()
             .single()
         );
-        
+
         if (error) throw error;
-        
+
         const camelUser = snakeToCamel<StudiaUser>(result);
         return normalizeSupabaseUser(camelUser, data.email);
       },
       update: async (id: string, updates: any) => {
         // Mapear campos del frontend a campos de Supabase
         const supabaseUpdates: any = {};
-        
+
         // Mapear nombreCompleto → full_name
         // También aceptar full_name directamente para sincronización explícita
         if (updates.full_name !== undefined) {
@@ -941,12 +959,12 @@ export function createRemoteDataAPI(): AppDataAPI {
         } else if (updates.nombreCompleto !== undefined) {
           supabaseUpdates.full_name = updates.nombreCompleto;
         }
-        
+
         // Mapear rolPersonalizado → role
         if (updates.rolPersonalizado !== undefined) {
           supabaseUpdates.role = updates.rolPersonalizado.toUpperCase();
         }
-        
+
         // Mapear profesorAsignadoId → profesor_asignado_id
         // IMPORTANTE: En Supabase, profesor_asignado_id debe ser un UUID válido
         // Solo actualizar si viene explícitamente definido (undefined significa no cambiar)
@@ -957,7 +975,7 @@ export function createRemoteDataAPI(): AppDataAPI {
             const profesorId = String(updates.profesorAsignadoId).trim();
             // Validar si es un UUID válido (formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-            
+
             if (uuidRegex.test(profesorId)) {
               // Es un UUID válido, usar directamente
               supabaseUpdates.profesor_asignado_id = profesorId;
@@ -968,7 +986,7 @@ export function createRemoteDataAPI(): AppDataAPI {
             }
           }
         }
-        
+
         // Otros campos que no necesitan mapeo especial
         if (updates.nivel !== undefined) {
           supabaseUpdates.nivel = updates.nivel;
@@ -976,18 +994,22 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (updates.telefono !== undefined) {
           supabaseUpdates.telefono = updates.telefono;
         }
+        // Mapear nivelTecnico → nivel_tecnico
+        if (updates.nivelTecnico !== undefined) {
+          supabaseUpdates.nivel_tecnico = updates.nivelTecnico;
+        }
         // mediaLinks no se guarda en profiles (no existe la columna en Supabase)
         // Se mantiene solo para compatibilidad local
-        
+
         const { data, error } = await withAuthErrorHandling(
           supabase
-          .from('profiles')
-          .update(supabaseUpdates)
-          .eq('id', id)
-          .select()
+            .from('profiles')
+            .update(supabaseUpdates)
+            .eq('id', id)
+            .select()
             .single()
         );
-        
+
         if (error) {
           console.error('[remoteDataAPI] Error al actualizar usuario:', {
             error: error?.message || error,
@@ -997,7 +1019,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           });
           throw error;
         }
-        
+
         // Sincronizar full_name con auth.users si se actualizó
         if (updates.nombreCompleto !== undefined) {
           try {
@@ -1028,17 +1050,17 @@ export function createRemoteDataAPI(): AppDataAPI {
             }
           }
         }
-        
+
         // Preservar el campo 'role' ANTES de snakeToCamel
         const originalRole = data.role;
-        
+
         const camelUser = snakeToCamel<StudiaUser>(data);
-        
+
         // Asegurar que el campo 'role' se preserve
         if (originalRole && !camelUser.role) {
           camelUser.role = originalRole;
         }
-        
+
         // Intentar obtener email del usuario autenticado si coincide
         let email: string | undefined = updates.email;
         if (!email) {
@@ -1051,10 +1073,10 @@ export function createRemoteDataAPI(): AppDataAPI {
             // Ignorar si no hay usuario autenticado
           }
         }
-        
+
         // Normalizar usuario
         const normalized = normalizeSupabaseUser(camelUser, email);
-        
+
         // Verificación CRÍTICA: forzar el rol desde el valor original de Supabase
         if (originalRole) {
           const roleUpper = String(originalRole).toUpperCase().trim();
@@ -1062,17 +1084,17 @@ export function createRemoteDataAPI(): AppDataAPI {
             normalized.rolPersonalizado = roleUpper;
           }
         }
-        
+
         return normalized;
       },
       delete: async (id: string) => {
         const { error } = await withAuthErrorHandling(
           supabase
-          .from('profiles')
-          .delete()
+            .from('profiles')
+            .delete()
             .eq('id', id)
         );
-        
+
         if (error) throw error;
         return { success: true };
       },
@@ -1080,14 +1102,14 @@ export function createRemoteDataAPI(): AppDataAPI {
     piezas: {
       list: async (sort?: string) => {
         let query = supabase.from('piezas').select('*');
-        
+
         if (sort) {
           const direction = sort.startsWith('-') ? 'desc' : 'asc';
           const field = sort.startsWith('-') ? sort.slice(1) : sort;
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
         return (data || []).map((p: any) => snakeToCamel<Pieza>(p));
@@ -1098,7 +1120,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .select('*')
           .eq('id', id)
           .single();
-        
+
         if (error) {
           if (error.code === 'PGRST116') return null;
           throw error;
@@ -1107,16 +1129,16 @@ export function createRemoteDataAPI(): AppDataAPI {
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
         let query = supabase.from('piezas').select('*');
-        
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        
+
         if (limit) {
           query = query.limit(limit);
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
         return (data || []).map((p: any) => snakeToCamel<Pieza>(p));
@@ -1131,7 +1153,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .insert(snakeData)
           .select()
           .single();
-        
+
         if (error) throw error;
         return snakeToCamel<Pieza>(result);
       },
@@ -1143,7 +1165,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .eq('id', id)
           .select()
           .single();
-        
+
         if (error) throw error;
         return snakeToCamel<Pieza>(data);
       },
@@ -1152,7 +1174,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .from('piezas')
           .delete()
           .eq('id', id);
-        
+
         if (error) throw error;
         return { success: true };
       },
@@ -1160,17 +1182,25 @@ export function createRemoteDataAPI(): AppDataAPI {
     bloques: {
       list: async (sort?: string) => {
         let query = supabase.from('bloques').select('*');
-        
+
         if (sort) {
           const direction = sort.startsWith('-') ? 'desc' : 'asc';
           const field = sort.startsWith('-') ? sort.slice(1) : sort;
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((b: any) => snakeToCamel<Bloque>(b));
+        return (data || []).map((b: any) => {
+          const camel = snakeToCamel<Bloque>(b);
+          // Fix targetPPMs mapping (snakeToCamel produces targetPpms)
+          if ((camel as any).targetPpms) {
+            camel.targetPPMs = (camel as any).targetPpms;
+            delete (camel as any).targetPpms;
+          }
+          return camel;
+        });
       },
       get: async (id: string) => {
         const { data, error } = await supabase
@@ -1178,70 +1208,83 @@ export function createRemoteDataAPI(): AppDataAPI {
           .select('*')
           .eq('id', id)
           .single();
-        
+
         if (error) {
           if (error.code === 'PGRST116') return null;
           throw error;
         }
-        return snakeToCamel<Bloque>(data);
+        const camel = snakeToCamel<Bloque>(data);
+        // Fix targetPPMs mapping (snakeToCamel produces targetPpms)
+        if ((camel as any).targetPpms) {
+          camel.targetPPMs = (camel as any).targetPpms;
+          delete (camel as any).targetPpms;
+        }
+        return camel;
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
         let query = supabase.from('bloques').select('*');
-        
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        
+
         if (limit) {
           query = query.limit(limit);
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((b: any) => snakeToCamel<Bloque>(b));
+        return (data || []).map((b: any) => {
+          const camel = snakeToCamel<Bloque>(b);
+          // Fix targetPPMs mapping (snakeToCamel produces targetPpms)
+          if ((camel as any).targetPpms) {
+            camel.targetPPMs = (camel as any).targetPpms;
+            delete (camel as any).targetPpms;
+          }
+          return camel;
+        });
       },
       create: async (data) => {
         const snakeData = camelToSnake({
           ...data,
           id: data.id || generateId('bloque'),
         });
+
+        // Fix targetPPMs mapping (camelToSnake produces target_pp_ms)
+        if (snakeData.target_pp_ms) {
+          snakeData.target_ppms = snakeData.target_pp_ms;
+          delete snakeData.target_pp_ms;
+        } else if (data.targetPPMs) {
+          snakeData.target_ppms = data.targetPPMs;
+        }
         const { data: result, error } = await supabase
           .from('bloques')
           .insert(snakeData)
           .select()
           .single();
-        
+
         if (error) throw error;
         return snakeToCamel<Bloque>(result);
       },
       update: async (id: string, updates: any) => {
-        // Debug: Verificar mediaLinks antes de convertir
-        if (process.env.NODE_ENV === 'development' && updates.mediaLinks) {
-          console.log('[remoteDataAPI] Actualizando bloque con mediaLinks:', {
-            id,
-            mediaLinks_original: updates.mediaLinks,
-            updates_completo: updates
-          });
-        }
-        
         const snakeUpdates = camelToSnake(updates);
-        
-        // Debug: Verificar conversión a snake_case
-        if (process.env.NODE_ENV === 'development' && updates.mediaLinks) {
-          console.log('[remoteDataAPI] Después de camelToSnake:', {
-            media_links: snakeUpdates.media_links,
-            snakeUpdates_completo: snakeUpdates
-          });
+
+        // Fix targetPPMs mapping (camelToSnake produces target_pp_ms)
+        if (snakeUpdates.target_pp_ms) {
+          snakeUpdates.target_ppms = snakeUpdates.target_pp_ms;
+          delete snakeUpdates.target_pp_ms;
+        } else if (updates.targetPPMs) {
+          snakeUpdates.target_ppms = updates.targetPPMs;
         }
-        
+
         const { data, error } = await supabase
           .from('bloques')
           .update(snakeUpdates)
           .eq('id', id)
           .select()
           .single();
-        
+
         if (error) {
           console.error('[remoteDataAPI] Error al actualizar bloque:', {
             error: error?.message || error,
@@ -1251,18 +1294,9 @@ export function createRemoteDataAPI(): AppDataAPI {
           });
           throw error;
         }
-        
+
         const resultado = snakeToCamel<Bloque>(data);
-        
-        // Debug: Verificar resultado
-        if (process.env.NODE_ENV === 'development' && updates.mediaLinks) {
-          console.log('[remoteDataAPI] Bloque actualizado:', {
-            id: resultado.id,
-            code: resultado.code,
-            mediaLinks_guardado: resultado.mediaLinks
-          });
-        }
-        
+
         return resultado;
       },
       delete: async (id: string) => {
@@ -1270,7 +1304,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .from('bloques')
           .delete()
           .eq('id', id);
-        
+
         if (error) throw error;
         return { success: true };
       },
@@ -1278,14 +1312,14 @@ export function createRemoteDataAPI(): AppDataAPI {
     planes: {
       list: async (sort?: string) => {
         let query = supabase.from('planes').select('*');
-        
+
         if (sort) {
           const direction = sort.startsWith('-') ? 'desc' : 'asc';
           const field = sort.startsWith('-') ? sort.slice(1) : sort;
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
         return (data || []).map((p: any) => snakeToCamel<Plan>(p));
@@ -1296,7 +1330,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .select('*')
           .eq('id', id)
           .single();
-        
+
         if (error) {
           if (error.code === 'PGRST116') return null;
           throw error;
@@ -1305,16 +1339,16 @@ export function createRemoteDataAPI(): AppDataAPI {
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
         let query = supabase.from('planes').select('*');
-        
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        
+
         if (limit) {
           query = query.limit(limit);
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
         return (data || []).map((p: any) => snakeToCamel<Plan>(p));
@@ -1329,7 +1363,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .insert(snakeData)
           .select()
           .single();
-        
+
         if (error) throw error;
         return snakeToCamel<Plan>(result);
       },
@@ -1341,7 +1375,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .eq('id', id)
           .select()
           .single();
-        
+
         if (error) throw error;
         return snakeToCamel<Plan>(data);
       },
@@ -1350,7 +1384,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .from('planes')
           .delete()
           .eq('id', id);
-        
+
         if (error) throw error;
         return { success: true };
       },
@@ -1358,23 +1392,23 @@ export function createRemoteDataAPI(): AppDataAPI {
     asignaciones: {
       list: async (sort?: string) => {
         let query = supabase.from('asignaciones').select('*');
-        
+
         if (sort) {
           const direction = sort.startsWith('-') ? 'desc' : 'asc';
           const field = sort.startsWith('-') ? sort.slice(1) : sort;
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
-        
+
         // Cargar todos los planes necesarios de una vez para eficiencia
         const asignacionesParsed = (data || []).map((a: any) => {
           const parsed = snakeToCamel<Asignacion>(a);
           return normalizeAsignacionISO(parsed);
         });
-        
+
         // Obtener todos los planIds únicos que necesitamos cargar
         const planIdsNecesarios = new Set<string>();
         asignacionesParsed.forEach((a: any) => {
@@ -1382,7 +1416,7 @@ export function createRemoteDataAPI(): AppDataAPI {
             planIdsNecesarios.add(a.planId);
           }
         });
-        
+
         // Cargar todos los planes necesarios
         let planesList: Plan[] = [];
         if (planIdsNecesarios.size > 0) {
@@ -1390,12 +1424,12 @@ export function createRemoteDataAPI(): AppDataAPI {
             .from('planes')
             .select('*')
             .in('id', Array.from(planIdsNecesarios));
-          
+
           if (!planesError && planesData) {
             planesList = planesData.map((p: any) => snakeToCamel<Plan>(p));
           }
         }
-        
+
         // Resolver planes para cada asignación
         const asignacionesResueltas = await Promise.all(
           asignacionesParsed.map(async (a: any) => {
@@ -1406,7 +1440,7 @@ export function createRemoteDataAPI(): AppDataAPI {
             };
           })
         );
-        
+
         return asignacionesResueltas;
       },
       get: async (id: string) => {
@@ -1415,20 +1449,20 @@ export function createRemoteDataAPI(): AppDataAPI {
           .select('*')
           .eq('id', id)
           .single();
-        
+
         if (error) {
           if (error.code === 'PGRST116') return null;
           throw error;
         }
-        
+
         // Deserializar campos JSON después de leer
         const parsed = snakeToCamel<Asignacion>(data);
         const normalized = normalizeAsignacionISO(parsed);
         const deserialized = deserializeJsonFields(normalized, ['planAdaptado', 'piezaSnapshot']);
-        
+
         // Resolver el plan
         const plan = await resolvePlanForAsignacion(deserialized);
-        
+
         return {
           ...deserialized,
           plan: plan || deserialized.plan || null,
@@ -1436,25 +1470,25 @@ export function createRemoteDataAPI(): AppDataAPI {
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
         let query = supabase.from('asignaciones').select('*');
-        
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        
+
         if (limit) {
           query = query.limit(limit);
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
-        
+
         // Cargar todos los planes necesarios de una vez para eficiencia
         const asignacionesParsed = (data || []).map((a: any) => {
           const parsed = snakeToCamel<Asignacion>(a);
           return normalizeAsignacionISO(parsed);
         });
-        
+
         // Obtener todos los planIds únicos que necesitamos cargar
         const planIdsNecesarios = new Set<string>();
         asignacionesParsed.forEach((a: any) => {
@@ -1462,7 +1496,7 @@ export function createRemoteDataAPI(): AppDataAPI {
             planIdsNecesarios.add(a.planId);
           }
         });
-        
+
         // Cargar todos los planes necesarios
         let planesList: Plan[] = [];
         if (planIdsNecesarios.size > 0) {
@@ -1470,12 +1504,12 @@ export function createRemoteDataAPI(): AppDataAPI {
             .from('planes')
             .select('*')
             .in('id', Array.from(planIdsNecesarios));
-          
+
           if (!planesError && planesData) {
             planesList = planesData.map((p: any) => snakeToCamel<Plan>(p));
           }
         }
-        
+
         // Resolver planes para cada asignación
         const asignacionesResueltas = await Promise.all(
           asignacionesParsed.map(async (a: any) => {
@@ -1486,7 +1520,7 @@ export function createRemoteDataAPI(): AppDataAPI {
             };
           })
         );
-        
+
         return asignacionesResueltas;
       },
       create: async (data) => {
@@ -1494,18 +1528,18 @@ export function createRemoteDataAPI(): AppDataAPI {
         const planIdValue = data.planId;
         const planValue = data.plan || data.planAdaptado; // plan es legacy, planAdaptado es nuevo
         const piezaSnapshotValue = data.piezaSnapshot;
-        
+
         const dataWithoutJson = { ...data };
         delete dataWithoutJson.plan;
         delete dataWithoutJson.planAdaptado;
         delete dataWithoutJson.planId;
         delete dataWithoutJson.piezaSnapshot;
-        
+
         const snakeData = camelToSnake({
           ...dataWithoutJson,
           id: data.id || generateId('asignacion'),
         });
-        
+
         // Lógica híbrida:
         // - Si planId existe: usar referencia (plan_id = planId, plan_adaptado = NULL, plan = NULL si no hay snapshot)
         // - Si plan/planAdaptado existe: usar snapshot (plan_adaptado = plan, plan = plan para legacy)
@@ -1534,20 +1568,20 @@ export function createRemoteDataAPI(): AppDataAPI {
           // Si no hay ninguno, el constraint de la BD fallará (correcto)
           throw new Error('Debe proporcionarse planId o plan/planAdaptado');
         }
-        
+
         if (piezaSnapshotValue) {
           snakeData.pieza_snapshot = piezaSnapshotValue;
         } else {
           // pieza_snapshot es NOT NULL según el esquema
           throw new Error('piezaSnapshot es requerido');
         }
-        
+
         const { data: result, error } = await supabase
           .from('asignaciones')
           .insert(snakeData)
           .select()
           .single();
-        
+
         if (error) {
           console.error('[remoteDataAPI] Error al crear asignación:', {
             error: error?.message || error,
@@ -1557,15 +1591,15 @@ export function createRemoteDataAPI(): AppDataAPI {
           });
           throw error;
         }
-        
+
         // Deserializar y resolver el plan
         const parsed = snakeToCamel<Asignacion>(result);
         const normalized = normalizeAsignacionISO(parsed);
         const deserialized = deserializeJsonFields(normalized, ['planAdaptado', 'piezaSnapshot']);
-        
+
         // Resolver el plan para retornarlo
         const plan = await resolvePlanForAsignacion(deserialized);
-        
+
         return {
           ...deserialized,
           plan: plan || deserialized.plan || null,
@@ -1579,18 +1613,18 @@ export function createRemoteDataAPI(): AppDataAPI {
           updates.planAdaptado = updates.plan;
           delete updates.plan;
         }
-        
+
         // Extraer campos especiales antes de camelToSnake
         const planIdValue = updates.planId;
         const planAdaptadoValue = updates.planAdaptado;
         const piezaSnapshotValue = updates.piezaSnapshot;
-        
+
         const updatesWithoutJson = { ...updates };
         delete updatesWithoutJson.planId;
         delete updatesWithoutJson.planAdaptado;
         delete updatesWithoutJson.plan; // Legacy
         delete updatesWithoutJson.piezaSnapshot;
-        
+
         // Campos permitidos en update
         const camposPermitidos = new Set([
           'notas', 'foco', 'estado', 'semanaInicioISO', 'semana_inicio_iso',
@@ -1598,14 +1632,14 @@ export function createRemoteDataAPI(): AppDataAPI {
           'profesorId', 'profesor_id', 'alumnoId', 'alumno_id',
           'planId', 'plan_id', 'planAdaptado', 'plan_adaptado',
         ]);
-        
+
         const camposActualizados = Object.keys(updatesWithoutJson);
         const camposNoPermitidos = camposActualizados.filter(campo => {
           const campoCamel = camelToSnake({ [campo]: '' });
           const campoSnake = Object.keys(campoCamel)[0];
           return !camposPermitidos.has(campo) && !camposPermitidos.has(campoSnake);
         });
-        
+
         if (camposNoPermitidos.length > 0) {
           const errorMsg = `Campos no permitidos en actualización de asignación: ${camposNoPermitidos.join(', ')}. Solo se pueden actualizar: notas, foco, estado, semanaInicioISO, piezaId, planId, planAdaptado (y piezaSnapshot si piezaId cambia).`;
           console.warn('[remoteDataAPI]', errorMsg);
@@ -1614,9 +1648,9 @@ export function createRemoteDataAPI(): AppDataAPI {
           }
           camposNoPermitidos.forEach(campo => delete updatesWithoutJson[campo]);
         }
-        
+
         const snakeUpdates = camelToSnake(updatesWithoutJson);
-        
+
         // Manejar planId y planAdaptado
         // Si se actualiza planAdaptado: establecer plan_id = NULL (ya no usa referencia)
         // Si se actualiza planId: establecer plan_adaptado = NULL (vuelve a usar referencia)
@@ -1629,7 +1663,7 @@ export function createRemoteDataAPI(): AppDataAPI {
             snakeUpdates.plan_id = null; // Ya no usa referencia
           }
         }
-        
+
         if (planIdValue !== undefined) {
           snakeUpdates.plan_id = planIdValue;
           // Solo establecer plan_adaptado a null si realmente estamos actualizando planId
@@ -1638,16 +1672,16 @@ export function createRemoteDataAPI(): AppDataAPI {
             snakeUpdates.plan_adaptado = null; // Vuelve a usar referencia
           }
         }
-        
+
         if (piezaSnapshotValue !== undefined) {
           snakeUpdates.pieza_snapshot = piezaSnapshotValue;
         }
-        
+
         // Validar que no esté vacío
         if (Object.keys(snakeUpdates).length === 0) {
           throw new Error('No se pueden actualizar asignaciones con un objeto vacío. Debe incluir al menos un campo válido.');
         }
-        
+
         if (process.env.NODE_ENV === 'development') {
           console.log('[remoteDataAPI] Actualizando asignación:', {
             id,
@@ -1657,14 +1691,14 @@ export function createRemoteDataAPI(): AppDataAPI {
             incluyePiezaSnapshot: piezaSnapshotValue !== undefined,
           });
         }
-        
+
         const { data, error } = await supabase
           .from('asignaciones')
           .update(snakeUpdates)
           .eq('id', id)
           .select()
           .single();
-        
+
         if (error) {
           const errorContext = {
             error: error?.message || error,
@@ -1673,9 +1707,9 @@ export function createRemoteDataAPI(): AppDataAPI {
             details: error?.details,
             id,
           };
-          
+
           console.error('[remoteDataAPI] Error al actualizar asignación:', errorContext);
-          
+
           // Mejorar mensajes de error específicos
           if (error.code === 'PGRST204' || error.code === '406') {
             const errorMsg = 'Error 406 (Not Acceptable): El servidor rechazó la actualización. Verifica que los campos enviados sean válidos y modificables.';
@@ -1692,15 +1726,15 @@ export function createRemoteDataAPI(): AppDataAPI {
           }
           throw error;
         }
-        
+
         // Deserializar y resolver el plan
         const parsed = snakeToCamel<Asignacion>(data);
         const normalized = normalizeAsignacionISO(parsed);
         const deserialized = deserializeJsonFields(normalized, ['planAdaptado', 'piezaSnapshot']);
-        
+
         // Resolver el plan
         const plan = await resolvePlanForAsignacion(deserialized);
-        
+
         return {
           ...deserialized,
           plan: plan || deserialized.plan || null,
@@ -1711,7 +1745,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .from('asignaciones')
           .delete()
           .eq('id', id);
-        
+
         if (error) throw error;
         return { success: true };
       },
@@ -1719,14 +1753,14 @@ export function createRemoteDataAPI(): AppDataAPI {
     registrosSesion: {
       list: async (sort?: string) => {
         let query = supabase.from('registros_sesion').select('*');
-        
+
         if (sort) {
           const direction = sort.startsWith('-') ? 'desc' : 'asc';
           const field = sort.startsWith('-') ? sort.slice(1) : sort;
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
         return (data || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroSesion>(r)));
@@ -1737,7 +1771,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .select('*')
           .eq('id', id)
           .single();
-        
+
         if (error) {
           if (error.code === 'PGRST116') return null;
           throw error;
@@ -1746,16 +1780,16 @@ export function createRemoteDataAPI(): AppDataAPI {
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
         let query = supabase.from('registros_sesion').select('*');
-        
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        
+
         if (limit) {
           query = query.limit(limit);
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
         return (data || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroSesion>(r)));
@@ -1770,7 +1804,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .insert(snakeData)
           .select()
           .single();
-        
+
         if (error) throw error;
         return normalizeISOFields(snakeToCamel<RegistroSesion>(result));
       },
@@ -1782,7 +1816,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .eq('id', id)
           .select()
           .single();
-        
+
         if (error) throw error;
         return normalizeISOFields(snakeToCamel<RegistroSesion>(data));
       },
@@ -1791,7 +1825,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .from('registros_sesion')
           .delete()
           .eq('id', id);
-        
+
         if (error) throw error;
         return { success: true };
       },
@@ -1799,14 +1833,14 @@ export function createRemoteDataAPI(): AppDataAPI {
     registrosBloque: {
       list: async (sort?: string) => {
         let query = supabase.from('registros_bloque').select('*');
-        
+
         if (sort) {
           const direction = sort.startsWith('-') ? 'desc' : 'asc';
           const field = sort.startsWith('-') ? sort.slice(1) : sort;
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
         return (data || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(r)));
@@ -1817,7 +1851,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .select('*')
           .eq('id', id)
           .single();
-        
+
         if (error) {
           if (error.code === 'PGRST116') return null;
           throw error;
@@ -1826,16 +1860,16 @@ export function createRemoteDataAPI(): AppDataAPI {
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
         let query = supabase.from('registros_bloque').select('*');
-        
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        
+
         if (limit) {
           query = query.limit(limit);
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
         return (data || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(r)));
@@ -1850,7 +1884,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .insert(snakeData)
           .select()
           .single();
-        
+
         if (error) throw error;
         return normalizeISOFields(snakeToCamel<RegistroBloque>(result));
       },
@@ -1862,7 +1896,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .eq('id', id)
           .select()
           .single();
-        
+
         if (error) throw error;
         return normalizeISOFields(snakeToCamel<RegistroBloque>(data));
       },
@@ -1871,7 +1905,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .from('registros_bloque')
           .delete()
           .eq('id', id);
-        
+
         if (error) throw error;
         return { success: true };
       },
@@ -1879,14 +1913,14 @@ export function createRemoteDataAPI(): AppDataAPI {
     feedbacksSemanal: {
       list: async (sort?: string) => {
         let query = supabase.from('feedbacks_semanal').select('*');
-        
+
         if (sort) {
           const direction = sort.startsWith('-') ? 'desc' : 'asc';
           const field = sort.startsWith('-') ? sort.slice(1) : sort;
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
         return (data || []).map((f: any) => {
@@ -1900,7 +1934,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .select('*')
           .eq('id', id)
           .single();
-        
+
         if (error) {
           if (error.code === 'PGRST116') return null;
           throw error;
@@ -1910,16 +1944,16 @@ export function createRemoteDataAPI(): AppDataAPI {
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
         let query = supabase.from('feedbacks_semanal').select('*');
-        
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        
+
         if (limit) {
           query = query.limit(limit);
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
         return (data || []).map((f: any) => {
@@ -1937,7 +1971,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .insert(snakeData)
           .select()
           .single();
-        
+
         if (error) throw error;
         const parsed = snakeToCamel<FeedbackSemanal>(result);
         return normalizeAsignacionISO<FeedbackSemanal>(parsed);
@@ -1950,7 +1984,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .eq('id', id)
           .select()
           .single();
-        
+
         if (error) throw error;
         const parsed = snakeToCamel<FeedbackSemanal>(data);
         return normalizeAsignacionISO<FeedbackSemanal>(parsed);
@@ -1960,7 +1994,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .from('feedbacks_semanal')
           .delete()
           .eq('id', id);
-        
+
         if (error) throw error;
         return { success: true };
       },
@@ -1968,14 +2002,14 @@ export function createRemoteDataAPI(): AppDataAPI {
     eventosCalendario: {
       list: async (sort?: string) => {
         let query = supabase.from('eventos_calendario').select('*');
-        
+
         if (sort) {
           const direction = sort.startsWith('-') ? 'desc' : 'asc';
           const field = sort.startsWith('-') ? sort.slice(1) : sort;
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
         return (data || []).map((e: any) => {
@@ -2006,7 +2040,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .select('*')
           .eq('id', id)
           .single();
-        
+
         if (error) {
           if (error.code === 'PGRST116') return null;
           throw error;
@@ -2032,16 +2066,16 @@ export function createRemoteDataAPI(): AppDataAPI {
       },
       filter: async (filters: Record<string, any>, limit?: number | null) => {
         let query = supabase.from('eventos_calendario').select('*');
-        
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        
+
         if (limit) {
           query = query.limit(limit);
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
         return (data || []).map((e: any) => {
@@ -2069,7 +2103,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .insert(snakeData)
           .select()
           .single();
-        
+
         if (error) throw error;
         const parsed = snakeToCamel<EventoCalendario>(result);
         // Asegurar que start_at, end_at, all_day estén presentes
@@ -2092,7 +2126,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .eq('id', id)
           .select()
           .single();
-        
+
         if (error) throw error;
         const parsed = snakeToCamel<EventoCalendario>(data);
         // Asegurar que start_at, end_at, all_day estén presentes
@@ -2112,7 +2146,77 @@ export function createRemoteDataAPI(): AppDataAPI {
           .from('eventos_calendario')
           .delete()
           .eq('id', id);
-        
+
+        if (error) throw error;
+        return { success: true };
+      },
+    },
+    evaluaciones: {
+      list: async (sort?: string) => {
+        let query = supabase.from('evaluaciones_tecnicas').select('*');
+        if (sort) {
+          const direction = sort.startsWith('-') ? 'desc' : 'asc';
+          const field = sort.startsWith('-') ? sort.slice(1) : sort;
+          const snakeField = toSnakeCase(field);
+          query = query.order(snakeField, { ascending: direction === 'asc' });
+        }
+        const { data, error } = await query;
+        if (error) throw error;
+        return (data || []).map((e: any) => snakeToCamel<EvaluacionTecnica>(e));
+      },
+      get: async (id: string) => {
+        const { data, error } = await supabase
+          .from('evaluaciones_tecnicas')
+          .select('*')
+          .eq('id', id)
+          .single();
+        if (error) {
+          if (error.code === 'PGRST116') return null;
+          throw error;
+        }
+        return snakeToCamel<EvaluacionTecnica>(data);
+      },
+      filter: async (filters: Record<string, any>, limit?: number | null) => {
+        let query = supabase.from('evaluaciones_tecnicas').select('*');
+        for (const [key, value] of Object.entries(filters)) {
+          const snakeKey = toSnakeCase(key);
+          query = query.eq(snakeKey, value);
+        }
+        if (limit) query = query.limit(limit);
+        const { data, error } = await query;
+        if (error) throw error;
+        return (data || []).map((e: any) => snakeToCamel<EvaluacionTecnica>(e));
+      },
+      create: async (data) => {
+        const snakeData = camelToSnake(data);
+        // Si el ID es temporal (generado localmente) o no existe, lo eliminamos para que Supabase genere un UUID válido
+        if (snakeData.id && (typeof snakeData.id === 'string' && !snakeData.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i))) {
+          delete snakeData.id;
+        }
+        const { data: result, error } = await supabase
+          .from('evaluaciones_tecnicas')
+          .insert(snakeData)
+          .select()
+          .single();
+        if (error) throw error;
+        return snakeToCamel<EvaluacionTecnica>(result);
+      },
+      update: async (id: string, updates: any) => {
+        const snakeUpdates = camelToSnake(updates);
+        const { data, error } = await supabase
+          .from('evaluaciones_tecnicas')
+          .update(snakeUpdates)
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw error;
+        return snakeToCamel<EvaluacionTecnica>(data);
+      },
+      delete: async (id: string) => {
+        const { error } = await supabase
+          .from('evaluaciones_tecnicas')
+          .delete()
+          .eq('id', id);
         if (error) throw error;
         return { success: true };
       },

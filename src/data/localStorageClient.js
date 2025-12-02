@@ -18,6 +18,7 @@ const DEFAULT_DATA = {
   registrosBloque: [],
   registrosSesion: [],
   usuarios: [],
+  evaluacionesTecnicas: [],
 };
 
 function isBrowser() {
@@ -40,6 +41,7 @@ function normalizeData(raw) {
     registrosBloque: Array.isArray(raw.registrosBloque) ? raw.registrosBloque : [],
     registrosSesion: Array.isArray(raw.registrosSesion) ? raw.registrosSesion : [],
     usuarios: Array.isArray(raw.usuarios) ? raw.usuarios : [],
+    evaluacionesTecnicas: Array.isArray(raw.evaluacionesTecnicas) ? raw.evaluacionesTecnicas : [],
   };
 }
 

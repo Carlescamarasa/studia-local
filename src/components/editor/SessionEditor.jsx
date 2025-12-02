@@ -59,12 +59,11 @@ function SortableRonda({
     <Card
       ref={setNodeRef}
       style={style}
-      className={`app-panel border-[var(--color-primary)]/30 bg-[var(--color-primary-soft)] ${
-        isDragging ? 'shadow-card border-[var(--color-primary)]' : ''
-      }`}
+      className={`app-panel border-[var(--color-primary)]/30 bg-[var(--color-primary-soft)] ${isDragging ? 'shadow-card border-[var(--color-primary)]' : ''
+        }`}
     >
       <CardContent className="pt-4">
-        <div 
+        <div
           className="flex items-center gap-2 mb-2 cursor-pointer hover:bg-[var(--color-primary-soft)] rounded-[var(--radius-card)] p-1 -m-1 transition-colors"
           onClick={() => setExpandedRondas(prev => {
             const n = new Set(prev);
@@ -97,7 +96,7 @@ function SortableRonda({
           <span className="text-sm text-[var(--color-text-secondary)] ml-auto">({ronda.bloques.length} ejercicios)</span>
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <Label className="text-xs text-[var(--color-text-secondary)] cursor-pointer flex items-center gap-1">
-              <Checkbox 
+              <Checkbox
                 checked={!!ronda.aleatoria}
                 onCheckedChange={(v) => updateRondaAleatoria(ronda.id, v)}
               />
@@ -150,7 +149,7 @@ function SortableRonda({
                     </div>
                   );
                 }
-                
+
                 return (
                   <SortableItem
                     key={`${ronda.id}-${code}-${eIndex}`}
@@ -174,10 +173,10 @@ function SortableRonda({
                           onClick={() => {
                             const idx = formData.bloques.findIndex(b => b.code === code);
                             if (idx !== -1) {
-                              setEditingEjercicio({ 
-                                index: idx, 
-                                ejercicio, 
-                                piezaSnapshot: piezaSnapshot || pieza 
+                              setEditingEjercicio({
+                                index: idx,
+                                ejercicio,
+                                piezaSnapshot: piezaSnapshot || pieza
                               });
                             }
                           }}
@@ -190,7 +189,7 @@ function SortableRonda({
                           variant="ghost"
                           size="sm"
                           onClick={() => removeEjercicioFromRonda(
-                            formData.rondas.findIndex(r => r.id === ronda.id), 
+                            formData.rondas.findIndex(r => r.id === ronda.id),
                             code
                           )}
                           className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle}`}
@@ -211,7 +210,7 @@ function SortableRonda({
   );
 }
 
-export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, onClose }) {
+export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, onSave, onClose }) {
   const [formData, setFormData] = useState({
     nombre: '',
     foco: 'GEN',
@@ -228,6 +227,16 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
   const { data: ejercicios = [] } = useQuery({
     queryKey: ['bloques'],
     queryFn: () => localDataClient.entities.Bloque.list(),
+  });
+
+  const { data: alumno } = useQuery({
+    queryKey: ['user', alumnoId],
+    queryFn: async () => {
+      if (!alumnoId) return null;
+      const users = await localDataClient.entities.User.list();
+      return users.find(u => u.id === alumnoId);
+    },
+    enabled: !!alumnoId,
   });
 
   useEffect(() => {
@@ -266,17 +275,17 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
       ...r,
       bloques: r.bloques.filter(code => codesInSession.includes(code))
     })).filter(r => r.bloques.length > 0);
-    
+
     setFormData({ ...formData, rondas: rondasReparadas });
     toast.success('✅ Referencias reparadas');
   }, [formData]);
 
   const handleSave = useCallback(() => {
     const codesInSession = formData.bloques.map(b => b.code);
-    const rondasConHuerfanas = formData.rondas.some(r => 
+    const rondasConHuerfanas = formData.rondas.some(r =>
       r.bloques.some(code => !codesInSession.includes(code))
     );
-    
+
     if (rondasConHuerfanas) {
       if (window.confirm('❌ Esta sesión contiene referencias inválidas en las rondas. ¿Deseas repararlas automáticamente?')) {
         handleRepararReferencias();
@@ -284,14 +293,14 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
       }
       return;
     }
-    
+
     onSave(formData);
   }, [formData, onSave, handleRepararReferencias]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (editingEjercicio) return;
-      
+
       if ((e.ctrlKey || e.metaKey) && e.key === '.') {
         e.preventDefault();
         onClose();
@@ -311,7 +320,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
 
   const filteredEjercicios = ejercicios.filter(e => {
     const matchSearch = e.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       e.code?.toLowerCase().includes(searchTerm.toLowerCase());
+      e.code?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchTipo = tiposFilter.size === 0 || tiposFilter.has(e.tipo);
     return matchSearch && matchTipo;
   });
@@ -329,7 +338,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
   const addEjerciciosSeleccionados = () => {
     const newBloquesToAdd = [];
     const newSecItems = [];
-    
+
     selectedEjercicios.forEach(ejercicioId => {
       const ejercicio = ejercicios.find(e => e.id === ejercicioId);
       if (ejercicio) {
@@ -337,7 +346,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
         if (exists && !window.confirm(`El ejercicio ${ejercicio.code} ya existe. ¿Añadir de nuevo?`)) {
           return;
         }
-        
+
         const nuevoEjercicio = {
           nombre: ejercicio.nombre,
           code: ejercicio.code,
@@ -349,14 +358,28 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
           media: ejercicio.media || {},
           elementosOrdenados: ejercicio.elementosOrdenados || [],
         };
-        
+
+        if (!exists) {
+          newBloquesToAdd.push(nuevoEjercicio);
+        }
         if (!exists) {
           newBloquesToAdd.push(nuevoEjercicio);
         }
         newSecItems.push({ kind: 'BLOQUE', code: ejercicio.code });
+
+        // Validación pedagógica de BPMs
+        if (alumno?.nivelTecnico && ejercicio.targetPPMs?.length) {
+          const target = ejercicio.targetPPMs.find(t => t.nivel === alumno.nivelTecnico);
+          if (!target) {
+            toast.warning(
+              `⚠️ Este ejercicio no tiene objetivos definidos para el Nivel Técnico ${alumno.nivelTecnico}`,
+              { duration: 5000 }
+            );
+          }
+        }
       }
     });
-    
+
     setFormData(prev => ({
       ...prev,
       bloques: [...prev.bloques, ...newBloquesToAdd],
@@ -393,9 +416,9 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
 
     if (codigosSeleccionados.length === 0) return;
 
-    const nuevaRonda = { 
-      id: uid(), 
-      bloques: codigosSeleccionados, 
+    const nuevaRonda = {
+      id: uid(),
+      bloques: codigosSeleccionados,
       repeticiones: 1,
       aleatoria: false
     };
@@ -404,11 +427,11 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
     setFormData(prev => {
       const nuevaSecuencia = [...prev.secuencia, { kind: 'RONDA', id: nuevaRonda.id }];
       nuevoSeqIndex = nuevaSecuencia.length - 1; // Índice de la nueva ronda en la secuencia
-      
+
       return {
-      ...prev,
-      bloques: [...prev.bloques, ...newBloquesToAdd],
-      rondas: [...prev.rondas, nuevaRonda],
+        ...prev,
+        bloques: [...prev.bloques, ...newBloquesToAdd],
+        rondas: [...prev.rondas, nuevaRonda],
         secuencia: nuevaSecuencia,
       };
     });
@@ -432,12 +455,12 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
       ...r,
       bloques: r.bloques.filter(code => code !== ejercicio.code)
     })).filter(r => r.bloques.length > 0);
-    
+
     // Eliminar de secuencia también
-    const newSecuencia = formData.secuencia.filter(item => 
+    const newSecuencia = formData.secuencia.filter(item =>
       !(item.kind === 'BLOQUE' && item.code === ejercicio.code)
     );
-    
+
     setFormData({ ...formData, bloques: newBloques, rondas: newRondas, secuencia: newSecuencia });
     toast.success('✅ Ejercicio eliminado y referencias actualizadas');
   };
@@ -452,14 +475,14 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
   };
 
   const updateRondaRepeticiones = (rondaId, reps) => {
-    const newRondas = formData.rondas.map(r => 
+    const newRondas = formData.rondas.map(r =>
       r.id === rondaId ? { ...r, repeticiones: Math.max(1, parseInt(reps) || 1) } : r
     );
     setFormData({ ...formData, rondas: newRondas });
   };
 
   const updateRondaAleatoria = (rondaId, aleatoria) => {
-    const newRondas = formData.rondas.map(r => 
+    const newRondas = formData.rondas.map(r =>
       r.id === rondaId ? { ...r, aleatoria: !!aleatoria } : r
     );
     setFormData({ ...formData, rondas: newRondas });
@@ -468,20 +491,20 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
   const duplicateRonda = (rondaId) => {
     const ronda = formData.rondas.find(r => r.id === rondaId);
     if (!ronda) return;
-    
+
     const newRonda = { ...JSON.parse(JSON.stringify(ronda)), id: uid() };
     const rondaIdx = formData.secuencia.findIndex(s => s.kind === 'RONDA' && s.id === rondaId);
-    
+
     const newSecuencia = [...formData.secuencia];
     const nuevoSeqIndex = rondaIdx + 1; // Índice de la nueva ronda en la secuencia
     newSecuencia.splice(nuevoSeqIndex, 0, { kind: 'RONDA', id: newRonda.id });
-    
-    setFormData({ 
-      ...formData, 
+
+    setFormData({
+      ...formData,
       rondas: [...formData.rondas, newRonda],
       secuencia: newSecuencia
     });
-    
+
     // Expandir la ronda duplicada automáticamente
     setExpandedRondas(prev => new Set([...prev, nuevoSeqIndex]));
     toast.success('✅ Ronda duplicada');
@@ -495,8 +518,8 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
     const overId = String(over.id);
 
     // 1) Reordenar dentro de SECUENCIA (ambos son seq-${index})
-    if (activeId.startsWith('seq-') && overId.startsWith('seq-') && 
-        !activeId.includes('-r-') && !overId.includes('-r-')) {
+    if (activeId.startsWith('seq-') && overId.startsWith('seq-') &&
+      !activeId.includes('-r-') && !overId.includes('-r-')) {
       const oldIndex = parseInt(activeId.split('-').pop());
       const newIndex = parseInt(overId.split('-').pop());
       setFormData({
@@ -507,16 +530,16 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
     }
 
     // 2) Mover dentro de una misma ronda
-    if (activeId.includes('-r-') && overId.includes('-r-') && 
-        activeId.split('-r-')[0] === overId.split('-r-')[0]) {
+    if (activeId.includes('-r-') && overId.includes('-r-') &&
+      activeId.split('-r-')[0] === overId.split('-r-')[0]) {
       const rondaId = activeId.split('-r-')[0];
       const ronda = formData.rondas.find(r => r.id === rondaId);
       if (!ronda) return;
-      
+
       const oldIndex = parseInt(activeId.split('-').pop());
       const newIndex = parseInt(overId.split('-').pop());
       const newBloques = arrayMove(ronda.bloques, oldIndex, newIndex);
-      
+
       setFormData({
         ...formData,
         rondas: formData.rondas.map(r =>
@@ -527,13 +550,13 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
     }
 
     // 3) Mover ejercicio de una ronda a otra ronda
-    if (activeId.includes('-r-') && overId.includes('-r-') && 
-        activeId.split('-r-')[0] !== overId.split('-r-')[0]) {
+    if (activeId.includes('-r-') && overId.includes('-r-') &&
+      activeId.split('-r-')[0] !== overId.split('-r-')[0]) {
       const fromRondaId = activeId.split('-r-')[0];
       const toRondaId = overId.split('-r-')[0];
       const bloqueCode = activeId.split('-r-')[1].split('-')[0];
       const newIndex = parseInt(overId.split('-').pop());
-      
+
       const newRondas = formData.rondas.map(r => {
         if (r.id === fromRondaId) {
           return { ...r, bloques: r.bloques.filter(code => code !== bloqueCode) };
@@ -550,7 +573,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
         }
         return r;
       });
-      
+
       setFormData({ ...formData, rondas: newRondas });
       return;
     }
@@ -559,31 +582,31 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
     if (activeId.startsWith('seq-') && !activeId.includes('-r-') && overId.includes('-r-')) {
       const activeIndex = parseInt(activeId.split('-').pop());
       const activeItem = formData.secuencia[activeIndex];
-      
+
       // Sólo permitimos mover BLOQUE a ronda
       if (activeItem.kind !== 'BLOQUE') return;
 
       const bloqueCode = activeItem.code;
       const rondaId = overId.split('-r-')[0];
       const newIndex = parseInt(overId.split('-').pop());
-      
+
       // Remover de secuencia
       const newSecuencia = formData.secuencia.filter((_, idx) => idx !== activeIndex);
-      
+
       // Añadir a ronda
       const newRondas = formData.rondas.map(r =>
         r.id === rondaId
           ? {
-              ...r,
-              bloques: [
-                ...r.bloques.slice(0, newIndex),
-                bloqueCode,
-                ...r.bloques.slice(newIndex),
-              ],
-            }
+            ...r,
+            bloques: [
+              ...r.bloques.slice(0, newIndex),
+              bloqueCode,
+              ...r.bloques.slice(newIndex),
+            ],
+          }
           : r
       );
-      
+
       setFormData({ ...formData, secuencia: newSecuencia, rondas: newRondas });
       return;
     }
@@ -593,18 +616,18 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
       const rondaId = activeId.split('-r-')[0];
       const bloqueCode = activeId.split('-r-')[1].split('-')[0];
       const newIndex = parseInt(overId.split('-').pop());
-      
+
       // Remover de ronda
       const newRondas = formData.rondas.map(r =>
         r.id === rondaId
           ? { ...r, bloques: r.bloques.filter(code => code !== bloqueCode) }
           : r
       );
-      
+
       // Añadir a secuencia
       const newSecuencia = [...formData.secuencia];
       newSecuencia.splice(newIndex, 0, { kind: 'BLOQUE', code: bloqueCode });
-      
+
       setFormData({ ...formData, secuencia: newSecuencia, rondas: newRondas });
       return;
     }
@@ -614,7 +637,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
     let tiempoEjercicios = formData.bloques
       .filter(b => b.tipo !== 'AD')
       .reduce((total, b) => total + (b.duracionSeg || 0), 0);
-    
+
     let tiempoRondas = formData.rondas.reduce((total, ronda) => {
       const tiempoRonda = ronda.bloques.reduce((sum, code) => {
         const bloque = formData.bloques.find(b => b.code === code);
@@ -625,7 +648,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
       }, 0);
       return total + (tiempoRonda * ronda.repeticiones);
     }, 0);
-    
+
     return tiempoEjercicios + tiempoRondas;
   };
 
@@ -661,13 +684,13 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
 
   const modalContent = (
     <>
-      <div 
+      <div
         className="fixed inset-0 bg-black/40 z-[125]"
         onClick={onClose}
       />
-      
+
       <div className="fixed inset-0 z-[130] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
-        <div 
+        <div
           className="w-full max-w-6xl my-8 overflow-hidden flex flex-col max-h-[92vh] pointer-events-auto shadow-card rounded-[var(--radius-modal)] bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)]"
           onClick={(e) => e.stopPropagation()}
         >
@@ -698,18 +721,18 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
 
               <div>
                 <Label htmlFor="foco" className="text-[var(--color-text-primary)]">Foco de la Sesión *</Label>
-                <Select 
-                  value={formData.foco} 
+                <Select
+                  value={formData.foco}
                   onValueChange={(v) => setFormData({ ...formData, foco: v })}
                   modal={false}
                 >
                   <SelectTrigger id="foco" className={`w-full ${componentStyles.controls.selectDefault}`}>
                     <SelectValue placeholder="Selecciona foco..." />
                   </SelectTrigger>
-                  <SelectContent 
-                    position="popper" 
-                    side="bottom" 
-                    align="start" 
+                  <SelectContent
+                    position="popper"
+                    side="bottom"
+                    align="start"
                     sideOffset={4}
                     className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                   >
@@ -750,7 +773,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                   </div>
                 ) : (
                   <DndProvider onDragEnd={handleDragEnd}>
-                    <SortableContext 
+                    <SortableContext
                       items={formData.secuencia.map((_, i) => `seq-${i}`)}
                       strategy={verticalListSortingStrategy}
                     >
@@ -759,7 +782,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                           if (item.kind === 'BLOQUE') {
                             const bloque = formData.bloques.find(b => b.code === item.code);
                             if (!bloque) return null;
-                            
+
                             return (
                               <SortableItem
                                 key={`seq-b-${item.code}-${seqIndex}`}
@@ -783,10 +806,10 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      onClick={() => setEditingEjercicio({ 
-                                        index: formData.bloques.findIndex(b => b.code === bloque.code), 
-                                        ejercicio: bloque, 
-                                        piezaSnapshot: piezaSnapshot || pieza 
+                                      onClick={() => setEditingEjercicio({
+                                        index: formData.bloques.findIndex(b => b.code === bloque.code),
+                                        ejercicio: bloque,
+                                        piezaSnapshot: piezaSnapshot || pieza
                                       })}
                                       className={componentStyles.buttons.editIcon}
                                     >
@@ -810,7 +833,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                           const ronda = formData.rondas.find(r => r.id === item.id);
                           if (!ronda) return null;
                           const isExpanded = expandedRondas.has(seqIndex);
-                          
+
                           return (
                             <SortableRonda
                               key={`seq-r-${item.id}`}
@@ -869,9 +892,8 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                       <Badge
                         key={key}
                         variant={tiposFilter.has(key) ? "default" : "outline"}
-                        className={`cursor-pointer transition-all rounded-full ${
-                          tiposFilter.has(key) ? tipoColors[key] : 'hover:bg-[var(--color-surface-muted)] hover:shadow-sm'
-                        }`}
+                        className={`cursor-pointer transition-all rounded-full ${tiposFilter.has(key) ? tipoColors[key] : 'hover:bg-[var(--color-surface-muted)] hover:shadow-sm'
+                          }`}
                         onClick={() => toggleTipoFilter(key)}
                       >
                         {key}
@@ -895,7 +917,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                   <Alert className="rounded-[var(--radius-card)] border-[var(--color-info)]/20 bg-[var(--color-info)]/10">
                     <AlertDescription className="text-[var(--color-text-primary)] flex items-center justify-between flex-wrap gap-2">
                       <span>
-                        <strong className="text-[var(--color-info)]">{selectedEjercicios.size} ejercicio(s) seleccionado(s).</strong> 
+                        <strong className="text-[var(--color-info)]">{selectedEjercicios.size} ejercicio(s) seleccionado(s).</strong>
                         {' '}Puedes agregarlos directamente o crear una ronda con ellos.
                       </span>
                       <div className="flex gap-2 flex-wrap">
@@ -937,11 +959,10 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                     filteredEjercicios.map((ejercicio) => (
                       <div
                         key={ejercicio.id}
-                        className={`flex items-center gap-2 p-2 border border-[var(--color-border-default)] rounded-[var(--radius-card)] cursor-pointer transition-all ${
-                          selectedEjercicios.has(ejercicio.id) 
-                            ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm' 
-                            : 'bg-[var(--color-surface-elevated)] hover:bg-[var(--color-surface-muted)] hover:shadow-sm'
-                        }`}
+                        className={`flex items-center gap-2 p-2 border border-[var(--color-border-default)] rounded-[var(--radius-card)] cursor-pointer transition-all ${selectedEjercicios.has(ejercicio.id)
+                          ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm'
+                          : 'bg-[var(--color-surface-elevated)] hover:bg-[var(--color-surface-muted)] hover:shadow-sm'
+                          }`}
                         onClick={() => {
                           const newSelected = new Set(selectedEjercicios);
                           if (newSelected.has(ejercicio.id)) {
@@ -954,7 +975,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, onSave, on
                       >
                         <Checkbox
                           checked={selectedEjercicios.has(ejercicio.id)}
-                          onCheckedChange={() => {}}
+                          onCheckedChange={() => { }}
                         />
                         <Badge variant="outline" className={`shrink-0 rounded-full ${tipoColors[ejercicio.tipo]}`}>
                           {ejercicio.tipo}

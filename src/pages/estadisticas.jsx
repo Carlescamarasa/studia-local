@@ -42,6 +42,7 @@ import FeedbackTab from "@/components/estadisticas/FeedbackTab";
 import HeatmapActividad from "@/components/estadisticas/HeatmapActividad";
 import ProgresoPorPieza from "@/components/estadisticas/ProgresoPorPieza";
 import ComparativaEstudiantes from "@/components/estadisticas/ComparativaEstudiantes";
+import HabilidadesView from "@/components/estadisticas/HabilidadesView";
 import { useEstadisticas, safeNumber } from "@/components/estadisticas/hooks/useEstadisticas";
 import { formatDuracionHM, formatLocalDate, parseLocalDate, startOfMonday } from "@/components/estadisticas/utils";
 import { shouldIgnoreHotkey } from "@/utils/hotkeys";
@@ -52,7 +53,7 @@ function EstadisticasPageContent() {
   const [searchParams, setSearchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
-  
+
   const [rangoPreset, setRangoPreset] = useState('4-semanas');
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [periodoInicio, setPeriodoInicio] = useState(() => {
@@ -62,7 +63,7 @@ function EstadisticasPageContent() {
     hace28.setDate(hace28.getDate() - 28);
     return formatLocalDate(hace28);
   });
-  
+
   const [periodoFin, setPeriodoFin] = useState(() => {
     return searchParams.get('fin') || formatLocalDate(new Date());
   });
@@ -117,12 +118,12 @@ function EstadisticasPageContent() {
 
   const estudiantesDelProfesor = useMemo(() => {
     if (!isProf || !effectiveUser) return [];
-    
-    const misAsignaciones = asignacionesProf.filter(a => 
-      a.profesorId === userIdActual && 
+
+    const misAsignaciones = asignacionesProf.filter(a =>
+      a.profesorId === userIdActual &&
       (a.estado === 'publicada' || a.estado === 'en_curso' || a.estado === 'borrador')
     );
-    
+
     const alumnosIds = [...new Set(misAsignaciones.map(a => a.alumnoId))];
     return alumnosIds;
   }, [asignacionesProf, effectiveUser, isProf, userIdActual]);
@@ -190,7 +191,7 @@ function EstadisticasPageContent() {
   const aplicarPreset = (preset) => {
     const hoy = new Date();
     let inicio, fin;
-    
+
     switch (preset) {
       case 'esta-semana':
         inicio = startOfMonday(hoy);
@@ -228,7 +229,7 @@ function EstadisticasPageContent() {
         fin = null;
         break;
     }
-    
+
     setPeriodoInicio(inicio ? formatLocalDate(inicio) : '');
     setPeriodoFin(fin ? formatLocalDate(fin) : '');
     setRangoPreset(preset);
@@ -321,15 +322,15 @@ function EstadisticasPageContent() {
     if (!periodoInicio || !periodoFin) return 0;
     const inicio = parseLocalDate(periodoInicio);
     const fin = parseLocalDate(periodoFin);
-    
+
     // Calcular diferencia en días entre inicio y fin (inclusive)
     const diffMs = fin.getTime() - inicio.getTime();
     const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1; // +1 para incluir el día final
-    
+
     // Convertir días a semanas (prorateado)
     // Si hay 7 días o menos = 1 semana, 8-14 días = 2 semanas, etc.
     const semanasTotales = diffDias > 0 ? Math.ceil(diffDias / 7) : 0;
-    
+
     return semanasTotales;
   }, [periodoInicio, periodoFin]);
 
@@ -375,9 +376,9 @@ function EstadisticasPageContent() {
         const estudiantesConAsignaciones = asignaciones
           .filter(a => profesoresSeleccionados.includes(a.profesorId))
           .map(a => a.alumnoId);
-        
+
         estudiantesConAsignaciones.forEach(id => targetAlumnoIds.add(id));
-        
+
         // También incluir estudiantes que tienen profesorAsignadoId (compatibilidad con usuarios que tienen esta propiedad)
         usuarios
           .filter(u => u.rolPersonalizado === 'ESTU' && u.profesorAsignadoId && profesoresSeleccionados.includes(u.profesorAsignadoId))
@@ -456,10 +457,10 @@ function EstadisticasPageContent() {
     userIdActual,
   });
 
-  const { 
-    kpis, 
-    datosLinea, 
-    tiposBloques, 
+  const {
+    kpis,
+    datosLinea,
+    tiposBloques,
     topEjercicios,
     progresoPorPieza,
     heatmapData,
@@ -478,7 +479,7 @@ function EstadisticasPageContent() {
   const feedbackAlumno = useMemo(() => {
     const distribucion = { 1: 0, 2: 0, 3: 0, 4: 0 };
     const comentarios = [];
-    
+
     registrosFiltradosUnicos.forEach(r => {
       const cal = safeNumber(r.calificacion);
       if (cal > 0 && cal <= 4) {
@@ -491,7 +492,7 @@ function EstadisticasPageContent() {
         comentarios.push(r);
       }
     });
-    
+
     return { distribucion, comentarios };
   }, [registrosFiltradosUnicos]);
 
@@ -509,7 +510,7 @@ function EstadisticasPageContent() {
   // Feedbacks del profesor para estudiantes
   const feedbackProfesor = useMemo(() => {
     if (!isEstu) return [];
-    
+
     const filtrados = feedbacksSemanal.filter(f => {
       if (f.alumnoId !== userIdActual) {
         return false;
@@ -517,47 +518,47 @@ function EstadisticasPageContent() {
       if (!f.semanaInicioISO) {
         return false;
       }
-      
+
       const feedbackDate = parseLocalDate(f.semanaInicioISO);
-      
+
       if (periodoInicio) {
         const inicioDate = parseLocalDate(periodoInicio);
         if (feedbackDate < inicioDate) {
           return false;
         }
       }
-      
+
       if (periodoFin) {
         const finDate = parseLocalDate(periodoFin);
         if (feedbackDate > finDate) {
           return false;
         }
       }
-      
+
       return true;
     });
-    
+
     return filtrados.sort((a, b) => b.semanaInicioISO.localeCompare(a.semanaInicioISO));
   }, [feedbacksSemanal, userIdActual, periodoInicio, periodoFin, isEstu]);
 
   // Feedbacks para profesores y admins: ADMIN y PROF ven TODOS los feedbacks
   const feedbacksParaProfAdmin = useMemo(() => {
     if (isEstu) return [];
-    
+
     // Para ADMIN: mostrar TODOS los feedbacks si no hay filtros explícitos
     // Para PROF: mostrar TODOS los feedbacks si no hay filtros explícitos
     let resultado = [...feedbacksSemanal];
-    
+
     // Solo filtrar por estudiantes si hay selección EXPLÍCITA
     if (alumnosSeleccionados.length > 0) {
       resultado = resultado.filter(f => alumnosSeleccionados.includes(f.alumnoId));
     }
-    
+
     // Solo filtrar por profesores si hay selección EXPLÍCITA
     if (profesoresSeleccionados.length > 0) {
       resultado = resultado.filter(f => profesoresSeleccionados.includes(f.profesorId));
     }
-    
+
     // Solo filtrar por período si hay filtro EXPLÍCITO de período
     // IMPORTANTE: Para ADMIN y PROF, incluir feedbacks sin semanaInicioISO también
     if (periodoInicio || periodoFin) {
@@ -566,10 +567,10 @@ function EstadisticasPageContent() {
         if (!f.semanaInicioISO) {
           return true;
         }
-        
+
         const feedbackDate = parseLocalDate(f.semanaInicioISO);
         const feedbackDateOnly = new Date(feedbackDate.getFullYear(), feedbackDate.getMonth(), feedbackDate.getDate());
-        
+
         if (periodoInicio) {
           const inicioDate = parseLocalDate(periodoInicio);
           const inicioDateOnly = new Date(inicioDate.getFullYear(), inicioDate.getMonth(), inicioDate.getDate());
@@ -577,7 +578,7 @@ function EstadisticasPageContent() {
             return false;
           }
         }
-        
+
         if (periodoFin) {
           const finDate = parseLocalDate(periodoFin);
           const finDateOnly = new Date(finDate.getFullYear(), finDate.getMonth(), finDate.getDate());
@@ -585,11 +586,11 @@ function EstadisticasPageContent() {
             return false;
           }
         }
-        
+
         return true;
       });
     }
-    
+
     // Agregar nombre del estudiante a cada feedback
     resultado = resultado.map(f => {
       const alumno = usuarios.find(u => u.id === f.alumnoId);
@@ -598,7 +599,7 @@ function EstadisticasPageContent() {
         alumnoNombre: alumno ? displayName(alumno) : f.alumnoId || 'N/A'
       };
     });
-    
+
     // Ordenar: primero por alumno, luego por fecha descendente
     resultado.sort((a, b) => {
       if (a.alumnoId !== b.alumnoId) {
@@ -608,7 +609,7 @@ function EstadisticasPageContent() {
       const fechaB = b.semanaInicioISO || '';
       return fechaB.localeCompare(fechaA);
     });
-    
+
     return resultado;
   }, [feedbacksSemanal, alumnosSeleccionados, profesoresSeleccionados, periodoInicio, periodoFin, isEstu, usuarios]);
 
@@ -647,7 +648,7 @@ function EstadisticasPageContent() {
   // Función para guardar feedback
   const guardarFeedback = () => {
     if (!feedbackDrawer) return;
-    
+
     if (!feedbackDrawer.notaProfesor?.trim()) {
       toast.error('❌ Las observaciones del profesor son obligatorias');
       return;
@@ -681,14 +682,14 @@ function EstadisticasPageContent() {
   // Función para manejar clicks en medialinks
   const handleMediaClick = (mediaLinks, index) => {
     if (!mediaLinks || !Array.isArray(mediaLinks) || mediaLinks.length === 0) return;
-    
+
     // Normalizar media links
     const normalizedLinks = normalizeMediaLinks(mediaLinks);
     if (normalizedLinks.length === 0) return;
-    
+
     // Asegurar que el índice esté dentro del rango
     const safeIndex = Math.max(0, Math.min(index, normalizedLinks.length - 1));
-    
+
     setSelectedMediaLinks(normalizedLinks);
     setSelectedMediaIndex(safeIndex);
     setShowMediaModal(true);
@@ -697,11 +698,11 @@ function EstadisticasPageContent() {
   // Atajos de teclado para el drawer de feedback
   useEffect(() => {
     if (!feedbackDrawer) return;
-    
+
     const handleKeyDown = (e) => {
       // No procesar si está en un campo editable
       if (shouldIgnoreHotkey(e)) return;
-      
+
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
         if (feedbackDrawer && feedbackDrawer.notaProfesor?.trim()) {
@@ -722,7 +723,7 @@ function EstadisticasPageContent() {
         setFeedbackDrawer(null);
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [feedbackDrawer, actualizarFeedbackMutation]);
@@ -732,10 +733,10 @@ function EstadisticasPageContent() {
     const handleKeyDown = (e) => {
       // No procesar si hay un modal o drawer abierto
       if (modalSesionOpen || feedbackDrawer || showMediaModal) return;
-      
+
       // No procesar si está en un input o textarea
       if (e.target.matches('input, textarea, select')) return;
-      
+
       // ArrowLeft para volver
       if (e.key === 'ArrowLeft' && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
         e.preventDefault();
@@ -747,12 +748,12 @@ function EstadisticasPageContent() {
           if (window.history.length <= 1) {
             navigate('/calendario');
           } else {
-        navigate(-1);
+            navigate(-1);
           }
         }
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate, location.state, modalSesionOpen, feedbackDrawer, showMediaModal]);
@@ -813,26 +814,26 @@ function EstadisticasPageContent() {
   // Calcular métricas de comparación de estudiantes - Siempre ejecutar el hook (fuera de condiciones)
   const estudiantesComparacion = useMemo(() => {
     if (isEstu) return [];
-    
+
     // Calcular métricas por estudiante
     const estudiantesMap = new Map();
-    
+
     // Obtener todos los estudiantes si no hay selección
-    const estudiantesIds = alumnosSeleccionados.length > 0 
-      ? alumnosSeleccionados 
+    const estudiantesIds = alumnosSeleccionados.length > 0
+      ? alumnosSeleccionados
       : estudiantes.map(e => e.id);
-    
+
     estudiantesIds.forEach(alumnoId => {
       const registrosEstudiante = registrosFiltradosUnicos.filter(r => r.alumnoId === alumnoId);
-      
+
       // Calcular KPIs manualmente para cada estudiante
       const tiempoTotal = registrosEstudiante.reduce((sum, r) => {
         const duracion = safeNumber(r.duracionRealSeg);
         return sum + (duracion > 0 && duracion <= 43200 ? duracion : 0);
       }, 0);
-      
+
       const numSesiones = registrosEstudiante.length;
-      
+
       let mediaSemanalSesiones = 0;
       if (periodoInicio && periodoFin) {
         const inicio = parseLocalDate(periodoInicio);
@@ -841,7 +842,7 @@ function EstadisticasPageContent() {
         const numDias = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1);
         mediaSemanalSesiones = numDias > 0 ? (numSesiones / numDias) * 7 : 0;
       }
-      
+
       const conCalificacion = registrosEstudiante.filter(r => {
         const cal = safeNumber(r.calificacion);
         return cal > 0 && cal <= 4;
@@ -849,19 +850,19 @@ function EstadisticasPageContent() {
       const calificacionPromedio = conCalificacion.length > 0
         ? (conCalificacion.reduce((acc, r) => acc + safeNumber(r.calificacion), 0) / conCalificacion.length).toFixed(1)
         : '0.0';
-      
-      const totalCompletados = registrosEstudiante.reduce((sum, r) => 
+
+      const totalCompletados = registrosEstudiante.reduce((sum, r) =>
         sum + safeNumber(r.bloquesCompletados), 0
       );
-      const totalOmitidos = registrosEstudiante.reduce((sum, r) => 
+      const totalOmitidos = registrosEstudiante.reduce((sum, r) =>
         sum + safeNumber(r.bloquesOmitidos), 0
       );
       const ratioCompletado = (totalCompletados + totalOmitidos) > 0
         ? ((totalCompletados / (totalCompletados + totalOmitidos)) * 100).toFixed(1)
         : 0;
-      
+
       const racha = calcularRacha(registrosEstudiante, null);
-      
+
       estudiantesMap.set(alumnoId, {
         id: alumnoId,
         tiempoTotal,
@@ -873,7 +874,7 @@ function EstadisticasPageContent() {
         rachaMaxima: racha.maxima,
       });
     });
-    
+
     return Array.from(estudiantesMap.values());
   }, [isEstu, alumnosSeleccionados, estudiantes, registrosFiltradosUnicos, periodoInicio, periodoFin]);
 
@@ -907,29 +908,29 @@ function EstadisticasPageContent() {
       }
       return 'Seleccionar rango';
     }
-    
+
     try {
       const inicio = parseLocalDate(periodoInicio);
       const fin = parseLocalDate(periodoFin);
-      
+
       const dayInicio = inicio.getDate();
       const monthInicio = inicio.toLocaleDateString('es-ES', { month: 'short' });
-      
+
       const dayFin = fin.getDate();
       const monthFin = fin.toLocaleDateString('es-ES', { month: 'short' });
       const yearFin = fin.getFullYear();
-      
+
       // Si son el mismo mes, mostrar "26 — 30 oct 2025"
       if (inicio.getMonth() === fin.getMonth() && inicio.getFullYear() === fin.getFullYear()) {
         return `${dayInicio} — ${dayFin} ${monthFin} ${yearFin}`;
       }
-      
+
       // Si son años diferentes, mostrar ambos años
       if (inicio.getFullYear() !== fin.getFullYear()) {
         const yearInicio = inicio.getFullYear();
         return `${dayInicio} ${monthInicio} ${yearInicio} — ${dayFin} ${monthFin} ${yearFin}`;
       }
-      
+
       // Meses diferentes, mismo año: "26 oct — 23 nov 2025"
       return `${dayInicio} ${monthInicio} — ${dayFin} ${monthFin} ${yearFin}`;
     } catch (e) {
@@ -995,91 +996,91 @@ function EstadisticasPageContent() {
                   <ChevronUp className="w-4 h-4" />
                 </Button>
               </div>
-              
+
               <div className="w-full space-y-4 md:space-y-6">
                 {/* Filtros de fecha y presets */}
                 <div className="space-y-3">
                   <div className="flex flex-col gap-3">
-                  {/* Rango de fechas */}
-                  <div className="flex-1 w-full">
-                    <Label className="text-xs sm:text-sm mb-1.5 block text-[var(--color-text-secondary)]">
-                      Rango de fechas
-                    </Label>
-                    <DateRangePicker
-                      startDate={periodoInicio}
-                      endDate={periodoFin}
-                      onDateChange={(start, end) => {
-                        setPeriodoInicio(start);
-                        setPeriodoFin(end);
-                        setRangoPreset('personalizado');
-                      }}
-                      className="w-full sm:w-auto"
-                    />
-                  </div>
-                  
+                    {/* Rango de fechas */}
+                    <div className="flex-1 w-full">
+                      <Label className="text-xs sm:text-sm mb-1.5 block text-[var(--color-text-secondary)]">
+                        Rango de fechas
+                      </Label>
+                      <DateRangePicker
+                        startDate={periodoInicio}
+                        endDate={periodoFin}
+                        onDateChange={(start, end) => {
+                          setPeriodoInicio(start);
+                          setPeriodoFin(end);
+                          setRangoPreset('personalizado');
+                        }}
+                        className="w-full sm:w-auto"
+                      />
+                    </div>
+
                     {/* Presets */}
-                  <div>
-                    <Label className="text-xs sm:text-sm mb-1.5 block text-[var(--color-text-secondary)]">
-                      Presets rápidos
-                    </Label>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {presets.map(p => (
-                        <Button
-                          key={p.key}
-                          variant={rangoPreset === p.key ? "primary" : "outline"}
-                          size="sm"
-                          onClick={() => {
-                            aplicarPreset(p.key);
-                          }}
-                          className={`
+                    <div>
+                      <Label className="text-xs sm:text-sm mb-1.5 block text-[var(--color-text-secondary)]">
+                        Presets rápidos
+                      </Label>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {presets.map(p => (
+                          <Button
+                            key={p.key}
+                            variant={rangoPreset === p.key ? "primary" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              aplicarPreset(p.key);
+                            }}
+                            className={`
                             text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all
-                            ${rangoPreset === p.key 
-                              ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-sm' 
-                              : 'hover:bg-[var(--color-surface-muted)]'
-                            }
+                            ${rangoPreset === p.key
+                                ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-sm'
+                                : 'hover:bg-[var(--color-surface-muted)]'
+                              }
                           `}
-                          aria-label={`Preset ${p.label}`}
-                          title={`Ver estadísticas: ${p.label}`}
-                        >
-                          {p.label}
-                        </Button>
-                      ))}
+                            aria-label={`Preset ${p.label}`}
+                            title={`Ver estadísticas: ${p.label}`}
+                          >
+                            {p.label}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Filtros adicionales (solo si no es estudiante) */}
-            {!isEstu && (
+                {/* Filtros adicionales (solo si no es estudiante) */}
+                {!isEstu && (
                   <div className={`${componentStyles.layout.grid2} gap-3`}>
-                  <MultiSelect
-                    label="Profesores"
-                    items={profesores.map(p => ({ value: p.id, label: displayName(p) }))}
-                    value={profesoresSeleccionados}
-                    onChange={setProfesoresSeleccionados}
-                  />
-                  <MultiSelect
-                    label="Alumnos"
-                    items={estudiantes.map(a => ({ value: a.id, label: displayName(a) }))}
-                    value={alumnosSeleccionados}
-                    onChange={setAlumnosSeleccionados}
-                  />
-              </div>
-            )}
+                    <MultiSelect
+                      label="Profesores"
+                      items={profesores.map(p => ({ value: p.id, label: displayName(p) }))}
+                      value={profesoresSeleccionados}
+                      onChange={setProfesoresSeleccionados}
+                    />
+                    <MultiSelect
+                      label="Alumnos"
+                      items={estudiantes.map(a => ({ value: a.id, label: displayName(a) }))}
+                      value={alumnosSeleccionados}
+                      onChange={setAlumnosSeleccionados}
+                    />
+                  </div>
+                )}
 
                 {/* Filtro de Foco */}
                 <div>
-                <MultiSelect
-                  label="Foco"
-                  items={Object.entries(focoLabels).map(([key, label]) => ({ value: key, label }))}
-                  value={focosSeleccionados}
-                  onChange={setFocosSeleccionados}
-                />
+                  <MultiSelect
+                    label="Foco"
+                    items={Object.entries(focoLabels).map(([key, label]) => ({ value: key, label }))}
+                    value={focosSeleccionados}
+                    onChange={setFocosSeleccionados}
+                  />
+                </div>
               </div>
-            </div>
             </CardContent>
           </Card>
-              </div>
+        </div>
       )}
 
       <div className={componentStyles.layout.page}>
@@ -1091,15 +1092,16 @@ function EstadisticasPageContent() {
               value={tabActiva}
               onChange={setTabActiva}
               className="w-full"
-            items={[
-              { value: 'resumen', label: 'Resumen', icon: BarChart3 },
-              { value: 'progreso', label: 'Progreso', icon: TrendingUp },
-              { value: 'tipos', label: 'Tipos', icon: PieChart },
-              { value: 'top', label: 'Top', icon: Star },
-              { value: 'autoevaluaciones', label: 'Sesiones', icon: List },
-              { value: 'feedback', label: 'Feedback', icon: MessageSquare },
-              ...(!isEstu ? [{ value: 'comparar', label: 'Comparar', icon: Activity }] : []),
-            ]}
+              items={[
+                { value: 'resumen', label: 'Resumen', icon: BarChart3 },
+                { value: 'progreso', label: 'Progreso', icon: TrendingUp },
+                { value: 'habilidades', label: 'Habilidades', icon: Star },
+                { value: 'tipos', label: 'Tipos de Bloque', icon: Layers },
+                { value: 'top', label: 'Top', icon: Star },
+                { value: 'autoevaluaciones', label: 'Sesiones', icon: List },
+                { value: 'feedback', label: 'Feedback', icon: MessageSquare },
+                ...(!isEstu ? [{ value: 'comparar', label: 'Comparar', icon: Activity }] : []),
+              ]}
             />
           </div>
         </Card>
@@ -1116,32 +1118,31 @@ function EstadisticasPageContent() {
         )}
 
         {tabActiva === 'progreso' && (
-          <>
-            <ProgresoTab
-              datosLinea={datosLinea}
-              granularidad={granularidad}
-              onGranularidadChange={setGranularidad}
-              tiempoRealVsObjetivo={tiempoRealVsObjetivo}
-              kpis={kpis}
-            />
-            <HeatmapActividad
-              data={heatmapData}
-              periodoInicio={periodoInicio}
-              periodoFin={periodoFin}
-              registrosFiltrados={registrosFiltradosUnicos}
-            />
-            {progresoPorPieza.length > 0 && (
-              <ProgresoPorPieza progresoPorPieza={progresoPorPieza} />
-            )}
-          </>
+          <ProgresoTab
+            datosLinea={datosLinea}
+            granularidad={granularidad}
+            onGranularidadChange={setGranularidad}
+            tiempoRealVsObjetivo={tiempoRealVsObjetivo}
+            kpis={kpis}
+          />
+        )}
+
+        {tabActiva === 'habilidades' && (
+          <HabilidadesView alumnoId={userIdActual} />
         )}
 
         {tabActiva === 'tipos' && (
           <TiposBloquesTab tiposBloques={tiposBloques} />
         )}
 
+
+
+
+
+
+
         {tabActiva === 'top' && (
-          <TopEjerciciosTab 
+          <TopEjerciciosTab
             topEjercicios={topEjercicios}
             bloquesFiltrados={bloquesFiltrados}
             registrosFiltrados={registrosFiltradosUnicos}
@@ -1267,261 +1268,261 @@ function EstadisticasPageContent() {
                     Tiempo de Estudio
                   </CardTitle>
                 </CardHeader>
-              <CardContent className={`${isMobile ? 'px-1 pb-1' : 'p-1.5'} sm:p-2 md:p-3`}>
-                {datosLinea.length === 0 ? (
-                  <div className="text-center py-8 sm:py-12">
-                    <TrendingUp className={componentStyles.components.emptyStateIcon} />
-                    <p className={componentStyles.components.emptyStateText}>No hay datos en el periodo seleccionado</p>
-                  </div>
-                ) : (
-                  <div className="w-full overflow-x-auto -mx-2 px-2">
-                    <ResponsiveContainer width="100%" height={isMobile ? 180 : 250} minHeight={180}>
-                      <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                        <XAxis 
-                          dataKey="fecha" 
-                          tick={{ fontSize: isMobile ? 9 : 11 }}
-                          angle={isMobile ? -45 : 0}
-                          textAnchor={isMobile ? 'end' : 'middle'}
-                          height={isMobile ? 60 : 30}
-                          interval={isMobile ? 'preserveStartEnd' : 0}
-                          tickFormatter={(fecha) => {
-                            if (granularidad === 'dia') {
-                              const d = parseLocalDate(fecha);
-                              return isMobile 
-                                ? `${d.getDate()}/${d.getMonth() + 1}`
-                                : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-                            } else if (granularidad === 'semana') {
-                              const d = parseLocalDate(fecha);
-                              return `${d.getDate()}/${d.getMonth() + 1}`;
-                            } else {
-                              const [y, m] = fecha.split('-');
-                              const d = new Date(Number(y), Number(m) - 1, 1);
-                              return isMobile
-                                ? `${m}/${y.slice(-2)}`
-                                : d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
-                            }
-                          }}
-                        />
-                        <YAxis 
-                          tick={{ fontSize: isMobile ? 9 : 11 }} 
-                          width={isMobile ? 40 : 60}
-                          tickFormatter={(v) => {
-                            const minutos = safeNumber(v);
-                            if (minutos >= 60) {
-                              const horas = Math.floor(minutos / 60);
-                              return isMobile ? `${horas}h` : `${horas} h`;
-                            }
-                            return isMobile ? `${minutos}m` : `${minutos} min`;
-                          }}
-                          label={isMobile ? undefined : { value: 'Tiempo', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} 
-                        />
-                      <RechartsTooltip 
-                        content={({ active, payload }) => {
-                          if (!active || !payload || payload.length === 0) return null;
-                          return (
-                            <div className={`bg-card border border-[var(--color-border-default)] ${componentStyles.containers.panelBase} shadow-card p-3`}>
-                              <p className="text-xs font-semibold mb-2 text-[var(--color-text-primary)]">
-                                {granularidad === 'dia' 
-                                  ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
-                                  : payload[0]?.payload.fecha}
-                              </p>
-                              <p className="text-xs text-[var(--color-primary)]">
-                                <strong>Tiempo:</strong> {formatDuracionHM(safeNumber(payload[0]?.payload.tiempo) * 60)}
-                              </p>
-                            </div>
-                          );
-                        }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="tiempo"
-                        stroke={designSystem.colors.primary}
-                        strokeWidth={isMobile ? 1.5 : 2}
-                        name="Tiempo"
-                        dot={{ r: isMobile ? 2 : 3, stroke: designSystem.colors.primary, fill: designSystem.colors.primary }}
-                        activeDot={{ r: isMobile ? 3 : 4 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                <CardContent className={`${isMobile ? 'px-1 pb-1' : 'p-1.5'} sm:p-2 md:p-3`}>
+                  {datosLinea.length === 0 ? (
+                    <div className="text-center py-8 sm:py-12">
+                      <TrendingUp className={componentStyles.components.emptyStateIcon} />
+                      <p className={componentStyles.components.emptyStateText}>No hay datos en el periodo seleccionado</p>
+                    </div>
+                  ) : (
+                    <div className="w-full overflow-x-auto -mx-2 px-2">
+                      <ResponsiveContainer width="100%" height={isMobile ? 180 : 250} minHeight={180}>
+                        <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                          <XAxis
+                            dataKey="fecha"
+                            tick={{ fontSize: isMobile ? 9 : 11 }}
+                            angle={isMobile ? -45 : 0}
+                            textAnchor={isMobile ? 'end' : 'middle'}
+                            height={isMobile ? 60 : 30}
+                            interval={isMobile ? 'preserveStartEnd' : 0}
+                            tickFormatter={(fecha) => {
+                              if (granularidad === 'dia') {
+                                const d = parseLocalDate(fecha);
+                                return isMobile
+                                  ? `${d.getDate()}/${d.getMonth() + 1}`
+                                  : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                              } else if (granularidad === 'semana') {
+                                const d = parseLocalDate(fecha);
+                                return `${d.getDate()}/${d.getMonth() + 1}`;
+                              } else {
+                                const [y, m] = fecha.split('-');
+                                const d = new Date(Number(y), Number(m) - 1, 1);
+                                return isMobile
+                                  ? `${m}/${y.slice(-2)}`
+                                  : d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+                              }
+                            }}
+                          />
+                          <YAxis
+                            tick={{ fontSize: isMobile ? 9 : 11 }}
+                            width={isMobile ? 40 : 60}
+                            tickFormatter={(v) => {
+                              const minutos = safeNumber(v);
+                              if (minutos >= 60) {
+                                const horas = Math.floor(minutos / 60);
+                                return isMobile ? `${horas}h` : `${horas} h`;
+                              }
+                              return isMobile ? `${minutos}m` : `${minutos} min`;
+                            }}
+                            label={isMobile ? undefined : { value: 'Tiempo', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }}
+                          />
+                          <RechartsTooltip
+                            content={({ active, payload }) => {
+                              if (!active || !payload || payload.length === 0) return null;
+                              return (
+                                <div className={`bg-card border border-[var(--color-border-default)] ${componentStyles.containers.panelBase} shadow-card p-3`}>
+                                  <p className="text-xs font-semibold mb-2 text-[var(--color-text-primary)]">
+                                    {granularidad === 'dia'
+                                      ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
+                                      : payload[0]?.payload.fecha}
+                                  </p>
+                                  <p className="text-xs text-[var(--color-primary)]">
+                                    <strong>Tiempo:</strong> {formatDuracionHM(safeNumber(payload[0]?.payload.tiempo) * 60)}
+                                  </p>
+                                </div>
+                              );
+                            }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="tiempo"
+                            stroke={designSystem.colors.primary}
+                            strokeWidth={isMobile ? 1.5 : 2}
+                            name="Tiempo"
+                            dot={{ r: isMobile ? 2 : 3, stroke: designSystem.colors.primary, fill: designSystem.colors.primary }}
+                            activeDot={{ r: isMobile ? 3 : 4 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-            <Card className={`${componentStyles.components.cardBase} ${isMobile ? '!p-0' : ''}`}>
-              <CardHeader className={`${isMobile ? 'px-1 pt-1 pb-0.5' : 'p-1.5'} sm:p-2 md:p-3`}>
-                <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
-                  <Smile className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-info)]" />
-                  Autoevaluación (1-4)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className={`${isMobile ? 'px-1 pb-1' : 'p-1.5'} sm:p-2 md:p-3`}>
-                {datosLinea.filter(d => d.satisfaccion !== null).length === 0 ? (
-                  <div className="text-center py-8 sm:py-12">
-                    <Smile className={componentStyles.components.emptyStateIcon} />
-                    <p className={componentStyles.components.emptyStateText}>No hay datos de autoevaluación</p>
-                  </div>
-                ) : (
-                  <div className="w-full overflow-x-auto -mx-2 px-2">
-                    <ResponsiveContainer width="100%" height={isMobile ? 180 : 250} minHeight={180}>
-                      <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                        <XAxis 
-                          dataKey="fecha" 
-                          tick={{ fontSize: isMobile ? 9 : 11 }}
-                          angle={isMobile ? -45 : 0}
-                          textAnchor={isMobile ? 'end' : 'middle'}
-                          height={isMobile ? 60 : 30}
-                          interval={isMobile ? 'preserveStartEnd' : 0}
-                          tickFormatter={(fecha) => {
-                            if (granularidad === 'dia') {
-                              const d = parseLocalDate(fecha);
-                              return isMobile 
-                                ? `${d.getDate()}/${d.getMonth() + 1}`
-                                : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-                            } else if (granularidad === 'semana') {
-                              const d = parseLocalDate(fecha);
-                              return `${d.getDate()}/${d.getMonth() + 1}`;
-                            } else {
-                              const [y, m] = fecha.split('-');
-                              const d = new Date(Number(y), Number(m) - 1, 1);
-                              return isMobile
-                                ? `${m}/${y.slice(-2)}`
-                                : d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
-                            }
-                          }}
-                        />
-                        <YAxis 
-                          tick={{ fontSize: isMobile ? 9 : 11 }} 
-                          width={isMobile ? 30 : 60}
-                          domain={[0, 4]} 
-                          label={isMobile ? undefined : { value: 'Nivel', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} 
-                        />
-                      <RechartsTooltip 
-                        content={({ active, payload }) => {
-                          if (!active || !payload || payload.length === 0) return null;
-                          return (
-                            <div className={`bg-card border border-[var(--color-border-default)] ${componentStyles.containers.panelBase} shadow-card p-3`}>
-                              <p className="text-xs font-semibold mb-2 text-[var(--color-text-primary)]">
-                                {granularidad === 'dia' 
-                                  ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
-                                  : payload[0]?.payload.fecha}
-                              </p>
-                              {payload[0]?.payload.satisfaccion !== null && (
-                                <p className="text-xs text-[var(--color-info)]">
-                                  <strong>Autoevaluación:</strong> {payload[0]?.payload.satisfaccion}/4
-                                </p>
-                              )}
-                            </div>
-                          );
-                        }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="satisfaccion"
-                        stroke={designSystem.colors.secondary}
-                        strokeWidth={isMobile ? 1.5 : 2}
-                        name="Autoevaluación"
-                        dot={{ r: isMobile ? 2 : 3, stroke: designSystem.colors.secondary, fill: designSystem.colors.secondary }}
-                        connectNulls
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              <Card className={`${componentStyles.components.cardBase} ${isMobile ? '!p-0' : ''}`}>
+                <CardHeader className={`${isMobile ? 'px-1 pt-1 pb-0.5' : 'p-1.5'} sm:p-2 md:p-3`}>
+                  <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
+                    <Smile className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-info)]" />
+                    Autoevaluación (1-4)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className={`${isMobile ? 'px-1 pb-1' : 'p-1.5'} sm:p-2 md:p-3`}>
+                  {datosLinea.filter(d => d.satisfaccion !== null).length === 0 ? (
+                    <div className="text-center py-8 sm:py-12">
+                      <Smile className={componentStyles.components.emptyStateIcon} />
+                      <p className={componentStyles.components.emptyStateText}>No hay datos de autoevaluación</p>
+                    </div>
+                  ) : (
+                    <div className="w-full overflow-x-auto -mx-2 px-2">
+                      <ResponsiveContainer width="100%" height={isMobile ? 180 : 250} minHeight={180}>
+                        <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                          <XAxis
+                            dataKey="fecha"
+                            tick={{ fontSize: isMobile ? 9 : 11 }}
+                            angle={isMobile ? -45 : 0}
+                            textAnchor={isMobile ? 'end' : 'middle'}
+                            height={isMobile ? 60 : 30}
+                            interval={isMobile ? 'preserveStartEnd' : 0}
+                            tickFormatter={(fecha) => {
+                              if (granularidad === 'dia') {
+                                const d = parseLocalDate(fecha);
+                                return isMobile
+                                  ? `${d.getDate()}/${d.getMonth() + 1}`
+                                  : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                              } else if (granularidad === 'semana') {
+                                const d = parseLocalDate(fecha);
+                                return `${d.getDate()}/${d.getMonth() + 1}`;
+                              } else {
+                                const [y, m] = fecha.split('-');
+                                const d = new Date(Number(y), Number(m) - 1, 1);
+                                return isMobile
+                                  ? `${m}/${y.slice(-2)}`
+                                  : d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+                              }
+                            }}
+                          />
+                          <YAxis
+                            tick={{ fontSize: isMobile ? 9 : 11 }}
+                            width={isMobile ? 30 : 60}
+                            domain={[0, 4]}
+                            label={isMobile ? undefined : { value: 'Nivel', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }}
+                          />
+                          <RechartsTooltip
+                            content={({ active, payload }) => {
+                              if (!active || !payload || payload.length === 0) return null;
+                              return (
+                                <div className={`bg-card border border-[var(--color-border-default)] ${componentStyles.containers.panelBase} shadow-card p-3`}>
+                                  <p className="text-xs font-semibold mb-2 text-[var(--color-text-primary)]">
+                                    {granularidad === 'dia'
+                                      ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
+                                      : payload[0]?.payload.fecha}
+                                  </p>
+                                  {payload[0]?.payload.satisfaccion !== null && (
+                                    <p className="text-xs text-[var(--color-info)]">
+                                      <strong>Autoevaluación:</strong> {payload[0]?.payload.satisfaccion}/4
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="satisfaccion"
+                            stroke={designSystem.colors.secondary}
+                            strokeWidth={isMobile ? 1.5 : 2}
+                            name="Autoevaluación"
+                            dot={{ r: isMobile ? 2 : 3, stroke: designSystem.colors.secondary, fill: designSystem.colors.secondary }}
+                            connectNulls
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-            <Card className={`${componentStyles.components.cardBase} ${isMobile ? '!p-0' : ''}`}>
-              <CardHeader className={`${isMobile ? 'px-1 pt-1 pb-0.5' : 'p-1.5'} sm:p-2 md:p-3`}>
-                <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
-                  <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primary)]" />
-                  Ejercicios: Completados vs Omitidos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className={`${isMobile ? 'px-1 pb-1' : 'p-1.5'} sm:p-2 md:p-3`}>
-                {datosLinea.length === 0 ? (
-                  <div className="text-center py-8 sm:py-12">
-                    <Layers className={componentStyles.components.emptyStateIcon} />
-                    <p className={componentStyles.components.emptyStateText}>No hay datos</p>
-                  </div>
-                ) : (
-                  <div className="w-full overflow-x-auto -mx-2 px-2">
-                    <ResponsiveContainer width="100%" height={isMobile ? 180 : 250} minHeight={180}>
-                      <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                        <XAxis 
-                          dataKey="fecha" 
-                          tick={{ fontSize: isMobile ? 9 : 11 }}
-                          angle={isMobile ? -45 : 0}
-                          textAnchor={isMobile ? 'end' : 'middle'}
-                          height={isMobile ? 60 : 30}
-                          interval={isMobile ? 'preserveStartEnd' : 0}
-                          tickFormatter={(fecha) => {
-                            if (granularidad === 'dia') {
-                              const d = parseLocalDate(fecha);
-                              return isMobile 
-                                ? `${d.getDate()}/${d.getMonth() + 1}`
-                                : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-                            } else if (granularidad === 'semana') {
-                              const d = parseLocalDate(fecha);
-                              return `${d.getDate()}/${d.getMonth() + 1}`;
-                            } else {
-                              const [y, m] = fecha.split('-');
-                              const d = new Date(Number(y), Number(m) - 1, 1);
-                              return isMobile
-                                ? `${m}/${y.slice(-2)}`
-                                : d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
-                            }
-                          }}
-                        />
-                        <YAxis 
-                          tick={{ fontSize: isMobile ? 9 : 11 }} 
-                          width={isMobile ? 30 : 60}
-                          label={isMobile ? undefined : { value: 'Ejercicios', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} 
-                        />
-                      <RechartsTooltip 
-                        content={({ active, payload }) => {
-                          if (!active || !payload || payload.length === 0) return null;
-                          return (
-                            <div className={`bg-card border border-[var(--color-border-default)] ${componentStyles.containers.panelBase} shadow-card p-3`}>
-                              <p className="text-xs font-semibold mb-2 text-[var(--color-text-primary)]">
-                                {granularidad === 'dia' 
-                                  ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
-                                  : payload[0]?.payload.fecha}
-                              </p>
-                              <p className="text-xs text-[var(--color-success)]">
-                                <strong>Completados:</strong> {payload[0]?.payload.completados}
-                              </p>
-                              <p className="text-xs text-[var(--color-danger)]">
-                                <strong>Omitidos:</strong> {payload[1]?.payload.omitidos}
-                              </p>
-                            </div>
-                          );
-                        }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="completados"
-                        stroke={designSystem.colors.success}
-                        strokeWidth={isMobile ? 1.5 : 2}
-                        name="Completados"
-                        dot={{ r: isMobile ? 2 : 3, stroke: designSystem.colors.success, fill: designSystem.colors.success }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="omitidos"
-                        stroke={designSystem.colors.danger}
-                        strokeWidth={isMobile ? 1.5 : 2}
-                        name="Omitidos"
-                        dot={{ r: isMobile ? 2 : 3, stroke: designSystem.colors.danger, fill: designSystem.colors.danger }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                  </div>
-                )}
-              </CardContent>
+              <Card className={`${componentStyles.components.cardBase} ${isMobile ? '!p-0' : ''}`}>
+                <CardHeader className={`${isMobile ? 'px-1 pt-1 pb-0.5' : 'p-1.5'} sm:p-2 md:p-3`}>
+                  <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
+                    <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primary)]" />
+                    Ejercicios: Completados vs Omitidos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className={`${isMobile ? 'px-1 pb-1' : 'p-1.5'} sm:p-2 md:p-3`}>
+                  {datosLinea.length === 0 ? (
+                    <div className="text-center py-8 sm:py-12">
+                      <Layers className={componentStyles.components.emptyStateIcon} />
+                      <p className={componentStyles.components.emptyStateText}>No hay datos</p>
+                    </div>
+                  ) : (
+                    <div className="w-full overflow-x-auto -mx-2 px-2">
+                      <ResponsiveContainer width="100%" height={isMobile ? 180 : 250} minHeight={180}>
+                        <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                          <XAxis
+                            dataKey="fecha"
+                            tick={{ fontSize: isMobile ? 9 : 11 }}
+                            angle={isMobile ? -45 : 0}
+                            textAnchor={isMobile ? 'end' : 'middle'}
+                            height={isMobile ? 60 : 30}
+                            interval={isMobile ? 'preserveStartEnd' : 0}
+                            tickFormatter={(fecha) => {
+                              if (granularidad === 'dia') {
+                                const d = parseLocalDate(fecha);
+                                return isMobile
+                                  ? `${d.getDate()}/${d.getMonth() + 1}`
+                                  : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                              } else if (granularidad === 'semana') {
+                                const d = parseLocalDate(fecha);
+                                return `${d.getDate()}/${d.getMonth() + 1}`;
+                              } else {
+                                const [y, m] = fecha.split('-');
+                                const d = new Date(Number(y), Number(m) - 1, 1);
+                                return isMobile
+                                  ? `${m}/${y.slice(-2)}`
+                                  : d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+                              }
+                            }}
+                          />
+                          <YAxis
+                            tick={{ fontSize: isMobile ? 9 : 11 }}
+                            width={isMobile ? 30 : 60}
+                            label={isMobile ? undefined : { value: 'Ejercicios', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }}
+                          />
+                          <RechartsTooltip
+                            content={({ active, payload }) => {
+                              if (!active || !payload || payload.length === 0) return null;
+                              return (
+                                <div className={`bg-card border border-[var(--color-border-default)] ${componentStyles.containers.panelBase} shadow-card p-3`}>
+                                  <p className="text-xs font-semibold mb-2 text-[var(--color-text-primary)]">
+                                    {granularidad === 'dia'
+                                      ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
+                                      : payload[0]?.payload.fecha}
+                                  </p>
+                                  <p className="text-xs text-[var(--color-success)]">
+                                    <strong>Completados:</strong> {payload[0]?.payload.completados}
+                                  </p>
+                                  <p className="text-xs text-[var(--color-danger)]">
+                                    <strong>Omitidos:</strong> {payload[1]?.payload.omitidos}
+                                  </p>
+                                </div>
+                              );
+                            }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="completados"
+                            stroke={designSystem.colors.success}
+                            strokeWidth={isMobile ? 1.5 : 2}
+                            name="Completados"
+                            dot={{ r: isMobile ? 2 : 3, stroke: designSystem.colors.success, fill: designSystem.colors.success }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="omitidos"
+                            stroke={designSystem.colors.danger}
+                            strokeWidth={isMobile ? 1.5 : 2}
+                            name="Omitidos"
+                            dot={{ r: isMobile ? 2 : 3, stroke: designSystem.colors.danger, fill: designSystem.colors.danger }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </CardContent>
               </Card>
             </div>
           </div>
@@ -1534,7 +1535,7 @@ function EstadisticasPageContent() {
           <Card className={componentStyles.components.cardBase}>
             <CardHeader>
               <CardTitle className="text-base md:text-lg">
-                {isEstu 
+                {isEstu
                   ? `Feedback del Profesor (${feedbackProfesor.length})`
                   : `Feedbacks de Estudiantes (${feedbacksParaProfAdmin.length})`
                 }
@@ -1566,45 +1567,45 @@ function EstadisticasPageContent() {
                             const endIndex = startIndex + feedbackPageSize;
                             return feedbackProfesor.slice(startIndex, endIndex);
                           })().map(f => {
-                          const profesor = usuarios.find(u => u.id === f.profesorId);
-                          // Solo ADMIN y PROF pueden editar, y solo el profesor creador o un ADMIN
-                          const puedeEditar = (isAdmin || isProf) && (isAdmin || f.profesorId === userIdActual);
-                          const fechaSemana = f.semanaInicioISO ? parseLocalDate(f.semanaInicioISO) : null;
-                          const fechaFormateada = fechaSemana ? fechaSemana.toLocaleDateString('es-ES', { 
-                            weekday: 'short',
-                            day: 'numeric', 
-                            month: 'short', 
-                            year: 'numeric' 
-                          }) : 'N/A';
-                          
-                          return (
-                            <tr key={f.id} className="border-b border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]">
-                              <td className="p-3 text-sm text-[var(--color-text-primary)]">
-                                {profesor ? displayName(profesor) : f.profesorId || 'N/A'}
-                              </td>
-                              <td className="p-3 text-sm text-[var(--color-text-secondary)]">
-                                {fechaFormateada}
-                              </td>
-                              <td className="p-3 text-sm text-[var(--color-text-primary)] max-w-md">
-                                <p className="break-words whitespace-pre-wrap">
-                                  {f.notaProfesor || '(Sin nota)'}
-                                </p>
-                              </td>
-                              <td className="p-3">
-                                {f.mediaLinks && f.mediaLinks.length > 0 ? (
-                                  <MediaLinksBadges 
-                                    mediaLinks={f.mediaLinks}
-                                    onMediaClick={(index) => handleMediaClick(f.mediaLinks, index)}
-                                  />
-                                ) : (
-                                  <span className="text-xs text-[var(--color-text-muted)]">-</span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                            const profesor = usuarios.find(u => u.id === f.profesorId);
+                            // Solo ADMIN y PROF pueden editar, y solo el profesor creador o un ADMIN
+                            const puedeEditar = (isAdmin || isProf) && (isAdmin || f.profesorId === userIdActual);
+                            const fechaSemana = f.semanaInicioISO ? parseLocalDate(f.semanaInicioISO) : null;
+                            const fechaFormateada = fechaSemana ? fechaSemana.toLocaleDateString('es-ES', {
+                              weekday: 'short',
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric'
+                            }) : 'N/A';
+
+                            return (
+                              <tr key={f.id} className="border-b border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]">
+                                <td className="p-3 text-sm text-[var(--color-text-primary)]">
+                                  {profesor ? displayName(profesor) : f.profesorId || 'N/A'}
+                                </td>
+                                <td className="p-3 text-sm text-[var(--color-text-secondary)]">
+                                  {fechaFormateada}
+                                </td>
+                                <td className="p-3 text-sm text-[var(--color-text-primary)] max-w-md">
+                                  <p className="break-words whitespace-pre-wrap">
+                                    {f.notaProfesor || '(Sin nota)'}
+                                  </p>
+                                </td>
+                                <td className="p-3">
+                                  {f.mediaLinks && f.mediaLinks.length > 0 ? (
+                                    <MediaLinksBadges
+                                      mediaLinks={f.mediaLinks}
+                                      onMediaClick={(index) => handleMediaClick(f.mediaLinks, index)}
+                                    />
+                                  ) : (
+                                    <span className="text-xs text-[var(--color-text-muted)]">-</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     </div>
                     <TablePagination
                       data={feedbackProfesor}
@@ -1624,7 +1625,7 @@ function EstadisticasPageContent() {
                   <div className="text-center py-12">
                     <MessageSquare className={componentStyles.components.emptyStateIcon} />
                     <p className={componentStyles.components.emptyStateText}>
-                      {alumnosSeleccionados.length > 0 
+                      {alumnosSeleccionados.length > 0
                         ? 'No hay feedbacks para los estudiantes seleccionados en este periodo'
                         : 'No hay feedbacks en este periodo'
                       }
@@ -1633,8 +1634,8 @@ function EstadisticasPageContent() {
                       <div className="mt-4 p-3 bg-[var(--color-surface-muted)] rounded text-xs text-left">
                         <p className="font-semibold mb-2">Total en BD: {feedbacksSemanal.length} feedbacks</p>
                         <p>Estudiantes cargados: {estudiantes.length}</p>
-                        <p>Filtros aplicados: {alumnosSeleccionados.length > 0 ? `${alumnosSeleccionados.length} estudiantes` : 'Todos'} | 
-                           {periodoInicio || periodoFin ? ` Período: ${periodoInicio || '...'} - ${periodoFin || '...'}` : ' Sin período'}
+                        <p>Filtros aplicados: {alumnosSeleccionados.length > 0 ? `${alumnosSeleccionados.length} estudiantes` : 'Todos'} |
+                          {periodoInicio || periodoFin ? ` Período: ${periodoInicio || '...'} - ${periodoFin || '...'}` : ' Sin período'}
                         </p>
                       </div>
                     )}
@@ -1647,13 +1648,13 @@ function EstadisticasPageContent() {
                       // Solo ADMIN y PROF pueden editar, y solo el profesor creador o un ADMIN
                       const puedeEditar = (isAdmin || isProf) && (isAdmin || f.profesorId === userIdActual);
                       const fechaSemana = f.semanaInicioISO ? parseLocalDate(f.semanaInicioISO) : null;
-                      const fechaFormateada = fechaSemana ? fechaSemana.toLocaleDateString('es-ES', { 
+                      const fechaFormateada = fechaSemana ? fechaSemana.toLocaleDateString('es-ES', {
                         weekday: 'short',
-                        day: 'numeric', 
-                        month: 'short', 
-                        year: 'numeric' 
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
                       }) : 'N/A';
-                      
+
                       return (
                         <div key={f.id} className="p-3 border border-[var(--color-border-default)] rounded relative">
                           <div className="flex items-start justify-between gap-2">
@@ -1663,7 +1664,7 @@ function EstadisticasPageContent() {
                               </p>
                               {f.mediaLinks && f.mediaLinks.length > 0 && (
                                 <div className="mb-2">
-                                  <MediaLinksBadges 
+                                  <MediaLinksBadges
                                     mediaLinks={f.mediaLinks}
                                     onMediaClick={(index) => handleMediaClick(f.mediaLinks, index)}
                                   />
@@ -1677,8 +1678,8 @@ function EstadisticasPageContent() {
                                   <div><strong>Creado:</strong> {
                                     (() => {
                                       const createdDate = f.created_at || f.createdAt;
-                                      const date = typeof createdDate === 'string' 
-                                        ? parseLocalDate(createdDate.split('T')[0]) 
+                                      const date = typeof createdDate === 'string'
+                                        ? parseLocalDate(createdDate.split('T')[0])
                                         : new Date(createdDate);
                                       return date.toLocaleDateString('es-ES', {
                                         weekday: 'short',
@@ -1730,12 +1731,12 @@ function EstadisticasPageContent() {
       {/* Drawer de edición de feedback */}
       {feedbackDrawer && (
         <>
-          <div 
+          <div
             className="fixed inset-0 bg-black/40 z-[100]"
             onClick={() => setFeedbackDrawer(null)}
           />
           <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
-            <div 
+            <div
               className="bg-[var(--color-surface-elevated)] w-full max-w-lg max-h-[95vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-4 border border-[var(--color-border-default)]"
               onClick={(e) => e.stopPropagation()}
             >
@@ -1749,11 +1750,11 @@ function EstadisticasPageContent() {
                       </h2>
                     </div>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => setFeedbackDrawer(null)} 
-                    className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-xl touch-manipulation" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFeedbackDrawer(null)}
+                    className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-xl touch-manipulation"
                     aria-label="Cerrar modal"
                   >
                     <X className="w-5 h-5" />
@@ -1767,7 +1768,7 @@ function EstadisticasPageContent() {
                   <Textarea
                     id="nota"
                     value={feedbackDrawer.notaProfesor}
-                    onChange={(e) => setFeedbackDrawer({...feedbackDrawer, notaProfesor: e.target.value})}
+                    onChange={(e) => setFeedbackDrawer({ ...feedbackDrawer, notaProfesor: e.target.value })}
                     placeholder="Comentarios, áreas de mejora, felicitaciones..."
                     rows={8}
                     className={`resize-none mt-1 ${componentStyles.controls.inputDefault}`}
@@ -1779,23 +1780,23 @@ function EstadisticasPageContent() {
 
                 <MediaLinksInput
                   value={feedbackDrawer.mediaLinks}
-                  onChange={(links) => setFeedbackDrawer({...feedbackDrawer, mediaLinks: links})}
+                  onChange={(links) => setFeedbackDrawer({ ...feedbackDrawer, mediaLinks: links })}
                 />
               </div>
 
               <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
                 <div className="flex gap-3 mb-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setFeedbackDrawer(null)} 
+                  <Button
+                    variant="outline"
+                    onClick={() => setFeedbackDrawer(null)}
                     className={`flex-1 ${componentStyles.buttons.outline}`}
                   >
                     Cancelar
                   </Button>
-                  <Button 
+                  <Button
                     variant="primary"
-                    onClick={guardarFeedback} 
-                    disabled={actualizarFeedbackMutation.isPending} 
+                    onClick={guardarFeedback}
+                    disabled={actualizarFeedbackMutation.isPending}
                     className={`flex-1 ${componentStyles.buttons.primary}`}
                   >
                     <Save className="w-4 h-4 mr-2" />

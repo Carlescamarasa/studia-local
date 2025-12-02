@@ -41,6 +41,12 @@ export interface StudiaUser {
   is_active: boolean;
   created_at: string; // ISO 8601 string
   updated_at: string; // ISO 8601 string
+
+  /**
+   * Nivel técnico numérico (1-100) para determinar BPMs objetivos.
+   * El campo 'nivel' (string) se mantiene para descripción visual.
+   */
+  nivelTecnico?: number;
 }
 
 /**
@@ -84,6 +90,15 @@ export type CreatePiezaInput = Omit<Pieza, 'id' | 'created_at' | 'updated_at'>;
 export type UpdatePiezaInput = Partial<Omit<Pieza, 'id' | 'created_at'>> & { id: string };
 
 /**
+ * Definición de BPM objetivo por nivel técnico
+ */
+export interface PPMObjetivoPorNivel {
+  nivel: number;
+  bpm: number;
+  unidad: 'negra' | 'blanca' | 'blancaConPuntillo' | 'corchea';
+}
+
+/**
  * Bloque/Ejercicio de práctica
  * 
  * Representa un ejercicio o bloque que forma parte de una sesión de práctica.
@@ -103,6 +118,24 @@ export interface Bloque {
   profesorId: string;
   created_at: string;
   updated_at: string;
+
+  /**
+   * Etiquetas de habilidades maestras que trabaja este ejercicio.
+   * Ej: ['motricidad', 'registro', 'sonido']
+   */
+  skillTags?: string[];
+
+  /**
+   * Nivel de dificultad específico para cada habilidad (1-10).
+   * Permite que un ejercicio sea fácil en 'motricidad' (2) pero difícil en 'resistencia' (8).
+   */
+  difficultyLevels?: Record<string, number>;
+
+  /**
+   * BPMs objetivo según el nivel técnico del alumno.
+   * Permite escalar la dificultad del ejercicio automáticamente.
+   */
+  targetPPMs?: PPMObjetivoPorNivel[];
 }
 
 export type CreateBloqueInput = Omit<Bloque, 'id' | 'created_at' | 'updated_at'>;
@@ -269,6 +302,15 @@ export interface RegistroBloque {
   inicioISO: string; // ISO 8601
   finISO?: string | null; // ISO 8601
   created_at: string;
+
+  /**
+   * BPM real alcanzado durante la práctica del bloque.
+   * Se registra automáticamente al finalizar.
+   */
+  ppmAlcanzado?: {
+    bpm: number;
+    unidad: 'negra' | 'blanca' | 'blancaConPuntillo' | 'corchea';
+  };
 }
 
 export type CreateRegistroBloqueInput = Omit<RegistroBloque, 'id' | 'created_at'>;
@@ -356,4 +398,50 @@ export interface SupportMensaje {
 
 export type CreateSupportMensajeInput = Omit<SupportMensaje, 'id' | 'created_at'>;
 export type UpdateSupportMensajeInput = Partial<Omit<SupportMensaje, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Estructura de las 5 Habilidades Maestras
+ * 
+ * Define los valores métricos para cada una de las habilidades pedagógicas.
+ */
+export interface HabilidadesMaestras {
+  /** Calidad de sonido (0-10) */
+  sonido?: number;
+
+  /** Flexibilidad y registro (0-10) */
+  flexibilidad?: number;
+
+  /** Motricidad / Digitación (BPM) */
+  motricidad?: number;
+
+  /** Velocidad de articulación (BPM) para diferentes golpes de lengua */
+  articulacion?: {
+    t?: number;   // Simple
+    tk?: number;  // Doble
+    ttk?: number; // Triple
+  };
+
+  /** Capacidad cognitiva / Lectura / Memoria (0-10) */
+  cognitivo?: number;
+}
+
+/**
+ * Evaluación Técnica (Snapshot)
+ * 
+ * Representa una evaluación puntual del perfil técnico de un estudiante.
+ * Permite historizar la evolución de las habilidades en el tiempo.
+ */
+export interface EvaluacionTecnica {
+  id: string;
+  alumnoId: string;
+  profesorId: string;
+  fecha: string; // ISO 8601 (YYYY-MM-DD)
+  habilidades: HabilidadesMaestras;
+  notas?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreateEvaluacionTecnicaInput = Omit<EvaluacionTecnica, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateEvaluacionTecnicaInput = Partial<Omit<EvaluacionTecnica, 'id' | 'created_at'>> & { id: string };
 

@@ -8,10 +8,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Calendar, User, Users, Music, Target, MessageSquare, 
+  Calendar, User, Users, Music, Target, MessageSquare,
   Search, X, Edit, Trash2, Save, Eye, Clock, Activity,
-  ChevronDown, ChevronRight, PlayCircle
+  ChevronDown, ChevronRight, PlayCircle, PlusCircle
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import EvaluacionForm from "@/components/evaluaciones/EvaluacionForm";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -34,8 +42,8 @@ import TablePagination from "@/components/common/TablePagination";
 import RowActionsMenu from "@/components/common/RowActionsMenu";
 
 const pad2 = (n) => String(n).padStart(2, "0");
-const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-const parseLocalDate = (s) => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const parseLocalDate = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
 const startOfMonday = (date) => {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const dow = d.getDay();
@@ -60,6 +68,8 @@ function AgendaPageContent() {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [feedbackDrawer, setFeedbackDrawer] = useState(null);
+  const [showEvaluacionModal, setShowEvaluacionModal] = useState(false);
+  const [selectedStudentForEval, setSelectedStudentForEval] = useState(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [viewingMedia, setViewingMedia] = useState(null);
   const [showMediaPreview, setShowMediaPreview] = useState(false);
@@ -114,19 +124,19 @@ function AgendaPageContent() {
   // Filtrar y validar asignaciones
   const asignaciones = useMemo(() => {
     return asignacionesRaw.filter(a => {
-    // Validar que tiene alumnoId válido
-    if (!a.alumnoId) return false;
-    const alumno = usuarios.find(u => u.id === a.alumnoId);
-    if (!alumno) return false;
-    
-    // Validar que tiene plan y semanas
-    if (!a.plan || !Array.isArray(a.plan.semanas) || a.plan.semanas.length === 0) return false;
-    
-    // Validar que tiene semanaInicioISO válida
-    if (!a.semanaInicioISO || typeof a.semanaInicioISO !== 'string') return false;
-    
-    return true;
-  });
+      // Validar que tiene alumnoId válido
+      if (!a.alumnoId) return false;
+      const alumno = usuarios.find(u => u.id === a.alumnoId);
+      if (!alumno) return false;
+
+      // Validar que tiene plan y semanas
+      if (!a.plan || !Array.isArray(a.plan.semanas) || a.plan.semanas.length === 0) return false;
+
+      // Validar que tiene semanaInicioISO válida
+      if (!a.semanaInicioISO || typeof a.semanaInicioISO !== 'string') return false;
+
+      return true;
+    });
   }, [asignacionesRaw, usuarios]);
 
   const feedbacksSemanal = useMemo(() => feedbacksSemanalRaw, [feedbacksSemanalRaw]);
@@ -147,7 +157,7 @@ function AgendaPageContent() {
           details: error?.details,
           data,
         });
-        
+
         // Si es error 409, buscar el feedback existente directamente en la BD
         if (error?.code === '23505' || error?.message?.includes('duplicate') || error?.status === 409) {
           // Buscar el feedback existente directamente en la base de datos
@@ -157,7 +167,7 @@ function AgendaPageContent() {
               profesorId: data.profesorId,
               semanaInicioISO: data.semanaInicioISO,
             });
-            
+
             if (feedbacksExistentes && feedbacksExistentes.length > 0) {
               const feedbackExistente = feedbacksExistentes[0];
               // Actualizar el feedback existente
@@ -187,7 +197,7 @@ function AgendaPageContent() {
         status: error?.status,
       });
       let errorMsg = '❌ Error al guardar feedback. Inténtalo de nuevo.';
-      
+
       // Mensajes específicos según el tipo de error
       if (error?.code === '23505' || error?.message?.includes('duplicate') || error?.status === 409) {
         errorMsg = '⚠️ Ya existe un feedback para este alumno y semana. Se intentará actualizar automáticamente.';
@@ -198,7 +208,7 @@ function AgendaPageContent() {
       } else if (error?.message) {
         errorMsg = `❌ Error: ${error.message}`;
       }
-      
+
       toast.error(errorMsg);
     },
   });
@@ -231,7 +241,7 @@ function AgendaPageContent() {
         status: error?.status,
       });
       let errorMsg = '❌ Error al actualizar feedback. Inténtalo de nuevo.';
-      
+
       // Mensajes específicos según el tipo de error
       if (error?.code === 'PGRST204' || error?.code === '23503') {
         errorMsg = '❌ Error de integridad: Verifica que el alumno y profesor existan en la base de datos.';
@@ -240,7 +250,7 @@ function AgendaPageContent() {
       } else if (error?.message) {
         errorMsg = `❌ Error: ${error.message}`;
       }
-      
+
       toast.error(errorMsg);
     },
   });
@@ -267,11 +277,11 @@ function AgendaPageContent() {
 
   useEffect(() => {
     if (!feedbackDrawer) return;
-    
+
     const handleKeyDown = (e) => {
       // No procesar si está en un campo editable
       if (shouldIgnoreHotkey(e)) return;
-      
+
       if ((e.ctrlKey || e.metaKey) && e.key === '.') {
         e.preventDefault();
         setFeedbackDrawer(null);
@@ -281,7 +291,7 @@ function AgendaPageContent() {
         guardarFeedback();
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [feedbackDrawer]);
@@ -330,11 +340,11 @@ function AgendaPageContent() {
     if (!existente) {
       existente = feedbacksSemanal.find(
         f => f.alumnoId === alumno.id &&
-             f.profesorId === userIdActual &&
-             f.semanaInicioISO === semanaActualISO
+          f.profesorId === userIdActual &&
+          f.semanaInicioISO === semanaActualISO
       ) || feedbacksSemanal.find(
         f => f.alumnoId === alumno.id &&
-             f.semanaInicioISO === semanaActualISO
+          f.semanaInicioISO === semanaActualISO
       ) || null;
     }
 
@@ -409,8 +419,8 @@ function AgendaPageContent() {
     // Buscar específicamente el feedback del profesor actual para esa semana
     let feedbackExistente = feedbacksSemanal.find(
       f => f.alumnoId === data.alumnoId &&
-           f.profesorId === data.profesorId &&
-           f.semanaInicioISO === data.semanaInicioISO
+        f.profesorId === data.profesorId &&
+        f.semanaInicioISO === data.semanaInicioISO
     );
 
 
@@ -461,36 +471,36 @@ function AgendaPageContent() {
   // Usar useMemo para recalcular cuando userIdActual, feedbacksSemanal o asignaciones cambien
   const tableData = useMemo(() => {
     return estudiantesFiltrados.map(alumno => {
-    const asignacionActiva = asignaciones.find(a => {
-      if (a.alumnoId !== alumno.id) return false;
-      if (a.estado !== 'publicada' && a.estado !== 'en_curso') return false;
-      const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
-      return offset >= 0 && offset < (a.plan?.semanas?.length || 0);
-    });
+      const asignacionActiva = asignaciones.find(a => {
+        if (a.alumnoId !== alumno.id) return false;
+        if (a.estado !== 'publicada' && a.estado !== 'en_curso') return false;
+        const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
+        return offset >= 0 && offset < (a.plan?.semanas?.length || 0);
+      });
 
       // Buscar TODOS los feedbacks para este alumno/semana (puede haber múltiples de diferentes profesores)
       // Mostraremos el más reciente o el del profesor actual si existe
-      const feedbacksAlumno = feedbacksSemanal.filter(f => 
-      f.alumnoId === alumno.id && f.semanaInicioISO === semanaActualISO
-    );
-      
+      const feedbacksAlumno = feedbacksSemanal.filter(f =>
+        f.alumnoId === alumno.id && f.semanaInicioISO === semanaActualISO
+      );
+
       // Si hay múltiples, preferir el del profesor actual, sino el más reciente
       const feedback = feedbacksAlumno.find(f => f.profesorId === userIdActual) || feedbacksAlumno[0];
 
-    const semanaIdx = asignacionActiva ? 
-      calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO) : 0;
-    
-    const semana = asignacionActiva?.plan?.semanas?.[semanaIdx];
+      const semanaIdx = asignacionActiva ?
+        calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO) : 0;
 
-    return {
-      id: alumno.id,
-      alumno,
-      asignacionActiva,
-      semana,
-      semanaIdx,
-      feedback,
-    };
-  });
+      const semana = asignacionActiva?.plan?.semanas?.[semanaIdx];
+
+      return {
+        id: alumno.id,
+        alumno,
+        asignacionActiva,
+        semana,
+        semanaIdx,
+        feedback,
+      };
+    });
   }, [estudiantesFiltrados, asignaciones, feedbacksSemanal, semanaActualISO, userIdActual, usuarios]);
 
   // Calcular datos paginados
@@ -526,7 +536,7 @@ function AgendaPageContent() {
     const semanaActual = totalSemanas > 0 ? (row.semanaIdx + 1) : null;
     const planNombre = row.asignacionActiva?.plan?.nombre || '';
     const isSelected = selectedItems.has(row.id);
-    
+
     const actions = [];
     if (row.asignacionActiva) {
       actions.push({
@@ -540,9 +550,8 @@ function AgendaPageContent() {
     return (
       <div
         key={row.id}
-        className={`rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-default)] dark:bg-[var(--color-surface-elevated)] px-4 py-3 md:px-5 md:py-4 shadow-sm flex flex-col gap-3 md:gap-4 ${
-          isSelected ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]' : ''
-        }`}
+        className={`rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-default)] dark:bg-[var(--color-surface-elevated)] px-4 py-3 md:px-5 md:py-4 shadow-sm flex flex-col gap-3 md:gap-4 ${isSelected ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]' : ''
+          }`}
       >
         {/* Cabecera: avatar + nombre + badges */}
         <div className="flex flex-col gap-2 md:gap-0">
@@ -661,6 +670,19 @@ function AgendaPageContent() {
                   Dar feedback
                 </Button>
               )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedStudentForEval(row.alumno);
+                  setShowEvaluacionModal(true);
+                }}
+                className={`w-full md:w-auto ${componentStyles.buttons.outline}`}
+              >
+                <PlusCircle className="w-4 h-4 mr-2" />
+                Nueva Evaluación
+              </Button>
             </div>
           )
         ) : (
@@ -734,18 +756,33 @@ function AgendaPageContent() {
             {isProfesorOrAdmin && (
               <div className="w-full md:flex-1 md:min-w-[220px] space-y-2">
                 {!row.feedback ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      abrirFeedbackDrawer(row.alumno);
-                    }}
-                    className={`w-full md:w-auto ${componentStyles.buttons.outline}`}
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Dar feedback
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        abrirFeedbackDrawer(row.alumno);
+                      }}
+                      className={`w-full md:w-auto ${componentStyles.buttons.outline}`}
+                    >
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Dar feedback
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedStudentForEval(row.alumno);
+                        setShowEvaluacionModal(true);
+                      }}
+                      className={`w-full md:w-auto ${componentStyles.buttons.outline}`}
+                    >
+                      <PlusCircle className="w-4 h-4 mr-2" />
+                      Nueva Evaluación
+                    </Button>
+                  </div>
                 ) : (
                   <div className="space-y-2">
                     {/* Título: Feedback del profesor · Nombre */}
@@ -786,11 +823,25 @@ function AgendaPageContent() {
                       {(() => {
                         // Verificar permisos: solo el profesor que creó el feedback o ADMIN puede editarlo/eliminarlo
                         const canEditFeedback = isAdmin || row.feedback.profesorId === userIdActual;
-                        
+
                         if (!canEditFeedback) return null;
-                        
+
                         return (
                           <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedStudentForEval(row.alumno);
+                                setShowEvaluacionModal(true);
+                              }}
+                              className={`h-8 ${componentStyles.buttons.ghost}`}
+                              aria-label="Nueva Evaluación"
+                              title="Nueva Evaluación"
+                            >
+                              <PlusCircle className="w-3 h-3" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -842,21 +893,21 @@ function AgendaPageContent() {
         const totalSemanas = row.asignacionActiva?.plan?.semanas?.length || 0;
         const semanaActual = totalSemanas > 0 ? (row.semanaIdx + 1) : null;
         const planNombre = row.asignacionActiva?.plan?.nombre || '';
-        
+
         return (
           <div className="flex items-center justify-between gap-3 min-w-0">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center shrink-0">
-            <span className="text-[var(--color-text-primary)] font-semibold text-sm">
-              {displayName(row.alumno).slice(0, 1).toUpperCase()}
-            </span>
-          </div>
-          <div className="min-w-0 flex-1">
+              <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center shrink-0">
+                <span className="text-[var(--color-text-primary)] font-semibold text-sm">
+                  {displayName(row.alumno).slice(0, 1).toUpperCase()}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-[var(--color-text-primary)] break-words">
-              {displayName(row.alumno)}
-            </p>
-          </div>
-        </div>
+                  {displayName(row.alumno)}
+                </p>
+              </div>
+            </div>
             {row.asignacionActiva && row.semana && (
               <div className="flex items-center gap-2 shrink-0">
                 {semanaActual && totalSemanas > 0 && (
@@ -918,11 +969,11 @@ function AgendaPageContent() {
         }
         return (
           <div className="min-w-0">
-              {row.semana.objetivo && (
+            {row.semana.objetivo && (
               <p className="text-xs text-[var(--color-text-secondary)] break-words">
                 {row.semana.objetivo}
-                </p>
-              )}
+              </p>
+            )}
           </div>
         );
       },
@@ -948,18 +999,18 @@ function AgendaPageContent() {
 
               return (
                 <div key={sesionIdx} className="space-y-1">
-                <div
+                  <div
                     className="flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors hover:bg-[var(--color-surface-muted)] cursor-pointer border border-[var(--color-border-default)]/50"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleSession(sesionKey);
-                  }}
-                >
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSession(sesionKey);
+                    }}
+                  >
                     <PlayCircle className="w-4 h-4 text-[var(--color-info)] shrink-0" />
                     <div className="flex-1 min-w-0 flex items-center gap-2">
                       <span className="text-sm text-[var(--color-text-primary)] break-words">
-                          {sesion.nombre}
-                        </span>
+                        {sesion.nombre}
+                      </span>
                       {tiempoTexto && (
                         <span className="text-xs text-[var(--color-text-secondary)]">
                           · {tiempoTexto}
@@ -972,12 +1023,12 @@ function AgendaPageContent() {
                       )}
                     </div>
                     <ChevronRight className={`w-4 h-4 text-[var(--color-text-secondary)] shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                      </div>
-                      {isExpanded && (
+                  </div>
+                  {isExpanded && (
                     <div className="ml-6 mt-1 mb-2 border-l-2 border-[var(--color-info)]/40 pl-3" onClick={(e) => e.stopPropagation()}>
-                          <SessionContentView sesion={sesion} compact />
-                        </div>
-                      )}
+                      <SessionContentView sesion={sesion} compact />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -992,18 +1043,33 @@ function AgendaPageContent() {
       render: (row) => {
         if (!row.feedback) {
           return (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                abrirFeedbackDrawer(row.alumno);
-              }}
-              className={`${componentStyles.buttons.outline}`}
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Dar feedback
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  abrirFeedbackDrawer(row.alumno);
+                }}
+                className={`${componentStyles.buttons.outline}`}
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Dar feedback
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEstudiantesFiltrados([row.alumno]); // Pre-seleccionar alumno
+                  setShowEvaluacionModal(true);
+                }}
+                className={`${componentStyles.buttons.outline}`}
+              >
+                <PlusCircle className="w-4 h-4 mr-2" />
+                Nueva Evaluación
+              </Button>
+            </div>
           );
         }
         return (
@@ -1011,7 +1077,7 @@ function AgendaPageContent() {
             <MessageSquare className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
+                <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
                 {(() => {
                   const profesor = usuarios.find(u => u.id === row.feedback.profesorId);
                   if (profesor) {
@@ -1041,6 +1107,20 @@ function AgendaPageContent() {
               )}
             </div>
             <div className="flex gap-1 shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEstudiantesFiltrados([row.alumno]); // Pre-seleccionar alumno
+                  setShowEvaluacionModal(true);
+                }}
+                className={`h-8 ${componentStyles.buttons.ghost}`}
+                aria-label="Nueva Evaluación"
+                title="Nueva Evaluación"
+              >
+                <PlusCircle className="w-3 h-3" />
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
@@ -1089,7 +1169,7 @@ function AgendaPageContent() {
             const numeroSemana = isoWeekNumberLocal(lunesSemana);
             const labelSemana = `Semana ${numeroSemana}`;
             const rangeTextSemana = `${lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} – ${domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
-            
+
             return (
               <PeriodHeaderButton
                 label={labelSemana}
@@ -1142,21 +1222,19 @@ function AgendaPageContent() {
           <div className="flex gap-2">
             <button
               onClick={() => setFiltroEstudiantes('asignados')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                filtroEstudiantes === 'asignados'
-                  ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)]'
-                  : 'bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]'
-              }`}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filtroEstudiantes === 'asignados'
+                ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)]'
+                : 'bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]'
+                }`}
             >
               Mis alumnos
             </button>
             <button
               onClick={() => setFiltroEstudiantes('todos')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                filtroEstudiantes === 'todos'
-                  ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)]'
-                  : 'bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]'
-              }`}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filtroEstudiantes === 'todos'
+                ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)]'
+                : 'bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]'
+                }`}
             >
               Ver todos
             </button>
@@ -1200,7 +1278,7 @@ function AgendaPageContent() {
               {tableData.length > pageSize && (
                 <div className="mt-4">
                   <TablePagination
-            data={tableData}
+                    data={tableData}
                     pageSize={pageSize}
                     currentPage={currentPage}
                     onPageChange={setCurrentPage}
@@ -1224,9 +1302,9 @@ function AgendaPageContent() {
                       size="sm"
                       onClick={() => {
                         const primerEstudiante = tableData.find(row => selectedItems.has(row.id));
-                  if (primerEstudiante) {
-                    abrirFeedbackDrawer(primerEstudiante.alumno);
-                  }
+                        if (primerEstudiante) {
+                          abrirFeedbackDrawer(primerEstudiante.alumno);
+                        }
                         setSelectedItems(new Set());
                       }}
                       className="h-9 text-xs"
@@ -1245,12 +1323,12 @@ function AgendaPageContent() {
       {/* Modal de feedback */}
       {feedbackDrawer && (
         <>
-          <div 
+          <div
             className="fixed inset-0 bg-black/40 z-[100]"
             onClick={() => setFeedbackDrawer(null)}
           />
           <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
-            <div 
+            <div
               className="bg-[var(--color-surface-elevated)] w-full max-w-lg max-h-[95vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-4 border border-[var(--color-border-default)]"
               onClick={(e) => e.stopPropagation()}
             >
@@ -1276,7 +1354,7 @@ function AgendaPageContent() {
                   <Textarea
                     id="nota"
                     value={feedbackDrawer.notaProfesor}
-                    onChange={(e) => setFeedbackDrawer({...feedbackDrawer, notaProfesor: e.target.value})}
+                    onChange={(e) => setFeedbackDrawer({ ...feedbackDrawer, notaProfesor: e.target.value })}
                     placeholder="Comentarios, áreas de mejora, felicitaciones..."
                     rows={8}
                     className={`resize-none mt-1 ${componentStyles.controls.inputDefault}`}
@@ -1288,9 +1366,9 @@ function AgendaPageContent() {
 
                 <MediaUploadSection
                   videoFile={feedbackDrawer.videoFile}
-                  setVideoFile={(file) => setFeedbackDrawer({...feedbackDrawer, videoFile: file})}
+                  setVideoFile={(file) => setFeedbackDrawer({ ...feedbackDrawer, videoFile: file })}
                   mediaLinks={feedbackDrawer.mediaLinks || []}
-                  setMediaLinks={(links) => setFeedbackDrawer({...feedbackDrawer, mediaLinks: links})}
+                  setMediaLinks={(links) => setFeedbackDrawer({ ...feedbackDrawer, mediaLinks: links })}
                   uploadingVideo={uploadingVideo}
                   disabled={crearFeedbackMutation.isPending || actualizarFeedbackMutation.isPending}
                   onPreview={(idx) => handlePreviewMedia(idx, feedbackDrawer.mediaLinks)}
@@ -1303,10 +1381,10 @@ function AgendaPageContent() {
                   <Button variant="outline" onClick={() => setFeedbackDrawer(null)} className={`flex-1 ${componentStyles.buttons.outline}`}>
                     Cancelar
                   </Button>
-                  <Button 
+                  <Button
                     variant="primary"
-                    onClick={guardarFeedback} 
-                    disabled={crearFeedbackMutation.isPending || actualizarFeedbackMutation.isPending || uploadingVideo} 
+                    onClick={guardarFeedback}
+                    disabled={crearFeedbackMutation.isPending || actualizarFeedbackMutation.isPending || uploadingVideo}
                     className={`flex-1 ${componentStyles.buttons.primary}`}
                   >
                     <Save className="w-4 h-4 mr-2" />
@@ -1332,11 +1410,27 @@ function AgendaPageContent() {
       )}
 
       {viewingMedia && (
-        <MediaViewer 
+        <MediaViewer
           media={viewingMedia}
           onClose={() => setViewingMedia(null)}
         />
       )}
+
+      <Dialog open={showEvaluacionModal} onOpenChange={setShowEvaluacionModal}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nueva Evaluación Técnica</DialogTitle>
+            <DialogDescription>
+              Registra el progreso actual de las habilidades maestras.
+            </DialogDescription>
+          </DialogHeader>
+          {/* Si hay un alumno seleccionado, pre-seleccionarlo, si no, permitir elegir (EvaluacionForm debe manejar esto) */}
+          <EvaluacionForm
+            alumnoId={selectedStudentForEval?.id}
+            onClose={() => setShowEvaluacionModal(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

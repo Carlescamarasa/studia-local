@@ -32,14 +32,14 @@ import { log } from "@/utils/log";
 import { sendPasswordResetEmailFor } from "@/lib/authPasswordHelpers";
 import { useUserActions } from "@/pages/auth/hooks/useUserActions";
 
-export default function PerfilModal({ 
-  open, 
+export default function PerfilModal({
+  open,
   onOpenChange,
-  userId = null 
+  userId = null
 }) {
   const queryClient = useQueryClient();
   const { design, setDesignPartial } = useDesign();
-  
+
   const [editedData, setEditedData] = useState(null);
   const [saveResult, setSaveResult] = useState(null);
   const [passwordData, setPasswordData] = useState({
@@ -77,30 +77,30 @@ export default function PerfilModal({
     { code: '+44', country: '🇬🇧 Reino Unido', digits: 10, placeholder: '7700 123456' },
     { code: '+351', country: '🇵🇹 Portugal', digits: 9, placeholder: '912 345 678' },
   ];
-  
+
   // Obtener placeholder según el país seleccionado
   const getPhonePlaceholder = (countryCode) => {
     const country = countryCodes.find(cc => cc.code === countryCode);
     return country?.placeholder || '600 000 000';
   };
-  
+
   // Actualizar isDarkMode cuando cambie el tema o se abra el modal
   useEffect(() => {
     const checkDarkMode = () => {
       const dark = document.documentElement.classList.contains('dark');
       setIsDarkMode(dark);
     };
-    
+
     // Verificar inmediatamente
     checkDarkMode();
-    
+
     // Observar cambios en la clase del documento
     const observer = new MutationObserver(checkDarkMode);
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ['class']
     });
-    
+
     return () => observer.disconnect();
   }, [design?.theme, open]);
 
@@ -123,7 +123,7 @@ export default function PerfilModal({
           return foundUser;
         }
       }
-      
+
       // Si no hay userId o no se encontró, usar el usuario actual
       const users = await localDataClient.entities.User.list();
       const userFromList = users.find(u => {
@@ -151,7 +151,7 @@ export default function PerfilModal({
     queryKey: ['targetUserEmail', targetUserId],
     queryFn: async () => {
       if (!targetUserId) return null;
-      
+
       // Si el targetUser ya tiene email válido, usarlo directamente
       if (targetUser?.email && targetUser.email.trim() && targetUser.email.includes('@')) {
         return targetUser.email;
@@ -164,14 +164,14 @@ export default function PerfilModal({
 
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        
+
         if (!supabaseUrl) return null;
 
         const headers = {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         };
-        
+
         if (supabaseAnonKey) {
           headers['apikey'] = supabaseAnonKey;
         }
@@ -193,7 +193,7 @@ export default function PerfilModal({
       } catch (error) {
         log.warn('[PerfilModal] Error obteniendo email del usuario:', error);
       }
-      
+
       return null;
     },
     enabled: !!targetUserId && open, // Ejecutar siempre que haya targetUserId y el modal esté abierto
@@ -229,18 +229,18 @@ export default function PerfilModal({
   const profesores = React.useMemo(() => {
     if (!allUsers || !Array.isArray(allUsers)) return [];
     const profesoresFiltrados = allUsers.filter(u => u.rolPersonalizado === 'PROF' || u.rolPersonalizado === 'ADMIN');
-    
+
     // Añadir el profesor asignado si existe (ya sea de allUsers o cargado directamente)
     const profesorId = editedData?.profesorAsignadoId || targetUser?.profesorAsignadoId || targetUser?.profesor_asignado_id;
     if (profesorId) {
       const profesorIdNormalizado = String(profesorId).trim();
-      
+
       // Buscar en allUsers primero
       let profesorAsignado = allUsers.find(u => {
         const idNormalizado = String(u.id).trim();
         return idNormalizado === profesorIdNormalizado;
       });
-      
+
       // Si no está en allUsers, usar el profesor cargado directamente
       if (!profesorAsignado && profesorAsignadoDirecto) {
         const profIdNormalizado = String(profesorAsignadoDirecto.id).trim();
@@ -248,26 +248,26 @@ export default function PerfilModal({
           profesorAsignado = profesorAsignadoDirecto;
         }
       }
-      
+
       // Añadir a la lista si existe y no está ya en ella
       if (profesorAsignado && !profesoresFiltrados.find(p => String(p.id).trim() === String(profesorAsignado.id).trim())) {
         profesoresFiltrados.push(profesorAsignado);
       }
     }
-    
+
     return profesoresFiltrados;
   }, [allUsers, targetUser?.profesorAsignadoId, targetUser?.profesor_asignado_id, editedData?.profesorAsignadoId, profesorAsignadoDirecto]);
 
   // Extraer código de país del teléfono si existe
   const extractCountryCodeFromPhone = (phone) => {
     if (!phone) return '+34';
-    
+
     // Buscar si el teléfono empieza con un código de país conocido
     const matched = countryCodes.find(cc => phone.startsWith(cc.code));
     if (matched) {
       return matched.code;
     }
-    
+
     // Si empieza con +, intentar extraer el código
     if (phone.startsWith('+')) {
       // Buscar el código más largo que coincida
@@ -277,7 +277,7 @@ export default function PerfilModal({
         }
       }
     }
-    
+
     return '+34'; // Default
   };
 
@@ -290,7 +290,7 @@ export default function PerfilModal({
   // Normalizar número de teléfono (eliminar espacios, guiones, paréntesis, etc.)
   const normalizePhoneNumber = (phone, countryCode) => {
     if (!phone) return '';
-    
+
     // Eliminar código de país si está presente
     let cleaned = phone;
     if (phone.startsWith(countryCode)) {
@@ -304,10 +304,10 @@ export default function PerfilModal({
         }
       }
     }
-    
+
     // Eliminar espacios, guiones, puntos, paréntesis, etc.
     cleaned = cleaned.replace(/[\s\-\(\)\.]/g, '');
-    
+
     return cleaned;
   };
 
@@ -320,17 +320,17 @@ export default function PerfilModal({
   // Generar link de WhatsApp (solo si el número tiene la longitud correcta)
   const getWhatsAppLink = (phone, countryCode) => {
     if (!phone) return null;
-    
+
     const normalized = normalizePhoneNumber(phone, countryCode);
     if (!normalized) return null;
-    
+
     // Verificar que el número tenga la longitud estándar del país
     const requiredDigits = getCountryDigits(countryCode);
     if (normalized.length !== requiredDigits) return null;
-    
+
     // Combinar código de país + número normalizado
     const fullNumber = countryCode.replace('+', '') + normalized;
-    
+
     return `https://wa.me/${fullNumber}`;
   };
 
@@ -338,13 +338,13 @@ export default function PerfilModal({
     if (targetUser && open) {
       const telefono = targetUser.telefono || '';
       const extractedCode = extractCountryCodeFromPhone(telefono);
-      const normalizedPhone = extractedCode !== '+34' 
+      const normalizedPhone = extractedCode !== '+34'
         ? normalizePhoneNumber(telefono, extractedCode)
         : telefono.replace(/^\+34\s*/, ''); // Si ya tiene +34, quitarlo
-      
+
       setPhoneCountryCode(extractedCode);
       setIsEditingPhone(false); // Resetear modo edición al cargar usuario
-      
+
       // Asegurar que profesorAsignadoId se carga correctamente desde targetUser
       // Puede venir como profesorAsignadoId o profesor_asignado_id
       const profesorAsignadoIdValue = targetUser.profesorAsignadoId || targetUser.profesor_asignado_id || null;
@@ -365,6 +365,7 @@ export default function PerfilModal({
         rolPersonalizado: targetUser.rolPersonalizado || 'ESTU',
         profesorAsignadoId: profesorAsignadoIdValue,
         nivel: targetUser.nivel || null,
+        nivelTecnico: targetUser.nivelTecnico || 1,
         telefono: normalizedPhone,
         mediaLinks: targetUser.mediaLinks || [],
       });
@@ -377,7 +378,7 @@ export default function PerfilModal({
       if (!targetUser?.id) {
         throw new Error('No se puede actualizar: usuario no encontrado');
       }
-      
+
       if (targetUser?.id === effectiveUser?.id) {
         // Si estamos actualizando nuestro propio perfil, usar updateMe
         // Pasar el ID del effectiveUser para que funcione en modo Supabase
@@ -393,7 +394,7 @@ export default function PerfilModal({
       // Actualizar el cache directamente con el usuario actualizado
       if (updatedUser) {
         queryClient.setQueryData(['targetUser', userId], updatedUser);
-        
+
         // Si estamos actualizando nuestro propio perfil, también actualizar la lista de usuarios
         if (targetUser?.id === effectiveUser?.id) {
           // Actualizar el usuario en la lista de usuarios
@@ -407,17 +408,17 @@ export default function PerfilModal({
           });
         }
       }
-      
+
       // Invalidar todas las queries relacionadas para forzar refetch
       await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       await queryClient.invalidateQueries({ queryKey: ['targetUser', userId] });
       await queryClient.invalidateQueries({ queryKey: ['users'] });
       await queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-      
+
       // Refetch explícito del targetUser para obtener los datos actualizados
       await refetchTargetUser();
       await queryClient.refetchQueries({ queryKey: ['allUsers'] });
-      
+
       setSaveResult({ success: true, message: '✅ Usuario actualizado correctamente.' });
       toast.success('Perfil actualizado correctamente.');
       setIsEditingPhone(false); // Salir del modo edición después de guardar
@@ -478,7 +479,7 @@ export default function PerfilModal({
 
       // Refetch inmediato para actualizar el targetUser
       await queryClient.refetchQueries({ queryKey: ['targetUser', userId] });
-      
+
       // También refetch de users para asegurar que se actualice
       await queryClient.refetchQueries({ queryKey: ['users'] });
 
@@ -521,7 +522,7 @@ export default function PerfilModal({
     }
 
     const isChangingOwnRole = targetUser?.id === effectiveUser?.id && editedData.rolPersonalizado !== effectiveUser?.rolPersonalizado;
-    
+
     if (isChangingOwnRole) {
       if (!window.confirm('¿Estás seguro de cambiar tu propio rol? Esto modificará tu acceso y navegación en la aplicación.')) {
         return;
@@ -531,9 +532,9 @@ export default function PerfilModal({
     if (editedData.rolPersonalizado !== targetUser?.rolPersonalizado && targetUser?.rolPersonalizado === 'ADMIN') {
       const adminCount = allUsers?.filter(u => u.rolPersonalizado === 'ADMIN').length || 0;
       if (adminCount <= 1) {
-        setSaveResult({ 
-          success: false, 
-          message: '❌ No puedes eliminar el último Administrador. Debe existir al menos un Administrador en el sistema.' 
+        setSaveResult({
+          success: false,
+          message: '❌ No puedes eliminar el último Administrador. Debe existir al menos un Administrador en el sistema.'
         });
         toast.error('No puedes eliminar el último Administrador. Debe existir al menos un Administrador en el sistema.');
         return;
@@ -558,11 +559,12 @@ export default function PerfilModal({
       full_name: editedData.nombreCompleto, // Sincronizar con full_name en profiles
       rolPersonalizado: editedData.rolPersonalizado,
       nivel: editedData.nivel || null,
+      nivelTecnico: editedData.nivelTecnico || null,
       telefono: telefonoFinal,
       // mediaLinks no se incluye al guardar (la columna no existe en Supabase profiles)
       // Se mantiene solo en el estado local para mostrar el componente MediaLinksInput
     };
-    
+
     // Solo incluir profesorAsignadoId si realmente ha cambiado
     // Esto evita intentar actualizar con IDs inválidos cuando solo se actualiza el nombre
     if (profesorAsignadoChanged && isEstudiante) {
@@ -591,7 +593,7 @@ export default function PerfilModal({
     mutationFn: async () => {
       // Determinar el email del usuario objetivo
       let targetEmail;
-      
+
       if (isEditingOwnProfile) {
         // Usuario editando su propio perfil: usar email de la sesión activa
         const { data: { session } } = await supabase.auth.getSession();
@@ -617,24 +619,24 @@ export default function PerfilModal({
     },
     onSuccess: (data) => {
       const email = data?.email || targetUser?.email || effectiveUser?.email || 'tu correo';
-      const mensaje = isEditingOwnProfile 
+      const mensaje = isEditingOwnProfile
         ? `✅ Te hemos enviado un correo a ${email} para cambiar tu contraseña.`
         : `✅ Se ha enviado un correo a ${email} para cambiar la contraseña.`;
-      setPasswordResult({ 
-        success: true, 
+      setPasswordResult({
+        success: true,
         message: mensaje
       });
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      toast.success(isEditingOwnProfile 
+      toast.success(isEditingOwnProfile
         ? 'Te hemos enviado un correo para cambiar tu contraseña.'
         : 'Se ha enviado un correo para cambiar la contraseña.');
     },
     onError: (error) => {
       log.error('[PerfilModal] Error al enviar email de restablecimiento:', error);
       const errorMessage = error.message || 'No se pudo enviar el correo';
-      setPasswordResult({ 
-        success: false, 
-        message: `❌ Error: ${errorMessage}` 
+      setPasswordResult({
+        success: false,
+        message: `❌ Error: ${errorMessage}`
       });
       toast.error(`Error al enviar el correo: ${errorMessage}`);
     },
@@ -654,7 +656,7 @@ export default function PerfilModal({
       if (!isEditingOwnProfile) {
         throw new Error('Solo puedes cambiar tu propia contraseña directamente.');
       }
-      
+
       // Obtener el email del usuario actual
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user?.email) {
@@ -668,13 +670,13 @@ export default function PerfilModal({
       });
 
       if (signInError) {
-        if (signInError.message?.includes('Invalid login credentials') || 
-            signInError.message?.includes('Email not confirmed')) {
+        if (signInError.message?.includes('Invalid login credentials') ||
+          signInError.message?.includes('Email not confirmed')) {
           throw new Error('La contraseña actual es incorrecta.');
         }
         throw signInError;
       }
-      
+
       // Si la contraseña actual es correcta, actualizar a la nueva
       const { error } = await supabase.auth.updateUser({
         password: newPassword.trim(),
@@ -687,8 +689,8 @@ export default function PerfilModal({
       return { success: true };
     },
     onSuccess: () => {
-      setPasswordResult({ 
-        success: true, 
+      setPasswordResult({
+        success: true,
         message: '✅ Contraseña actualizada correctamente.'
       });
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -697,9 +699,9 @@ export default function PerfilModal({
     onError: (error) => {
       log.error('[PerfilModal] Error al actualizar contraseña:', error);
       const errorMessage = error.message || 'No se pudo actualizar la contraseña';
-      setPasswordResult({ 
-        success: false, 
-        message: `❌ Error: ${errorMessage}` 
+      setPasswordResult({
+        success: false,
+        message: `❌ Error: ${errorMessage}`
       });
       toast.error(`Error al actualizar la contraseña: ${errorMessage}`);
     },
@@ -711,40 +713,40 @@ export default function PerfilModal({
 
     // Validaciones
     if (!passwordData.currentPassword.trim()) {
-      setPasswordResult({ 
-        success: false, 
-        message: '❌ Por favor, introduce tu contraseña actual.' 
+      setPasswordResult({
+        success: false,
+        message: '❌ Por favor, introduce tu contraseña actual.'
       });
       return;
     }
 
     if (!passwordData.newPassword.trim()) {
-      setPasswordResult({ 
-        success: false, 
-        message: '❌ Por favor, introduce una nueva contraseña.' 
+      setPasswordResult({
+        success: false,
+        message: '❌ Por favor, introduce una nueva contraseña.'
       });
       return;
     }
 
     if (passwordData.newPassword.length < 6) {
-      setPasswordResult({ 
-        success: false, 
-        message: '❌ La contraseña debe tener al menos 6 caracteres.' 
+      setPasswordResult({
+        success: false,
+        message: '❌ La contraseña debe tener al menos 6 caracteres.'
       });
       return;
     }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordResult({ 
-        success: false, 
-        message: '❌ Las contraseñas no coinciden.' 
+      setPasswordResult({
+        success: false,
+        message: '❌ Las contraseñas no coinciden.'
       });
       return;
     }
 
-    updatePasswordMutation.mutate({ 
+    updatePasswordMutation.mutate({
       currentPassword: passwordData.currentPassword,
-      newPassword: passwordData.newPassword 
+      newPassword: passwordData.newPassword
     });
   };
 
@@ -756,12 +758,12 @@ export default function PerfilModal({
 
   // Determinar si estamos editando el perfil propio
   // Verificar tanto por ID como por email para asegurar que funciona en todos los casos
-  const isEditingOwnProfile = targetUser?.id === effectiveUser?.id || 
-    (targetUser?.email && effectiveUser?.email && 
-     targetUser.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim()) ||
+  const isEditingOwnProfile = targetUser?.id === effectiveUser?.id ||
+    (targetUser?.email && effectiveUser?.email &&
+      targetUser.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim()) ||
     (!userId && targetUser?.id === effectiveUser?.id); // Si no hay userId, siempre es el perfil propio
   const userRole = effectiveUser?.rolPersonalizado;
-  
+
   // Permisos de edición según rol
   const canEditNombreCompleto = userRole === 'ADMIN' || userRole === 'PROF' || userRole === 'ESTU'; // Todos pueden editar
   const canEditEmail = false; // Nadie puede editar
@@ -769,7 +771,7 @@ export default function PerfilModal({
   const canEditProfesor = userRole === 'ADMIN'; // Solo ADMIN (antes también PROF)
   const canEditTelefono = userRole === 'ADMIN' || userRole === 'PROF' || userRole === 'ESTU'; // Todos pueden editar
   const canEditNivel = userRole === 'ADMIN' || userRole === 'PROF' || userRole === 'ESTU'; // Todos pueden editar
-  
+
   const isEstudiante = targetUser?.rolPersonalizado === 'ESTU';
   const isProfesor = targetUser?.rolPersonalizado === 'PROF';
 
@@ -780,8 +782,8 @@ export default function PerfilModal({
           <div className="flex items-center justify-center">
             <DialogTitle className="flex items-center gap-2 text-center">
               <User className="w-5 h-5 text-[var(--color-primary)]" />
-              {isLoading || !targetUser 
-                ? 'Cargando perfil...' 
+              {isLoading || !targetUser
+                ? 'Cargando perfil...'
                 : (isEditingOwnProfile ? 'Mi Perfil' : `Perfil de ${getNombreCompleto(targetUser)}`)
               }
             </DialogTitle>
@@ -800,7 +802,7 @@ export default function PerfilModal({
 
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               {saveResult && (
-                <Alert 
+                <Alert
                   variant={saveResult.success ? 'success' : 'danger'}
                   className={componentStyles.containers.panelBase}
                 >
@@ -915,18 +917,18 @@ export default function PerfilModal({
                               {editedData.profesorAsignadoId ? (() => {
                                 // Normalizar IDs para comparación (pueden venir como string o UUID)
                                 const profesorIdNormalizado = String(editedData.profesorAsignadoId).trim();
-                                
+
                                 if (!profesorIdNormalizado || profesorIdNormalizado === 'null' || profesorIdNormalizado === 'undefined') {
                                   return "Sin asignar";
                                 }
-                                
+
                                 // Primero buscar en profesores (que ya incluye el profesor cargado directamente)
                                 let prof = profesores.find(p => {
                                   if (!p || !p.id) return false;
                                   const profIdNormalizado = String(p.id).trim();
                                   return profIdNormalizado === profesorIdNormalizado;
                                 });
-                                
+
                                 // Si no se encuentra en profesores, buscar en allUsers
                                 if (!prof && allUsers && Array.isArray(allUsers)) {
                                   prof = allUsers.find(p => {
@@ -935,7 +937,7 @@ export default function PerfilModal({
                                     return profIdNormalizado === profesorIdNormalizado;
                                   });
                                 }
-                                
+
                                 // Si aún no se encuentra, usar el profesor cargado directamente
                                 if (!prof && profesorAsignadoDirecto) {
                                   const profIdNormalizado = String(profesorAsignadoDirecto.id).trim();
@@ -943,7 +945,7 @@ export default function PerfilModal({
                                     prof = profesorAsignadoDirecto;
                                   }
                                 }
-                                
+
                                 // Último recurso: usar displayNameById
                                 if (!prof) {
                                   const nombrePorId = displayNameById(profesorIdNormalizado);
@@ -951,7 +953,7 @@ export default function PerfilModal({
                                     return nombrePorId;
                                   }
                                 }
-                                
+
                                 return prof ? getNombreCompleto(prof) : "Sin asignar";
                               })() : "Sin asignar"}
                             </SelectValue>
@@ -973,18 +975,18 @@ export default function PerfilModal({
                           value={editedData.profesorAsignadoId ? (() => {
                             // Normalizar IDs para comparación
                             const profesorIdNormalizado = String(editedData.profesorAsignadoId).trim();
-                            
+
                             if (!profesorIdNormalizado || profesorIdNormalizado === 'null' || profesorIdNormalizado === 'undefined') {
                               return 'Sin asignar';
                             }
-                            
+
                             // Primero buscar en profesores (que ya incluye el profesor cargado directamente)
                             let prof = profesores.find(p => {
                               if (!p || !p.id) return false;
                               const profIdNormalizado = String(p.id).trim();
                               return profIdNormalizado === profesorIdNormalizado;
                             });
-                            
+
                             // Si no se encuentra en profesores, buscar en allUsers
                             if (!prof && allUsers && Array.isArray(allUsers)) {
                               prof = allUsers.find(p => {
@@ -993,7 +995,7 @@ export default function PerfilModal({
                                 return profIdNormalizado === profesorIdNormalizado;
                               });
                             }
-                            
+
                             // Si aún no se encuentra, usar el profesor cargado directamente
                             if (!prof && profesorAsignadoDirecto) {
                               const profIdNormalizado = String(profesorAsignadoDirecto.id).trim();
@@ -1001,7 +1003,7 @@ export default function PerfilModal({
                                 prof = profesorAsignadoDirecto;
                               }
                             }
-                            
+
                             // Último recurso: usar displayNameById
                             if (!prof) {
                               const nombrePorId = displayNameById(profesorIdNormalizado);
@@ -1009,7 +1011,7 @@ export default function PerfilModal({
                                 return nombrePorId;
                               }
                             }
-                            
+
                             return prof ? getNombreCompleto(prof) : 'Sin asignar';
                           })() : 'Sin asignar'}
                           disabled
@@ -1175,13 +1177,44 @@ export default function PerfilModal({
                     </div>
                   )}
 
+                  {isEstudiante && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="nivelTecnico" className="block text-sm text-[var(--color-text-primary)]">Nivel Técnico (1-10)</Label>
+                      {canEditNivel ? (
+                        <Input
+                          id="nivelTecnico"
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={editedData.nivelTecnico || ''}
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? null : parseInt(e.target.value);
+                            if (val === null || (!isNaN(val) && val >= 1 && val <= 10)) {
+                              setEditedData({ ...editedData, nivelTecnico: val });
+                            }
+                          }}
+                          placeholder="Ej: 5"
+                          className={componentStyles.controls.inputDefault}
+                        />
+                      ) : (
+                        <Input
+                          id="nivelTecnico"
+                          value={editedData.nivelTecnico || 'Sin especificar'}
+                          disabled
+                          className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
+                        />
+                      )}
+                      <p className="text-xs text-[var(--color-text-secondary)]">Nivel técnico objetivo para cálculo de BPMs</p>
+                    </div>
+                  )}
+
                   {isEditingOwnProfile && (() => {
                     const currentTheme = design?.theme || 'system';
                     // En modo oscuro, usar colores más claros para mejor visibilidad
                     // En modo claro, usar las variables CSS del sistema
                     const inactiveBorderColor = isDarkMode ? '#888888' : 'var(--color-border-strong)';
                     const inactiveHoverBorderColor = isDarkMode ? '#AAAAAA' : 'var(--color-border-default)';
-                    
+
                     return (
                       <div className="space-y-1.5">
                         <Label className="block text-sm text-[var(--color-text-primary)]">Tema</Label>
@@ -1191,11 +1224,10 @@ export default function PerfilModal({
                               setDesignPartial('theme', 'light');
                               toast.success('Tema claro activado');
                             }}
-                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
-                              currentTheme === 'light'
-                                ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)] shadow-sm'
-                                : 'bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
-                            }`}
+                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${currentTheme === 'light'
+                              ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)] shadow-sm'
+                              : 'bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
+                              }`}
                             style={currentTheme === 'light' ? {} : {
                               borderColor: inactiveBorderColor,
                               borderWidth: '2px',
@@ -1221,11 +1253,10 @@ export default function PerfilModal({
                               setDesignPartial('theme', 'dark');
                               toast.success('Tema oscuro activado');
                             }}
-                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
-                              currentTheme === 'dark'
-                                ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)] shadow-sm'
-                                : 'bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
-                            }`}
+                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${currentTheme === 'dark'
+                              ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)] shadow-sm'
+                              : 'bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
+                              }`}
                             style={currentTheme === 'dark' ? {} : {
                               borderColor: inactiveBorderColor,
                               borderWidth: '2px',
@@ -1251,11 +1282,10 @@ export default function PerfilModal({
                               setDesignPartial('theme', 'system');
                               toast.success('Tema del sistema activado');
                             }}
-                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
-                              currentTheme === 'system'
-                                ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)] shadow-sm'
-                                : 'bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
-                            }`}
+                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${currentTheme === 'system'
+                              ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)] shadow-sm'
+                              : 'bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
+                              }`}
                             style={currentTheme === 'system' ? {} : {
                               borderColor: inactiveBorderColor,
                               borderWidth: '2px',
@@ -1307,9 +1337,9 @@ export default function PerfilModal({
                         Cambia tu contraseña directamente o solicita un enlace por correo.
                       </p>
                     </div>
-                    
+
                     {passwordResult && (
-                      <Alert 
+                      <Alert
                         variant={passwordResult.success ? 'success' : 'danger'}
                         className={componentStyles.containers.panelBase}
                       >
@@ -1415,9 +1445,9 @@ export default function PerfilModal({
                         Enviar enlace para cambiar contraseña a este usuario.
                       </p>
                     </div>
-                    
+
                     {passwordResult && (
-                      <Alert 
+                      <Alert
                         variant={passwordResult.success ? 'success' : 'danger'}
                         className={componentStyles.containers.panelBase}
                       >
@@ -1452,7 +1482,7 @@ export default function PerfilModal({
                 )}
 
                 {canEditRole && isEditingOwnProfile && (
-                  <Alert 
+                  <Alert
                     variant="warning"
                     className={componentStyles.containers.panelBase}
                   >
