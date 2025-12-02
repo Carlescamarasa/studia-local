@@ -58,6 +58,8 @@ import { shouldIgnoreHotkey, matchesHotkey, getHotkeyById, HOTKEYS_CONFIG, isMac
 import HotkeysModal from "@/components/common/HotkeysModal";
 import { HotkeysModalProvider, useHotkeysModal } from "@/hooks/useHotkeysModal.jsx";
 import { useAppVersion } from "@/hooks/useAppVersion";
+import { useCurrentProfile } from "@/hooks/useCurrentProfile";
+import LevelBadge from "@/components/common/LevelBadge";
 
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
@@ -139,6 +141,20 @@ function LayoutContent() {
 
   /* Usuario actual - usar useEffectiveUser() unificado */
   const effectiveUser = useEffectiveUser();
+  const { profile, refetch: refetchProfile } = useCurrentProfile();
+
+  // Forzar actualización del perfil al montar para asegurar datos frescos
+  useEffect(() => {
+    refetchProfile();
+  }, [refetchProfile]);
+
+  // Usar profile si está disponible (tiene datos más frescos de Supabase), sino effectiveUser
+  const displayUser = profile || effectiveUser;
+
+  console.log('DEBUG: Layout displayUser:', displayUser);
+  console.log('DEBUG: Layout nivelTecnico:', displayUser?.nivelTecnico);
+  console.log('DEBUG: Layout nivel (label):', displayUser?.nivel);
+
   const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
   const isLoading = false; // No hay loading en local
 
@@ -187,7 +203,7 @@ function LayoutContent() {
   /* Hotkeys globales */
   useEffect(() => {
     const userRole = effectiveUser?.rolPersonalizado || 'ESTU';
-    
+
     const handleKey = (e) => {
       // Usar helper centralizado para detectar campos editables
       if (shouldIgnoreHotkey(e)) return;
@@ -344,7 +360,7 @@ function LayoutContent() {
   useEffect(() => {
     // No redirigir si estamos en una ruta pública
     if (isPublicRoute) return;
-    
+
     // Solo verificar si no está cargando y no hay usuario
     if (!authLoading && !user) {
       // La sesión caducó o no hay usuario autenticado
@@ -357,7 +373,7 @@ function LayoutContent() {
   useEffect(() => {
     // No verificar si estamos en una ruta pública
     if (isPublicRoute) return;
-    
+
     // Solo verificar si hay usuario (si no hay usuario, RequireAuth ya maneja la redirección)
     if (!user || authLoading || !checkSession) {
       return;
@@ -394,7 +410,7 @@ function LayoutContent() {
   // Obtener el rol efectivo usando la función unificada
   const { appRole } = useAuth();
   const userRole = getEffectiveRole({ appRole, currentUser: effectiveUser }) || null;
-  
+
   // Obtener conteos de reportes para el badge (solo para ADMIN)
   // IMPORTANTE: Este hook debe estar antes del return condicional
   const { data: reportCounts } = useQuery({
@@ -403,19 +419,19 @@ function LayoutContent() {
       if (userRole !== 'ADMIN') {
         return { nuevos: 0, enRevision: 0 };
       }
-      
+
       try {
         // Usar la misma lógica que la página de reportes: traer todos y filtrar
         // Esto asegura que contamos igual que la vista de reportes
         const allReports = await listErrorReports();
-        
+
         // Filtrar excluyendo 'resuelto', igual que cuando statusFilter = 'active'
         const activeReports = allReports.filter(r => r.status !== 'resuelto');
-        
+
         // Contar por estado
         const nuevos = activeReports.filter(r => r.status === 'nuevo').length;
         const enRevision = activeReports.filter(r => r.status === 'en_revision').length;
-        
+
         return {
           nuevos,
           enRevision
@@ -423,12 +439,12 @@ function LayoutContent() {
       } catch (error) {
         // Ignorar errores CORS o de red silenciosamente
         // Estos pueden ocurrir si la sesión expiró o hay problemas de conectividad
-        if (error?.message?.includes('CORS') || 
-            error?.message?.includes('NetworkError') ||
-            error?.message?.includes('No hay sesión activa') ||
-            error?.code === 'PGRST301' || 
-            error?.status === 401 ||
-            error?.status === 403) {
+        if (error?.message?.includes('CORS') ||
+          error?.message?.includes('NetworkError') ||
+          error?.message?.includes('No hay sesión activa') ||
+          error?.code === 'PGRST301' ||
+          error?.status === 401 ||
+          error?.status === 403) {
           return { nuevos: 0, enRevision: 0 };
         }
         // Solo loguear errores inesperados
@@ -441,19 +457,19 @@ function LayoutContent() {
     staleTime: 10000, // Considerar datos frescos por 10 segundos
     retry: false, // No reintentar si falla (evita spam de errores)
   });
-  
+
   // Debug: verificar el rol calculado (desactivado)
 
   if (isLoading) {
     return (
-      <LoadingSpinner 
-        size="xl" 
-        variant="fullPage" 
+      <LoadingSpinner
+        size="xl"
+        variant="fullPage"
         text={`Cargando ${appName}...`}
       />
     );
   }
-  
+
   // Mapeo de URLs a los roles que tienen acceso
   const pagePermissions = {
     '/usuarios': ['ADMIN'],
@@ -493,15 +509,15 @@ function LayoutContent() {
     } catch (error) {
       // Si es un error de sesión faltante o expirada, es válido continuar
       // El objetivo es cerrar sesión y si no hay sesión, ya estamos en el estado deseado
-      if (error?.message?.includes('Auth session missing') || 
-          error?.message?.includes('JWT expired') ||
-          error?.status === 403) {
+      if (error?.message?.includes('Auth session missing') ||
+        error?.message?.includes('JWT expired') ||
+        error?.status === 403) {
         // No mostrar error si simplemente no hay sesión
       } else {
-      console.error("Error al cerrar sesión:", error);
+        console.error("Error al cerrar sesión:", error);
       }
     }
-    
+
     // Limpiar datos locales siempre (incluso si falló el signOut de Supabase)
     try {
       if (localDataClient?.auth?.logout) {
@@ -510,9 +526,9 @@ function LayoutContent() {
     } catch (localError) {
       console.warn('[Layout] Error limpiando datos locales:', localError);
     }
-    
+
     // Redirigir a login siempre
-      navigate("/login", { replace: true });
+    navigate("/login", { replace: true });
   };
 
   const [perfilModalOpen, setPerfilModalOpen] = useState(false);
@@ -533,9 +549,8 @@ function LayoutContent() {
       >
         {/* Overlay mobile */}
         <div
-          className={`fixed inset-0 bg-black/30 z-[80] lg:hidden transition-opacity duration-200 ${
-            abierto ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-          }`}
+          className={`fixed inset-0 bg-black/30 z-[80] lg:hidden transition-opacity duration-200 ${abierto ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+            }`}
           onClick={(e) => {
             closeSidebar();
           }}
@@ -568,17 +583,24 @@ function LayoutContent() {
           <div className="border-b border-[var(--color-border-default)]/30 p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-card overflow-hidden">
-                <img 
-                  src={logoLTS} 
+                <img
+                  src={logoLTS}
                   alt={appName}
                   className="w-full h-full object-cover"
                 />
               </div>
               <div>
                 <h2 className="font-bold text-[var(--color-text-primary)] text-lg font-headings">{appName}</h2>
-                <p className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide font-medium">
-                  {ROLE_LABEL[userRole] || "Estudiante"}
-                </p>
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide font-medium">
+                    {ROLE_LABEL[userRole] || "Estudiante"}
+                  </p>
+                  {displayUser?.nivelTecnico && userRole === 'ESTU' && (
+                    <div className="mt-0.5">
+                      <LevelBadge level={displayUser.nivelTecnico} label={displayUser.nivel} />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -598,7 +620,7 @@ function LayoutContent() {
                     const nuevos = reportCounts?.nuevos || 0;
                     const enRevision = reportCounts?.enRevision || 0;
                     const totalCount = isReportes ? (nuevos + enRevision) : 0;
-                    
+
                     return (
                       <Link
                         key={item.title}
@@ -661,7 +683,9 @@ function LayoutContent() {
                 <p className="font-medium text-[var(--color-text-primary)] text-sm truncate">
                   {displayName(effectiveUser) || "Usuario"}
                 </p>
-                <p className="text-xs text-[var(--color-text-secondary)] truncate">{effectiveUser?.email}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-[var(--color-text-secondary)] truncate">{effectiveUser?.email}</p>
+                </div>
               </div>
             </button>
 
@@ -680,7 +704,7 @@ function LayoutContent() {
               variant="ghost"
               size="sm"
               onClick={logout}
-                className={`w-full justify-start gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
+              className={`w-full justify-start gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
               aria-label="Cerrar sesión"
             >
               <LogOut className="w-4 h-4" />
@@ -690,7 +714,7 @@ function LayoutContent() {
         </aside>
 
         {/* Contenido principal - Ancho completo cuando sidebar cerrado */}
-        <main 
+        <main
           className="min-h-screen transition-all duration-200 flex flex-col"
           style={{
             marginLeft: !isMobile && abierto ? `${SIDEBAR_WIDTH}px` : '0',
@@ -774,8 +798,8 @@ function LayoutContent() {
           </footer>
         </main>
       </div>
-      <PerfilModal 
-        open={perfilModalOpen} 
+      <PerfilModal
+        open={perfilModalOpen}
         onOpenChange={setPerfilModalOpen}
       />
     </RoleBootstrap>
@@ -786,9 +810,9 @@ function LayoutContent() {
 function HotkeysModalWrapper() {
   const { showHotkeysModal, setShowHotkeysModal } = useHotkeysModal();
   return (
-    <HotkeysModal 
-      open={showHotkeysModal} 
-      onOpenChange={setShowHotkeysModal} 
+    <HotkeysModal
+      open={showHotkeysModal}
+      onOpenChange={setShowHotkeysModal}
     />
   );
 }

@@ -395,6 +395,8 @@ function normalizeSupabaseUser(user: any, email?: string): any {
     isActive: user.isActive !== false,
     // Mapear nivel_tecnico a nivelTecnico si existe
     nivelTecnico: user.nivelTecnico || user.nivel_tecnico || 1,
+    // Mapear nivel (experiencia) si existe
+    nivel: user.nivel || null,
   };
 }
 
@@ -693,8 +695,8 @@ export function createRemoteDataAPI(): AppDataAPI {
             const { data: profesoresData, error: profesoresError } = await withAuthErrorHandling(
               supabase
                 .from('profiles')
-                .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at')
-                .in('id', profesorIdsArray)
+                .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at, nivel, nivel_tecnico, telefono')
+                .in('id', profesorIdsArray) as Promise<any>
             );
 
             if (!profesoresError && profesoresData && Array.isArray(profesoresData)) {
@@ -748,7 +750,7 @@ export function createRemoteDataAPI(): AppDataAPI {
             const { data: currentUserProfile, error: currentUserError } = await withAuthErrorHandling(
               supabase
                 .from('profiles')
-                .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at')
+                .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at, nivel, nivel_tecnico, telefono')
                 .eq('id', currentUserId)
                 .single()
             );
@@ -1525,11 +1527,11 @@ export function createRemoteDataAPI(): AppDataAPI {
       },
       create: async (data) => {
         // Arquitectura híbrida: soportar planId (referencia) o plan/planAdaptado (snapshot)
-        const planIdValue = data.planId;
-        const planValue = data.plan || data.planAdaptado; // plan es legacy, planAdaptado es nuevo
-        const piezaSnapshotValue = data.piezaSnapshot;
+        const planIdValue = (data as any).planId;
+        const planValue = data.plan || (data as any).planAdaptado; // plan es legacy, planAdaptado es nuevo
+        const piezaSnapshotValue = (data as any).piezaSnapshot;
 
-        const dataWithoutJson = { ...data };
+        const dataWithoutJson = { ...data } as any;
         delete dataWithoutJson.plan;
         delete dataWithoutJson.planAdaptado;
         delete dataWithoutJson.planId;

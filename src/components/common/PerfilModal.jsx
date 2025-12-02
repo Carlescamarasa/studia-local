@@ -411,6 +411,7 @@ export default function PerfilModal({
 
       // Invalidar todas las queries relacionadas para forzar refetch
       await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      await queryClient.invalidateQueries({ queryKey: ['currentProfile'] }); // Fix: Invalidate correct key used by useCurrentProfile
       await queryClient.invalidateQueries({ queryKey: ['targetUser', userId] });
       await queryClient.invalidateQueries({ queryKey: ['users'] });
       await queryClient.invalidateQueries({ queryKey: ['allUsers'] });
@@ -473,6 +474,7 @@ export default function PerfilModal({
 
       // Actualizar el targetUser localmente para reflejar el cambio
       await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      await queryClient.invalidateQueries({ queryKey: ['currentProfile'] }); // Fix: Invalidate correct key
       await queryClient.invalidateQueries({ queryKey: ['targetUser', userId] });
       await queryClient.invalidateQueries({ queryKey: ['users'] });
       await queryClient.invalidateQueries({ queryKey: ['allUsers'] });
@@ -770,7 +772,7 @@ export default function PerfilModal({
   const canEditRole = userRole === 'ADMIN'; // Solo ADMIN
   const canEditProfesor = userRole === 'ADMIN'; // Solo ADMIN (antes también PROF)
   const canEditTelefono = userRole === 'ADMIN' || userRole === 'PROF' || userRole === 'ESTU'; // Todos pueden editar
-  const canEditNivel = userRole === 'ADMIN' || userRole === 'PROF' || userRole === 'ESTU'; // Todos pueden editar
+  const canEditNivel = userRole === 'ADMIN' || userRole === 'PROF'; // Solo ADMIN y PROF pueden editar
 
   const isEstudiante = targetUser?.rolPersonalizado === 'ESTU';
   const isProfesor = targetUser?.rolPersonalizado === 'PROF';
@@ -1147,33 +1149,14 @@ export default function PerfilModal({
                   {isEstudiante && (
                     <div className="space-y-1.5">
                       <Label htmlFor="nivel" className="block text-sm text-[var(--color-text-primary)]">Experiencia</Label>
-                      {canEditNivel ? (
-                        <Select
-                          value={editedData.nivel || "__none__"}
-                          onValueChange={(value) => {
-                            const newValue = value === "__none__" ? null : value;
-                            setEditedData({ ...editedData, nivel: newValue });
-                          }}
-                        >
-                          <SelectTrigger id="nivel" className={componentStyles.controls.selectDefault}>
-                            <SelectValue placeholder="Seleccionar experiencia" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__none__">Sin especificar</SelectItem>
-                            <SelectItem value="principiante">Principiante</SelectItem>
-                            <SelectItem value="intermedio">Intermedio</SelectItem>
-                            <SelectItem value="avanzado">Avanzado</SelectItem>
-                            <SelectItem value="profesional">Profesional</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Input
-                          id="nivel"
-                          value={editedData.nivel ? editedData.nivel.charAt(0).toUpperCase() + editedData.nivel.slice(1) : 'Sin especificar'}
-                          disabled
-                          className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
-                        />
-                      )}
+                      {/* Campo de Experiencia siempre bloqueado - se calcula automáticamente */}
+                      <Input
+                        id="nivel"
+                        value={editedData.nivel ? editedData.nivel.charAt(0).toUpperCase() + editedData.nivel.slice(1) : 'Sin especificar'}
+                        disabled
+                        className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
+                      />
+                      <p className="text-xs text-[var(--color-text-secondary)]">Se actualiza automáticamente según el Nivel Técnico</p>
                     </div>
                   )}
 
@@ -1190,7 +1173,17 @@ export default function PerfilModal({
                           onChange={(e) => {
                             const val = e.target.value === '' ? null : parseInt(e.target.value);
                             if (val === null || (!isNaN(val) && val >= 1 && val <= 10)) {
-                              setEditedData({ ...editedData, nivelTecnico: val });
+                              // Calcular automáticamente el nivel de experiencia
+                              let nuevoNivel = 'principiante';
+                              if (val >= 4 && val <= 6) nuevoNivel = 'intermedio';
+                              else if (val >= 7 && val <= 9) nuevoNivel = 'avanzado';
+                              else if (val >= 10) nuevoNivel = 'profesional';
+
+                              setEditedData({
+                                ...editedData,
+                                nivelTecnico: val,
+                                nivel: nuevoNivel
+                              });
                             }
                           }}
                           placeholder="Ej: 5"

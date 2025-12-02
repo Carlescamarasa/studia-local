@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Save, Plus, Trash2, AlertTriangle, RefreshCw, Info, Music, GripVertical, ArrowUp, ArrowDown, RotateCcw, Play, Image as ImageIcon, FileText, Volume2 } from "lucide-react";
+import { X, Save, Plus, Trash2, AlertTriangle, RefreshCw, Info, Music, GripVertical, ArrowUp, ArrowDown, RotateCcw, Play, Image as ImageIcon, FileText, Volume2, Pentagon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -258,9 +258,20 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
   }, [formData, selectedElementos, usandoPiezaSnapshot, piezaRefId, ejercicio?.id, effectiveUser?.id, saveMutation]);
 
   const addTargetPPM = () => {
+    const currentLevels = (formData.targetPPMs || []).map(t => t.nivel);
+    let nextLevel = 1;
+    while (currentLevels.includes(nextLevel) && nextLevel <= 10) {
+      nextLevel++;
+    }
+
+    if (nextLevel > 10) {
+      toast.error("Ya existen objetivos para todos los niveles (1-10).");
+      return;
+    }
+
     setFormData({
       ...formData,
-      targetPPMs: [...(formData.targetPPMs || []), { nivel: 1, bpm: 60, unidad: 'negra' }]
+      targetPPMs: [...(formData.targetPPMs || []), { nivel: nextLevel, bpm: 60, unidad: 'negra' }]
     });
   };
 
@@ -271,6 +282,16 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
   };
 
   const updateTargetPPM = (index, field, value) => {
+    if (field === 'nivel') {
+      const newLevel = parseInt(value) || 1;
+      const currentLevels = (formData.targetPPMs || []).map((t, i) => i === index ? null : t.nivel); // Exclude current item
+
+      if (currentLevels.includes(newLevel)) {
+        toast.error("Ya existe una velocidad objetivo para ese nivel.");
+        return; // Prevent update
+      }
+    }
+
     const newTargets = [...(formData.targetPPMs || [])];
     newTargets[index] = { ...newTargets[index], [field]: value };
     setFormData({ ...formData, targetPPMs: newTargets });
@@ -482,6 +503,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                     items={SKILL_OPTIONS}
                     value={formData.skillTags}
                     onChange={(val) => setFormData({ ...formData, skillTags: val })}
+                    icon={Pentagon}
                   />
                   <p className="text-xs text-[var(--color-text-secondary)] mt-1">
                     Selecciona las habilidades que trabaja este ejercicio para las estadísticas.

@@ -11,15 +11,18 @@ interface HabilidadesViewProps {
 }
 
 export default function HabilidadesView({ alumnoId }: HabilidadesViewProps) {
-    const [dataSource, setDataSource] = useState<DataSource>('evaluaciones');
+    const [showEvaluaciones, setShowEvaluaciones] = useState(true);
+    const [showExperiencia, setShowExperiencia] = useState(true);
     const { experienceStats, evaluationStats, isLoading } = useHabilidadesStats(alumnoId);
 
     // Determine data for Radar Chart
     const radarData = useMemo(() => {
-        if (dataSource === 'evaluaciones') return evaluationStats;
-        if (dataSource === 'experiencia') return experienceStats.radarData;
+        if (!showEvaluaciones && !showExperiencia) return [];
 
-        if (dataSource === 'ambas') {
+        if (showEvaluaciones && !showExperiencia) return evaluationStats;
+        if (!showEvaluaciones && showExperiencia) return experienceStats.radarData;
+
+        if (showEvaluaciones && showExperiencia) {
             // Standard subjects to ensure consistent order
             const subjects = ['Sonido', 'Flexibilidad', 'Motricidad', 'Articulación (T)', 'Cognitivo'];
 
@@ -38,7 +41,7 @@ export default function HabilidadesView({ alumnoId }: HabilidadesViewProps) {
             });
         }
         return [];
-    }, [dataSource, evaluationStats, experienceStats]);
+    }, [showEvaluaciones, showExperiencia, evaluationStats, experienceStats]);
 
     // Determine data for List
     const listData = experienceStats.listData;
@@ -49,44 +52,59 @@ export default function HabilidadesView({ alumnoId }: HabilidadesViewProps) {
                 <h3 className="text-lg font-semibold">Habilidades Maestras</h3>
 
                 <div className="flex items-center gap-2 bg-muted/50 p-1 rounded-lg">
-                    <ToggleGroup type="single" value={dataSource} onValueChange={(val) => val && setDataSource(val as DataSource)}>
-                        <ToggleGroupItem value="evaluaciones" aria-label="Evaluaciones" className="gap-2 px-3">
+                    <ToggleGroup type="multiple" value={[showEvaluaciones ? 'evaluaciones' : '', showExperiencia ? 'experiencia' : ''].filter(Boolean)}>
+                        <ToggleGroupItem
+                            value="evaluaciones"
+                            aria-label="Evaluaciones"
+                            className="gap-2 px-3 data-[state=on]:bg-[var(--color-accent)]/10 data-[state=on]:text-[var(--color-accent)] data-[state=on]:border-[var(--color-accent)] data-[state=on]:border data-[state=on]:shadow-sm hover:text-[var(--color-accent)] transition-all"
+                            onClick={() => setShowEvaluaciones(!showEvaluaciones)}
+                        >
                             <ClipboardList className="h-4 w-4" />
-                            <span className="text-sm">Evaluaciones</span>
+                            <span className="text-sm font-medium">Evaluaciones</span>
                         </ToggleGroupItem>
-                        <ToggleGroupItem value="experiencia" aria-label="Experiencia" className="gap-2 px-3">
+                        <ToggleGroupItem
+                            value="experiencia"
+                            aria-label="Experiencia"
+                            className="gap-2 px-3 data-[state=on]:bg-[var(--color-accent)]/10 data-[state=on]:text-[var(--color-accent)] data-[state=on]:border-[var(--color-accent)] data-[state=on]:border data-[state=on]:shadow-sm hover:text-[var(--color-accent)] transition-all"
+                            onClick={() => setShowExperiencia(!showExperiencia)}
+                        >
                             <Activity className="h-4 w-4" />
-                            <span className="text-sm">Experiencia</span>
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="ambas" aria-label="Ambas" className="gap-2 px-3">
-                            <Layers className="h-4 w-4" />
-                            <span className="text-sm">Ambas</span>
+                            <span className="text-sm font-medium">Experiencia</span>
                         </ToggleGroupItem>
                     </ToggleGroup>
                 </div>
             </div>
 
             <div className="p-4 border rounded-lg bg-card text-card-foreground shadow-sm">
-                <p className="text-muted-foreground mb-4 text-sm">
-                    {dataSource === 'evaluaciones' && 'Basado en las evaluaciones manuales del profesor.'}
-                    {dataSource === 'experiencia' && 'Basado en los registros de práctica de los últimos 30 días.'}
-                    {dataSource === 'ambas' && 'Comparativa entre evaluación del profesor y datos de práctica.'}
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <HabilidadesRadarChart
-                        data={radarData || []}
-                        isLoading={isLoading}
-                        dataKey1="A"
-                        dataKey2={dataSource === 'ambas' ? "B" : undefined}
-                    />
-                    <EvolucionPPMChart alumnoId={alumnoId} />
-                </div>
-
-                {(dataSource === 'experiencia' || dataSource === 'ambas') && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <HabilidadesTrabajadas data={listData} isLoading={isLoading} />
+                {!showEvaluaciones && !showExperiencia ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                        <Layers className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                        <p>Activa al menos una fuente para mostrar resultados.</p>
                     </div>
+                ) : (
+                    <>
+                        <p className="text-muted-foreground mb-4 text-sm">
+                            {showEvaluaciones && !showExperiencia && 'Basado en las evaluaciones manuales del profesor.'}
+                            {!showEvaluaciones && showExperiencia && 'Basado en los registros de práctica de los últimos 30 días.'}
+                            {showEvaluaciones && showExperiencia && 'Comparativa entre evaluación del profesor y datos de práctica.'}
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <HabilidadesRadarChart
+                                data={radarData || []}
+                                isLoading={isLoading}
+                                dataKey1="A"
+                                dataKey2={showEvaluaciones && showExperiencia ? "B" : undefined}
+                            />
+                            <EvolucionPPMChart alumnoId={alumnoId} />
+                        </div>
+
+                        {showExperiencia && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <HabilidadesTrabajadas data={listData} isLoading={isLoading} />
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>

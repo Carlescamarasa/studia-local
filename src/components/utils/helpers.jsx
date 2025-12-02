@@ -14,32 +14,32 @@ import { useLocalData } from "@/local-data/LocalDataProvider";
  */
 export function displayName(u) {
   if (!u) return 'Sin nombre';
-  
+
   // Prioridad 1: full_name (fuente de verdad en profiles)
   if (u.full_name && u.full_name.trim()) {
     return u.full_name.trim();
   }
-  
+
   // Prioridad 2: nombreCompleto (campo derivado, fallback)
   if (u.nombreCompleto && u.nombreCompleto.trim()) {
     return u.nombreCompleto.trim();
   }
-  
+
   // Prioridad 3: first_name + last_name
   const combined = [u.first_name, u.last_name].filter(Boolean).join(' ').trim();
   if (combined) return combined;
-  
+
   // Prioridad 4: name genérico
   if (u.name && u.name.trim()) {
     return u.name.trim();
   }
-  
+
   // Si tenemos solo el id, intentar resolver por ID
   if (u.id) {
     const byId = displayNameById(u.id);
     if (byId && byId !== 'Sin nombre') return byId;
   }
-  
+
   // Prioridad 5: email (parte local o completo si la parte local es un ID)
   if (u.email) {
     const email = String(u.email);
@@ -61,7 +61,7 @@ export function displayName(u) {
     // Si no tiene @, usar el email tal cual
     return email;
   }
-  
+
   return 'Sin nombre';
 }
 
@@ -89,7 +89,7 @@ export function formatDurationMinutes(totalMinutes) {
   const minutes = Math.max(0, Math.floor(totalMinutes || 0));
   const hours = Math.floor(minutes / 60);
   const rem = minutes % 60;
-  
+
   // Si las horas son >= 24, mostrar formato con días
   if (hours >= 24) {
     const dias = Math.floor(hours / 24);
@@ -107,7 +107,7 @@ export function formatDurationMinutes(totalMinutes) {
       return `${dias} d`;
     }
   }
-  
+
   // Formato normal para < 24h
   if (hours <= 0) {
     return `${rem} min`;
@@ -126,14 +126,14 @@ export function normalizarTexto(str) {
 // --- Helpers de fechas locales (sin UTC, sin saltos DST) ---
 const pad2 = (n) => String(n).padStart(2, "0");
 
-export const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+export const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 
-export const parseLocalDate = (s) => { 
+export const parseLocalDate = (s) => {
   if (!s || typeof s !== 'string') {
     throw new Error('parseLocalDate: Invalid input');
   }
-  const [y,m,d] = s.split("-").map(Number); 
-  return new Date(y, m-1, d); 
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d);
 };
 
 export const startOfMonday = (date) => {
@@ -148,7 +148,7 @@ export const isoWeekNumberLocal = (date) => {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
   const week1 = new Date(d.getFullYear(), 0, 4);
-  return 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay()+6) % 7)) / 7);
+  return 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
 };
 
 /**
@@ -179,11 +179,11 @@ export function calcularOffsetSemanas(semanaInicioISO, semanaActualISO) {
  */
 export function calcularTiempoSesion(sesion) {
   if (!sesion || !sesion.bloques) return 0;
-  
+
   const tiempoEjercicios = sesion.bloques
     .filter(b => b.tipo !== 'AD')
     .reduce((total, b) => total + (b.duracionSeg || 0), 0);
-  
+
   const tiempoRondas = (sesion.rondas || []).reduce((total, ronda) => {
     const tiempoRonda = ronda.bloques.reduce((sum, code) => {
       const bloque = sesion.bloques.find(b => b.code === code);
@@ -194,7 +194,7 @@ export function calcularTiempoSesion(sesion) {
     }, 0);
     return total + (tiempoRonda * ronda.repeticiones);
   }, 0);
-  
+
   return tiempoEjercicios + tiempoRondas;
 }
 
@@ -203,15 +203,15 @@ export function calcularTiempoSesion(sesion) {
  */
 export function aplanarSesion(sesion) {
   if (!sesion || !sesion.bloques) return [];
-  
+
   const listaEjecucion = [];
-  
+
   // Primero añadir ejercicios normales (no en rondas)
   const codigosEnRondas = new Set();
   (sesion.rondas || []).forEach(ronda => {
     ronda.bloques.forEach(code => codigosEnRondas.add(code));
   });
-  
+
   sesion.bloques.forEach((ejercicio, idx) => {
     if (!codigosEnRondas.has(ejercicio.code)) {
       listaEjecucion.push({
@@ -221,7 +221,7 @@ export function aplanarSesion(sesion) {
       });
     }
   });
-  
+
   // Luego añadir rondas aplanadas
   (sesion.rondas || []).forEach((ronda, rondaIdx) => {
     for (let rep = 0; rep < ronda.repeticiones; rep++) {
@@ -239,7 +239,7 @@ export function aplanarSesion(sesion) {
       });
     }
   });
-  
+
   return listaEjecucion;
 }
 
@@ -254,18 +254,18 @@ export function aplanarSesion(sesion) {
  */
 export function getEffectiveRole(options = {}) {
   const { appRole, currentUser } = options;
-  
+
   // Priorizar appRole (modo Supabase) sobre currentUser (modo local)
   // En modo Supabase: usar appRole
   if (appRole) {
     return appRole;
   }
-  
+
   // En modo local puro (sin Supabase): usar currentUser
   if (currentUser?.rolPersonalizado) {
     return currentUser.rolPersonalizado;
   }
-  
+
   // Fallback: intentar obtener desde getCurrentUser() si no se pasó
   if (!currentUser && !appRole) {
     try {
@@ -277,7 +277,7 @@ export function getEffectiveRole(options = {}) {
       // Ignorar errores
     }
   }
-  
+
   // Fallback final
   return "ESTU";
 }
@@ -295,23 +295,23 @@ export function useEffectiveUser() {
   const { user: supabaseUser, appRole } = useAuth();
   const currentUser = getCurrentUser();
   const { usuarios, loading: dataLoading } = useLocalData();
-  
+
   // Si hay usuario de Supabase, buscar en datos locales por email
   if (supabaseUser?.email) {
     const normalizedEmail = supabaseUser.email.toLowerCase().trim();
-    
+
     // Buscar en usuarios locales (solo si ya están cargados)
     if (!dataLoading) {
       const foundUser = usuarios.find(u => {
         if (!u.email) return false;
         return u.email.toLowerCase().trim() === normalizedEmail;
       });
-      
+
       if (foundUser) {
         return foundUser;
       }
     }
-    
+
     // Si no se encuentra en datos locales pero hay appRole,
     // crear un usuario sintético inmediatamente (no esperar a que carguen los datos)
     // Esto es seguro porque el usuario sintético no depende de los datos locales
@@ -323,7 +323,7 @@ export function useEffectiveUser() {
       const nameParts = fullName.split(' ');
       const firstName = nameParts[0] || emailParts;
       const lastName = nameParts.slice(1).join(' ') || '';
-      
+
       return {
         id: supabaseUser.id,
         email: supabaseUser.email,
@@ -337,13 +337,15 @@ export function useEffectiveUser() {
         fechaRegistro: supabaseUser.created_at || new Date().toISOString(),
         // Añadir metadata adicional si existe
         ...(metadata.avatar_url && { avatar_url: metadata.avatar_url }),
+        ...(metadata.nivel_tecnico && { nivelTecnico: metadata.nivel_tecnico }),
+        ...(metadata.nivelTecnico && { nivelTecnico: metadata.nivelTecnico }),
       };
     }
-    
+
     // Si no hay appRole aún, retornar null temporalmente
     return null;
   }
-  
+
   // En modo local, usar currentUser directamente
   return currentUser;
 }
@@ -362,7 +364,7 @@ export function useEffectiveUser() {
  */
 export function resolveUserIdActual(effectiveUser, usuarios = []) {
   if (!effectiveUser?.id) return null;
-  
+
   // Estrategia 1: Buscar por ID directamente (prioritario)
   // En modo Supabase, effectiveUser.id es UUID de auth.users = profiles.id
   // En modo local, puede ser string, pero debe coincidir si existe
@@ -370,20 +372,20 @@ export function resolveUserIdActual(effectiveUser, usuarios = []) {
   if (usuarioActual) {
     return usuarioActual.id;
   }
-  
+
   // Estrategia 2: Si no se encuentra y tenemos email, buscar por email
   // (En modo Supabase, email solo disponible para usuario autenticado)
   // (En modo local, email puede estar disponible para todos)
   if (effectiveUser.email) {
     const normalizedEmail = effectiveUser.email.toLowerCase().trim();
-    const usuarioPorEmail = usuarios.find(u => 
+    const usuarioPorEmail = usuarios.find(u =>
       u.email && u.email.toLowerCase().trim() === normalizedEmail
     );
     if (usuarioPorEmail) {
       return usuarioPorEmail.id;
     }
   }
-  
+
   // Fallback: usar effectiveUser.id directamente
   // En modo Supabase, esto DEBE ser el UUID correcto
   // En modo local, puede ser necesario usar este ID

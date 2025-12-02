@@ -154,11 +154,21 @@ function SortableRonda({
                   <SortableItem
                     key={`${ronda.id}-${code}-${eIndex}`}
                     id={`${ronda.id}-r-${code}-${eIndex}`}
-                    className="flex items-center gap-2 p-2 bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded-[var(--radius-card)]"
+                    className="flex items-center gap-2 p-2 bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded-[var(--radius-card)] cursor-pointer hover:border-[var(--color-primary)] transition-colors"
+                    onClick={() => {
+                      const idx = formData.bloques.findIndex(b => b.code === code);
+                      if (idx !== -1) {
+                        setEditingEjercicio({
+                          index: idx,
+                          ejercicio,
+                          piezaSnapshot: piezaSnapshot || pieza
+                        });
+                      }
+                    }}
                   >
                     {({ dragHandleProps, isDragging }) => (
                       <>
-                        <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing">
+                        <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 -m-1" onClick={(e) => e.stopPropagation()}>
                           <GripVertical className="w-3 h-3 text-[var(--color-text-secondary)]" />
                         </div>
                         <Badge variant="outline" className={`shrink-0 rounded-full ${tipoColors[ejercicio.tipo]}`}>
@@ -170,7 +180,8 @@ function SortableRonda({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             const idx = formData.bloques.findIndex(b => b.code === code);
                             if (idx !== -1) {
                               setEditingEjercicio({
@@ -188,10 +199,13 @@ function SortableRonda({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => removeEjercicioFromRonda(
-                            formData.rondas.findIndex(r => r.id === ronda.id),
-                            code
-                          )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeEjercicioFromRonda(
+                              formData.rondas.findIndex(r => r.id === ronda.id),
+                              code
+                            );
+                          }}
                           className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle}`}
                           title="Quitar de la ronda"
                         >

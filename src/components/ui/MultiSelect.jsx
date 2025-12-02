@@ -4,7 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Filter, Check } from "lucide-react";
 
-export default function MultiSelect({ label, items, value = [], onChange }) {
+export default function MultiSelect({ label, items, value = [], onChange, icon: Icon = Filter }) {
   const [open, setOpen] = React.useState(false);
 
   const toggleItem = (itemValue) => {
@@ -27,7 +27,7 @@ export default function MultiSelect({ label, items, value = [], onChange }) {
     if (value.length === 0) {
       return label;
     }
-    
+
     // En mobile, mostrar hasta 2 labels, luego "+X más" si hay más
     if (selectedLabels.length <= 2) {
       return `${label} (${selectedLabels.join(', ')})`;
@@ -41,7 +41,7 @@ export default function MultiSelect({ label, items, value = [], onChange }) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="text-xs h-9 rounded-xl focus-brand justify-start text-left min-w-0">
-          <Filter className="w-4 h-4 mr-2 shrink-0" />
+          <Icon className="w-4 h-4 mr-2 shrink-0" />
           <span className="truncate min-w-0 flex-1">
             {buttonText}
           </span>
@@ -81,9 +81,8 @@ export default function MultiSelect({ label, items, value = [], onChange }) {
                       className="cursor-pointer"
                     >
                       <div className="flex items-center gap-2 flex-1">
-                        <div className={`w-4 h-4 border-2 rounded flex items-center justify-center shrink-0 ${
-                          isSelected ? 'bg-[var(--color-accent)] border-[var(--color-accent)]' : 'border-[var(--color-border-default)]'
-                        }`}>
+                        <div className={`w-4 h-4 border-2 rounded flex items-center justify-center shrink-0 ${isSelected ? 'bg-[var(--color-accent)] border-[var(--color-accent)]' : 'border-[var(--color-border-default)]'
+                          }`}>
                           {isSelected && <Check className="w-3 h-3 text-white" />}
                         </div>
                         <span className="truncate">{item.label}</span>
