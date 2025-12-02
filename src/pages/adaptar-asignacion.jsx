@@ -283,8 +283,8 @@ function SortableSemanaAdaptar({
       ref={setNodeRef}
       style={style}
       className={`border-l-4 border-[var(--color-primary)] bg-[var(--color-primary-soft)]/50 rounded-r-lg p-3 transition-all ${isDragging
-          ? `${componentStyles.dnd.dragging} ${componentStyles.elevation.level3}`
-          : 'hover:bg-[var(--color-primary-soft)]'
+        ? `${componentStyles.dnd.dragging} ${componentStyles.elevation.level3}`
+        : 'hover:bg-[var(--color-primary-soft)]'
         }`}
     >
       <div className="flex items-start gap-2">
@@ -970,6 +970,7 @@ function AdaptarAsignacionPageContent() {
         <ExerciseEditor
           ejercicio={editingEjercicio.ejercicio}
           piezaSnapshot={asignacion.piezaSnapshot}
+          isInlineMode={true}
           onClose={(updated) => {
             if (updated) {
               if (editingEjercicio.source === 'ronda') {

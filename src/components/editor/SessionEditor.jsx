@@ -1013,6 +1013,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
         <ExerciseEditor
           ejercicio={editingEjercicio.ejercicio}
           piezaSnapshot={editingEjercicio.piezaSnapshot}
+          isInlineMode={true}
           onClose={(updated) => {
             if (updated) {
               updateEjercicioInline(editingEjercicio.index, updated);
