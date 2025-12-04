@@ -358,6 +358,15 @@ button:focus-visible {
     background-color: var(--color-danger);
     opacity: 0.9;
   }
+  .btn-warning {
+    background-color: var(--color-warning);
+    color: var(--color-text-inverse);
+    border: 1px solid var(--color-warning);
+  }
+  .btn-warning:hover {
+    background-color: var(--color-warning);
+    opacity: 0.9;
+  }
   .btn-disabled {
     opacity: 0.5;
     pointer-events: none;

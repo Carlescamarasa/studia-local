@@ -1,0 +1,4 @@
+id,student_id,skill,total_xp,practice_xp,evaluation_xp,last_updated_at,last_manual_xp_at,last_manual_xp_amount
+1ba85193-1d88-475e-bac8-63ece6611eb5,77dcf831-6283-462a-83bd-f5c46b3cde28,flexibilidad,243,243,0,2025-12-04 00:50:12.94113+00,2025-12-03 23:05:02.361+00,120
+72cafcfe-92b9-49a9-b319-d3b398717e62,77dcf831-6283-462a-83bd-f5c46b3cde28,articulacion,33,33,0,2025-12-03 00:50:12.94113+00,2025-12-03 15:09:31.902+00,5
+e2e6ac18-a972-4c21-be2f-302a2eef8d6a,77dcf831-6283-462a-83bd-f5c46b3cde28,motricidad,115,115,0,2025-12-03 00:50:12.94113+00,2025-12-03 15:09:31.379+00,15

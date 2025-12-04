@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { componentStyles } from "@/design/componentStyles"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-0 disabled:pointer-events-none disabled:opacity-50",
+  "btn inline-flex items-center justify-center whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-0 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
@@ -16,6 +16,7 @@ const buttonVariants = cva(
         outline: "btn-outline",
         ghost: "btn-ghost",
         link: "text-primary underline-offset-4 hover:underline",
+        warning: "btn-warning",
       },
       size: {
         default: "btn-md",
@@ -31,25 +32,25 @@ const buttonVariants = cva(
   }
 )
 
-const Button = React.forwardRef(({ 
-  className, 
-  variant, 
-  size, 
-  asChild = false, 
+const Button = React.forwardRef(({
+  className,
+  variant,
+  size,
+  asChild = false,
   loading = false,
   loadingText,
   children,
   disabled,
-  ...props 
+  ...props
 }, ref) => {
   const Comp = asChild ? Slot : "button"
-  
+
   // Determinar el tamaño del spinner según el tamaño del botón
-  const spinnerClass = size === "sm" 
+  const spinnerClass = size === "sm"
     ? componentStyles.buttons.spinnerInlineSm
     : size === "lg"
-    ? componentStyles.buttons.spinnerInlineLg
-    : componentStyles.buttons.spinnerInline
+      ? componentStyles.buttons.spinnerInlineLg
+      : componentStyles.buttons.spinnerInline
 
   // Contenido del botón: si está loading, mostrar spinner + texto, sino mostrar children
   const buttonContent = loading ? (

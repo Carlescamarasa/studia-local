@@ -94,7 +94,7 @@ export interface DesignTokens {
       strong: string;
     };
   };
-  
+
   // Layout y espaciado
   layout: {
     radius: {
@@ -133,7 +133,7 @@ export interface DesignTokens {
       paddingY: string;
     };
   };
-  
+
   // Tipografía
   typography: {
     fontFamilyBase: string;
@@ -148,7 +148,7 @@ export interface DesignTokens {
       relaxed: number;
     };
   };
-  
+
   // Chrome (shell de la app: sidebar, header, paneles laterales)
   chrome: {
     sidebar: {
@@ -163,7 +163,7 @@ export interface DesignTokens {
       border: string;
     };
   };
-  
+
   // Controls (botones, inputs, search, textareas, selects)
   controls: {
     field: {
@@ -184,7 +184,7 @@ export interface DesignTokens {
       height: string;
     };
   };
-  
+
   // Componentes específicos
   components: {
     input: {
@@ -263,7 +263,7 @@ export interface DesignTokens {
       border: string;
     };
   };
-  
+
   // Focus y accesibilidad
   focus: {
     ring: {
@@ -273,7 +273,7 @@ export interface DesignTokens {
       offset: string;
     };
   };
-  
+
   // Brand (compatibilidad con sistema anterior)
   brandHue: number;
   theme: ThemeValue;
@@ -294,13 +294,13 @@ export const DEFAULT_DESIGN: DesignTokens = {
     warning: '#F59E0B',         // Ámbar
     danger: '#EF4444',         // Rojo
     info: '#3B82F6',           // Azul
-    
+
     // Colores de superficie
     background: '#FFFFFF',
     surface: '#F9FAFB',
     surfaceElevated: '#FFFFFF',
     surfaceMuted: '#F3F4F6',
-    
+
     // Colores de texto
     text: {
       primary: '#111827',
@@ -308,7 +308,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
       muted: '#9CA3AF',
       inverse: '#FFFFFF',
     },
-    
+
     // Colores de borde
     border: {
       default: '#E5E7EB',
@@ -316,7 +316,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
       strong: '#D1D5DB',
     },
   },
-  
+
   // Layout y espaciado
   layout: {
     radius: {
@@ -355,7 +355,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
       paddingY: '1rem',        // 16px padding vertical de secciones
     },
   },
-  
+
   // Tipografía
   typography: {
     fontFamilyBase: '"Raleway", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -370,7 +370,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
       relaxed: 1.75,
     },
   },
-  
+
   // Chrome (shell de la app)
   chrome: {
     sidebar: {
@@ -385,7 +385,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
       border: 'var(--color-border-default)',
     },
   },
-  
+
   // Controls (botones, inputs, search)
   controls: {
     field: {
@@ -396,7 +396,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
     },
     button: {
       height: '2.5rem', // 40px - altura estándar para botones
-      radius: 'sm', // Cambiado de 'lg' a 'sm' para botones más cuadrados (4px)
+      radius: 'lg', // Cambiado de 'sm' a 'lg' para botones redondeados (12px)
       shadow: 'none', // Sin sombra por defecto
     },
     search: {
@@ -406,7 +406,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
       height: '2.5rem', // 40px - altura estándar para search
     },
   },
-  
+
   // Componentes específicos
   components: {
     input: {
@@ -487,7 +487,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
       border: '1px solid var(--color-border-default)',
     },
   },
-  
+
   // Focus y accesibilidad
   focus: {
     ring: {
@@ -497,7 +497,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
       offset: '2px',
     },
   },
-  
+
   // Brand (compatibilidad con sistema anterior)
   brandHue: 28, // Hue de #fd9840
   theme: 'light',
@@ -570,7 +570,7 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
   const vars: Record<string, string> = {};
   const toKebab = (s: string) =>
     s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/_/g, "-").toLowerCase();
-  
+
   // TODO(auditoría-DS3): El README referencia este archivo como `src/design/designConfig.ts`,
   // pero la ruta real es `src/components/design/designConfig.ts`. Actualizar README en la limpieza final.
 
@@ -606,7 +606,7 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
   Object.entries(brandScale).forEach(([k, l]) => {
     vars[`--brand-${k}`] = `${brandHue} ${brandSaturation}% ${l}%`;
   });
-  
+
   // Radius
   if (normalized.layout?.radius) {
     Object.entries(normalized.layout.radius).forEach(([key, value]) => {
@@ -629,25 +629,25 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
     // Alias de compatibilidad con CSS global aplicado en FASE 3:
     // - Se emite `--radius-ctrl` y `--radius-card` desde layout.radius
   }
-  
+
   // Shadows
   vars['--shadow-card'] = getShadowValue(normalized.layout?.shadow || 'md');
   vars['--shadow-control'] = getShadowValue(normalized.layout?.shadow === 'none' ? 'none' : 'sm');
-  
+
   // Spacing según densidad
   const density = normalized.layout?.density || 'normal';
   const spacing = getSpacingForDensity(density);
   Object.entries(spacing).forEach(([key, value]) => {
     vars[`--space-${key}`] = value;
   });
-  
+
   // Gaps
   if (normalized.layout?.gaps) {
     Object.entries(normalized.layout.gaps).forEach(([key, value]) => {
       vars[`--gap-${key}`] = value;
     });
   }
-  
+
   // Layout de página
   if (normalized.layout?.page) {
     vars['--page-max-width'] = normalized.layout.page.maxWidth || DEFAULT_DESIGN.layout.page.maxWidth;
@@ -655,39 +655,39 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
     vars['--page-padding-y'] = normalized.layout.page.paddingY || DEFAULT_DESIGN.layout.page.paddingY;
     vars['--page-section-gap-y'] = normalized.layout.page.sectionGapY || DEFAULT_DESIGN.layout.page.sectionGapY;
   }
-  
+
   // Layout de grid
   if (normalized.layout?.grid) {
     vars['--grid-columns'] = String(normalized.layout.grid.columns || DEFAULT_DESIGN.layout.grid.columns);
     vars['--grid-gap-x'] = normalized.layout.grid.gapX || DEFAULT_DESIGN.layout.grid.gapX;
     vars['--grid-gap-y'] = normalized.layout.grid.gapY || DEFAULT_DESIGN.layout.grid.gapY;
   }
-  
+
   // Layout de sidebar
   if (normalized.layout?.sidebar) {
     vars['--sidebar-width'] = normalized.layout.sidebar.width || DEFAULT_DESIGN.layout.sidebar.width;
   }
-  
+
   // Layout de sección
   if (normalized.layout?.section) {
     vars['--section-padding-y'] = normalized.layout.section.paddingY || DEFAULT_DESIGN.layout.section.paddingY;
   }
-  
+
   // Focus ring (con valores por defecto)
   const focusRing = normalized.focus?.ring || DEFAULT_DESIGN.focus.ring;
   vars['--focus-ring'] = `${focusRing.width} ${focusRing.style} ${focusRing.color}`;
   vars['--focus-ring-offset'] = focusRing.offset;
-  
+
   // Tipografía
   if (normalized.typography) {
     vars['--font-family-base'] = normalized.typography.fontFamilyBase || DEFAULT_DESIGN.typography.fontFamilyBase;
-    vars['--font-family-headings'] = normalized.typography.serifHeadings 
+    vars['--font-family-headings'] = normalized.typography.serifHeadings
       ? (normalized.typography.fontFamilySerif || DEFAULT_DESIGN.typography.fontFamilySerif)
       : (normalized.typography.fontFamilyHeadings || DEFAULT_DESIGN.typography.fontFamilyHeadings);
     vars['--font-size-base'] = `${normalized.typography.fontSizeBase || DEFAULT_DESIGN.typography.fontSizeBase}px`;
     // TODO(auditoría-DS3): Evaluar si hace falta exponer más escala (sm, md, lg) como CSS vars derivadas de `fontSizeBase` + `fontSizeScale`.
   }
-  
+
   // Chrome (shell de la app)
   if (normalized.chrome) {
     if (normalized.chrome.sidebar) {
@@ -704,7 +704,7 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
       vars['--header-border'] = normalized.chrome.header.border || DEFAULT_DESIGN.chrome.header.border;
     }
   }
-  
+
   // Controls (botones, inputs, search)
   if (normalized.controls) {
     if (normalized.controls.field) {
@@ -725,7 +725,7 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
       vars['--search-height'] = normalized.controls.search.height || DEFAULT_DESIGN.controls.search.height;
     }
   }
-  
+
   // Componentes
   if (normalized.components) {
     if (normalized.components.input) {
@@ -749,28 +749,28 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
     if (normalized.components.card) {
       const card = normalized.components.card;
       const cardDefault = DEFAULT_DESIGN.components.card;
-      
+
       // Padding base de la card (X/Y separados)
       vars['--card-padding-x'] = card.padding?.x || cardDefault.padding.x;
       vars['--card-padding-y'] = card.padding?.y || cardDefault.padding.y;
-      
+
       // Padding específico de header
       vars['--card-header-padding-x'] = card.padding?.header?.x || cardDefault.padding.header.x;
       vars['--card-header-padding-y'] = card.padding?.header?.y || cardDefault.padding.header.y;
-      
+
       // Padding específico de content
       vars['--card-content-padding-x'] = card.padding?.content?.x || cardDefault.padding.content.x;
       vars['--card-content-padding-y'] = card.padding?.content?.y || cardDefault.padding.content.y;
-      
+
       // Padding específico de footer
       vars['--card-footer-padding-x'] = card.padding?.footer?.x || cardDefault.padding.footer.x;
       vars['--card-footer-padding-y'] = card.padding?.footer?.y || cardDefault.padding.footer.y;
-      
+
       // Radius y shadow
       vars['--card-radius'] = getRadiusValue(card.radius || cardDefault.radius);
       vars['--radius-card'] = vars['--radius-card'] || vars['--card-radius']; // Alias consistente
       vars['--shadow-card'] = getShadowValue(card.shadow || cardDefault.shadow);
-      
+
       // Gap interno
       vars['--card-gap'] = card.gap || cardDefault.gap;
     }
@@ -783,14 +783,14 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
       vars['--header-height'] = normalized.components.header.height || DEFAULT_DESIGN.components.header.height;
     }
   }
-  
+
   // ============================================================================
   // MAPEO DE VARS SHADCN/TAILWIND PARA COMPATIBILIDAD
   // ============================================================================
   // Los componentes UI (table, select, etc.) usan clases Tailwind que dependen
   // de vars shadcn (--background, --muted, --card, etc.). Mapeamos desde el
   // sistema propio para mantener consistencia y soporte Dark mode.
-  
+
   // Helper para convertir hex a HSL (formato esperado por shadcn)
   const hexToHsl = (hex: string): string => {
     if (!hex || typeof hex !== 'string') {
@@ -806,11 +806,11 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
     const r = parseInt(hex.substring(0, 2), 16) / 255;
     const g = parseInt(hex.substring(2, 4), 16) / 255;
     const b = parseInt(hex.substring(4, 6), 16) / 255;
-    
+
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
     let h = 0, s = 0, l = (max + min) / 2;
-    
+
     if (max !== min) {
       const d = max - min;
       s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
@@ -820,10 +820,10 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
         case b: h = ((r - g) / d + 4) / 6; break;
       }
     }
-    
+
     return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
   };
-  
+
   // Mapeo de colores del sistema propio a vars shadcn
   // IMPORTANTE: Estas vars se aplican directamente al root, por lo que funcionan
   // tanto en light como en dark mode. No necesitamos duplicarlas en .dark
@@ -832,41 +832,41 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
     // Background y foreground
     vars['--background'] = hexToHsl(colors.background || DEFAULT_DESIGN.colors.background);
     vars['--foreground'] = hexToHsl(colors.text?.primary || DEFAULT_DESIGN.colors.text.primary);
-    
+
     // Card (surface elevated)
     vars['--card'] = hexToHsl(colors.surfaceElevated || DEFAULT_DESIGN.colors.surfaceElevated);
     vars['--card-foreground'] = hexToHsl(colors.text?.primary || DEFAULT_DESIGN.colors.text.primary);
-    
+
     // Popover (igual que card)
     vars['--popover'] = hexToHsl(colors.surfaceElevated || DEFAULT_DESIGN.colors.surfaceElevated);
     vars['--popover-foreground'] = hexToHsl(colors.text?.primary || DEFAULT_DESIGN.colors.text.primary);
-    
+
     // Primary (color de marca) - SIEMPRE #fd9840
     vars['--primary'] = hexToHsl(colors.primary || DEFAULT_DESIGN.colors.primary);
     vars['--primary-foreground'] = hexToHsl(colors.text?.inverse || DEFAULT_DESIGN.colors.text.inverse);
-    
+
     // Secondary (surface)
     vars['--secondary'] = hexToHsl(colors.surface || DEFAULT_DESIGN.colors.surface);
     vars['--secondary-foreground'] = hexToHsl(colors.text?.primary || DEFAULT_DESIGN.colors.text.primary);
-    
+
     // Muted (surface muted)
     vars['--muted'] = hexToHsl(colors.surfaceMuted || DEFAULT_DESIGN.colors.surfaceMuted || colors.surface || DEFAULT_DESIGN.colors.surface);
     vars['--muted-foreground'] = hexToHsl(colors.text?.secondary || DEFAULT_DESIGN.colors.text.secondary);
-    
+
     // Accent (surface muted)
     vars['--accent'] = hexToHsl(colors.surfaceMuted || DEFAULT_DESIGN.colors.surfaceMuted || colors.surface || DEFAULT_DESIGN.colors.surface);
     vars['--accent-foreground'] = hexToHsl(colors.text?.primary || DEFAULT_DESIGN.colors.text.primary);
-    
+
     // Destructive (danger)
     vars['--destructive'] = hexToHsl(colors.danger || DEFAULT_DESIGN.colors.danger);
     vars['--destructive-foreground'] = hexToHsl(colors.text?.inverse || DEFAULT_DESIGN.colors.text.inverse);
-    
+
     // Border (border default)
     vars['--border'] = hexToHsl(colors.border?.default || DEFAULT_DESIGN.colors.border.default);
     vars['--input'] = hexToHsl(colors.border?.default || DEFAULT_DESIGN.colors.border.default);
     vars['--ring'] = hexToHsl(colors.text?.primary || DEFAULT_DESIGN.colors.text.primary);
   }
-  
+
   return vars;
 }
 

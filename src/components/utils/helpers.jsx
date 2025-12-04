@@ -77,7 +77,7 @@ export function displayNameById(userId) {
   if (user) return displayName(user);
   // Fallback explícito para IDs conocidos en local
   if (userId === '6913f9c07890d136d35d0a77') return 'Carles Estudiante';
-  if (userId === '691432b999585b6c94028617') return 'La Trompeta Sonará';
+  if (userId === '77dcf831-6283-462a-83bd-f5c46b3cde28') return 'La Trompeta Sonará'; // Supabase UUID
   return 'Sin nombre';
 }
 

@@ -1,0 +1,2 @@
+id,alumno_id,profesor_id,estado,tipo,titulo,created_at,updated_at,cerrado_at,ultima_respuesta_de
+13a9583f-9fd0-4ea2-97bd-4dc4d6d9a79f,77dcf831-6283-462a-83bd-f5c46b3cde28,2f3fc08b-5096-4dba-a350-ddce0df297f3,cerrado,duda_general,Problema de asma puntual,2025-11-25 15:12:10.353728+00,2025-11-26 00:24:47.083913+00,2025-11-26 00:24:46.909+00,alumno

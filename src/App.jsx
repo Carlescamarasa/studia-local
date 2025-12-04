@@ -19,6 +19,11 @@ const queryClient = new QueryClient({
   },
 });
 
+// Expose to window for debugging and cross-component access
+if (typeof window !== 'undefined') {
+  window.__queryClient = queryClient;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -29,8 +34,8 @@ function App() {
               {/* Handler global para reportes de errores - siempre montado dentro de los providers */}
               <GlobalErrorReportHandler />
               <ErrorBoundary>
-              <AppRouter />
-              <Toaster />
+                <AppRouter />
+                <Toaster />
               </ErrorBoundary>
             </DataProvider>
           </LocalDataProvider>

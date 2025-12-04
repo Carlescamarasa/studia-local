@@ -1061,7 +1061,7 @@ function AgendaPageContent() {
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setEstudiantesFiltrados([row.alumno]); // Pre-seleccionar alumno
+                  setSelectedStudentForEval(row.alumno);
                   setShowEvaluacionModal(true);
                 }}
                 className={`${componentStyles.buttons.outline}`}
@@ -1112,7 +1112,7 @@ function AgendaPageContent() {
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setEstudiantesFiltrados([row.alumno]); // Pre-seleccionar alumno
+                  setSelectedStudentForEval(row.alumno);
                   setShowEvaluacionModal(true);
                 }}
                 className={`h-8 ${componentStyles.buttons.ghost}`}
@@ -1417,15 +1417,9 @@ function AgendaPageContent() {
       )}
 
       <Dialog open={showEvaluacionModal} onOpenChange={setShowEvaluacionModal}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Nueva Evaluación Técnica</DialogTitle>
-            <DialogDescription>
-              Registra el progreso actual de las habilidades maestras.
-            </DialogDescription>
-          </DialogHeader>
-          {/* Si hay un alumno seleccionado, pre-seleccionarlo, si no, permitir elegir (EvaluacionForm debe manejar esto) */}
+        <DialogContent className="max-w-4xl w-full max-h-[90vh] p-0 gap-0 overflow-hidden bg-[var(--color-surface-elevated)] border-[var(--color-border-default)]">
           <EvaluacionForm
+            key={selectedStudentForEval?.id}
             alumnoId={selectedStudentForEval?.id}
             onClose={() => setShowEvaluacionModal(false)}
           />

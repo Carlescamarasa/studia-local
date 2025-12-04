@@ -31,16 +31,16 @@ function startOfMonday(date) {
   return d;
 }
 
-// IDs válidos de usuarios (fuente de verdad)
+// IDs válidos de usuarios (Supabase UUIDs)
 const VALID_USER_IDS = [
-  '6913f9c07890d136d35d0a77', // Carles Estudiante
-  '6913ff6688f046f7e7eb3f3b', // Carles Profe
-  '6913f837bb2b72a49b9d25d2', // Carles Camarasa Botella (Admin)
-  '691432b999585b6c94028617', // La Trompeta Sonará
+  'aeb71bd6-2443-49ea-84aa-fbb7f2ab5589', // Carles +01
+  '7232a445-c1cb-43c6-9df4-ff663aa77f4f', // Carles Profe
+  'a1a9582f-2903-4bac-b456-08a8dd7a4d74', // Carles Camarasa Botella (Admin)
+  '77dcf831-6283-462a-83bd-f5c46b3cde28', // La Trompeta Sonará
 ];
 
-const DEFAULT_ESTUDIANTE_ID = '6913f9c07890d136d35d0a77'; // Carles Estudiante
-const DEFAULT_PROFESOR_ID = '6913ff6688f046f7e7eb3f3b'; // Carles Profe
+const DEFAULT_ESTUDIANTE_ID = 'aeb71bd6-2443-49ea-84aa-fbb7f2ab5589'; // Carles +01
+const DEFAULT_PROFESOR_ID = '7232a445-c1cb-43c6-9df4-ff663aa77f4f'; // Carles Profe
 
 /**
  * Normaliza un número, reemplazando valores inválidos por 0

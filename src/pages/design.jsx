@@ -7,21 +7,67 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Palette, Download, Upload, RotateCcw, Save, Trash2,
+import {
+  Palette, Download, Upload, RotateCcw, Save, Trash2,
   FileCode, CheckCircle, AlertTriangle, Play, Eye, Plus,
-  Scan, Sparkles, X, Copy, Settings, Shield } from "lucide-react";
+  Scan, Sparkles, X, Copy, Settings, Shield
+} from "lucide-react";
 import { toast } from "sonner";
 import RequireRole from "@/components/auth/RequireRole";
 import PageHeader from "@/components/ds/PageHeader";
 import { runDesignAudit, QUICK_PROFILES, parseAuditSpec, runAudit } from "@/components/utils/auditor";
 import Tabs from "@/components/ds/Tabs";
 import { getAllPresets, saveCustomPreset, deleteCustomPreset, exportCustomPresets, importCustomPresets } from "@/components/design/DesignPresets";
-import { QAVisualContent } from "@/pages/qa-visual.jsx";
-import { componentStyles } from "@/design/componentStyles";
+import LevelConfigView from "@/components/admin/LevelConfigView";
+
+// ... existing imports ...
+
+// ... inside DesignPageContent ...
+
+const componentStyles = {
+  layout: {
+    page: "container mx-auto p-6 max-w-[var(--page-max-width)]",
+    grid2: "grid grid-cols-1 md:grid-cols-2 gap-6",
+  },
+  controls: {
+    inputDefault: "bg-background border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+    selectDefault: "bg-background border-input ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+    inputSm: "h-8 text-xs",
+    inputUnderline: "border-b border-input bg-transparent rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary",
+  },
+  containers: {
+    cardBase: "rounded-xl border bg-card text-card-foreground shadow-sm",
+    cardElevated: "rounded-xl border bg-card text-card-foreground shadow-md",
+    cardMetric: "rounded-xl border bg-card text-card-foreground shadow-sm p-4",
+    panelBase: "rounded-xl border bg-muted/20 text-muted-foreground",
+  },
+  typography: {
+    pageTitle: "text-2xl font-bold tracking-tight",
+    pageSubtitle: "text-muted-foreground",
+    cardTitle: "text-lg font-semibold leading-none tracking-tight",
+    bodyText: "text-sm text-muted-foreground",
+    smallMetaText: "text-xs text-muted-foreground",
+  },
+  buttons: {
+    primary: "bg-primary text-primary-foreground hover:bg-primary/90",
+    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+    outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+    ghost: "hover:bg-accent hover:text-accent-foreground",
+    danger: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+  },
+  status: {
+    badgeDefault: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+    badgeInfo: "border-transparent bg-blue-500 text-white hover:bg-blue-600",
+    badgeSuccess: "border-transparent bg-green-500 text-white hover:bg-green-600",
+    badgeWarning: "border-transparent bg-yellow-500 text-white hover:bg-yellow-600",
+    badgeDanger: "border-transparent bg-red-500 text-white hover:bg-red-600",
+    badgeOutline: "text-foreground",
+  }
+};
 
 function LayoutValuesDebug() {
   const [values, setValues] = useState({});
-  
+
   useEffect(() => {
     const updateValues = () => {
       const root = getComputedStyle(document.documentElement);
@@ -38,7 +84,8 @@ function LayoutValuesDebug() {
     const interval = setInterval(updateValues, 500);
     return () => clearInterval(interval);
   }, []);
-  
+
+
   return (
     <div className="mt-4 p-3 bg-[var(--color-surface-muted)] rounded-lg text-xs">
       <p className="font-semibold mb-2">Valores de Layout Actuales (CSS vars):</p>
@@ -160,7 +207,7 @@ function DesignPageContent({ embedded = false }) {
       toast.success('✅ Preset base cargado');
       return;
     }
-    
+
     // Si no es base, intentar cargar como preset personalizado
     const result = loadPreset(presetId);
     if (result.success) {
@@ -257,7 +304,7 @@ function DesignPageContent({ embedded = false }) {
   const handleVisualSmoke = useCallback(() => {
     setQaRunning(true);
     setQaOutput('Ejecutando visual smoke...');
-    
+
     setTimeout(() => {
       const checks = [
         { sel: '.icon-tile', name: 'Icon tiles' },
@@ -269,15 +316,15 @@ function DesignPageContent({ embedded = false }) {
         { sel: '[data-testid="tabs-segmented"]', name: 'Tabs segmentadas' },
         { sel: '[data-sidebar-abierto]', name: 'Sidebar state' },
       ];
-      
+
       const results = checks.map(c => {
         const found = document.querySelectorAll(c.sel).length;
         const status = found > 0 ? '✅' : '⚠️';
         return `${status} ${c.name}: ${found}`;
       });
-      
+
       const bodyHTML = document.body.innerHTML;
-      
+
       results.push('');
       results.push('Legacy Colors:');
       LEGACY_HEX.forEach(({ pattern, name, displayHex }) => {
@@ -288,7 +335,7 @@ function DesignPageContent({ embedded = false }) {
           results.push(`✅ ${name} (${displayHex}): OK`);
         }
       });
-      
+
       setQaOutput(`VISUAL SMOKE TEST\n${'='.repeat(50)}\n\n${results.join('\n')}`);
       setQaRunning(false);
       toast.success('✅ Visual smoke completado');
@@ -298,10 +345,10 @@ function DesignPageContent({ embedded = false }) {
   const handleA11yQuick = useCallback(() => {
     setQaRunning(true);
     setQaOutput('Ejecutando a11y quick-check...');
-    
+
     setTimeout(() => {
       const results = [];
-      
+
       const h1Count = document.querySelectorAll('h1').length;
       if (h1Count === 0) {
         results.push('❌ Sin H1 en página');
@@ -310,7 +357,7 @@ function DesignPageContent({ embedded = false }) {
       } else {
         results.push(`⚠️ ${h1Count} H1s (se recomienda 1)`);
       }
-      
+
       const buttons = Array.from(document.querySelectorAll('button, a[role="button"]'));
       const unlabelledButtons = buttons.filter(el => {
         const text = el.textContent?.trim();
@@ -319,10 +366,10 @@ function DesignPageContent({ embedded = false }) {
         const title = el.getAttribute('title');
         return !text && !ariaLabel && !ariaLabelledBy && !title;
       });
-      results.push(unlabelledButtons.length === 0 
-        ? `✅ Todos los botones etiquetados (${buttons.length} total)` 
+      results.push(unlabelledButtons.length === 0
+        ? `✅ Todos los botones etiquetados (${buttons.length} total)`
         : `❌ ${unlabelledButtons.length}/${buttons.length} botón(es) sin label`);
-      
+
       const inputs = Array.from(document.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), textarea, select'));
       const unlabelledInputs = inputs.filter(el => {
         const id = el.getAttribute('id');
@@ -331,37 +378,37 @@ function DesignPageContent({ embedded = false }) {
         const hasLabel = id ? document.querySelector(`label[for="${id}"]`) : null;
         return !hasLabel && !ariaLabel && !ariaLabelledBy;
       });
-      results.push(unlabelledInputs.length === 0 
-        ? `✅ Todos los inputs etiquetados (${inputs.length} total)` 
+      results.push(unlabelledInputs.length === 0
+        ? `✅ Todos los inputs etiquetados (${inputs.length} total)`
         : `⚠️ ${unlabelledInputs.length}/${inputs.length} input(s) sin label`);
-      
+
       const hasMain = !!document.querySelector('main');
       const hasNav = !!document.querySelector('nav, [role="navigation"]');
       const hasHeader = !!document.querySelector('header, [role="banner"]');
-      
+
       results.push('');
       results.push('Landmarks:');
       results.push(hasMain ? '✅ <main> presente' : '⚠️ Sin <main> landmark');
       results.push(hasNav ? '✅ Nav presente' : 'ℹ️ Sin nav (puede ser OK)');
       results.push(hasHeader ? '✅ Header presente' : 'ℹ️ Sin header');
-      
+
       results.push('');
       results.push('Focus:');
       const focusableElements = document.querySelectorAll('button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])');
       results.push(`ℹ️ ${focusableElements.length} elementos enfocables detectados`);
       results.push(`ℹ️ Ring focus: brand (probar con Tab)`);
-      
+
       results.push('');
       results.push('Contraste:');
       results.push('ℹ️ Usar herramienta externa para análisis completo');
       results.push('✅ Design System usa tokens con contraste WCAG AA+');
-      
+
       setQaOutput(`A11Y QUICK-CHECK\n${'='.repeat(50)}\n\n${results.join('\n')}`);
       setQaRunning(false);
-      
+
       const errors = results.filter(r => r.startsWith('❌')).length;
       const warnings = results.filter(r => r.startsWith('⚠️')).length;
-      
+
       if (errors > 0) {
         toast.error(`❌ ${errors} error(es) críticos`);
       } else if (warnings > 0) {
@@ -389,9 +436,17 @@ function DesignPageContent({ embedded = false }) {
               { value: 'presets', label: 'Presets' },
               { value: 'controls', label: 'Controles' },
               { value: 'preview', label: 'Preview' },
+              { value: 'levels', label: 'Niveles' },
             ]}
           />
         </div>
+
+        {activeSection === 'levels' && (
+          <div className="mt-6">
+            <LevelConfigView />
+          </div>
+        )}
+
 
         {activeSection === 'presets' && (
           <>
@@ -430,13 +485,12 @@ function DesignPageContent({ embedded = false }) {
                     <div className={componentStyles.layout.grid2}>
                       {basePresets.map((preset) => {
                         const isActive = currentPresetId === preset.id;
-                        
+
                         return (
-                          <Card 
+                          <Card
                             key={preset.id}
-                            className={`app-panel cursor-pointer transition-all border ${
-                              isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
-                            }`}
+                            className={`app-panel cursor-pointer transition-all border ${isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
+                              }`}
                             onClick={() => handleLoadPreset(preset.id)}
                           >
                             <CardContent className="p-3">
@@ -504,13 +558,12 @@ function DesignPageContent({ embedded = false }) {
                     <div className={componentStyles.layout.grid2}>
                       {Object.entries(customPresets).map(([id, preset]) => {
                         const isActive = JSON.stringify(config) === JSON.stringify(preset.config);
-                        
+
                         return (
-                          <Card 
+                          <Card
                             key={id}
-                            className={`app-panel cursor-pointer transition-all border ${
-                              isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
-                            }`}
+                            className={`app-panel cursor-pointer transition-all border ${isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
+                              }`}
                             onClick={() => handleLoadPreset(id)}
                           >
                             <CardContent className="p-3">
@@ -709,7 +762,7 @@ function DesignPageContent({ embedded = false }) {
               <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>Configuración Actual</CardTitle>
               </CardHeader>
-                    <CardContent className="pt-4 text-[var(--color-text-primary)]">
+              <CardContent className="pt-4 text-[var(--color-text-primary)]">
                 <pre className="text-xs font-mono bg-[var(--color-surface-muted)] p-4 rounded-xl border border-[var(--color-border-default)] overflow-x-auto">
                   {JSON.stringify(config, null, 2)}
                 </pre>
@@ -729,9 +782,9 @@ function DesignPageContent({ embedded = false }) {
                 <div className="py-2">
                   <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Tipografía</h3>
                   <LabeledRow label="Títulos con Serif">
-                    <Switch 
-                      checked={design?.typography?.serifHeadings || false} 
-                      onCheckedChange={(v) => setDesignPartial('typography.serifHeadings', !!v)} 
+                    <Switch
+                      checked={design?.typography?.serifHeadings || false}
+                      onCheckedChange={(v) => setDesignPartial('typography.serifHeadings', !!v)}
                     />
                   </LabeledRow>
                   <LabeledRow label="Tamaño Base (px)">
@@ -800,8 +853,8 @@ function DesignPageContent({ embedded = false }) {
                 <div className="py-2">
                   <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Layout</h3>
                   <LabeledRow label="Radio Global">
-                    <Select 
-                      value={design?.layout?.radius?.global || 'lg'} 
+                    <Select
+                      value={design?.layout?.radius?.global || 'lg'}
                       onValueChange={(v) => setDesignPartial('layout.radius.global', v)}
                     >
                       <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
@@ -820,8 +873,8 @@ function DesignPageContent({ embedded = false }) {
                     </Select>
                   </LabeledRow>
                   <LabeledRow label="Radio de Cards">
-                    <Select 
-                      value={design?.layout?.radius?.card || 'lg'} 
+                    <Select
+                      value={design?.layout?.radius?.card || 'lg'}
                       onValueChange={(v) => setDesignPartial('layout.radius.card', v)}
                     >
                       <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
@@ -840,8 +893,8 @@ function DesignPageContent({ embedded = false }) {
                     </Select>
                   </LabeledRow>
                   <LabeledRow label="Radio de Controles">
-                    <Select 
-                      value={design?.layout?.radius?.controls || 'lg'} 
+                    <Select
+                      value={design?.layout?.radius?.controls || 'lg'}
                       onValueChange={(v) => setDesignPartial('layout.radius.controls', v)}
                     >
                       <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
@@ -860,8 +913,8 @@ function DesignPageContent({ embedded = false }) {
                     </Select>
                   </LabeledRow>
                   <LabeledRow label="Radio de Pills">
-                    <Select 
-                      value={design?.layout?.radius?.pill || 'lg'} 
+                    <Select
+                      value={design?.layout?.radius?.pill || 'lg'}
                       onValueChange={(v) => setDesignPartial('layout.radius.pill', v)}
                     >
                       <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
@@ -880,8 +933,8 @@ function DesignPageContent({ embedded = false }) {
                     </Select>
                   </LabeledRow>
                   <LabeledRow label="Radio de Modales">
-                    <Select 
-                      value={design?.layout?.radius?.modal || 'xl'} 
+                    <Select
+                      value={design?.layout?.radius?.modal || 'xl'}
                       onValueChange={(v) => setDesignPartial('layout.radius.modal', v)}
                     >
                       <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
@@ -900,8 +953,8 @@ function DesignPageContent({ embedded = false }) {
                     </Select>
                   </LabeledRow>
                   <LabeledRow label="Sombras">
-                    <Select 
-                      value={design?.layout?.shadow || 'md'} 
+                    <Select
+                      value={design?.layout?.shadow || 'md'}
                       onValueChange={(v) => setDesignPartial('layout.shadow', v)}
                     >
                       <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
@@ -918,8 +971,8 @@ function DesignPageContent({ embedded = false }) {
                     </Select>
                   </LabeledRow>
                   <LabeledRow label="Densidad">
-                    <Select 
-                      value={design?.layout?.density || 'normal'} 
+                    <Select
+                      value={design?.layout?.density || 'normal'}
                       onValueChange={(v) => setDesignPartial('layout.density', v)}
                     >
                       <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
@@ -1267,8 +1320,8 @@ function DesignPageContent({ embedded = false }) {
                 <div className="py-2">
                   <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Componentes</h3>
                   <LabeledRow label="Radio de Botones">
-                    <Select 
-                      value={design?.components?.button?.radius || 'lg'} 
+                    <Select
+                      value={design?.components?.button?.radius || 'lg'}
                       onValueChange={(v) => setDesignPartial('components.button.radius', v)}
                     >
                       <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
@@ -1311,8 +1364,8 @@ function DesignPageContent({ embedded = false }) {
                     />
                   </LabeledRow>
                   <LabeledRow label="Radio de Inputs">
-                    <Select 
-                      value={design?.components?.input?.radius || 'lg'} 
+                    <Select
+                      value={design?.components?.input?.radius || 'lg'}
                       onValueChange={(v) => setDesignPartial('components.input.radius', v)}
                     >
                       <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
@@ -1339,8 +1392,8 @@ function DesignPageContent({ embedded = false }) {
                     />
                   </LabeledRow>
                   <LabeledRow label="Radio de Cards">
-                    <Select 
-                      value={design?.components?.card?.radius || 'lg'} 
+                    <Select
+                      value={design?.components?.card?.radius || 'lg'}
                       onValueChange={(v) => setDesignPartial('components.card.radius', v)}
                     >
                       <SelectTrigger className={`w-48 ${componentStyles.controls.selectDefault}`}>
@@ -1441,20 +1494,20 @@ function DesignPageContent({ embedded = false }) {
                 <Copy className="w-4 h-4 mr-2" />
                 Copiar JSON de Configuración
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
                   const json = exportDesign();
                   navigator.clipboard.writeText(json);
                   toast.success('✅ Diseño exportado al portapapeles');
-                }} 
+                }}
                 className="h-10 rounded-xl"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Exportar Diseño
               </Button>
             </div>
-            
+
             <Card className="app-card">
               <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>Importar Diseño</CardTitle>
@@ -1478,8 +1531,8 @@ function DesignPageContent({ embedded = false }) {
                     }
                   }}
                 />
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => {
                     const json = prompt('Pega el JSON del diseño:');
                     if (json) {
@@ -1490,7 +1543,7 @@ function DesignPageContent({ embedded = false }) {
                         toast.error('❌ Error: ' + result.error);
                       }
                     }
-                  }} 
+                  }}
                   className="h-10 rounded-xl"
                 >
                   <Upload className="w-4 h-4 mr-2" />
@@ -1527,8 +1580,8 @@ function DesignPageContent({ embedded = false }) {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button 
-                    onClick={() => handleRunAudit(auditProfile)} 
+                  <Button
+                    onClick={() => handleRunAudit(auditProfile)}
                     disabled={auditRunning}
                     className="btn-primary h-9 rounded-xl shadow-sm"
                   >
@@ -1538,7 +1591,7 @@ function DesignPageContent({ embedded = false }) {
                 </div>
               </div>
             </CardHeader>
-                    <CardContent className="pt-4 text-[var(--color-text-primary)]">
+            <CardContent className="pt-4 text-[var(--color-text-primary)]">
               {auditReport ? (
                 <div className="space-y-4">
                   <div className={componentStyles.layout.grid2}>
@@ -1571,7 +1624,7 @@ function DesignPageContent({ embedded = false }) {
                   )}
 
                   {auditReport?.issues && (
-                  <details className="rounded-xl border border-[var(--color-border-default)] p-4 bg-[var(--color-surface-muted)]">
+                    <details className="rounded-xl border border-[var(--color-border-default)] p-4 bg-[var(--color-surface-muted)]">
                       <summary className="cursor-pointer font-medium text-[var(--color-text-primary)]">Detalles por categoría</summary>
                       <div className="mt-4 space-y-4 max-h-[420px] overflow-auto">
                         {Object.entries(auditReport.issues).map(([bucket, items]) => (
@@ -1602,7 +1655,7 @@ function DesignPageContent({ embedded = false }) {
                       </div>
                     </details>
                   )}
-                  
+
                   <Button variant="outline" onClick={handleCopyAudit} className="h-9 rounded-xl w-full">
                     <Copy className="w-4 h-4 mr-2" />
                     Copiar informe JSON completo
@@ -1632,15 +1685,15 @@ function DesignPageContent({ embedded = false }) {
                   <div>
                     <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Acciones rápidas</h4>
                     <div className="flex items-center gap-3">
-                    <Button
-                      className="btn-primary h-8 rounded-xl shadow-sm px-3"
-                      onClick={() => toast.success('✅ Botón Primary funcionando')}
-                      aria-label="Probar botón Primary QA"
-                    >
-                      Primary (QA)
-                    </Button>
-                    <Badge>QA</Badge>
-                  </div>
+                      <Button
+                        className="btn-primary h-8 rounded-xl shadow-sm px-3"
+                        onClick={() => toast.success('✅ Botón Primary funcionando')}
+                        aria-label="Probar botón Primary QA"
+                      >
+                        Primary (QA)
+                      </Button>
+                      <Badge>QA</Badge>
+                    </div>
                   </div>
                   <div className="app-panel p-3 rounded-xl border border-[var(--color-border-muted)]">
                     <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Componentes de prueba</h4>
@@ -1649,15 +1702,15 @@ function DesignPageContent({ embedded = false }) {
                   <div className="icon-tile" aria-hidden />
                   <div>
                     <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Pestañas de ejemplo</h4>
-                  <Tabs
-                    value={qaTabsValue}
-                    onChange={setQaTabsValue}
-                    items={[
-                      { value: 'one', label: 'Uno' },
-                      { value: 'two', label: 'Dos' },
-                    ]}
-                    variant="segmented"
-                  />
+                    <Tabs
+                      value={qaTabsValue}
+                      onChange={setQaTabsValue}
+                      items={[
+                        { value: 'one', label: 'Uno' },
+                        { value: 'two', label: 'Dos' },
+                      ]}
+                      variant="segmented"
+                    />
                     <div className="mt-3 text-sm text-[var(--color-text-secondary)]">
                       {qaTabsValue === 'one' ? (
                         <span>Contenido de la pestaña “Uno”: texto de ejemplo.</span>
@@ -1669,8 +1722,8 @@ function DesignPageContent({ embedded = false }) {
                 </div>
 
                 <div className="flex gap-2 flex-wrap">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={handleVisualSmoke}
                     disabled={qaRunning}
                     className="h-10 rounded-xl"
@@ -1678,8 +1731,8 @@ function DesignPageContent({ embedded = false }) {
                     <Eye className="w-4 h-4 mr-2" />
                     Visual Smoke
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={handleA11yQuick}
                     disabled={qaRunning}
                     className="h-10 rounded-xl"
@@ -1717,7 +1770,7 @@ function DesignPageContent({ embedded = false }) {
               <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>Selector de Estilo Base</CardTitle>
               </CardHeader>
-                    <CardContent className="pt-4 text-[var(--color-text-primary)]">
+              <CardContent className="pt-4 text-[var(--color-text-primary)]">
                 <div className="space-y-4">
                   <div>
                     <Label className="text-sm font-medium text-[var(--color-text-primary)] mb-2 block">
@@ -1872,7 +1925,7 @@ function DesignPageContent({ embedded = false }) {
                   <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Tabs:</p>
                   <Tabs
                     value="tab1"
-                    onChange={() => {}}
+                    onChange={() => { }}
                     items={[
                       { value: 'tab1', label: 'Tab 1' },
                       { value: 'tab2', label: 'Tab 2' },
@@ -1913,7 +1966,7 @@ function DesignPageContent({ embedded = false }) {
           </>
         )}
       </div>
-    </div>
+    </div >
   );
 }
 

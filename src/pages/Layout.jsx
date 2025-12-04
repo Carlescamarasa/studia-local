@@ -25,6 +25,7 @@ import {
   MessageSquare,
   HelpCircle,
   Tag,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ds";
@@ -71,6 +72,7 @@ const navigationByRole = {
     { title: "Agenda", url: "/agenda", icon: Calendar, group: "Profesor" },
     { title: "Calendario", url: "/calendario", icon: Calendar, group: "Profesor" },
     { title: "Estadísticas", url: "/estadisticas", icon: Activity, group: "Profesor" },
+    { title: "Habilidades", url: "/habilidades", icon: Star, group: "Profesor" },
     { title: "Reportes", url: "/reportes", icon: Bug, group: "Admin" },
     { title: "Panel de Diseño", url: "/design", icon: Palette, group: "Admin" },
     { title: "Versión y Registro", url: "/admin/version", icon: Tag, group: "Admin" },
@@ -85,6 +87,7 @@ const navigationByRole = {
     { title: "Agenda", url: "/agenda", icon: Calendar, group: "Profesor" },
     { title: "Calendario", url: "/calendario", icon: Calendar, group: "Profesor" },
     { title: "Estadísticas", url: "/estadisticas", icon: Activity, group: "Profesor" },
+    { title: "Habilidades", url: "/habilidades", icon: Star, group: "Profesor" },
   ],
   ESTU: [
     { title: "Studia ahora", url: "/hoy", icon: PlayCircle, group: "Estudio" },
@@ -92,6 +95,7 @@ const navigationByRole = {
     { title: "Calendario", url: "/calendario", icon: Calendar, group: "Estudio" },
     { title: "Centro de dudas", url: "/soporte", icon: MessageSquare, group: "Estudio" },
     { title: "Mis Estadísticas", url: "/estadisticas", icon: Activity, group: "Estudio" },
+    { title: "Habilidades", url: "/habilidades", icon: Star, group: "Estudio" },
   ],
 };
 
@@ -151,9 +155,9 @@ function LayoutContent() {
   // Usar profile si está disponible (tiene datos más frescos de Supabase), sino effectiveUser
   const displayUser = profile || effectiveUser;
 
-  console.log('DEBUG: Layout displayUser:', displayUser);
-  console.log('DEBUG: Layout nivelTecnico:', displayUser?.nivelTecnico);
-  console.log('DEBUG: Layout nivel (label):', displayUser?.nivel);
+  // console.log('DEBUG: Layout displayUser:', displayUser);
+  // console.log('DEBUG: Layout nivelTecnico:', displayUser?.nivelTecnico);
+  // console.log('DEBUG: Layout nivel (label):', displayUser?.nivel);
 
   const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
   const isLoading = false; // No hay loading en local
@@ -482,6 +486,7 @@ function LayoutContent() {
     '/hoy': ['ESTU'],
     '/semana': ['ESTU'],
     '/estadisticas': ['ESTU', 'PROF', 'ADMIN'],
+    '/habilidades': ['ESTU', 'PROF', 'ADMIN'],
     '/design': ['ADMIN'],
     '/admin/version': ['ADMIN'],
     '/testseed': ['ADMIN'],

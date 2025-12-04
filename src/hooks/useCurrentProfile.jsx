@@ -31,16 +31,16 @@ export function useCurrentProfile() {
           const normalizedEmail = effectiveUser.email.toLowerCase().trim();
           localProfile = users.find(u => u.email && u.email.toLowerCase().trim() === normalizedEmail);
           if (localProfile) {
-            console.log('DEBUG: useCurrentProfile found profile by EMAIL (ID mismatch fixed):', localProfile);
+            // console.log('DEBUG: useCurrentProfile found profile by EMAIL (ID mismatch fixed):', localProfile);
           }
         }
 
         if (localProfile) {
-          console.log('DEBUG: useCurrentProfile found local profile:', localProfile);
+          // console.log('DEBUG: useCurrentProfile found local profile:', localProfile);
           return localProfile;
         }
 
-        console.log('DEBUG: useCurrentProfile NOT found local, using fallback');
+        // console.log('DEBUG: useCurrentProfile NOT found local, using fallback');
 
         // Si no se encuentra en la lista, usar datos del effectiveUser como fallback
         // Esto puede pasar si el usuario no tiene perfil en la BD aún

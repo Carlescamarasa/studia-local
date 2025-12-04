@@ -34,10 +34,12 @@ const ResetPasswordPage = lazy(() => import("@/pages/auth/ResetPasswordPage.jsx"
 const InvitationPage = lazy(() => import("@/pages/auth/InvitationPage.jsx"));
 const DebugFormularioRapido = lazy(() => import("@/pages/DebugFormularioRapido.jsx"));
 const DebugSubidaYT = lazy(() => import("@/pages/debug/DebugSubidaYTPage.jsx"));
+const LevelSystemDebug = lazy(() => import("@/pages/debug/LevelSystemDebug.jsx"));
 const Soporte = lazy(() => import("@/pages/soporte.jsx"));
 const SoporteProf = lazy(() => import("@/pages/soporte-prof.jsx"));
 const Ayuda = lazy(() => import("@/pages/ayuda.jsx"));
 const AppVersion = lazy(() => import("@/pages/admin/AppVersion.jsx"));
+const Habilidades = lazy(() => import("@/pages/habilidades.jsx"));
 
 // Componente de carga
 const PageLoader = () => (
@@ -98,9 +100,11 @@ export default function AppRouter() {
           <Route path="local" element={<LocalPage />} />
           <Route path="qa-visual" element={<QAVisualPage />} />
           <Route path="debug/subidaYT" element={<DebugSubidaYT />} />
+          <Route path="debug/level-system" element={<LevelSystemDebug />} />
           <Route path="soporte" element={<Soporte />} />
           <Route path="soporte-prof" element={<SoporteProf />} />
           <Route path="ayuda" element={<Ayuda />} />
+          <Route path="habilidades" element={<Habilidades />} />
           <Route path="version" element={<Navigate to="/admin/version" replace />} />
           <Route path="admin/version" element={<AppVersion />} />
         </Route>

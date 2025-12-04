@@ -17,9 +17,10 @@ interface HabilidadesRadarChartProps {
     isLoading?: boolean;
     dataKey1?: string;
     dataKey2?: string;
+    dataKey3?: string;
 }
 
-export default function HabilidadesRadarChart({ data, isLoading, dataKey1 = "A", dataKey2 }: HabilidadesRadarChartProps) {
+export default function HabilidadesRadarChart({ data, isLoading, dataKey1 = "A", dataKey2, dataKey3 }: HabilidadesRadarChartProps) {
     if (isLoading) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -51,38 +52,48 @@ export default function HabilidadesRadarChart({ data, isLoading, dataKey1 = "A",
                             <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }} />
                             <PolarRadiusAxis angle={30} domain={[0, 10]} tick={false} axisLine={false} />
 
-                            <Radar
-                                name={dataKey2 ? "Evaluación" : "Habilidades"}
-                                dataKey={dataKey1}
-                                stroke="var(--color-primary)"
-                                fill="var(--color-primary)"
-                                fillOpacity={dataKey2 ? 0.2 : 0.4}
-                            />
+                            {/* Layer 3: Total (Background) */}
+                            {dataKey3 && (
+                                <Radar
+                                    name="Total"
+                                    dataKey={dataKey3}
+                                    stroke="#64748b" // Slate-500
+                                    fill="#64748b"
+                                    fillOpacity={0.15}
+                                />
+                            )}
 
+                            {/* Layer 2: Experience (Green) */}
                             {dataKey2 && (
                                 <Radar
                                     name="Experiencia"
                                     dataKey={dataKey2}
-                                    stroke="#10b981" // Green for experience? Or maybe secondary color?
+                                    stroke="#10b981" // Emerald-500
                                     fill="#10b981"
                                     fillOpacity={0.4}
                                 />
                             )}
 
+                            {/* Layer 1: Evaluation (Orange/Primary) - Foreground */}
+                            {dataKey1 && (
+                                <Radar
+                                    name={dataKey2 ? "Evaluación" : "Habilidades"}
+                                    dataKey={dataKey1}
+                                    stroke="var(--color-primary)"
+                                    fill="var(--color-primary)"
+                                    fillOpacity={dataKey2 ? 0.2 : 0.4}
+                                />
+                            )}
+
                             <Tooltip
                                 formatter={(value: number, name: string, props: any) => {
-                                    // Mostrar valor original si existe (para BPM), sino el valor normalizado (0-10)
-                                    // Si hay dos series, el props.payload tendrá ambas.
-                                    // Pero el formatter se llama por cada serie.
-                                    // Si es la serie "Experiencia", buscamos originalExperiencia?
-                                    // Esto se complica si no estandarizamos los nombres.
+                                    // Show original value if exists (for XP), otherwise normalized value (0-10)
+                                    let key = "original";
+                                    if (name === "Experiencia") key = "originalExperiencia";
+                                    if (name === "Total") key = "originalTotal";
 
-                                    // Simplificación: mostrar el valor normalizado por ahora, o intentar buscar el original.
-                                    // Si el data tiene { subject, A, B, originalA, originalB }
-
-                                    const key = name === "Experiencia" ? "originalExperiencia" : "original";
                                     const original = props.payload[key];
-                                    return [original !== undefined ? `${original} BPM` : value.toFixed(1), name];
+                                    return [original !== undefined ? `${original} XP` : value.toFixed(1), name];
                                 }}
                             />
                             <Legend />

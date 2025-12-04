@@ -11,7 +11,7 @@ const VALID_USER_IDS = [
   '6913f9c07890d136d35d0a77', // Carles Estudiante
   '6913ff6688f046f7e7eb3f3b', // Carles Profe
   '6913f837bb2b72a49b9d25d2', // Carles Camarasa Botella (Admin)
-  '691432b999585b6c94028617', // La Trompeta Sonará
+  '77dcf831-6283-462a-83bd-f5c46b3cde28', // La Trompeta Sonará (Supabase UUID)
 ];
 
 const DEFAULT_ESTUDIANTE_ID = '6913f9c07890d136d35d0a77';

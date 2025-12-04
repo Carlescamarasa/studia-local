@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Save, Plus, Trash2, AlertTriangle, RefreshCw, Info, Music, GripVertical, ArrowUp, ArrowDown, RotateCcw, Play, Image as ImageIcon, FileText, Volume2, Pentagon } from "lucide-react";
+import { X, Save, Plus, Trash2, AlertTriangle, RefreshCw, Info, Music, GripVertical, ArrowUp, ArrowDown, RotateCcw, Play, Image as ImageIcon, FileText, Volume2, Pentagon, Star } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,6 +19,7 @@ import MediaLinksInput from "@/components/common/MediaLinksInput";
 import { normalizeMediaLinks } from "@/components/utils/media";
 import { useEffectiveUser } from "@/components/utils/helpers";
 import MultiSelect from "@/components/ui/MultiSelect";
+import { NoteQuarter, NoteQuarterDotted, NoteHalf, NoteHalfDotted, NoteEighth } from "@/components/icons/NoteIcons";
 
 const SKILL_OPTIONS = [
   { value: 'Sonido', label: 'Sonido' },
@@ -503,7 +504,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                     items={SKILL_OPTIONS}
                     value={formData.skillTags}
                     onChange={(val) => setFormData({ ...formData, skillTags: val })}
-                    icon={Pentagon}
+                    icon={Star}
                   />
                   <p className="text-xs text-[var(--color-text-secondary)] mt-1">
                     Selecciona las habilidades que trabaja este ejercicio para las estadísticas.
@@ -550,12 +551,13 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
 
                 <div>
                   <Label htmlFor="indicador">Indicador de Logro</Label>
-                  <Input
+                  <Textarea
                     id="indicador"
                     value={formData.indicadorLogro}
                     onChange={(e) => setFormData({ ...formData, indicadorLogro: e.target.value })}
                     placeholder="¿Cómo sabe el estudiante que lo logró?"
-                    className="h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange"
+                    rows={3}
+                    className="rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange resize-none"
                   />
                 </div>
               </CardContent>
@@ -779,57 +781,83 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                   <CardTitle>Objetivos Técnicos (PPM)</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-12 gap-2 text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-2 px-1">
+                  <div className="grid grid-cols-12 gap-2 md:gap-4 text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-2 px-1">
                     <div className="col-span-2">Nivel</div>
-                    <div className="col-span-3">BPM</div>
-                    <div className="col-span-5">Unidad</div>
+                    <div className="col-span-2">PPM</div>
+                    <div className="col-span-6">Unidad</div>
                     <div className="col-span-2 text-right">Acciones</div>
                   </div>
 
                   {(formData.targetPPMs || []).map((target, index) => (
-                    <div key={index} className="grid grid-cols-12 gap-2 items-center">
-                      <div className="col-span-2">
+                    <div key={index} className="grid grid-cols-12 gap-2 md:gap-4 items-center">
+                      <div className="col-span-2 overflow-hidden">
                         <Input
                           type="number"
                           min="1"
                           max="10"
                           value={target.nivel}
                           onChange={(e) => updateTargetPPM(index, 'nivel', parseInt(e.target.value) || 1)}
-                          className="h-9 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange"
+                          className="h-10 w-full max-w-full rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange"
                         />
                       </div>
-                      <div className="col-span-3">
+                      <div className="col-span-2 overflow-hidden">
                         <Input
                           type="number"
                           min="1"
                           value={target.bpm}
                           onChange={(e) => updateTargetPPM(index, 'bpm', parseInt(e.target.value) || 60)}
-                          className="h-9 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange"
+                          className="h-10 w-full max-w-full rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange"
                         />
                       </div>
-                      <div className="col-span-5">
+                      <div className="col-span-6 overflow-hidden">
                         <Select
                           value={target.unidad}
                           onValueChange={(v) => updateTargetPPM(index, 'unidad', v)}
                         >
-                          <SelectTrigger className="h-9 w-full rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange">
+                          <SelectTrigger className="h-10 w-full max-w-full rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="negra">Negra (♩)</SelectItem>
-                            <SelectItem value="blanca">Blanca (d)</SelectItem>
-                            <SelectItem value="blancaConPuntillo">Blanca c/p (d.)</SelectItem>
-                            <SelectItem value="corchea">Corchea (♪)</SelectItem>
+                            <SelectItem value="negra">
+                              <div className="flex items-center gap-2">
+                                <NoteQuarter className="w-4 h-4" />
+                                <span>Negra</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="negraConPuntillo">
+                              <div className="flex items-center gap-2">
+                                <NoteQuarterDotted className="w-5 h-4" />
+                                <span>Negra c/p</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="blanca">
+                              <div className="flex items-center gap-2">
+                                <NoteHalf className="w-4 h-4" />
+                                <span>Blanca</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="blancaConPuntillo">
+                              <div className="flex items-center gap-2">
+                                <NoteHalfDotted className="w-5 h-4" />
+                                <span>Blanca c/p</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="corchea">
+                              <div className="flex items-center gap-2">
+                                <NoteEighth className="w-4 h-4" />
+                                <span>Corchea</span>
+                              </div>
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="col-span-2 text-right">
+                      <div className="col-span-2 text-right overflow-hidden">
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
                           onClick={() => removeTargetPPM(index)}
-                          className="h-9 w-9 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)] rounded-[var(--radius-ctrl)]"
+                          className="h-10 w-10 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)] rounded-[var(--radius-ctrl)]"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

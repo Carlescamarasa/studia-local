@@ -42,7 +42,7 @@ import FeedbackTab from "@/components/estadisticas/FeedbackTab";
 import HeatmapActividad from "@/components/estadisticas/HeatmapActividad";
 import ProgresoPorPieza from "@/components/estadisticas/ProgresoPorPieza";
 import ComparativaEstudiantes from "@/components/estadisticas/ComparativaEstudiantes";
-import HabilidadesView from "@/components/estadisticas/HabilidadesView";
+
 import { useEstadisticas, safeNumber } from "@/components/estadisticas/hooks/useEstadisticas";
 import { formatDuracionHM, formatLocalDate, parseLocalDate, startOfMonday } from "@/components/estadisticas/utils";
 import { shouldIgnoreHotkey } from "@/utils/hotkeys";
@@ -1095,7 +1095,7 @@ function EstadisticasPageContent() {
               items={[
                 { value: 'resumen', label: 'Resumen', icon: BarChart3 },
                 { value: 'progreso', label: 'Progreso', icon: TrendingUp },
-                { value: 'habilidades', label: 'Habilidades', icon: Star },
+
                 { value: 'tipos', label: 'Tipos de Bloque', icon: Layers },
                 { value: 'top', label: 'Top', icon: Star },
                 { value: 'autoevaluaciones', label: 'Sesiones', icon: List },
@@ -1127,19 +1127,7 @@ function EstadisticasPageContent() {
           />
         )}
 
-        {tabActiva === 'habilidades' && (
-          <HabilidadesView
-            alumnoId={userIdActual}
-            students={
-              isAdmin
-                ? estudiantes
-                : isProf
-                  ? estudiantes.filter(e => estudiantesDelProfesor.includes(e.id))
-                  : []
-            }
-            enableSelection={isAdmin || isProf}
-          />
-        )}
+
 
         {tabActiva === 'tipos' && (
           <TiposBloquesTab tiposBloques={tiposBloques} />

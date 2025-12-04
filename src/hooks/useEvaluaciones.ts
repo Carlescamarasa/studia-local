@@ -28,8 +28,10 @@ export function useEvaluaciones(alumnoId?: string) {
             return localDataClient.entities.EvaluacionTecnica.create(data);
         },
         onSuccess: (newEvaluacion) => {
-            // Invalidar query del alumno específico
+            // Invalidar query del alumno específico y las estadísticas relacionadas
             queryClient.invalidateQueries({ queryKey: ['evaluaciones', newEvaluacion.alumnoId] });
+            queryClient.invalidateQueries({ queryKey: ['qualitative-xp', newEvaluacion.alumnoId] });
+            queryClient.invalidateQueries({ queryKey: ['total-xp-v2', newEvaluacion.alumnoId] });
             toast.success('Evaluación creada correctamente');
         },
         onError: (error: any) => {
@@ -45,6 +47,8 @@ export function useEvaluaciones(alumnoId?: string) {
         },
         onSuccess: (updatedEvaluacion) => {
             queryClient.invalidateQueries({ queryKey: ['evaluaciones', updatedEvaluacion.alumnoId] });
+            queryClient.invalidateQueries({ queryKey: ['qualitative-xp', updatedEvaluacion.alumnoId] });
+            queryClient.invalidateQueries({ queryKey: ['total-xp-v2', updatedEvaluacion.alumnoId] });
             toast.success('Evaluación actualizada correctamente');
         },
         onError: (error: any) => {
@@ -63,9 +67,13 @@ export function useEvaluaciones(alumnoId?: string) {
         onSuccess: () => {
             if (alumnoId) {
                 queryClient.invalidateQueries({ queryKey: ['evaluaciones', alumnoId] });
+                queryClient.invalidateQueries({ queryKey: ['qualitative-xp', alumnoId] });
+                queryClient.invalidateQueries({ queryKey: ['total-xp-v2', alumnoId] });
             } else {
                 // Si no tenemos alumnoId en el contexto, invalidamos todas las evaluaciones (menos eficiente pero seguro)
                 queryClient.invalidateQueries({ queryKey: ['evaluaciones'] });
+                queryClient.invalidateQueries({ queryKey: ['qualitative-xp'] });
+                queryClient.invalidateQueries({ queryKey: ['total-xp-v2'] });
             }
             toast.success('Evaluación eliminada correctamente');
         },

@@ -129,6 +129,11 @@ const entityToAPIKey = {
   'RegistroSesion': 'registrosSesion',
   'EventoCalendario': 'eventosCalendario',
   'EvaluacionTecnica': 'evaluaciones',
+  'LevelConfig': 'levelsConfig',
+  'LevelKeyCriteria': 'levelKeyCriteria',
+  'StudentCriteriaStatus': 'studentCriteriaStatus',
+  'StudentLevelHistory': 'studentLevelHistory',
+  'StudentXPTotal': 'studentXpTotal',
 };
 
 // Helper para crear entidades con métodos CRUD apoyadas en la capa de datos
@@ -207,7 +212,8 @@ function createEntityAPI(entityName, dataKey, entityApi) {
                   entityName === 'RegistroBloque' ? RegistrosBloqueAPI.createRegistroBloque :
                     entityName === 'RegistroSesion' ? RegistrosSesionAPI.createRegistroSesion :
                       entityName === 'EventoCalendario' ? EventosCalendarioAPI.createEventoCalendario :
-                        null;
+                        entityName === 'EvaluacionTecnica' ? EvaluacionesAPI.createEvaluacionTecnica :
+                          null;
 
       if (!apiCreate) {
         throw new Error(`API create no definida para entidad ${entityName}`);
@@ -238,7 +244,8 @@ function createEntityAPI(entityName, dataKey, entityApi) {
                   entityName === 'RegistroBloque' ? RegistrosBloqueAPI.updateRegistroBloque :
                     entityName === 'RegistroSesion' ? RegistrosSesionAPI.updateRegistroSesion :
                       entityName === 'EventoCalendario' ? EventosCalendarioAPI.updateEventoCalendario :
-                        null;
+                        entityName === 'EvaluacionTecnica' ? EvaluacionesAPI.updateEvaluacionTecnica :
+                          null;
 
       if (!apiUpdate) {
         throw new Error(`API update no definida para entidad ${entityName}`);
@@ -270,7 +277,8 @@ function createEntityAPI(entityName, dataKey, entityApi) {
                   entityName === 'RegistroBloque' ? RegistrosBloqueAPI.deleteRegistroBloque :
                     entityName === 'RegistroSesion' ? RegistrosSesionAPI.deleteRegistroSesion :
                       entityName === 'EventoCalendario' ? EventosCalendarioAPI.deleteEventoCalendario :
-                        null;
+                        entityName === 'EvaluacionTecnica' ? EvaluacionesAPI.deleteEvaluacionTecnica :
+                          null;
 
       if (!apiDelete) {
         throw new Error(`API delete no definida para entidad ${entityName}`);
@@ -636,6 +644,11 @@ export const localDataClient = {
     },
     EventoCalendario: createEntityAPI('EventoCalendario', 'eventosCalendario', () => EventosCalendarioAPI.getAllEventosCalendario()),
     EvaluacionTecnica: createEntityAPI('EvaluacionTecnica', 'evaluaciones', () => EvaluacionesAPI.getEvaluacionesTecnicas()),
+    LevelConfig: createEntityAPI('LevelConfig', 'levelsConfig', async () => localDataRef.levelsConfig || []),
+    LevelKeyCriteria: createEntityAPI('LevelKeyCriteria', 'levelKeyCriteria', async () => localDataRef.levelKeyCriteria || []),
+    StudentCriteriaStatus: createEntityAPI('StudentCriteriaStatus', 'studentCriteriaStatus', async () => localDataRef.studentCriteriaStatus || []),
+    StudentLevelHistory: createEntityAPI('StudentLevelHistory', 'studentLevelHistory', async () => localDataRef.studentLevelHistory || []),
+    StudentXPTotal: createEntityAPI('StudentXPTotal', 'studentXpTotal', async () => localDataRef.studentXpTotal || []),
   },
 };
 

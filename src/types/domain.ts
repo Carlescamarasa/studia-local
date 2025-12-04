@@ -446,3 +446,94 @@ export interface EvaluacionTecnica {
 export type CreateEvaluacionTecnicaInput = Omit<EvaluacionTecnica, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateEvaluacionTecnicaInput = Partial<Omit<EvaluacionTecnica, 'id' | 'created_at'>> & { id: string };
 
+/**
+ * Configuración de requisitos por nivel
+ */
+export interface LevelConfig {
+  level: number;
+  minXpFlex: number;
+  minXpMotr: number;
+  minXpArt: number;
+  minEvalSound: number;
+  minEvalCog: number;
+  evidenceWindowDays: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateLevelConfigInput = Omit<LevelConfig, 'created_at' | 'updated_at'>;
+export type UpdateLevelConfigInput = Partial<Omit<LevelConfig, 'created_at'>> & { level: number };
+
+/**
+ * Criterios clave para subir de nivel
+ */
+export type CriteriaSkill = 'Flexibilidad' | 'Motricidad' | 'Articulación' | 'Sonido' | 'Cognición';
+export type CriteriaSource = 'PRACTICA' | 'PROF';
+
+export interface LevelKeyCriteria {
+  id: string;
+  level: number;
+  skill: CriteriaSkill;
+  source: CriteriaSource;
+  description: string;
+  thresholdNum?: number | null;
+  required: boolean;
+  evidenceRequired: number;
+  evidenceDays: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateLevelKeyCriteriaInput = Omit<LevelKeyCriteria, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateLevelKeyCriteriaInput = Partial<Omit<LevelKeyCriteria, 'id' | 'created_at'>> & { id: string };
+
+/**
+ * Estado de los criterios para un estudiante
+ */
+export type CriteriaStatus = 'PASSED' | 'FAILED';
+
+export interface StudentCriteriaStatus {
+  id: string;
+  studentId: string;
+  criterionId: string;
+  status: CriteriaStatus;
+  assessedAt: string;
+  assessedBy?: string | null;
+}
+
+export type CreateStudentCriteriaStatusInput = Omit<StudentCriteriaStatus, 'id'>;
+export type UpdateStudentCriteriaStatusInput = Partial<Omit<StudentCriteriaStatus, 'id'>> & { id: string };
+
+/**
+ * Historial de cambios de nivel
+ */
+export interface StudentLevelHistory {
+  id: string;
+  studentId: string;
+  fromLevel?: number | null;
+  toLevel: number;
+  changedAt: string;
+  changedBy?: string | null;
+  reason?: string | null;
+}
+
+export type CreateStudentLevelHistoryInput = Omit<StudentLevelHistory, 'id' | 'changedAt'>;
+
+// ============================================================================
+// Student XP Total - Lifetime XP accumulation by skill
+// ============================================================================
+
+export interface StudentXPTotal {
+  id: string;
+  studentId: string;
+  skill: 'motricidad' | 'articulacion' | 'flexibilidad';
+  totalXp: number;
+  practiceXp: number;
+  evaluationXp: number;
+  lastUpdatedAt: string;
+  lastManualXpAt?: string; // Timestamp when manual XP was last awarded
+  lastManualXpAmount?: number; // Amount of last manual XP (for 30-day window)
+}
+
+export type CreateStudentXPTotalInput = Omit<StudentXPTotal, 'id'>;
+export type UpdateStudentXPTotalInput = Partial<Omit<StudentXPTotal, 'id' | 'studentId' | 'skill'>>;

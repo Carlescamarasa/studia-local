@@ -7,99 +7,117 @@ import { RegistroBloque, Bloque } from '@/types/domain';
 export type DataSource = 'evaluaciones' | 'experiencia' | 'ambas';
 
 export function useHabilidadesStats(alumnoId: string) {
-    // 1. Fetch Practice Data
-    const { data: registros = [], isLoading: loadingRegistros } = useQuery({
-        queryKey: ['registrosBloque', alumnoId],
-        queryFn: () => localDataClient.entities.RegistroBloque.list('-inicioISO'),
-    });
-
-    const { data: bloques = [], isLoading: loadingBloques } = useQuery<Bloque[]>({
-        queryKey: ['bloques'],
+    // Fetch total XP from student_xp_total table (includes both practice and evaluation)
+    const { data: totalXPData, isLoading: loadingTotalXP } = useQuery({
+        queryKey: ['total-xp-v2', alumnoId], // Changed key to force cache refresh
         queryFn: async () => {
-            const result = await localDataClient.entities.Bloque.list();
-            return result as Bloque[];
+            // Query student_xp_total: schema is {student_id, skill, total_xp, practice_xp, evaluation_xp}
+            const result = await localDataClient.entities.StudentXPTotal.list();
+
+            // Filter rows for this student
+            const studentRows = result.filter((r: any) =>
+                (r.studentId === alumnoId || r.student_id === alumnoId)
+            );
+
+            if (studentRows.length === 0) {
+                return {
+                    motricidad: { total: 0, practice: 0, evaluation: 0 },
+                    articulacion: { total: 0, practice: 0, evaluation: 0 },
+                    flexibilidad: { total: 0, practice: 0, evaluation: 0 },
+                };
+            }
+
+            // Extract XP by skill (one row per skill)
+            const motrRow = studentRows.find((r: any) => r.skill === 'motricidad');
+            const artRow = studentRows.find((r: any) => r.skill === 'articulacion');
+            const flexRow = studentRows.find((r: any) => r.skill === 'flexibilidad');
+
+            const processed = {
+                motricidad: {
+                    total: motrRow?.total_xp || motrRow?.totalXp || 0,
+                    practice: motrRow?.practice_xp || motrRow?.practiceXp || 0,
+                    evaluation: motrRow?.evaluation_xp || motrRow?.evaluationXp || 0,
+                },
+                articulacion: {
+                    total: artRow?.total_xp || artRow?.totalXp || 0,
+                    practice: artRow?.practice_xp || artRow?.practiceXp || 0,
+                    evaluation: artRow?.evaluation_xp || artRow?.evaluationXp || 0,
+                },
+                flexibilidad: {
+                    total: flexRow?.total_xp || flexRow?.totalXp || 0,
+                    practice: flexRow?.practice_xp || flexRow?.practiceXp || 0,
+                    evaluation: flexRow?.evaluation_xp || flexRow?.evaluationXp || 0,
+                },
+            };
+
+            return processed;
         },
+        enabled: !!alumnoId,
+        staleTime: 1000 * 60 * 5,
     });
 
-    // 2. Fetch Evaluations Data
-    const { evaluaciones, isLoading: loadingEvaluaciones } = useEvaluaciones(alumnoId);
 
-    // 3. Calculate Experience Stats
-    const experienceStats = useMemo(() => {
-        if (!registros.length || !bloques.length) return { skillCounts: [], radarData: [] };
+    // Get Qualitative Evaluation Scores (Sonido, Cognición - from qualitative evaluations)
+    const { data: qualitativeXP, isLoading: loadingEvalXP } = useQuery({
+        queryKey: ['qualitative-xp', alumnoId],
+        queryFn: async () => {
+            const { computeEvaluationXP } = await import('@/services/xpService');
+            return computeEvaluationXP(alumnoId, 30);
+        },
+        enabled: !!alumnoId,
+        staleTime: 1000 * 60 * 5,
+    });
 
-        const hace30dias = new Date();
-        hace30dias.setDate(hace30dias.getDate() - 30);
+    // Combine into 5-axis radar data
+    const radarStats = useMemo(() => {
+        const defaultXP = { total: 0, practice: 0, evaluation: 0 };
+        const motr = totalXPData?.motricidad || defaultXP;
+        const art = totalXPData?.articulacion || defaultXP;
+        const flex = totalXPData?.flexibilidad || defaultXP;
+        const qualitative = qualitativeXP || { sonido: 0, cognicion: 0 };
 
-        const bloquesMap = new Map(bloques.map((b: Bloque) => [b.code, b]));
-        const skillCounts: Record<string, number> = {};
-        const skillBPMs: Record<string, number[]> = {};
+        // Cap practice values at 100 for radar display
+        const cappedPractice = {
+            motricidad: Math.min(100, motr.practice),
+            articulacion: Math.min(100, art.practice),
+            flexibilidad: Math.min(100, flex.practice),
+        };
 
-        registros.forEach((r: RegistroBloque) => {
-            // Filter: Student + Completed + Recent + Has PPM
-            if (r.alumnoId !== alumnoId || r.estado !== 'completado' || !r.ppmAlcanzado || r.ppmAlcanzado.bpm <= 0) return;
-            if (new Date(r.inicioISO) < hace30dias) return;
+        // Cap evaluation values at 100 for radar display
+        const cappedEvaluation = {
+            motricidad: Math.min(100, motr.evaluation),
+            articulacion: Math.min(100, art.evaluation),
+            flexibilidad: Math.min(100, flex.evaluation),
+        };
 
-            const bloque = bloquesMap.get(r.code);
-
-            // STRICT FILTER: Must have targetPPMs AND skillTags
-            if (!bloque || !bloque.targetPPMs || !bloque.skillTags || bloque.skillTags.length === 0) return;
-
-            bloque.skillTags.forEach(tag => {
-                skillCounts[tag] = (skillCounts[tag] || 0) + 1;
-
-                if (!skillBPMs[tag]) skillBPMs[tag] = [];
-                skillBPMs[tag].push(r.ppmAlcanzado!.bpm);
-            });
-        });
-
-        // Format for List
-        const listData = Object.entries(skillCounts)
-            .map(([skill, count]) => ({ skill, count }))
-            .sort((a, b) => b.count - a.count);
-
-        // Format for Radar (Normalize BPM to 0-10 scale, e.g., 120bpm = 10)
-        // This is a heuristic. We might need a better normalization based on targetPPMs.
-        // For now, let's assume 120 is max.
-        const radarData = Object.entries(skillBPMs).map(([skill, bpms]) => {
-            const avgBpm = bpms.reduce((a, b) => a + b, 0) / bpms.length;
-            return {
-                subject: skill,
-                A: Math.min(avgBpm / 12, 10), // 120 bpm -> 10
-                original: Math.round(avgBpm),
-                fullMark: 10
-            };
-        });
-
-        return { listData, radarData };
-    }, [registros, bloques, alumnoId]);
-
-    // 4. Process Evaluations Data (Latest)
-    const evaluationStats = useMemo(() => {
-        if (!evaluaciones || evaluaciones.length === 0) return null;
-
-        // Sort by date desc
-        const latest = [...evaluaciones].sort((a, b) =>
-            new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
-        )[0];
-
-        if (!latest || !latest.habilidades) return null;
-
-        const h = latest.habilidades;
-
-        // Map to Radar format
-        return [
-            { subject: 'Sonido', A: h.sonido || 0, fullMark: 10 },
-            { subject: 'Flexibilidad', A: h.flexibilidad || 0, fullMark: 10 },
-            { subject: 'Motricidad', A: h.motricidad ? Math.min(h.motricidad / 12, 10) : 0, original: h.motricidad, fullMark: 10 },
-            { subject: 'Articulación (T)', A: h.articulacion?.t ? Math.min(h.articulacion.t / 12, 10) : 0, original: h.articulacion?.t, fullMark: 10 },
-            { subject: 'Cognitivo', A: h.cognitivo || 0, fullMark: 10 },
-        ];
-    }, [evaluaciones]);
+        return {
+            // Practice-based (from XP system - only practice)
+            practiceData: [
+                { subject: 'Motricidad', A: cappedPractice.motricidad / 10, original: Math.round(cappedPractice.motricidad), fullMark: 10 },
+                { subject: 'Articulación (T)', A: cappedPractice.articulacion / 10, original: Math.round(cappedPractice.articulacion), fullMark: 10 },
+                { subject: 'Flexibilidad', A: cappedPractice.flexibilidad / 10, original: Math.round(cappedPractice.flexibilidad), fullMark: 10 },
+            ],
+            // Evaluation-based (from student_xp_total.evaluation_xp)
+            evaluationData: [
+                { subject: 'Sonido', A: qualitative.sonido / 10, original: Math.round(qualitative.sonido), fullMark: 10 },
+                { subject: 'Motricidad', A: cappedEvaluation.motricidad / 10, original: Math.round(cappedEvaluation.motricidad), fullMark: 10 },
+                { subject: 'Articulación (T)', A: cappedEvaluation.articulacion / 10, original: Math.round(cappedEvaluation.articulacion), fullMark: 10 },
+                { subject: 'Flexibilidad', A: cappedEvaluation.flexibilidad / 10, original: Math.round(cappedEvaluation.flexibilidad), fullMark: 10 },
+                { subject: 'Cognición', A: qualitative.cognicion / 10, original: Math.round(qualitative.cognicion), fullMark: 10 },
+            ],
+            // Combined 5-axis data (evaluation + practice for skills with both)
+            combinedData: [
+                { subject: 'Sonido', A: qualitative.sonido / 10, B: undefined, original: Math.round(qualitative.sonido), fullMark: 10 },
+                { subject: 'Motricidad', A: cappedEvaluation.motricidad / 10, B: cappedPractice.motricidad / 10, original: Math.round(cappedEvaluation.motricidad), originalExperiencia: Math.round(cappedPractice.motricidad), fullMark: 10 },
+                { subject: 'Articulación (T)', A: cappedEvaluation.articulacion / 10, B: cappedPractice.articulacion / 10, original: Math.round(cappedEvaluation.articulacion), originalExperiencia: Math.round(cappedPractice.articulacion), fullMark: 10 },
+                { subject: 'Flexibilidad', A: cappedEvaluation.flexibilidad / 10, B: cappedPractice.flexibilidad / 10, original: Math.round(cappedEvaluation.flexibilidad), originalExperiencia: Math.round(cappedPractice.flexibilidad), fullMark: 10 },
+                { subject: 'Cognición', A: qualitative.cognicion / 10, B: undefined, original: Math.round(qualitative.cognicion), fullMark: 10 },
+            ]
+        };
+    }, [totalXPData, qualitativeXP]);
 
     return {
-        experienceStats,
-        evaluationStats,
-        isLoading: loadingRegistros || loadingBloques || loadingEvaluaciones
+        radarStats,
+        isLoading: loadingTotalXP || loadingEvalXP
     };
 }
