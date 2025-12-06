@@ -86,17 +86,17 @@ export default function PieceEditor({ pieza, onClose }) {
       setSaveResult({ success: false, message: '❌ El nombre es obligatorio' });
       return;
     }
-    
+
     // Añadir profesorId si no existe (solo para creación, no para edición)
-    const dataToSave = pieza?.id 
-      ? formData 
+    const dataToSave = pieza?.id
+      ? formData
       : { ...formData, profesorId: effectiveUser?.id };
-    
+
     if (!pieza?.id && !effectiveUser?.id) {
       setSaveResult({ success: false, message: '❌ No se pudo identificar el usuario. Por favor, recarga la página.' });
       return;
     }
-    
+
     saveMutation.mutate(dataToSave);
   }, [formData, pieza?.id, effectiveUser?.id, saveMutation]);
 
@@ -152,9 +152,9 @@ export default function PieceEditor({ pieza, onClose }) {
 
     const oldIndex = formData.elementos.findIndex((_, i) => `elemento-${i}` === active.id);
     const newIndex = formData.elementos.findIndex((_, i) => `elemento-${i}` === over.id);
-    
+
     if (oldIndex === -1 || newIndex === -1) return;
-    
+
     setFormData({
       ...formData,
       elementos: arrayMove(formData.elementos, oldIndex, newIndex),
@@ -163,12 +163,12 @@ export default function PieceEditor({ pieza, onClose }) {
 
   const modalContent = (
     <>
-      <div 
-        className="fixed inset-0 bg-black/40 z-[115]"
-        onClick={onClose}
+      <div
+        className="fixed inset-0 bg-black/40 z-[220]"
+        onClick={() => onClose(null)}
       />
-      <div className="fixed inset-0 z-[120] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
-        <div 
+      <div className="fixed inset-0 z-[225] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
+        <div
           className="bg-[var(--color-surface-elevated)] w-full max-w-3xl max-h-[92vh] shadow-[0_8px_24px_rgba(0,0,0,0.16)] rounded-[var(--radius-modal)] flex flex-col pointer-events-auto my-8"
           onClick={(e) => e.stopPropagation()}
         >
@@ -176,10 +176,10 @@ export default function PieceEditor({ pieza, onClose }) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Music className="w-6 h-6 text-[var(--color-text-primary)]" />
-              <div>
+                <div>
                   <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
-                  {pieza ? 'Editar Pieza' : 'Nueva Pieza'}
-                </h2>
+                    {pieza ? 'Editar Pieza' : 'Nueva Pieza'}
+                  </h2>
                   <p className="text-sm text-[var(--color-text-secondary)]">Plantilla de pieza musical</p>
                 </div>
               </div>
@@ -239,20 +239,20 @@ export default function PieceEditor({ pieza, onClose }) {
               <div className={componentStyles.layout.grid2}>
                 <div className={componentStyles.form.field}>
                   <Label htmlFor="nivel" className={componentStyles.typography.cardTitle}>Nivel</Label>
-                  <Select 
-                    value={formData.nivel} 
+                  <Select
+                    value={formData.nivel}
                     onValueChange={(v) => setFormData({ ...formData, nivel: v })}
                     modal={false}
                   >
                     <SelectTrigger id="nivel" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue placeholder="Selecciona nivel..." />
                     </SelectTrigger>
-                    <SelectContent 
-                      position="popper" 
-                      side="bottom" 
-                      align="start" 
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
                       sideOffset={4}
-                      className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                      className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                     >
                       <SelectItem value="principiante">Principiante</SelectItem>
                       <SelectItem value="intermedio">Intermedio</SelectItem>
@@ -301,19 +301,19 @@ export default function PieceEditor({ pieza, onClose }) {
                   </div>
                 ) : (
                   <DndProvider onDragEnd={handleDragEnd}>
-                    <SortableContext 
+                    <SortableContext
                       items={formData.elementos.map((_, i) => `elemento-${i}`)}
                       strategy={verticalListSortingStrategy}
                     >
                       <div className="space-y-3">
                         {formData.elementos.map((elemento, index) => (
-                          <SortableItem 
+                          <SortableItem
                             key={`elemento-${index}`}
                             id={`elemento-${index}`}
                             className="border-2"
                           >
                             {({ dragHandleProps, isDragging }) => (
-                              <Card 
+                              <Card
                                 className={`border-2 ${isDragging ? 'shadow-card border-[var(--color-primary)]' : ''}`}
                               >
                                 <CardContent className="pt-4 space-y-3">
@@ -338,7 +338,7 @@ export default function PieceEditor({ pieza, onClose }) {
                                           data-form-type="other"
                                         />
                                       </div>
-                                      
+
                                       <MediaLinksInput
                                         value={elemento.mediaLinks || []}
                                         onChange={(links) => updateElemento(index, 'mediaLinks', links)}

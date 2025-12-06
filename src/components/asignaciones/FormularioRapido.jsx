@@ -88,7 +88,7 @@ export default function FormularioRapido({ onClose }) {
   const crearAsignacionesMutation = useMutation({
     mutationFn: async (data) => {
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      
+
       if (authError || !authUser) {
         if (process.env.NODE_ENV === 'development') {
           console.error('[FormularioRapido] Error obteniendo usuario autenticado:', authError);
@@ -97,14 +97,14 @@ export default function FormularioRapido({ onClose }) {
       }
 
       const profesorId = authUser.id || effectiveUser?.id;
-      
+
       if (!profesorId) {
         throw new Error('No se pudo obtener el ID del profesor. Por favor, inicia sesión nuevamente.');
       }
 
       const pieza = piezas.find(p => p.id === data.piezaId);
       const plan = planes.find(p => p.id === data.planId);
-      
+
       if (!pieza || !plan) {
         throw new Error('Pieza o Plan no encontrados');
       }
@@ -145,10 +145,10 @@ export default function FormularioRapido({ onClose }) {
               asignacion,
             });
           }
-          
+
           const alumno = usuarios.find(e => e.id === asignacion.alumnoId && e.rolPersonalizado === 'ESTU');
           const errorMessage = error?.message || 'Error desconocido';
-          
+
           if (error?.code === '42501' || errorMessage.includes('row-level security')) {
             toast.error(`❌ Error de permisos: No tienes permiso para crear esta asignación. Verifica que estés autenticado correctamente.`);
           } else if (errorMessage.includes('CORS') || error?.status === null) {
@@ -158,12 +158,12 @@ export default function FormularioRapido({ onClose }) {
           }
         }
       }
-      
+
       return results;
     },
     onSuccess: (results) => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
-      
+
       if (results.length === 0) {
         toast.error('No se pudo crear ninguna asignación');
         return;
@@ -278,19 +278,20 @@ export default function FormularioRapido({ onClose }) {
 
   const focoLabels = {
     GEN: 'General',
-    LIG: 'Ligaduras',
-    RIT: 'Ritmo',
+    SON: 'Sonido',
+    FLX: 'Flexibilidad',
+    MOT: 'Motricidad',
     ART: 'Articulación',
-    'S&A': 'Sonido y Afinación',
+    COG: 'Cognitivo',
   };
 
   const modalContent = (
     <>
-      <div className="fixed inset-0 bg-black/40 z-[80]" onClick={onClose} />
-      
-      <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto" role="dialog" aria-modal="true">
-        <div 
-          className="bg-[var(--color-surface-elevated)] w-full max-w-4xl max-h-[92vh] shadow-card rounded-[var(--radius-modal)] flex flex-col pointer-events-auto my-8 relative z-[110]"
+      <div className="fixed inset-0 bg-black/40 z-[200]" onClick={onClose} />
+
+      <div className="fixed inset-0 z-[210] flex items-center justify-center pointer-events-none p-4 overflow-y-auto" role="dialog" aria-modal="true">
+        <div
+          className="bg-[var(--color-surface-elevated)] w-full max-w-4xl max-h-[92vh] shadow-card rounded-[var(--radius-modal)] flex flex-col pointer-events-auto my-8 relative z-[210]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -384,20 +385,20 @@ export default function FormularioRapido({ onClose }) {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <Select 
-                      value={formData.piezaId} 
+                    <Select
+                      value={formData.piezaId}
                       onValueChange={(v) => setFormData({ ...formData, piezaId: v })}
                       modal={false}
                     >
                       <SelectTrigger id="pieza" className={`w-full ${componentStyles.controls.selectDefault}`}>
                         <SelectValue placeholder="Selecciona una pieza..." />
                       </SelectTrigger>
-                      <SelectContent 
-                        position="popper" 
-                        side="bottom" 
-                        align="start" 
+                      <SelectContent
+                        position="popper"
+                        side="bottom"
+                        align="start"
                         sideOffset={4}
-                        className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                        className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                       >
                         {piezas.length === 0 ? (
                           <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay piezas</div>
@@ -482,20 +483,20 @@ export default function FormularioRapido({ onClose }) {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <Select 
-                      value={formData.planId} 
+                    <Select
+                      value={formData.planId}
                       onValueChange={(v) => setFormData({ ...formData, planId: v })}
                       modal={false}
                     >
                       <SelectTrigger id="plan" className={`w-full ${componentStyles.controls.selectDefault}`}>
                         <SelectValue placeholder="Selecciona un plan..." />
                       </SelectTrigger>
-                      <SelectContent 
-                        position="popper" 
-                        side="bottom" 
-                        align="start" 
+                      <SelectContent
+                        position="popper"
+                        side="bottom"
+                        align="start"
                         sideOffset={4}
-                        className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                        className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                       >
                         {planes.length === 0 ? (
                           <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay planes</div>
@@ -531,20 +532,20 @@ export default function FormularioRapido({ onClose }) {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <Select 
-                      value={formData.foco} 
+                    <Select
+                      value={formData.foco}
                       onValueChange={(v) => setFormData({ ...formData, foco: v })}
                       modal={false}
                     >
                       <SelectTrigger id="foco" className={`w-full ${componentStyles.controls.selectDefault}`}>
                         <SelectValue placeholder="Selecciona foco..." />
                       </SelectTrigger>
-                      <SelectContent 
-                        position="popper" 
-                        side="bottom" 
-                        align="start" 
+                      <SelectContent
+                        position="popper"
+                        side="bottom"
+                        align="start"
                         sideOffset={4}
-                        className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                        className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                       >
                         {Object.entries(focoLabels).map(([key, label]) => (
                           <SelectItem key={key} value={key}>{label}</SelectItem>
@@ -596,9 +597,8 @@ export default function FormularioRapido({ onClose }) {
                       />
                     </div>
 
-                    <div className={`flex items-center justify-between p-3 border border-[var(--color-border-default)] app-panel bg-[var(--color-info)]/10 rounded-lg ${
-                      formData.estudiantesIds.length > 1 ? 'opacity-60' : ''
-                    }`}>
+                    <div className={`flex items-center justify-between p-3 border border-[var(--color-border-default)] app-panel bg-[var(--color-info)]/10 rounded-lg ${formData.estudiantesIds.length > 1 ? 'opacity-60' : ''
+                      }`}>
                       <div className="flex-1">
                         <Label htmlFor="adaptar" className="font-medium text-[var(--color-text-primary)]">Adaptar plan ahora (recomendado)</Label>
                         <p className="text-xs text-[var(--color-text-secondary)]">Crear en borrador y abrir editor para adaptar el plan</p>
@@ -610,7 +610,7 @@ export default function FormularioRapido({ onClose }) {
                         disabled={formData.estudiantesIds.length > 1}
                       />
                     </div>
-                    
+
                     {formData.estudiantesIds.length > 1 && (
                       <p className="text-xs text-[var(--color-warning)]">
                         ⚠️ Solo puedes adaptar el plan si seleccionas un único estudiante

@@ -761,18 +761,16 @@ function EstadisticasPageContent() {
   const tipoLabels = {
     CA: 'Calentamiento A',
     CB: 'Calentamiento B',
-    TC: 'Técnica Central',
-    TM: 'Técnica Mantenimiento',
+    TC: 'Técnica',
     FM: 'Fragmento Musical',
     VC: 'Vuelta a la Calma',
-    AD: 'Advertencia/Descanso',
+    AD: 'Aviso/Descanso',
   };
 
   const tipoColors = {
     CA: componentStyles.status.badgeDefault,
     CB: componentStyles.status.badgeDefault,
     TC: componentStyles.status.badgeDefault,
-    TM: componentStyles.status.badgeDefault,
     FM: componentStyles.status.badgeDefault,
     VC: componentStyles.status.badgeDefault,
     AD: componentStyles.status.badgeDefault,
@@ -783,7 +781,6 @@ function EstadisticasPageContent() {
     CA: '#3b82f6', // blue-500
     CB: '#60a5fa', // blue-400
     TC: '#8b5cf6', // purple-500
-    TM: '#10b981', // green-500
     FM: '#ec4899', // pink-500
     VC: '#06b6d4', // cyan-500
     AD: '#94a3b8', // slate-400
@@ -791,18 +788,20 @@ function EstadisticasPageContent() {
 
   const focoLabels = {
     GEN: 'General',
-    LIG: 'Ligaduras',
-    RIT: 'Ritmo',
+    SON: 'Sonido',
+    FLX: 'Flexibilidad',
+    MOT: 'Motricidad',
     ART: 'Articulación',
-    'S&A': 'Sonido y Afinación',
+    COG: 'Cognitivo',
   };
 
   const focoColors = {
     GEN: componentStyles.status.badgeDefault,
-    LIG: componentStyles.status.badgeInfo,
-    RIT: componentStyles.status.badgeDefault, // purple -> default
+    SON: componentStyles.status.badgeInfo,
+    FLX: componentStyles.status.badgeDefault,
     ART: componentStyles.status.badgeSuccess,
-    'S&A': componentStyles.status.badgeDefault, // brand -> default
+    MOT: componentStyles.status.badgeDefault,
+    COG: componentStyles.status.badgeInfo,
   };
 
   const comentariosFiltrados = feedbackAlumno.comentarios.filter(r => {

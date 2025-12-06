@@ -62,15 +62,15 @@ export default function CrearAsignacionWizard({ onClose }) {
       // Usar usuario del contexto AuthProvider en lugar de llamar directamente a supabase.auth.getUser()
       // Verificar si hay error de autenticación en el contexto
       if (authErrorContext) {
-        const isSessionNotFound = authErrorContext.message?.includes('session_not_found') || 
-                                  authErrorContext.status === 403 ||
-                                  authErrorContext.code === 'session_not_found';
+        const isSessionNotFound = authErrorContext.message?.includes('session_not_found') ||
+          authErrorContext.status === 403 ||
+          authErrorContext.code === 'session_not_found';
         if (isSessionNotFound) {
           throw new Error('Sesión expirada. Por favor, vuelve a iniciar sesión.');
         }
         throw new Error('Error de autenticación. Por favor, inicia sesión nuevamente.');
       }
-      
+
       // Verificar que hay usuario autenticado
       if (!authUser && !effectiveUser) {
         throw new Error('Usuario no autenticado. Por favor, inicia sesión nuevamente.');
@@ -78,7 +78,7 @@ export default function CrearAsignacionWizard({ onClose }) {
 
       // Usar authUser.id (del contexto) si está disponible, sino effectiveUser?.id
       const profesorId = authUser?.id || effectiveUser?.id;
-      
+
       if (!profesorId) {
         throw new Error('No se pudo obtener el ID del profesor. Por favor, inicia sesión nuevamente.');
       }
@@ -94,7 +94,7 @@ export default function CrearAsignacionWizard({ onClose }) {
 
       const pieza = piezas.find(p => p.id === data.piezaId);
       const plan = planes.find(p => p.id === data.planId);
-      
+
       if (!pieza || !plan) {
         throw new Error('Pieza o Plan no encontrados');
       }
@@ -133,10 +133,10 @@ export default function CrearAsignacionWizard({ onClose }) {
             details: error?.details,
             asignacion,
           });
-          
+
           const alumno = estudiantes.find(e => e.id === asignacion.alumnoId);
           const errorMessage = error?.message || 'Error desconocido';
-          
+
           // Mensajes de error más descriptivos
           if (error?.code === '42501' || errorMessage.includes('row-level security')) {
             toast.error(`❌ Error de permisos: No tienes permiso para crear esta asignación. Verifica que estés autenticado correctamente.`);
@@ -147,12 +147,12 @@ export default function CrearAsignacionWizard({ onClose }) {
           }
         }
       }
-      
+
       return results;
     },
     onSuccess: (results) => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
-      
+
       if (results.length === 1) {
         toast.success('✅ Asignación creada');
         navigate(createPageUrl(`asignacion-detalle?id=${results[0].id}`));
@@ -212,7 +212,7 @@ export default function CrearAsignacionWizard({ onClose }) {
   };
 
   const canProceed = () => {
-    switch(step) {
+    switch (step) {
       case 1: return formData.estudiantesIds.length > 0;
       case 2: return !!formData.piezaId;
       case 3: return !!formData.planId;
@@ -239,17 +239,18 @@ export default function CrearAsignacionWizard({ onClose }) {
 
   const focoLabels = {
     GEN: 'General',
-    LIG: 'Ligaduras',
-    RIT: 'Ritmo',
+    SON: 'Sonido',
+    FLX: 'Flexibilidad',
+    MOT: 'Motricidad',
     ART: 'Articulación',
-    'S&A': 'Sonido y Afinación',
+    COG: 'Cognitivo',
   };
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-50" onClick={onClose} />
-      
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+      <div className="fixed inset-0 bg-black/40 z-[200]" onClick={onClose} />
+
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 pointer-events-none">
         <Card className="w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col pointer-events-auto app-card shadow-card">
           <CardHeader className="border-b border-[var(--color-border-default)] bg-brand-500 text-white rounded-t-[var(--radius-modal)]">
             <div className="flex items-center justify-between">
@@ -261,14 +262,13 @@ export default function CrearAsignacionWizard({ onClose }) {
                 <X className="w-5 h-5" />
               </Button>
             </div>
-            
+
             <div className="flex items-center gap-2 mt-4 flex-wrap">
               {steps.map((s, idx) => (
                 <React.Fragment key={s.num}>
                   <div className={`flex items-center gap-2 ${step === s.num ? 'text-white' : step > s.num ? 'text-white' : 'text-white/50'}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      step === s.num ? 'bg-white text-brand-600' : step > s.num ? 'bg-white/80 text-brand-600' : 'bg-white/20'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step === s.num ? 'bg-white text-brand-600' : step > s.num ? 'bg-white/80 text-brand-600' : 'bg-white/20'
+                      }`}>
                       {step > s.num ? <Check className="w-4 h-4" /> : s.num}
                     </div>
                     <span className="text-sm hidden md:inline">{s.label}</span>
@@ -326,11 +326,10 @@ export default function CrearAsignacionWizard({ onClose }) {
                     filteredEstudiantes.map((estudiante) => (
                       <Card
                         key={estudiante.id}
-                        className={`cursor-pointer transition-all app-panel ${
-                          formData.estudiantesIds.includes(estudiante.id)
+                        className={`cursor-pointer transition-all app-panel ${formData.estudiantesIds.includes(estudiante.id)
                             ? 'border-brand-300 bg-brand-50 shadow-sm'
                             : 'hover:bg-muted'
-                        }`}
+                          }`}
                         onClick={() => toggleEstudiante(estudiante.id)}
                       >
                         <CardContent className="pt-4 flex items-center gap-3">
@@ -379,11 +378,10 @@ export default function CrearAsignacionWizard({ onClose }) {
                     filteredPiezas.map((pieza) => (
                       <Card
                         key={pieza.id}
-                        className={`cursor-pointer transition-all app-panel ${
-                          formData.piezaId === pieza.id
+                        className={`cursor-pointer transition-all app-panel ${formData.piezaId === pieza.id
                             ? 'border-brand-300 bg-brand-50 shadow-sm'
                             : 'hover:bg-muted'
-                        }`}
+                          }`}
                         onClick={() => setFormData({ ...formData, piezaId: pieza.id })}
                       >
                         <CardContent className="pt-4">
@@ -447,11 +445,10 @@ export default function CrearAsignacionWizard({ onClose }) {
                     filteredPlanes.map((plan) => (
                       <Card
                         key={plan.id}
-                        className={`cursor-pointer transition-all app-panel ${
-                          formData.planId === plan.id
+                        className={`cursor-pointer transition-all app-panel ${formData.planId === plan.id
                             ? 'border-brand-300 bg-brand-50 shadow-sm'
                             : 'hover:bg-muted'
-                        }`}
+                          }`}
                         onClick={() => setFormData({ ...formData, planId: plan.id })}
                       >
                         <CardContent className="pt-4">
@@ -548,7 +545,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                     <SelectTrigger className="h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-500))]" aria-label="Seleccionar foco">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="z-[120]" position="popper">
+                    <SelectContent className="z-[230]" position="popper">
                       {Object.entries(focoLabels).map(([key, label]) => (
                         <SelectItem key={key} value={key}>{label}</SelectItem>
                       ))}

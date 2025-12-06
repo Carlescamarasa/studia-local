@@ -518,7 +518,7 @@ export default function TestSeedPage() {
       }
 
       let bloques = await localDataClient.entities.Bloque.list();
-      const tiposRequeridos = ['CA', 'CB', 'TC', 'TM', 'FM', 'VC', 'AD'];
+      const tiposRequeridos = ['CA', 'CB', 'TC', 'FM', 'VC', 'AD'];
       const ejerciciosBase = {};
 
       // Nombres variados para cada tipo de ejercicio (múltiples opciones)
@@ -1838,7 +1838,7 @@ export default function TestSeedPage() {
         return;
       }
 
-      const tiposRequeridos = ['CA', 'CB', 'TC', 'TM', 'FM', 'VC', 'AD'];
+      const tiposRequeridos = ['CA', 'CB', 'TC', 'FM', 'VC', 'AD'];
       const bloquesSeed = (data.bloques || []).filter(b => b.code?.includes('SEED'));
       const tiposPresentes = new Set(bloquesSeed.map(b => b.tipo));
       const todosLosTipos = tiposRequeridos.every(t => tiposPresentes.has(t));

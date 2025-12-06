@@ -107,7 +107,7 @@ export interface Bloque {
   id: string;
   nombre: string;
   code: string;
-  tipo: 'CA' | 'CB' | 'TC' | 'TM' | 'FM' | 'VC' | 'AD';
+  tipo: 'CA' | 'CB' | 'TC' | 'FM' | 'VC' | 'AD';
   duracionSeg: number;
   instrucciones?: string;
   indicadorLogro?: string;
@@ -148,7 +148,7 @@ export interface SesionBloque {
   id?: string;
   code: string;
   nombre: string;
-  tipo: 'CA' | 'CB' | 'TC' | 'TM' | 'FM' | 'VC' | 'AD';
+  tipo: 'CA' | 'CB' | 'TC' | 'FM' | 'VC' | 'AD';
   duracionSeg: number;
   [key: string]: any; // Permite campos adicionales del bloque original
 }
@@ -195,7 +195,7 @@ export interface PlanSemana {
 export interface Plan {
   id: string;
   nombre: string;
-  focoGeneral: 'GEN' | 'LIG' | 'RIT' | 'ART' | 'S&A';
+  focoGeneral: 'GEN' | 'SON' | 'FLX' | 'ART' | 'MOT' | 'COG';
   objetivoSemanalPorDefecto?: string;
   piezaId: string;
   profesorId: string;
@@ -230,7 +230,7 @@ export interface Asignacion {
   piezaId: string;
   semanaInicioISO: string; // YYYY-MM-DD
   estado: 'borrador' | 'publicada' | 'archivada';
-  foco: 'GEN' | 'LIG' | 'RIT' | 'ART' | 'S&A';
+  foco: 'GEN' | 'SON' | 'FLX' | 'ART' | 'MOT' | 'COG';
   notas?: string | null;
   plan: Plan; // Snapshot completo del plan
   piezaSnapshot: PiezaSnapshot; // Snapshot completo de la pieza
@@ -293,7 +293,7 @@ export interface RegistroBloque {
   semanaIdx: number;
   sesionIdx: number;
   ordenEjecucion: number;
-  tipo: 'CA' | 'CB' | 'TC' | 'TM' | 'FM' | 'VC' | 'AD';
+  tipo: 'CA' | 'CB' | 'TC' | 'FM' | 'VC' | 'AD';
   code: string;
   nombre: string;
   duracionObjetivoSeg: number;

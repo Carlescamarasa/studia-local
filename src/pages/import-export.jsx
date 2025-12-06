@@ -18,7 +18,7 @@ import { componentStyles } from "@/design/componentStyles";
 import { cn } from "@/lib/utils";
 
 const pad2 = (n) => String(n).padStart(2, "0");
-const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 const startOfMonday = (date) => {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const dow = d.getDay();
@@ -31,25 +31,25 @@ const startOfMonday = (date) => {
 const parseCSV = (text) => {
   const lines = text.split('\n').filter(line => line.trim());
   if (lines.length === 0) return [];
-  
+
   // Detectar separador (punto y coma o coma)
   const firstLine = lines[0];
   const separator = firstLine.includes(';') ? ';' : ',';
-  
+
   // Parsear headers (quitar comillas si existen)
   const headers = lines[0].split(separator).map(h => h.trim().replace(/^"|"$/g, ''));
-  
+
   // Parsear filas
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
-    
+
     // Parsear valores (manejar comillas correctamente)
     const values = [];
     let current = '';
     let inQuotes = false;
-    
+
     for (let j = 0; j < line.length; j++) {
       const char = line[j];
       if (char === '"') {
@@ -62,10 +62,10 @@ const parseCSV = (text) => {
       }
     }
     values.push(current.trim()); // Último valor
-    
+
     // Limpiar comillas de los valores
     const cleanedValues = values.map(v => v.replace(/^"|"$/g, ''));
-    
+
     if (cleanedValues.length === headers.length) {
       const row = {};
       headers.forEach((header, idx) => {
@@ -74,7 +74,7 @@ const parseCSV = (text) => {
       rows.push(row);
     }
   }
-  
+
   return rows;
 };
 
@@ -88,7 +88,7 @@ const generateCSV = (headers, rows) => {
     }
     return str;
   };
-  
+
   const headerRow = headers.map(escapeCSV).join(';');
   const dataRows = rows.map(row => headers.map(h => escapeCSV(row[h])).join(';'));
   return [headerRow, ...dataRows].join('\n');
@@ -182,19 +182,19 @@ export default function ImportExportPage() {
   // Importación con CSV para Ejercicios
   const importarEjerciciosCSV = async (data) => {
     const results = { created: 0, updated: 0, skipped: 0, errors: [] };
-    
+
     // Rastrear códigos generados durante esta importación para evitar duplicados
     const codigosGenerados = new Map(); // tipo -> Set de códigos generados
-    
+
     // Función para generar código considerando los ya generados en este lote
     const generateCodeConRastreo = (tipo) => {
       // Obtener códigos existentes en BD y los generados en este lote
       const ejerciciosDeTipo = bloques.filter(e => e.code?.startsWith(`${tipo}-`));
       const codigosEnLote = codigosGenerados.get(tipo) || new Set();
-      
+
       // Encontrar el máximo número entre BD y lote actual
       let maxNum = 0;
-      
+
       // Buscar en BD
       ejerciciosDeTipo.forEach(e => {
         const match = e.code.match(/\d+/);
@@ -203,7 +203,7 @@ export default function ImportExportPage() {
           if (num > maxNum) maxNum = num;
         }
       });
-      
+
       // Buscar en códigos generados en este lote
       codigosEnLote.forEach(code => {
         const match = code.match(/\d+/);
@@ -212,31 +212,31 @@ export default function ImportExportPage() {
           if (num > maxNum) maxNum = num;
         }
       });
-      
+
       // Generar nuevo código
       const nuevoCode = `${tipo}-${String(maxNum + 1).padStart(4, '0')}`;
-      
+
       // Registrar en el lote
       if (!codigosGenerados.has(tipo)) {
         codigosGenerados.set(tipo, new Set());
       }
       codigosGenerados.get(tipo).add(nuevoCode);
-      
+
       return nuevoCode;
     };
-    
+
     for (const row of data) {
       try {
         // Ignorar columnas 'id' si existen (no usar IDs externos)
         const { id, code, nombre, tipo, duracion_objetivo_seg, instrucciones, indicadorLogro, mediaLinks } = row;
-        
+
         if (!nombre || !tipo) {
           results.errors.push(`Fila ${data.indexOf(row) + 1}: Faltan campos obligatorios (nombre, tipo)`);
           continue;
         }
 
         // Validar tipo
-        const tiposValidos = ['CA', 'CB', 'TC', 'TM', 'FM', 'VC', 'AD'];
+        const tiposValidos = ['CA', 'CB', 'TC', 'FM', 'VC', 'AD'];
         const tipoNormalizado = tipo.toUpperCase();
         if (!tiposValidos.includes(tipoNormalizado)) {
           results.errors.push(`${nombre || `Fila ${data.indexOf(row) + 1}`}: Tipo "${tipo}" no válido. Debe ser uno de: ${tiposValidos.join(', ')}`);
@@ -267,7 +267,7 @@ export default function ImportExportPage() {
 
         // Buscar si ya existe un ejercicio con ese code
         const existe = bloques.find(b => b.code === codeFinal);
-        
+
         if (existe) {
           // Si existe, actualizar
           await localDataClient.entities.Bloque.update(existe.id, {
@@ -299,19 +299,19 @@ export default function ImportExportPage() {
         results.errors.push(`${row.nombre || row.code || `Fila ${data.indexOf(row) + 1}`}: ${error.message}`);
       }
     }
-    
+
     return results;
   };
 
   // Importación con CSV para Piezas
   const importarPiezasCSV = async (data) => {
     const results = { created: 0, updated: 0, skipped: 0, errors: [] };
-    
+
     for (const row of data) {
       try {
         // Ignorar columnas 'id' si existen (no usar IDs externos)
         const { id, code, nombre, nivel, ejercicios } = row;
-        
+
         if (!nombre) {
           results.errors.push(`Fila ${data.indexOf(row) + 1}: Falta campo obligatorio (nombre)`);
           continue;
@@ -331,7 +331,7 @@ export default function ImportExportPage() {
           const codesEjercicios = ejercicios.split(',').map(c => c.trim()).filter(Boolean);
           const ejerciciosEncontrados = [];
           const ejerciciosNoEncontrados = [];
-          
+
           for (const codeEjercicio of codesEjercicios) {
             const ejercicio = bloques.find(b => b.code === codeEjercicio);
             if (ejercicio) {
@@ -345,7 +345,7 @@ export default function ImportExportPage() {
               ejerciciosNoEncontrados.push(codeEjercicio);
             }
           }
-          
+
           if (ejerciciosNoEncontrados.length > 0) {
             results.errors.push(`${nombre}: Ejercicios no encontrados: ${ejerciciosNoEncontrados.join(', ')}`);
           }
@@ -359,7 +359,7 @@ export default function ImportExportPage() {
         } else {
           piezaExistente = piezas.find(p => p.nombre === nombre);
         }
-        
+
         if (piezaExistente) {
           // Si existe, actualizar
           await localDataClient.entities.Pieza.update(piezaExistente.id, {
@@ -384,7 +384,7 @@ export default function ImportExportPage() {
         results.errors.push(`${row.nombre || `Fila ${data.indexOf(row) + 1}`}: ${error.message}`);
       }
     }
-    
+
     return results;
   };
 
@@ -399,40 +399,40 @@ export default function ImportExportPage() {
         }
       } else {
         // Importación JSON (lógica existente)
-      if (type === 'piezas') {
+        if (type === 'piezas') {
           const results = { created: 0, updated: 0, errors: [] };
-        for (const item of data) {
-          try {
+          for (const item of data) {
+            try {
               // Ignorar 'id' si viene en el JSON
               const { id, ...itemData } = item;
-            await localDataClient.entities.Pieza.create({
+              await localDataClient.entities.Pieza.create({
                 nombre: itemData.nombre,
                 descripcion: itemData.descripcion || '',
                 nivel: itemData.nivel || 'principiante',
                 tiempoObjetivoSeg: itemData.tiempoObjetivoSeg || 0,
                 elementos: itemData.elementos || [],
-              profesorId: effectiveUser.id,
-            });
-            results.created++;
-          } catch (error) {
-            results.errors.push(`${item.nombre}: ${error.message}`);
+                profesorId: effectiveUser.id,
+              });
+              results.created++;
+            } catch (error) {
+              results.errors.push(`${item.nombre}: ${error.message}`);
+            }
           }
-        }
-        return results;
+          return results;
         } else if (type === 'bloques' || type === 'ejercicios') {
           const results = { created: 0, updated: 0, skipped: 0, errors: [] };
-        for (const item of data) {
-          try {
+          for (const item of data) {
+            try {
               // Ignorar 'id' si viene en el JSON
               const { id, code, ...itemData } = item;
-              
+
               const exists = bloques.some(b => b.code === code);
-            if (exists) {
-              results.skipped++;
-              continue;
-            }
-              
-            await localDataClient.entities.Bloque.create({
+              if (exists) {
+                results.skipped++;
+                continue;
+              }
+
+              await localDataClient.entities.Bloque.create({
                 nombre: itemData.nombre || item.nombre,
                 code: code,
                 tipo: itemData.tipo || item.tipo,
@@ -442,71 +442,71 @@ export default function ImportExportPage() {
                 materialesRequeridos: itemData.materialesRequeridos || [],
                 media: itemData.media || {},
                 elementosOrdenados: itemData.elementosOrdenados || [],
-              profesorId: effectiveUser.id,
-            });
-            results.created++;
-          } catch (error) {
+                profesorId: effectiveUser.id,
+              });
+              results.created++;
+            } catch (error) {
               results.errors.push(`${item.code || item.nombre}: ${error.message}`);
-          }
-        }
-        return results;
-      } else if (type === 'planes') {
-          const results = { created: 0, updated: 0, errors: [] };
-        for (const item of data) {
-          try {
-            let piezaId = item.piezaId;
-            
-            if (item.piezaNombre) {
-              const pieza = piezas.find(p => p.nombre === item.piezaNombre);
-              if (pieza) {
-                piezaId = pieza.id;
-              } else {
-                results.errors.push(`${item.nombre}: Pieza "${item.piezaNombre}" no encontrada`);
-                continue;
-              }
             }
-
-            const semanasResueltas = (item.semanas || []).map(semana => ({
-              ...semana,
-              sesiones: (semana.sesiones || []).map(sesion => ({
-                ...sesion,
-                bloques: (sesion.bloques || []).map(bloque => {
-                  if (typeof bloque === 'string') {
-                    const bloqueEncontrado = bloques.find(b => b.code === bloque);
-                    if (bloqueEncontrado) {
-                      return {
-                        nombre: bloqueEncontrado.nombre,
-                        code: bloqueEncontrado.code,
-                        tipo: bloqueEncontrado.tipo,
-                        duracionSeg: bloqueEncontrado.duracionSeg,
-                        instrucciones: bloqueEncontrado.instrucciones,
-                        indicadorLogro: bloqueEncontrado.indicadorLogro,
-                        materialesRequeridos: bloqueEncontrado.materialesRequeridos || [],
-                        media: bloqueEncontrado.media || {},
-                        elementosOrdenados: bloqueEncontrado.elementosOrdenados || [],
-                      };
-                    }
-                    return null;
-                  }
-                  return bloque;
-                }).filter(Boolean)
-              }))
-            }));
-
-            await localDataClient.entities.Plan.create({
-              nombre: item.nombre,
-              focoGeneral: item.focoGeneral || 'GEN',
-              objetivoSemanalPorDefecto: item.objetivoSemanalPorDefecto || '',
-              piezaId: piezaId,
-              semanas: semanasResueltas,
-              profesorId: effectiveUser.id,
-            });
-            results.created++;
-          } catch (error) {
-            results.errors.push(`${item.nombre}: ${error.message}`);
           }
-        }
-        return results;
+          return results;
+        } else if (type === 'planes') {
+          const results = { created: 0, updated: 0, errors: [] };
+          for (const item of data) {
+            try {
+              let piezaId = item.piezaId;
+
+              if (item.piezaNombre) {
+                const pieza = piezas.find(p => p.nombre === item.piezaNombre);
+                if (pieza) {
+                  piezaId = pieza.id;
+                } else {
+                  results.errors.push(`${item.nombre}: Pieza "${item.piezaNombre}" no encontrada`);
+                  continue;
+                }
+              }
+
+              const semanasResueltas = (item.semanas || []).map(semana => ({
+                ...semana,
+                sesiones: (semana.sesiones || []).map(sesion => ({
+                  ...sesion,
+                  bloques: (sesion.bloques || []).map(bloque => {
+                    if (typeof bloque === 'string') {
+                      const bloqueEncontrado = bloques.find(b => b.code === bloque);
+                      if (bloqueEncontrado) {
+                        return {
+                          nombre: bloqueEncontrado.nombre,
+                          code: bloqueEncontrado.code,
+                          tipo: bloqueEncontrado.tipo,
+                          duracionSeg: bloqueEncontrado.duracionSeg,
+                          instrucciones: bloqueEncontrado.instrucciones,
+                          indicadorLogro: bloqueEncontrado.indicadorLogro,
+                          materialesRequeridos: bloqueEncontrado.materialesRequeridos || [],
+                          media: bloqueEncontrado.media || {},
+                          elementosOrdenados: bloqueEncontrado.elementosOrdenados || [],
+                        };
+                      }
+                      return null;
+                    }
+                    return bloque;
+                  }).filter(Boolean)
+                }))
+              }));
+
+              await localDataClient.entities.Plan.create({
+                nombre: item.nombre,
+                focoGeneral: item.focoGeneral || 'GEN',
+                objetivoSemanalPorDefecto: item.objetivoSemanalPorDefecto || '',
+                piezaId: piezaId,
+                semanas: semanasResueltas,
+                profesorId: effectiveUser.id,
+              });
+              results.created++;
+            } catch (error) {
+              results.errors.push(`${item.nombre}: ${error.message}`);
+            }
+          }
+          return results;
         }
       }
     },
@@ -515,7 +515,7 @@ export default function ImportExportPage() {
       queryClient.invalidateQueries({ queryKey: ['piezas'] });
       queryClient.invalidateQueries({ queryKey: ['bloques'] });
       queryClient.invalidateQueries({ queryKey: ['planes'] });
-      
+
       const total = (results.created || 0) + (results.updated || 0);
       if (total > 0) {
         toast.success(`✅ Importación completada: ${results.created || 0} creados${results.updated ? `, ${results.updated} actualizados` : ''}`);
@@ -535,7 +535,7 @@ export default function ImportExportPage() {
     try {
       const text = await importFile.text();
       let data;
-      
+
       if (importFormat === 'csv') {
         data = parseCSV(text);
         if (data.length === 0) {
@@ -544,15 +544,15 @@ export default function ImportExportPage() {
         }
       } else {
         data = JSON.parse(text);
-      if (!Array.isArray(data)) {
-        toast.error('❌ El archivo debe contener un array de objetos');
-        return;
+        if (!Array.isArray(data)) {
+          toast.error('❌ El archivo debe contener un array de objetos');
+          return;
         }
       }
 
       // Determinar el tipo real (ejercicios vs bloques)
       const realType = importType === 'ejercicios' ? 'ejercicios' : importType;
-      
+
       importMutation.mutate({ type: realType, data, format: importFormat });
     } catch (error) {
       toast.error(`❌ Error al leer el archivo: ${error.message}`);
@@ -568,7 +568,7 @@ export default function ImportExportPage() {
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       const file = files[0];
@@ -588,7 +588,7 @@ export default function ImportExportPage() {
   // Funciones de exportación (sin cambios)
   const exportarJSON = (type) => {
     let data, filename;
-    
+
     if (type === 'piezas') {
       data = piezas.map(p => ({
         nombre: p.nombre,
@@ -715,19 +715,19 @@ export default function ImportExportPage() {
     const estudiantesBase = usuarios.filter(u => u.rolPersonalizado === 'ESTU');
     const headers = ["Alumno", "Email", "Pieza", "Plan", "Semana", "Sesiones", "Tiempo(min)"];
     const rows = estudiantesBase.map(est => {
-      const asignacionesEstudiante = asignaciones.filter(a => 
-        a.alumnoId === est.id && 
+      const asignacionesEstudiante = asignaciones.filter(a =>
+        a.alumnoId === est.id &&
         (a.estado === 'publicada' || a.estado === 'en_curso')
       );
       const asignacion = asignacionesEstudiante.find(a => {
         const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActual);
         return offset >= 0 && offset < (a.plan?.semanas?.length || 0);
       });
-      const semanaDelPlan = asignacion ? 
-        asignacion.plan?.semanas?.[calcularOffsetSemanas(asignacion.semanaInicioISO, semanaActual)] : 
+      const semanaDelPlan = asignacion ?
+        asignacion.plan?.semanas?.[calcularOffsetSemanas(asignacion.semanaInicioISO, semanaActual)] :
         null;
       const tiempoTotal = semanaDelPlan?.sesiones?.reduce((sum, s) => sum + calcularTiempoSesion(s), 0) || 0;
-      
+
       return [
         displayName(est),
         est.email || '',
@@ -872,7 +872,7 @@ export default function ImportExportPage() {
                       <p className="text-sm text-[var(--color-text-secondary)]">
                         Importa ejercicios desde un archivo CSV. El campo <code className="px-1.5 py-0.5 bg-[var(--color-surface-muted)] rounded text-xs font-mono">code</code> actúa como identificador lógico para actualizar ejercicios existentes.
                       </p>
-                      
+
                       <div className="flex flex-col sm:flex-row gap-2">
                         <Button
                           variant="outline"
@@ -900,7 +900,7 @@ export default function ImportExportPage() {
                           Subir CSV
                         </Button>
                       </div>
-                      
+
                       <Alert className="rounded-xl border-[var(--color-info)] bg-[var(--color-info)]/10">
                         <AlertTriangle className="h-4 w-4 text-[var(--color-info)]" />
                         <AlertDescription className="text-xs">
@@ -924,7 +924,7 @@ export default function ImportExportPage() {
                       <p className="text-sm text-[var(--color-text-secondary)]">
                         Importa piezas desde un archivo CSV. El campo <code className="px-1.5 py-0.5 bg-[var(--color-surface-muted)] rounded text-xs font-mono">code</code> permite identificar piezas existentes, y <code className="px-1.5 py-0.5 bg-[var(--color-surface-muted)] rounded text-xs font-mono">ejercicios</code> es una lista de codes de ejercicios separados por comas.
                       </p>
-                      
+
                       <div className="flex flex-col sm:flex-row gap-2">
                         <Button
                           variant="outline"
@@ -952,7 +952,7 @@ export default function ImportExportPage() {
                           Subir CSV
                         </Button>
                       </div>
-                      
+
                       <Alert className="rounded-xl border-[var(--color-info)] bg-[var(--color-info)]/10">
                         <AlertTriangle className="h-4 w-4 text-[var(--color-info)]" />
                         <AlertDescription className="text-xs">
@@ -984,7 +984,7 @@ export default function ImportExportPage() {
                           <p className={componentStyles.typography.bodyText + " text-xs"}>
                             Importa piezas desde archivo JSON.
                           </p>
-                          <Button 
+                          <Button
                             onClick={() => {
                               setImportType('piezas');
                               setImportFormat('json');
@@ -1014,7 +1014,7 @@ export default function ImportExportPage() {
                           <p className={componentStyles.typography.bodyText + " text-xs"}>
                             Importa ejercicios desde archivo JSON.
                           </p>
-                          <Button 
+                          <Button
                             onClick={() => {
                               setImportType('bloques');
                               setImportFormat('json');
@@ -1044,7 +1044,7 @@ export default function ImportExportPage() {
                           <p className={componentStyles.typography.bodyText + " text-xs"}>
                             Importa planes con resolución automática de IDs.
                           </p>
-                          <Button 
+                          <Button
                             onClick={() => {
                               setImportType('planes');
                               setImportFormat('json');
@@ -1091,8 +1091,8 @@ export default function ImportExportPage() {
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{piezas.length}</Badge>
                           </div>
-                          <Button 
-                            onClick={() => exportarJSON('piezas')} 
+                          <Button
+                            onClick={() => exportarJSON('piezas')}
                             className={`w-full h-9 ${componentStyles.buttons.primary}`}
                             size="sm"
                           >
@@ -1118,16 +1118,16 @@ export default function ImportExportPage() {
                             <Badge variant="outline" className="rounded-full">{bloques.length}</Badge>
                           </div>
                           <div className="flex gap-2">
-                          <Button 
-                              onClick={() => exportarJSON('ejercicios')} 
+                            <Button
+                              onClick={() => exportarJSON('ejercicios')}
                               className={`flex-1 h-9 ${componentStyles.buttons.primary}`}
-                            size="sm"
-                          >
-                            <FileDown className="w-4 h-4 mr-2" />
+                              size="sm"
+                            >
+                              <FileDown className="w-4 h-4 mr-2" />
                               JSON
-                          </Button>
-                            <Button 
-                              onClick={exportarEjercicios} 
+                            </Button>
+                            <Button
+                              onClick={exportarEjercicios}
                               className={`flex-1 h-9 ${componentStyles.buttons.outline}`}
                               size="sm"
                             >
@@ -1153,8 +1153,8 @@ export default function ImportExportPage() {
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{planes.length}</Badge>
                           </div>
-                          <Button 
-                            onClick={() => exportarJSON('planes')} 
+                          <Button
+                            onClick={() => exportarJSON('planes')}
                             className={`w-full h-9 ${componentStyles.buttons.primary}`}
                             size="sm"
                           >
@@ -1187,8 +1187,8 @@ export default function ImportExportPage() {
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{usuarios.length}</Badge>
                           </div>
-                          <Button 
-                            onClick={exportarUsuarios} 
+                          <Button
+                            onClick={exportarUsuarios}
                             className={`w-full h-9 ${componentStyles.buttons.primary}`}
                             size="sm"
                           >
@@ -1213,8 +1213,8 @@ export default function ImportExportPage() {
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{asignaciones.length}</Badge>
                           </div>
-                          <Button 
-                            onClick={exportarAsignaciones} 
+                          <Button
+                            onClick={exportarAsignaciones}
                             className={`w-full h-9 ${componentStyles.buttons.primary}`}
                             size="sm"
                           >
@@ -1241,8 +1241,8 @@ export default function ImportExportPage() {
                               {usuarios.filter(u => u.rolPersonalizado === 'ESTU').length}
                             </Badge>
                           </div>
-                          <Button 
-                            onClick={exportarAgenda} 
+                          <Button
+                            onClick={exportarAgenda}
                             className={`w-full h-9 ${componentStyles.buttons.primary}`}
                             size="sm"
                           >
@@ -1267,8 +1267,8 @@ export default function ImportExportPage() {
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{registrosSesion.length}</Badge>
                           </div>
-                          <Button 
-                            onClick={exportarEstadisticas} 
+                          <Button
+                            onClick={exportarEstadisticas}
                             className={`w-full h-9 ${componentStyles.buttons.primary}`}
                             size="sm"
                           >
@@ -1293,8 +1293,8 @@ export default function ImportExportPage() {
                             <span>Total:</span>
                             <Badge variant="outline" className="rounded-full">{registrosBloques.length}</Badge>
                           </div>
-                          <Button 
-                            onClick={exportarBloquesDetallado} 
+                          <Button
+                            onClick={exportarBloquesDetallado}
                             className={`w-full h-9 ${componentStyles.buttons.primary}`}
                             size="sm"
                           >
@@ -1303,14 +1303,14 @@ export default function ImportExportPage() {
                           </Button>
                         </CardContent>
                       </Card>
-                          </div>
-                          </div>
+                    </div>
+                  </div>
                 </div>
               )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                          </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Modal de importación */}
       {showImportModal && createPortal(
@@ -1396,8 +1396,8 @@ export default function ImportExportPage() {
                       <Button variant="outline" onClick={() => setShowImportModal(false)} className={`flex-1 ${componentStyles.buttons.outline}`}>
                         Cancelar
                       </Button>
-                      <Button 
-                        onClick={handleImport} 
+                      <Button
+                        onClick={handleImport}
                         loading={importMutation.isPending}
                         loadingText="Importando..."
                         disabled={!importFile}
@@ -1439,7 +1439,7 @@ export default function ImportExportPage() {
                             </Badge>
                           )}
                         </div>
-                        
+
                         {importResults.errors.length > 0 && (
                           <div className="mt-3 max-h-48 overflow-y-auto border border-[var(--color-border-default)] rounded-xl p-2 bg-[var(--color-surface-elevated)] text-xs space-y-1">
                             {importResults.errors.map((err, idx) => (

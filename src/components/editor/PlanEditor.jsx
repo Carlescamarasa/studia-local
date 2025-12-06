@@ -23,12 +23,12 @@ import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "@/components/stu
 import { useEffectiveUser } from "@/components/utils/helpers";
 
 // Componente Sortable para Sesión
-function SortableSesion({ 
-  id, 
-  sesion, 
-  semanaIndex, 
-  sesionIndex, 
-  expandedSesiones, 
+function SortableSesion({
+  id,
+  sesion,
+  semanaIndex,
+  sesionIndex,
+  expandedSesiones,
   expandedEjercicios,
   toggleSesion,
   toggleEjercicios,
@@ -71,9 +71,8 @@ function SortableSesion({
     <div
       ref={setNodeRef}
       style={style}
-      className={`ml-4 border-l-2 border-[var(--color-info)]/40 bg-[var(--color-info)]/10 rounded-r-lg p-2.5 transition-all ${
-        isDragging ? 'shadow-card border-[var(--color-info)] opacity-90' : 'hover:bg-[var(--color-info)]/20'
-      }`}
+      className={`ml-4 border-l-2 border-[var(--color-info)]/40 bg-[var(--color-info)]/10 rounded-r-lg p-2.5 transition-all ${isDragging ? 'shadow-card border-[var(--color-info)] opacity-90' : 'hover:bg-[var(--color-info)]/20'
+        }`}
     >
       <div className="flex items-start gap-2">
         <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing pt-1" onClick={(e) => e.stopPropagation()}>
@@ -95,8 +94,8 @@ function SortableSesion({
           <div className="flex items-center gap-1.5 flex-wrap">
             <PlayCircle className="w-3.5 h-3.5 text-[var(--color-info)] flex-shrink-0" />
             <span className="text-sm font-medium text-[var(--color-text-primary)]">{sesion.nombre}</span>
-            <Badge 
-              variant="outline" 
+            <Badge
+              variant="outline"
               className={tiempoTotal > 0 ? componentStyles.status.badgeSuccess : componentStyles.status.badgeDefault}
             >
               <Clock className="w-3 h-3 mr-1" />
@@ -145,7 +144,7 @@ function SortableSesion({
                 const S = ensureRondaIds(sesion);
                 const secuencia = getSecuencia(S);
                 const bloquesMap = mapBloquesByCode(S);
-                
+
                 if (!secuencia || secuencia.length === 0) {
                   return (
                     <div className="text-xs text-[var(--color-text-secondary)] p-2">
@@ -153,16 +152,16 @@ function SortableSesion({
                     </div>
                   );
                 }
-                
+
                 return (
                   <>
                     {secuencia.map((item, seqIdx) => {
                       if (item.kind === 'BLOQUE') {
                         const ejercicio = bloquesMap.get(item.code);
                         if (!ejercicio) return null;
-                        
+
                         const ejercicioIndex = sesion.bloques.findIndex(b => b.code === item.code);
-                        
+
                         return (
                           <div key={`bloque-${item.code}-${seqIdx}`} className={componentStyles.items.compactItem}>
                             <Badge variant="outline" className={`${tipoColors[ejercicio.tipo]} rounded-full ${componentStyles.typography.compactText}`}>
@@ -197,14 +196,14 @@ function SortableSesion({
                       } else if (item.kind === 'RONDA') {
                         const ronda = S.rondas.find(r => r.id === item.id);
                         if (!ronda) return null;
-                        
+
                         const rondaIndex = sesion.rondas.findIndex(r => r.id === item.id);
                         const rondaKey = `${semanaIndex}-${sesionIndex}-ronda-${rondaIndex}`;
                         const isRondaExpanded = expandedEjercicios.has(rondaKey);
-                        
+
                         return (
                           <div key={`ronda-${item.id}-${seqIdx}`}>
-                            <div 
+                            <div
                               className={componentStyles.items.compactItemHover}
                               onClick={(e) => toggleRonda(semanaIndex, sesionIndex, rondaIndex, e)}
                             >
@@ -349,9 +348,8 @@ function SortableSemana({
     <div
       ref={setNodeRef}
       style={style}
-      className={`border-l-4 border-[var(--color-primary)] bg-[var(--color-primary-soft)]/50 rounded-r-lg p-3 transition-all ${
-        isDragging ? 'shadow-card border-[var(--color-primary)] opacity-90' : 'hover:bg-[var(--color-primary-soft)]'
-      }`}
+      className={`border-l-4 border-[var(--color-primary)] bg-[var(--color-primary-soft)]/50 rounded-r-lg p-3 transition-all ${isDragging ? 'shadow-card border-[var(--color-primary)] opacity-90' : 'hover:bg-[var(--color-primary-soft)]'
+        }`}
     >
       <div className="flex items-start gap-2">
         <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing pt-1" onClick={(e) => e.stopPropagation()}>
@@ -526,7 +524,7 @@ export default function PlanEditor({ plan, onClose }) {
       const duplicados = semanaNombres.filter((nombre, index) =>
         semanaNombres.indexOf(nombre) !== index
       );
-      
+
       if (duplicados.length > 0) {
         throw new Error('Hay semanas con nombres duplicados. Cada semana debe tener un nombre único.');
       }
@@ -555,17 +553,17 @@ export default function PlanEditor({ plan, onClose }) {
       setSaveResult({ success: false, message: '❌ Debes seleccionar una pieza' });
       return;
     }
-    
+
     // Añadir profesorId si no existe (solo para creación, no para edición)
-    const dataToSave = plan?.id 
-      ? formData 
+    const dataToSave = plan?.id
+      ? formData
       : { ...formData, profesorId: effectiveUser?.id };
-    
+
     if (!plan?.id && !effectiveUser?.id) {
       setSaveResult({ success: false, message: '❌ No se pudo identificar el usuario. Por favor, recarga la página.' });
       return;
     }
-    
+
     saveMutation.mutate(dataToSave);
   }, [formData, plan?.id, effectiveUser?.id, saveMutation]);
 
@@ -588,7 +586,7 @@ export default function PlanEditor({ plan, onClose }) {
     const handleKeyDown = (e) => {
       // No capturar si hay subeditor abierto
       if (editingSemana || editingSesion || editingEjercicio) return;
-      
+
       // Cerrar con Ctrl/Cmd + .
       if ((e.ctrlKey || e.metaKey) && e.key === '.') {
         e.preventDefault();
@@ -629,7 +627,7 @@ export default function PlanEditor({ plan, onClose }) {
     const semana = formData.semanas[index];
     const newSemana = JSON.parse(JSON.stringify(semana));
     newSemana.nombre = `${semana.nombre} (copia)`;
-    
+
     const newSemanas = [...formData.semanas];
     newSemanas.splice(index + 1, 0, newSemana);
     setFormData({ ...formData, semanas: newSemanas });
@@ -702,7 +700,7 @@ export default function PlanEditor({ plan, onClose }) {
       setTimeout(() => setSaveResult(null), 3000);
     }
   };
-  
+
   const updateEjercicioInline = (semanaIndex, sesionIndex, ejercicioIndex, updatedEjercicio) => {
     const newSemanas = [...formData.semanas];
     newSemanas[semanaIndex].sesiones[sesionIndex].bloques[ejercicioIndex] = updatedEjercicio;
@@ -716,26 +714,26 @@ export default function PlanEditor({ plan, onClose }) {
     if (window.confirm('¿Eliminar este ejercicio?')) {
       const newSemanas = [...formData.semanas];
       const ejercicio = newSemanas[semanaIndex].sesiones[sesionIndex].bloques[ejercicioIndex];
-      
+
       // Eliminar ejercicio de bloques
-      newSemanas[semanaIndex].sesiones[sesionIndex].bloques = 
+      newSemanas[semanaIndex].sesiones[sesionIndex].bloques =
         newSemanas[semanaIndex].sesiones[sesionIndex].bloques.filter((_, i) => i !== ejercicioIndex);
-      
+
       // Actualizar referencias en rondas
       if (newSemanas[semanaIndex].sesiones[sesionIndex].rondas) {
-        newSemanas[semanaIndex].sesiones[sesionIndex].rondas = 
+        newSemanas[semanaIndex].sesiones[sesionIndex].rondas =
           newSemanas[semanaIndex].sesiones[sesionIndex].rondas.map(r => ({
             ...r,
             bloques: r.bloques.filter(code => code !== ejercicio.code)
           })).filter(r => r.bloques.length > 0);
       }
-      
+
       setFormData({ ...formData, semanas: newSemanas });
       setSaveResult({ success: true, message: '✅ Ejercicio eliminado y referencias actualizadas' });
       setTimeout(() => setSaveResult(null), 3000);
     }
   };
-  
+
   const updateEjercicioEnRonda = (semanaIndex, sesionIndex, rondaIndex, ejercicioCode, updatedEjercicio) => {
     const newSemanas = [...formData.semanas];
     const bloqueIndex = newSemanas[semanaIndex].sesiones[sesionIndex].bloques.findIndex(b => b.code === ejercicioCode);
@@ -751,7 +749,7 @@ export default function PlanEditor({ plan, onClose }) {
   const removeRonda = (semanaIndex, sesionIndex, rondaIndex) => {
     if (window.confirm('¿Eliminar esta ronda?')) {
       const newSemanas = [...formData.semanas];
-      newSemanas[semanaIndex].sesiones[sesionIndex].rondas = 
+      newSemanas[semanaIndex].sesiones[sesionIndex].rondas =
         newSemanas[semanaIndex].sesiones[sesionIndex].rondas.filter((_, i) => i !== rondaIndex);
       setFormData({ ...formData, semanas: newSemanas });
       setSaveResult({ success: true, message: '✅ Ronda eliminada' });
@@ -794,7 +792,7 @@ export default function PlanEditor({ plan, onClose }) {
     if (activeId.startsWith('sesion-') && overId.startsWith('sesion-')) {
       const [, activeSemana, activeSesion] = activeId.split('-');
       const [, overSemana, overSesion] = overId.split('-');
-      
+
       if (activeSemana === overSemana) {
         const semanaIndex = parseInt(activeSemana);
         const oldIndex = parseInt(activeSesion);
@@ -813,12 +811,12 @@ export default function PlanEditor({ plan, onClose }) {
   // Calcular tiempo total de una sesión (incluyendo rondas)
   const calcularTiempoSesion = (sesion) => {
     if (!sesion.bloques) return 0;
-    
+
     // Tiempo de ejercicios (excluyendo AD)
     const tiempoEjercicios = sesion.bloques
       .filter(b => b.tipo !== 'AD')
       .reduce((total, b) => total + (b.duracionSeg || 0), 0);
-    
+
     // Tiempo de rondas
     const tiempoRondas = (sesion.rondas || []).reduce((total, ronda) => {
       const tiempoRonda = ronda.bloques.reduce((sum, code) => {
@@ -830,16 +828,17 @@ export default function PlanEditor({ plan, onClose }) {
       }, 0);
       return total + (tiempoRonda * ronda.repeticiones);
     }, 0);
-    
+
     return tiempoEjercicios + tiempoRondas;
   };
 
   const focoLabels = {
     GEN: 'General',
-    LIG: 'Ligaduras',
-    RIT: 'Ritmo',
+    SON: 'Sonido',
+    FLX: 'Flexibilidad',
+    MOT: 'Motricidad',
     ART: 'Articulación',
-    'S&A': 'Sonido y Afinación',
+    COG: 'Cognitivo',
   };
 
   const focoColors = {
@@ -863,17 +862,13 @@ export default function PlanEditor({ plan, onClose }) {
   const modalContent = (
     <>
       {/* Overlay con cierre al hacer clic */}
-      <div 
-        className="fixed inset-0 bg-black/40 z-[115]"
-        onClick={() => {
-          if (!editingSemana && !editingSesion && !editingEjercicio) {
-            onClose();
-          }
-        }}
+      <div
+        className="fixed inset-0 bg-black/40 z-[220]"
+        onClick={() => onClose(null)}
       />
-      
-      <div className="fixed inset-0 z-[120] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
-        <div 
+
+      <div className="fixed inset-0 z-[225] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
+        <div
           className="bg-[var(--color-surface-elevated)] w-full max-w-5xl max-h-[92vh] shadow-[0_8px_24px_rgba(0,0,0,0.16)] rounded-[var(--radius-modal)] flex flex-col pointer-events-auto my-8 border border-[var(--color-border-default)]"
           onClick={(e) => e.stopPropagation()}
         >
@@ -924,20 +919,20 @@ export default function PlanEditor({ plan, onClose }) {
                   <Label htmlFor="pieza" className={componentStyles.typography.cardTitle}>
                     Pieza Asociada *
                   </Label>
-                  <Select 
-                    value={formData.piezaId} 
+                  <Select
+                    value={formData.piezaId}
                     onValueChange={(v) => setFormData({ ...formData, piezaId: v })}
                     modal={false}
                   >
                     <SelectTrigger id="pieza" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue placeholder="Selecciona una pieza..." />
                     </SelectTrigger>
-                    <SelectContent 
-                      position="popper" 
-                      side="bottom" 
-                      align="start" 
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
                       sideOffset={4}
-                      className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                      className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                     >
                       {piezas.length === 0 ? (
                         <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay piezas</div>
@@ -954,20 +949,20 @@ export default function PlanEditor({ plan, onClose }) {
 
                 <div>
                   <Label htmlFor="foco" className="text-[var(--color-text-primary)]">Foco General</Label>
-                  <Select 
-                    value={formData.focoGeneral} 
+                  <Select
+                    value={formData.focoGeneral}
                     onValueChange={(v) => setFormData({ ...formData, focoGeneral: v })}
                     modal={false}
                   >
                     <SelectTrigger id="foco" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent 
-                      position="popper" 
-                      side="bottom" 
-                      align="start" 
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
                       sideOffset={4}
-                      className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                      className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                     >
                       {Object.entries(focoLabels).map(([key, label]) => (
                         <SelectItem key={key} value={key}>{label}</SelectItem>
@@ -1012,7 +1007,7 @@ export default function PlanEditor({ plan, onClose }) {
                   </div>
                 ) : (
                   <DndProvider onDragEnd={handleDragEnd}>
-                    <SortableContext 
+                    <SortableContext
                       items={formData.semanas.map((_, i) => `semana-${i}`)}
                       strategy={verticalListSortingStrategy}
                     >

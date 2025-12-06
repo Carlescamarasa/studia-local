@@ -668,27 +668,26 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
 
   const focoLabels = {
     GEN: 'General',
-    LIG: 'Ligaduras',
-    RIT: 'Ritmo',
+    SON: 'Sonido',
+    FLX: 'Flexibilidad',
     ART: 'Articulación',
-    'S&A': 'Sonido y Afinación',
+    MOT: 'Motricidad',
+    COG: 'Cognitivo',
   };
 
   const tipoLabels = {
-    CA: 'Calentamiento',
-    CB: 'Cuerpo',
+    CA: 'Calentamiento A',
+    CB: 'Calentamiento B',
     TC: 'Técnica',
-    TM: 'Tempo',
     FM: 'Fragmento Musical',
     VC: 'Vuelta a la Calma',
-    AD: 'Advertencia',
+    AD: 'Aviso/Descanso',
   };
 
   const tipoColors = {
     CA: componentStyles.status.badgeDefault,
     CB: componentStyles.status.badgeInfo,
     TC: componentStyles.status.badgeDefault,
-    TM: componentStyles.status.badgeSuccess,
     FM: componentStyles.status.badgeDefault,
     VC: componentStyles.status.badgeInfo,
     AD: componentStyles.status.badgeDefault,
@@ -748,7 +747,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
                     side="bottom"
                     align="start"
                     sideOffset={4}
-                    className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                    className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                   >
                     {Object.entries(focoLabels).map(([key, label]) => (
                       <SelectItem key={key} value={key}>{label}</SelectItem>

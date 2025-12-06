@@ -83,11 +83,10 @@ export default function EjerciciosTab() {
   const tipoLabels = {
     CA: 'Calentamiento A',
     CB: 'Calentamiento B',
-    TC: 'Técnica Central',
-    TM: 'Técnica Mantenimiento',
+    TC: 'Técnica',
     FM: 'Fragmento Musical',
     VC: 'Vuelta a la Calma',
-    AD: 'Advertencia/Descanso',
+    AD: 'Aviso/Descanso',
   };
 
   // Removed tipoColors
@@ -95,7 +94,6 @@ export default function EjerciciosTab() {
     CA: 'primary',
     CB: 'info',
     TC: 'warning',
-    TM: 'success',
     FM: 'danger',
     VC: 'info',
     AD: 'neutral',
@@ -103,7 +101,7 @@ export default function EjerciciosTab() {
 
   const ejerciciosFiltrados = ejercicios.filter(e => {
     const matchesSearch = e.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         e.code?.toLowerCase().includes(searchTerm.toLowerCase());
+      e.code?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTipo = tipoFilter === 'all' || e.tipo === tipoFilter;
     return matchesSearch && matchesTipo;
   });
@@ -223,7 +221,7 @@ export default function EjerciciosTab() {
                 <CardContent className="pt-4">
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
-                      <div 
+                      <div
                         className="flex-1 min-w-0 cursor-pointer"
                         onClick={() => handleEditar(ejercicio)}
                       >

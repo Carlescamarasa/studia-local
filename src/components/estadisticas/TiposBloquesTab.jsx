@@ -8,18 +8,16 @@ import { Badge } from "@/components/ds";
 const tipoLabels = {
   CA: 'Calentamiento A',
   CB: 'Calentamiento B',
-  TC: 'Técnica Central',
-  TM: 'Técnica Mantenimiento',
+  TC: 'Técnica',
   FM: 'Fragmento Musical',
   VC: 'Vuelta a la Calma',
-  AD: 'Avisos/Descanso',
+  AD: 'Aviso/Descanso',
 };
 
 const tipoColors = {
   CA: 'bg-blue-100 text-blue-800 border-blue-300',
   CB: 'bg-blue-200 text-blue-900 border-blue-400',
   TC: 'bg-purple-100 text-purple-800 border-purple-300',
-  TM: 'bg-purple-200 text-purple-900 border-purple-400',
   FM: 'bg-green-100 text-green-800 border-green-300',
   VC: 'bg-orange-100 text-orange-800 border-orange-300',
   AD: 'bg-red-100 text-red-800 border-red-300',
@@ -29,7 +27,6 @@ const tipoChartColors = {
   CA: '#3b82f6',
   CB: '#2563eb',
   TC: '#a855f7',
-  TM: '#9333ea',
   FM: '#22c55e',
   VC: '#f97316',
   AD: '#ef4444',
@@ -64,7 +61,7 @@ export default function TiposBloquesTab({ tiposBloques }) {
               {tiposBloques
                 .sort((a, b) => b.tiempoReal - a.tiempoReal)
                 .map((tipo) => {
-                  const porcentaje = totalTiempo > 0 
+                  const porcentaje = totalTiempo > 0
                     ? ((tipo.tiempoReal / totalTiempo) * 100).toFixed(1)
                     : 0;
 
@@ -84,9 +81,9 @@ export default function TiposBloquesTab({ tiposBloques }) {
                             </span>
                           </div>
                           <div className="bg-[var(--color-surface-muted)] rounded-full h-2 overflow-hidden">
-                            <div 
+                            <div
                               className="h-full transition-all"
-                              style={{ 
+                              style={{
                                 width: `${porcentaje}%`,
                                 backgroundColor: tipoChartColors[tipo.tipo] || tipoChartColors.CA
                               }}

@@ -82,10 +82,11 @@ export default function PlanesTab() {
 
   const focoLabels = {
     GEN: 'General',
-    LIG: 'Ligaduras',
-    RIT: 'Ritmo',
+    SON: 'Sonido',
+    FLX: 'Flexibilidad',
+    MOT: 'Motricidad',
     ART: 'Articulación',
-    'S&A': 'Sonido y Afinación',
+    COG: 'Cognitivo',
   };
 
   const focoVariants = { // New object

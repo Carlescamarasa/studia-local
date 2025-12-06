@@ -15,14 +15,14 @@ import { Target, User, Calendar, Edit, Trash2, PlayCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
-export default function ModalAsignacion({ 
-  open, 
-  onOpenChange, 
-  asignacion, 
-  usuarios, 
-  userIdActual, 
+export default function ModalAsignacion({
+  open,
+  onOpenChange,
+  asignacion,
+  usuarios,
+  userIdActual,
   userRole,
-  onDelete 
+  onDelete
 }) {
   const navigate = useNavigate();
 
@@ -31,7 +31,7 @@ export default function ModalAsignacion({
   const alumno = usuarios.find(u => u.id === asignacion.alumnoId);
   const profesor = usuarios.find(u => u.id === asignacion.profesorId);
   const fechaSemana = asignacion.semanaInicioISO ? formatearFechaEvento(asignacion.semanaInicioISO) : '';
-  const piezaNombre = asignacion.piezaSnapshot?.nombre || asignacion.piezaId || 'Pieza';
+  const piezaNombre = asignacion.piezaSnapshot?.nombre || asignacion.piezaId || 'Sin pieza específica';
 
   const isAdmin = userRole === 'ADMIN';
   const isProf = userRole === 'PROF';

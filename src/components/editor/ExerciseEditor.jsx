@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Save, Plus, Trash2, AlertTriangle, RefreshCw, Info, Music, GripVertical, ArrowUp, ArrowDown, RotateCcw, Play, Image as ImageIcon, FileText, Volume2, Pentagon, Star } from "lucide-react";
+import { X, Save, Plus, Trash2, AlertTriangle, RefreshCw, Info, Music, GripVertical, ArrowUp, ArrowDown, RotateCcw, Play, Image as ImageIcon, FileText, Volume2, Pentagon, Star, Pencil } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -33,6 +33,52 @@ const SKILL_OPTIONS = [
   { value: 'Registro', label: 'Registro' }
 ];
 
+// Métodos iniciales por defecto (se cargan en localStorage si no hay ninguno)
+const INITIAL_METODO_OPTIONS = [
+  { value: 'ARB', label: 'Arbans' },
+  { value: 'CLK', label: 'Clarke' },
+  { value: 'SCL', label: 'Escalas' },
+  { value: 'FLX', label: 'Flexibilidad' },
+  { value: 'INT', label: 'Intervalos' },
+  { value: 'RNG', label: 'Registro' },
+  { value: 'ART', label: 'Articulación' },
+  { value: 'OTR', label: 'Otro' },
+];
+
+// Helper para obtener métodos desde localStorage (inicializa con defaults si está vacío)
+const getMetodos = () => {
+  try {
+    const saved = localStorage.getItem('studia_metodos');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    // Primera vez: inicializar con métodos por defecto
+    localStorage.setItem('studia_metodos', JSON.stringify(INITIAL_METODO_OPTIONS));
+    return INITIAL_METODO_OPTIONS;
+  } catch {
+    return INITIAL_METODO_OPTIONS;
+  }
+};
+
+// Helper para guardar métodos en localStorage
+const saveMetodos = (metodos) => {
+  localStorage.setItem('studia_metodos', JSON.stringify(metodos));
+};
+
+// Helper para obtener el número más alto usado para un método
+const getHighestCodeNumber = (allEjercicios, metodo) => {
+  const regex = new RegExp(`^TC-${metodo}-(\\d+)$`);
+  let highest = 0;
+  allEjercicios.forEach(ej => {
+    const match = ej.code?.match(regex);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > highest) highest = num;
+    }
+  });
+  return highest;
+};
+
 export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isInlineMode: initialInlineMode = false }) {
   const queryClient = useQueryClient();
   const effectiveUser = useEffectiveUser();
@@ -41,6 +87,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
     nombre: '',
     code: '',
     tipo: 'TC',
+    metodo: 'OTR', // Método para ejercicios TC
     duracionSeg: 0,
     instrucciones: '',
     indicadorLogro: '',
@@ -79,10 +126,105 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
   const [selectedElementos, setSelectedElementos] = useState([]);
   const [isInlineMode, setIsInlineMode] = useState(initialInlineMode);
 
+  // Estado para gestión de métodos (todos son editables)
+  const [metodos, setMetodos] = useState(getMetodos());
+  const [showMetodoEditor, setShowMetodoEditor] = useState(false);
+  const [nuevoMetodoCodigo, setNuevoMetodoCodigo] = useState('');
+  const [nuevoMetodoNombre, setNuevoMetodoNombre] = useState('');
+  const [editingMetodo, setEditingMetodo] = useState(null); // { value, label } del método en edición
+
+  // Lista de métodos para el selector
+  const metodoOptions = metodos;
+
+  // Obtener ejercicios para verificar uso de métodos
   const { data: allEjercicios = [] } = useQuery({
     queryKey: ['bloques'],
     queryFn: () => localDataClient.entities.Bloque.list(),
   });
+
+  // Verificar si un método está en uso (tiene ejercicios con código > 0000)
+  const isMetodoInUse = (metodoCode) => {
+    return getHighestCodeNumber(allEjercicios, metodoCode) > 0;
+  };
+
+  // Función para añadir un nuevo método
+  const handleAddMetodo = () => {
+    const codigo = nuevoMetodoCodigo.toUpperCase().trim();
+    const nombre = nuevoMetodoNombre.trim();
+    if (!codigo || !nombre) return;
+    if (codigo.length < 2 || codigo.length > 5) {
+      setSaveResult({ success: false, message: 'El código debe tener entre 2-5 caracteres' });
+      setTimeout(() => setSaveResult(null), 2000);
+      return;
+    }
+    if (metodos.some(m => m.value === codigo)) {
+      setSaveResult({ success: false, message: 'Este código ya existe' });
+      setTimeout(() => setSaveResult(null), 2000);
+      return;
+    }
+    const nuevoMetodo = { value: codigo, label: nombre };
+    const nuevosMetodos = [...metodos, nuevoMetodo];
+    setMetodos(nuevosMetodos);
+    saveMetodos(nuevosMetodos);
+    setNuevoMetodoCodigo('');
+    setNuevoMetodoNombre('');
+    setFormData({ ...formData, metodo: codigo });
+    setSaveResult({ success: true, message: `✅ Método "${nombre}" añadido` });
+    setTimeout(() => setSaveResult(null), 2000);
+  };
+
+  // Función para eliminar un método (solo si no está en uso)
+  const handleDeleteMetodo = (codigo) => {
+    if (isMetodoInUse(codigo)) {
+      setSaveResult({ success: false, message: '❌ No se puede eliminar: hay ejercicios usando este método' });
+      setTimeout(() => setSaveResult(null), 3000);
+      return;
+    }
+    const nuevosMetodos = metodos.filter(m => m.value !== codigo);
+    setMetodos(nuevosMetodos);
+    saveMetodos(nuevosMetodos);
+    if (formData.metodo === codigo) {
+      setFormData({ ...formData, metodo: 'OTR' });
+    }
+    setSaveResult({ success: true, message: '✅ Método eliminado' });
+    setTimeout(() => setSaveResult(null), 2000);
+  };
+
+  // Función para iniciar edición de un método
+  const handleStartEditMetodo = (metodo) => {
+    if (isMetodoInUse(metodo.value)) {
+      setSaveResult({ success: false, message: '❌ No se puede editar: hay ejercicios usando este método' });
+      setTimeout(() => setSaveResult(null), 3000);
+      return;
+    }
+    setEditingMetodo({ ...metodo });
+    setNuevoMetodoCodigo(metodo.value);
+    setNuevoMetodoNombre(metodo.label);
+  };
+
+  // Función para guardar edición de un método
+  const handleSaveEditMetodo = () => {
+    if (!editingMetodo) return;
+    const nuevoNombre = nuevoMetodoNombre.trim();
+    if (!nuevoNombre) return;
+    const nuevosMetodos = metodos.map(m =>
+      m.value === editingMetodo.value ? { ...m, label: nuevoNombre } : m
+    );
+    setMetodos(nuevosMetodos);
+    saveMetodos(nuevosMetodos);
+    setEditingMetodo(null);
+    setNuevoMetodoCodigo('');
+    setNuevoMetodoNombre('');
+    setSaveResult({ success: true, message: '✅ Método actualizado' });
+    setTimeout(() => setSaveResult(null), 2000);
+  };
+
+  // Función para cancelar edición
+  const handleCancelEditMetodo = () => {
+    setEditingMetodo(null);
+    setNuevoMetodoCodigo('');
+    setNuevoMetodoNombre('');
+  };
 
   const { data: piezas = [] } = useQuery({
     queryKey: ['piezas'],
@@ -93,7 +235,22 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
   const usandoPiezaSnapshot = !!piezaSnapshot;
   const elementosDisponibles = usandoPiezaSnapshot ? (piezaSnapshot?.elementos || []) : (piezaRef?.elementos || []);
 
-  const generateCode = async (tipo) => {
+  const generateCode = async (tipo, metodo = null) => {
+    // Para TC, usar formato TC-{método}-{número}
+    if (tipo === 'TC' && metodo) {
+      const prefix = `TC-${metodo}-`;
+      const ejerciciosDeTipo = allEjercicios.filter(e => e.code?.startsWith(prefix));
+      const maxNum = ejerciciosDeTipo.reduce((max, e) => {
+        const match = e.code.match(new RegExp(`${prefix}(\\d+)`));
+        if (match) {
+          const num = parseInt(match[1]);
+          return num > max ? num : max;
+        }
+        return max;
+      }, 0);
+      return `${prefix}${String(maxNum + 1).padStart(4, '0')}`;
+    }
+    // Para otros tipos, usar formato {tipo}-{número}
     const ejerciciosDeTipo = allEjercicios.filter(e => e.code?.startsWith(`${tipo}-`));
     const maxNum = ejerciciosDeTipo.reduce((max, e) => {
       const match = e.code.match(/\d+/);
@@ -108,12 +265,19 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
 
   useEffect(() => {
     if (ejercicio) {
+      // Extraer método del código si es TC (ej: TC-ARB-0001 -> ARB)
+      let metodoFromCode = 'OTR';
+      if (ejercicio.tipo === 'TC' && ejercicio.code) {
+        const match = ejercicio.code.match(/^TC-([A-Z]+)-/);
+        if (match) metodoFromCode = match[1];
+      }
       // setIsInlineMode(true); // REMOVED: This was forcing inline mode for all edits
       setFormData({
         id: ejercicio.id, // Set ID
         nombre: ejercicio.nombre || '',
         code: ejercicio.code || '',
         tipo: ejercicio.tipo || 'TC',
+        metodo: ejercicio.metodo || metodoFromCode,
         duracionSeg: ejercicio.duracionSeg || 0,
         instrucciones: ejercicio.instrucciones || '',
         indicadorLogro: ejercicio.indicadorLogro || '',
@@ -130,13 +294,13 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
       setIsInlineMode(false);
       setFormData({
         id: null,
-        nombre: '', code: '', tipo: 'TC', duracionSeg: 0, instrucciones: '', indicadorLogro: '',
+        nombre: '', code: '', tipo: 'TC', metodo: 'OTR', duracionSeg: 0, instrucciones: '', indicadorLogro: '',
         materialesRequeridos: [], mediaLinks: [], elementosOrdenados: [], piezaRefId: null,
         targetPPMs: [], skillTags: [],
       });
       setPiezaRefId('');
       setSelectedElementos([]);
-      generateCode('TC').then(code => {
+      generateCode('TC', 'OTR').then(code => {
         setFormData(prev => ({ ...prev, code }));
       });
     }
@@ -145,7 +309,8 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
   // ... (intermediate useEffects omitted for brevity, they are unchanged)
 
   const handleRegenerateCode = async () => {
-    const newCode = await generateCode(formData.tipo);
+    const metodo = formData.tipo === 'TC' ? formData.metodo : null;
+    const newCode = await generateCode(formData.tipo, metodo);
     setFormData({ ...formData, code: newCode });
     setAutoGeneratedCode(true);
     setSaveResult({ success: true, message: '✅ Código regenerado' });
@@ -356,20 +521,18 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
   };
 
   const tipoLabels = {
-    CA: 'Calentamiento A',
-    CB: 'Calentamiento B',
-    TC: 'Técnica Central',
-    TM: 'Técnica Mantenimiento',
+    CA: 'Calentamiento A (físico)',
+    CB: 'Calentamiento B (musical)',
+    TC: 'Técnica',
     FM: 'Fragmento Musical',
     VC: 'Vuelta a la Calma',
-    AD: 'Advertencia/Descanso',
+    AD: 'Aviso/Descanso',
   };
 
   const tipoColors = {
     CA: 'bg-brand-100 text-brand-800 border-brand-200',
     CB: 'bg-blue-100 text-blue-800 border-blue-200',
     TC: 'bg-purple-100 text-purple-800 border-purple-200',
-    TM: 'bg-green-100 text-green-800 border-green-200',
     FM: 'bg-pink-100 text-pink-800 border-pink-200',
     VC: 'bg-cyan-100 text-cyan-800 border-cyan-200',
     AD: 'bg-[var(--color-surface-muted)] text-ui border-[var(--color-border-default)]',
@@ -446,9 +609,10 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                     <Select
                       value={formData.tipo}
                       onValueChange={(v) => {
+                        const newMetodo = v === 'TC' ? formData.metodo : null;
                         setFormData({ ...formData, tipo: v });
                         if (!ejercicio) {
-                          generateCode(v).then(code => {
+                          generateCode(v, newMetodo).then(code => {
                             setFormData(prev => ({ ...prev, code }));
                             setAutoGeneratedCode(true);
                           });
@@ -464,7 +628,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                         side="bottom"
                         align="start"
                         sideOffset={4}
-                        className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                        className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                       >
                         {Object.entries(tipoLabels).map(([key, label]) => (
                           <SelectItem key={key} value={key}>{label}</SelectItem>
@@ -472,6 +636,175 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Selector de Método (solo para TC) */}
+                  {formData.tipo === 'TC' && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="metodo">Método *</Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowMetodoEditor(!showMetodoEditor)}
+                          className="text-xs h-7 px-2 text-[var(--color-primary)]"
+                        >
+                          {showMetodoEditor ? 'Ocultar' : 'Editar métodos'}
+                        </Button>
+                      </div>
+                      <Select
+                        value={formData.metodo}
+                        onValueChange={(v) => {
+                          setFormData({ ...formData, metodo: v });
+                          if (!ejercicio) {
+                            generateCode('TC', v).then(code => {
+                              setFormData(prev => ({ ...prev, code }));
+                              setAutoGeneratedCode(true);
+                            });
+                          }
+                        }}
+                        modal={false}
+                      >
+                        <SelectTrigger id="metodo" className="w-full h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange">
+                          <SelectValue placeholder="Selecciona método..." />
+                        </SelectTrigger>
+                        <SelectContent
+                          position="popper"
+                          side="bottom"
+                          align="start"
+                          sideOffset={4}
+                          className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                        >
+                          {metodoOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label} ({opt.value})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-[var(--color-text-secondary)]">
+                        Código: TC-{formData.metodo}-XXXX
+                      </p>
+
+                      {/* Editor de métodos inline */}
+                      {showMetodoEditor && (
+                        <div className="mt-3 p-4 border border-[var(--color-border-default)] rounded-lg bg-[var(--color-surface-muted)] space-y-4">
+                          {/* Sección: Todos los métodos */}
+                          <div>
+                            <p className="text-xs font-semibold text-[var(--color-text-primary)] mb-2">Métodos disponibles:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {metodos.map((m) => {
+                                const inUse = isMetodoInUse(m.value);
+                                return (
+                                  <div
+                                    key={m.value}
+                                    className={`flex items-center gap-1 px-2 py-1 rounded-md border text-xs ${editingMetodo?.value === m.value
+                                      ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)]'
+                                      : inUse
+                                        ? 'border-[var(--color-border-default)] bg-[var(--color-surface-muted)] opacity-70'
+                                        : 'border-[var(--color-border-default)] bg-[var(--color-surface)]'
+                                      }`}
+                                  >
+                                    <span className="font-medium">{m.label}</span>
+                                    <span className="text-[var(--color-text-secondary)]">({m.value})</span>
+                                    {inUse && (
+                                      <span className="text-[10px] text-[var(--color-text-secondary)] ml-1">🔒</span>
+                                    )}
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleStartEditMetodo(m)}
+                                      disabled={inUse}
+                                      className={`h-5 w-5 p-0 ml-1 ${inUse ? 'opacity-30 cursor-not-allowed' : 'hover:bg-[var(--color-info)]/10 hover:text-[var(--color-info)]'}`}
+                                      title={inUse ? "En uso (no editable)" : "Editar nombre"}
+                                    >
+                                      <Pencil className="w-3 h-3" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleDeleteMetodo(m.value)}
+                                      disabled={inUse}
+                                      className={`h-5 w-5 p-0 ${inUse ? 'opacity-30 cursor-not-allowed' : 'hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)]'}`}
+                                      title={inUse ? "En uso (no eliminable)" : "Eliminar"}
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <p className="text-xs text-[var(--color-text-secondary)] italic mt-2">
+                              🔒 = Método en uso (tiene ejercicios creados). No se puede editar/eliminar.
+                            </p>
+                          </div>
+
+                          {/* Sección: Añadir/Editar */}
+                          <div className="pt-3 border-t border-[var(--color-border-default)]">
+                            <p className="text-xs font-semibold text-[var(--color-text-primary)] mb-2">
+                              {editingMetodo ? `✏️ Editando: ${editingMetodo.label}` : '➕ Añadir nuevo método:'}
+                            </p>
+                            <div className="flex flex-col gap-2">
+                              <div className="flex gap-2">
+                                <Input
+                                  placeholder="Código (2-5)"
+                                  value={nuevoMetodoCodigo}
+                                  onChange={(e) => setNuevoMetodoCodigo(e.target.value.toUpperCase().slice(0, 5))}
+                                  className="w-20 h-9 text-xs"
+                                  maxLength={5}
+                                  disabled={!!editingMetodo}
+                                />
+                                <Input
+                                  placeholder="Nombre del método"
+                                  value={nuevoMetodoNombre}
+                                  onChange={(e) => setNuevoMetodoNombre(e.target.value)}
+                                  className="flex-1 h-9 text-xs"
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                {editingMetodo ? (
+                                  <>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      onClick={handleSaveEditMetodo}
+                                      disabled={!nuevoMetodoNombre}
+                                      className="h-9 px-4 text-xs flex-1"
+                                    >
+                                      <Save className="w-3 h-3 mr-1" />
+                                      Guardar cambios
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={handleCancelEditMetodo}
+                                      className="h-9 px-4 text-xs"
+                                    >
+                                      Cancelar
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={handleAddMetodo}
+                                    disabled={!nuevoMetodoCodigo || !nuevoMetodoNombre}
+                                    className="h-9 px-4 text-xs"
+                                  >
+                                    <Plus className="w-3 h-3 mr-1" />
+                                    Añadir método
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div>
                     <Label htmlFor="code">Código Único *</Label>
@@ -587,7 +920,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                           side="bottom"
                           align="start"
                           sideOffset={4}
-                          className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                          className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                         >
                           <SelectItem value={null}>Sin pieza de referencia</SelectItem>
                           {piezas.length === 0 ? (
@@ -775,7 +1108,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
               </Card>
             )}
 
-            {['CA', 'CB', 'TC', 'TM'].includes(formData.tipo) && (
+            {['CA', 'CB', 'TC'].includes(formData.tipo) && (
               <Card className="app-panel">
                 <CardHeader>
                   <CardTitle>Objetivos Técnicos (PPM)</CardTitle>
@@ -784,74 +1117,74 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                   <div className="grid grid-cols-12 gap-2 md:gap-4 text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-2 px-1">
                     <div className="col-span-2">Nivel</div>
                     <div className="col-span-2">PPM</div>
-                    <div className="col-span-6">Unidad</div>
-                    <div className="col-span-2 text-right">Acciones</div>
+                    <div className="col-span-5">Unidad</div>
+                    <div className="col-span-3 text-right">Acciones</div>
                   </div>
 
                   {(formData.targetPPMs || []).map((target, index) => (
                     <div key={index} className="grid grid-cols-12 gap-2 md:gap-4 items-center">
-                      <div className="col-span-2 overflow-hidden">
+                      <div className="col-span-2">
                         <Input
                           type="number"
                           min="1"
                           max="10"
                           value={target.nivel}
                           onChange={(e) => updateTargetPPM(index, 'nivel', parseInt(e.target.value) || 1)}
-                          className="h-10 w-full max-w-full rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange"
+                          className="h-10 w-full rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange text-center"
                         />
                       </div>
-                      <div className="col-span-2 overflow-hidden">
+                      <div className="col-span-2">
                         <Input
                           type="number"
                           min="1"
                           value={target.bpm}
                           onChange={(e) => updateTargetPPM(index, 'bpm', parseInt(e.target.value) || 60)}
-                          className="h-10 w-full max-w-full rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange"
+                          className="h-10 w-full rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange text-center"
                         />
                       </div>
-                      <div className="col-span-6 overflow-hidden">
+                      <div className="col-span-5">
                         <Select
                           value={target.unidad}
                           onValueChange={(v) => updateTargetPPM(index, 'unidad', v)}
                         >
-                          <SelectTrigger className="h-10 w-full max-w-full rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange">
+                          <SelectTrigger className="h-10 w-full rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="negra">
-                              <div className="flex items-center gap-2">
-                                <NoteQuarter className="w-4 h-4" />
-                                <span>Negra</span>
+                              <div className="flex items-center gap-3">
+                                <NoteQuarter className="w-5 h-5 shrink-0" />
+                                <span className="text-sm">Negra</span>
                               </div>
                             </SelectItem>
                             <SelectItem value="negraConPuntillo">
-                              <div className="flex items-center gap-2">
-                                <NoteQuarterDotted className="w-5 h-4" />
-                                <span>Negra c/p</span>
+                              <div className="flex items-center gap-3">
+                                <NoteQuarterDotted className="w-5 h-5 shrink-0" />
+                                <span className="text-sm">Negra c/p</span>
                               </div>
                             </SelectItem>
                             <SelectItem value="blanca">
-                              <div className="flex items-center gap-2">
-                                <NoteHalf className="w-4 h-4" />
-                                <span>Blanca</span>
+                              <div className="flex items-center gap-3">
+                                <NoteHalf className="w-5 h-5 shrink-0" />
+                                <span className="text-sm">Blanca</span>
                               </div>
                             </SelectItem>
                             <SelectItem value="blancaConPuntillo">
-                              <div className="flex items-center gap-2">
-                                <NoteHalfDotted className="w-5 h-4" />
-                                <span>Blanca c/p</span>
+                              <div className="flex items-center gap-3">
+                                <NoteHalfDotted className="w-5 h-5 shrink-0" />
+                                <span className="text-sm">Blanca c/p</span>
                               </div>
                             </SelectItem>
                             <SelectItem value="corchea">
-                              <div className="flex items-center gap-2">
-                                <NoteEighth className="w-4 h-4" />
-                                <span>Corchea</span>
+                              <div className="flex items-center gap-3">
+                                <NoteEighth className="w-5 h-5 shrink-0" />
+                                <span className="text-sm">Corchea</span>
                               </div>
                             </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="col-span-2 text-right overflow-hidden">
+                      <div className="col-span-3 flex justify-end">
                         <Button
                           type="button"
                           variant="ghost"

@@ -49,10 +49,11 @@ export default function WeekEditor({ semana, onSave, onClose }) {
 
   const focoLabels = {
     GEN: 'General',
-    LIG: 'Ligaduras',
-    RIT: 'Ritmo',
+    SON: 'Sonido',
+    FLX: 'Flexibilidad',
+    MOT: 'Motricidad',
     ART: 'Articulación',
-    'S&A': 'Sonido y Afinación',
+    COG: 'Cognitivo',
   };
 
   const modalContent = (
@@ -106,7 +107,7 @@ export default function WeekEditor({ semana, onSave, onClose }) {
                   side="bottom" 
                   align="start" 
                   sideOffset={4}
-                  className="z-[120] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                  className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                 >
                   {Object.entries(focoLabels).map(([key, label]) => (
                     <SelectItem key={key} value={key}>{label}</SelectItem>

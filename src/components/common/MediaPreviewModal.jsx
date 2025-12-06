@@ -158,7 +158,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
       <>
         {/* Overlay transparente para audio - Fixed para cubrir toda la pantalla */}
         <div
-          className="fixed inset-0 bg-transparent z-[120]"
+          className="fixed inset-0 bg-transparent z-[230]"
           onClick={handleOverlayClick}
           aria-hidden="true"
         />
@@ -258,7 +258,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
     <>
       {/* Overlay oscuro para video/imagen - Fixed para cubrir toda la pantalla */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[120]"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[230]"
         onClick={handleOverlayClick}
         aria-hidden="true"
       />
