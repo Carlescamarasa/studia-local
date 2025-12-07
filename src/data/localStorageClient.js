@@ -100,7 +100,7 @@ export function createItem(name, item) {
   const newItem = {
     ...item,
     id: item?.id || generateId(name),
-    created_date: item?.created_date || new Date().toISOString(),
+    created_at: item?.created_at || new Date().toISOString(),
   };
   const nextItems = [...current, newItem];
   saveToStorage({ [name]: nextItems });

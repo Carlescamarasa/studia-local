@@ -39,6 +39,8 @@ import TiposBloquesTab from "@/components/estadisticas/TiposBloquesTab";
 import TopEjerciciosTab from "@/components/estadisticas/TopEjerciciosTab";
 import AutoevaluacionesTab from "@/components/estadisticas/AutoevaluacionesTab";
 import FeedbackTab from "@/components/estadisticas/FeedbackTab";
+import EvaluacionesTab from "@/components/estadisticas/EvaluacionesTab";
+import FeedbackUnificadoTab from "@/components/estadisticas/FeedbackUnificadoTab";
 import HeatmapActividad from "@/components/estadisticas/HeatmapActividad";
 import ProgresoPorPieza from "@/components/estadisticas/ProgresoPorPieza";
 import ComparativaEstudiantes from "@/components/estadisticas/ComparativaEstudiantes";
@@ -153,6 +155,14 @@ function EstadisticasPageContent() {
     queryKey: ['feedbacksSemanal'],
     queryFn: async () => {
       return await localDataClient.entities.FeedbackSemanal.list('-created_at');
+    },
+  });
+
+  // Evaluaciones técnicas
+  const { data: evaluacionesTecnicas = [] } = useQuery({
+    queryKey: ['evaluacionesTecnicas'],
+    queryFn: async () => {
+      return await localDataClient.entities.EvaluacionTecnica.list();
     },
   });
 
@@ -612,6 +622,64 @@ function EstadisticasPageContent() {
 
     return resultado;
   }, [feedbacksSemanal, alumnosSeleccionados, profesoresSeleccionados, periodoInicio, periodoFin, isEstu, usuarios]);
+
+  // Evaluaciones técnicas filtradas
+  const evaluacionesFiltradas = useMemo(() => {
+    let resultado = [...evaluacionesTecnicas];
+
+    // Para ESTU: solo sus evaluaciones
+    if (isEstu) {
+      resultado = resultado.filter(e => e.alumnoId === userIdActual);
+    } else {
+      // Solo filtrar por estudiantes si hay selección EXPLÍCITA
+      if (alumnosSeleccionados.length > 0) {
+        resultado = resultado.filter(e => alumnosSeleccionados.includes(e.alumnoId));
+      }
+    }
+
+    // Filtrar por período
+    if (periodoInicio || periodoFin) {
+      resultado = resultado.filter(e => {
+        const fechaEval = e.fecha || e.created_at;
+        if (!fechaEval) return true;
+
+        const evalDate = parseLocalDate(fechaEval.split('T')[0]);
+        const evalDateOnly = new Date(evalDate.getFullYear(), evalDate.getMonth(), evalDate.getDate());
+
+        if (periodoInicio) {
+          const inicioDate = parseLocalDate(periodoInicio);
+          const inicioDateOnly = new Date(inicioDate.getFullYear(), inicioDate.getMonth(), inicioDate.getDate());
+          if (evalDateOnly < inicioDateOnly) return false;
+        }
+
+        if (periodoFin) {
+          const finDate = parseLocalDate(periodoFin);
+          const finDateOnly = new Date(finDate.getFullYear(), finDate.getMonth(), finDate.getDate());
+          if (evalDateOnly > finDateOnly) return false;
+        }
+
+        return true;
+      });
+    }
+
+    // Ordenar por createdAt/created_at descendente (timestamp real)
+    resultado.sort((a, b) => {
+      const fechaA = a.createdAt || a.created_at || a.created_date || '';
+      const fechaB = b.createdAt || b.created_at || b.created_date || '';
+      return fechaB.localeCompare(fechaA);
+    });
+
+    return resultado;
+  }, [evaluacionesTecnicas, userIdActual, alumnosSeleccionados, periodoInicio, periodoFin, isEstu]);
+
+  // Crear mapa de usuarios para EvaluacionesTab
+  const usuariosMap = useMemo(() => {
+    const map = {};
+    usuarios.forEach(u => {
+      map[u.id] = u;
+    });
+    return map;
+  }, [usuarios]);
 
   // Mutación para actualizar feedback
   const actualizarFeedbackMutation = useMutation({
@@ -1157,8 +1225,10 @@ function EstadisticasPageContent() {
         )}
 
         {tabActiva === 'feedback' && (
-          <FeedbackTab
+          <FeedbackUnificadoTab
             feedbacks={isEstu ? feedbackProfesor : feedbacksParaProfAdmin}
+            evaluaciones={evaluacionesFiltradas}
+            usuarios={usuarios}
             isEstu={isEstu}
             onEditFeedback={(f) => setFeedbackDrawer(f)}
             puedeEditar={(f) => {

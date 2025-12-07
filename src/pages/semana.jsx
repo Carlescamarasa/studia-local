@@ -9,7 +9,7 @@ import {
   Music, Calendar, Target, PlayCircle, MessageSquare,
   Layers,
   ChevronLeft, ChevronRight, ChevronDown, Home, Clock, CheckCircle2,
-  Star, Trash2, BookOpen
+  Star, Trash2, BookOpen, ClipboardCheck, Gauge, Brain, Zap
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -27,8 +27,8 @@ import { log } from "@/utils/log";
 
 // --- Helpers de fechas locales ---
 const pad2 = (n) => String(n).padStart(2, "0");
-const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-const parseLocalDate = (s) => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const parseLocalDate = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
 const startOfMonday = (date) => {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const dow = d.getDay();
@@ -46,7 +46,7 @@ function SemanaPageContent() {
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [selectedMediaLinks, setSelectedMediaLinks] = useState([]);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
-  const [tipoFeedbackSemana, setTipoFeedbackSemana] = useState('todos'); // 'todos' | 'profesor' | 'sesiones'
+  const [tipoFeedbackSemana, setTipoFeedbackSemana] = useState('todos'); // 'todos' | 'profesor' | 'sesiones' | 'evaluaciones'
   const queryClient = useQueryClient();
 
   const effectiveUser = useEffectiveUser();
@@ -71,6 +71,12 @@ function SemanaPageContent() {
     queryFn: () => localDataClient.entities.RegistroSesion.list('-inicioISO'),
   });
 
+  // Evaluaciones técnicas
+  const { data: evaluacionesTecnicas = [] } = useQuery({
+    queryKey: ['evaluacionesTecnicas'],
+    queryFn: () => localDataClient.entities.EvaluacionTecnica.list(),
+  });
+
   // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
   // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD
   const usuarioActual = usuarios.find(u => {
@@ -90,7 +96,7 @@ function SemanaPageContent() {
     return offset >= 0 && offset < (a.plan?.semanas?.length || 0);
   });
 
-  const semanaIdx = asignacionActiva ? 
+  const semanaIdx = asignacionActiva ?
     calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO) : 0;
 
   const semanaDelPlan = asignacionActiva?.plan?.semanas?.[semanaIdx];
@@ -121,27 +127,31 @@ function SemanaPageContent() {
       });
   }, [registrosSesion, userIdActual]);
 
-  // Combinar feedbacks y registros, ordenados por fecha, filtrando solo semana actual
+  // Combinar feedbacks, evaluaciones y registros, ordenados por timestamp, filtrando solo semana actual
   const itemsCombinados = useMemo(() => {
     const items = [];
     const lunesSemana = parseLocalDate(semanaActualISO);
     const domingoSemana = new Date(lunesSemana);
     domingoSemana.setDate(domingoSemana.getDate() + 6);
     domingoSemana.setHours(23, 59, 59, 999);
-    
+
     // Agregar feedbacks (solo de la semana actual)
     feedbacksProfesor.forEach(feedback => {
       const fechaFeedback = feedback.semanaInicioISO ? parseLocalDate(feedback.semanaInicioISO) : null;
       if (fechaFeedback && fechaFeedback >= lunesSemana && fechaFeedback <= domingoSemana) {
+        // Supabase returns createdAt (camelCase via snakeToCamel), local has created_at
+        const timestampStr = feedback.createdAt || feedback.created_at;
+        const timestamp = timestampStr ? new Date(timestampStr) : fechaFeedback;
         items.push({
           tipo: 'feedback',
           fecha: fechaFeedback,
-          fechaISO: feedback.semanaInicioISO,
+          timestamp: timestamp,
+          fechaISO: timestampStr || feedback.semanaInicioISO,
           data: feedback,
         });
       }
     });
-    
+
     // Agregar registros de sesión (solo de la semana actual)
     registrosSesionesAlumno.forEach(registro => {
       if (registro.inicioISO) {
@@ -150,25 +160,65 @@ function SemanaPageContent() {
           items.push({
             tipo: 'registro',
             fecha: fechaRegistro,
+            timestamp: new Date(registro.inicioISO),
             fechaISO: registro.inicioISO,
             data: registro,
           });
         }
       }
     });
-    
-    // Ordenar por fecha descendente (más reciente primero)
-    return items.sort((a, b) => b.fecha - a.fecha);
-  }, [feedbacksProfesor, registrosSesionesAlumno, semanaActualISO]);
+
+    // Agregar evaluaciones técnicas (solo de la semana actual)
+    evaluacionesTecnicas
+      .filter(e => e.alumnoId === userIdActual)
+      .forEach(evaluacion => {
+        // Supabase returns createdAt (camelCase), local has created_at or created_date, fallback to fecha
+        const fechaEval = evaluacion.createdAt || evaluacion.created_at || evaluacion.created_date || evaluacion.fecha;
+        if (!fechaEval) return;
+        const evalDate = parseLocalDate(fechaEval.split('T')[0]);
+        if (evalDate >= lunesSemana && evalDate <= domingoSemana) {
+          // Prioritize createdAt/created_at for timestamp (accurate hour:minute)
+          const timestamp = evaluacion.createdAt
+            ? new Date(evaluacion.createdAt)
+            : evaluacion.created_at
+              ? new Date(evaluacion.created_at)
+              : evaluacion.created_date
+                ? new Date(evaluacion.created_date)
+                : new Date(fechaEval);
+          items.push({
+            tipo: 'evaluacion',
+            fecha: evalDate,
+            timestamp: timestamp,
+            fechaISO: fechaEval,
+            data: evaluacion,
+          });
+        }
+      });
+
+    // Ordenar por timestamp descendente (más reciente primero)
+    return items.sort((a, b) => b.timestamp - a.timestamp);
+  }, [feedbacksProfesor, registrosSesionesAlumno, evaluacionesTecnicas, userIdActual, semanaActualISO]);
+
+  // Mapa de usuarios para mostrar nombres
+  const usuariosMap = useMemo(() => {
+    const map = {};
+    usuarios.forEach(u => {
+      map[u.id] = u;
+    });
+    return map;
+  }, [usuarios]);
 
   // Filtrar items según el tipo seleccionado
+  // Tabs: 'todos' | 'sesiones' | 'feedback' | 'evaluaciones'
   const itemsFiltrados = useMemo(() => {
     if (tipoFeedbackSemana === 'todos') {
       return itemsCombinados;
-    } else if (tipoFeedbackSemana === 'profesor') {
-      return itemsCombinados.filter(item => item.tipo === 'feedback');
     } else if (tipoFeedbackSemana === 'sesiones') {
       return itemsCombinados.filter(item => item.tipo === 'registro');
+    } else if (tipoFeedbackSemana === 'feedback') {
+      return itemsCombinados.filter(item => item.tipo === 'feedback');
+    } else if (tipoFeedbackSemana === 'evaluaciones') {
+      return itemsCombinados.filter(item => item.tipo === 'evaluacion');
     }
     return itemsCombinados;
   }, [itemsCombinados, tipoFeedbackSemana]);
@@ -189,14 +239,14 @@ function SemanaPageContent() {
 
   const handlePreviewMedia = (index, mediaLinks) => {
     if (!mediaLinks || !Array.isArray(mediaLinks) || mediaLinks.length === 0) return;
-    
+
     // Normalizar media links
     const normalizedLinks = normalizeMediaLinks(mediaLinks);
     if (normalizedLinks.length === 0) return;
-    
+
     // Asegurar que el índice esté dentro del rango
     const safeIndex = Math.max(0, Math.min(index, normalizedLinks.length - 1));
-    
+
     setSelectedMediaLinks(normalizedLinks);
     setSelectedMediaIndex(safeIndex);
     setShowMediaModal(true);
@@ -279,7 +329,7 @@ function SemanaPageContent() {
             const numeroSemana = isoWeekNumberLocal(lunesSemana);
             const labelSemana = `Semana ${numeroSemana}`;
             const rangeTextSemana = `${lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} – ${domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
-            
+
             return (
               <PeriodHeaderButton
                 label={labelSemana}
@@ -348,7 +398,7 @@ function SemanaPageContent() {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className={"flex items-start gap-2 py-1 " + componentStyles.components.toneRowSemana}>
                   <Target className="w-4 h-4 text-[var(--color-primary)] mt-0.5 shrink-0" />
                   <div className="min-w-0 flex-1">
@@ -372,7 +422,7 @@ function SemanaPageContent() {
                 <h3 className={`${componentStyles.typography.sectionTitle} mb-4`}>
                   Sesiones ({semanaDelPlan.sesiones?.length || 0})
                 </h3>
-                
+
                 {/* Lista compacta de sesiones */}
                 {semanaDelPlan.sesiones && semanaDelPlan.sesiones.length === 0 ? (
                   <div className="text-center py-12">
@@ -411,8 +461,8 @@ function SemanaPageContent() {
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <PlayCircle className="w-3.5 h-3.5 text-[var(--color-info)] flex-shrink-0" />
                                 <span className="text-sm font-medium text-[var(--color-text-primary)]">{sesion.nombre}</span>
-                                <Badge 
-                                  variant="outline" 
+                                <Badge
+                                  variant="outline"
                                   className={tiempoTotal > 0 ? componentStyles.status.badgeSuccess : componentStyles.status.badgeDefault}
                                 >
                                   <Clock className="w-3 h-3 mr-1" />
@@ -464,54 +514,81 @@ function SemanaPageContent() {
               <div className="pt-4 border-t border-[var(--color-border-default)]">
                 {/* Título arriba de los filtros */}
                 <h3 className={cn(componentStyles.typography.sectionTitle, "mb-3")}>
-                    Semana Actual
-                  </h3>
-                
+                  Semana Actual
+                </h3>
+
                 {/* Filtros compactos debajo del título */}
                 <div className="flex gap-1.5 flex-wrap mb-4">
-                    <Button
-                      variant={tipoFeedbackSemana === 'todos' ? 'primary' : 'outline'}
-                      size="sm"
-                      onClick={() => setTipoFeedbackSemana('todos')}
+                  <Button
+                    variant={tipoFeedbackSemana === 'todos' ? 'primary' : 'outline'}
+                    size="sm"
+                    onClick={() => setTipoFeedbackSemana('todos')}
                     className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-                    >
-                      Todos
-                    </Button>
-                    <Button
-                      variant={tipoFeedbackSemana === 'profesor' ? 'primary' : 'outline'}
-                      size="sm"
-                      onClick={() => setTipoFeedbackSemana('profesor')}
+                  >
+                    Todos
+                  </Button>
+                  <Button
+                    variant={tipoFeedbackSemana === 'sesiones' ? 'primary' : 'outline'}
+                    size="sm"
+                    onClick={() => setTipoFeedbackSemana('sesiones')}
                     className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-                    >
-                      Feedback Profesor
-                    </Button>
-                    <Button
-                      variant={tipoFeedbackSemana === 'sesiones' ? 'primary' : 'outline'}
-                      size="sm"
-                      onClick={() => setTipoFeedbackSemana('sesiones')}
+                  >
+                    <BookOpen className="w-3.5 h-3.5 mr-1" />
+                    Registro Sesiones
+                  </Button>
+                  <Button
+                    variant={tipoFeedbackSemana === 'feedback' ? 'primary' : 'outline'}
+                    size="sm"
+                    onClick={() => setTipoFeedbackSemana('feedback')}
                     className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-                    >
-                      Registro Sesiones
-                    </Button>
+                  >
+                    <MessageSquare className="w-3.5 h-3.5 mr-1" />
+                    Feedback
+                  </Button>
+                  <Button
+                    variant={tipoFeedbackSemana === 'evaluaciones' ? 'primary' : 'outline'}
+                    size="sm"
+                    onClick={() => setTipoFeedbackSemana('evaluaciones')}
+                    className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+                  >
+                    <ClipboardCheck className="w-3.5 h-3.5 mr-1" />
+                    Evaluaciones
+                  </Button>
                 </div>
 
                 {itemsFiltrados.length === 0 ? (
                   <div className="text-center py-8">
-                    <MessageSquare className={`w-12 h-12 mx-auto mb-3 ${componentStyles.empty.emptyIcon} text-[var(--color-text-secondary)]`} />
+                    {tipoFeedbackSemana === 'sesiones' ? (
+                      <BookOpen className={`w-12 h-12 mx-auto mb-3 ${componentStyles.empty.emptyIcon} text-[var(--color-text-secondary)]`} />
+                    ) : tipoFeedbackSemana === 'feedback' ? (
+                      <MessageSquare className={`w-12 h-12 mx-auto mb-3 ${componentStyles.empty.emptyIcon} text-[var(--color-text-secondary)]`} />
+                    ) : tipoFeedbackSemana === 'evaluaciones' ? (
+                      <ClipboardCheck className={`w-12 h-12 mx-auto mb-3 ${componentStyles.empty.emptyIcon} text-[var(--color-text-secondary)]`} />
+                    ) : (
+                      <Calendar className={`w-12 h-12 mx-auto mb-3 ${componentStyles.empty.emptyIcon} text-[var(--color-text-secondary)]`} />
+                    )}
                     <p className={componentStyles.empty.emptyText}>
-                      No hay {tipoFeedbackSemana === 'todos' ? 'feedbacks ni registros de sesiones' : tipoFeedbackSemana === 'profesor' ? 'feedbacks del profesor' : 'registros de sesiones'} esta semana
+                      {tipoFeedbackSemana === 'todos'
+                        ? 'No hay actividad esta semana'
+                        : tipoFeedbackSemana === 'sesiones'
+                          ? 'No hay registros de sesiones esta semana'
+                          : tipoFeedbackSemana === 'feedback'
+                            ? 'No hay feedback del profesor esta semana'
+                            : 'No hay evaluaciones técnicas esta semana'}
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     {itemsFiltrados.map((item) => {
+                      // Renderizar Feedback del Profesor
                       if (item.tipo === 'feedback') {
                         const feedback = item.data;
                         const prof = usuarios.find(u => u.id === feedback.profesorId);
-                        const fechaFormateada = item.fecha.toLocaleDateString('es-ES', { 
-                          day: 'numeric', 
-                          month: 'short', 
-                          year: 'numeric' 
+                        const fechaFormateada = item.timestamp.toLocaleDateString('es-ES', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit'
                         });
 
                         return (
@@ -519,14 +596,14 @@ function SemanaPageContent() {
                             <MessageSquare className="w-4 h-4 text-[var(--color-info)] mt-0.5 shrink-0" />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <p className="text-xs text-[var(--color-text-secondary)] font-medium">Feedback del profesor</p>
+                                <p className="text-xs text-[var(--color-text-secondary)] font-medium">🗨️ Comentario del profesor</p>
                                 {prof && (
                                   <span className="text-xs text-[var(--color-text-secondary)]">
                                     • {displayName(prof)}
                                   </span>
                                 )}
                                 <span className="text-xs text-[var(--color-text-secondary)]">
-                                  • Semana del {fechaFormateada}
+                                  • {fechaFormateada}
                                 </span>
                               </div>
                               {feedback.notaProfesor && (
@@ -547,10 +624,78 @@ function SemanaPageContent() {
                             </div>
                           </div>
                         );
-                      } else {
+                      }
+
+                      // Renderizar Evaluación Técnica
+                      if (item.tipo === 'evaluacion') {
+                        const evaluacion = item.data;
+                        const prof = usuariosMap[evaluacion.profesorId];
+                        const profNombre = prof ? displayName(prof) : 'Profesor';
+                        const fechaFormateada = item.timestamp.toLocaleDateString('es-ES', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        });
+
+                        const habilidades = evaluacion.habilidades || {};
+                        const skills = [];
+
+                        if (habilidades.sonido != null) skills.push({ icon: <Music className="w-3.5 h-3.5 text-blue-500" />, name: 'Sonido', value: `${habilidades.sonido}/10` });
+                        if (habilidades.flexibilidad != null) skills.push({ icon: <Zap className="w-3.5 h-3.5 text-yellow-500" />, name: 'Flexibilidad', value: `${habilidades.flexibilidad}/10` });
+                        if (habilidades.cognitivo != null) skills.push({ icon: <Brain className="w-3.5 h-3.5 text-purple-500" />, name: 'Cognición', value: `${habilidades.cognitivo}/10` });
+                        if (habilidades.motricidad != null) skills.push({ icon: <Gauge className="w-3.5 h-3.5 text-green-500" />, name: 'Motricidad', value: `${habilidades.motricidad} BPM` });
+                        if (habilidades.articulacion) {
+                          const art = habilidades.articulacion;
+                          const parts = [];
+                          if (art.t != null) parts.push(`T: ${art.t}`);
+                          if (art.tk != null) parts.push(`TK: ${art.tk}`);
+                          if (art.ttk != null) parts.push(`TTK: ${art.ttk}`);
+                          if (parts.length > 0) skills.push({ icon: <Target className="w-3.5 h-3.5 text-orange-500" />, name: 'Articulación', value: `${parts.join(', ')} BPM` });
+                        }
+
+                        return (
+                          <div key={`evaluacion-${evaluacion.id}`} className="flex items-start gap-2 py-2 px-3 border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary)]/5 hover:bg-[var(--color-primary)]/10 transition-colors">
+                            <ClipboardCheck className="w-4 h-4 text-[var(--color-primary)] mt-0.5 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <p className="text-xs text-[var(--color-text-secondary)] font-medium">📋 Evaluación técnica</p>
+                                {evaluacion.profesorId && (
+                                  <span className="text-xs text-[var(--color-text-secondary)]">
+                                    • {profNombre}
+                                  </span>
+                                )}
+                                <span className="text-xs text-[var(--color-text-secondary)]">
+                                  • {fechaFormateada}
+                                </span>
+                              </div>
+                              {skills.length > 0 ? (
+                                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                                  {skills.map((skill, idx) => (
+                                    <div key={idx} className="flex items-center gap-1.5 text-xs">
+                                      {skill.icon}
+                                      <span className="font-medium">{skill.name}:</span>
+                                      <span className="text-[var(--color-text-primary)]">{skill.value}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-xs text-[var(--color-text-secondary)] italic">Sin datos evaluados</p>
+                              )}
+                              {evaluacion.notas && (
+                                <p className="text-sm text-[var(--color-text-primary)] italic break-words mt-1">
+                                  "{evaluacion.notas}"
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Renderizar Registro de Sesión
+                      if (item.tipo === 'registro') {
                         const registro = item.data;
-                        const fecha = new Date(registro.inicioISO);
-                        const fechaFormateada = fecha.toLocaleDateString('es-ES', {
+                        const fechaFormateada = item.timestamp.toLocaleDateString('es-ES', {
                           day: 'numeric',
                           month: 'short',
                           hour: '2-digit',
@@ -620,6 +765,8 @@ function SemanaPageContent() {
                           </div>
                         );
                       }
+
+                      return null;
                     })}
                   </div>
                 )}
@@ -630,19 +777,21 @@ function SemanaPageContent() {
       </div>
 
       {/* Modal de preview de medios */}
-      {showMediaModal && selectedMediaLinks.length > 0 && (
-        <MediaPreviewModal
-          urls={selectedMediaLinks}
-          initialIndex={selectedMediaIndex || 0}
-          open={showMediaModal}
-          onClose={() => {
-            setShowMediaModal(false);
-            setSelectedMediaLinks([]);
-            setSelectedMediaIndex(0);
-          }}
-        />
-      )}
-    </div>
+      {
+        showMediaModal && selectedMediaLinks.length > 0 && (
+          <MediaPreviewModal
+            urls={selectedMediaLinks}
+            initialIndex={selectedMediaIndex || 0}
+            open={showMediaModal}
+            onClose={() => {
+              setShowMediaModal(false);
+              setSelectedMediaLinks([]);
+              setSelectedMediaIndex(0);
+            }}
+          />
+        )
+      }
+    </div >
   );
 }
 

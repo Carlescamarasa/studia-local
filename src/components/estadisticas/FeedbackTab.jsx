@@ -23,20 +23,26 @@ export default function FeedbackTab({ feedbacks, isEstu, onEditFeedback, puedeEd
   const columns = [
     {
       key: 'fecha',
-      label: 'Semana',
+      label: 'Fecha',
       sortable: true,
-      render: (f) => (
-        <span className="text-sm text-[var(--color-text-primary)]">
-          {f.semanaInicioISO 
-            ? `Semana del ${parseLocalDate(f.semanaInicioISO).toLocaleDateString('es-ES', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })}`
-            : 'Sin fecha'
-          }
-        </span>
-      ),
+      render: (f) => {
+        // Use created_at for timestamp if available, otherwise semanaInicioISO
+        const dateStr = f.created_at || f.semanaInicioISO;
+        if (!dateStr) return <span className="text-sm text-[var(--color-text-secondary)]">Sin fecha</span>;
+
+        const date = new Date(dateStr);
+        const fechaFormateada = date.toLocaleDateString('es-ES', {
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        return (
+          <span className="text-sm text-[var(--color-text-primary)] whitespace-nowrap">
+            {fechaFormateada}
+          </span>
+        );
+      },
     },
     {
       key: 'nota',
@@ -49,7 +55,7 @@ export default function FeedbackTab({ feedbacks, isEstu, onEditFeedback, puedeEd
           </p>
           {f.mediaLinks && f.mediaLinks.length > 0 && (
             <div className="mt-1">
-              <MediaLinksBadges 
+              <MediaLinksBadges
                 mediaLinks={f.mediaLinks}
                 onMediaClick={onMediaClick ? (index) => onMediaClick(f.mediaLinks, index) : undefined}
               />
@@ -99,11 +105,8 @@ export default function FeedbackTab({ feedbacks, isEstu, onEditFeedback, puedeEd
     <Card className={componentStyles.components.cardBase}>
       <CardHeader>
         <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primary)]" />
-          {isEstu 
-            ? `Feedback del Profesor (${feedbacks.length})`
-            : `Feedbacks (${feedbacks.length})`
-          }
+          <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-info)]" />
+          🗨️ Comentarios del Profesor ({feedbacks.length})
         </CardTitle>
       </CardHeader>
       <CardContent>
