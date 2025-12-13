@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
+import { createRemoteDataAPI } from "@/api/remoteDataAPI";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ds";
 import {
   ArrowLeft, Save, Target, User, Music, BookOpen, Calendar,
   ChevronDown, ChevronRight, Clock, Layers, Plus, Edit, Trash2,
-  GripVertical, Copy, PlayCircle, AlertCircle, Shuffle
+  GripVertical, Copy, PlayCircle, AlertCircle, Shuffle, Eye
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -46,7 +47,8 @@ function SortableSesionAdaptar({
   componentStyles,
   ensureRondaIds,
   getSecuencia,
-  mapBloquesByCode
+  mapBloquesByCode,
+  dbBloques = [] // Add prop for DB bloques with variations
 }) {
   const {
     attributes,
@@ -123,7 +125,14 @@ function SortableSesionAdaptar({
           {(() => {
             const S = ensureRondaIds(sesion);
             const secuencia = getSecuencia(S);
-            const bloquesMap = mapBloquesByCode(S);
+            // Create bloquesMap with DB variations merged in
+            const bloquesMap = new Map();
+            (S.bloques || []).forEach(b => {
+              // Find matching DB bloque to get variations
+              const dbBloque = dbBloques.find(db => db.code === b.code || db.id === b.id);
+              const variations = dbBloque?.variations || dbBloque?.content || b.variations || [];
+              bloquesMap.set(b.code, { ...b, variations });
+            });
 
             return (
               <div className="ml-2 space-y-1.5">
@@ -137,6 +146,11 @@ function SortableSesionAdaptar({
                         <Badge variant="outline" className={`${tipoColors[ejercicio.tipo]} rounded-full ${componentStyles.typography.compactText}`}>
                           {ejercicio.tipo}
                         </Badge>
+                        {ejercicio.variations && ejercicio.variations.length > 0 && (
+                          <div className="flex items-center justify-center w-5 h-5 bg-blue-50 dark:bg-blue-900/20 rounded-full shrink-0" title={`${ejercicio.variations.length} variaciones disponibles`}>
+                            <Eye className="w-3 h-3 text-blue-500" />
+                          </div>
+                        )}
                         <span className="flex-1 text-[var(--color-text-primary)] font-medium truncate">{ejercicio.nombre}</span>
                         <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0`}>{ejercicio.code}</span>
                       </div>
@@ -190,6 +204,11 @@ function SortableSesionAdaptar({
                                   <Badge variant="outline" className={`${componentStyles.typography.compactText} rounded-full ${tipoColors[ejercicio.tipo]}`}>
                                     {ejercicio.tipo}
                                   </Badge>
+                                  {ejercicio.variations && ejercicio.variations.length > 0 && (
+                                    <div className="flex items-center justify-center w-5 h-5 bg-blue-50 dark:bg-blue-900/20 rounded-full shrink-0" title={`${ejercicio.variations.length} variaciones disponibles`}>
+                                      <Eye className="w-3 h-3 text-blue-500" />
+                                    </div>
+                                  )}
                                   <span className="flex-1 text-[var(--color-text-primary)] truncate">{ejercicio.nombre}</span>
                                   <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0`}>{ejercicio.code}</span>
                                 </div>
@@ -205,35 +224,36 @@ function SortableSesionAdaptar({
               </div>
             );
           })()}
-
-          <div className={`flex ${componentStyles.layout.gapCompact} items-center pt-1`}>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditingSesion({ semanaIndex, sesionIndex, sesion });
-              }}
-              className={`${componentStyles.buttons.actionCompact} ${componentStyles.buttons.editSubtle}`}
-            >
-              <Edit className="w-3 h-3 mr-1" />
-              Editar sesión
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                removeSesion(semanaIndex, sesionIndex);
-              }}
-              className={`${componentStyles.buttons.actionCompact} ${componentStyles.buttons.deleteSubtle}`}
-            >
-              <Trash2 className="w-3 h-3 mr-1" />
-              Eliminar sesión
-            </Button>
-          </div>
         </div>
       )}
+
+      {/* Session action buttons - always visible */}
+      <div className={`flex ${componentStyles.layout.gapCompact} items-center pt-2 mt-2 border-t border-dashed border-[var(--color-border-default)]`}>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={(e) => {
+            e.stopPropagation();
+            setEditingSesion({ semanaIndex, sesionIndex, sesion });
+          }}
+          className={`${componentStyles.buttons.actionCompact} ${componentStyles.buttons.editSubtle}`}
+        >
+          <Edit className="w-3 h-3 mr-1" />
+          Editar "{sesion.nombre}"
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={(e) => {
+            e.stopPropagation();
+            removeSesion(semanaIndex, sesionIndex);
+          }}
+          className={`${componentStyles.buttons.actionCompact} ${componentStyles.buttons.deleteSubtle}`}
+        >
+          <Trash2 className="w-3 h-3 mr-1" />
+          Eliminar "{sesion.nombre}"
+        </Button>
+      </div>
     </div>
   );
 }
@@ -262,7 +282,8 @@ function SortableSemanaAdaptar({
   componentStyles,
   ensureRondaIds,
   getSecuencia,
-  mapBloquesByCode
+  mapBloquesByCode,
+  dbBloques = [] // Add prop for DB bloques with variations
 }) {
   const {
     attributes,
@@ -386,6 +407,7 @@ function SortableSemanaAdaptar({
                 ensureRondaIds={ensureRondaIds}
                 getSecuencia={getSecuencia}
                 mapBloquesByCode={mapBloquesByCode}
+                dbBloques={dbBloques}
               />
             ))}
           </div>
@@ -463,6 +485,21 @@ function AdaptarAsignacionPageContent() {
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => localDataClient.entities.User.list(),
+  });
+
+  // Fetch bloques from Supabase to get variations data
+  const remoteDataAPI = createRemoteDataAPI();
+  const { data: dbBloques = [] } = useQuery({
+    queryKey: ['bloques-with-variations'],
+    queryFn: async () => {
+      try {
+        return await remoteDataAPI.bloques.list();
+      } catch (error) {
+        console.error('Error fetching bloques from Supabase:', error);
+        return await localDataClient.entities.Bloque.list();
+      }
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {
@@ -936,6 +973,7 @@ function AdaptarAsignacionPageContent() {
                         ensureRondaIds={ensureRondaIds}
                         getSecuencia={getSecuencia}
                         mapBloquesByCode={mapBloquesByCode}
+                        dbBloques={dbBloques}
                       />
                     ))}
                   </div>
@@ -967,35 +1005,44 @@ function AdaptarAsignacionPageContent() {
         />
       )}
 
-      {editingEjercicio && (
-        <ExerciseEditor
-          ejercicio={editingEjercicio.ejercicio}
-          piezaSnapshot={asignacion.piezaSnapshot}
-          isInlineMode={true}
-          onClose={(updated) => {
-            if (updated) {
-              if (editingEjercicio.source === 'ronda') {
-                updateEjercicioEnRonda(
-                  editingEjercicio.semanaIndex,
-                  editingEjercicio.sesionIndex,
-                  editingEjercicio.rondaIndex,
-                  editingEjercicio.ejercicioCode,
-                  updated
-                );
+      {editingEjercicio && (() => {
+        // Enrich ejercicio with variations from dbBloques
+        const baseEjercicio = editingEjercicio.ejercicio;
+        const dbBloque = dbBloques.find(db => db.code === baseEjercicio.code || db.id === baseEjercicio.id);
+        const enrichedEjercicio = {
+          ...baseEjercicio,
+          variations: baseEjercicio.variations || dbBloque?.variations || dbBloque?.content || []
+        };
+        return (
+          <ExerciseEditor
+            ejercicio={enrichedEjercicio}
+            piezaSnapshot={asignacion.piezaSnapshot}
+            isInlineMode={true}
+            onClose={(updated) => {
+              if (updated) {
+                if (editingEjercicio.source === 'ronda') {
+                  updateEjercicioEnRonda(
+                    editingEjercicio.semanaIndex,
+                    editingEjercicio.sesionIndex,
+                    editingEjercicio.rondaIndex,
+                    editingEjercicio.ejercicioCode,
+                    updated
+                  );
+                } else {
+                  updateEjercicioInline(
+                    editingEjercicio.semanaIndex,
+                    editingEjercicio.sesionIndex,
+                    editingEjercicio.ejercicioIndex,
+                    updated
+                  );
+                }
               } else {
-                updateEjercicioInline(
-                  editingEjercicio.semanaIndex,
-                  editingEjercicio.sesionIndex,
-                  editingEjercicio.ejercicioIndex,
-                  updated
-                );
+                setEditingEjercicio(null);
               }
-            } else {
-              setEditingEjercicio(null);
-            }
-          }}
-        />
-      )}
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }

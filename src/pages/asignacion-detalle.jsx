@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from "@/components/ds";
 import {
   ArrowLeft, Target, User, Music, BookOpen, Calendar,
   Settings, ChevronDown, ChevronRight, Clock,
-  Edit, XCircle, Shield, Save, X, // Existing icons
+  Edit, XCircle, Shield, Save, X, SlidersHorizontal, // Existing icons
   Eye, CheckCircle2, Layers, PlayCircle, MessageSquare // New icons from outline
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -35,7 +35,7 @@ export default function AsignacionDetallePage() {
   const [expandedSesiones, setExpandedSesiones] = useState(new Set());
   const [showEditDrawer, setShowEditDrawer] = useState(false);
   const [editData, setEditData] = useState(null);
-  
+
   const urlParams = new URLSearchParams(window.location.search);
   const asignacionId = urlParams.get('id');
 
@@ -95,7 +95,7 @@ export default function AsignacionDetallePage() {
           };
         }
       }
-      
+
       return localDataClient.entities.Asignacion.update(asignacionId, data);
     },
     onSuccess: () => {
@@ -106,7 +106,7 @@ export default function AsignacionDetallePage() {
     onError: (error) => {
       console.error('[asignacion-detalle.jsx] Error al actualizar asignación:', error);
       let errorMsg = '❌ Error al guardar cambios. Inténtalo de nuevo.';
-      
+
       // Mensajes específicos según el tipo de error
       if (error?.code === 'PGRST204' || error?.code === '406') {
         errorMsg = '❌ Error 406: El servidor rechazó la actualización. El campo "plan" no puede actualizarse directamente. Solo se pueden actualizar: notas, foco, estado, semanaInicioISO y piezaId.';
@@ -117,7 +117,7 @@ export default function AsignacionDetallePage() {
       } else if (error?.message) {
         errorMsg = `❌ Error: ${error.message}`;
       }
-      
+
       toast.error(errorMsg);
     },
   });
@@ -145,7 +145,7 @@ export default function AsignacionDetallePage() {
     if (!asignacion || !effectiveUser) return false;
     const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
     if (isAdmin) return true;
-    
+
     // Si es profesor, solo puede editar si es su asignación
     const isProf = effectiveUser?.rolPersonalizado === 'PROF';
     if (isProf) {
@@ -153,7 +153,7 @@ export default function AsignacionDetallePage() {
       // (considerando posibles desincronizaciones entre auth y BD)
       return asignacion.profesorId === userIdActual || asignacion.profesorId === effectiveUser?.id;
     }
-    
+
     return false;
   }, [asignacion, effectiveUser, userIdActual]);
 
@@ -171,12 +171,12 @@ export default function AsignacionDetallePage() {
   const handleEditarInformacion = () => {
     if (!asignacion) return;
     // Usar semanaInicioISO si existe, sino usar la fecha actual
-    const fechaInicial = asignacion.semanaInicioISO 
-      ? asignacion.semanaInicioISO 
+    const fechaInicial = asignacion.semanaInicioISO
+      ? asignacion.semanaInicioISO
       : formatLocalDate(new Date());
-    
+
     console.log('Inicializando edición con fecha:', fechaInicial, 'de asignación:', asignacion.semanaInicioISO);
-    
+
     setEditData({
       piezaId: asignacion.piezaId,
       fechaSeleccionada: fechaInicial,
@@ -242,8 +242,8 @@ export default function AsignacionDetallePage() {
     }
 
     // Validar notas: string o null (no puede ser undefined)
-    const notas = editData.notas && editData.notas.trim() !== '' 
-      ? editData.notas.trim() 
+    const notas = editData.notas && editData.notas.trim() !== ''
+      ? editData.notas.trim()
       : null;
 
     const dataToSave = {
@@ -325,10 +325,10 @@ export default function AsignacionDetallePage() {
 
   if (isLoading) {
     return (
-      <LoadingSpinner 
-        size="xl" 
-        variant="fullPage" 
-        text="Cargando asignación..." 
+      <LoadingSpinner
+        size="xl"
+        variant="fullPage"
+        text="Cargando asignación..."
       />
     );
   }
@@ -389,7 +389,7 @@ export default function AsignacionDetallePage() {
                     onClick={() => navigate(createPageUrl(`adaptar-asignacion?id=${asignacionId}`))}
                     className={componentStyles.buttons.outline}
                   >
-                    <Edit className="w-4 h-4 mr-2" />
+                    <SlidersHorizontal className="w-4 h-4 mr-2" />
                     Adaptar plan
                   </Button>
                 )}
@@ -422,7 +422,7 @@ export default function AsignacionDetallePage() {
                 </Badge>
                 {/* Publicar (solo si es borrador) */}
                 {isBorrador && (
-                  <Button 
+                  <Button
                     onClick={() => publicarMutation.mutate()}
                     disabled={publicarMutation.isPending}
                     className={componentStyles.buttons.primary}
@@ -447,7 +447,7 @@ export default function AsignacionDetallePage() {
                   <p className="text-xs text-[var(--color-text-secondary)]">{alumno?.email}</p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-lg bg-[var(--color-primary-soft)] border border-[var(--color-primary)]/20 flex items-center justify-center shrink-0">
                   <Music className="w-5 h-5 text-[var(--color-primary)]" />
@@ -485,11 +485,11 @@ export default function AsignacionDetallePage() {
                       (() => {
                         try {
                           const fecha = parseLocalDate(asignacion.semanaInicioISO);
-                          return fecha.toLocaleDateString('es-ES', { 
-                            weekday: 'long', 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
+                          return fecha.toLocaleDateString('es-ES', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
                           });
                         } catch (error) {
                           console.error('Error parsing fecha:', error, asignacion.semanaInicioISO);
@@ -619,8 +619,8 @@ export default function AsignacionDetallePage() {
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <PlayCircle className="w-3.5 h-3.5 text-[var(--color-info)] flex-shrink-0" />
                                 <span className="text-sm font-semibold text-[var(--color-text-primary)]">{sesion.nombre}</span>
-                                <Badge 
-                                  variant="outline" 
+                                <Badge
+                                  variant="outline"
                                   className={tiempoTotal > 0 ? componentStyles.status.badgeSuccess : componentStyles.status.badgeDefault}
                                 >
                                   <Clock className="w-3 h-3 mr-1" />
@@ -652,12 +652,12 @@ export default function AsignacionDetallePage() {
       {/* Modal de edición */}
       {showEditDrawer && editData && (
         <>
-          <div 
+          <div
             className="fixed inset-0 bg-black/40 z-[100]"
             onClick={() => setShowEditDrawer(false)}
           />
           <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
-            <div 
+            <div
               className="bg-[var(--color-surface-elevated)] w-full max-w-2xl max-h-[95vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-4 border border-[var(--color-border-default)]"
               onClick={(e) => e.stopPropagation()}
             >
@@ -678,18 +678,18 @@ export default function AsignacionDetallePage() {
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 <div>
                   <Label htmlFor="pieza" className="text-[var(--color-text-primary)]">Pieza *</Label>
-                  <Select 
-                    value={editData.piezaId} 
+                  <Select
+                    value={editData.piezaId}
                     onValueChange={(v) => setEditData({ ...editData, piezaId: v })}
                     modal={false}
                   >
                     <SelectTrigger id="pieza" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue placeholder="Selecciona una pieza" />
                     </SelectTrigger>
-                    <SelectContent 
-                      position="popper" 
-                      side="bottom" 
-                      align="start" 
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
                       sideOffset={4}
                       className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                     >
@@ -742,18 +742,18 @@ export default function AsignacionDetallePage() {
 
                 <div>
                   <Label htmlFor="foco" className="text-sm font-medium text-[var(--color-text-primary)]">Foco</Label>
-                  <Select 
-                    value={editData.foco} 
+                  <Select
+                    value={editData.foco}
                     onValueChange={(v) => setEditData({ ...editData, foco: v })}
                     modal={false}
                   >
                     <SelectTrigger id="foco" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue placeholder="Selecciona un foco" />
                     </SelectTrigger>
-                    <SelectContent 
-                      position="popper" 
-                      side="bottom" 
-                      align="start" 
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
                       sideOffset={4}
                       className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                     >
@@ -779,18 +779,18 @@ export default function AsignacionDetallePage() {
                 {puedeEditarProfesor && (
                   <div>
                     <Label htmlFor="profesor" className="text-sm font-medium text-[var(--color-text-primary)]">Profesor asignado</Label>
-                    <Select 
-                      value={editData.profesorId || ''} 
+                    <Select
+                      value={editData.profesorId || ''}
                       onValueChange={(v) => setEditData({ ...editData, profesorId: v || null })}
                       modal={false}
                     >
                       <SelectTrigger id="profesor" className={`w-full ${componentStyles.controls.selectDefault}`}>
                         <SelectValue placeholder="Selecciona un profesor" />
                       </SelectTrigger>
-                      <SelectContent 
-                        position="popper" 
-                        side="bottom" 
-                        align="start" 
+                      <SelectContent
+                        position="popper"
+                        side="bottom"
+                        align="start"
                         sideOffset={4}
                         className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                       >

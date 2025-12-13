@@ -136,6 +136,13 @@ export interface Bloque {
    * Permite escalar la dificultad del ejercicio automáticamente.
    */
   targetPPMs?: PPMObjetivoPorNivel[];
+
+  /**
+   * Contenido/Variaciones del ejercicio (JSONB).
+   *[{ "label": "Sistema 1", "min_level": 1, "tags": ["easy"], "asset_url": "..." }]
+   */
+  content?: any;
+  variations?: any[];
 }
 
 export type CreateBloqueInput = Omit<Bloque, 'id' | 'created_at' | 'updated_at'>;

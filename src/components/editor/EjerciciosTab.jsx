@@ -1,113 +1,153 @@
-
-import React, { useState } from "react";
-import { localDataClient } from "@/api/localDataClient";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import React, { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ds"; // Changed import to "@/components/ds"
-import { Plus, Search, Copy, Trash2, Edit, Dumbbell, Clock, Layers } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import ExerciseEditor from "./ExerciseEditor";
-import { toast } from "sonner";
-import UnifiedTable from "@/components/tables/UnifiedTable";
+import {
+  Flame, Backpack, Check, Clock, Play, Zap, Repeat,
+  Activity, Music, Plus, Trash2, ChevronRight,
+  BookOpen, ListMusic, History, Layout as LayoutIcon,
+  BarChart3, Calendar, Users, Eye, Search
+} from 'lucide-react';
 import { componentStyles } from "@/design/componentStyles";
-import { useEffectiveUser } from "@/components/utils/helpers";
+import ExerciseEditor from "./ExerciseEditor";
+
+// --- HELPERS & MOCK DATA ---
+
+const TYPE_MAP = {
+  'CA': { label: 'Calentamiento A (físico)', color: 'text-orange-600 bg-orange-50' },
+  'CB': { label: 'Calentamiento B (musical)', color: 'text-blue-600 bg-blue-50' },
+  'TC': { label: 'Técnica', color: 'text-purple-600 bg-purple-50' },
+  'FM': { label: 'Fragmento Musical', color: 'text-pink-600 bg-pink-50' },
+  'VC': { label: 'Vuelta a la Calma', color: 'text-green-600 bg-green-50' },
+  'AD': { label: 'Aviso/Descanso', color: 'text-slate-600 bg-slate-50' },
+};
+
+// MOCKED VARIATIONS (Simulating JSONB 'content')
+const MOCKED_VARIATIONS = {
+  'TC-COL-0004': [
+    { label: 'Sistema 1', min_level: 1, tags: ['easy', 'tone'], asset_url: 'https://placehold.co/600x150/e2e8f0/475569?text=Colin+4+-+Sistema+1' },
+    { label: 'Sistema 2', min_level: 2, tags: ['medium', 'flex'], asset_url: 'https://placehold.co/600x150/e2e8f0/475569?text=Colin+4+-+Sistema+2' },
+    { label: 'Sistema 3', min_level: 3, tags: ['hard', 'range'], asset_url: 'https://placehold.co/600x150/e2e8f0/475569?text=Colin+4+-+Sistema+3' }
+  ],
+  'TC-CLA-0002': [
+    { label: 'Var A (Ligado)', min_level: 1, tags: ['slur'], asset_url: null },
+    { label: 'Var B (Piccado)', min_level: 2, tags: ['staccato'], asset_url: 'https://placehold.co/600x150/e2e8f0/475569?text=Clarke+2+-+Var+B' }
+  ]
+};
 
 export default function EjerciciosTab() {
-  const queryClient = useQueryClient();
-  const effectiveUser = useEffectiveUser();
-  const [showEditor, setShowEditor] = useState(false);
-  const [ejercicioActual, setEjercicioActual] = useState(null); // Keep original name 'ejercicioActual'
+  // State
+  const [localExercises, setLocalExercises] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [tipoFilter, setTipoFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
 
-  const { data: ejercicios = [], isLoading } = useQuery({
-    queryKey: ['bloques'],
-    queryFn: () => localDataClient.entities.Bloque.list('-updated_at'),
+  // Dashboard Accordion
+  const [expandedVarId, setExpandedVarId] = useState(null);
+
+  // Editor State
+  const [showEditor, setShowEditor] = useState(false);
+  const [ejercicioActual, setEjercicioActual] = useState(null);
+
+  // --- Data Loading ---
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Fetch Bloques directly
+      const { data: bloques, error: errBloques } = await supabase
+        .from('bloques')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (errBloques) throw errBloques;
+
+      if (bloques) {
+        const mappedBloques = bloques.map((b, idx) => {
+          let vars = [];
+          // DEMO HACK with MOCKED_VARIATIONS
+          if (idx === 0) vars = MOCKED_VARIATIONS['TC-COL-0004'];
+          else if (idx === 1) vars = MOCKED_VARIATIONS['TC-CLA-0002'];
+          else vars = MOCKED_VARIATIONS[b.code] || MOCKED_VARIATIONS[b.id] || [];
+
+          // Real logic: map from DB content
+          if (b.content && Array.isArray(b.content)) {
+            if (b.content.length > 0) vars = b.content;
+          }
+
+          const categoryInfo = TYPE_MAP[b.tipo] || { label: 'General', color: 'text-slate-600 bg-slate-50' };
+          const dur = Math.round((b.duracion_seg || b.duracionSeg || 300) / 60);
+
+          return {
+            id: b.id,
+            title: b.nombre,
+            type: b.tipo,
+            category: categoryInfo.label,
+            dur: dur || 5,
+            asset: 'resource.pdf',
+            variations: vars,
+            raw: b,
+            code: b.code
+          };
+        });
+        setLocalExercises(mappedBloques);
+      }
+    } catch (error) {
+      console.error("Error loading data:", error);
+      toast.error("Error cargando datos");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // --- Filter Logic ---
+  const filteredExercises = localExercises.filter(ex => {
+    const matchesSearch = ex.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (ex.code && ex.code.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesType = typeFilter === 'all' || ex.type === typeFilter;
+    return matchesSearch && matchesType;
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => localDataClient.entities.Bloque.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bloques'] });
-      toast.success("✅ Ejercicio eliminado");
-    },
-  });
-
-  const duplicateMutation = useMutation({
-    mutationFn: async (ejercicio) => {
-      const newCode = ejercicio.code.includes('-')
-        ? `${ejercicio.code.split('-')[0]}-${Date.now().toString().slice(-4)}`
-        : `${ejercicio.code}-COPY`;
-
-      const newData = {
-        ...ejercicio,
-        nombre: `${ejercicio.nombre} (copia)`,
-        code: newCode,
-        profesorId: effectiveUser?.id,
+  // --- Handlers ---
+  const handleOpenEditor = (exercise = null) => {
+    if (exercise) {
+      // Merge variations from display mapping into raw data for editing
+      const rawWithVariations = {
+        ...(exercise.raw || exercise),
+        variations: exercise.variations || (exercise.raw?.content) || []
       };
-      delete newData.id;
-      delete newData.created_date;
-      delete newData.updated_date;
-      delete newData.created_by;
-
-      return localDataClient.entities.Bloque.create(newData);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bloques'] });
-      toast.success("✅ Ejercicio duplicado");
-    },
-  });
-
-  const handleCrear = () => {
-    setEjercicioActual(null);
+      setEjercicioActual(rawWithVariations);
+    } else {
+      setEjercicioActual(null);
+    }
     setShowEditor(true);
   };
 
-  const handleEditar = (ejercicio) => {
-    setEjercicioActual(ejercicio);
-    setShowEditor(true);
-  };
-
-  const handleEliminar = (ejercicio) => {
-    if (window.confirm(`¿Eliminar "${ejercicio.nombre}"?`)) {
-      deleteMutation.mutate(ejercicio.id);
+  const handleDeleteExercise = async (id) => {
+    if (!confirm("¿Seguro que quieres borrar este ejercicio?")) return;
+    setLocalExercises(prev => prev.filter(e => e.id !== id));
+    try {
+      const { error } = await supabase.from('bloques').delete().eq('id', id);
+      if (error) throw error;
+      toast.success("Ejercicio eliminado");
+      loadData();
+    } catch (e) {
+      toast.error("Error al eliminar");
+      loadData();
     }
   };
 
-  const handleDuplicar = (ejercicio) => {
-    duplicateMutation.mutate(ejercicio);
-  };
-
-  const tipoLabels = {
-    CA: 'Calentamiento A',
-    CB: 'Calentamiento B',
-    TC: 'Técnica',
-    FM: 'Fragmento Musical',
-    VC: 'Vuelta a la Calma',
-    AD: 'Aviso/Descanso',
-  };
-
-  // Removed tipoColors
-  const tipoVariants = { // Added tipoVariants
-    CA: 'primary',
-    CB: 'info',
-    TC: 'warning',
-    FM: 'danger',
-    VC: 'info',
-    AD: 'neutral',
-  };
-
-  const ejerciciosFiltrados = ejercicios.filter(e => {
-    const matchesSearch = e.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      e.code?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTipo = tipoFilter === 'all' || e.tipo === tipoFilter;
-    return matchesSearch && matchesTipo;
-  });
-
   return (
     <div className="space-y-4">
+      {/* HEADER ACTIONS (Filters + New) */}
       <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
         <div className="flex gap-2 flex-wrap flex-1 w-full md:w-auto">
           <Input
@@ -116,172 +156,101 @@ export default function EjerciciosTab() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className={`flex-1 min-w-[200px] ${componentStyles.controls.inputDefault}`}
           />
-          <Select value={tipoFilter} onValueChange={setTipoFilter}>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className={`w-full md:w-48 ${componentStyles.controls.selectDefault}`}>
               <SelectValue placeholder="Todos los tipos" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los tipos</SelectItem>
-              {Object.entries(tipoLabels).map(([key, label]) => (
-                <SelectItem key={key} value={key}>{label}</SelectItem>
+              {Object.keys(TYPE_MAP).map(key => (
+                <SelectItem key={key} value={key}>{TYPE_MAP[key].label} ({key})</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={handleCrear} className={`w-full md:w-auto ${componentStyles.buttons.primary}`}>
+        <Button onClick={() => handleOpenEditor(null)} className={`w-full md:w-auto ${componentStyles.buttons.primary}`}>
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Ejercicio
         </Button>
       </div>
 
-      {isLoading ? (
-        <div className="text-center py-8">
-          <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
-        </div>
-      ) : ejerciciosFiltrados.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-[var(--color-border-default)] rounded-[var(--radius-card)]">
-          <Layers className="w-16 h-16 mx-auto mb-4 text-[var(--color-text-secondary)]" />
-          <p className="text-[var(--color-text-secondary)] mb-2">
-            {searchTerm || tipoFilter !== 'all' ? 'No se encontraron ejercicios' : 'Aún no hay ejercicios'}
-          </p>
-          <Button onClick={handleCrear} variant="outline" className={`mt-2 ${componentStyles.buttons.outline}`}>
-            <Plus className="w-4 h-4 mr-2" />
-            Crear el primero
-          </Button>
-        </div>
-      ) : (
-        <>
-          <div className="hidden md:block">
-            <UnifiedTable
-              columns={[
-                {
-                  key: 'tipo',
-                  label: 'Tipo',
-                  sortable: true,
-                  render: (e) => (
-                    <Badge variant={tipoVariants[e.tipo]}>{e.tipo}</Badge> // Updated Badge usage
-                  ),
-                  sortValue: (e) => e.tipo
-                },
-                { key: 'code', label: 'Código', sortable: true, render: (e) => <span className="font-mono text-sm">{e.code}</span> },
-                { key: 'nombre', label: 'Nombre', sortable: true, render: (e) => <span className="font-medium">{e.nombre}</span> },
-                {
-                  key: 'duracion',
-                  label: 'Duración',
-                  sortable: true,
-                  render: (e) => (
-                    <span className="text-sm text-[var(--color-text-secondary)]">
-                      {Math.floor(e.duracionSeg / 60)}:{String(e.duracionSeg % 60).padStart(2, '0')} min
-                    </span>
-                  ),
-                  sortValue: (e) => e.duracionSeg
-                }
-              ]}
-              data={ejerciciosFiltrados}
-              selectable={true}
-              bulkActions={[
-                {
-                  id: 'duplicate',
-                  label: 'Duplicar',
-                  icon: Copy,
-                  onClick: (ids) => {
-                    const ejerciciosParaDuplicar = ejerciciosFiltrados.filter(e => ids.includes(e.id));
-                    ejerciciosParaDuplicar.forEach(e => handleDuplicar(e));
-                  },
-                },
-                {
-                  id: 'delete',
-                  label: 'Eliminar',
-                  icon: Trash2,
-                  onClick: (ids) => {
-                    if (window.confirm(`¿Eliminar ${ids.length} ejercicio${ids.length > 1 ? 's' : ''}?`)) {
-                      ids.forEach(id => {
-                        const ejercicio = ejerciciosFiltrados.find(e => e.id === id);
-                        if (ejercicio) {
-                          deleteMutation.mutate(ejercicio.id);
-                        }
-                      });
-                    }
-                  },
-                },
-              ]}
-              getRowActions={(e) => [ // Changed 'actions' to 'getRowActions' and updated structure
-                { id: 'edit', label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => handleEditar(e) },
-                { id: 'duplicate', label: 'Duplicar', icon: <Copy className="w-4 h-4" />, onClick: () => handleDuplicar(e) },
-                { id: 'delete', label: 'Eliminar', icon: <Trash2 className="w-4 h-4" />, onClick: () => handleEliminar(e) }
-              ]}
-              onRowClick={(e) => handleEditar(e)}
-              keyField="id"
-            />
-          </div>
-
-          <div className="md:hidden space-y-3">
-            {ejerciciosFiltrados.map((ejercicio) => (
-              <Card key={ejercicio.id} className="border hover:shadow-sm transition-shadow app-card">
-                <CardContent className="pt-4">
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div
-                        className="flex-1 min-w-0 cursor-pointer"
-                        onClick={() => handleEditar(ejercicio)}
-                      >
-                        <Badge variant={tipoVariants[ejercicio.tipo]} className="mb-2"> {/* Updated Badge usage, removed rounded-full */}
-                          {tipoLabels[ejercicio.tipo]}
-                        </Badge>
-                        <h3 className="font-semibold text-base mb-1">{ejercicio.nombre}</h3>
-                        <p className="text-xs text-[var(--color-text-secondary)] font-mono">{ejercicio.code}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs"> {/* Removed rounded-full */}
-                        <Clock className="w-3 h-3 mr-1" />
-                        {Math.floor(ejercicio.duracionSeg / 60)}:{String(ejercicio.duracionSeg % 60).padStart(2, '0')} min
-                      </Badge>
-                    </div>
-
-                    <div className="flex gap-2 pt-2 border-t border-[var(--color-border-default)]"> {/* Reemplazado a tokens */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditar(ejercicio)}
-                        className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
-                        aria-label="Editar ejercicio"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDuplicar(ejercicio)}
-                        className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
-                        aria-label="Duplicar ejercicio"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEliminar(ejercicio)}
-                        className={`${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle} px-3`}
-                      >
+      {/* CONTENT: TABLE */}
+      <div className="bg-[var(--color-surface-default)] rounded-xl shadow-sm border border-[var(--color-border-default)] overflow-hidden">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-[var(--color-surface-elevated)] font-medium border-b border-[var(--color-border-default)]">
+            <tr>
+              <th className="px-4 py-3 font-medium text-[var(--color-text-secondary)]">Nombre</th>
+              <th className="px-4 py-3 font-medium text-[var(--color-text-secondary)]">Tipo</th>
+              <th className="px-4 py-3 font-medium text-[var(--color-text-secondary)]">Duración</th>
+              <th className="px-4 py-3 text-right font-medium text-[var(--color-text-secondary)]">Acciones</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[var(--color-border-default)]">
+            {filteredExercises.length === 0 ? (
+              <tr><td colSpan="4" className="p-8 text-center text-[var(--color-text-secondary)]">
+                {loading ? 'Cargando...' : 'No se encontraron ejercicios'}
+              </td></tr>
+            ) : filteredExercises.map(ex => (
+              <React.Fragment key={ex.id}>
+                <tr
+                  onClick={() => setExpandedVarId(expandedVarId === ex.id ? null : ex.id)}
+                  className={`hover:bg-[var(--color-surface-elevated)] transition-colors group cursor-pointer ${expandedVarId === ex.id ? 'bg-[var(--color-surface-elevated)]' : ''}`}
+                >
+                  <td className="px-4 py-3 font-medium text-[var(--color-text-primary)] flex items-center gap-2">
+                    {ex.variations.length > 0 && (
+                      <div className={`text-[var(--color-text-secondary)] text-[10px] transition-transform ${expandedVarId === ex.id ? 'rotate-90' : ''}`}>▶</div>
+                    )}
+                    {ex.title}
+                  </td>
+                  <td className="px-4 py-3"><span className="text-xs bg-[var(--color-surface-elevated)] px-2 py-1 rounded text-[var(--color-text-secondary)]">{ex.type}</span></td>
+                  <td className="px-4 py-3 text-[var(--color-text-secondary)] font-mono">{ex.dur}'</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={(e) => { e.stopPropagation(); handleOpenEditor(ex); }} className="p-1 hover:bg-[var(--color-surface-elevated)] rounded text-[var(--color-text-secondary)]">
+                        <div className="w-4 h-4 text-xs">Edit</div>
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); handleDeleteExercise(ex.id); }} className="p-1 hover:bg-red-100 dark:hover:bg-red-900/20 rounded text-red-500">
                         <Trash2 className="w-4 h-4" />
-                      </Button>
+                      </button>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </td>
+                </tr>
+                {/* ACCORDION */}
+                {expandedVarId === ex.id && ex.variations.length > 0 && (
+                  <tr className="bg-[var(--color-surface-elevated)]/50">
+                    <td colSpan="5" className="px-4 py-2 p-0">
+                      <div className="ml-8 border-l-2 border-[var(--color-border-default)] pl-4 space-y-2 mb-3 mt-1">
+                        <div className="text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">Variaciones ({ex.variations.length})</div>
+                        {ex.variations.map((v, idx) => (
+                          <div key={idx} className="flex items-center gap-3 bg-[var(--color-surface-default)] p-2 rounded border border-[var(--color-border-default)] text-sm shadow-sm">
+                            <div className="w-6 h-6 bg-[var(--color-surface-elevated)] rounded flex items-center justify-center text-[10px] font-mono text-[var(--color-text-secondary)]">L{v.min_level}</div>
+                            <div className="flex-1">
+                              <div className="font-medium text-[var(--color-text-primary)] text-xs">{v.label}</div>
+                              <div className="text-[10px] text-[var(--color-text-secondary)]">{v.tags.join(', ')}</div>
+                            </div>
+                            {v.asset_url && (
+                              <div className="text-[10px] text-[var(--color-text-secondary)] bg-[var(--color-surface-elevated)] px-1.5 py-0.5 rounded border border-[var(--color-border-default)] truncate max-w-[150px]">{v.asset_url}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
             ))}
-          </div>
-        </>
-      )}
+          </tbody>
+        </table>
+      </div>
 
+      {/* EDITOR */}
       {showEditor && (
         <ExerciseEditor
           ejercicio={ejercicioActual}
           onClose={() => {
             setShowEditor(false);
             setEjercicioActual(null);
+            loadData(); // Re-fetch on close
           }}
         />
       )}

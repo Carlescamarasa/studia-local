@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight, Layers, Shuffle } from "lucide-react";
+import { ChevronDown, ChevronRight, Layers, Shuffle, Eye } from "lucide-react";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "./sessionSequence";
 import { componentStyles } from "@/design/componentStyles";
 
@@ -18,13 +18,25 @@ const tipoColors = {
  * Componente unificado para visualizar el contenido de una sesión
  * Muestra ejercicios y rondas intercalados según la secuencia
  * Rondas expandidas por defecto
+ * @param {Object} sesion - Session object with bloques and rondas
+ * @param {boolean} compact - Compact mode flag
+ * @param {Array} dbBloques - Optional array of bloques from DB with variations
+ * @param {string} semanaFoco - Optional semana foco to compare for Repaso badge
  */
-export default function SessionContentView({ sesion, compact = false }) {
+export default function SessionContentView({ sesion, compact = false, dbBloques = [], semanaFoco = null }) {
   if (!sesion) return null;
 
   const S = ensureRondaIds(sesion);
   const secuencia = getSecuencia(S);
-  const bloquesMap = mapBloquesByCode(S);
+
+  // Create bloquesMap with DB variations merged in
+  const bloquesMap = new Map();
+  (S.bloques || []).forEach(b => {
+    // Find matching DB bloque to get variations
+    const dbBloque = dbBloques.find(db => db.code === b.code || db.id === b.id);
+    const variations = dbBloque?.variations || dbBloque?.content || b.variations || [];
+    bloquesMap.set(b.code, { ...b, variations });
+  });
 
   // Inicializar todas las rondas como expandidas por defecto
   const [expanded, setExpanded] = useState(() => {
@@ -75,12 +87,22 @@ export default function SessionContentView({ sesion, compact = false }) {
                 </div>
               );
             }
-            
+
             return (
               <div key={`b-${item.code}-${idx}`} className={componentStyles.items.compactItem}>
                 <Badge variant="outline" className={`${tipoColors[ej.tipo]} rounded-full ${componentStyles.typography.compactText}`}>
                   {ej.tipo}
                 </Badge>
+                {ej.variations && ej.variations.length > 0 && (
+                  <div className="flex items-center justify-center w-5 h-5 bg-blue-50 dark:bg-blue-900/20 rounded-full shrink-0" title={`${ej.variations.length} variaciones`}>
+                    <Eye className="w-3 h-3 text-blue-500" />
+                  </div>
+                )}
+                {semanaFoco && S.foco !== semanaFoco && (
+                  <div className="flex items-center justify-center w-5 h-5 bg-purple-50 dark:bg-purple-900/20 rounded-full shrink-0" title="Modo Repaso">
+                    <Shuffle className="w-3 h-3 text-purple-500" />
+                  </div>
+                )}
                 <span className="flex-1 text-[var(--color-text-primary)] font-medium truncate">{ej.nombre}</span>
                 <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0`}>{ej.code}</span>
               </div>
@@ -102,7 +124,7 @@ export default function SessionContentView({ sesion, compact = false }) {
 
           return (
             <div key={`r-${key}`}>
-              <div 
+              <div
                 className={componentStyles.items.compactItemHover}
                 onClick={() => toggleRonda(key)}
               >
@@ -133,12 +155,17 @@ export default function SessionContentView({ sesion, compact = false }) {
                         </div>
                       );
                     }
-                    
+
                     return (
                       <div key={`r-${key}-${code}-${j}`} className={`${componentStyles.items.compactItem} ml-2`}>
                         <Badge variant="outline" className={`${componentStyles.typography.compactText} rounded-full ${tipoColors[ej.tipo]}`}>
                           {ej.tipo}
                         </Badge>
+                        {ej.variations && ej.variations.length > 0 && (
+                          <div className="flex items-center justify-center w-5 h-5 bg-blue-50 dark:bg-blue-900/20 rounded-full shrink-0" title="Ejercicio con variaciones (Modo Repaso)">
+                            <Eye className="w-3 h-3 text-blue-500" />
+                          </div>
+                        )}
                         <span className="flex-1 text-[var(--color-text-primary)] truncate">{ej.nombre}</span>
                         <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0`}>{ej.code}</span>
                       </div>

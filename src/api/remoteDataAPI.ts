@@ -1210,6 +1210,10 @@ export function createRemoteDataAPI(): AppDataAPI {
             camel.targetPPMs = (camel as any).targetPpms;
             delete (camel as any).targetPpms;
           }
+          // Map content (JSONB) to variations - CRITICAL for exercise variations display
+          if (camel.content && !camel.variations) {
+            camel.variations = Array.isArray(camel.content) ? camel.content : [];
+          }
           return camel;
         });
       },
@@ -1229,6 +1233,10 @@ export function createRemoteDataAPI(): AppDataAPI {
         if ((camel as any).targetPpms) {
           camel.targetPPMs = (camel as any).targetPpms;
           delete (camel as any).targetPpms;
+        }
+        // Map content (JSONB) to variations
+        if (camel.content && !camel.variations) {
+          camel.variations = Array.isArray(camel.content) ? camel.content : [];
         }
         return camel;
       },
@@ -1252,6 +1260,10 @@ export function createRemoteDataAPI(): AppDataAPI {
           if ((camel as any).targetPpms) {
             camel.targetPPMs = (camel as any).targetPpms;
             delete (camel as any).targetPpms;
+          }
+          // Map content (JSONB) to variations
+          if (camel.content && !camel.variations) {
+            camel.variations = Array.isArray(camel.content) ? camel.content : [];
           }
           return camel;
         });

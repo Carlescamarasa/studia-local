@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { localDataClient } from "@/api/localDataClient";
+import { createRemoteDataAPI } from "@/api/remoteDataAPI";
+
+// Create remote API instance for fetching bloques with variations
+const remoteDataAPI = createRemoteDataAPI();
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ds/Button"; // Updated import path
@@ -50,6 +54,7 @@ import { MediaIcon, getMediaLabel } from "../components/common/MediaEmbed";
 import { resolveMedia, MediaKind } from "../components/utils/media";
 import { shouldIgnoreHotkey } from "@/utils/hotkeys";
 import { useHotkeysModal } from "@/hooks/useHotkeysModal.jsx";
+import { getValidVariations, pickRandomVariation } from "@/hooks/useExerciseVariations";
 
 import RequireRole from "@/components/auth/RequireRole";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -171,13 +176,27 @@ function HoyPageContent() {
     queryFn: () => localDataClient.entities.Asignacion.list(),
   });
 
-  // Cargar bloques actuales para actualizar mediaLinks
+  // Cargar bloques actuales desde Supabase (remoteDataAPI tiene content → variations mapping)
   const { data: bloquesActuales = [] } = useQuery({
-    queryKey: ['bloques'],
+    queryKey: ['bloques-with-variations'],
     queryFn: async () => {
-      const bloques = await localDataClient.entities.Bloque.list();
-      return bloques;
+      try {
+        // Fetch from Supabase to get content/variations field
+        const bloques = await remoteDataAPI.bloques.list();
+        console.log('[DEBUG] bloquesActuales sample (from Supabase):', bloques.slice(0, 3).map(b => ({
+          code: b.code,
+          nombre: b.nombre,
+          variations: b.variations,
+          hasVariations: !!(b.variations && b.variations.length > 0)
+        })));
+        return bloques;
+      } catch (error) {
+        console.error('Error fetching bloques from Supabase, falling back to localStorage:', error);
+        // Fallback to localStorage if Supabase fails
+        return await localDataClient.entities.Bloque.list();
+      }
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Filtrar y validar asignaciones
@@ -521,13 +540,35 @@ function HoyPageContent() {
         // Buscar el bloque actual en la base de datos por código
         const bloqueActual = bloquesActuales.find(b => b.code === bloqueSnapshot.code);
         if (bloqueActual) {
+          // VARIATIONS LOGIC INJECTION
+          // Intentar resolver variación si existe contenido
+          let selectedVariationMedia = null;
+          let variationLabel = null;
+
+          if (bloqueActual.variations && bloqueActual.variations.length > 0) {
+            const userLevel = alumnoActual?.nivelTecnico || 1;
+            const validVars = getValidVariations(bloqueActual, userLevel);
+
+            if (validVars) {
+              const picked = pickRandomVariation(validVars);
+              if (picked) {
+                variationLabel = picked.label;
+                if (picked.asset_url) {
+                  selectedVariationMedia = [picked.asset_url];
+                }
+              }
+            }
+          }
+
           // Actualizar con mediaLinks y otras propiedades actualizadas
-          // Priorizar mediaLinks del bloque actual si existe y no está vacío
-          const mediaLinksFinal = (bloqueActual.mediaLinks && bloqueActual.mediaLinks.length > 0)
-            ? bloqueActual.mediaLinks
-            : (bloqueSnapshot.mediaLinks && bloqueSnapshot.mediaLinks.length > 0)
-              ? bloqueSnapshot.mediaLinks
-              : [];
+          // Priorizar Variación > Bloque Actual > Snapshot
+          const mediaLinksFinal = selectedVariationMedia
+            ? selectedVariationMedia
+            : (bloqueActual.mediaLinks && bloqueActual.mediaLinks.length > 0)
+              ? bloqueActual.mediaLinks
+              : (bloqueSnapshot.mediaLinks && bloqueSnapshot.mediaLinks.length > 0)
+                ? bloqueSnapshot.mediaLinks
+                : [];
 
           return {
             ...bloqueSnapshot,
@@ -537,6 +578,8 @@ function HoyPageContent() {
             indicadorLogro: bloqueActual.indicadorLogro || bloqueSnapshot.indicadorLogro,
             materialesRequeridos: bloqueActual.materialesRequeridos || bloqueSnapshot.materialesRequeridos || [],
             targetPPMs: bloqueActual.targetPPMs || bloqueSnapshot.targetPPMs || [],
+            // Inyectar info de variación para UI (opcional)
+            variationName: variationLabel
           };
         }
         return bloqueSnapshot;
@@ -2305,6 +2348,12 @@ function HoyPageContent() {
                                       <Badge className={`${focoColors[sesion.foco]} text-xs px-2 py-0.5`} variant="outline">
                                         Foco: {focoLabels[sesion.foco]}
                                       </Badge>
+                                      {sesion.foco !== semanaAsignacion.foco && (
+                                        <Badge className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5" variant="outline">
+                                          <Shuffle className="w-3 h-3 mr-1" />
+                                          Repaso
+                                        </Badge>
+                                      )}
                                     </div>
 
                                     {/* Botón para desplegar/colapsar ejercicios */}
@@ -2329,7 +2378,7 @@ function HoyPageContent() {
                                     {/* Resumen expandido */}
                                     {resumenExpandido && (
                                       <div className="border-t border-[var(--color-border-default)] pt-2" onClick={(e) => e.stopPropagation()}>
-                                        <SessionContentView sesion={sesion} compact />
+                                        <SessionContentView sesion={sesion} compact dbBloques={bloquesActuales} semanaFoco={semanaAsignacion.foco} />
                                       </div>
                                     )}
 
@@ -2454,7 +2503,7 @@ function HoyPageContent() {
                             {/* Resumen expandido */}
                             {resumenExpandido && (
                               <div className="border-t border-[var(--color-border-default)] pt-2" onClick={(e) => e.stopPropagation()}>
-                                <SessionContentView sesion={sesion} compact />
+                                <SessionContentView sesion={sesion} compact dbBloques={bloquesActuales} semanaFoco={semanaDelPlan?.foco} />
                               </div>
                             )}
 
