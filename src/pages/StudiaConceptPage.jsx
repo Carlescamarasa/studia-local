@@ -31,15 +31,30 @@ import { supabase } from '@/lib/supabaseClient'; // Real Data Switch
 
 // Helper for Categories
 const TYPE_MAP = {
+    'TC': { label: 'Técnica', color: 'bg-blue-100 text-blue-700' },
+    'FL': { label: 'Flexibilidad', color: 'bg-green-100 text-green-700' },
+    'SON': { label: 'Sonido', color: 'bg-purple-100 text-purple-700' },
+    'ART': { label: 'Articulación', color: 'bg-orange-100 text-orange-700' },
+    'MEC': { label: 'Mecanismo', color: 'bg-slate-100 text-slate-700' },
     'CA': { label: 'Calentamiento', color: 'text-orange-600 bg-orange-50' },
     'CB': { label: 'Calentamiento', color: 'text-orange-600 bg-orange-50' },
-    'TC': { label: 'Técnica', color: 'text-blue-600 bg-blue-50' },
     'TM': { label: 'Téc. Mantenimiento', color: 'text-blue-600 bg-blue-50' },
-    'FL': { label: 'Flexibilidad', color: 'text-purple-600 bg-purple-50' },
-    'MC': { label: 'Mecanismo', color: 'text-indigo-600 bg-indigo-50' },
     'VC': { label: 'Vuelta Calma', color: 'text-green-600 bg-green-50' },
     'AD': { label: 'Advertencia', color: 'text-red-600 bg-red-50' },
     'FM': { label: 'Musicalidad', color: 'text-pink-600 bg-pink-50' },
+};
+
+// --- MOCKED VARIATIONS DATA (Simulating JSONB 'content') ---
+const MOCKED_VARIATIONS = {
+    'TC-COL-0004': [
+        { label: 'Sistema 1', min_level: 1, tags: ['easy', 'tone'], asset_url: 'https://placehold.co/600x150/e2e8f0/475569?text=Colin+4+-+Sistema+1' },
+        { label: 'Sistema 2', min_level: 2, tags: ['medium', 'flex'], asset_url: 'https://placehold.co/600x150/e2e8f0/475569?text=Colin+4+-+Sistema+2' },
+        { label: 'Sistema 3', min_level: 3, tags: ['hard', 'range'], asset_url: 'https://placehold.co/600x150/e2e8f0/475569?text=Colin+4+-+Sistema+3' }
+    ],
+    'TC-CLA-0002': [
+        { label: 'Var A (Ligado)', min_level: 1, tags: ['slur'], asset_url: null }, // Test Fallback
+        { label: 'Var B (Piccado)', min_level: 2, tags: ['staccato'], asset_url: 'https://placehold.co/600x150/e2e8f0/475569?text=Clarke+2+-+Var+B' }
+    ]
 };
 
 export default function StudiaConceptPage() {
@@ -50,9 +65,13 @@ export default function StudiaConceptPage() {
     const [loading, setLoading] = useState(true);
 
     // State for UI
-    const [view, setView] = useState('student'); // 'dashboard', 'student'
-    const [activeTab, setActiveTab] = useState('repertorio');
+    const [view, setView] = useState('profe'); // 'profe' | 'student'
+    const [activeTab, setActiveTab] = useState('ejercicios');
     const [showArchived, setShowArchived] = useState(false);
+
+    // Dashboard Accordion State
+    const [expandedVarId, setExpandedVarId] = useState(null);
+    const [showBackpack, setShowBackpack] = useState(false); // Toggle List vs Backpack Cloud
 
     // Derived State
     const [studentItinerary, setStudentItinerary] = useState({ items: [], totalMin: 0 });
@@ -93,7 +112,8 @@ export default function StudiaConceptPage() {
             status: 'active',
             dur: formData.duracion,
             asset: 'resource.pdf',
-            raw: {}
+            raw: {},
+            variations: [] // New items start with no variations
         };
 
         try {
@@ -173,13 +193,20 @@ export default function StudiaConceptPage() {
                     .from('bloques')
                     .select('*')
                     .order('created_at', { ascending: false }) // ensure newest first
-                    .limit(100); // Guardrail
+                    .limit(100);
 
                 if (errBloques) throw errBloques;
 
                 if (bloques) {
-                    // Map Bloques (snake_case from DB) to Mockup Schema
-                    const mapped = bloques.map((b, idx) => {
+                    // Map Bloques and Attach MOCKED VARIATIONS (For Demo: Attach to first few items regardless of ID)
+                    const mappedBloques = bloques.map((b, idx) => {
+                        let vars = [];
+                        // DEMO HACK: Force attach variations to the first 2 items to guarantee UI testing
+                        if (idx === 0) vars = MOCKED_VARIATIONS['TC-COL-0004'];
+                        else if (idx === 1) vars = MOCKED_VARIATIONS['TC-CLA-0002'];
+                        // Standard match (if IDs matched)
+                        else vars = MOCKED_VARIATIONS[b.code] || MOCKED_VARIATIONS[b.id] || [];
+
                         const categoryInfo = TYPE_MAP[b.tipo] || { label: 'General', color: 'text-slate-600 bg-slate-50' };
                         // Simulate lifecycle status (since real data might not have per-student status yet)
                         let mode = 'learning';
@@ -199,10 +226,36 @@ export default function StudiaConceptPage() {
                             status: status,
                             dur: dur || 5,
                             asset: 'resource.pdf',
+                            variations: vars,
                             raw: b
                         };
                     });
-                    setLocalExercises(mapped);
+                    setLocalExercises(mappedBloques);
+
+                    // Generate Itinerary (Mock Logic: 1st=Focus, others=Review with Variations)
+                    const itinerary = mappedBloques.slice(0, 4).map((ex, i) => {
+                        const mode = i === 0 ? 'learning' : 'review';
+                        let activeVar = null;
+
+                        if (mode === 'review' && ex.variations.length > 0) {
+                            // Filter by Level (Mock User Level = 2)
+                            // 100% Random Selection from Valid Pool
+                            const valid = ex.variations.filter(v => v.min_level <= 2);
+                            if (valid.length > 0) {
+                                activeVar = valid[Math.floor(Math.random() * valid.length)];
+                            }
+                        }
+
+                        return {
+                            ...ex,
+                            mode: mode,
+                            isFocus: mode === 'learning',
+                            activeVariation: activeVar
+                        };
+                    });
+
+                    const totalMin = itinerary.reduce((sum, item) => sum + item.dur, 0);
+                    setStudentItinerary({ items: itinerary, totalMin });
                 }
 
                 // 2. Fetch Planes
@@ -266,7 +319,7 @@ export default function StudiaConceptPage() {
 
         const allItems = [
             ...learning.map(i => ({ ...i, isFocus: true })),
-            ...reviewSelected.map(i => ({ ...i, isFocus: false, variantLabel: "Variación estándar" }))
+            ...reviewSelected.map(i => ({ ...i, isFocus: false }))
         ];
 
         setStudentItinerary({
@@ -422,47 +475,112 @@ export default function StudiaConceptPage() {
                                         <div className="flex gap-2">
                                             <span className="px-2 py-1 bg-slate-100 text-xs rounded text-slate-500">{localExercises.length} items</span>
                                             <button
+                                                onClick={() => setShowBackpack(!showBackpack)}
+                                                className={`px-3 py-1 text-xs font-bold rounded flex items-center gap-1 transition-colors ${showBackpack ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                                                <Backpack className="w-3 h-3" /> {showBackpack ? 'Ver Lista' : 'Ver Mochila'}
+                                            </button>
+                                            <button
                                                 onClick={() => handleOpenModal(null)}
                                                 className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded flex items-center gap-1 transition-colors">
                                                 <Plus className="w-3 h-3" /> Nuevo
                                             </button>
                                         </div>
                                     </div>
-                                    <table className="w-full text-left text-sm">
-                                        <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
-                                            <tr>
-                                                <th className="px-4 py-3 text-left font-medium text-slate-400">Nombre</th>
-                                                <th className="px-4 py-3 text-left font-medium text-slate-400">Tipo</th>
-                                                <th className="px-4 py-3 text-left font-medium text-slate-400">Duración</th>
-                                                <th className="px-4 py-3 text-left font-medium text-slate-400">ID</th>
-                                                <th className="px-4 py-3 text-right font-medium text-slate-400">Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                            {localExercises.map(ex => (
-                                                <tr key={ex.id} className="hover:bg-slate-50 transition-colors group">
-                                                    <td className="px-4 py-3 font-medium text-slate-700">{ex.title}</td>
-                                                    <td className="px-4 py-3"><span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500">{ex.type}</span></td>
-                                                    <td className="px-4 py-3 text-slate-500 font-mono">{ex.dur}'</td>
-                                                    <td className="px-4 py-3 text-xs text-slate-300 font-mono">{ex.id.slice(0, 8)}...</td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <button
-                                                                onClick={() => handleOpenModal(ex)}
-                                                                className="p-1 hover:bg-slate-200 rounded text-slate-500">
-                                                                <div className="w-4 h-4 text-xs">Edit</div>
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDeleteExercise(ex.id)}
-                                                                className="p-1 hover:bg-red-100 rounded text-red-500">
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </button>
+
+                                    {/* MOCHILA VIEW (BACKPACK) */}
+                                    {showBackpack ? (
+                                        <div className="p-6 bg-slate-50 min-h-[300px]">
+                                            <div className="mb-4 flex items-center gap-2">
+                                                <Backpack className="w-5 h-5 text-indigo-500" />
+                                                <h3 className="font-bold text-slate-700">Mochila de Repaso (Items Dominados)</h3>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {localExercises.filter(e => e.mode === 'review').map(ex => (
+                                                    <div key={ex.id} className="bg-white border border-slate-200 rounded-full px-3 py-1.5 flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
+                                                        <span className={`w-2 h-2 rounded-full ${TYPE_MAP[ex.type]?.color.split(' ')[0].replace('text-', 'bg-')}`}></span>
+                                                        <span className="text-sm font-medium text-slate-700">{ex.title}</span>
+                                                        {ex.variations.length > 0 && (
+                                                            <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 rounded-full">{ex.variations.length} vars</span>
+                                                        )}
+                                                        <div className="w-0 overflow-hidden group-hover:w-auto transition-all flex items-center">
+                                                            <button className="ml-2 bg-indigo-50 text-indigo-600 p-1 rounded-full hover:bg-indigo-100"><Play className="w-3 h-3" /></button>
                                                         </div>
-                                                    </td>
+                                                    </div>
+                                                ))}
+                                                {localExercises.filter(e => e.mode === 'review').length === 0 && (
+                                                    <div className="text-slate-400 text-sm italic">No hay items en la mochila de repaso aún.</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <table className="w-full text-left text-sm">
+                                            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left font-medium text-slate-400">Nombre</th>
+                                                    <th className="px-4 py-3 text-left font-medium text-slate-400">Tipo</th>
+                                                    <th className="px-4 py-3 text-left font-medium text-slate-400">Duración</th>
+                                                    <th className="px-4 py-3 text-left font-medium text-slate-400">ID</th>
+                                                    <th className="px-4 py-3 text-right font-medium text-slate-400">Acciones</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {localExercises.map(ex => (
+                                                    <React.Fragment key={ex.id}>
+                                                        <tr
+                                                            onClick={() => setExpandedVarId(expandedVarId === ex.id ? null : ex.id)}
+                                                            className={`hover:bg-slate-50 transition-colors group cursor-pointer ${expandedVarId === ex.id ? 'bg-slate-50' : ''}`}
+                                                        >
+                                                            <td className="px-4 py-3 font-medium text-slate-700 flex items-center gap-2">
+                                                                {ex.variations.length > 0 && (
+                                                                    <div className={`text-slate-400 text-[10px] transition-transform ${expandedVarId === ex.id ? 'rotate-90' : ''}`}>▶</div>
+                                                                )}
+                                                                {ex.title}
+                                                            </td>
+                                                            <td className="px-4 py-3"><span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500">{ex.type}</span></td>
+                                                            <td className="px-4 py-3 text-slate-500 font-mono">{ex.dur}'</td>
+                                                            <td className="px-4 py-3 text-xs text-slate-300 font-mono">{ex.id.slice(0, 8)}...</td>
+                                                            <td className="px-4 py-3 text-right">
+                                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleOpenModal(ex); }}
+                                                                        className="p-1 hover:bg-slate-200 rounded text-slate-500">
+                                                                        <div className="w-4 h-4 text-xs">Edit</div>
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleDeleteExercise(ex.id); }}
+                                                                        className="p-1 hover:bg-red-100 rounded text-red-500">
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                        {/* VARIATIONS VIEWER (Accordion) */}
+                                                        {expandedVarId === ex.id && ex.variations.length > 0 && (
+                                                            <tr className="bg-slate-50/50">
+                                                                <td colSpan="5" className="px-4 py-2 p-0">
+                                                                    <div className="ml-8 border-l-2 border-slate-200 pl-4 space-y-2 mb-3 mt-1">
+                                                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Variaciones ({ex.variations.length})</div>
+                                                                        {ex.variations.map((v, idx) => (
+                                                                            <div key={idx} className="flex items-center gap-3 bg-white p-2 rounded border border-slate-200 text-sm shadow-sm">
+                                                                                <div className="w-6 h-6 bg-slate-100 rounded flex items-center justify-center text-[10px] font-mono text-slate-500">L{v.min_level}</div>
+                                                                                <div className="flex-1">
+                                                                                    <div className="font-medium text-slate-700 text-xs">{v.label}</div>
+                                                                                    <div className="text-[10px] text-slate-400">{v.tags.join(', ')}</div>
+                                                                                </div>
+                                                                                {v.asset_url && (
+                                                                                    <div className="text-[10px] text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100 truncate max-w-[150px]">{v.asset_url}</div>
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </React.Fragment>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -626,7 +744,10 @@ export default function StudiaConceptPage() {
                                         {ex.isFocus ? (
                                             <span className="text-[10px] font-bold text-white bg-blue-500 px-1.5 py-0.5 rounded uppercase tracking-wide flex items-center gap-1"><Zap className="w-3 h-3 fill-current" /> Foco</span>
                                         ) : (
-                                            <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded uppercase tracking-wide flex items-center gap-1"><Eye className="w-3 h-3" /> Repaso</span>
+                                            // Review Mode - Clean Badge
+                                            <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded uppercase tracking-wide flex items-center gap-1">
+                                                <Eye className="w-3 h-3" /> Repaso
+                                            </span>
                                         )}
                                         <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">{ex.category}</span>
                                     </div>
