@@ -21,6 +21,9 @@ import { createPortal } from "react-dom";
 import { uid, ensureRondaIds, buildDefaultSecuencia } from "../study/sessionSequence";
 import { componentStyles } from "@/design/componentStyles";
 import { SortableItem } from "@/components/dnd/SortableItem";
+import { calculateSessionTime } from "@/utils/variationUtils";
+import { formatDurationMinutes } from "@/components/utils/helpers";
+import { Clock } from "lucide-react";
 
 // Componente Sortable para Ronda
 function SortableRonda({
@@ -737,7 +740,32 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     AD: componentStyles.status.badgeDefault,
   };
 
-  const tiempoTotal = calcularTiempoTotal();
+  // Calcular tiempo total usando la utilidad avanzada que considera modos
+  const sessionTime = useMemo(() => {
+    // Aplanar la sesión para el cálculo
+    const flatBlocks = [];
+
+    // 1. Bloques sueltos (si están en secuencia y son BLOQUE)
+    formData.secuencia.forEach(item => {
+      if (item.kind === 'BLOQUE') {
+        const bloque = formData.bloques.find(b => b.code === item.code);
+        if (bloque) flatBlocks.push(bloque);
+      } else if (item.kind === 'RONDA') {
+        const ronda = formData.rondas.find(r => r.id === item.id);
+        if (ronda) {
+          for (let i = 0; i < ronda.repeticiones; i++) {
+            ronda.bloques.forEach(code => {
+              const bloque = formData.bloques.find(b => b.code === code);
+              if (bloque) flatBlocks.push(bloque);
+            });
+          }
+        }
+      }
+    });
+
+    // Calcular tiempo asumiendo un nivel promedio (ej. 5) ya que estamos editando
+    return calculateSessionTime(flatBlocks, 5);
+  }, [formData]);
 
   const modalContent = (
     <>
@@ -755,7 +783,20 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <PlayCircle className="w-6 h-6 text-[var(--color-text-primary)]" />
-                <CardTitle className="text-[var(--color-text-primary)]">Editar Sesión</CardTitle>
+                <div className="flex flex-col">
+                  <CardTitle className="text-[var(--color-text-primary)]">Editar Sesión</CardTitle>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className={`${componentStyles.status.badgeSuccess} flex items-center gap-1`}>
+                      <Clock className="w-3 h-3" />
+                      {Math.floor(sessionTime.totalTime / 60)} min {sessionTime.totalTime % 60} s
+                    </Badge>
+                    {sessionTime.repasoTime > 0 && (
+                      <span className="text-xs text-[var(--color-text-secondary)]">
+                        ({Math.floor(sessionTime.focoTime / 60)}m foco + {Math.floor(sessionTime.repasoTime / 60)}m repaso)
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
               <Button variant="ghost" size="icon" onClick={onClose} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-[var(--btn-radius)] touch-manipulation">
                 <X className="w-5 h-5" />
@@ -801,22 +842,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
               </div>
             </div>
 
-            <div className="app-panel border-[var(--color-info)]/20 bg-[var(--color-info)]/10 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-[var(--color-text-primary)] font-medium">Tiempo previsto (excluyendo AD)</p>
-                  <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-                    {formData.bloques.filter(b => b.tipo !== 'AD').length} ejercicios + {formData.rondas.length} rondas
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-3xl font-bold text-[var(--color-text-primary)]">
-                    {Math.floor(tiempoTotal / 60)}:{String(tiempoTotal % 60).padStart(2, '0')}
-                  </p>
-                  <p className="text-xs text-[var(--color-text-secondary)]">minutos</p>
-                </div>
-              </div>
-            </div>
+
 
             <Card className="app-panel">
               <CardHeader>
@@ -1057,7 +1083,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
                 </div>
               </CardContent>
             </Card>
-          </CardContent>
+          </CardContent >
 
           <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
             <div className="flex gap-3 mb-2">
@@ -1073,8 +1099,8 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
               Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar • Ctrl/⌘+B : limpiar selección
             </p>
           </div>
-        </div>
-      </div>
+        </div >
+      </div >
 
       {editingEjercicio && (() => {
         // Enrich ejercicio with variations from ejercicios list (from remoteDataAPI)
@@ -1106,7 +1132,8 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
             }}
           />
         );
-      })()}
+      })()
+      }
     </>
   );
 

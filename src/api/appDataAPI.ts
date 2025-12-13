@@ -36,6 +36,20 @@ import type {
   EvaluacionTecnica,
   CreateEvaluacionTecnicaInput,
   UpdateEvaluacionTecnicaInput,
+  LevelConfig,
+  CreateLevelConfigInput,
+  UpdateLevelConfigInput,
+  LevelKeyCriteria,
+  CreateLevelKeyCriteriaInput,
+  UpdateLevelKeyCriteriaInput,
+  StudentCriteriaStatus,
+  CreateStudentCriteriaStatusInput,
+  UpdateStudentCriteriaStatusInput,
+  StudentLevelHistory,
+  CreateStudentLevelHistoryInput,
+  StudentXPTotal,
+  CreateStudentXPTotalInput,
+  UpdateStudentXPTotalInput,
 } from '@/types/domain';
 
 /**
@@ -101,6 +115,13 @@ export interface EventoCalendarioAPI extends EntityAPI<EventoCalendario, CreateE
  */
 export interface EvaluacionTecnicaAPI extends EntityAPI<EvaluacionTecnica, CreateEvaluacionTecnicaInput, UpdateEvaluacionTecnicaInput> { }
 
+export interface LevelConfigAPI extends EntityAPI<LevelConfig, CreateLevelConfigInput, UpdateLevelConfigInput> { }
+export interface LevelKeyCriteriaAPI extends EntityAPI<LevelKeyCriteria, CreateLevelKeyCriteriaInput, UpdateLevelKeyCriteriaInput> { }
+export interface StudentCriteriaStatusAPI extends EntityAPI<StudentCriteriaStatus, CreateStudentCriteriaStatusInput, UpdateStudentCriteriaStatusInput> { }
+// StudentLevelHistory no tiene UpdateInput definido exportado, usare Partial<...> & {id: string} o any si falla, pero usare CreateStudentLevelHistoryInput como update type temporal o any
+export interface StudentLevelHistoryAPI extends EntityAPI<StudentLevelHistory, CreateStudentLevelHistoryInput, any> { }
+export interface StudentXPTotalAPI extends EntityAPI<StudentXPTotal, CreateStudentXPTotalInput, UpdateStudentXPTotalInput> { }
+
 /**
  * Interfaz principal AppDataAPI
  * 
@@ -117,5 +138,10 @@ export interface AppDataAPI {
   feedbacksSemanal: FeedbackSemanalAPI;
   eventosCalendario: EventoCalendarioAPI;
   evaluaciones: EvaluacionTecnicaAPI;
+  levelsConfig: LevelConfigAPI;
+  levelKeyCriteria: LevelKeyCriteriaAPI;
+  studentCriteriaStatus: StudentCriteriaStatusAPI;
+  studentLevelHistory: StudentLevelHistoryAPI;
+  studentXpTotal: StudentXPTotalAPI;
 }
 

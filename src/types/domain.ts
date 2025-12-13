@@ -52,7 +52,7 @@ export interface StudiaUser {
 /**
  * Tipo auxiliar para crear un usuario (sin campos auto-generados)
  */
-export type CreateStudiaUserInput = Omit<StudiaUser, 'id' | 'created_at' | 'updated_at'>;
+export type CreateStudiaUserInput = Omit<StudiaUser, 'id' | 'created_at' | 'updated_at'> & { id?: string };
 
 /**
  * Tipo auxiliar para actualizar un usuario (todos los campos opcionales excepto id)
@@ -86,7 +86,7 @@ export interface Pieza {
   updated_at: string;
 }
 
-export type CreatePiezaInput = Omit<Pieza, 'id' | 'created_at' | 'updated_at'>;
+export type CreatePiezaInput = Omit<Pieza, 'id' | 'created_at' | 'updated_at'> & { id?: string };
 export type UpdatePiezaInput = Partial<Omit<Pieza, 'id' | 'created_at'>> & { id: string };
 
 /**
@@ -160,11 +160,11 @@ export interface Bloque {
    * Contenido/Variaciones del ejercicio (JSONB).
    *[{ "label": "Sistema 1", "min_level": 1, "tags": ["easy"], "asset_url": "..." }]
    */
-  content?: any;
-  variations?: any[];
+  content?: Variation[];
+  variations?: Variation[];
 }
 
-export type CreateBloqueInput = Omit<Bloque, 'id' | 'created_at' | 'updated_at'>;
+export type CreateBloqueInput = Omit<Bloque, 'id' | 'created_at' | 'updated_at'> & { id?: string };
 export type UpdateBloqueInput = Partial<Omit<Bloque, 'id' | 'created_at'>> & { id: string };
 
 /**
@@ -230,7 +230,7 @@ export interface Plan {
   updated_at: string;
 }
 
-export type CreatePlanInput = Omit<Plan, 'id' | 'created_at' | 'updated_at'>;
+export type CreatePlanInput = Omit<Plan, 'id' | 'created_at' | 'updated_at'> & { id?: string };
 export type UpdatePlanInput = Partial<Omit<Plan, 'id' | 'created_at'>> & { id: string };
 
 /**
@@ -264,7 +264,7 @@ export interface Asignacion {
   updated_at: string;
 }
 
-export type CreateAsignacionInput = Omit<Asignacion, 'id' | 'created_at' | 'updated_at'>;
+export type CreateAsignacionInput = Omit<Asignacion, 'id' | 'created_at' | 'updated_at'> & { id?: string };
 export type UpdateAsignacionInput = Partial<Omit<Asignacion, 'id' | 'created_at'>> & { id: string };
 
 /**
@@ -303,7 +303,7 @@ export interface RegistroSesion {
   registrosBloque?: RegistroBloque[];
 }
 
-export type CreateRegistroSesionInput = Omit<RegistroSesion, 'id' | 'created_at'>;
+export type CreateRegistroSesionInput = Omit<RegistroSesion, 'id' | 'created_at'> & { id?: string };
 export type UpdateRegistroSesionInput = Partial<Omit<RegistroSesion, 'id' | 'created_at'>> & { id: string };
 
 /**
@@ -340,7 +340,7 @@ export interface RegistroBloque {
   };
 }
 
-export type CreateRegistroBloqueInput = Omit<RegistroBloque, 'id' | 'created_at'>;
+export type CreateRegistroBloqueInput = Omit<RegistroBloque, 'id' | 'created_at'> & { id?: string };
 export type UpdateRegistroBloqueInput = Partial<Omit<RegistroBloque, 'id' | 'created_at'>> & { id: string };
 
 /**
@@ -359,7 +359,7 @@ export interface FeedbackSemanal {
   updated_at: string;
 }
 
-export type CreateFeedbackSemanalInput = Omit<FeedbackSemanal, 'id' | 'created_at' | 'updated_at'>;
+export type CreateFeedbackSemanalInput = Omit<FeedbackSemanal, 'id' | 'created_at' | 'updated_at'> & { id?: string };
 export type UpdateFeedbackSemanalInput = Partial<Omit<FeedbackSemanal, 'id' | 'created_at'>> & { id: string };
 
 /**
@@ -384,7 +384,7 @@ export interface EventoCalendario {
   updated_at: string;
 }
 
-export type CreateEventoCalendarioInput = Omit<EventoCalendario, 'id' | 'created_at' | 'updated_at'>;
+export type CreateEventoCalendarioInput = Omit<EventoCalendario, 'id' | 'created_at' | 'updated_at'> & { id?: string };
 export type UpdateEventoCalendarioInput = Partial<Omit<EventoCalendario, 'id' | 'created_at'>> & { id: string };
 
 /**
@@ -469,7 +469,7 @@ export interface EvaluacionTecnica {
   updated_at: string;
 }
 
-export type CreateEvaluacionTecnicaInput = Omit<EvaluacionTecnica, 'id' | 'created_at' | 'updated_at'>;
+export type CreateEvaluacionTecnicaInput = Omit<EvaluacionTecnica, 'id' | 'created_at' | 'updated_at'> & { id?: string };
 export type UpdateEvaluacionTecnicaInput = Partial<Omit<EvaluacionTecnica, 'id' | 'created_at'>> & { id: string };
 
 /**

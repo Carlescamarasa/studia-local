@@ -405,8 +405,8 @@ function normalizeSupabaseUser(user: any, email?: string): any {
  * Detecta errores 401/403 y dispara un evento personalizado para que AuthProvider pueda reaccionar
  */
 async function withAuthErrorHandling<T>(
-  promise: Promise<{ data: T | null; error: any }>
-): Promise<{ data: T | null; error: any }> {
+  promise: any
+): Promise<{ data: T | null; error: any; count?: number | null }> {
   try {
     const result = await promise;
 
@@ -494,7 +494,9 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
       // Continuar con la llamada a Edge Function - si no es ADMIN, fallará con 403
     }
 
-    // Llamar a la Edge Function para obtener emails
+    // Llamar a la      // @ts-ignore
+    const isDev = import.meta.env.DEV;
+    // @ts-ignore
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -628,18 +630,17 @@ export function createRemoteDataAPI(): AppDataAPI {
             console.error('[remoteDataAPI] Error al leer profiles:', {
               error: error?.message || error,
               code: error?.code,
-              status: error?.status,
               details: error?.details,
             });
             throw error;
           }
 
-          if (data && data.length > 0) {
+          if (data && (data as any[]).length > 0) {
             allData = allData.concat(data);
             from += PAGE_SIZE;
             // Si obtenemos menos registros que PAGE_SIZE, hemos llegado al final
             // O si el count indica que ya tenemos todos
-            hasMore = data.length === PAGE_SIZE && (count === null || allData.length < count);
+            hasMore = (data as any[]).length === PAGE_SIZE && (count === null || allData.length < count);
           } else {
             hasMore = false;
           }
@@ -1025,7 +1026,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           console.error('[remoteDataAPI] Error al actualizar usuario:', {
             error: error?.message || error,
             code: error?.code,
-            status: error?.status,
+            details: error?.details,
             id,
           });
           throw error;
@@ -1350,7 +1351,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           console.error('[remoteDataAPI] Error al actualizar bloque:', {
             error: error?.message || error,
             code: error?.code,
-            status: error?.status,
+            details: error?.details,
             id,
           });
           throw error;
@@ -1647,7 +1648,6 @@ export function createRemoteDataAPI(): AppDataAPI {
           console.error('[remoteDataAPI] Error al crear asignación:', {
             error: error?.message || error,
             code: error?.code,
-            status: error?.status,
             details: error?.details,
           });
           throw error;
@@ -1704,7 +1704,8 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (camposNoPermitidos.length > 0) {
           const errorMsg = `Campos no permitidos en actualización de asignación: ${camposNoPermitidos.join(', ')}. Solo se pueden actualizar: notas, foco, estado, semanaInicioISO, piezaId, planId, planAdaptado (y piezaSnapshot si piezaId cambia).`;
           console.warn('[remoteDataAPI]', errorMsg);
-          if (process.env.NODE_ENV === 'development') {
+          // @ts-ignore
+          if (import.meta.env.DEV) {
             console.warn('[remoteDataAPI] Campos eliminados del update:', camposNoPermitidos);
           }
           camposNoPermitidos.forEach(campo => delete updatesWithoutJson[campo]);
@@ -1743,7 +1744,8 @@ export function createRemoteDataAPI(): AppDataAPI {
           throw new Error('No se pueden actualizar asignaciones con un objeto vacío. Debe incluir al menos un campo válido.');
         }
 
-        if (process.env.NODE_ENV === 'development') {
+        // @ts-ignore
+        if (import.meta.env.DEV) {
           console.log('[remoteDataAPI] Actualizando asignación:', {
             id,
             camposActualizados: Object.keys(snakeUpdates),
@@ -1764,7 +1766,6 @@ export function createRemoteDataAPI(): AppDataAPI {
           const errorContext = {
             error: error?.message || error,
             code: error?.code,
-            status: error?.status,
             details: error?.details,
             id,
           };
@@ -1847,7 +1848,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           return sessions;
         }
 
-        const blocks = (blocksData || []).map((b: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(b)));
+        const blocks = (blocksData || []).map((b: any) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
 
         // Join blocks to sessions
         const result = sessions.map(session => {
@@ -1891,7 +1892,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           return session;
         }
 
-        const blocks = (blocksData || []).map((b: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(b)));
+        const blocks = (blocksData || []).map((b: any) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
 
         return {
           ...session,
@@ -1932,7 +1933,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           return sessions;
         }
 
-        const blocks = (blocksData || []).map((b: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(b)));
+        const blocks = (blocksData || []).map((b: any) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
 
         // Join blocks to sessions
         return sessions.map(session => ({
@@ -1943,7 +1944,7 @@ export function createRemoteDataAPI(): AppDataAPI {
       create: async (data) => {
         const snakeData = camelToSnake({
           ...data,
-          id: data.id || generateId('registroSesion'),
+          id: (data as any).id || generateId('registroSesion'),
         });
         const { data: result, error } = await supabase
           .from('registros_sesion')
@@ -2023,7 +2024,7 @@ export function createRemoteDataAPI(): AppDataAPI {
       create: async (data) => {
         const snakeData = camelToSnake({
           ...data,
-          id: data.id || generateId('registroBloque'),
+          id: (data as any).id || generateId('registroBloque'),
         });
         const { data: result, error } = await supabase
           .from('registros_bloque')
@@ -2110,7 +2111,7 @@ export function createRemoteDataAPI(): AppDataAPI {
       create: async (data) => {
         const snakeData = camelToSnake({
           ...data,
-          id: data.id || generateId('feedback'),
+          id: (data as any).id || generateId('feedbackSemanal'),
         });
         const { data: result, error } = await supabase
           .from('feedbacks_semanal')
@@ -2704,6 +2705,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .delete()
           .eq('id', id);
         if (error) throw error;
+        return { success: true };
       }
     },
   };

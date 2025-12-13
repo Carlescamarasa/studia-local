@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight, Layers, Shuffle, Eye, Zap } from "lucide-react";
+import { ChevronDown, ChevronRight, Layers, Shuffle, Eye, Zap, Clock } from "lucide-react";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "./sessionSequence";
 import { componentStyles } from "@/design/componentStyles";
 
@@ -14,6 +14,14 @@ const tipoColors = {
   AD: componentStyles.status.badgeDefault,
 };
 
+const formatDuration = (seconds) => {
+  if (!seconds) return null;
+  const min = Math.floor(seconds / 60);
+  const seg = seconds % 60;
+  if (seg === 0) return `${min} min`;
+  return `${min}:${String(seg).padStart(2, '0')}`;
+};
+
 /**
  * Componente unificado para visualizar el contenido de una sesión
  * Muestra ejercicios y rondas intercalados según la secuencia
@@ -22,8 +30,17 @@ const tipoColors = {
  * @param {boolean} compact - Compact mode flag
  * @param {Array} dbBloques - Optional array of bloques from DB with variations
  * @param {string} semanaFoco - Optional semana foco to compare for Repaso badge
+ * @param {Object} expandedRondas - Optional map of expanded round IDs (controlled mode)
+ * @param {Function} onToggleRonda - Optional callback for toggling rounds (controlled mode)
  */
-export default function SessionContentView({ sesion, compact = false, dbBloques = [], semanaFoco = null }) {
+export default function SessionContentView({
+  sesion,
+  compact = false,
+  dbBloques = [],
+  semanaFoco = null,
+  expandedRondas = null,
+  onToggleRonda = null
+}) {
   if (!sesion) return null;
 
   const S = ensureRondaIds(sesion);
@@ -35,11 +52,14 @@ export default function SessionContentView({ sesion, compact = false, dbBloques 
     // Find matching DB bloque to get variations
     const dbBloque = dbBloques.find(db => db.code === b.code || db.id === b.id);
     const variations = dbBloque?.variations || dbBloque?.content || b.variations || [];
-    bloquesMap.set(b.code, { ...b, variations });
+    // Ensure duration is present (from DB if possible, else from session bloque)
+    const duracionSeg = dbBloque?.duracionSeg || dbBloque?.duracion_seg || b.duracionSeg || 0;
+    bloquesMap.set(b.code, { ...b, variations, duracionSeg });
   });
 
-  // Inicializar todas las rondas como expandidas por defecto
-  const [expanded, setExpanded] = useState(() => {
+  // Estado interno para modo no controlado
+  const [internalExpanded, setInternalExpanded] = useState(() => {
+    if (expandedRondas) return {}; // Si es controlado, no usamos estado inicial
     const expandedMap = {};
     const seq = getSecuencia(ensureRondaIds(sesion));
     seq.forEach((item) => {
@@ -50,8 +70,9 @@ export default function SessionContentView({ sesion, compact = false, dbBloques 
     return expandedMap;
   });
 
-  // Actualizar cuando cambie la sesión
+  // Sincronizar estado interno si la sesión cambia y no es controlado
   React.useEffect(() => {
+    if (expandedRondas) return;
     const S = ensureRondaIds(sesion);
     const seq = getSecuencia(S);
     const expandedMap = {};
@@ -60,11 +81,18 @@ export default function SessionContentView({ sesion, compact = false, dbBloques 
         expandedMap[item.id] = true;
       }
     });
-    setExpanded(expandedMap);
-  }, [sesion]); // Actualizar cuando cambie la sesión
+    setInternalExpanded(expandedMap);
+  }, [sesion, expandedRondas]);
 
-  const toggleRonda = (key) => {
-    setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
+  const isControlled = expandedRondas !== null;
+  const currentExpanded = isControlled ? expandedRondas : internalExpanded;
+
+  const handleToggleRonda = (key, roundId) => {
+    if (isControlled && onToggleRonda) {
+      onToggleRonda(roundId || key);
+    } else {
+      setInternalExpanded(prev => ({ ...prev, [key]: !prev[key] }));
+    }
   };
 
   return (
@@ -109,7 +137,23 @@ export default function SessionContentView({ sesion, compact = false, dbBloques 
                   </div>
                 )}
                 <span className="flex-1 text-[var(--color-text-primary)] font-medium truncate">{ej.nombre}</span>
-                <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0`}>{ej.code}</span>
+
+                {/* Variations count badge */}
+                {ej.variations && ej.variations.length > 0 && (
+                  <span className="text-[10px] text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded-full font-medium" title={`${ej.variations.length} variaciones`}>
+                    {ej.variations.length} var
+                  </span>
+                )}
+
+                {/* Duration */}
+                {ej.duracionSeg > 0 && (
+                  <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex items-center gap-0.5`}>
+                    <Clock className="w-3 h-3" />
+                    {formatDuration(ej.duracionSeg)}
+                  </span>
+                )}
+
+                <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0 ml-1`}>{ej.code}</span>
               </div>
             );
           }
@@ -125,13 +169,13 @@ export default function SessionContentView({ sesion, compact = false, dbBloques 
           }
 
           const key = item.id || idx;
-          const isOpen = !!expanded[key];
+          const isOpen = !!currentExpanded[key];
 
           return (
             <div key={`r-${key}`}>
               <div
                 className={componentStyles.items.compactItemHover}
-                onClick={() => toggleRonda(key)}
+                onClick={() => handleToggleRonda(key, item.id)}
               >
                 <div className={`flex items-center ${componentStyles.layout.gapCompact} flex-shrink-0`}>
                   {isOpen ? (
@@ -177,7 +221,23 @@ export default function SessionContentView({ sesion, compact = false, dbBloques 
                           </div>
                         ) : null}
                         <span className="flex-1 text-[var(--color-text-primary)] truncate">{ej.nombre}</span>
-                        <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0`}>{ej.code}</span>
+
+                        {/* Variations count inside ronda */}
+                        {ej.variations && ej.variations.length > 0 && (
+                          <span className="text-[10px] text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded-full font-medium" title={`${ej.variations.length} variaciones`}>
+                            {ej.variations.length} var
+                          </span>
+                        )}
+
+                        {/* Duration inside ronda */}
+                        {ej.duracionSeg > 0 && (
+                          <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex items-center gap-0.5`}>
+                            <Clock className="w-3 h-3" />
+                            {formatDuration(ej.duracionSeg)}
+                          </span>
+                        )}
+
+                        <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0 ml-1`}>{ej.code}</span>
                       </div>
                     );
                   })}

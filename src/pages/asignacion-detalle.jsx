@@ -28,6 +28,10 @@ import PageHeader from "@/components/ds/PageHeader";
 import { LoadingSpinner } from "@/components/ds";
 import { componentStyles } from "@/design/componentStyles";
 
+import { createRemoteDataAPI } from "@/api/remoteDataAPI";
+
+// ... imports ...
+
 export default function AsignacionDetallePage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -40,6 +44,21 @@ export default function AsignacionDetallePage() {
   const asignacionId = urlParams.get('id');
 
   const effectiveUser = useEffectiveUser();
+
+  // Query para obtener bloques con variaciones actualizados (para duraciones y contenido)
+  const { data: dbBloques = [] } = useQuery({
+    queryKey: ['bloques-with-variations'],
+    queryFn: async () => {
+      const api = createRemoteDataAPI();
+      if (api) {
+        const { data, error } = await api.bloques.list();
+        if (error) throw error;
+        return data;
+      }
+      return localDataClient.entities.Bloque.list();
+    },
+    staleTime: 1000 * 60 * 5
+  });
 
   const { data: asignacion, isLoading } = useQuery({
     queryKey: ['asignacion', asignacionId],
@@ -646,7 +665,7 @@ export default function AsignacionDetallePage() {
 
                               {isExpanded && (
                                 <div className="ml-2 mt-1.5" onClick={(e) => e.stopPropagation()}>
-                                  <SessionContentView sesion={sesion} />
+                                  <SessionContentView sesion={sesion} dbBloques={dbBloques} />
                                 </div>
                               )}
                             </div>

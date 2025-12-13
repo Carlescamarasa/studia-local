@@ -24,18 +24,6 @@ const TYPE_MAP = {
   'AD': { label: 'Aviso/Descanso', color: 'text-slate-600 bg-slate-50' },
 };
 
-// MOCKED VARIATIONS (Simulating JSONB 'content')
-const MOCKED_VARIATIONS = {
-  'TC-COL-0004': [
-    { label: 'Sistema 1', min_level: 1, tags: ['easy', 'tone'], asset_url: 'https://placehold.co/600x150/e2e8f0/475569?text=Colin+4+-+Sistema+1' },
-    { label: 'Sistema 2', min_level: 2, tags: ['medium', 'flex'], asset_url: 'https://placehold.co/600x150/e2e8f0/475569?text=Colin+4+-+Sistema+2' },
-    { label: 'Sistema 3', min_level: 3, tags: ['hard', 'range'], asset_url: 'https://placehold.co/600x150/e2e8f0/475569?text=Colin+4+-+Sistema+3' }
-  ],
-  'TC-CLA-0002': [
-    { label: 'Var A (Ligado)', min_level: 1, tags: ['slur'], asset_url: null },
-    { label: 'Var B (Piccado)', min_level: 2, tags: ['staccato'], asset_url: 'https://placehold.co/600x150/e2e8f0/475569?text=Clarke+2+-+Var+B' }
-  ]
-};
 
 export default function EjerciciosTab() {
   // State
@@ -75,17 +63,7 @@ export default function EjerciciosTab() {
             vars = b.content;
             console.log(`[EjerciciosTab] ${b.nombre || b.code}: Using ${vars.length} variations from Supabase content column`);
           }
-          // PRIORITY 2: Fallback to MOCKED_VARIATIONS for demo purposes
-          else {
-            // Only use mocked data as fallback when no real data exists
-            if (idx === 0) vars = MOCKED_VARIATIONS['TC-COL-0004'];
-            else if (idx === 1) vars = MOCKED_VARIATIONS['TC-CLA-0002'];
-            else vars = MOCKED_VARIATIONS[b.code] || [];
 
-            if (vars.length > 0) {
-              console.log(`[EjerciciosTab] ${b.nombre || b.code}: Using MOCKED_VARIATIONS (no Supabase content)`);
-            }
-          }
 
           const categoryInfo = TYPE_MAP[b.tipo] || { label: 'General', color: 'text-slate-600 bg-slate-50' };
           const dur = Math.round((b.duracion_seg || b.duracionSeg || 300) / 60);

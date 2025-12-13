@@ -28,6 +28,8 @@ import { componentStyles } from "@/design/componentStyles";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "@/components/study/sessionSequence";
 import RequireRole from "@/components/auth/RequireRole";
 
+import SessionContentView from "@/components/study/SessionContentView";
+
 // Componente Sortable para Sesión (similar a PlanEditor pero adaptado)
 function SortableSesionAdaptar({
   id,
@@ -69,6 +71,24 @@ function SortableSesionAdaptar({
   const tiempoTotal = calcularTiempoSesion(sesion);
   const tiempoMinutos = Math.floor(tiempoTotal / 60);
   const tiempoSegundos = tiempoTotal % 60;
+
+  // Adaptar estado de expansión para SessionContentView
+  const expandedRondasMap = {};
+  if (sesion.rondas) {
+    sesion.rondas.forEach((r, idx) => {
+      const key = `${semanaIndex}-${sesionIndex}-ronda-${idx}`;
+      if (expandedEjercicios.has(key)) {
+        expandedRondasMap[r.id] = true;
+      }
+    });
+  }
+
+  const handleToggleRondaLocal = (rondaId) => {
+    const rIndex = sesion.rondas.findIndex(r => r.id === rondaId);
+    if (rIndex !== -1) {
+      toggleRonda(semanaIndex, sesionIndex, rIndex);
+    }
+  };
 
   return (
     <div
@@ -121,109 +141,13 @@ function SortableSesionAdaptar({
       </div>
 
       {isExpanded && (
-        <div className="mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
-          {(() => {
-            const S = ensureRondaIds(sesion);
-            const secuencia = getSecuencia(S);
-            // Create bloquesMap with DB variations merged in
-            const bloquesMap = new Map();
-            (S.bloques || []).forEach(b => {
-              // Find matching DB bloque to get variations
-              const dbBloque = dbBloques.find(db => db.code === b.code || db.id === b.id);
-              const variations = dbBloque?.variations || dbBloque?.content || b.variations || [];
-              bloquesMap.set(b.code, { ...b, variations });
-            });
-
-            return (
-              <div className="ml-2 space-y-1.5">
-                {secuencia.map((item, seqIdx) => {
-                  if (item.kind === 'BLOQUE') {
-                    const ejercicio = bloquesMap.get(item.code);
-                    if (!ejercicio) return null;
-
-                    return (
-                      <div key={`bloque-${item.code}-${seqIdx}`} className={componentStyles.items.compactItem}>
-                        <Badge variant="outline" className={`${tipoColors[ejercicio.tipo]} rounded-full ${componentStyles.typography.compactText}`}>
-                          {ejercicio.tipo}
-                        </Badge>
-                        {ejercicio.variations && ejercicio.variations.length > 0 && (
-                          <div className="flex items-center justify-center w-5 h-5 bg-blue-50 dark:bg-blue-900/20 rounded-full shrink-0" title={`${ejercicio.variations.length} variaciones disponibles`}>
-                            <Eye className="w-3 h-3 text-blue-500" />
-                          </div>
-                        )}
-                        <span className="flex-1 text-[var(--color-text-primary)] font-medium truncate">{ejercicio.nombre}</span>
-                        <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0`}>{ejercicio.code}</span>
-                      </div>
-                    );
-                  } else if (item.kind === 'RONDA') {
-                    const ronda = S.rondas.find(r => r.id === item.id);
-                    if (!ronda) return null;
-
-                    const rondaIndex = sesion.rondas.findIndex(r => r.id === item.id);
-                    const rondaKey = `${semanaIndex}-${sesionIndex}-ronda-${rondaIndex}`;
-                    const isRondaExpanded = expandedEjercicios.has(rondaKey);
-
-                    return (
-                      <div key={`ronda-${item.id}-${seqIdx}`}>
-                        <div
-                          className={componentStyles.items.compactItemHover}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleRonda(semanaIndex, sesionIndex, rondaIndex);
-                          }}
-                        >
-                          <div className={`flex items-center ${componentStyles.layout.gapCompact} flex-shrink-0`}>
-                            {isRondaExpanded ? (
-                              <ChevronDown className="w-3 h-3 text-[var(--color-text-secondary)]" />
-                            ) : (
-                              <ChevronRight className="w-3 h-3 text-[var(--color-text-secondary)]" />
-                            )}
-                            <Badge variant="outline" className={`bg-[var(--color-primary)]/10 border-[var(--color-primary)]/30 text-[var(--color-primary)] rounded-full ${componentStyles.typography.compactText} font-semibold`}>
-                              RONDA
-                            </Badge>
-                          </div>
-                          <span className="flex-1 text-[var(--color-text-primary)] font-medium truncate">
-                            {ronda.aleatoria && <Shuffle className="w-3 h-3 inline mr-1 text-[var(--color-primary)]" />}
-                            × {ronda.repeticiones} repeticiones ({ronda.bloques.length} ejercicios)
-                          </span>
-                        </div>
-
-                        {isRondaExpanded && (
-                          <div className="ml-2 mt-1.5 space-y-1">
-                            {ronda.bloques.map((code, eIndex) => {
-                              const ejercicio = bloquesMap.get(code);
-                              if (!ejercicio) {
-                                return (
-                                  <div key={eIndex} className={`text-xs text-[var(--color-danger)] p-1 ml-2`}>
-                                    ⚠️ Referencia huérfana: {code}
-                                  </div>
-                                );
-                              }
-                              return (
-                                <div key={eIndex} className={`${componentStyles.items.compactItem} ml-2`}>
-                                  <Badge variant="outline" className={`${componentStyles.typography.compactText} rounded-full ${tipoColors[ejercicio.tipo]}`}>
-                                    {ejercicio.tipo}
-                                  </Badge>
-                                  {ejercicio.variations && ejercicio.variations.length > 0 && (
-                                    <div className="flex items-center justify-center w-5 h-5 bg-blue-50 dark:bg-blue-900/20 rounded-full shrink-0" title={`${ejercicio.variations.length} variaciones disponibles`}>
-                                      <Eye className="w-3 h-3 text-blue-500" />
-                                    </div>
-                                  )}
-                                  <span className="flex-1 text-[var(--color-text-primary)] truncate">{ejercicio.nombre}</span>
-                                  <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0`}>{ejercicio.code}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }
-                  return null;
-                })}
-              </div>
-            );
-          })()}
+        <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+          <SessionContentView
+            sesion={sesion}
+            dbBloques={dbBloques}
+            expandedRondas={expandedRondasMap}
+            onToggleRonda={handleToggleRondaLocal}
+          />
         </div>
       )}
 
@@ -456,6 +380,22 @@ function AdaptarAsignacionPageContent() {
 
   const asignacionId = searchParams.get('id');
 
+  // Query para obtener bloques con variaciones actualizados
+  const { data: dbBloques = [] } = useQuery({
+    queryKey: ['bloques-with-variations'],
+    queryFn: async () => {
+      const api = createRemoteDataAPI();
+      if (api) {
+        const { data, error } = await api.bloques.list();
+        if (error) throw error;
+        return data;
+      }
+      return localDataClient.entities.Bloque.list();
+    },
+    // Stale time de 5 minutos para evitar recargas constantes
+    staleTime: 1000 * 60 * 5
+  });
+
   const { data: asignacion, isLoading, error } = useQuery({
     queryKey: ['asignacion', asignacionId],
     queryFn: async () => {
@@ -487,20 +427,7 @@ function AdaptarAsignacionPageContent() {
     queryFn: () => localDataClient.entities.User.list(),
   });
 
-  // Fetch bloques from Supabase to get variations data
-  const remoteDataAPI = createRemoteDataAPI();
-  const { data: dbBloques = [] } = useQuery({
-    queryKey: ['bloques-with-variations'],
-    queryFn: async () => {
-      try {
-        return await remoteDataAPI.bloques.list();
-      } catch (error) {
-        console.error('Error fetching bloques from Supabase:', error);
-        return await localDataClient.entities.Bloque.list();
-      }
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+
 
   useEffect(() => {
     if (asignacion?.plan) {
