@@ -100,9 +100,15 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
     variations: [], // NEW: Array of { label, min_level, tags, asset_urls[] }
   });
 
-  // Debug log for props
+  // Debug log for props - VARIATIONS DEBUGGING
   useEffect(() => {
-    console.log('ExerciseEditor mounted/updated with:', { ejercicio, isInlineMode: initialInlineMode });
+    console.log('[ExerciseEditor] Mounted/updated with:', {
+      ejercicioCode: ejercicio?.code,
+      ejercicioVariations: ejercicio?.variations,
+      ejercicioContent: ejercicio?.content,
+      variationsCount: ejercicio?.variations?.length || 0,
+      isInlineMode: initialInlineMode
+    });
   }, [ejercicio, initialInlineMode]);
 
   // Función para convertir el formato antiguo (media object) al nuevo (mediaLinks array)
@@ -365,6 +371,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
         onClose(result);
       } else {
         queryClient.invalidateQueries({ queryKey: ['bloques'] });
+        queryClient.invalidateQueries({ queryKey: ['bloques-with-variations'] });
         setSaveResult({ success: true, message: '✅ Cambios guardados' });
         setTimeout(() => onClose(null), 1500);
       }
@@ -530,7 +537,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
       ...formData,
       variations: [
         ...(formData.variations || []),
-        { label: '', min_level: 1, tags: [], asset_urls: [] }
+        { label: '', min_level: 1, duracionSeg: 0, tags: [], asset_urls: [] }
       ]
     });
   };
@@ -571,11 +578,11 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
   const modalContent = (
     <>
       <div
-        className="fixed inset-0 bg-black/40 z-[220]"
+        className="fixed inset-0 bg-black/40 z-[260]"
         onClick={() => onClose(null)}
       />
 
-      <div className="fixed inset-0 z-[225] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
+      <div className="fixed inset-0 z-[265] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
         <div
           className="bg-[var(--color-surface-elevated)] w-full max-w-3xl max-h-[92vh] shadow-card rounded-[var(--radius-modal)] flex flex-col pointer-events-auto my-8 border border-[var(--color-border-default)]"
           onClick={(e) => e.stopPropagation()}
@@ -1311,26 +1318,40 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                       <div key={idx} className="p-4 border border-[var(--color-border-default)] rounded-lg bg-[var(--color-surface-muted)]">
                         <div className="flex items-start gap-3">
                           <div className="flex-1 space-y-3">
-                            <div className={componentStyles.layout.grid2}>
+                            <div className="grid grid-cols-3 gap-3">
                               <div>
                                 <Label className="text-xs">Nombre/Etiqueta</Label>
                                 <Input
-                                  value={variation.label || ''}
+                                  value={variation.label || variation.nombre || ''}
                                   onChange={(e) => updateVariation(idx, 'label', e.target.value)}
-                                  placeholder="Ej: Sistema 1, Variante A..."
+                                  placeholder="Ej: Sistema 1"
                                   className="mt-1"
                                 />
                               </div>
                               <div>
-                                <Label className="text-xs">Nivel Mínimo (1-10)</Label>
+                                <Label className="text-xs">Nivel Mínimo</Label>
                                 <Input
                                   type="number"
                                   min="1"
                                   max="10"
-                                  value={variation.min_level || 1}
+                                  value={variation.min_level || variation.nivelMinimo || 1}
                                   onChange={(e) => updateVariation(idx, 'min_level', parseInt(e.target.value) || 1)}
                                   className="mt-1"
                                 />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Duración (seg)</Label>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={variation.duracionSeg || 0}
+                                  onChange={(e) => updateVariation(idx, 'duracionSeg', parseInt(e.target.value) || 0)}
+                                  placeholder="120"
+                                  className="mt-1"
+                                />
+                                <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+                                  {Math.floor((variation.duracionSeg || 0) / 60)}:{String((variation.duracionSeg || 0) % 60).padStart(2, '0')}
+                                </p>
                               </div>
                             </div>
                             <div>

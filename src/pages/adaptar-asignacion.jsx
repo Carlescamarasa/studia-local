@@ -1013,6 +1013,15 @@ function AdaptarAsignacionPageContent() {
           ...baseEjercicio,
           variations: baseEjercicio.variations || dbBloque?.variations || dbBloque?.content || []
         };
+        // DEBUG LOG - can be removed after fixing
+        console.log('[adaptar-asignacion] Enriching ejercicio for ExerciseEditor:', {
+          baseCode: baseEjercicio.code,
+          baseVariations: baseEjercicio.variations,
+          dbBloqueFound: !!dbBloque,
+          dbBloqueVariations: dbBloque?.variations,
+          dbBloqueContent: dbBloque?.content,
+          finalVariations: enrichedEjercicio.variations
+        });
         return (
           <ExerciseEditor
             ejercicio={enrichedEjercicio}

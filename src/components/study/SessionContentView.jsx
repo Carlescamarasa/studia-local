@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight, Layers, Shuffle, Eye } from "lucide-react";
+import { ChevronDown, ChevronRight, Layers, Shuffle, Eye, Zap } from "lucide-react";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "./sessionSequence";
 import { componentStyles } from "@/design/componentStyles";
 
@@ -93,11 +93,16 @@ export default function SessionContentView({ sesion, compact = false, dbBloques 
                 <Badge variant="outline" className={`${tipoColors[ej.tipo]} rounded-full ${componentStyles.typography.compactText}`}>
                   {ej.tipo}
                 </Badge>
-                {ej.variations && ej.variations.length > 0 && (
-                  <div className="flex items-center justify-center w-5 h-5 bg-blue-50 dark:bg-blue-900/20 rounded-full shrink-0" title={`${ej.variations.length} variaciones`}>
-                    <Eye className="w-3 h-3 text-blue-500" />
+                {/* Mode icon: Zap for foco (amber), Eye for repaso (purple) */}
+                {ej.modo === 'repaso' ? (
+                  <div className="flex items-center justify-center w-5 h-5 bg-purple-100 dark:bg-purple-900/30 rounded-full shrink-0" title="Modo Repaso">
+                    <Eye className="w-3 h-3 text-purple-600" />
                   </div>
-                )}
+                ) : ej.modo === 'foco' ? (
+                  <div className="flex items-center justify-center w-5 h-5 bg-amber-100 dark:bg-amber-900/30 rounded-full shrink-0" title="Modo Foco">
+                    <Zap className="w-3 h-3 text-amber-600" />
+                  </div>
+                ) : null}
                 {semanaFoco && S.foco !== semanaFoco && (
                   <div className="flex items-center justify-center w-5 h-5 bg-purple-50 dark:bg-purple-900/20 rounded-full shrink-0" title="Modo Repaso">
                     <Shuffle className="w-3 h-3 text-purple-500" />
@@ -161,11 +166,16 @@ export default function SessionContentView({ sesion, compact = false, dbBloques 
                         <Badge variant="outline" className={`${componentStyles.typography.compactText} rounded-full ${tipoColors[ej.tipo]}`}>
                           {ej.tipo}
                         </Badge>
-                        {ej.variations && ej.variations.length > 0 && (
-                          <div className="flex items-center justify-center w-5 h-5 bg-blue-50 dark:bg-blue-900/20 rounded-full shrink-0" title="Ejercicio con variaciones (Modo Repaso)">
-                            <Eye className="w-3 h-3 text-blue-500" />
+                        {/* Mode icon inside ronda */}
+                        {ej.modo === 'repaso' ? (
+                          <div className="flex items-center justify-center w-5 h-5 bg-purple-100 dark:bg-purple-900/30 rounded-full shrink-0" title="Modo Repaso">
+                            <Eye className="w-3 h-3 text-purple-600" />
                           </div>
-                        )}
+                        ) : ej.modo === 'foco' ? (
+                          <div className="flex items-center justify-center w-5 h-5 bg-amber-100 dark:bg-amber-900/30 rounded-full shrink-0" title="Modo Foco">
+                            <Zap className="w-3 h-3 text-amber-600" />
+                          </div>
+                        ) : null}
                         <span className="flex-1 text-[var(--color-text-primary)] truncate">{ej.nombre}</span>
                         <span className={`text-[var(--color-text-secondary)] ${componentStyles.typography.compactTextTiny} flex-shrink-0`}>{ej.code}</span>
                       </div>

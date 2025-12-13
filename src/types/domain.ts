@@ -99,6 +99,25 @@ export interface PPMObjetivoPorNivel {
 }
 
 /**
+ * Variación de un ejercicio
+ * 
+ * Representa una variante del material de un ejercicio con filtrado por nivel.
+ * Usado en modo repaso para selección aleatoria basada en nivel del alumno.
+ */
+export interface Variation {
+  /** Nombre/etiqueta de la variación (ej: "Sistema 1", "Escala mayor") */
+  nombre: string;
+  /** Nivel mínimo requerido (1-10) para que esta variación sea elegible */
+  nivelMinimo: number;
+  /** Duración estimada en segundos */
+  duracionSeg: number;
+  /** URLs de assets (PDF, audio, video, imagen) */
+  mediaLinks?: string[];
+  /** Tags opcionales para categorización */
+  tags?: string[];
+}
+
+/**
  * Bloque/Ejercicio de práctica
  * 
  * Representa un ejercicio o bloque que forma parte de una sesión de práctica.

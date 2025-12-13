@@ -69,14 +69,22 @@ export default function EjerciciosTab() {
       if (bloques) {
         const mappedBloques = bloques.map((b, idx) => {
           let vars = [];
-          // DEMO HACK with MOCKED_VARIATIONS
-          if (idx === 0) vars = MOCKED_VARIATIONS['TC-COL-0004'];
-          else if (idx === 1) vars = MOCKED_VARIATIONS['TC-CLA-0002'];
-          else vars = MOCKED_VARIATIONS[b.code] || MOCKED_VARIATIONS[b.id] || [];
 
-          // Real logic: map from DB content
-          if (b.content && Array.isArray(b.content)) {
-            if (b.content.length > 0) vars = b.content;
+          // PRIORITY 1: Use real content from Supabase if available
+          if (b.content && Array.isArray(b.content) && b.content.length > 0) {
+            vars = b.content;
+            console.log(`[EjerciciosTab] ${b.nombre || b.code}: Using ${vars.length} variations from Supabase content column`);
+          }
+          // PRIORITY 2: Fallback to MOCKED_VARIATIONS for demo purposes
+          else {
+            // Only use mocked data as fallback when no real data exists
+            if (idx === 0) vars = MOCKED_VARIATIONS['TC-COL-0004'];
+            else if (idx === 1) vars = MOCKED_VARIATIONS['TC-CLA-0002'];
+            else vars = MOCKED_VARIATIONS[b.code] || [];
+
+            if (vars.length > 0) {
+              console.log(`[EjerciciosTab] ${b.nombre || b.code}: Using MOCKED_VARIATIONS (no Supabase content)`);
+            }
           }
 
           const categoryInfo = TYPE_MAP[b.tipo] || { label: 'General', color: 'text-slate-600 bg-slate-50' };

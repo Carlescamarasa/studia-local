@@ -2,12 +2,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
+import { remoteDataAPI } from "@/api/remoteDataAPI";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Save, Plus, Trash2, PlayCircle, Edit, Copy, GripVertical, Search, RotateCcw, AlertTriangle, ChevronDown, ChevronRight, Shuffle } from "lucide-react";
+import { X, Save, Plus, Trash2, PlayCircle, Edit, Copy, GripVertical, Search, RotateCcw, AlertTriangle, ChevronDown, ChevronRight, Shuffle, Zap, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -36,6 +37,7 @@ function SortableRonda({
   setFormData,
   setEditingEjercicio,
   removeEjercicioFromRonda,
+  toggleEjercicioModo,
   piezaSnapshot,
   pieza,
   tipoColors,
@@ -184,6 +186,21 @@ function SortableRonda({
                             e.stopPropagation();
                             const idx = formData.bloques.findIndex(b => b.code === code);
                             if (idx !== -1) {
+                              toggleEjercicioModo(idx);
+                            }
+                          }}
+                          className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${(ejercicio.modo || 'foco') === 'foco' ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-50' : 'text-purple-500 hover:text-purple-600 hover:bg-purple-50'}`}
+                          title={(ejercicio.modo || 'foco') === 'foco' ? 'Modo Foco (click para cambiar a Repaso)' : 'Modo Repaso (click para cambiar a Foco)'}
+                        >
+                          {(ejercicio.modo || 'foco') === 'foco' ? <Zap className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const idx = formData.bloques.findIndex(b => b.code === code);
+                            if (idx !== -1) {
                               setEditingEjercicio({
                                 index: idx,
                                 ejercicio,
@@ -239,8 +256,17 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
   const [editingEjercicio, setEditingEjercicio] = useState(null);
 
   const { data: ejercicios = [] } = useQuery({
-    queryKey: ['bloques'],
-    queryFn: () => localDataClient.entities.Bloque.list(),
+    queryKey: ['bloques-with-variations'],
+    queryFn: async () => {
+      try {
+        // Use remoteDataAPI which maps content to variations
+        return await remoteDataAPI.bloques.list();
+      } catch (error) {
+        console.warn('[SessionEditor] Error fetching from remoteDataAPI, falling back to local:', error);
+        return await localDataClient.entities.Bloque.list();
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
   const { data: alumno } = useQuery({
@@ -371,11 +397,11 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
           materialesRequeridos: ejercicio.materialesRequeridos || [],
           media: ejercicio.media || {},
           elementosOrdenados: ejercicio.elementosOrdenados || [],
+          // Include variations in snapshot
+          variations: ejercicio.variations || ejercicio.content || [],
+          content: ejercicio.content || ejercicio.variations || [],
         };
 
-        if (!exists) {
-          newBloquesToAdd.push(nuevoEjercicio);
-        }
         if (!exists) {
           newBloquesToAdd.push(nuevoEjercicio);
         }
@@ -421,6 +447,9 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
             materialesRequeridos: ejercicio.materialesRequeridos || [],
             media: ejercicio.media || {},
             elementosOrdenados: ejercicio.elementosOrdenados || [],
+            // Include variations in snapshot
+            variations: ejercicio.variations || ejercicio.content || [],
+            content: ejercicio.content || ejercicio.variations || [],
           };
           newBloquesToAdd.push(nuevoEjercicio);
         }
@@ -464,19 +493,26 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
 
   const removeEjercicio = (index) => {
     const ejercicio = formData.bloques[index];
-    const newBloques = formData.bloques.filter((_, i) => i !== index);
-    const newRondas = formData.rondas.map(r => ({
-      ...r,
-      bloques: r.bloques.filter(code => code !== ejercicio.code)
-    })).filter(r => r.bloques.length > 0);
 
-    // Eliminar de secuencia también
-    const newSecuencia = formData.secuencia.filter(item =>
-      !(item.kind === 'BLOQUE' && item.code === ejercicio.code)
-    );
+    // Check if this exercise is used in any ronda
+    const usedInRonda = formData.rondas.some(r => r.bloques.includes(ejercicio.code));
 
-    setFormData({ ...formData, bloques: newBloques, rondas: newRondas, secuencia: newSecuencia });
-    toast.success('✅ Ejercicio eliminado y referencias actualizadas');
+    if (usedInRonda) {
+      // Only remove from secuencia, not from bloques (keep it for rondas)
+      const newSecuencia = formData.secuencia.filter(item =>
+        !(item.kind === 'BLOQUE' && item.code === ejercicio.code)
+      );
+      setFormData({ ...formData, secuencia: newSecuencia });
+      toast.success('✅ Ejercicio eliminado de la secuencia (sigue disponible en rondas)');
+    } else {
+      // Not used in any ronda, safe to remove completely
+      const newBloques = formData.bloques.filter((_, i) => i !== index);
+      const newSecuencia = formData.secuencia.filter(item =>
+        !(item.kind === 'BLOQUE' && item.code === ejercicio.code)
+      );
+      setFormData({ ...formData, bloques: newBloques, secuencia: newSecuencia });
+      toast.success('✅ Ejercicio eliminado completamente');
+    }
   };
 
   const removeEjercicioFromRonda = (rondaIndex, ejercicioCode) => {
@@ -500,6 +536,14 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
       r.id === rondaId ? { ...r, aleatoria: !!aleatoria } : r
     );
     setFormData({ ...formData, rondas: newRondas });
+  };
+
+  // Toggle between 'foco' and 'repaso' mode for an exercise
+  const toggleEjercicioModo = (index) => {
+    const newBloques = [...formData.bloques];
+    const currentModo = newBloques[index].modo || 'foco';
+    newBloques[index].modo = currentModo === 'foco' ? 'repaso' : 'foco';
+    setFormData({ ...formData, bloques: newBloques });
   };
 
   const duplicateRonda = (rondaId) => {
@@ -698,11 +742,11 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
   const modalContent = (
     <>
       <div
-        className="fixed inset-0 bg-black/40 z-[125]"
+        className="fixed inset-0 bg-black/40 z-[240]"
         onClick={onClose}
       />
 
-      <div className="fixed inset-0 z-[130] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
+      <div className="fixed inset-0 z-[245] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
         <div
           className="w-full max-w-6xl my-8 overflow-hidden flex flex-col max-h-[92vh] pointer-events-auto shadow-card rounded-[var(--radius-modal)] bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)]"
           onClick={(e) => e.stopPropagation()}
@@ -819,6 +863,15 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
                                     <Button
                                       variant="ghost"
                                       size="sm"
+                                      onClick={() => toggleEjercicioModo(formData.bloques.findIndex(b => b.code === bloque.code))}
+                                      className={`${componentStyles.buttons.iconSmall} ${(bloque.modo || 'foco') === 'foco' ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-50' : 'text-purple-500 hover:text-purple-600 hover:bg-purple-50'}`}
+                                      title={(bloque.modo || 'foco') === 'foco' ? 'Modo Foco (click para cambiar a Repaso)' : 'Modo Repaso (click para cambiar a Foco)'}
+                                    >
+                                      {(bloque.modo || 'foco') === 'foco' ? <Zap className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
                                       onClick={() => setEditingEjercicio({
                                         index: formData.bloques.findIndex(b => b.code === bloque.code),
                                         ejercicio: bloque,
@@ -863,6 +916,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
                               setFormData={setFormData}
                               setEditingEjercicio={setEditingEjercicio}
                               removeEjercicioFromRonda={removeEjercicioFromRonda}
+                              toggleEjercicioModo={toggleEjercicioModo}
                               piezaSnapshot={piezaSnapshot}
                               pieza={pieza}
                               tipoColors={tipoColors}
@@ -1022,20 +1076,37 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
         </div>
       </div>
 
-      {editingEjercicio && (
-        <ExerciseEditor
-          ejercicio={editingEjercicio.ejercicio}
-          piezaSnapshot={editingEjercicio.piezaSnapshot}
-          isInlineMode={true}
-          onClose={(updated) => {
-            if (updated) {
-              updateEjercicioInline(editingEjercicio.index, updated);
-            } else {
-              setEditingEjercicio(null);
-            }
-          }}
-        />
-      )}
+      {editingEjercicio && (() => {
+        // Enrich ejercicio with variations from ejercicios list (from remoteDataAPI)
+        const baseEjercicio = editingEjercicio.ejercicio;
+        const dbBloque = ejercicios.find(e => e.code === baseEjercicio.code || e.id === baseEjercicio.id);
+        const enrichedEjercicio = {
+          ...baseEjercicio,
+          variations: baseEjercicio.variations || dbBloque?.variations || dbBloque?.content || [],
+          content: baseEjercicio.content || dbBloque?.content || dbBloque?.variations || [],
+        };
+        console.log('[SessionEditor] Enriching ejercicio for ExerciseEditor:', {
+          baseCode: baseEjercicio.code,
+          baseVariations: baseEjercicio.variations?.length || 0,
+          dbBloqueFound: !!dbBloque,
+          dbBloqueVariations: dbBloque?.variations?.length || 0,
+          finalVariations: enrichedEjercicio.variations?.length || 0,
+        });
+        return (
+          <ExerciseEditor
+            ejercicio={enrichedEjercicio}
+            piezaSnapshot={editingEjercicio.piezaSnapshot}
+            isInlineMode={true}
+            onClose={(updated) => {
+              if (updated) {
+                updateEjercicioInline(editingEjercicio.index, updated);
+              } else {
+                setEditingEjercicio(null);
+              }
+            }}
+          />
+        );
+      })()}
     </>
   );
 

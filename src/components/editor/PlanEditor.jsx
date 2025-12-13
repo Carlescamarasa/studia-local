@@ -549,10 +549,6 @@ export default function PlanEditor({ plan, onClose }) {
       setSaveResult({ success: false, message: '❌ El nombre es obligatorio' });
       return;
     }
-    if (!formData.piezaId) {
-      setSaveResult({ success: false, message: '❌ Debes seleccionar una pieza' });
-      return;
-    }
 
     // Añadir profesorId si no existe (solo para creación, no para edición)
     const dataToSave = plan?.id
@@ -917,7 +913,7 @@ export default function PlanEditor({ plan, onClose }) {
 
                 <div className={componentStyles.form.field}>
                   <Label htmlFor="pieza" className={componentStyles.typography.cardTitle}>
-                    Pieza Asociada *
+                    Pieza Asociada (opcional)
                   </Label>
                   <Select
                     value={formData.piezaId}

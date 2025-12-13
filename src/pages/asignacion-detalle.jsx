@@ -208,38 +208,44 @@ export default function AsignacionDetallePage() {
   }, [showEditDrawer, editData]);
 
   const handleGuardarEdicion = () => {
+    console.log('[handleGuardarEdicion] Called with editData:', editData);
     if (!editData) {
       toast.error('❌ Error: No hay datos para guardar');
       return;
     }
-    if (!editData.piezaId) {
-      toast.error('❌ Debes seleccionar una pieza');
-      return;
-    }
+    console.log('[handleGuardarEdicion] piezaId:', editData.piezaId, 'fechaSeleccionada:', editData.fechaSeleccionada);
+    // piezaId can be null (optional field now)
     if (!editData.fechaSeleccionada || editData.fechaSeleccionada.trim() === '') {
       toast.error('❌ Debes seleccionar una fecha');
       return;
     }
+    console.log('[handleGuardarEdicion] Passed fecha validation');
 
-    if (editData.piezaId !== asignacion.piezaId) {
+    // Only show confirmation when changing from one pieza to another (not when removing pieza)
+    if (editData.piezaId && editData.piezaId !== asignacion.piezaId) {
       if (!window.confirm('Cambiar pieza actualizará el material de FM. ¿Continuar?')) {
         return;
       }
     }
+    console.log('[handleGuardarEdicion] Passed pieza confirm check');
 
     const semanaInicioISO = calcularLunesSemanaISO(editData.fechaSeleccionada);
+    console.log('[handleGuardarEdicion] semanaInicioISO:', semanaInicioISO);
     if (!semanaInicioISO) {
       toast.error('❌ Error al calcular la fecha de inicio');
       return;
     }
+    console.log('[handleGuardarEdicion] Passed semana validation');
 
     // Validar foco: solo valores permitidos
     const focoPermitidos = ['GEN', 'LIG', 'RIT', 'ART', 'S&A'];
     const foco = editData.foco || 'GEN';
+    console.log('[handleGuardarEdicion] foco:', foco, 'permitidos:', focoPermitidos);
     if (!focoPermitidos.includes(foco)) {
       toast.error(`❌ Valor de foco no válido. Debe ser uno de: ${focoPermitidos.join(', ')}`);
       return;
     }
+    console.log('[handleGuardarEdicion] Passed foco validation');
 
     // Validar notas: string o null (no puede ser undefined)
     const notas = editData.notas && editData.notas.trim() !== ''
@@ -252,22 +258,29 @@ export default function AsignacionDetallePage() {
       foco: foco,
       notas: notas, // null si está vacío
     };
+    console.log('[handleGuardarEdicion] dataToSave created:', dataToSave);
 
     // Incluir profesorId solo si el usuario tiene permisos para cambiarlo
+    console.log('[handleGuardarEdicion] puedeEditarProfesor:', puedeEditarProfesor, 'editData.profesorId:', editData.profesorId, 'original:', asignacion?.profesorId);
     if (puedeEditarProfesor && editData.profesorId !== undefined) {
-      // Validar que el profesorId existe en la lista de profesores
-      const profesorExiste = profesoresDisponibles.some(p => p.value === editData.profesorId);
-      if (!profesorExiste && editData.profesorId !== null) {
-        toast.error('❌ El profesor seleccionado no es válido');
-        return;
+      // Solo validar si el profesor cambió respecto al original
+      if (editData.profesorId !== asignacion?.profesorId && editData.profesorId !== null) {
+        // Validar que el nuevo profesorId existe en la lista de profesores
+        const profesorExiste = profesoresDisponibles.some(p => p.value === editData.profesorId);
+        console.log('[handleGuardarEdicion] profesorExiste:', profesorExiste, 'profesoresDisponibles:', profesoresDisponibles.length);
+        if (!profesorExiste) {
+          toast.error('❌ El profesor seleccionado no es válido');
+          return;
+        }
       }
       dataToSave.profesorId = editData.profesorId || null;
     }
+    console.log('[handleGuardarEdicion] Final dataToSave:', dataToSave);
 
     // Campos permitidos en update: notas, foco, estado, semanaInicioISO, piezaId, piezaSnapshot (solo si piezaId cambió), profesorId (solo si tiene permisos)
     // Campos PROHIBIDOS en update: plan (solo se actualiza en create completo)
 
-    console.log('Guardando asignación con datos:', dataToSave);
+    console.log('[handleGuardarEdicion] Calling editarMutation.mutate...');
     editarMutation.mutate(dataToSave);
   };
 
@@ -677,10 +690,10 @@ export default function AsignacionDetallePage() {
 
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 <div>
-                  <Label htmlFor="pieza" className="text-[var(--color-text-primary)]">Pieza *</Label>
+                  <Label htmlFor="pieza" className="text-[var(--color-text-primary)]">Pieza (opcional)</Label>
                   <Select
-                    value={editData.piezaId}
-                    onValueChange={(v) => setEditData({ ...editData, piezaId: v })}
+                    value={editData.piezaId || 'none'}
+                    onValueChange={(v) => setEditData({ ...editData, piezaId: v === 'none' ? null : v })}
                     modal={false}
                   >
                     <SelectTrigger id="pieza" className={`w-full ${componentStyles.controls.selectDefault}`}>
@@ -693,6 +706,7 @@ export default function AsignacionDetallePage() {
                       sideOffset={4}
                       className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                     >
+                      <SelectItem value="none">Sin pieza asignada</SelectItem>
                       {piezas.length === 0 ? (
                         <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay piezas</div>
                       ) : (

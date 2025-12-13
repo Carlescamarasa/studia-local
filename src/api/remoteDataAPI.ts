@@ -1203,6 +1203,8 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         const { data, error } = await query;
         if (error) throw error;
+        // Debug: Log raw data from Supabase
+        console.log('[remoteDataAPI.bloques.list] Raw Supabase data sample:', data?.[0]);
         return (data || []).map((b: any) => {
           const camel = snakeToCamel<Bloque>(b);
           // Fix targetPPMs mapping (snakeToCamel produces targetPpms)
@@ -1211,8 +1213,21 @@ export function createRemoteDataAPI(): AppDataAPI {
             delete (camel as any).targetPpms;
           }
           // Map content (JSONB) to variations - CRITICAL for exercise variations display
+          // Also check raw b.content in case snakeToCamel doesn't preserve it
+          const rawContent = b.content;
+          if (!camel.content && rawContent) {
+            camel.content = rawContent;
+          }
           if (camel.content && !camel.variations) {
             camel.variations = Array.isArray(camel.content) ? camel.content : [];
+          }
+          // Also try to use raw content as fallback
+          if ((!camel.variations || camel.variations.length === 0) && rawContent && Array.isArray(rawContent)) {
+            camel.variations = rawContent;
+          }
+          // DEBUG LOG - can be removed after fixing
+          if (camel.variations?.length > 0) {
+            console.log(`[remoteDataAPI.bloques.list] Bloque ${camel.code} has ${camel.variations.length} variations`, camel.variations);
           }
           return camel;
         });
@@ -1291,14 +1306,37 @@ export function createRemoteDataAPI(): AppDataAPI {
         return snakeToCamel<Bloque>(result);
       },
       update: async (id: string, updates: any) => {
-        const snakeUpdates = camelToSnake(updates);
+        // Only send fields that exist in the bloques table schema
+        // DB columns: id, nombre, code, tipo, duracion_seg, instrucciones, indicador_logro, 
+        // materiales_requeridos, media, target_ppms, elementos_ordenados, content, pieza_id
+        const allowedFields = new Set([
+          'nombre', 'code', 'tipo', 'duracionSeg', 'instrucciones',
+          'indicadorLogro', 'materialesRequeridos', 'media', 'targetPPMs',
+          'elementosOrdenados', 'content', 'piezaId'
+          // Note: 'variations' is mapped to 'content', 'metodo' is only for code generation
+        ]);
+
+        // Filter out fields not in DB schema
+        const filteredUpdates: any = {};
+        for (const [key, value] of Object.entries(updates)) {
+          // Map variations → content (DB uses 'content' column for variations)
+          if (key === 'variations') {
+            filteredUpdates.content = value;
+          } else if (allowedFields.has(key)) {
+            filteredUpdates[key] = value;
+          } else {
+            console.warn(`[remoteDataAPI.bloques.update] Field '${key}' not in DB schema, skipping`);
+          }
+        }
+
+        const snakeUpdates = camelToSnake(filteredUpdates);
 
         // Fix targetPPMs mapping (camelToSnake produces target_pp_ms)
         if (snakeUpdates.target_pp_ms) {
           snakeUpdates.target_ppms = snakeUpdates.target_pp_ms;
           delete snakeUpdates.target_pp_ms;
-        } else if (updates.targetPPMs) {
-          snakeUpdates.target_ppms = updates.targetPPMs;
+        } else if (filteredUpdates.targetPPMs) {
+          snakeUpdates.target_ppms = filteredUpdates.targetPPMs;
         }
 
         const { data, error } = await supabase
@@ -2671,3 +2709,5 @@ export function createRemoteDataAPI(): AppDataAPI {
   };
 }
 
+// Export a singleton instance for direct imports
+export const remoteDataAPI = createRemoteDataAPI();

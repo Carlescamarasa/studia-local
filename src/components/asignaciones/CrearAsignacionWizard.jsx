@@ -95,22 +95,29 @@ export default function CrearAsignacionWizard({ onClose }) {
       const pieza = piezas.find(p => p.id === data.piezaId);
       const plan = planes.find(p => p.id === data.planId);
 
-      if (!pieza || !plan) {
-        throw new Error('Pieza o Plan no encontrados');
+      if (!plan) {
+        throw new Error('Plan no encontrado');
       }
 
       const planCopy = JSON.parse(JSON.stringify(plan));
-      const piezaSnapshot = {
+      // Create piezaSnapshot - empty if no pieza selected
+      const piezaSnapshot = pieza ? {
         nombre: pieza.nombre,
         descripcion: pieza.descripcion || '',
         nivel: pieza.nivel,
         tiempoObjetivoSeg: pieza.tiempoObjetivoSeg || 0,
         elementos: pieza.elementos || [],
+      } : {
+        nombre: 'Sin pieza asignada',
+        descripcion: '',
+        nivel: 'N/A',
+        tiempoObjetivoSeg: 0,
+        elementos: [],
       };
 
       const asignaciones = data.estudiantesIds.map(alumnoId => ({
         alumnoId,
-        piezaId: data.piezaId,
+        piezaId: data.piezaId || null, // Allow null piezaId
         semanaInicioISO: data.semanaInicioISO,
         estado: data.publicarAlTerminar ? 'publicada' : 'borrador',
         foco: data.foco || 'GEN',
@@ -214,7 +221,7 @@ export default function CrearAsignacionWizard({ onClose }) {
   const canProceed = () => {
     switch (step) {
       case 1: return formData.estudiantesIds.length > 0;
-      case 2: return !!formData.piezaId;
+      case 2: return true; // Pieza is now optional
       case 3: return !!formData.planId;
       case 4: return !!formData.fechaSeleccionada;
       case 5: return true;
@@ -327,8 +334,8 @@ export default function CrearAsignacionWizard({ onClose }) {
                       <Card
                         key={estudiante.id}
                         className={`cursor-pointer transition-all app-panel ${formData.estudiantesIds.includes(estudiante.id)
-                            ? 'border-brand-300 bg-brand-50 shadow-sm'
-                            : 'hover:bg-muted'
+                          ? 'border-brand-300 bg-brand-50 shadow-sm'
+                          : 'hover:bg-muted'
                           }`}
                         onClick={() => toggleEstudiante(estudiante.id)}
                       >
@@ -379,8 +386,8 @@ export default function CrearAsignacionWizard({ onClose }) {
                       <Card
                         key={pieza.id}
                         className={`cursor-pointer transition-all app-panel ${formData.piezaId === pieza.id
-                            ? 'border-brand-300 bg-brand-50 shadow-sm'
-                            : 'hover:bg-muted'
+                          ? 'border-brand-300 bg-brand-50 shadow-sm'
+                          : 'hover:bg-muted'
                           }`}
                         onClick={() => setFormData({ ...formData, piezaId: pieza.id })}
                       >
@@ -446,8 +453,8 @@ export default function CrearAsignacionWizard({ onClose }) {
                       <Card
                         key={plan.id}
                         className={`cursor-pointer transition-all app-panel ${formData.planId === plan.id
-                            ? 'border-brand-300 bg-brand-50 shadow-sm'
-                            : 'hover:bg-muted'
+                          ? 'border-brand-300 bg-brand-50 shadow-sm'
+                          : 'hover:bg-muted'
                           }`}
                         onClick={() => setFormData({ ...formData, planId: plan.id })}
                       >
