@@ -40,6 +40,7 @@ const SoporteProf = lazy(() => import("@/pages/soporte-prof.jsx"));
 const Ayuda = lazy(() => import("@/pages/ayuda.jsx"));
 const AppVersion = lazy(() => import("@/pages/admin/AppVersion.jsx"));
 const Habilidades = lazy(() => import("@/pages/habilidades.jsx"));
+const StudiaConceptPage = lazy(() => import("@/pages/StudiaConceptPage.jsx"));
 
 // Componente de carga
 const PageLoader = () => (
@@ -62,7 +63,10 @@ export default function AppRouter() {
 
         {/* Ruta de debug - accesible sin autenticación para facilitar depuración */}
         {process.env.NODE_ENV === 'development' && (
-          <Route path="/debug/formulario-rapido" element={<DebugFormularioRapido />} />
+          <>
+            <Route path="/debug/formulario-rapido" element={<DebugFormularioRapido />} />
+            <Route path="/concept" element={<StudiaConceptPage />} />
+          </>
         )}
 
         {/* Rutas protegidas: todas requieren autenticación */}
