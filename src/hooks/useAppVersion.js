@@ -7,7 +7,8 @@ import { toast } from 'sonner';
  * Hook para gestionar versiones de la aplicación
  * @returns {Object} { currentVersion, history, refresh, createVersion, activateVersion }
  */
-export function useAppVersion() {
+export function useAppVersion(options = {}) {
+  const { fetchHistory = false } = options;
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
@@ -31,6 +32,7 @@ export function useAppVersion() {
     queryKey: ['appVersion', 'history'],
     queryFn: () => versionClient.listHistory(),
     staleTime: 5 * 60 * 1000, // 5 minutos
+    enabled: fetchHistory,
   });
 
   // Mutación para crear versión (y activarla automáticamente)

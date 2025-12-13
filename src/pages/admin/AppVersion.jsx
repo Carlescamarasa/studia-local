@@ -23,7 +23,7 @@ function AppVersionPageContent() {
     activateVersion,
     isCreating,
     isActivating,
-  } = useAppVersion();
+  } = useAppVersion({ fetchHistory: true });
 
   const [isNewVersionModalOpen, setIsNewVersionModalOpen] = useState(false);
   const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);

@@ -341,7 +341,7 @@ export async function rebuildAllLocalData(options = {}) {
 
     // 4. Crear bloques base si no existen
     let bloques = JSON.parse(localStorage.getItem('local_bloques') || '[]');
-    const tiposRequeridos = ['CA', 'CB', 'TC', 'FM', 'VC', 'AD'];
+    const tiposRequeridos = ['CA', 'CB', 'TC', 'TM', 'FM', 'VC', 'AD'];
     const ejerciciosBase = {};
 
     for (const tipo of tiposRequeridos) {

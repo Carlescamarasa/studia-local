@@ -19,24 +19,32 @@ export function useCurrentProfile() {
       }
 
       try {
-        // OPTIMIZACIÓN: Siempre intentar desde localDataClient primero
-        // El usuario autenticado ya debería estar en la lista gracias a la optimización en usuarios.list()
-        const users = await localDataClient.entities.User.list();
-        // 1. Intentar buscar por ID
-        let localProfile = users.find(u => u.id === effectiveUser.id);
+        // OPTIMIZACIÓN: Solo pedir el usuario actual, NO pedir la lista completa
+        // 1. Intentar buscar por ID directamente
+        let localProfile = await localDataClient.entities.User.get(effectiveUser.id);
 
         // 2. Si no se encuentra por ID y tenemos email, buscar por email
         // Esto corrige el caso donde effectiveUser tiene un ID legacy (Mongo) pero el remoto tiene UUID
         if (!localProfile && effectiveUser.email) {
           const normalizedEmail = effectiveUser.email.toLowerCase().trim();
-          localProfile = users.find(u => u.email && u.email.toLowerCase().trim() === normalizedEmail);
-          if (localProfile) {
-            // console.log('DEBUG: useCurrentProfile found profile by EMAIL (ID mismatch fixed):', localProfile);
+
+          // FALLBACK SEGURO: Si falla por ID, cargamos la lista (costoso pero necesario si hay mismatch de IDs)
+          // No podemos usar .filter({ email }) porque la columna email no existe en la tabla profiles
+          try {
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('[useCurrentProfile] Perfil no encontrado por ID, usando fallback costoso (User.list) para buscar por email:', {
+                id: effectiveUser.id,
+                email: normalizedEmail
+              });
+            }
+            const allUsers = await localDataClient.entities.User.list();
+            localProfile = allUsers.find(u => u.email && u.email.toLowerCase().trim() === normalizedEmail);
+          } catch (fallbackError) {
+            console.error('[useCurrentProfile] Error en fallback de búsqueda por email:', fallbackError);
           }
         }
 
         if (localProfile) {
-          // console.log('DEBUG: useCurrentProfile found local profile:', localProfile);
           return localProfile;
         }
 

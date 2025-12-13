@@ -13,8 +13,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/auth/AuthProvider';
-import { 
-  getPendingSupportTicketsCountsForAdmin, 
+import {
+  getPendingSupportTicketsCountsForAdmin,
   getPendingSupportTicketsCountsForProf,
   getPendingSupportTicketsCountsForEstu
 } from '@/data/supportTicketsClient';
@@ -56,6 +56,7 @@ export function usePendingSupportTicketsCount() {
     enabled: !!user?.id && !!appRole,
     // Refrescar cada 30 segundos para mantener el conteo actualizado
     refetchInterval: 30000,
+    staleTime: 60000, // 1 minuto de cache
     // No mostrar errores de red/CORS como errores críticos
     retry: false,
   });
