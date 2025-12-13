@@ -6,12 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ds";
-import { 
-  MessageSquare, 
-  Plus, 
-  Send, 
-  Upload, 
-  Loader2, 
+import {
+  MessageSquare,
+  Plus,
+  Send,
+  Upload,
+  Loader2,
   X,
   AlertCircle,
   CheckCircle,
@@ -22,10 +22,10 @@ import { componentStyles } from "@/design/componentStyles";
 import { toast } from "sonner";
 import PageHeader from "@/components/ds/PageHeader";
 import RequireRole from "@/components/auth/RequireRole";
-import { 
-  getTicketsByAlumno, 
-  getTicketById, 
-  createTicket, 
+import {
+  getTicketsByAlumno,
+  getTicketById,
+  createTicket,
   updateTicket,
   getMensajesByTicket,
   createMensaje
@@ -33,9 +33,9 @@ import {
 import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
 import MediaPreviewModal from "@/components/common/MediaPreviewModal";
-import MediaUploadSection from "@/components/common/MediaUploadSection";
+import MediaLinksInput from "@/components/common/MediaLinksInput";
 import { useAuth } from "@/auth/AuthProvider";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -45,7 +45,7 @@ import {
 
 function SoportePageContent() {
   // ===== TODOS LOS HOOKS AL PRINCIPIO - SIEMPRE EN EL MISMO ORDEN =====
-  
+
   // Hook de autenticación
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
@@ -121,7 +121,7 @@ function SoportePageContent() {
       queryClient.invalidateQueries({ queryKey: ['support-mensajes', selectedTicketId] });
       queryClient.invalidateQueries({ queryKey: ['support-ticket', selectedTicketId] });
       queryClient.invalidateQueries({ queryKey: ['support-tickets'] });
-      
+
       setMessageText("");
       setVideoFile(null);
       setUploadingVideo(false);
@@ -134,7 +134,7 @@ function SoportePageContent() {
   });
 
   // ===== RETURNS CONDICIONALES DESPUÉS DE TODOS LOS HOOKS =====
-  
+
   // Validar que user y profile estén disponibles
   if (!user || !profile) {
     return (
@@ -247,250 +247,248 @@ function SoportePageContent() {
 
   return (
     <div className="bg-background min-h-screen">
-        <PageHeader
-          title="Centro de dudas"
-          subtitle="Comunícate con tu profesor y resuelve tus dudas"
-        />
+      <PageHeader
+        title="Centro de dudas"
+        subtitle="Comunícate con tu profesor y resuelve tus dudas"
+      />
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        {/* Lista de tickets */}
-        <div className="lg:col-span-1">
-          <Card className={componentStyles.containers.cardBase}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Tus tickets</CardTitle>
-                <Button
-                  onClick={() => setShowNewTicketModal(true)}
-                  className={componentStyles.buttons.primary}
-                  size="sm"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nuevo
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {tickets && tickets.length > 0 ? (
-                <div className="space-y-2">
-                  {tickets.map((ticket) => (
-                    <div
-                      key={ticket.id}
-                      onClick={() => setSelectedTicketId(ticket.id)}
-                      className={`rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-default)] px-4 py-3 md:px-5 md:py-4 shadow-sm cursor-pointer transition-colors ${
-                        selectedTicketId === ticket.id
-                          ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]'
-                          : 'hover:bg-[var(--color-surface-muted)]'
-                      }`}
-                    >
-                      {/* Fila principal: título + estatus */}
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <h3 className="font-medium text-sm text-[var(--color-text-primary)] line-clamp-2 flex-1 min-w-0">
-                          {ticket.titulo}
-                        </h3>
-                        <div className="shrink-0">
-                        {getEstadoBadge(ticket.estado)}
-                      </div>
-                      </div>
-                      
-                      {/* Profesor asignado */}
-                      {ticket._profesorNombre ? (
-                        <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)] mb-1.5">
-                          <User className="w-3 h-3 shrink-0" />
-                          <span className="truncate">Profesor: {ticket._profesorNombre}</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]/70 mb-1.5 italic">
-                          <User className="w-3 h-3 shrink-0" />
-                          <span>Profesor: Sin asignar</span>
-                        </div>
-                      )}
-                      
-                      {/* Fecha y badge de nueva respuesta */}
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
-                          <Clock className="w-3 h-3 shrink-0" />
-                          <span>{formatDate(ticket.updated_at)}</span>
-                      </div>
-                      {ticket.ultimaRespuestaDe === 'profesor' && (
-                          <Badge variant="success" className="text-xs px-2 py-0.5 shrink-0">
-                            Nueva respuesta
-                          </Badge>
-                        )}
-                        </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-[var(--color-text-secondary)]">
-                  <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>No tienes tickets aún</p>
-                  <p className="text-xs mt-1">Crea uno nuevo para empezar</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Vista de ticket seleccionado */}
-        <div className="lg:col-span-2">
-          {selectedTicketId ? (
+          {/* Lista de tickets */}
+          <div className="lg:col-span-1">
             <Card className={componentStyles.containers.cardBase}>
               <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle>{selectedTicket?.titulo}</CardTitle>
-                    <div className="flex items-center gap-2 mt-2">
-                      {selectedTicket && getEstadoBadge(selectedTicket.estado)}
-                      {selectedTicket?.tipo && (
-                        <Badge variant="outline">{selectedTicket.tipo}</Badge>
-                      )}
-                    </div>
-                    {/* Mostrar nombre del profesor asignado en el detalle */}
-                    {selectedTicket && (
-                      <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                        {selectedTicket._profesorNombre ? (
-                          <>Profesor asignado: <span className="font-medium">{selectedTicket._profesorNombre}</span></>
-                        ) : (
-                          <span className="italic">Profesor asignado: Sin asignar</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Tus tickets</CardTitle>
+                  <Button
+                    onClick={() => setShowNewTicketModal(true)}
+                    className={componentStyles.buttons.primary}
+                    size="sm"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nuevo
+                  </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Mensajes */}
-                {loadingMensajes ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-[var(--color-primary)]" />
-                  </div>
-                ) : mensajes && mensajes.length > 0 ? (
-                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-                    {mensajes.map((mensaje) => {
-                      const isAlumno = mensaje.rolAutor === 'alumno';
-                      return (
-                        <div
-                          key={mensaje.id}
-                          className={`flex ${isAlumno ? 'justify-end' : 'justify-start'}`}
-                        >
-                          <div
-                            className={`max-w-[75%] rounded-lg p-3 shadow-sm ${
-                              isAlumno
-                                ? 'bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30'
-                                : 'bg-[var(--color-surface-muted)] border border-[var(--color-border-default)]'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 mb-1.5">
-                              <span className={`text-xs font-semibold ${
-                                isAlumno 
-                                  ? 'text-[var(--color-primary)]' 
-                                  : 'text-[var(--color-text-secondary)]'
-                              }`}>
-                                {isAlumno 
-                                  ? 'Tú' 
-                                  : mensaje._autorNombre 
-                                    ? `Profesor – ${mensaje._autorNombre}`
-                                    : 'Profesor'}
-                              </span>
-                              <span className="text-xs text-[var(--color-text-secondary)] opacity-70">
-                                {formatDate(mensaje.created_at)}
-                              </span>
-                            </div>
-                            {mensaje.texto && (
-                              <p className="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed">
-                                {mensaje.texto}
-                              </p>
-                            )}
-                            {mensaje.mediaLinks && mensaje.mediaLinks.length > 0 && (
-                              <div className={`mt-2 ${mensaje.texto ? 'pt-2 border-t border-[var(--color-border-default)]/50' : ''}`}>
-                                <MediaLinksBadges
-                                  mediaLinks={mensaje.mediaLinks}
-                                  onMediaClick={(idx) => {
-                                    setSelectedMediaLinks(mensaje.mediaLinks);
-                                    setSelectedMediaIndex(idx);
-                                    setShowMediaModal(true);
-                                  }}
-                                />
-                              </div>
-                            )}
+              <CardContent>
+                {tickets && tickets.length > 0 ? (
+                  <div className="space-y-2">
+                    {tickets.map((ticket) => (
+                      <div
+                        key={ticket.id}
+                        onClick={() => setSelectedTicketId(ticket.id)}
+                        className={`rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-default)] px-4 py-3 md:px-5 md:py-4 shadow-sm cursor-pointer transition-colors ${selectedTicketId === ticket.id
+                            ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]'
+                            : 'hover:bg-[var(--color-surface-muted)]'
+                          }`}
+                      >
+                        {/* Fila principal: título + estatus */}
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <h3 className="font-medium text-sm text-[var(--color-text-primary)] line-clamp-2 flex-1 min-w-0">
+                            {ticket.titulo}
+                          </h3>
+                          <div className="shrink-0">
+                            {getEstadoBadge(ticket.estado)}
                           </div>
                         </div>
-                      );
-                    })}
+
+                        {/* Profesor asignado */}
+                        {ticket._profesorNombre ? (
+                          <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)] mb-1.5">
+                            <User className="w-3 h-3 shrink-0" />
+                            <span className="truncate">Profesor: {ticket._profesorNombre}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]/70 mb-1.5 italic">
+                            <User className="w-3 h-3 shrink-0" />
+                            <span>Profesor: Sin asignar</span>
+                          </div>
+                        )}
+
+                        {/* Fecha y badge de nueva respuesta */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
+                            <Clock className="w-3 h-3 shrink-0" />
+                            <span>{formatDate(ticket.updated_at)}</span>
+                          </div>
+                          {ticket.ultimaRespuestaDe === 'profesor' && (
+                            <Badge variant="success" className="text-xs px-2 py-0.5 shrink-0">
+                              Nueva respuesta
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-[var(--color-text-secondary)]">
                     <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>No hay mensajes aún</p>
+                    <p>No tienes tickets aún</p>
+                    <p className="text-xs mt-1">Crea uno nuevo para empezar</p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </div>
 
-                {/* Formulario de respuesta */}
-                {selectedTicket && (
-                  <div className="border-t border-[var(--color-border-default)] pt-6 mt-6 space-y-4">
-                    {/* Banner de advertencia si el ticket está cerrado y el usuario es el propietario */}
-                    {selectedTicket.estado === 'cerrado' && selectedTicket.alumnoId === user?.id && (
-                      <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
-                        <AlertCircle className="h-4 w-4 text-[var(--color-info)]" />
-                        <AlertDescription className="text-sm text-[var(--color-text-primary)]">
-                          Este ticket está cerrado. Si envías un nuevo mensaje, se reabrirá automáticamente.
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="message-text">Tu mensaje</Label>
-                      <Textarea
-                        id="message-text"
-                        value={messageText}
-                        onChange={(e) => setMessageText(e.target.value)}
-                        placeholder="Escribe tu mensaje..."
-                        rows={4}
-                        className={componentStyles.controls.inputDefault}
-                      />
-                    </div>
-                    <MediaUploadSection
-                      videoFile={videoFile}
-                      setVideoFile={setVideoFile}
-                      mediaLinks={mediaLinks}
-                      setMediaLinks={setMediaLinks}
-                      uploadingVideo={uploadingVideo}
-                      disabled={createMensajeMutation.isPending}
-                      videoId="video-file"
-                    />
-                    <Button
-                      onClick={handleSendMessage}
-                      disabled={uploadingVideo || createMensajeMutation.isPending || (!messageText.trim() && !videoFile && mediaLinks.length === 0)}
-                      className={componentStyles.buttons.primary}
-                    >
-                      {uploadingVideo || createMensajeMutation.isPending ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          {uploadingVideo ? 'Subiendo vídeo...' : 'Enviando...'}
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-4 h-4 mr-2" />
-                          Enviar
-                        </>
+          {/* Vista de ticket seleccionado */}
+          <div className="lg:col-span-2">
+            {selectedTicketId ? (
+              <Card className={componentStyles.containers.cardBase}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle>{selectedTicket?.titulo}</CardTitle>
+                      <div className="flex items-center gap-2 mt-2">
+                        {selectedTicket && getEstadoBadge(selectedTicket.estado)}
+                        {selectedTicket?.tipo && (
+                          <Badge variant="outline">{selectedTicket.tipo}</Badge>
+                        )}
+                      </div>
+                      {/* Mostrar nombre del profesor asignado en el detalle */}
+                      {selectedTicket && (
+                        <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                          {selectedTicket._profesorNombre ? (
+                            <>Profesor asignado: <span className="font-medium">{selectedTicket._profesorNombre}</span></>
+                          ) : (
+                            <span className="italic">Profesor asignado: Sin asignar</span>
+                          )}
+                        </div>
                       )}
-                    </Button>
+                    </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className={componentStyles.containers.cardBase}>
-              <CardContent className="flex items-center justify-center py-16">
-                <div className="text-center text-[var(--color-text-secondary)]">
-                  <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p>Selecciona un ticket para ver los mensajes</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Mensajes */}
+                  {loadingMensajes ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-[var(--color-primary)]" />
+                    </div>
+                  ) : mensajes && mensajes.length > 0 ? (
+                    <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                      {mensajes.map((mensaje) => {
+                        const isAlumno = mensaje.rolAutor === 'alumno';
+                        return (
+                          <div
+                            key={mensaje.id}
+                            className={`flex ${isAlumno ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div
+                              className={`max-w-[75%] rounded-lg p-3 shadow-sm ${isAlumno
+                                  ? 'bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30'
+                                  : 'bg-[var(--color-surface-muted)] border border-[var(--color-border-default)]'
+                                }`}
+                            >
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <span className={`text-xs font-semibold ${isAlumno
+                                    ? 'text-[var(--color-primary)]'
+                                    : 'text-[var(--color-text-secondary)]'
+                                  }`}>
+                                  {isAlumno
+                                    ? 'Tú'
+                                    : mensaje._autorNombre
+                                      ? `Profesor – ${mensaje._autorNombre}`
+                                      : 'Profesor'}
+                                </span>
+                                <span className="text-xs text-[var(--color-text-secondary)] opacity-70">
+                                  {formatDate(mensaje.created_at)}
+                                </span>
+                              </div>
+                              {mensaje.texto && (
+                                <p className="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed">
+                                  {mensaje.texto}
+                                </p>
+                              )}
+                              {mensaje.mediaLinks && mensaje.mediaLinks.length > 0 && (
+                                <div className={`mt-2 ${mensaje.texto ? 'pt-2 border-t border-[var(--color-border-default)]/50' : ''}`}>
+                                  <MediaLinksBadges
+                                    mediaLinks={mensaje.mediaLinks}
+                                    onMediaClick={(idx) => {
+                                      setSelectedMediaLinks(mensaje.mediaLinks);
+                                      setSelectedMediaIndex(idx);
+                                      setShowMediaModal(true);
+                                    }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-[var(--color-text-secondary)]">
+                      <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p>No hay mensajes aún</p>
+                    </div>
+                  )}
+
+                  {/* Formulario de respuesta */}
+                  {selectedTicket && (
+                    <div className="border-t border-[var(--color-border-default)] pt-6 mt-6 space-y-4">
+                      {/* Banner de advertencia si el ticket está cerrado y el usuario es el propietario */}
+                      {selectedTicket.estado === 'cerrado' && selectedTicket.alumnoId === user?.id && (
+                        <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
+                          <AlertCircle className="h-4 w-4 text-[var(--color-info)]" />
+                          <AlertDescription className="text-sm text-[var(--color-text-primary)]">
+                            Este ticket está cerrado. Si envías un nuevo mensaje, se reabrirá automáticamente.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
+                      <div className="space-y-2">
+                        <Label htmlFor="message-text">Tu mensaje</Label>
+                        <Textarea
+                          id="message-text"
+                          value={messageText}
+                          onChange={(e) => setMessageText(e.target.value)}
+                          placeholder="Escribe tu mensaje..."
+                          rows={4}
+                          className={componentStyles.controls.inputDefault}
+                        />
+                      </div>
+                      <MediaLinksInput
+                        value={mediaLinks}
+                        onChange={setMediaLinks}
+                        showFileUpload={true}
+                        videoFile={videoFile}
+                        onVideoFileChange={setVideoFile}
+                        uploadingVideo={uploadingVideo}
+                        disabled={createMensajeMutation.isPending}
+                        videoId="video-file"
+                      />
+                      <Button
+                        onClick={handleSendMessage}
+                        disabled={uploadingVideo || createMensajeMutation.isPending || (!messageText.trim() && !videoFile && mediaLinks.length === 0)}
+                        className={componentStyles.buttons.primary}
+                      >
+                        {uploadingVideo || createMensajeMutation.isPending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            {uploadingVideo ? 'Subiendo vídeo...' : 'Enviando...'}
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4 mr-2" />
+                            Enviar
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className={componentStyles.containers.cardBase}>
+                <CardContent className="flex items-center justify-center py-16">
+                  <div className="text-center text-[var(--color-text-secondary)]">
+                    <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p>Selecciona un ticket para ver los mensajes</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
 
         {/* Modal para nuevo ticket */}

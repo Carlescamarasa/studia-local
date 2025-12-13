@@ -14,7 +14,7 @@ import { componentStyles } from '@/design/componentStyles';
 import { supabase } from '@/lib/supabaseClient';
 import { createErrorReport } from '@/api/errorReportsAPI';
 import ScreenshotEditor from './ScreenshotEditor';
-import MediaUploadSection from './MediaUploadSection';
+import MediaLinksInput from './MediaLinksInput';
 import { uploadVideoToYouTube } from '@/utils/uploadVideoToYouTube';
 
 const CATEGORIES = [
@@ -49,10 +49,10 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   // Hooks siempre en el mismo orden
   const auth = useAuth();
   const location = useLocation();
-  
+
   // Extraer user de forma segura
   const user = auth?.user || null;
-  
+
   // Estados siempre en el mismo orden
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
@@ -60,7 +60,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   const [isCapturing, setIsCapturing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const screenshotPreviewRef = useRef(null);
-  
+
   // Estados para grabación de voz
   const [audioRecording, setAudioRecording] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -68,7 +68,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const recordingTimerRef = useRef(null);
-  
+
   const [isEditing, setIsEditing] = useState(false);
 
   // Estados para video y mediaLinks
@@ -82,7 +82,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
     const originalLog = console.log;
     const originalError = console.error;
     const originalWarn = console.warn;
-    
+
     // Interceptar logs (esto es una aproximación, los logs reales se capturan del estado)
     // Por ahora, retornamos un mensaje indicando que los logs están disponibles
     return {
@@ -119,7 +119,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
     // Preservar estado actual antes de cerrar
     const preservedCategory = category;
     const preservedAudio = audioRecording;
-    
+
     try {
       // Cerrar temporalmente el modal antes de capturar
       const wasOpen = open;
@@ -132,7 +132,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
 
       // Encontrar el contenedor principal (el main o el body)
       const mainContent = document.querySelector('main') || document.body;
-      
+
       // Capturar sin el modal visible
       const canvas = await html2canvas(mainContent, {
         useCORS: true,
@@ -143,24 +143,24 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
           // Excluir cualquier overlay o modal restante
           const zIndex = parseInt(window.getComputedStyle(element).zIndex);
           const isHighZIndex = zIndex >= 50;
-          const isFixedOverlay = element.classList.contains('fixed') && 
-                                 element.classList.contains('inset-0') && 
-                                 isHighZIndex;
-          
+          const isFixedOverlay = element.classList.contains('fixed') &&
+            element.classList.contains('inset-0') &&
+            isHighZIndex;
+
           // Excluir cualquier elemento con atributos de Radix Dialog
           const hasRadixDialogAttr = element.hasAttribute('data-radix-dialog-overlay') ||
-                                     element.hasAttribute('data-radix-dialog-content') ||
-                                     element.hasAttribute('data-radix-portal');
-          
+            element.hasAttribute('data-radix-dialog-content') ||
+            element.hasAttribute('data-radix-portal');
+
           // Excluir elementos dentro de portales o modales
           const isInModal = element.closest('[data-radix-dialog-overlay]') !== null ||
-                            element.closest('[data-radix-dialog-content]') !== null ||
-                            element.closest('[data-radix-portal]') !== null;
-          
+            element.closest('[data-radix-dialog-content]') !== null ||
+            element.closest('[data-radix-portal]') !== null;
+
           return isFixedOverlay || hasRadixDialogAttr || isInModal;
         }
       });
-      
+
       // Reabrir el modal si estaba abierto
       if (wasOpen) {
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -169,7 +169,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         setCategory(preservedCategory);
         setAudioRecording(preservedAudio);
       }
-      
+
       canvas.toBlob((blob) => {
         if (blob) {
           const url = URL.createObjectURL(blob);
@@ -264,7 +264,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         const url = URL.createObjectURL(audioBlob);
         setAudioRecording({ blob: audioBlob, url });
         setRecordingTime(0);
-        
+
         // Detener el stream
         stream.getTracks().forEach(track => track.stop());
       };
@@ -290,7 +290,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-      
+
       if (recordingTimerRef.current) {
         clearInterval(recordingTimerRef.current);
         recordingTimerRef.current = null;
@@ -369,7 +369,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
 
       // Capturar contexto (usar la función memoizada)
       const context = captureContext();
-      
+
       // Agregar mediaLinks al contexto (video + enlaces multimedia manuales)
       const finalMediaLinks = [...mediaLinks];
       if (videoUrl) {
@@ -390,10 +390,10 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       });
 
       toast.success('✅ Reporte enviado correctamente. ¡Gracias por tu ayuda!');
-      
+
       // Notificar a ErrorBoundary si está esperando confirmación
       window.dispatchEvent(new CustomEvent('error-report-sent'));
-      
+
       // Limpiar formulario
       setCategory('');
       setDescription('');
@@ -425,14 +425,14 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         isTemporaryCloseRef.current = false;
         return;
       }
-      
+
       // Al abrir, establecer valores desde props o eventos
       if (initialError) {
         setCategory(initialCategory || 'algo_no_funciona');
         // Manejar tanto objetos Error como objetos serializados
-        const errorMessage = initialError?.message || 
-                            (typeof initialError?.toString === 'function' ? initialError.toString() : null) ||
-                            (typeof initialError === 'string' ? initialError : String(initialError || ''));
+        const errorMessage = initialError?.message ||
+          (typeof initialError?.toString === 'function' ? initialError.toString() : null) ||
+          (typeof initialError === 'string' ? initialError : String(initialError || ''));
         setDescription(errorMessage);
       } else if (initialCategory) {
         setCategory(initialCategory);
@@ -481,7 +481,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   useEffect(() => {
     if (!open) {
       window.dispatchEvent(new CustomEvent('report-modal-closed'));
-      
+
       const cleanup = () => {
         const body = document.body;
         if (body.style.pointerEvents === 'none') {
@@ -499,7 +499,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
           }
         }
       };
-      
+
       setTimeout(cleanup, 50);
       setTimeout(cleanup, 200);
       return cleanup;
@@ -516,7 +516,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       if (e.key === 'Escape') {
         return;
       }
-      
+
       // Permitir si está en un input, textarea, select o contenteditable
       const target = e.target;
       if (target && (
@@ -541,19 +541,19 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       ];
 
       if (estudioHotkeys.includes(e.key)) {
-      e.stopImmediatePropagation();
-      e.stopPropagation();
-      e.preventDefault();
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        e.preventDefault();
       }
     };
 
     // Usar capture: true para interceptar antes de que llegue a hoy.jsx
     // Usar capture: true para interceptar antes de que llegue a hoy.jsx
     window.addEventListener('keydown', handleKeyDown, { capture: true, passive: false });
-    
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown, { capture: true });
-      
+
       const cleanup = () => {
         const body = document.body;
         if (body.style.pointerEvents === 'none') {
@@ -571,7 +571,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
           }
         }
       };
-      
+
       setTimeout(cleanup, 50);
       setTimeout(cleanup, 200);
     };
@@ -582,213 +582,214 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       <DialogPortal>
         <DialogOverlay className="!z-[9997]" />
         <DialogPrimitive.Content className={`fixed left-[50%] top-[50%] !z-[9998] grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.16)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-[var(--radius-modal)] max-w-2xl max-h-[90vh] overflow-y-auto ${componentStyles.modal.sizeLg}`}>
-        <DialogHeader>
-          <DialogTitle>Reportar problema o sugerencia</DialogTitle>
-          <DialogDescription>
-            Ayúdanos a mejorar la aplicación. Describe el problema o tu sugerencia y, si quieres, incluye una captura de pantalla.
-          </DialogDescription>
-        </DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Reportar problema o sugerencia</DialogTitle>
+            <DialogDescription>
+              Ayúdanos a mejorar la aplicación. Describe el problema o tu sugerencia y, si quieres, incluye una captura de pantalla.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Categoría */}
-          <div className="space-y-2">
-            <Label htmlFor="category">Categoría *</Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger id="category">
-                <SelectValue placeholder="Selecciona una categoría" />
-              </SelectTrigger>
-              <SelectContent className="!z-[9999]">
-                {CATEGORIES.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>
-                    <div>
-                      <div className="font-medium">{cat.label}</div>
-                      <div className="text-xs text-muted-foreground">{cat.description}</div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Descripción */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Descripción *</Label>
-            <Textarea
-              id="description"
-              placeholder="Describe el problema o tu sugerencia..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={6}
-              className="resize-none"
-            />
-          </div>
-
-          {/* Captura de pantalla */}
-          <div className="space-y-2">
-            <Label>Captura de pantalla (opcional)</Label>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCaptureScreenshot}
-                disabled={isCapturing}
-                className={`${componentStyles.buttons.outline} gap-2`}
-              >
-                {isCapturing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Capturando...
-                  </>
-                ) : (
-                  <>
-                    <Camera className="w-4 h-4" />
-                    Capturar pantalla
-                  </>
-                )}
-              </Button>
-              {screenshot && !isEditing && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setScreenshot(null)}
-                  className="gap-2"
-                >
-                  <X className="w-4 h-4" />
-                  Eliminar
-                </Button>
-              )}
+          <div className="space-y-4">
+            {/* Categoría */}
+            <div className="space-y-2">
+              <Label htmlFor="category">Categoría *</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger id="category">
+                  <SelectValue placeholder="Selecciona una categoría" />
+                </SelectTrigger>
+                <SelectContent className="!z-[9999]">
+                  {CATEGORIES.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      <div>
+                        <div className="font-medium">{cat.label}</div>
+                        <div className="text-xs text-muted-foreground">{cat.description}</div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            
-            {screenshot && !isEditing && (
-              <div className="mt-2 border rounded-lg p-2 bg-[var(--color-surface-muted)]">
-                <img
-                  ref={screenshotPreviewRef}
-                  src={screenshot.url}
-                  alt="Vista previa de captura"
-                  className="max-w-full h-auto rounded"
-                />
-                <div className="mt-2 flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsEditing(true)}
-                    className={`${componentStyles.buttons.outline} gap-2`}
-                  >
-                    <Pencil className="w-4 h-4" />
-                    Editar captura
-                  </Button>
-                </div>
-              </div>
-            )}
-            
-            {isEditing && screenshot && (
-              <div className="mt-2">
-                <ScreenshotEditor
-                  imageUrl={screenshot.url}
-                  onSave={(edited) => {
-                    if (screenshot.blob) {
-                      URL.revokeObjectURL(screenshot.url);
-                    }
-                    setScreenshot(edited);
-                    setIsEditing(false);
-                  }}
-                  onCancel={() => setIsEditing(false)}
-                />
-              </div>
-            )}
-          </div>
 
-          {/* Nota de voz */}
-          <div className="space-y-2">
-            <Label>Nota de voz (opcional)</Label>
-            <div className="flex gap-2">
-              {!isRecording && !audioRecording ? (
+            {/* Descripción */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Descripción *</Label>
+              <Textarea
+                id="description"
+                placeholder="Describe el problema o tu sugerencia..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={6}
+                className="resize-none"
+              />
+            </div>
+
+            {/* Captura de pantalla */}
+            <div className="space-y-2">
+              <Label>Captura de pantalla (opcional)</Label>
+              <div className="flex gap-2">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={handleStartRecording}
-                  disabled={isSubmitting}
+                  onClick={handleCaptureScreenshot}
+                  disabled={isCapturing}
                   className={`${componentStyles.buttons.outline} gap-2`}
                 >
-                  <Mic className="w-4 h-4" />
-                  Grabar nota de voz
+                  {isCapturing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Capturando...
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-4 h-4" />
+                      Capturar pantalla
+                    </>
+                  )}
                 </Button>
-              ) : isRecording ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleStopRecording}
-                  className={`${componentStyles.buttons.outline} gap-2 ${isRecording ? 'bg-[var(--color-danger)]/10 border-[var(--color-danger)] text-[var(--color-danger)]' : ''}`}
-                >
-                  <Square className="w-4 h-4 fill-current" />
-                  Detener grabación ({formatRecordingTime(recordingTime)})
-                </Button>
-              ) : null}
-              {audioRecording && (
-                <>
+                {screenshot && !isEditing && (
                   <Button
                     type="button"
                     variant="ghost"
-                    onClick={handleRemoveAudio}
+                    onClick={() => setScreenshot(null)}
                     className="gap-2"
                   >
                     <X className="w-4 h-4" />
                     Eliminar
                   </Button>
-                </>
+                )}
+              </div>
+
+              {screenshot && !isEditing && (
+                <div className="mt-2 border rounded-lg p-2 bg-[var(--color-surface-muted)]">
+                  <img
+                    ref={screenshotPreviewRef}
+                    src={screenshot.url}
+                    alt="Vista previa de captura"
+                    className="max-w-full h-auto rounded"
+                  />
+                  <div className="mt-2 flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsEditing(true)}
+                      className={`${componentStyles.buttons.outline} gap-2`}
+                    >
+                      <Pencil className="w-4 h-4" />
+                      Editar captura
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {isEditing && screenshot && (
+                <div className="mt-2">
+                  <ScreenshotEditor
+                    imageUrl={screenshot.url}
+                    onSave={(edited) => {
+                      if (screenshot.blob) {
+                        URL.revokeObjectURL(screenshot.url);
+                      }
+                      setScreenshot(edited);
+                      setIsEditing(false);
+                    }}
+                    onCancel={() => setIsEditing(false)}
+                  />
+                </div>
               )}
             </div>
-            
-            {audioRecording && (
-              <div className="mt-2 border rounded-lg p-2 bg-[var(--color-surface-muted)]">
-                <audio controls src={audioRecording.url} className="w-full">
-                  Tu navegador no soporta el elemento audio.
-                </audio>
+
+            {/* Nota de voz */}
+            <div className="space-y-2">
+              <Label>Nota de voz (opcional)</Label>
+              <div className="flex gap-2">
+                {!isRecording && !audioRecording ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleStartRecording}
+                    disabled={isSubmitting}
+                    className={`${componentStyles.buttons.outline} gap-2`}
+                  >
+                    <Mic className="w-4 h-4" />
+                    Grabar nota de voz
+                  </Button>
+                ) : isRecording ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleStopRecording}
+                    className={`${componentStyles.buttons.outline} gap-2 ${isRecording ? 'bg-[var(--color-danger)]/10 border-[var(--color-danger)] text-[var(--color-danger)]' : ''}`}
+                  >
+                    <Square className="w-4 h-4 fill-current" />
+                    Detener grabación ({formatRecordingTime(recordingTime)})
+                  </Button>
+                ) : null}
+                {audioRecording && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={handleRemoveAudio}
+                      className="gap-2"
+                    >
+                      <X className="w-4 h-4" />
+                      Eliminar
+                    </Button>
+                  </>
+                )}
               </div>
-            )}
+
+              {audioRecording && (
+                <div className="mt-2 border rounded-lg p-2 bg-[var(--color-surface-muted)]">
+                  <audio controls src={audioRecording.url} className="w-full">
+                    Tu navegador no soporta el elemento audio.
+                  </audio>
+                </div>
+              )}
+            </div>
+
+            {/* Video y enlaces multimedia */}
+            <MediaLinksInput
+              value={mediaLinks}
+              onChange={setMediaLinks}
+              showFileUpload={true}
+              videoFile={videoFile}
+              onVideoFileChange={setVideoFile}
+              uploadingVideo={uploadingVideo}
+              disabled={isSubmitting}
+              videoId="video-error-report"
+            />
           </div>
 
-          {/* Video y enlaces multimedia */}
-          <MediaUploadSection
-            videoFile={videoFile}
-            setVideoFile={setVideoFile}
-            mediaLinks={mediaLinks}
-            setMediaLinks={setMediaLinks}
-            uploadingVideo={uploadingVideo}
-            disabled={isSubmitting}
-            videoId="video-error-report"
-          />
-        </div>
-
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
-            className={componentStyles.buttons.outline}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting || uploadingVideo || !category || !description.trim()}
-            className={`${componentStyles.buttons.primary} gap-2`}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Enviando...
-              </>
-            ) : (
-              'Enviar reporte'
-            )}
-          </Button>
-        </DialogFooter>
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-          <X className="h-5 w-5" />
-          <span className="sr-only">Close</span>
-        </DialogPrimitive.Close>
-      </DialogPrimitive.Content>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+              className={componentStyles.buttons.outline}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || uploadingVideo || !category || !description.trim()}
+              className={`${componentStyles.buttons.primary} gap-2`}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                'Enviar reporte'
+              )}
+            </Button>
+          </DialogFooter>
+          <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+            <X className="h-5 w-5" />
+            <span className="sr-only">Close</span>
+          </DialogPrimitive.Close>
+        </DialogPrimitive.Content>
       </DialogPortal>
     </Dialog>
   );

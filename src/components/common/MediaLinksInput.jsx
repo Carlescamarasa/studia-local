@@ -1,13 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { X, Eye, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { X, Eye, AlertCircle, Upload, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { MediaIcon, getMediaLabel } from "./MediaEmbed";
 import { isValidUrl, extractUrlsFromText, normalizeMediaLinks } from "../utils/media";
 import { componentStyles } from "@/design/componentStyles";
+import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const MAX_LINKS = 10;
 
@@ -22,15 +30,15 @@ function extractGoogleDriveId(url) {
   // Formato: drive.google.com/file/d/{id}
   const fileMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (fileMatch) return fileMatch[1];
-  
+
   // Formato: drive.google.com/open?id={id}
   const openMatch = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
   if (openMatch) return openMatch[1];
-  
+
   // Formato: drive.google.com/uc?id={id}
   const ucMatch = url.match(/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/);
   if (ucMatch) return ucMatch[1];
-  
+
   return null;
 }
 
@@ -40,17 +48,17 @@ function extractGoogleDriveId(url) {
 function fetchWithTimeout(url, options = {}, timeout = 6000) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
-  
+
   return fetch(url, { ...options, signal: controller.signal })
     .finally(() => clearTimeout(timeoutId))
     .catch(error => {
       // Silenciar todos los errores (timeout, CORS, QUIC, etc.)
       // No lanzar el error, simplemente retornar null
-      if (error.name === 'AbortError' || 
-          error.message?.includes('timeout') ||
-          error.message?.includes('QUIC') ||
-          error.message?.includes('CORS') ||
-          error.message?.includes('Failed to fetch')) {
+      if (error.name === 'AbortError' ||
+        error.message?.includes('timeout') ||
+        error.message?.includes('QUIC') ||
+        error.message?.includes('CORS') ||
+        error.message?.includes('Failed to fetch')) {
         return null;
       }
       // Para otros errores, también silenciar
@@ -73,10 +81,10 @@ function usePageTitle(url) {
 
     // Para SoundCloud, YouTube, Vimeo: no intentar obtener título (no es necesario)
     // El embed funciona sin título y evita problemas de CORS
-    if (url.includes('soundcloud.com') || 
-        url.includes('youtube.com') || 
-        url.includes('youtu.be') || 
-        url.includes('vimeo.com')) {
+    if (url.includes('soundcloud.com') ||
+      url.includes('youtube.com') ||
+      url.includes('youtu.be') ||
+      url.includes('vimeo.com')) {
       setTitle(null);
       setIsLoading(false);
       return;
@@ -89,7 +97,7 @@ function usePageTitle(url) {
         // Usar un nombre descriptivo basado en el ID
         setTitle(`Archivo de Google Drive (${driveId.substring(0, 8)}...)`);
         setIsLoading(false);
-        
+
         // Intentar obtener el título real en segundo plano (sin bloquear)
         // pero no mostrar loading mientras tanto
         const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
@@ -105,28 +113,28 @@ function usePageTitle(url) {
             if (data.contents) {
               const parser = new DOMParser();
               const doc = parser.parseFromString(data.contents, 'text/html');
-              
+
               let pageTitle = doc.querySelector('title')?.textContent?.trim() || null;
-              
+
               if (!pageTitle) {
                 pageTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content')?.trim() || null;
               }
-              
+
               if (!pageTitle) {
                 const driveTitle = doc.querySelector('[data-title]')?.getAttribute('data-title') ||
-                                  doc.querySelector('.docs-title-input')?.value ||
-                                  doc.querySelector('title')?.textContent?.split(' - ')[0]?.trim();
+                  doc.querySelector('.docs-title-input')?.value ||
+                  doc.querySelector('title')?.textContent?.split(' - ')[0]?.trim();
                 if (driveTitle) {
                   pageTitle = driveTitle;
                 }
               }
-              
+
               if (pageTitle) {
                 pageTitle = pageTitle
                   .replace(/\s*-\s*Google\s+Docs\s*/i, '')
                   .replace(/\s*-\s*Google\s+Drive\s*/i, '')
                   .trim();
-                
+
                 if (pageTitle && pageTitle.length > 0) {
                   setTitle(pageTitle);
                 }
@@ -138,7 +146,7 @@ function usePageTitle(url) {
             // No loggear errores de timeout, CORS, QUIC, etc.
           });
       }
-      
+
       return () => {
         cancelled = true;
       };
@@ -146,12 +154,12 @@ function usePageTitle(url) {
 
     setIsLoading(true);
     setTitle(null);
-    
+
     // Intentar obtener el título usando un proxy CORS (solo para URLs que no son de servicios conocidos)
     // Usamos allorigins.win como proxy público (gratuito, sin API key)
     // Si falla, simplemente no mostramos título (no es crítico)
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    
+
     fetchWithTimeout(proxyUrl, {}, 6000)
       .then(res => {
         if (cancelled) return null;
@@ -164,22 +172,22 @@ function usePageTitle(url) {
           // Parsear el HTML para obtener el título
           const parser = new DOMParser();
           const doc = parser.parseFromString(data.contents, 'text/html');
-          
+
           // Intentar múltiples formas de obtener el título
           let pageTitle = doc.querySelector('title')?.textContent?.trim() || null;
-          
+
           // Si no hay título en <title>, buscar en meta tags
           if (!pageTitle) {
             pageTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content')?.trim() || null;
           }
-          
+
           // Limpiar el título (eliminar " - Google Docs" u otros sufijos comunes)
           if (pageTitle) {
             pageTitle = pageTitle
               .replace(/\s*-\s*Google\s+Docs\s*/i, '')
               .replace(/\s*-\s*Google\s+Drive\s*/i, '')
               .trim();
-            
+
             // Solo establecer si tiene contenido real (no solo espacios)
             if (pageTitle && pageTitle.length > 0) {
               setTitle(pageTitle);
@@ -214,17 +222,16 @@ function usePageTitle(url) {
  */
 function MediaLinkItem({ url, index, isValid, label, onPreview, onRemove }) {
   const { title, isLoading } = usePageTitle(url);
-  
+
   return (
-    <div 
-      className={`flex items-start gap-2 p-2 rounded-lg border transition-colors w-full ${
-        isValid 
-          ? 'bg-[var(--color-surface-elevated)] border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]' 
-          : 'bg-[var(--color-danger)]/10 border-[var(--color-danger)]/20'
-      }`}
+    <div
+      className={`flex items-start gap-2 p-2 rounded-lg border transition-colors w-full ${isValid
+        ? 'bg-[var(--color-surface-elevated)] border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]'
+        : 'bg-[var(--color-danger)]/10 border-[var(--color-danger)]/20'
+        }`}
     >
       <MediaIcon url={url} className="w-4 h-4 shrink-0 text-[var(--color-text-secondary)] mt-0.5" />
-      
+
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 min-w-0 mb-1 flex-wrap">
           <Badge variant="outline" className="text-xs shrink-0">
@@ -249,7 +256,7 @@ function MediaLinkItem({ url, index, isValid, label, onPreview, onRemove }) {
           </p>
         )}
       </div>
-      
+
       <div className="flex gap-1 shrink-0 mt-0.5">
         {isValid && onPreview && (
           <Button
@@ -281,10 +288,45 @@ function MediaLinkItem({ url, index, isValid, label, onPreview, onRemove }) {
 /**
  * Componente para entrada y gestión de enlaces multimedia
  * Valida, normaliza y muestra preview de enlaces
+ * Opcionalmente incluye funcionalidad de subida de video
  */
-export default function MediaLinksInput({ value = [], onChange, onPreview }) {
+export default function MediaLinksInput({
+  value = [],
+  onChange,
+  onPreview,
+  // File upload props (optional)
+  showFileUpload = false,
+  videoFile = null,
+  onVideoFileChange = null,
+  uploadingVideo = false,
+  disabled = false,
+  videoId = "video-upload"
+}) {
+  const videoFileInputRef = useRef(null);
+  const dropzoneRef = useRef(null);
   const [inputText, setInputText] = useState('');
   const [errors, setErrors] = useState([]);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (disabled || uploadingVideo || !onVideoFileChange) return;
+
+    const files = Array.from(e.dataTransfer.files);
+    const droppedVideoFile = files.find(file => file.type.startsWith('video/'));
+
+    if (droppedVideoFile) {
+      onVideoFileChange(droppedVideoFile);
+    }
+  };
+
+  const isDisabled = disabled || uploadingVideo;
 
   const handleParse = () => {
     const urls = extractUrlsFromText(inputText);
@@ -321,7 +363,115 @@ export default function MediaLinksInput({ value = [], onChange, onPreview }) {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* File Upload Section (optional) */}
+      {showFileUpload && onVideoFileChange && (
+        <section className="space-y-2">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-medium text-[var(--color-text-primary)]">
+              Subir vídeo (opcional)
+            </h3>
+            <TooltipProvider delayDuration={300} skipDelayDuration={0}>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0 shrink-0"
+                    aria-label="Información sobre privacidad del vídeo"
+                    disabled={isDisabled}
+                  >
+                    <HelpCircle className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="max-w-xs z-[130]"
+                  onPointerDownOutside={(e) => e.preventDefault()}
+                  sideOffset={8}
+                >
+                  <p className="text-xs">
+                    El vídeo se subirá a una cuenta de YouTube oculta. Solo tú y tu profesor podréis acceder mediante el enlace compartido.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <p className="text-xs text-[var(--color-text-secondary)] break-words">
+            Por ejemplo, un fragmento de la sesión, una duda o tu progreso.
+          </p>
+          <div
+            ref={dropzoneRef}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onClick={() => !isDisabled && videoFileInputRef.current?.click()}
+            className={cn(
+              "border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer",
+              videoFile
+                ? "border-[var(--color-success)] bg-[var(--color-success)]/10"
+                : "border-[var(--color-border-default)] bg-[var(--color-surface-muted)]/50 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5",
+              isDisabled && "opacity-50 pointer-events-none cursor-not-allowed"
+            )}
+          >
+            <Upload className="w-12 h-12 mx-auto mb-3 text-[var(--color-text-secondary)]" />
+            <p className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
+              {videoFile ? videoFile.name : 'Arrastra un archivo aquí o haz clic para seleccionar'}
+            </p>
+            {videoFile && (
+              <p className="text-xs text-[var(--color-text-secondary)] mb-4">
+                {(videoFile.size / 1024 / 1024).toFixed(2)} MB
+              </p>
+            )}
+            {!videoFile && (
+              <p className="text-xs text-[var(--color-text-secondary)] mb-4">
+                Formato: Video (máx. 500MB)
+              </p>
+            )}
+            <Input
+              ref={videoFileInputRef}
+              id={videoId}
+              type="file"
+              accept="video/*"
+              onChange={(e) => onVideoFileChange(e.target.files?.[0] || null)}
+              className="hidden"
+              disabled={isDisabled}
+            />
+            <div className="flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  videoFileInputRef.current?.click();
+                }}
+                disabled={isDisabled}
+                className={cn("text-xs h-9", componentStyles.buttons.outline)}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {videoFile ? 'Cambiar archivo' : 'Seleccionar archivo'}
+              </Button>
+              {videoFile && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onVideoFileChange(null);
+                    if (videoFileInputRef.current) videoFileInputRef.current.value = '';
+                  }}
+                  disabled={isDisabled}
+                  className="text-xs h-9"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Eliminar
+                </Button>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Media Links Input Section */}
       <div>
         <Label htmlFor="mediaLinks">Enlaces multimedia (opcional)</Label>
         <Textarea
@@ -338,8 +488,8 @@ https://drive.google.com/file/d/ID/view?usp=sharing&format=mp3`}
           data-form-type="other"
         />
         <p className="text-xs text-[var(--color-text-secondary)] mt-1 break-words">
-            Pega una URL por línea. Soporta imágenes, audio, vídeo, PDF, YouTube, Vimeo, SoundCloud y Google Drive.
-          </p>
+          Pega una URL por línea. Soporta imágenes, audio, vídeo, PDF, YouTube, Vimeo, SoundCloud y Google Drive.
+        </p>
         {errors.length > 0 && (
           <div className="flex items-center gap-2 mt-2 text-xs text-[var(--color-danger)]">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -370,15 +520,15 @@ https://drive.google.com/file/d/ID/view?usp=sharing&format=mp3`}
               if (!url || typeof url !== 'string') {
                 return null;
               }
-              
+
               const trimmedUrl = url.trim();
               if (!trimmedUrl) {
                 return null;
               }
-              
+
               const isValid = isValidUrl(trimmedUrl);
               const label = getMediaLabel(trimmedUrl);
-              
+
               return (
                 <MediaLinkItem
                   key={idx}

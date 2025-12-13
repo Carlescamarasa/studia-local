@@ -97,7 +97,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
     piezaRefId: null,
     targetPPMs: [],
     skillTags: [],
-    variations: [], // NEW: Array of { label, min_level, tags, asset_url }
+    variations: [], // NEW: Array of { label, min_level, tags, asset_urls[] }
   });
 
   // Debug log for props
@@ -530,7 +530,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
       ...formData,
       variations: [
         ...(formData.variations || []),
-        { label: '', min_level: 1, tags: [], asset_url: '' }
+        { label: '', min_level: 1, tags: [], asset_urls: [] }
       ]
     });
   };
@@ -1334,11 +1334,10 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                               </div>
                             </div>
                             <div>
-                              <Label className="text-xs">URL del Asset (imagen/PDF)</Label>
-                              <Input
-                                value={variation.asset_url || ''}
-                                onChange={(e) => updateVariation(idx, 'asset_url', e.target.value)}
-                                placeholder="https://..."
+                              <Label className="text-xs">URLs de Assets (PDF, MP3, imágenes...)</Label>
+                              <MediaLinksInput
+                                value={variation.asset_urls || (variation.asset_url ? [variation.asset_url] : [])}
+                                onChange={(urls) => updateVariation(idx, 'asset_urls', urls)}
                                 className="mt-1"
                               />
                             </div>

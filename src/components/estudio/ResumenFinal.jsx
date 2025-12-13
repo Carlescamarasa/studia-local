@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle, XCircle, Clock, RotateCcw, Home, Loader2 } from "lucide-react";
 import MediaPreviewModal from "../common/MediaPreviewModal";
-import MediaUploadSection from "../common/MediaUploadSection";
+import MediaLinksInput from "../common/MediaLinksInput";
 import { componentStyles } from "@/design/componentStyles";
 import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
 import { toast } from "sonner";
@@ -26,9 +26,9 @@ const EmojiCalidad = ({ nivel }) => {
     3: { emoji: "🙂", label: "Bien" },
     4: { emoji: "😄", label: "Excelente" },
   };
-  
+
   const config = emojis[nivel] || emojis[3];
-  
+
   return (
     <div className="flex flex-col items-center">
       <span className="text-xl sm:text-2xl">{config.emoji}</span>
@@ -37,14 +37,14 @@ const EmojiCalidad = ({ nivel }) => {
   );
 };
 
-export default function ResumenFinal({ 
+export default function ResumenFinal({
   sesion,
-  tiempoReal, 
+  tiempoReal,
   tiempoPrevisto,
-  completados, 
+  completados,
   omitidos,
   totalEjercicios,
-  onGuardarYSalir, 
+  onGuardarYSalir,
   onReiniciar,
   onCalidadNotas,
   open = true,
@@ -63,7 +63,7 @@ export default function ResumenFinal({
   const [guardado, setGuardado] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
-  
+
   const pendientes = totalEjercicios - completados.size - omitidos.size;
 
   // Hotkeys para ResumenFinal: 1-4 para valoración rápida, Ctrl+Enter para guardar
@@ -97,14 +97,14 @@ export default function ResumenFinal({
       window.removeEventListener('keydown', handleKeyDown, true);
     };
   }, [open, calidad, guardado, uploadingVideo]);
-  
+
   const handleGuardarFeedback = async () => {
     let finalMediaLinks = [...mediaLinks];
-    
+
     // Si hay vídeo, subirlo primero
     if (videoFile && userId && userProfile) {
       setUploadingVideo(true);
-      
+
       try {
         const uploadResult = await uploadVideoToYouTube(videoFile, {
           contexto: 'sesion_estudio',
@@ -136,9 +136,9 @@ export default function ResumenFinal({
       // Llamar a onCalidadNotas y esperar a que termine
       await onCalidadNotas(calidad, notas, finalMediaLinks);
     }
-    
+
     setGuardado(true);
-    
+
     // Esperar un poco más para asegurar que el guardado se complete
     setTimeout(() => {
       onGuardarYSalir();
@@ -149,12 +149,12 @@ export default function ResumenFinal({
     setPreviewIndex(index);
     setShowPreview(true);
   };
-  
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent 
-          size="lg" 
+        <DialogContent
+          size="lg"
           className={cn(
             // Mobile: full-screen
             "w-full h-[100dvh] max-h-none rounded-none p-4 overflow-y-auto",
@@ -174,20 +174,20 @@ export default function ResumenFinal({
             </div>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto min-h-0 space-y-3 sm:space-y-4">
-              {/* Métricas: Completados / Omitidos / Minutos */}
-              <section className="flex flex-wrap items-center gap-4 justify-center pb-2 sm:pb-3 border-b border-[var(--color-border-default)]">
+            {/* Métricas: Completados / Omitidos / Minutos */}
+            <section className="flex flex-wrap items-center gap-4 justify-center pb-2 sm:pb-3 border-b border-[var(--color-border-default)]">
               <div className="text-center">
                 <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-success)]" />
                 <p className="text-base sm:text-lg font-bold text-[var(--color-text-primary)]">{completados.size}</p>
                 <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Completados</p>
               </div>
-              
+
               <div className="text-center">
                 <XCircle className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-text-secondary)]" />
                 <p className="text-base sm:text-lg font-bold text-[var(--color-text-primary)]">{omitidos.size}</p>
                 <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Omitidos</p>
               </div>
-              
+
               <div className="text-center">
                 <Clock className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-info)]" />
                 <p className="text-base sm:text-lg font-bold text-[var(--color-text-primary)]">
@@ -195,93 +195,94 @@ export default function ResumenFinal({
                 </p>
                 <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">Minutos</p>
               </div>
-              </section>
+            </section>
 
-              {/* Bloque de feedback: caritas */}
-              <section className="space-y-2 sm:space-y-3">
+            {/* Bloque de feedback: caritas */}
+            <section className="space-y-2 sm:space-y-3">
               <h2 className={`font-semibold text-sm sm:text-base text-center ${componentStyles.typography.sectionTitle}`}>¿Cómo fue la práctica?</h2>
-              
-                <div className="grid grid-cols-2 gap-2 sm:gap-3 max-w-[300px] mx-auto">
+
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 max-w-[300px] mx-auto">
                 {[1, 2, 3, 4].map((nivel) => (
                   <button
                     key={nivel}
                     onClick={() => setCalidad(nivel)}
-                      className={cn(
-                        "flex flex-col items-center justify-center p-2 sm:p-3 app-panel border-2 transition-all w-full",
-                      calidad === nivel 
-                        ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' 
+                    className={cn(
+                      "flex flex-col items-center justify-center p-2 sm:p-3 app-panel border-2 transition-all w-full",
+                      calidad === nivel
+                        ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]'
                         : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
-                      )}
+                    )}
                     aria-label={`Calificar como ${["Muy difícil", "Difícil", "Bien", "Excelente"][nivel - 1]}`}
                   >
                     <EmojiCalidad nivel={nivel} />
                   </button>
                 ))}
               </div>
-              </section>
-              
-              {/* Notas sobre la práctica */}
-              <section className="space-y-1">
-                <label htmlFor="notas-practica" className={`block text-sm font-medium text-[var(--color-text-primary)] mb-1.5 ${componentStyles.forms.label}`}>
-                  Notas sobre la práctica (opcional)
-                </label>
-                <Textarea
-                  id="notas-practica"
-                  value={notas}
-                  onChange={(e) => setNotas(e.target.value)}
-                  placeholder="¿Qué te ha gustado? ¿Retos a futuro? ¿Cómo piensas superarlos?"
-                  rows={2}
-                  className={cn("text-xs sm:text-sm app-panel resize-none w-full", componentStyles.controls.inputDefault)}
-                  aria-label="Notas sobre la práctica"
-                />
-              </section>
+            </section>
 
-              {/* Input de subida de vídeo y enlaces multimedia */}
-              <MediaUploadSection
-                videoFile={videoFile}
-                setVideoFile={setVideoFile}
-                mediaLinks={mediaLinks}
-                setMediaLinks={setMediaLinks}
-                uploadingVideo={uploadingVideo}
-                disabled={guardado}
-                onPreview={handlePreview}
-                videoId="video-sesion"
+            {/* Notas sobre la práctica */}
+            <section className="space-y-1">
+              <label htmlFor="notas-practica" className={`block text-sm font-medium text-[var(--color-text-primary)] mb-1.5 ${componentStyles.forms.label}`}>
+                Notas sobre la práctica (opcional)
+              </label>
+              <Textarea
+                id="notas-practica"
+                value={notas}
+                onChange={(e) => setNotas(e.target.value)}
+                placeholder="¿Qué te ha gustado? ¿Retos a futuro? ¿Cómo piensas superarlos?"
+                rows={2}
+                className={cn("text-xs sm:text-sm app-panel resize-none w-full", componentStyles.controls.inputDefault)}
+                aria-label="Notas sobre la práctica"
               />
-            </div>
-            
-            {/* Footer: Botones finales */}
-            <footer className="mt-2 flex flex-col-reverse gap-3 sm:mt-4 sm:flex-row sm:justify-end shrink-0">
-              <Button
-                variant="outline"
-                onClick={onReiniciar}
-                className={cn("flex-1 min-w-[120px] text-xs sm:text-sm h-9 sm:h-10", componentStyles.buttons.outline)}
-              >
-                <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
-                Repetir
-              </Button>
-              <Button
-                onClick={handleGuardarFeedback}
-                disabled={guardado || uploadingVideo}
-                className={cn("flex-1 min-w-[120px] text-xs sm:text-sm h-9 sm:h-10", componentStyles.buttons.primary)}
-              >
-                {uploadingVideo ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 animate-spin" />
-                    Subiendo vídeo...
-                  </>
-                ) : guardado ? (
-                  <>
-                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
-                    Guardado
-                  </>
-                ) : (
-                  <>
-                    <Home className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
-                    Finalizar
-                  </>
-                )}
-              </Button>
-            </footer>
+            </section>
+
+            {/* Input de subida de vídeo y enlaces multimedia */}
+            <MediaLinksInput
+              value={mediaLinks}
+              onChange={setMediaLinks}
+              onPreview={handlePreview}
+              showFileUpload={true}
+              videoFile={videoFile}
+              onVideoFileChange={setVideoFile}
+              uploadingVideo={uploadingVideo}
+              disabled={guardado}
+              videoId="video-sesion"
+            />
+          </div>
+
+          {/* Footer: Botones finales */}
+          <footer className="mt-2 flex flex-col-reverse gap-3 sm:mt-4 sm:flex-row sm:justify-end shrink-0">
+            <Button
+              variant="outline"
+              onClick={onReiniciar}
+              className={cn("flex-1 min-w-[120px] text-xs sm:text-sm h-9 sm:h-10", componentStyles.buttons.outline)}
+            >
+              <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
+              Repetir
+            </Button>
+            <Button
+              onClick={handleGuardarFeedback}
+              disabled={guardado || uploadingVideo}
+              className={cn("flex-1 min-w-[120px] text-xs sm:text-sm h-9 sm:h-10", componentStyles.buttons.primary)}
+            >
+              {uploadingVideo ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 animate-spin" />
+                  Subiendo vídeo...
+                </>
+              ) : guardado ? (
+                <>
+                  <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
+                  Guardado
+                </>
+              ) : (
+                <>
+                  <Home className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
+                  Finalizar
+                </>
+              )}
+            </Button>
+          </footer>
         </DialogContent>
       </Dialog>
 

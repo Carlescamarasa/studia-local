@@ -29,7 +29,7 @@ import { usePeriodHeaderState, PeriodHeaderButton, PeriodHeaderPanel } from "../
 import MediaLinksBadges from "../components/common/MediaLinksBadges";
 import MediaViewer from "../components/common/MediaViewer";
 import MediaPreviewModal from "../components/common/MediaPreviewModal";
-import MediaUploadSection from "../components/common/MediaUploadSection";
+import MediaLinksInput from "../components/common/MediaLinksInput";
 import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
 import RequireRole from "@/components/auth/RequireRole";
 import SessionContentView from "../components/study/SessionContentView";
@@ -1365,14 +1365,15 @@ function AgendaPageContent() {
                   </p>
                 </div>
 
-                <MediaUploadSection
+                <MediaLinksInput
+                  value={feedbackDrawer.mediaLinks || []}
+                  onChange={(links) => setFeedbackDrawer({ ...feedbackDrawer, mediaLinks: links })}
+                  onPreview={(idx) => handlePreviewMedia(idx, feedbackDrawer.mediaLinks)}
+                  showFileUpload={true}
                   videoFile={feedbackDrawer.videoFile}
-                  setVideoFile={(file) => setFeedbackDrawer({ ...feedbackDrawer, videoFile: file })}
-                  mediaLinks={feedbackDrawer.mediaLinks || []}
-                  setMediaLinks={(links) => setFeedbackDrawer({ ...feedbackDrawer, mediaLinks: links })}
+                  onVideoFileChange={(file) => setFeedbackDrawer({ ...feedbackDrawer, videoFile: file })}
                   uploadingVideo={uploadingVideo}
                   disabled={crearFeedbackMutation.isPending || actualizarFeedbackMutation.isPending}
-                  onPreview={(idx) => handlePreviewMedia(idx, feedbackDrawer.mediaLinks)}
                   videoId="video-feedback-agenda"
                 />
               </div>
