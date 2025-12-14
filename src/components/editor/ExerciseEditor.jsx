@@ -1240,78 +1240,127 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                           </p>
                         </div>
                       ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           {(formData.variations || []).map((variation, idx) => (
-                            <div key={idx} className="p-4 border border-[var(--color-border-default)] rounded-lg bg-[var(--color-surface-muted)]">
-                              <div className="flex items-start gap-3">
-                                <div className="flex-1 space-y-3">
-                                  <div className="grid grid-cols-12 gap-3">
-                                    <div className="col-span-12 md:col-span-4">
-                                      <Label className="text-xs">Nombre/Etiqueta</Label>
-                                      <Input
-                                        value={variation.label || variation.nombre || ''}
-                                        onChange={(e) => updateVariation(idx, 'label', e.target.value)}
-                                        placeholder="Ej: Sistema 1"
-                                        className="mt-1 h-10"
-                                      />
-                                    </div>
-                                    <div className="col-span-6 md:col-span-4">
-                                      <Label className="text-xs">Nivel Mínimo</Label>
-                                      <Input
-                                        type="number"
-                                        min="1"
-                                        max="10"
-                                        value={variation.min_level || variation.nivelMinimo || 1}
-                                        onChange={(e) => updateVariation(idx, 'min_level', parseInt(e.target.value) || 1)}
-                                        className="mt-1 h-10"
-                                      />
-                                    </div>
-                                    <div className="col-span-6 md:col-span-4">
-                                      <Label className="text-xs">Duración (seg)</Label>
-                                      <Input
-                                        type="number"
-                                        min="0"
-                                        value={variation.duracionSeg || 0}
-                                        onChange={(e) => updateVariation(idx, 'duracionSeg', parseInt(e.target.value) || 0)}
-                                        placeholder="120"
-                                        className="mt-1 h-10"
-                                      />
-                                      <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-                                        {Math.floor((variation.duracionSeg || 0) / 60)}:{String((variation.duracionSeg || 0) % 60).padStart(2, '0')}
-                                      </p>
-                                    </div>
-                                    <div className="col-span-12">
-                                      <Label className="text-xs">Bloque Multimedia</Label>
-                                      <MediaLinksInput
-                                        value={variation.asset_urls || (variation.asset_url ? [variation.asset_url] : [])}
-                                        onChange={(urls) => updateVariation(idx, 'asset_urls', urls)}
-                                        showFileUpload={true}
-                                        className="mt-1"
-                                        originType="variacion"
-                                        originId={variation.id}
-                                        originLabel={`Variación: ${variation.label || 'Nueva'}`}
-                                        onAssetRegistered={handleAssetRegistered}
-                                      />
-                                    </div>
-                                    <div className="col-span-12">
-                                      <Label className="text-xs">Tags (separados por coma)</Label>
-                                      <Input
-                                        value={(variation.tags || []).join(', ')}
-                                        onChange={(e) => updateVariation(idx, 'tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
-                                        placeholder="easy, tone, range..."
-                                        className="mt-1 h-10"
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
+                            <div key={idx} className="border border-[var(--color-border-default)] rounded-lg bg-[var(--color-surface-muted)]/50 hover:bg-[var(--color-surface-muted)] transition-colors overflow-hidden">
+                              {/* Variation Header with Delete Button */}
+                              <div className="flex items-center justify-between px-4 py-2 bg-[var(--color-surface-muted)] border-b border-[var(--color-border-default)]/50">
+                                <span className="text-xs font-medium text-[var(--color-text-secondary)]">Variación {idx + 1}</span>
                                 <Button
                                   variant="ghost"
-                                  size="icon"
+                                  size="sm"
                                   onClick={() => removeVariation(idx)}
-                                  className={componentStyles.buttons.deleteIcon}
+                                  className="text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)] h-7 w-7 p-0"
+                                  title="Eliminar variación"
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
+                              </div>
+
+                              {/* Fields Grid */}
+                              <div className="p-4 grid grid-cols-12 gap-4 items-start">
+                                {/* Nombre/Etiqueta: col-span-3 */}
+                                <div className="col-span-12 md:col-span-3">
+                                  <Label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Nombre/Etiqueta</Label>
+                                  <Input
+                                    value={variation.label || variation.nombre || ''}
+                                    onChange={(e) => updateVariation(idx, 'label', e.target.value)}
+                                    placeholder="Ej: Sistema 1"
+                                    className="h-9 text-sm w-full"
+                                  />
+                                </div>
+
+                                {/* Nivel Mínimo: col-span-2 */}
+                                <div className="col-span-6 md:col-span-2">
+                                  <Label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Nivel Mín.</Label>
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    max="10"
+                                    value={variation.min_level || variation.nivelMinimo || 1}
+                                    onChange={(e) => updateVariation(idx, 'min_level', parseInt(e.target.value) || 1)}
+                                    className="h-9 text-sm text-center w-full"
+                                  />
+                                </div>
+
+                                {/* Duración: col-span-3 */}
+                                <div className="col-span-6 md:col-span-3">
+                                  <Label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Duración (seg)</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={variation.duracionSeg || 0}
+                                    onChange={(e) => updateVariation(idx, 'duracionSeg', parseInt(e.target.value) || 0)}
+                                    placeholder="120"
+                                    className="h-9 text-sm w-full"
+                                  />
+                                  <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                                    {Math.floor((variation.duracionSeg || 0) / 60)}:{String((variation.duracionSeg || 0) % 60).padStart(2, '0')}
+                                  </p>
+                                </div>
+
+                                {/* Tags: col-span-4 (Chip/Pill style) */}
+                                <div className="col-span-12 md:col-span-4">
+                                  <Label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Tags (opcional)</Label>
+                                  <div className="flex flex-wrap gap-1.5 p-2 min-h-[36px] bg-[var(--color-surface)] border border-[var(--color-border-default)] rounded-md">
+                                    {(variation.tags || []).map((tag, tagIdx) => (
+                                      <Badge
+                                        key={tagIdx}
+                                        variant="secondary"
+                                        className="flex items-center gap-1 text-xs py-0.5 px-2 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-0"
+                                      >
+                                        {tag}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const newTags = [...(variation.tags || [])];
+                                            newTags.splice(tagIdx, 1);
+                                            updateVariation(idx, 'tags', newTags);
+                                          }}
+                                          className="ml-0.5 hover:text-[var(--color-danger)] focus:outline-none"
+                                        >
+                                          <X className="w-3 h-3" />
+                                        </button>
+                                      </Badge>
+                                    ))}
+                                    <input
+                                      type="text"
+                                      placeholder={(variation.tags || []).length === 0 ? "Añadir tag..." : ""}
+                                      className="flex-1 min-w-[80px] text-xs bg-transparent border-0 outline-none focus:ring-0 p-0 placeholder:text-[var(--color-text-muted)]"
+                                      onKeyDown={(e) => {
+                                        if ((e.key === 'Enter' || e.key === ',') && e.target.value.trim()) {
+                                          e.preventDefault();
+                                          const newTag = e.target.value.trim().replace(/,/g, '');
+                                          if (newTag && !(variation.tags || []).includes(newTag)) {
+                                            updateVariation(idx, 'tags', [...(variation.tags || []), newTag]);
+                                          }
+                                          e.target.value = '';
+                                        }
+                                      }}
+                                      onBlur={(e) => {
+                                        const newTag = e.target.value.trim().replace(/,/g, '');
+                                        if (newTag && !(variation.tags || []).includes(newTag)) {
+                                          updateVariation(idx, 'tags', [...(variation.tags || []), newTag]);
+                                        }
+                                        e.target.value = '';
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Media Block (Full Width) */}
+                                <div className="col-span-12">
+                                  <Label className="text-xs font-medium text-[var(--color-text-secondary)] mb-2 block">Recursos y Multimedia</Label>
+                                  <MediaLinksInput
+                                    value={variation.asset_urls || (variation.asset_url ? [variation.asset_url] : [])}
+                                    onChange={(urls) => updateVariation(idx, 'asset_urls', urls)}
+                                    showFileUpload={true}
+                                    originType="variacion"
+                                    originId={variation.id}
+                                    originLabel={`Variación: ${variation.label || 'Nueva'}`}
+                                    onAssetRegistered={handleAssetRegistered}
+                                  />
+                                </div>
                               </div>
                             </div>
                           ))}
