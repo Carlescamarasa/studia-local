@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Eye, AlertCircle, Upload, HelpCircle, FileText, Image, Music, Loader2 } from "lucide-react";
+import { X, Eye, AlertCircle, Upload, HelpCircle, FileText, Image, Music, Loader2, Link as LinkIcon, Video } from "lucide-react";
 import { toast } from "sonner";
 import { MediaIcon, getMediaLabel } from "./MediaEmbed";
 import { isValidUrl, extractUrlsFromText, normalizeMediaLinks } from "../utils/media";
@@ -234,9 +234,11 @@ function MediaLinkItem({
   onPreview,
   onRemove,
   onMove,
-  onRename
+  onRename,
+  isVideoFile = false,
+  showMoveControls = true
 }) {
-  const { title, isLoading } = usePageTitle(url);
+  const { title, isLoading } = usePageTitle(!isVideoFile ? url : null); // Don't fetch title for video files
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(name || '');
 
@@ -262,7 +264,9 @@ function MediaLinkItem({
   }, [title, name]);
 
   const handleSaveRename = () => {
-    onRename(index, editedName.trim() || null);
+    if (onRename) {
+      onRename(index, editedName.trim() || null);
+    }
     setIsEditing(false);
   };
 
@@ -280,115 +284,138 @@ function MediaLinkItem({
 
   return (
     <div
-      className={`flex items-start gap-2 p-2 rounded-lg border transition-colors w-full group ${isValid
-        ? 'bg-[var(--color-surface-elevated)] border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]'
-        : 'bg-[var(--color-danger)]/10 border-[var(--color-danger)]/20'
+      className={`flex items-start gap-2 p-2 rounded-lg border transition-colors w-full group overflow-hidden ${isValid
+        ? 'bg-white border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]'
+        : 'bg-[var(--color-danger)]/5 border-[var(--color-danger)]/20'
         }`}
     >
       {/* Reorder Controls */}
-      <div className="flex flex-col gap-0.5 mt-0.5 opacity-50 group-hover:opacity-100 transition-opacity">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => onMove(index, -1)}
-          disabled={index === 0}
-          className="h-5 w-5 p-0 hover:bg-[var(--color-surface-hover)] disabled:opacity-30"
-          aria-label="Mover arriba"
-        >
-          <ArrowUp className="w-3 h-3" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => onMove(index, 1)}
-          disabled={index === totalItems - 1}
-          className="h-5 w-5 p-0 hover:bg-[var(--color-surface-hover)] disabled:opacity-30"
-          aria-label="Mover abajo"
-        >
-          <ArrowDown className="w-3 h-3" />
-        </Button>
-      </div>
+      {showMoveControls ? (
+        <div className="flex flex-col gap-0.5 mt-0.5 opacity-30 group-hover:opacity-100 transition-opacity shrink-0">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onMove(index, -1)}
+            disabled={index === 0}
+            className="h-4 w-4 p-0 hover:bg-[var(--color-surface-hover)] disabled:opacity-10"
+            aria-label="Mover arriba"
+          >
+            <ArrowUp className="w-2.5 h-2.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onMove(index, 1)}
+            disabled={index === totalItems - 1}
+            className="h-4 w-4 p-0 hover:bg-[var(--color-surface-hover)] disabled:opacity-10"
+            aria-label="Mover abajo"
+          >
+            <ArrowDown className="w-2.5 h-2.5" />
+          </Button>
+        </div>
+      ) : (
+        <div className="w-4 shrink-0 flex items-center justify-center mt-2 opacity-30">
+          {/* Placeholder or dedicated icon for pinned items */}
+        </div>
+      )}
 
-      <MediaIcon url={url} className="w-4 h-4 shrink-0 text-[var(--color-text-secondary)] mt-1.5" />
+      {isVideoFile ? (
+        <div className="mt-1.5 shrink-0 bg-red-100 rounded p-0.5 text-red-600">
+          <Video className="w-3.5 h-3.5" />
+        </div>
+      ) : (
+        <MediaIcon url={url} className="w-4 h-4 shrink-0 text-[var(--color-text-secondary)] mt-1.5" />
+      )}
+
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 min-w-0 mb-1 flex-wrap">
-          <Badge variant="outline" className="text-xs shrink-0">
-            {label}
-          </Badge>
+        <div className="flex items-center gap-2 min-w-0 mb-0.5 flex-wrap">
+          {isVideoFile && (
+            <Badge variant="outline" className="text-[10px] h-4 px-1 py-0 border-red-200 text-red-700 bg-red-50 shrink-0">
+              Vídeo
+            </Badge>
+          )}
+          {!isVideoFile && (
+            <Badge variant="outline" className="text-[10px] h-4 px-1 py-0 shrink-0 text-slate-500 font-normal">
+              {label}
+            </Badge>
+          )}
+
           {!isValid && (
-            <span className="text-xs text-[var(--color-danger)] font-medium shrink-0">Inválido</span>
+            <span className="text-[10px] text-[var(--color-danger)] font-medium shrink-0">Inválido</span>
           )}
         </div>
 
         {isEditing ? (
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-0.5">
             <Input
               value={editedName}
               onChange={(e) => setEditedName(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="h-7 text-xs bg-white"
+              className="h-6 text-xs bg-[var(--color-background)] px-1.5 py-0"
               placeholder={title || "Nombre del archivo"}
               autoFocus
             />
             <Button
               size="sm"
               variant="ghost"
-              className="h-7 w-7 p-0 text-[var(--color-success)]"
+              className="h-6 w-6 p-0 text-[var(--color-success)] hover:bg-green-50"
               onClick={handleSaveRename}
             >
-              <Check className="w-4 h-4" />
+              <Check className="w-3 h-3" />
             </Button>
           </div>
         ) : (
-          <div className="group/title flex items-center gap-2 mt-0.5">
+          <div className="group/title flex items-center gap-2">
             {displayName ? (
-              <p className="text-xs font-medium text-[var(--color-text-primary)] break-words" title={displayName}>
+              <p className="text-sm text-[var(--color-text-primary)] truncate font-medium" title={displayName}>
                 {displayName}
               </p>
             ) : (
-              <p className="text-xs text-[var(--color-text-primary)] break-all" title={url}>
-                {isLoading ? 'Cargando título...' : url}
+              <p className="text-sm text-[var(--color-text-primary)] truncate" title={url}>
+                {isLoading ? 'Cargando título...' : (isVideoFile ? 'Archivo de vídeo' : url)}
               </p>
             )}
 
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setEditedName(name || title || '');
-                setIsEditing(true);
-              }}
-              className="h-5 w-5 p-0 opacity-0 group-hover/title:opacity-100 transition-opacity text-[var(--color-text-secondary)]"
-              aria-label="Renombrar"
-            >
-              <Pencil className="w-3 h-3" />
-            </Button>
+            {!isVideoFile && onRename && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditedName(name || title || '');
+                  setIsEditing(true);
+                }}
+                className="h-5 w-5 p-0 opacity-0 group-hover/title:opacity-100 transition-opacity text-[var(--color-text-secondary)] hover:bg-slate-100"
+                aria-label="Renombrar"
+              >
+                <Pencil className="w-3 h-3" />
+              </Button>
+            )}
           </div>
         )}
 
-        {/* Show URL prominently if name is custom, otherwise subtler */}
-        {(name || displayName) && (
-          <p className="text-[10px] text-[var(--color-text-muted)] break-all mt-0.5 truncate" title={url}>
+        {/* Show URL/Filename subtly */}
+        {!isEditing && (
+          <p className="text-[10px] text-[var(--color-text-muted)] truncate opacity-80" title={url}>
             {url}
           </p>
         )}
       </div>
 
-      <div className="flex gap-1 shrink-0 mt-0.5">
-        {isValid && onPreview && (
+      <div className="flex gap-1 shrink-0 items-center self-center sm:self-start sm:mt-0.5">
+        {isValid && onPreview && !isVideoFile && (
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={() => onPreview(index)}
-            className="h-8 w-8 p-0 shrink-0"
+            className="h-7 w-7 p-0 shrink-0 text-slate-400 hover:text-slate-600 hover:bg-slate-100"
             aria-label="Ver preview"
           >
-            <Eye className="w-4 h-4" />
+            <Eye className="w-3.5 h-3.5" />
           </Button>
         )}
         <Button
@@ -396,10 +423,10 @@ function MediaLinkItem({
           variant="ghost"
           size="sm"
           onClick={() => onRemove(index)}
-          className="h-8 w-8 p-0 shrink-0 text-[var(--color-danger)] hover:text-[var(--color-danger)]/80 hover:bg-[var(--color-danger)]/10"
+          className="h-7 w-7 p-0 shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10"
           aria-label="Eliminar enlace"
         >
-          <X className="w-4 h-4" />
+          <X className="w-3.5 h-3.5" />
         </Button>
       </div>
     </div>
@@ -434,66 +461,65 @@ export default function MediaLinksInput({
   const fileInputRef = useRef(null);
   const dropzoneRef = useRef(null);
   const [inputText, setInputText] = useState('');
-  const [errors, setErrors] = useState([]);
+  const [isDragActive, setIsDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingFileName, setUploadingFileName] = useState('');
 
   // Normalize internal value to always be objects
-  const richItems = value.map(item => {
+  const richItems = Array.isArray(value) ? value.map(item => {
     if (typeof item === 'string') return { url: item, name: null };
     return item;
-  });
+  }) : [];
 
-  // File type icon mapping
-  const getFileTypeIcon = (type) => {
-    switch (type) {
-      case 'pdf': return FileText;
-      case 'image': return Image;
-      case 'audio': return Music;
-      default: return Upload;
-    }
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!disabled) setIsDragActive(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!disabled) setIsDragActive(true);
   };
 
-  // Handle drop for video files (legacy)
-  const handleVideoDrop = (e) => {
+  const handleUnifiedDrop = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsDragActive(false);
 
-    if (disabled || uploadingVideo || !onVideoFileChange) return;
-
-    const files = Array.from(e.dataTransfer.files);
-    const droppedVideoFile = files.find(file => file.type.startsWith('video/'));
-
-    if (droppedVideoFile) {
-      onVideoFileChange(droppedVideoFile);
-    }
-  };
-
-  // Handle drop for static files (PDF/Image/Audio)
-  const handleFileDrop = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (disabled || uploading) return;
+    if (disabled || uploading || uploadingVideo) return;
 
     const files = Array.from(e.dataTransfer.files);
-    await handleFileUpload(files);
-  };
 
-  // Handle file selection from input
-  const handleFileSelect = async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 0) {
-      await handleFileUpload(files);
+    // Check for video files if video upload is enabled
+    // Only accept ONE video file drop if onVideoFileChange is provided
+    const videoFiles = files.filter(file => file.type.startsWith('video/'));
+    const otherFiles = files.filter(file => !file.type.startsWith('video/'));
+
+    if (videoFiles.length > 0) {
+      if (!onVideoFileChange) {
+        toast.error("La subida de vídeo no está habilitada en este contexto.");
+      } else if (videoFile) {
+        toast.error("Ya existe un vídeo subido. Elimínalo para subir otro.");
+      } else {
+        // Take the first video
+        onVideoFileChange(videoFiles[0]);
+        if (videoFiles.length > 1) {
+          toast.warning("Solo se puede subir un vídeo principal. Los otros vídeos han sido ignorados.");
+        }
+      }
     }
-    // Reset input to allow re-selecting same file
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+
+    // Process other files
+    if (otherFiles.length > 0) {
+      await handleFileUpload(otherFiles);
     }
   };
 
@@ -508,13 +534,21 @@ export default function MediaLinksInput({
     });
 
     if (validFiles.length === 0) {
-      toast.error('Tipo de archivo no soportado. Usa PDF, imágenes o audio.');
+      // If we only dropped video files and they were handled, validation is implied.
+      // But if we dropped unsupported types:
+      const hasUnkown = files.some(file => detectFileType(file) === 'unknown' && !file.type.startsWith('video/'));
+      if (hasUnkown) {
+        toast.error('Tipo de archivo no soportado. Usa PDF, imágenes o audio.');
+      }
       return;
     }
 
     // Check link limit
-    if (value.length + validFiles.length > MAX_LINKS) {
-      toast.error(`Máximo ${MAX_LINKS} enlaces permitidos`);
+    // Current total = (videoFile ? 1 : 0) + richItems.length
+    // New total = Current total + validFiles.length
+    const currentTotal = (videoFile ? 1 : 0) + richItems.length;
+    if (currentTotal + validFiles.length > MAX_LINKS) {
+      toast.error(`Máximo ${MAX_LINKS} elementos permitidos en total.`);
       return;
     }
 
@@ -570,24 +604,33 @@ export default function MediaLinksInput({
       // Add new items protecting objects
       const combined = [...richItems, ...newItems];
       // Normalize but preserve objects
-      const normalized = normalizeMediaLinks(combined, true).slice(0, MAX_LINKS);
+      const normalized = normalizeMediaLinks(combined, true).slice(0, MAX_LINKS - (videoFile ? 1 : 0));
       onChange(normalized);
     }
   };
 
-  const isDisabled = disabled || uploadingVideo || uploading;
+  const handleInputKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleParseInput();
+    }
+  };
 
-  const handleParse = () => {
+  const handleParseInput = () => {
+    if (!inputText.trim()) return;
+
     const urls = extractUrlsFromText(inputText);
-    setErrors([]);
 
     if (urls.length === 0) {
-      setErrors(['No se encontraron URLs válidas']);
+      // Maybe the user typed a title or something that is not a url? 
+      // For now, strict URL requirement as per original requirement "Input de Texto: ... un campo para pegar URLs"
+      toast.error('No se detectó una URL válida');
       return;
     }
 
-    if (urls.length > MAX_LINKS) {
-      setErrors([`Máximo ${MAX_LINKS} enlaces permitidos`]);
+    const currentTotal = (videoFile ? 1 : 0) + richItems.length;
+    if (currentTotal + urls.length > MAX_LINKS) {
+      toast.error(`Límite alcanzado (${MAX_LINKS} items máximo)`);
       return;
     }
 
@@ -596,14 +639,18 @@ export default function MediaLinksInput({
 
     // Combinar con existentes y deduplicar
     const combined = [...richItems, ...newItems];
-    const normalized = normalizeMediaLinks(combined, true).slice(0, MAX_LINKS);
+    const normalized = normalizeMediaLinks(combined, true).slice(0, MAX_LINKS - (videoFile ? 1 : 0));
 
     onChange(normalized);
     setInputText('');
-    setErrors([]);
   };
 
-  const handleRemove = (index) => {
+  const handleRemoveItem = (index) => {
+    // If video is present, indices might be shifted in the UI? 
+    // No, we will manage two separate lists in the UI render but handle removal by knowing what we are removing.
+    // However, if we unify the list visually, we should probably know the source.
+    // Let's implement handles separately for clarity or check index.
+
     const updated = richItems.filter((_, i) => i !== index);
     onChange(updated);
   };
@@ -623,269 +670,182 @@ export default function MediaLinksInput({
     }
   };
 
-  const handlePreview = (index) => {
-    if (onPreview) {
-      onPreview(index);
-    }
-  };
+  const currentCount = (videoFile ? 1 : 0) + richItems.length;
+  const isLimitReached = currentCount >= MAX_LINKS;
+
+  // Unified items list for rendering
+  // We want the Video file (if exists) to appear first or appropriately.
+  // The 'value' links follow.
 
   return (
     <div className="space-y-4">
-      {/* File Upload Section (optional) */}
-      {showFileUpload && onVideoFileChange && (
-        <section className="space-y-2">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-medium text-[var(--color-text-primary)]">
-              Subir vídeo (opcional)
-            </h3>
-            <TooltipProvider delayDuration={300} skipDelayDuration={0}>
-              <Tooltip delayDuration={300}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-5 w-5 p-0 shrink-0"
-                    aria-label="Información sobre privacidad del vídeo"
-                    disabled={isDisabled}
-                  >
-                    <HelpCircle className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="right"
-                  className="max-w-xs z-[130]"
-                  onPointerDownOutside={(e) => e.preventDefault()}
-                  sideOffset={8}
-                >
-                  <p className="text-xs">
-                    El vídeo se subirá a una cuenta de YouTube oculta. Solo tú y tu profesor podréis acceder mediante el enlace compartido.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <p className="text-xs text-[var(--color-text-secondary)] break-words">
-            Por ejemplo, un fragmento de la sesión, una duda o tu progreso.
-          </p>
-          <div
-            ref={dropzoneRef}
-            onDragOver={handleDragOver}
-            onDrop={handleVideoDrop}
-            onClick={() => !isDisabled && videoFileInputRef.current?.click()}
-            className={cn(
-              "border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer",
-              videoFile
-                ? "border-[var(--color-success)] bg-[var(--color-success)]/10"
-                : "border-[var(--color-border-default)] bg-[var(--color-surface-muted)]/50 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5",
-              isDisabled && "opacity-50 pointer-events-none cursor-not-allowed"
-            )}
-          >
-            <Upload className="w-12 h-12 mx-auto mb-3 text-[var(--color-text-secondary)]" />
-            <p className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
-              {videoFile ? videoFile.name : 'Arrastra un archivo aquí o haz clic para seleccionar'}
+      {/* Unified Compact Dropzone Area */}
+      <div
+        ref={dropzoneRef}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleUnifiedDrop}
+        className={cn(
+          "relative rounded-xl border-2 border-dashed transition-all duration-200 p-6 flex flex-col items-center justify-center text-center gap-4 group",
+          isDragActive ? "border-orange-500 bg-orange-50 scale-[1.01]" : "border-slate-200 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300",
+          (uploading || uploadingVideo) && "pointer-events-none opacity-80"
+        )}
+      >
+        {/* Uploading Overlay State */}
+        {(uploading || uploadingVideo) && (
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-xl">
+            <Loader2 className="w-8 h-8 text-orange-500 animate-spin mb-2" />
+            <p className="text-sm font-medium text-slate-700">
+              {uploadingVideo ? "Subiendo vídeo..." : `Subiendo ${uploadingFileName}...`}
             </p>
-            {videoFile && (
-              <p className="text-xs text-[var(--color-text-secondary)] mb-4">
-                {(videoFile.size / 1024 / 1024).toFixed(2)} MB
-              </p>
-            )}
-            {!videoFile && (
-              <p className="text-xs text-[var(--color-text-secondary)] mb-4">
-                Formato: Video (máx. 500MB)
-              </p>
-            )}
-            <Input
-              ref={videoFileInputRef}
-              id={videoId}
-              type="file"
-              accept="video/*"
-              onChange={(e) => onVideoFileChange(e.target.files?.[0] || null)}
-              className="hidden"
-              disabled={isDisabled}
-            />
-            <div className="flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  videoFileInputRef.current?.click();
-                }}
-                disabled={isDisabled}
-                className={cn("text-xs h-9", componentStyles.buttons.outline)}
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                {videoFile ? 'Cambiar archivo' : 'Seleccionar archivo'}
-              </Button>
-              {videoFile && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onVideoFileChange(null);
-                    if (videoFileInputRef.current) videoFileInputRef.current.value = '';
-                  }}
-                  disabled={isDisabled}
-                  className="text-xs h-9"
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Eliminar
-                </Button>
-              )}
+          </div>
+        )}
+
+        {/* Iconography */}
+        <div className="flex items-center justify-center gap-3 text-slate-300 group-hover:text-slate-400 transition-colors pointer-events-none">
+          <Upload className="w-8 h-8" />
+        </div>
+
+        {/* Instruction Text */}
+        <div className="space-y-1 pointer-events-none">
+          <h3 className="font-semibold text-slate-700">Arrastra archivos aquí</h3>
+          <p className="text-xs text-slate-500">
+            Vídeo, Audio, Imágenes, PDF
+          </p>
+        </div>
+
+        {/* URL Input Area (Visual Integration) */}
+        <div className="w-full max-w-md relative z-20">
+          <div className="flex shadow-sm rounded-lg overflow-hidden border border-slate-200 bg-white focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-500 transition-all">
+            <div className="flex items-center justify-center w-10 bg-slate-50 border-r border-slate-100 text-slate-400">
+              <LinkIcon className="w-4 h-4" />
             </div>
-          </div>
-        </section>
-      )}
-
-      {/* File Upload Section for PDF/Image/Audio */}
-      {showFileUpload && (
-        <section className="space-y-2">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-medium text-[var(--color-text-primary)]">
-              Subir archivos (PDF, Imagen, Audio)
-            </h3>
-          </div>
-          <p className="text-xs text-[var(--color-text-secondary)] break-words">
-            Arrastra archivos aquí o haz clic para seleccionar. Se subirán a la nube.
-          </p>
-          <div
-            onDragOver={handleDragOver}
-            onDrop={handleFileDrop}
-            onClick={() => !isDisabled && fileInputRef.current?.click()}
-            className={cn(
-              "border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer",
-              uploading
-                ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10"
-                : "border-[var(--color-border-default)] bg-[var(--color-surface-muted)]/50 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5",
-              isDisabled && "opacity-50 pointer-events-none cursor-not-allowed"
-            )}
-          >
-            {uploading ? (
-              <>
-                <Loader2 className="w-12 h-12 mx-auto mb-3 text-[var(--color-primary)] animate-spin" />
-                <p className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
-                  Subiendo {uploadingFileName}...
-                </p>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <FileText className="w-8 h-8 text-[var(--color-text-secondary)]" />
-                  <Image className="w-8 h-8 text-[var(--color-text-secondary)]" />
-                  <Music className="w-8 h-8 text-[var(--color-text-secondary)]" />
-                </div>
-                <p className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
-                  Arrastra archivos aquí o haz clic para seleccionar
-                </p>
-                <p className="text-xs text-[var(--color-text-secondary)] mb-4">
-                  PDF, imágenes (JPG, PNG, GIF, WebP) o audio (MP3, WAV, OGG) - máx. 10MB
-                </p>
-              </>
-            )}
-            <Input
-              ref={fileInputRef}
-              type="file"
-              accept={getAcceptedMimeTypes()}
-              onChange={handleFileSelect}
-              className="hidden"
-              disabled={isDisabled}
-              multiple
+            <input
+              type="text"
+              className="flex-1 px-3 py-2.5 text-sm outline-none placeholder:text-slate-400"
+              placeholder="O pega un enlace de YouTube, Drive, SoundCloud..."
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={handleInputKeyDown}
+              disabled={isLimitReached && !inputText}
             />
-            {!uploading && (
-              <div className="flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={handleParseInput}
+              disabled={!inputText.trim() || isLimitReached}
+              className="px-4 py-1 text-xs font-bold uppercase tracking-wider text-orange-600 hover:bg-orange-50 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
+            >
+              Añadir
+            </button>
+          </div>
+
+          {/* Hidden file inputs for fallback clicking on the container background? 
+                   Actually, standard UX is clicking a button to select files, dragging is alternate.
+                   Let's add a small "or select files" button below input 
+               */}
+          <div className="mt-2 flex justify-center gap-2">
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              className="text-xs text-slate-400 hover:text-slate-600 h-auto p-0"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Seleccionar archivos
+            </Button>
+            {onVideoFileChange && (
+              <>
+                <span className="text-slate-300 text-xs">•</span>
                 <Button
-                  variant="outline"
+                  type="button"
+                  variant="link"
                   size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    fileInputRef.current?.click();
-                  }}
-                  disabled={isDisabled}
-                  className={cn("text-xs h-9", componentStyles.buttons.outline)}
+                  className="text-xs text-slate-400 hover:text-slate-600 h-auto p-0"
+                  onClick={() => videoFileInputRef.current?.click()}
                 >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Seleccionar archivos
+                  Seleccionar vídeo
                 </Button>
-              </div>
+              </>
             )}
-          </div>
-        </section>
-      )}
-
-      {/* Media Links Input Section */}
-      <div>
-        <Label htmlFor="mediaLinks">Enlaces multimedia (opcional)</Label>
-        <Textarea
-          id="mediaLinks"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder={`https://ejemplo.com/imagen.jpg
-https://youtu.be/VIDEO
-https://soundcloud.com/artist/track
-https://drive.google.com/file/d/ID/view?usp=sharing&format=mp3`}
-          rows={4}
-          className={`resize-none font-mono text-xs ${componentStyles.controls.inputDefault}`}
-          autoComplete="off"
-          data-form-type="other"
-        />
-        <p className="text-xs text-[var(--color-text-secondary)] mt-1 break-words">
-          Pega una URL por línea. Soporta imágenes, audio, vídeo, PDF, YouTube, Vimeo, SoundCloud y Google Drive.
-        </p>
-        {errors.length > 0 && (
-          <div className="flex items-center gap-2 mt-2 text-xs text-[var(--color-danger)]">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{errors.join(', ')}</span>
-          </div>
-        )}
-        {inputText.trim() && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleParse}
-            className="mt-2"
-            disabled={value.length >= MAX_LINKS}
-          >
-            Agregar enlaces ({value.length}/{MAX_LINKS})
-          </Button>
-        )}
-      </div>
-
-      {richItems.length > 0 && (
-        <div className="border rounded-lg p-3 bg-[var(--color-surface-muted)] space-y-2 w-full min-w-0 max-w-full overflow-hidden">
-          <p className="text-xs font-semibold text-[var(--color-text-primary)]">
-            Enlaces agregados ({richItems.length}/{MAX_LINKS}):
-          </p>
-          <div className="space-y-2 w-full min-w-0 max-w-full">
-            {richItems.map((item, idx) => {
-              if (!item || !item.url) return null;
-
-              const trimmedUrl = item.url.trim();
-              if (!trimmedUrl) return null;
-
-              const isValid = isValidUrl(trimmedUrl);
-              const label = getMediaLabel(trimmedUrl);
-
-              return (
-                <MediaLinkItem
-                  key={idx}
-                  url={trimmedUrl}
-                  name={item.name}
-                  index={idx}
-                  totalItems={richItems.length}
-                  isValid={isValid}
-                  label={label}
-                  onPreview={handlePreview}
-                  onRemove={handleRemove}
-                  onMove={handleMove}
-                  onRename={handleRename}
-                />
-              );
-            })}
           </div>
         </div>
-      )}
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={getAcceptedMimeTypes()}
+          onChange={(e) => {
+            if (e.target.files?.length) handleFileUpload(Array.from(e.target.files));
+            e.target.value = '';
+          }}
+          className="hidden"
+          multiple
+        />
+
+        <input
+          ref={videoFileInputRef}
+          type="file"
+          accept="video/*"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file && onVideoFileChange) onVideoFileChange(file);
+            e.target.value = '';
+          }}
+          className="hidden"
+        />
+      </div>
+
+      {/* Unified List Items */}
+      <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+        {/* Header / Counter */}
+        <div className="bg-slate-100/50 px-4 py-2 border-b border-slate-200 flex justify-between items-center text-xs">
+          <span className="font-medium text-slate-500">Recursos Adjuntos</span>
+          <span className={`${isLimitReached ? 'text-orange-600 font-bold' : 'text-slate-400'}`}>
+            {currentCount}/{MAX_LINKS} items
+          </span>
+        </div>
+
+        <div className="divide-y divide-slate-100">
+          {currentCount === 0 && (
+            <div className="p-8 text-center text-slate-400 text-sm italic">
+              No hay recursos añadidos
+            </div>
+          )}
+
+          {/* Video Item (Pinned at top) */}
+          {videoFile && (
+            <div className="px-3 py-2">
+              <MediaLinkItem
+                url={videoFile.name} // Display filename
+                name={videoFile.name}
+                isVideoFile={true}
+                isValid={true}
+                index={-1} // Special index
+                totalItems={currentCount}
+                showMoveControls={false}
+                onRemove={() => onVideoFileChange(null)}
+              />
+            </div>
+          )}
+
+          {/* Link Items */}
+          {richItems.map((item, index) => (
+            <div key={index + item.url} className="px-3 py-1 first:pt-2 last:pb-2">
+              <MediaLinkItem
+                {...item}
+                index={index}
+                totalItems={richItems.length}
+                isValid={isValidUrl(item.url)}
+                label={getMediaLabel(item.url)}
+                onRemove={handleRemoveItem}
+                onMove={handleMove}
+                onPreview={onPreview}
+                onRename={handleRename}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
