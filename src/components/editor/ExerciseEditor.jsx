@@ -817,7 +817,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                         min="0"
                         value={formData.duracionSeg}
                         onChange={(e) => setFormData({ ...formData, duracionSeg: parseInt(e.target.value || 0) })}
-                        className="w-full max-w-[80px] h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange mt-1"
+                        className="w-full max-w-[100px] ml-auto h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange mt-1"
                       />
                       <p className="text-xs text-[var(--color-text-secondary)] mt-1">
                         {Math.floor(formData.duracionSeg / 60)}:{String(formData.duracionSeg % 60).padStart(2, '0')} min
