@@ -47,7 +47,7 @@ export default function MultiSelect({ label, items, value = [], onChange, icon: 
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-0" align="start">
+      <PopoverContent className="w-64 p-0 z-[280]" align="start">
         <Command>
           <CommandInput
             placeholder={`Buscar ${label.toLowerCase()}...`}
