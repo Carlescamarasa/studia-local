@@ -4,12 +4,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Eye, AlertCircle, Upload, HelpCircle } from "lucide-react";
+import { X, Eye, AlertCircle, Upload, HelpCircle, FileText, Image, Music, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { MediaIcon, getMediaLabel } from "./MediaEmbed";
 import { isValidUrl, extractUrlsFromText, normalizeMediaLinks } from "../utils/media";
 import { componentStyles } from "@/design/componentStyles";
 import { cn } from "@/lib/utils";
+import { uploadFile, getAcceptedMimeTypes, detectFileType, ACCEPTED_FILE_TYPES } from "@/lib/storageUpload";
 import {
   Tooltip,
   TooltipContent,
@@ -303,16 +304,30 @@ export default function MediaLinksInput({
   videoId = "video-upload"
 }) {
   const videoFileInputRef = useRef(null);
+  const fileInputRef = useRef(null);
   const dropzoneRef = useRef(null);
   const [inputText, setInputText] = useState('');
   const [errors, setErrors] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadingFileName, setUploadingFileName] = useState('');
+
+  // File type icon mapping
+  const getFileTypeIcon = (type) => {
+    switch (type) {
+      case 'pdf': return FileText;
+      case 'image': return Image;
+      case 'audio': return Music;
+      default: return Upload;
+    }
+  };
 
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
   };
 
-  const handleDrop = (e) => {
+  // Handle drop for video files (legacy)
+  const handleVideoDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -326,7 +341,77 @@ export default function MediaLinksInput({
     }
   };
 
-  const isDisabled = disabled || uploadingVideo;
+  // Handle drop for static files (PDF/Image/Audio)
+  const handleFileDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (disabled || uploading) return;
+
+    const files = Array.from(e.dataTransfer.files);
+    await handleFileUpload(files);
+  };
+
+  // Handle file selection from input
+  const handleFileSelect = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      await handleFileUpload(files);
+    }
+    // Reset input to allow re-selecting same file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Upload files to Supabase Storage
+  const handleFileUpload = async (files) => {
+    if (files.length === 0) return;
+
+    // Filter to accepted types only
+    const validFiles = files.filter(file => {
+      const type = detectFileType(file);
+      return type !== 'unknown';
+    });
+
+    if (validFiles.length === 0) {
+      toast.error('Tipo de archivo no soportado. Usa PDF, imágenes o audio.');
+      return;
+    }
+
+    // Check link limit
+    if (value.length + validFiles.length > MAX_LINKS) {
+      toast.error(`Máximo ${MAX_LINKS} enlaces permitidos`);
+      return;
+    }
+
+    setUploading(true);
+    const newUrls = [];
+
+    for (const file of validFiles) {
+      setUploadingFileName(file.name);
+
+      const result = await uploadFile(file, 'ejercicios');
+
+      if (result.success && result.url) {
+        newUrls.push(result.url);
+        toast.success(`${file.name} subido correctamente`);
+      } else {
+        toast.error(result.error || `Error al subir ${file.name}`);
+      }
+    }
+
+    setUploading(false);
+    setUploadingFileName('');
+
+    if (newUrls.length > 0) {
+      const combined = [...value, ...newUrls];
+      const normalized = normalizeMediaLinks(combined).slice(0, MAX_LINKS);
+      onChange(normalized);
+    }
+  };
+
+  const isDisabled = disabled || uploadingVideo || uploading;
 
   const handleParse = () => {
     const urls = extractUrlsFromText(inputText);
@@ -403,7 +488,7 @@ export default function MediaLinksInput({
           <div
             ref={dropzoneRef}
             onDragOver={handleDragOver}
-            onDrop={handleDrop}
+            onDrop={handleVideoDrop}
             onClick={() => !isDisabled && videoFileInputRef.current?.click()}
             className={cn(
               "border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer",
@@ -467,6 +552,81 @@ export default function MediaLinksInput({
                 </Button>
               )}
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* File Upload Section for PDF/Image/Audio */}
+      {showFileUpload && (
+        <section className="space-y-2">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-medium text-[var(--color-text-primary)]">
+              Subir archivos (PDF, Imagen, Audio)
+            </h3>
+          </div>
+          <p className="text-xs text-[var(--color-text-secondary)] break-words">
+            Arrastra archivos aquí o haz clic para seleccionar. Se subirán a la nube.
+          </p>
+          <div
+            onDragOver={handleDragOver}
+            onDrop={handleFileDrop}
+            onClick={() => !isDisabled && fileInputRef.current?.click()}
+            className={cn(
+              "border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer",
+              uploading
+                ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10"
+                : "border-[var(--color-border-default)] bg-[var(--color-surface-muted)]/50 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5",
+              isDisabled && "opacity-50 pointer-events-none cursor-not-allowed"
+            )}
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="w-12 h-12 mx-auto mb-3 text-[var(--color-primary)] animate-spin" />
+                <p className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
+                  Subiendo {uploadingFileName}...
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <FileText className="w-8 h-8 text-[var(--color-text-secondary)]" />
+                  <Image className="w-8 h-8 text-[var(--color-text-secondary)]" />
+                  <Music className="w-8 h-8 text-[var(--color-text-secondary)]" />
+                </div>
+                <p className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
+                  Arrastra archivos aquí o haz clic para seleccionar
+                </p>
+                <p className="text-xs text-[var(--color-text-secondary)] mb-4">
+                  PDF, imágenes (JPG, PNG, GIF, WebP) o audio (MP3, WAV, OGG) - máx. 10MB
+                </p>
+              </>
+            )}
+            <Input
+              ref={fileInputRef}
+              type="file"
+              accept={getAcceptedMimeTypes()}
+              onChange={handleFileSelect}
+              className="hidden"
+              disabled={isDisabled}
+              multiple
+            />
+            {!uploading && (
+              <div className="flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                  disabled={isDisabled}
+                  className={cn("text-xs h-9", componentStyles.buttons.outline)}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Seleccionar archivos
+                </Button>
+              </div>
+            )}
           </div>
         </section>
       )}
