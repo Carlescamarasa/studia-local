@@ -263,10 +263,12 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     queryFn: async () => {
       try {
         // Use remoteDataAPI which maps content to variations
-        return await remoteDataAPI.bloques.list();
+        const res = await remoteDataAPI.bloques.list();
+        return res || [];
       } catch (error) {
         console.warn('[SessionEditor] Error fetching from remoteDataAPI, falling back to local:', error);
-        return await localDataClient.entities.Bloque.list();
+        const localRes = await localDataClient.entities.Bloque.list();
+        return localRes || [];
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes cache

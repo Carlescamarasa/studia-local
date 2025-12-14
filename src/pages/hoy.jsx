@@ -183,17 +183,20 @@ function HoyPageContent() {
       try {
         // Fetch from Supabase to get content/variations field
         const bloques = await remoteDataAPI.bloques.list();
-        console.log('[DEBUG] bloquesActuales sample (from Supabase):', bloques.slice(0, 3).map(b => ({
-          code: b.code,
-          nombre: b.nombre,
-          variations: b.variations,
-          hasVariations: !!(b.variations && b.variations.length > 0)
-        })));
-        return bloques;
+        if (bloques) {
+          console.log('[DEBUG] bloquesActuales sample (from Supabase):', bloques.slice(0, 3).map(b => ({
+            code: b.code,
+            nombre: b.nombre,
+            variations: b.variations,
+            hasVariations: !!(b.variations && b.variations.length > 0)
+          })));
+        }
+        return bloques || [];
       } catch (error) {
         console.error('Error fetching bloques from Supabase, falling back to localStorage:', error);
         // Fallback to localStorage if Supabase fails
-        return await localDataClient.entities.Bloque.list();
+        const localRes = await localDataClient.entities.Bloque.list();
+        return localRes || [];
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -539,22 +542,40 @@ function HoyPageContent() {
       bloques: (sesion.bloques || []).map(bloqueSnapshot => {
         // Buscar el bloque actual en la base de datos por código
         const bloqueActual = bloquesActuales.find(b => b.code === bloqueSnapshot.code);
+
+        if (!bloqueActual) {
+          console.warn(`[WARNING] Bloque ${bloqueSnapshot.code} no encontrado en la biblioteca (bloquesActuales). No se podrán cargar variaciones.`);
+        }
+
         if (bloqueActual) {
           // VARIATIONS LOGIC INJECTION
-          // Intentar resolver variación si existe contenido
+          // Intentar resolver variación si existe contenido Y si estamos en modo repaso
           let selectedVariationMedia = null;
           let variationLabel = null;
+          let selectedVariationDuration = null;
 
-          if (bloqueActual.variations && bloqueActual.variations.length > 0) {
+          // Only pick random variation if mode is 'repaso'
+          if (bloqueSnapshot.modo === 'repaso' && bloqueActual.variations && bloqueActual.variations.length > 0) {
             const userLevel = alumnoActual?.nivelTecnico || 1;
+
             const validVars = getValidVariations(bloqueActual, userLevel);
 
             if (validVars) {
               const picked = pickRandomVariation(validVars);
+
               if (picked) {
                 variationLabel = picked.label;
+
+                // 1. Media/Multimedia (User refers to this as "Materiales")
                 if (picked.asset_url) {
                   selectedVariationMedia = [picked.asset_url];
+                } else if (picked.asset_urls && Array.isArray(picked.asset_urls)) {
+                  selectedVariationMedia = picked.asset_urls;
+                }
+
+                // 2. Duration
+                if (picked.duracionSeg || picked.duracion_seg) {
+                  selectedVariationDuration = picked.duracionSeg || picked.duracion_seg;
                 }
               }
             }
@@ -570,13 +591,19 @@ function HoyPageContent() {
                 ? bloqueSnapshot.mediaLinks
                 : [];
 
+          const baseName = bloqueActual.nombre || bloqueSnapshot.nombre;
+          const finalName = variationLabel ? `${baseName} / ${variationLabel}` : baseName;
+
           return {
             ...bloqueSnapshot,
+            nombre: finalName,
             mediaLinks: mediaLinksFinal,
             // Mantener otras propiedades actualizadas si existen
+            // Instructions/Indicators always come from the Base/Snaphost
             instrucciones: bloqueActual.instrucciones || bloqueSnapshot.instrucciones,
             indicadorLogro: bloqueActual.indicadorLogro || bloqueSnapshot.indicadorLogro,
             materialesRequeridos: bloqueActual.materialesRequeridos || bloqueSnapshot.materialesRequeridos || [],
+            duracionSeg: selectedVariationDuration || bloqueActual.duracionSeg || bloqueSnapshot.duracionSeg || 0,
             targetPPMs: bloqueActual.targetPPMs || bloqueSnapshot.targetPPMs || [],
             // Inyectar info de variación para UI (opcional)
             variationName: variationLabel

@@ -385,12 +385,18 @@ function AdaptarAsignacionPageContent() {
     queryKey: ['bloques-with-variations'],
     queryFn: async () => {
       const api = createRemoteDataAPI();
-      if (api) {
-        const { data, error } = await api.bloques.list();
-        if (error) throw error;
-        return data;
+      try {
+        if (api) {
+          const { data, error } = await api.bloques.list();
+          if (error) throw error;
+          return data || [];
+        }
+        const localData = await localDataClient.entities.Bloque.list();
+        return localData || [];
+      } catch (err) {
+        console.warn('Error fetching bloques, falling back to empty array', err);
+        return [];
       }
-      return localDataClient.entities.Bloque.list();
     },
     // Stale time de 5 minutos para evitar recargas constantes
     staleTime: 1000 * 60 * 5
