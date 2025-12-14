@@ -21,7 +21,8 @@ import {
   ChevronRight, ChevronLeft, ChevronsRight, AlertTriangle, ChevronDown, ChevronUp,
   Play, Pause, X, List, HelpCircle,
   Maximize2, Minimize2, CheckCircle, XCircle,
-  SkipForward, Shuffle, Menu, User
+  SkipForward, Shuffle, Menu, User,
+  ShieldAlert, Save, MoreVertical, RotateCcw, FileText, Video, ExternalLink, ImageIcon
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -44,6 +45,20 @@ import ModalCancelar from "../components/estudio/ModalCancelar";
 import ResumenFinal from "../components/estudio/ResumenFinal";
 import Metronomo from "../components/study/Metronomo";
 import SessionContentView from "../components/study/SessionContentView";
+// Helper para detectar tipo de archivo
+const detectMediaType = (url) => {
+  if (!url) return 'unknown';
+  const extension = url.split('.').pop().toLowerCase();
+
+  if (['mp3', 'wav', 'ogg', 'm4a'].includes(extension)) return 'audio';
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) return 'image';
+  if (['pdf'].includes(extension)) return 'pdf';
+  if (['mp4', 'webm', 'mov'].includes(extension)) return 'video';
+  if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')) return 'video';
+
+  return 'unknown';
+};
+
 import ReportErrorButtonInTimer from "../components/common/ReportErrorButtonInTimer";
 import { toast } from "sonner";
 import { useSidebar } from "@/components/ui/SidebarState";
@@ -1577,186 +1592,120 @@ function HoyPageContent() {
               {!isAD && (isFM ? elementosFM.length > 0 : ((ejercicioActual.media && Object.keys(ejercicioActual.media).length > 0) || (ejercicioActual.mediaLinks && ejercicioActual.mediaLinks.length > 0))) && (
                 <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4 last:border-b-0">
                   <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] mb-2 md:mb-3`}>
-                    {isFM ? '🎼 Material de la Pieza' : '📎 Material'}
+                    {isFM ? '🎼 Material de la Pieza' : '📎 Material de Práctica'}
                   </p>
                   <div className="space-y-4">
-                    {isFM ? (
-                      elementosFM.map((elemento, idx) => (
-                        <div key={idx} className={`border rounded-lg p-3 bg-[var(--color-accent)]/10 space-y-2`}>
-                          <h3 className={`${componentStyles.typography.cardTitle} text-[var(--color-accent)]`}>{elemento.nombre}</h3>
+                    {/* Renderizado de materiales optimizado */}
+                    {(isFM ? (elementosFM[0]?.mediaLinks || []) : (ejercicioActual.mediaLinks || []))
+                      .map((url, idx) => {
+                        const type = detectMediaType(url);
+                        const fileName = url.split('/').pop().split('?')[0] || 'Archivo adjunto';
 
-                          {/* Mostrar mediaLinks como iconos (excepto audio que va embedido) */}
-                          {elemento.mediaLinks && elemento.mediaLinks.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                              {elemento.mediaLinks.map((url, urlIdx) => {
-                                const media = resolveMedia(url);
-                                // Audio y SoundCloud: embedidos directamente (solo en modo estudio)
-                                if (media.kind === MediaKind.AUDIO || media.kind === MediaKind.SOUNDCLOUD) {
-                                  return (
-                                    <div key={urlIdx} className="w-full">
-                                      <MediaEmbed url={url} className="w-full" />
-                                    </div>
-                                  );
-                                }
-                                // Resto: abrir modal pantalla completa (modo estudio)
-                                return (
-                                  <Button
-                                    key={urlIdx}
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setMediaModal(url)}
-                                    className="flex items-center justify-center p-2 h-10 w-10 border border-[var(--color-border-default)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-elevated)] transition-colors flex-shrink-0"
-                                    aria-label={`Abrir ${getMediaLabel(url)} en pantalla completa`}
-                                  >
-                                    <MediaIcon url={url} className="w-5 h-5" />
-                                    <span className="sr-only">{getMediaLabel(url)}</span>
-                                  </Button>
-                                );
-                              })}
+                        // AUDIO - Embedido
+                        if (type === 'audio') {
+                          return (
+                            <div key={idx} className="bg-[var(--color-surface-elevated)] border border-[var(--color-primary)]/20 rounded-xl p-3 shadow-sm">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="bg-[var(--color-primary)]/10 p-1.5 rounded-lg">
+                                  <Music className="w-4 h-4 text-[var(--color-primary)]" />
+                                </div>
+                                <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+                                  {fileName}
+                                </span>
+                              </div>
+                              <audio controls className="w-full h-8" src={url} preload="metadata" />
                             </div>
-                          )}
+                          );
+                        }
 
-                          {elemento.media?.pdf && (
-                            <div className="md:col-span-1">
+                        // IMAGEN - Embedida
+                        if (type === 'image') {
+                          return (
+                            <div key={idx} className="bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded-xl overflow-hidden shadow-sm">
+                              <img
+                                src={url}
+                                alt={fileName}
+                                className="w-full h-auto cursor-pointer hover:opacity-95 transition-opacity"
+                                onClick={() => setMediaFullscreen({ tipo: 'imagen', url: url })}
+                              />
+                            </div>
+                          );
+                        }
+
+                        // PDF - Card
+                        if (type === 'pdf') {
+                          return (
+                            <div key={idx} className="bg-white border border-[var(--color-border-default)] rounded-xl p-4 flex items-center gap-4 hover:border-[var(--color-primary)]/50 transition-colors shadow-sm group">
+                              <div className="bg-red-50 p-3 rounded-lg group-hover:bg-red-100 transition-colors">
+                                <FileText className="w-6 h-6 text-red-500" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-[var(--color-text-primary)] truncate">{fileName}</p>
+                                <p className="text-xs text-[var(--color-text-secondary)]">Documento PDF</p>
+                              </div>
                               <Button
                                 variant="outline"
-                                size="sm"
-                                onClick={() => setMediaModal(elemento.media.pdf)}
-                                className="w-full h-10 text-sm rounded-lg"
-                                aria-label="Ver partitura (PDF) en pantalla completa"
+                                onClick={() => setMediaModal(url)}
+                                className="shrink-0 rounded-lg hover:bg-[var(--color-surface-elevated)]"
                               >
-                                📄 Ver partitura (PDF)
+                                Abrir Partitura en Pantalla Completa
                               </Button>
                             </div>
-                          )}
+                          );
+                        }
 
-                          {elemento.media?.video && (
-                            <div>
-                              <p className="text-xs font-medium text-ui mb-1">📹 Video</p>
-                              <video
-                                controls
-                                className="w-full rounded-lg max-h-60"
-                                src={elemento.media.video}
-                              />
-                            </div>
-                          )}
-
-                          {elemento.media?.audio && (
-                            <div>
-                              <p className="text-xs font-medium text-ui mb-1">🎵 Audio</p>
-                              <audio controls className="w-full" src={elemento.media.audio} preload="metadata" />
-                            </div>
-                          )}
-
-                          {elemento.media?.imagen && (
-                            <div>
-                              <p className="text-xs font-medium text-ui mb-1">🖼️ Imagen</p>
-                              <img
-                                src={elemento.media.imagen}
-                                alt={elemento.nombre}
-                                className="w-full rounded-lg cursor-pointer"
-                                onClick={() => setMediaFullscreen({ tipo: 'imagen', url: elemento.media.imagen })}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <>
-                        {/* Audio y PDF: grid 2 columnas en desktop, stacked en mobile */}
-                        {(ejercicioActual.mediaLinks && ejercicioActual.mediaLinks.some(url => {
-                          const media = resolveMedia(url);
-                          return media.kind === MediaKind.AUDIO || media.kind === MediaKind.SOUNDCLOUD;
-                        })) || ejercicioActual.media?.pdf ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {/* Audio / SoundCloud: embedidos directamente */}
-                            {ejercicioActual.mediaLinks && ejercicioActual.mediaLinks
-                              .filter(url => {
-                                const media = resolveMedia(url);
-                                return media.kind === MediaKind.AUDIO || media.kind === MediaKind.SOUNDCLOUD;
-                              })
-                              .map((url, urlIdx) => (
-                                <div key={urlIdx} className="md:col-span-1 w-full">
-                                  <MediaEmbed url={url} className="w-full" />
-                                </div>
-                              ))}
-
-                            {/* PDF: botón grande - abre modal pantalla completa */}
-                            {ejercicioActual.media?.pdf && (
-                              <div className="md:col-span-1">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setMediaModal(ejercicioActual.media.pdf)}
-                                  className="w-full h-10 text-sm rounded-lg"
-                                  aria-label="Ver partitura (PDF) en pantalla completa"
-                                >
-                                  📄 Ver partitura (PDF)
-                                </Button>
+                        // VIDEO - Card (o modal si es link externo)
+                        if (type === 'video') {
+                          return (
+                            <div key={idx} className="bg-white border border-[var(--color-border-default)] rounded-xl p-4 flex items-center gap-4 hover:border-[var(--color-primary)]/50 transition-colors shadow-sm group">
+                              <div className="bg-blue-50 p-3 rounded-lg group-hover:bg-blue-100 transition-colors">
+                                <Video className="w-6 h-6 text-blue-500" />
                               </div>
-                            )}
-                          </div>
-                        ) : null}
-
-                        {/* Otros media links (vídeos, etc.): iconos clickeables - abren modal */}
-                        {ejercicioActual.mediaLinks && ejercicioActual.mediaLinks
-                          .filter(url => {
-                            const media = resolveMedia(url);
-                            return media.kind !== MediaKind.AUDIO && media.kind !== MediaKind.SOUNDCLOUD;
-                          })
-                          .length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                              {ejercicioActual.mediaLinks
-                                .filter(url => {
-                                  const media = resolveMedia(url);
-                                  return media.kind !== MediaKind.AUDIO && media.kind !== MediaKind.SOUNDCLOUD;
-                                })
-                                .map((url, urlIdx) => (
-                                  <Button
-                                    key={urlIdx}
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setMediaModal(url)}
-                                    className="flex items-center justify-center p-2 h-10 w-10 border border-[var(--color-border-default)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-elevated)] transition-colors flex-shrink-0"
-                                    aria-label={`Abrir ${getMediaLabel(url)} en pantalla completa`}
-                                  >
-                                    <MediaIcon url={url} className="w-5 h-5" />
-                                    <span className="sr-only">{getMediaLabel(url)}</span>
-                                  </Button>
-                                ))}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-[var(--color-text-primary)] truncate">{fileName}</p>
+                                <p className="text-xs text-[var(--color-text-secondary)]">Video</p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                onClick={() => setMediaModal(url)}
+                                className="shrink-0 rounded-lg hover:bg-[var(--color-surface-elevated)]"
+                              >
+                                Ver Video
+                              </Button>
                             </div>
-                          )}
+                          );
+                        }
 
-                        {ejercicioActual.media?.video && (
-                          <div>
-                            <p className="text-xs font-medium text-ui mb-1">📹 Video</p>
-                            <video
-                              controls
-                              className="w-full rounded-lg max-h-60"
-                              src={ejercicioActual.media.video}
-                            />
+                        // fallback - Link genérico
+                        return (
+                          <div key={idx} className="bg-white border border-[var(--color-border-default)] rounded-xl p-3 flex items-center gap-3">
+                            <ExternalLink className="w-5 h-5 text-[var(--color-text-secondary)]" />
+                            <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--color-primary)] hover:underline truncate flex-1">
+                              {fileName}
+                            </a>
                           </div>
-                        )}
+                        );
+                      })
+                    }
 
-                        {ejercicioActual.media?.audio && (
-                          <div>
-                            <p className="text-xs font-medium text-ui mb-1">🎵 Audio</p>
-                            <audio controls className="w-full" src={ejercicioActual.media.audio} preload="metadata" />
-                          </div>
-                        )}
-
-                        {ejercicioActual.media?.imagen && (
-                          <div>
-                            <p className="text-xs font-medium text-ui mb-1">🖼️ Imagen</p>
-                            <img
-                              src={ejercicioActual.media.imagen}
-                              alt="Material"
-                              className="w-full rounded-lg cursor-pointer"
-                              onClick={() => setMediaFullscreen({ tipo: 'imagen', url: ejercicioActual.media.imagen })}
-                            />
-                          </div>
-                        )}
-                      </>
+                    {/* Fallback para objetos media legacy (no mediaLinks array) */}
+                    {!isFM && ejercicioActual.media?.pdf && (
+                      <div className="bg-white border border-[var(--color-border-default)] rounded-xl p-4 flex items-center gap-4 hover:border-[var(--color-primary)]/50 transition-colors shadow-sm group">
+                        <div className="bg-red-50 p-3 rounded-lg group-hover:bg-red-100 transition-colors">
+                          <FileText className="w-6 h-6 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-[var(--color-text-primary)] truncate">Partitura</p>
+                          <p className="text-xs text-[var(--color-text-secondary)]">Documento PDF</p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          onClick={() => setMediaModal(ejercicioActual.media.pdf)}
+                          className="shrink-0 rounded-lg hover:bg-[var(--color-surface-elevated)]"
+                        >
+                          Abrir Partitura en Pantalla Completa
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
