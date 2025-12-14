@@ -18,6 +18,7 @@ import {
   Edit3,
   PanelLeft,
   FileDown,
+  FileVideo,
   Beaker,
   Layers,
   Palette,
@@ -78,6 +79,7 @@ const navigationByRole = {
     { title: "Versión y Registro", url: "/admin/version", icon: Tag, group: "Admin" },
     { title: "Tests & Seeds", url: "/testseed", icon: Settings, group: "Admin" },
     { title: "Importar y Exportar", url: "/import-export", icon: FileDown, group: "Admin" },
+    { title: "Multimedia", url: "/contenido-multimedia", icon: FileVideo, group: "Admin" },
   ],
   PROF: [
     { title: "Mis Estudiantes", url: "/estudiantes", icon: Users, group: "Planificador" },
@@ -88,6 +90,7 @@ const navigationByRole = {
     { title: "Calendario", url: "/calendario", icon: Calendar, group: "Profesor" },
     { title: "Estadísticas", url: "/estadisticas", icon: Activity, group: "Profesor" },
     { title: "Habilidades", url: "/habilidades", icon: Star, group: "Profesor" },
+    { title: "Multimedia", url: "/contenido-multimedia", icon: FileVideo, group: "Profesor" },
   ],
   ESTU: [
     { title: "Studia ahora", url: "/hoy", icon: PlayCircle, group: "Estudio" },
@@ -493,6 +496,7 @@ function LayoutContent() {
     '/import-export': ['ADMIN'],
     '/soporte': ['ESTU'],
     '/soporte-prof': ['PROF', 'ADMIN'],
+    '/contenido-multimedia': ['PROF', 'ADMIN'],
   };
 
   // Filtrar items del sidebar según los permisos reales de acceso

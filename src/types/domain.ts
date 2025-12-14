@@ -105,6 +105,8 @@ export interface PPMObjetivoPorNivel {
  * Usado en modo repaso para selección aleatoria basada en nivel del alumno.
  */
 export interface Variation {
+  /** ID único de la variación (para linking de assets) */
+  id?: string;
   /** Nombre/etiqueta de la variación (ej: "Sistema 1", "Escala mayor") */
   nombre: string;
   /** Nivel mínimo requerido (1-10) para que esta variación sea elegible */
@@ -563,3 +565,32 @@ export interface StudentXPTotal {
 
 export type CreateStudentXPTotalInput = Omit<StudentXPTotal, 'id'>;
 export type UpdateStudentXPTotalInput = Partial<Omit<StudentXPTotal, 'id' | 'studentId' | 'skill'>>;
+
+// ============================================================================
+// Media Assets - Centralized file management
+// ============================================================================
+
+export interface MediaAsset {
+  id: string;
+  url: string;
+  name?: string;
+  fileType: 'pdf' | 'audio' | 'video' | 'image' | 'youtube' | 'drive' | 'soundcloud' | 'other';
+  state: 'uploaded' | 'external';
+  storagePath?: string;
+
+  // Polymorphic origin
+  originType: 'ejercicio' | 'variacion' | 'feedback_profesor' | 'feedback_sesion' | 'centro_dudas' | 'otro';
+  originId: string;
+  originLabel?: string;
+  originContext?: Record<string, any>;
+
+  created_at: string;
+  createdBy?: string;
+}
+
+export type CreateMediaAssetInput = Omit<MediaAsset, 'id' | 'created_at' | 'fileType' | 'state'> & {
+  id?: string,
+  fileType: string,
+  state?: 'uploaded' | 'external'
+};
+export type UpdateMediaAssetInput = Partial<Omit<MediaAsset, 'id' | 'created_at'>> & { id: string };

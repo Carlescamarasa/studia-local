@@ -1204,8 +1204,6 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         const { data, error } = await query;
         if (error) throw error;
-        // Debug: Log raw data from Supabase
-        console.log('[remoteDataAPI.bloques.list] Raw Supabase data sample:', data?.[0]);
         return (data || []).map((b: any) => {
           const camel = snakeToCamel<Bloque>(b);
           // Fix targetPPMs mapping (snakeToCamel produces targetPpms)
@@ -1279,24 +1277,67 @@ export function createRemoteDataAPI(): AppDataAPI {
           }
           // Map content (JSONB) to variations
           if (camel.content && !camel.variations) {
-            camel.variations = Array.isArray(camel.content) ? camel.content : [];
+            // Handle new structure { variations: [...] } or legacy array structure
+            camel.variations = camel.content.variations || (Array.isArray(camel.content) ? camel.content : []);
           }
           return camel;
         });
       },
       create: async (data) => {
-        const snakeData = camelToSnake({
-          ...data,
-          id: data.id || generateId('bloque'),
-        });
+        // Only send fields that exist in the bloques table schema
+        // DB columns: id, nombre, code, tipo, duracion_seg, instrucciones, indicador_logro, 
+        // materiales_requeridos, media_links, elementos_ordenados, pieza_ref_id, profesor_id,
+        // skill_tags, target_ppms, content
+        const allowedFields = new Set([
+          'id', 'nombre', 'code', 'tipo', 'duracionSeg', 'instrucciones',
+          'indicadorLogro', 'materialesRequeridos', 'mediaLinks', 'elementosOrdenados',
+          'piezaRefId', 'profesorId', 'skillTags', 'targetPPMs', 'content'
+        ]);
+
+        // Get current user ID for profesor_id (required field)
+        let profesorId = (data as any).profesorId;
+        if (!profesorId) {
+          try {
+            const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
+            profesorId = user?.id;
+          } catch (e) {
+            console.warn('[remoteDataAPI.bloques.create] Could not get current user for profesor_id');
+          }
+        }
+
+        if (!profesorId) {
+          throw new Error('profesor_id es requerido para crear un bloque');
+        }
+
+        // Generate ID
+        const bloqueId = data.id || generateId('bloque');
+
+        // Filter to allowed fields only
+        const filteredData: any = {
+          id: bloqueId,
+          profesorId: profesorId,
+        };
+
+        for (const [key, value] of Object.entries(data)) {
+          if (key === 'id' || key === 'profesorId') continue; // Already handled
+          if (allowedFields.has(key)) {
+            filteredData[key] = value;
+          } else {
+            // Silently skip non-DB fields (metodo, variations, skillTags, targetPPMs, etc.)
+            console.log(`[remoteDataAPI.bloques.create] Field '${key}' not in DB schema, skipping`);
+          }
+        }
+
+        const snakeData = camelToSnake(filteredData);
 
         // Fix targetPPMs mapping (camelToSnake produces target_pp_ms)
         if (snakeData.target_pp_ms) {
           snakeData.target_ppms = snakeData.target_pp_ms;
           delete snakeData.target_pp_ms;
-        } else if (data.targetPPMs) {
-          snakeData.target_ppms = data.targetPPMs;
+        } else if (filteredData.targetPPMs) {
+          snakeData.target_ppms = filteredData.targetPPMs;
         }
+
         const { data: result, error } = await supabase
           .from('bloques')
           .insert(snakeData)
@@ -1309,26 +1350,36 @@ export function createRemoteDataAPI(): AppDataAPI {
       update: async (id: string, updates: any) => {
         // Only send fields that exist in the bloques table schema
         // DB columns: id, nombre, code, tipo, duracion_seg, instrucciones, indicador_logro, 
-        // materiales_requeridos, media, target_ppms, elementos_ordenados, content, pieza_id
+        // materiales_requeridos, media_links, elementos_ordenados, pieza_ref_id, profesor_id,
+        // skill_tags, target_ppms, content
         const allowedFields = new Set([
           'nombre', 'code', 'tipo', 'duracionSeg', 'instrucciones',
-          'indicadorLogro', 'materialesRequeridos', 'media', 'targetPPMs',
-          'elementosOrdenados', 'content', 'piezaId'
-          // Note: 'variations' is mapped to 'content', 'metodo' is only for code generation
+          'indicadorLogro', 'materialesRequeridos', 'mediaLinks', 'elementosOrdenados',
+          'piezaRefId', 'skillTags', 'targetPPMs', 'content'
+          // Note: 'metodo', 'variations' are frontend-only (variations mapped to content)
         ]);
 
         // Filter out fields not in DB schema
         const filteredUpdates: any = {};
+
+        // DEBUG: Log what we receive
+        console.log('[remoteDataAPI.bloques.update] Received updates:', {
+          id,
+          indicadorLogro: updates.indicadorLogro,
+          allKeys: Object.keys(updates)
+        });
+
         for (const [key, value] of Object.entries(updates)) {
-          // Map variations → content (DB uses 'content' column for variations)
-          if (key === 'variations') {
-            filteredUpdates.content = value;
-          } else if (allowedFields.has(key)) {
+          if (allowedFields.has(key)) {
             filteredUpdates[key] = value;
           } else {
-            console.warn(`[remoteDataAPI.bloques.update] Field '${key}' not in DB schema, skipping`);
+            // Silently log non-DB fields (don't spam console with warnings)
+            console.log(`[remoteDataAPI.bloques.update] Field '${key}' not in DB schema, skipping`);
           }
         }
+
+        // DEBUG: Log what we're sending
+        console.log('[remoteDataAPI.bloques.update] Filtered updates:', filteredUpdates);
 
         const snakeUpdates = camelToSnake(filteredUpdates);
 
@@ -1339,6 +1390,9 @@ export function createRemoteDataAPI(): AppDataAPI {
         } else if (filteredUpdates.targetPPMs) {
           snakeUpdates.target_ppms = filteredUpdates.targetPPMs;
         }
+
+        // DEBUG: Log snake case version
+        console.log('[remoteDataAPI.bloques.update] Snake updates:', snakeUpdates);
 
         const { data, error } = await supabase
           .from('bloques')
@@ -1356,6 +1410,14 @@ export function createRemoteDataAPI(): AppDataAPI {
           });
           throw error;
         }
+
+        // DEBUG: Log what Supabase returned
+        console.log('[remoteDataAPI.bloques.update] Supabase returned:', {
+          id: data?.id,
+          code: data?.code,
+          indicador_logro: data?.indicador_logro,
+          success: !!data
+        });
 
         const resultado = snakeToCamel<Bloque>(data);
 
@@ -2702,6 +2764,79 @@ export function createRemoteDataAPI(): AppDataAPI {
       delete: async (id: string) => {
         const { error } = await supabase
           .from('student_xp_total')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+        return { success: true };
+      }
+    },
+    mediaAssets: {
+      list: async (sort?: string) => {
+        let query = supabase.from('media_assets').select('*');
+        if (sort) {
+          const direction = sort.startsWith('-') ? 'desc' : 'asc';
+          const field = sort.startsWith('-') ? sort.slice(1) : sort;
+          const snakeField = toSnakeCase(field);
+          query = query.order(snakeField, { ascending: direction === 'asc' });
+        }
+        const { data, error } = await query;
+        if (error) throw error;
+        return (data || []).map((e: any) => snakeToCamel(e));
+      },
+      get: async (id: string) => {
+        const { data, error } = await supabase
+          .from('media_assets')
+          .select('*')
+          .eq('id', id)
+          .single();
+        if (error) {
+          if (error.code === 'PGRST116') return null;
+          throw error;
+        }
+        return snakeToCamel(data);
+      },
+      filter: async (filters: Record<string, any>, limit?: number | null) => {
+        let query = supabase.from('media_assets').select('*');
+        for (const [key, value] of Object.entries(filters)) {
+          const snakeKey = toSnakeCase(key);
+          query = query.eq(snakeKey, value);
+        }
+        if (limit) query = query.limit(limit);
+        const { data, error } = await query;
+        if (error) throw error;
+        return (data || []).map((e: any) => snakeToCamel(e));
+      },
+      create: async (input: any) => {
+        const snakeInput = camelToSnake(input);
+
+        // Ensure user is set
+        if (!snakeInput.created_by) {
+          const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
+          if (user?.id) snakeInput.created_by = user.id;
+        }
+
+        const { data, error } = await supabase
+          .from('media_assets')
+          .insert(snakeInput)
+          .select()
+          .single();
+        if (error) throw error;
+        return snakeToCamel(data);
+      },
+      update: async (id: string, updates: any) => {
+        const snakeUpdates = camelToSnake(updates);
+        const { data, error } = await supabase
+          .from('media_assets')
+          .update(snakeUpdates)
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw error;
+        return snakeToCamel(data);
+      },
+      delete: async (id: string) => {
+        const { error } = await supabase
+          .from('media_assets')
           .delete()
           .eq('id', id);
         if (error) throw error;

@@ -11,6 +11,7 @@ import { isValidUrl, extractUrlsFromText, normalizeMediaLinks } from "../utils/m
 import { componentStyles } from "@/design/componentStyles";
 import { cn } from "@/lib/utils";
 import { uploadFile, getAcceptedMimeTypes, detectFileType, ACCEPTED_FILE_TYPES } from "@/lib/storageUpload";
+import { remoteDataAPI } from "@/api/remoteDataAPI";
 import {
   Tooltip,
   TooltipContent,
@@ -142,9 +143,9 @@ function usePageTitle(url) {
               }
             }
           })
-          .catch(() => {
+          .catch((err) => {
             // Silenciar errores para Google Drive ya que tenemos un fallback
-            // No loggear errores de timeout, CORS, QUIC, etc.
+            console.warn('Google Drive title fetch failed (non-critical):', err.message);
           });
       }
 
@@ -300,6 +301,13 @@ export default function MediaLinksInput({
   videoFile = null,
   onVideoFileChange = null,
   uploadingVideo = false,
+  // DB Registration props (optional)
+  onAssetRegistered = null,
+  originType = null,
+  originId = null,
+  originLabel = null,
+
+  // Other props
   disabled = false,
   videoId = "video-upload"
 }) {
@@ -394,8 +402,36 @@ export default function MediaLinksInput({
       const result = await uploadFile(file, 'ejercicios');
 
       if (result.success && result.url) {
+        // Register in DB if needed
+        if (onAssetRegistered && originType && originId) {
+          try {
+            // Map simplified types to DB types
+            const type = detectFileType(file);
+            const assetTypeMap = { 'image': 'image', 'video': 'video', 'audio': 'audio', 'pdf': 'pdf' };
+            const fileType = assetTypeMap[type] || 'other';
+
+            const newAsset = await remoteDataAPI.mediaAssets.create({
+              url: result.url,
+              name: file.name,
+              fileType: fileType,
+              state: 'uploaded',
+              storagePath: result.path,
+              originType: originType,
+              originId: originId,
+              originLabel: originLabel,
+              originContext: {}
+            });
+            onAssetRegistered(newAsset);
+            toast.success("Archivo subido y registrado");
+          } catch (e) {
+            console.error("DB registration failed", e);
+            // Non-blocking error, user still gets the URL
+            toast.success(`${file.name} subido correctamente (falló el registro en DB)`);
+          }
+        } else {
+          toast.success(`${file.name} subido correctamente`);
+        }
         newUrls.push(result.url);
-        toast.success(`${file.name} subido correctamente`);
       } else {
         toast.error(result.error || `Error al subir ${file.name}`);
       }

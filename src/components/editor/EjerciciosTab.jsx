@@ -105,12 +105,31 @@ export default function EjerciciosTab() {
   // --- Handlers ---
   const handleOpenEditor = (exercise = null) => {
     if (exercise) {
-      // Merge variations from display mapping into raw data for editing
-      const rawWithVariations = {
-        ...(exercise.raw || exercise),
-        variations: exercise.variations || (exercise.raw?.content) || []
+      // Convert snake_case raw data to camelCase for ExerciseEditor
+      const raw = exercise.raw || exercise;
+      const camelCaseData = {
+        id: raw.id,
+        nombre: raw.nombre,
+        code: raw.code,
+        tipo: raw.tipo,
+        // Convert snake_case to camelCase
+        duracionSeg: raw.duracion_seg ?? raw.duracionSeg ?? 0,
+        instrucciones: raw.instrucciones || '',
+        indicadorLogro: raw.indicador_logro ?? raw.indicadorLogro ?? '',
+        materialesRequeridos: raw.materiales_requeridos ?? raw.materialesRequeridos ?? [],
+        mediaLinks: raw.media_links ?? raw.mediaLinks ?? [],
+        elementosOrdenados: raw.elementos_ordenados ?? raw.elementosOrdenados ?? [],
+        piezaRefId: raw.pieza_ref_id ?? raw.piezaRefId ?? null,
+        profesorId: raw.profesor_id ?? raw.profesorId ?? null,
+        skillTags: raw.skill_tags ?? raw.skillTags ?? [],
+        targetPPMs: raw.target_ppms ?? raw.targetPPMs ?? [],
+        // CRITICAL FIX: Ensure content is passed so variations can be extracted
+        content: raw.content || { variations: [] },
+        // Merge variations from display mapping into data for editing
+        variations: exercise.variations || raw.content || [],
       };
-      setEjercicioActual(rawWithVariations);
+      console.log('[EjerciciosTab] Opening editor with camelCase data:', camelCaseData);
+      setEjercicioActual(camelCaseData);
     } else {
       setEjercicioActual(null);
     }
@@ -165,37 +184,66 @@ export default function EjerciciosTab() {
         <table className="w-full text-left text-sm">
           <thead className="bg-[var(--color-surface-elevated)] font-medium border-b border-[var(--color-border-default)]">
             <tr>
+              <th className="px-4 py-3 font-medium text-[var(--color-text-secondary)] w-16">Code</th>
               <th className="px-4 py-3 font-medium text-[var(--color-text-secondary)]">Nombre</th>
-              <th className="px-4 py-3 font-medium text-[var(--color-text-secondary)]">Tipo</th>
-              <th className="px-4 py-3 font-medium text-[var(--color-text-secondary)]">Duración</th>
-              <th className="px-4 py-3 text-right font-medium text-[var(--color-text-secondary)]">Acciones</th>
+              <th className="px-4 py-3 font-medium text-[var(--color-text-secondary)] w-24">Tipo</th>
+              <th className="px-4 py-3 font-medium text-[var(--color-text-secondary)] w-20 text-center">Media</th>
+              <th className="px-4 py-3 font-medium text-[var(--color-text-secondary)] w-20 text-right">Dur.</th>
+              <th className="px-4 py-3 text-right font-medium text-[var(--color-text-secondary)] w-24">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--color-border-default)]">
             {filteredExercises.length === 0 ? (
-              <tr><td colSpan="4" className="p-8 text-center text-[var(--color-text-secondary)]">
+              <tr><td colSpan="6" className="p-8 text-center text-[var(--color-text-secondary)]">
                 {loading ? 'Cargando...' : 'No se encontraron ejercicios'}
               </td></tr>
             ) : filteredExercises.map(ex => (
               <React.Fragment key={ex.id}>
                 <tr
-                  onClick={() => setExpandedVarId(expandedVarId === ex.id ? null : ex.id)}
-                  className={`hover:bg-[var(--color-surface-elevated)] transition-colors group cursor-pointer ${expandedVarId === ex.id ? 'bg-[var(--color-surface-elevated)]' : ''}`}
+                  onClick={() => handleOpenEditor(ex)}
+                  className="hover:bg-[var(--color-surface-elevated)] transition-colors group cursor-pointer"
                 >
-                  <td className="px-4 py-3 font-medium text-[var(--color-text-primary)] flex items-center gap-2">
-                    {ex.variations.length > 0 && (
-                      <div className={`text-[var(--color-text-secondary)] text-[10px] transition-transform ${expandedVarId === ex.id ? 'rotate-90' : ''}`}>▶</div>
-                    )}
-                    {ex.title}
+                  <td className="px-4 py-3 text-[var(--color-text-secondary)] font-mono text-xs">
+                    {ex.code || '-'}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-[var(--color-text-primary)]">
+                    <div className="flex items-center gap-2">
+                      {/* Variations Indicator Button - Only click here expands */}
+                      {ex.variations.length > 0 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandedVarId(expandedVarId === ex.id ? null : ex.id);
+                          }}
+                          className={`p-1 rounded hover:bg-[var(--color-surface-hover)] transition-transform ${expandedVarId === ex.id ? 'rotate-90' : ''}`}
+                        >
+                          <div className="text-[var(--color-text-secondary)] text-[10px]">▶</div>
+                        </button>
+                      )}
+                      {ex.title}
+                    </div>
                   </td>
                   <td className="px-4 py-3"><span className="text-xs bg-[var(--color-surface-elevated)] px-2 py-1 rounded text-[var(--color-text-secondary)]">{ex.type}</span></td>
-                  <td className="px-4 py-3 text-[var(--color-text-secondary)] font-mono">{ex.dur}'</td>
+                  <td className="px-4 py-3 text-center">
+                    {/* Media Icons */}
+                    <div className="flex justify-center gap-1">
+                      {(ex.raw.media_links?.length > 0 || ex.raw.mediaLinks?.length > 0) && (
+                        <div title="Multimedia" className="text-[var(--color-text-secondary)]">
+                          <LayoutIcon className="w-4 h-4" />
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-right text-[var(--color-text-secondary)] font-mono">{ex.dur}'</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={(e) => { e.stopPropagation(); handleOpenEditor(ex); }} className="p-1 hover:bg-[var(--color-surface-elevated)] rounded text-[var(--color-text-secondary)]">
-                        <div className="w-4 h-4 text-xs">Edit</div>
+                      {/* Edit Icon Button */}
+                      <button onClick={(e) => { e.stopPropagation(); handleOpenEditor(ex); }} className="p-1.5 hover:bg-[var(--color-surface-elevated)] rounded-full text-[var(--color-text-primary)] transition-colors">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
                       </button>
-                      <button onClick={(e) => { e.stopPropagation(); handleDeleteExercise(ex.id); }} className="p-1 hover:bg-red-100 dark:hover:bg-red-900/20 rounded text-red-500">
+                      <button onClick={(e) => { e.stopPropagation(); handleDeleteExercise(ex.id); }} className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-full text-red-500 transition-colors">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -204,19 +252,16 @@ export default function EjerciciosTab() {
                 {/* ACCORDION */}
                 {expandedVarId === ex.id && ex.variations.length > 0 && (
                   <tr className="bg-[var(--color-surface-elevated)]/50">
-                    <td colSpan="5" className="px-4 py-2 p-0">
-                      <div className="ml-8 border-l-2 border-[var(--color-border-default)] pl-4 space-y-2 mb-3 mt-1">
+                    <td colSpan="6" className="px-4 py-2 p-0">
+                      <div className="ml-16 border-l-2 border-[var(--color-border-default)] pl-4 space-y-2 mb-3 mt-1">
                         <div className="text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">Variaciones ({ex.variations.length})</div>
                         {ex.variations.map((v, idx) => (
-                          <div key={idx} className="flex items-center gap-3 bg-[var(--color-surface-default)] p-2 rounded border border-[var(--color-border-default)] text-sm shadow-sm">
+                          <div key={idx} className="flex items-center gap-3 bg-[var(--color-surface-default)] p-2 rounded border border-[var(--color-border-default)] text-sm shadow-sm inline-flex min-w-[300px]">
                             <div className="w-6 h-6 bg-[var(--color-surface-elevated)] rounded flex items-center justify-center text-[10px] font-mono text-[var(--color-text-secondary)]">L{v.min_level}</div>
                             <div className="flex-1">
                               <div className="font-medium text-[var(--color-text-primary)] text-xs">{v.label}</div>
-                              <div className="text-[10px] text-[var(--color-text-secondary)]">{v.tags.join(', ')}</div>
+                              <div className="text-[10px] text-[var(--color-text-secondary)]">{v.tags?.join(', ')}</div>
                             </div>
-                            {v.asset_url && (
-                              <div className="text-[10px] text-[var(--color-text-secondary)] bg-[var(--color-surface-elevated)] px-1.5 py-0.5 rounded border border-[var(--color-border-default)] truncate max-w-[150px]">{v.asset_url}</div>
-                            )}
                           </div>
                         ))}
                       </div>

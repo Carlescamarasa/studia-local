@@ -41,6 +41,7 @@ const Ayuda = lazy(() => import("@/pages/ayuda.jsx"));
 const AppVersion = lazy(() => import("@/pages/admin/AppVersion.jsx"));
 const Habilidades = lazy(() => import("@/pages/habilidades.jsx"));
 const StudiaConceptPage = lazy(() => import("@/pages/StudiaConceptPage.jsx"));
+const ContenidoMultimediaPage = lazy(() => import("@/pages/contenido-multimedia.jsx"));
 
 // Componente de carga
 const PageLoader = () => (
@@ -109,6 +110,7 @@ export default function AppRouter() {
           <Route path="soporte-prof" element={<SoporteProf />} />
           <Route path="ayuda" element={<Ayuda />} />
           <Route path="habilidades" element={<Habilidades />} />
+          <Route path="contenido-multimedia" element={<ContenidoMultimediaPage />} />
           <Route path="version" element={<Navigate to="/admin/version" replace />} />
           <Route path="admin/version" element={<AppVersion />} />
         </Route>

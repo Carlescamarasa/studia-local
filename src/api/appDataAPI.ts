@@ -50,6 +50,9 @@ import type {
   StudentXPTotal,
   CreateStudentXPTotalInput,
   UpdateStudentXPTotalInput,
+  MediaAsset,
+  CreateMediaAssetInput,
+  UpdateMediaAssetInput,
 } from '@/types/domain';
 
 /**
@@ -121,6 +124,7 @@ export interface StudentCriteriaStatusAPI extends EntityAPI<StudentCriteriaStatu
 // StudentLevelHistory no tiene UpdateInput definido exportado, usare Partial<...> & {id: string} o any si falla, pero usare CreateStudentLevelHistoryInput como update type temporal o any
 export interface StudentLevelHistoryAPI extends EntityAPI<StudentLevelHistory, CreateStudentLevelHistoryInput, any> { }
 export interface StudentXPTotalAPI extends EntityAPI<StudentXPTotal, CreateStudentXPTotalInput, UpdateStudentXPTotalInput> { }
+export interface MediaAssetAPI extends EntityAPI<MediaAsset, CreateMediaAssetInput, UpdateMediaAssetInput> { }
 
 /**
  * Interfaz principal AppDataAPI
@@ -143,5 +147,6 @@ export interface AppDataAPI {
   studentCriteriaStatus: StudentCriteriaStatusAPI;
   studentLevelHistory: StudentLevelHistoryAPI;
   studentXpTotal: StudentXPTotalAPI;
+  mediaAssets: MediaAssetAPI;
 }
 
