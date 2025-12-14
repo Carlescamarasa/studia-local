@@ -536,12 +536,19 @@ function HoyPageContent() {
   }, [mostrarModalCancelar, mostrarItinerario, mediaFullscreen, reportModalAbierto, cronometroActivo, cronometroPausadoPorModal, sesionActiva, sesionFinalizada, timestampInicio]);
 
   const empezarSesion = async (sesion, sesionIdxProp) => {
+    console.log('[empezarSesion] Input sesion:', sesion);
     // Actualizar bloques con mediaLinks actuales de la base de datos
     const sesionActualizada = {
       ...sesion,
       bloques: (sesion.bloques || []).map(bloqueSnapshot => {
         // Buscar el bloque actual en la base de datos por código
         const bloqueActual = bloquesActuales.find(b => b.code === bloqueSnapshot.code);
+
+        console.log(`[empezarSesion] Processing ${bloqueSnapshot.code} (${bloqueSnapshot.nombre})`, {
+          modo: bloqueSnapshot.modo,
+          bloqueActualFound: !!bloqueActual,
+          hasVariations: bloqueActual?.variations?.length
+        });
 
         if (!bloqueActual) {
           console.warn(`[WARNING] Bloque ${bloqueSnapshot.code} no encontrado en la biblioteca (bloquesActuales). No se podrán cargar variaciones.`);
@@ -555,13 +562,16 @@ function HoyPageContent() {
           let selectedVariationDuration = null;
 
           // Only pick random variation if mode is 'repaso'
-          if (bloqueSnapshot.modo === 'repaso' && bloqueActual.variations && bloqueActual.variations.length > 0) {
+          const isRepaso = bloqueSnapshot.modo === 'repaso';
+          if (isRepaso && bloqueActual.variations && bloqueActual.variations.length > 0) {
             const userLevel = alumnoActual?.nivelTecnico || 1;
 
             const validVars = getValidVariations(bloqueActual, userLevel);
+            console.log(`[empezarSesion] Variations for ${bloqueSnapshot.code}:`, { userLevel, validVarsCount: validVars?.length });
 
             if (validVars) {
               const picked = pickRandomVariation(validVars);
+              console.log(`[empezarSesion] Picked variation:`, picked);
 
               if (picked) {
                 variationLabel = picked.label;
@@ -579,6 +589,8 @@ function HoyPageContent() {
                 }
               }
             }
+          } else {
+            console.log(`[empezarSesion] Skipping variation logic for ${bloqueSnapshot.code}. Mode: ${bloqueSnapshot.modo}`);
           }
 
           // Actualizar con mediaLinks y otras propiedades actualizadas
@@ -612,6 +624,9 @@ function HoyPageContent() {
         return bloqueSnapshot;
       })
     };
+
+    console.log('[empezarSesion] Final sesion blocks:', sesionActualizada.bloques.map(b => b.code));
+
 
     setSesionActiva(sesionActualizada);
     setIndiceActual(0);

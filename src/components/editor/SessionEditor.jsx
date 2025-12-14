@@ -263,15 +263,20 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     queryFn: async () => {
       try {
         // Use remoteDataAPI which maps content to variations
-        const res = await remoteDataAPI.bloques.list();
-        return res || [];
+        const data = await remoteDataAPI.bloques.list();
+        if (!data || data.length === 0) {
+          throw new Error('Remote empty');
+        }
+        return data;
       } catch (error) {
         console.warn('[SessionEditor] Error fetching from remoteDataAPI, falling back to local:', error);
-        const localRes = await localDataClient.entities.Bloque.list();
-        return localRes || [];
+        const localData = await localDataClient.entities.Bloque.list();
+        return localData;
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    // staleTime: 5 * 60 * 1000, // 5 minutes cache
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   const { data: alumno } = useQuery({
@@ -367,6 +372,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     const matchSearch = e.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       e.code?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchTipo = tiposFilter.size === 0 || tiposFilter.has(e.tipo);
+
     return matchSearch && matchTipo;
   });
 

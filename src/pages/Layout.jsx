@@ -27,6 +27,8 @@ import {
   HelpCircle,
   Tag,
   Star,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ds";
@@ -698,16 +700,71 @@ function LayoutContent() {
               </div>
             </button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(createPageUrl('ayuda'))}
-              className={`w-full justify-start gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
-              aria-label="Centro de Ayuda"
-            >
-              <HelpCircle className="w-4 h-4" />
-              Ayuda
-            </Button>
+            <div className="flex items-center gap-1 w-full">
+              {/* Ayuda */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigate(createPageUrl('ayuda'))}
+                      className={`flex-1 justify-center gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
+                      aria-label="Centro de Ayuda"
+                    >
+                      <HelpCircle className="w-5 h-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Ayuda</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              {/* Toggle Tema - Ahora separado */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDesignPartial('theme', (design?.theme === 'dark' ? 'light' : 'dark'))}
+                      className={`flex-1 justify-center gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
+                      aria-label={design?.theme === 'dark' ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+                    >
+                      {design?.theme === 'dark' ? (
+                        <Sun className="w-5 h-5" />
+                      ) : (
+                        <Moon className="w-5 h-5" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{design?.theme === 'dark' ? "Modo claro" : "Modo oscuro"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              {/* Ocultar menú */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={safeToggle}
+                      className={`flex-1 justify-center gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
+                      aria-label="Ocultar menú"
+                    >
+                      <PanelLeft className="w-5 h-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Ocultar menú</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
 
             <Button
               variant="ghost"
