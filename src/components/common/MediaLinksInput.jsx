@@ -218,21 +218,100 @@ function usePageTitle(url) {
   return { title, isLoading };
 }
 
+import { ArrowUp, ArrowDown, Pencil, Check, GripVertical } from 'lucide-react';
+
 /**
  * Componente individual para cada enlace multimedia
  * Permite usar hooks dentro del map
  */
-function MediaLinkItem({ url, index, isValid, label, onPreview, onRemove }) {
+function MediaLinkItem({
+  url,
+  name,
+  index,
+  isValid,
+  label,
+  totalItems,
+  onPreview,
+  onRemove,
+  onMove,
+  onRename
+}) {
   const { title, isLoading } = usePageTitle(url);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState(name || '');
+
+  // Update local edited name when prop changes
+  useEffect(() => {
+    // If we have a custom name, use it. 
+    // If not, and we have a fetched title, use that as default (but don't save it yet)
+    // If not, use empty string
+    if (name) {
+      setEditedName(name);
+    } else if (title) {
+      // Only set default if not already set, to avoid overwriting user edits
+      // But here we want to show it as placeholder or initial value
+    }
+  }, [name, title]);
+
+  // Initialize with title if no custom name exists
+  useEffect(() => {
+    if (!name && title) {
+      // We could auto-set the name, but better to keep it null until user edits
+      // Just let the display prioritize: name > title > url
+    }
+  }, [title, name]);
+
+  const handleSaveRename = () => {
+    onRename(index, editedName.trim() || null);
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveRename();
+    } else if (e.key === 'Escape') {
+      setIsEditing(false);
+      setEditedName(name || '');
+    }
+  };
+
+  const displayName = name || title;
 
   return (
     <div
-      className={`flex items-start gap-2 p-2 rounded-lg border transition-colors w-full ${isValid
+      className={`flex items-start gap-2 p-2 rounded-lg border transition-colors w-full group ${isValid
         ? 'bg-[var(--color-surface-elevated)] border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]'
         : 'bg-[var(--color-danger)]/10 border-[var(--color-danger)]/20'
         }`}
     >
-      <MediaIcon url={url} className="w-4 h-4 shrink-0 text-[var(--color-text-secondary)] mt-0.5" />
+      {/* Reorder Controls */}
+      <div className="flex flex-col gap-0.5 mt-0.5 opacity-50 group-hover:opacity-100 transition-opacity">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => onMove(index, -1)}
+          disabled={index === 0}
+          className="h-5 w-5 p-0 hover:bg-[var(--color-surface-hover)] disabled:opacity-30"
+          aria-label="Mover arriba"
+        >
+          <ArrowUp className="w-3 h-3" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => onMove(index, 1)}
+          disabled={index === totalItems - 1}
+          className="h-5 w-5 p-0 hover:bg-[var(--color-surface-hover)] disabled:opacity-30"
+          aria-label="Mover abajo"
+        >
+          <ArrowDown className="w-3 h-3" />
+        </Button>
+      </div>
+
+      <MediaIcon url={url} className="w-4 h-4 shrink-0 text-[var(--color-text-secondary)] mt-1.5" />
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 min-w-0 mb-1 flex-wrap">
@@ -243,18 +322,58 @@ function MediaLinkItem({ url, index, isValid, label, onPreview, onRemove }) {
             <span className="text-xs text-[var(--color-danger)] font-medium shrink-0">Inválido</span>
           )}
         </div>
-        {title ? (
-          <>
-            <p className="text-xs font-medium text-[var(--color-text-primary)] break-words mt-0.5" title={title}>
-              {title}
-            </p>
-            <p className="text-xs text-[var(--color-text-muted)] break-all mt-0.5" title={url}>
-              {url}
-            </p>
-          </>
+
+        {isEditing ? (
+          <div className="flex items-center gap-2 mt-1">
+            <Input
+              value={editedName}
+              onChange={(e) => setEditedName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="h-7 text-xs bg-white"
+              placeholder={title || "Nombre del archivo"}
+              autoFocus
+            />
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0 text-[var(--color-success)]"
+              onClick={handleSaveRename}
+            >
+              <Check className="w-4 h-4" />
+            </Button>
+          </div>
         ) : (
-          <p className="text-xs text-[var(--color-text-primary)] break-all mt-0.5" title={url}>
-            {isLoading ? 'Cargando título...' : url}
+          <div className="group/title flex items-center gap-2 mt-0.5">
+            {displayName ? (
+              <p className="text-xs font-medium text-[var(--color-text-primary)] break-words" title={displayName}>
+                {displayName}
+              </p>
+            ) : (
+              <p className="text-xs text-[var(--color-text-primary)] break-all" title={url}>
+                {isLoading ? 'Cargando título...' : url}
+              </p>
+            )}
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setEditedName(name || title || '');
+                setIsEditing(true);
+              }}
+              className="h-5 w-5 p-0 opacity-0 group-hover/title:opacity-100 transition-opacity text-[var(--color-text-secondary)]"
+              aria-label="Renombrar"
+            >
+              <Pencil className="w-3 h-3" />
+            </Button>
+          </div>
+        )}
+
+        {/* Show URL prominently if name is custom, otherwise subtler */}
+        {(name || displayName) && (
+          <p className="text-[10px] text-[var(--color-text-muted)] break-all mt-0.5 truncate" title={url}>
+            {url}
           </p>
         )}
       </div>
@@ -293,7 +412,7 @@ function MediaLinkItem({ url, index, isValid, label, onPreview, onRemove }) {
  * Opcionalmente incluye funcionalidad de subida de video
  */
 export default function MediaLinksInput({
-  value = [],
+  value = [], // Can be string[] or {url, name}[]
   onChange,
   onPreview,
   // File upload props (optional)
@@ -318,6 +437,12 @@ export default function MediaLinksInput({
   const [errors, setErrors] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadingFileName, setUploadingFileName] = useState('');
+
+  // Normalize internal value to always be objects
+  const richItems = value.map(item => {
+    if (typeof item === 'string') return { url: item, name: null };
+    return item;
+  });
 
   // File type icon mapping
   const getFileTypeIcon = (type) => {
@@ -394,7 +519,7 @@ export default function MediaLinksInput({
     }
 
     setUploading(true);
-    const newUrls = [];
+    const newItems = [];
 
     for (const file of validFiles) {
       setUploadingFileName(file.name);
@@ -431,7 +556,8 @@ export default function MediaLinksInput({
         } else {
           toast.success(`${file.name} subido correctamente`);
         }
-        newUrls.push(result.url);
+        // Use filename as default name
+        newItems.push({ url: result.url, name: file.name });
       } else {
         toast.error(result.error || `Error al subir ${file.name}`);
       }
@@ -440,9 +566,11 @@ export default function MediaLinksInput({
     setUploading(false);
     setUploadingFileName('');
 
-    if (newUrls.length > 0) {
-      const combined = [...value, ...newUrls];
-      const normalized = normalizeMediaLinks(combined).slice(0, MAX_LINKS);
+    if (newItems.length > 0) {
+      // Add new items protecting objects
+      const combined = [...richItems, ...newItems];
+      // Normalize but preserve objects
+      const normalized = normalizeMediaLinks(combined, true).slice(0, MAX_LINKS);
       onChange(normalized);
     }
   };
@@ -463,9 +591,12 @@ export default function MediaLinksInput({
       return;
     }
 
+    // Convert strings to objects
+    const newItems = urls.map(u => ({ url: u, name: null }));
+
     // Combinar con existentes y deduplicar
-    const combined = [...value, ...urls];
-    const normalized = normalizeMediaLinks(combined).slice(0, MAX_LINKS);
+    const combined = [...richItems, ...newItems];
+    const normalized = normalizeMediaLinks(combined, true).slice(0, MAX_LINKS);
 
     onChange(normalized);
     setInputText('');
@@ -473,8 +604,23 @@ export default function MediaLinksInput({
   };
 
   const handleRemove = (index) => {
-    const updated = value.filter((_, i) => i !== index);
+    const updated = richItems.filter((_, i) => i !== index);
     onChange(updated);
+  };
+
+  const handleMove = (index, direction) => {
+    if (index + direction < 0 || index + direction >= richItems.length) return;
+    const newItems = [...richItems];
+    [newItems[index], newItems[index + direction]] = [newItems[index + direction], newItems[index]];
+    onChange(newItems);
+  };
+
+  const handleRename = (index, newName) => {
+    const newItems = [...richItems];
+    if (newItems[index]) {
+      newItems[index] = { ...newItems[index], name: newName };
+      onChange(newItems);
+    }
   };
 
   const handlePreview = (index) => {
@@ -706,21 +852,17 @@ https://drive.google.com/file/d/ID/view?usp=sharing&format=mp3`}
         )}
       </div>
 
-      {value.length > 0 && (
+      {richItems.length > 0 && (
         <div className="border rounded-lg p-3 bg-[var(--color-surface-muted)] space-y-2 w-full min-w-0 max-w-full overflow-hidden">
           <p className="text-xs font-semibold text-[var(--color-text-primary)]">
-            Enlaces agregados ({value.length}/{MAX_LINKS}):
+            Enlaces agregados ({richItems.length}/{MAX_LINKS}):
           </p>
           <div className="space-y-2 w-full min-w-0 max-w-full">
-            {value.map((url, idx) => {
-              if (!url || typeof url !== 'string') {
-                return null;
-              }
+            {richItems.map((item, idx) => {
+              if (!item || !item.url) return null;
 
-              const trimmedUrl = url.trim();
-              if (!trimmedUrl) {
-                return null;
-              }
+              const trimmedUrl = item.url.trim();
+              if (!trimmedUrl) return null;
 
               const isValid = isValidUrl(trimmedUrl);
               const label = getMediaLabel(trimmedUrl);
@@ -729,11 +871,15 @@ https://drive.google.com/file/d/ID/view?usp=sharing&format=mp3`}
                 <MediaLinkItem
                   key={idx}
                   url={trimmedUrl}
+                  name={item.name}
                   index={idx}
+                  totalItems={richItems.length}
                   isValid={isValid}
                   label={label}
                   onPreview={handlePreview}
                   onRemove={handleRemove}
+                  onMove={handleMove}
+                  onRename={handleRename}
                 />
               );
             })}

@@ -38,10 +38,14 @@ const PDF_EXTENSION = '.pdf';
 
 /**
  * Valida si una URL es segura (http/https)
+ * Soporta string o objeto {url: string}
  */
-export function isValidUrl(urlString) {
+export function isValidUrl(input) {
+  if (!input) return false;
+  const urlString = typeof input === 'string' ? input : input.url;
+
   if (!urlString || typeof urlString !== 'string') return false;
-  
+
   try {
     const url = new URL(urlString.trim());
     return url.protocol === 'http:' || url.protocol === 'https:';
@@ -52,26 +56,35 @@ export function isValidUrl(urlString) {
 
 /**
  * Detecta el tipo de medio y genera URL de embed
+ * Soporta string o objeto {url: string, name?: string}
  */
-export function resolveMedia(urlString) {
+export function resolveMedia(input) {
+  const urlString = typeof input === 'string' ? input : input?.url;
+  const customName = typeof input === 'object' ? input?.name : null;
+
   if (!isValidUrl(urlString)) {
-    return { kind: MediaKind.UNKNOWN, originalUrl: urlString };
+    return { kind: MediaKind.UNKNOWN, originalUrl: urlString, name: customName };
   }
 
   const url = urlString.trim();
   const urlLower = url.toLowerCase();
+
+  let result = { kind: MediaKind.UNKNOWN, originalUrl: url, name: customName, title: 'External Link' };
+
+  // Helper to attach name if present
+  const withName = (res) => ({ ...res, name: customName || res.title });
 
   // YouTube
   for (const pattern of YOUTUBE_PATTERNS) {
     const match = url.match(pattern);
     if (match) {
       const videoId = match[1];
-      return {
+      return withName({
         kind: MediaKind.YOUTUBE,
         embedUrl: `https://www.youtube.com/embed/${videoId}`,
         originalUrl: url,
         title: 'YouTube Video',
-      };
+      });
     }
   }
 
@@ -79,12 +92,12 @@ export function resolveMedia(urlString) {
   const vimeoMatch = url.match(VIMEO_PATTERN);
   if (vimeoMatch) {
     const videoId = vimeoMatch[1];
-    return {
+    return withName({
       kind: MediaKind.VIMEO,
       embedUrl: `https://player.vimeo.com/video/${videoId}`,
       originalUrl: url,
       title: 'Vimeo Video',
-    };
+    });
   }
 
   // SoundCloud
@@ -103,13 +116,13 @@ export function resolveMedia(urlString) {
       // Si falla el parsing, usar la URL original
       cleanUrl = url;
     }
-    
-    return {
+
+    return withName({
       kind: MediaKind.SOUNDCLOUD,
       embedUrl: `https://w.soundcloud.com/player/?url=${encodeURIComponent(cleanUrl)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true`,
       originalUrl: url,
       title: 'SoundCloud Audio',
-    };
+    });
   }
 
   // Google Drive
@@ -117,110 +130,125 @@ export function resolveMedia(urlString) {
     const match = url.match(pattern);
     if (match) {
       const fileId = match[1];
-      
+
       // Verificar si tiene parámetro format=mp3 o similar para audio
       const urlLower = url.toLowerCase();
-      if (urlLower.includes('format=mp3') || 
-          urlLower.includes('format=wav') || 
-          urlLower.includes('format=ogg') || 
-          urlLower.includes('format=m4a') || 
-          urlLower.includes('format=aac') || 
-          urlLower.includes('format=flac') ||
-          urlLower.includes('&format=mp3') ||
-          urlLower.includes('&format=wav') ||
-          urlLower.includes('&format=ogg') ||
-          urlLower.includes('&format=m4a') ||
-          urlLower.includes('&format=aac') ||
-          urlLower.includes('&format=flac')) {
+      if (urlLower.includes('format=mp3') ||
+        urlLower.includes('format=wav') ||
+        urlLower.includes('format=ogg') ||
+        urlLower.includes('format=m4a') ||
+        urlLower.includes('format=aac') ||
+        urlLower.includes('format=flac') ||
+        urlLower.includes('&format=mp3') ||
+        urlLower.includes('&format=wav') ||
+        urlLower.includes('&format=ogg') ||
+        urlLower.includes('&format=m4a') ||
+        urlLower.includes('&format=aac') ||
+        urlLower.includes('&format=flac')) {
         // Es un archivo de audio desde Google Drive
-        return {
+        return withName({
           kind: MediaKind.AUDIO,
           embedUrl: url, // Usar la URL completa con el parámetro format
           originalUrl: url,
           title: 'Audio File (Google Drive)',
-        };
+        });
       }
-      
+
       // Si no es audio, tratarlo como Drive normal
-      return {
+      return withName({
         kind: MediaKind.DRIVE,
         embedUrl: `https://drive.google.com/file/d/${fileId}/preview`,
         originalUrl: url,
         title: 'Google Drive File',
-      };
+      });
     }
   }
 
   // Audio files
   if (AUDIO_EXTENSIONS.some(ext => urlLower.endsWith(ext))) {
-    return {
+    return withName({
       kind: MediaKind.AUDIO,
       embedUrl: url,
       originalUrl: url,
       title: 'Audio File',
-    };
+    });
   }
 
   // Video files
   if (VIDEO_EXTENSIONS.some(ext => urlLower.endsWith(ext))) {
-    return {
+    return withName({
       kind: MediaKind.VIDEO,
       embedUrl: url,
       originalUrl: url,
       title: 'Video File',
-    };
+    });
   }
 
   // Images
   if (IMAGE_EXTENSIONS.some(ext => urlLower.endsWith(ext))) {
-    return {
+    return withName({
       kind: MediaKind.IMAGE,
       embedUrl: url,
       originalUrl: url,
       title: 'Image',
-    };
+    });
   }
 
   // PDF
   if (urlLower.endsWith(PDF_EXTENSION)) {
     // Usar Google Docs Viewer para PDFs
-    return {
+    return withName({
       kind: MediaKind.PDF,
       embedUrl: `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`,
       originalUrl: url,
       title: 'PDF Document',
-    };
+    });
   }
 
   // Unknown - link genérico
-  return {
+  return withName({
     kind: MediaKind.UNKNOWN,
     originalUrl: url,
     title: 'External Link',
-  };
+  });
 }
 
 /**
  * Normaliza y deduplica una lista de URLs
+ * Soporta mezclar strings y objetos {url, name}
+ * Devuelve array de objetos {url, name} si preserveObjects es true, o array de strings
  */
-export function normalizeMediaLinks(urls) {
-  if (!Array.isArray(urls)) return [];
-  
+export function normalizeMediaLinks(items, preserveObjects = false) {
+  if (!Array.isArray(items)) return [];
+
   const seen = new Set();
   const normalized = [];
-  
-  for (const url of urls) {
-    if (!url || typeof url !== 'string') continue;
-    
-    const trimmed = url.trim();
+
+  for (const item of items) {
+    if (!item) continue;
+
+    // Normalizar a objeto internamente
+    const entry = typeof item === 'string'
+      ? { url: item, name: null }
+      : { url: item.url, name: item.name || null };
+
+    if (!entry.url || typeof entry.url !== 'string') continue;
+
+    const trimmed = entry.url.trim();
     if (!trimmed || seen.has(trimmed)) continue;
-    
+
+    // Validar URL
     if (isValidUrl(trimmed)) {
       seen.add(trimmed);
-      normalized.push(trimmed);
+      // Devolver objeto o string según preferencia
+      if (preserveObjects) {
+        normalized.push({ url: trimmed, name: entry.name });
+      } else {
+        normalized.push(trimmed);
+      }
     }
   }
-  
+
   return normalized;
 }
 
@@ -229,9 +257,10 @@ export function normalizeMediaLinks(urls) {
  */
 export function extractUrlsFromText(text) {
   if (!text || typeof text !== 'string') return [];
-  
+
   const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
-  return normalizeMediaLinks(lines);
+  // Default to returning strings for parsing raw text
+  return normalizeMediaLinks(lines, false);
 }
 
 // Tests rápidos en desarrollo
@@ -252,12 +281,12 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     ];
 
     if (process.env.NODE_ENV === 'development') {
-    console.group('🔍 Media Resolution Tests');
-    tests.forEach(url => {
-      const result = resolveMedia(url);
-      console.log(`${url}\n→`, result);
-    });
-    console.groupEnd();
+      console.group('🔍 Media Resolution Tests');
+      tests.forEach(url => {
+        const result = resolveMedia(url);
+        console.log(`${url}\n→`, result);
+      });
+      console.groupEnd();
     }
   };
 }

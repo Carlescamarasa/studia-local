@@ -325,7 +325,10 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
         instrucciones: ejercicio.instrucciones || '',
         indicadorLogro: ejercicio.indicadorLogro || '',
         materialesRequeridos: ejercicio.materialesRequeridos || [],
-        mediaLinks: normalizeMedia(ejercicio.mediaLinks || ejercicio.media),
+        // Load media: Prioritize content.mediaItems (rich objects), then mediaLinks/media (legacy strings)
+        mediaLinks: (ejercicio.content?.mediaItems && ejercicio.content.mediaItems.length > 0)
+          ? ejercicio.content.mediaItems
+          : normalizeMedia(ejercicio.mediaLinks || ejercicio.media),
         elementosOrdenados: ejercicio.elementosOrdenados || [],
         skillTags: ejercicio.skillTags || [],
         piezaRefId: ejercicio.piezaRefId || null,
@@ -445,8 +448,25 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
     if (dataToSave.media) {
       delete dataToSave.media;
     }
+
     // Normalizar mediaLinks al guardar
-    dataToSave.mediaLinks = normalizeMediaLinks(dataToSave.mediaLinks || []);
+    // dataToSave.mediaLinks contains objects {url, name} or strings
+    // We need to:
+    // 1. Save the rich objects in content.mediaItems (for ordering and names)
+    // 2. Save only the URLs in the mediaLinks column (for DB compatibility and simple queries)
+
+    const richMediaItems = normalizeMediaLinks(dataToSave.mediaLinks || [], true);
+    const plainUrls = normalizeMediaLinks(dataToSave.mediaLinks || [], false);
+
+    dataToSave.mediaLinks = plainUrls;
+
+    // PACK VARIATIONS AND RICH MEDIA INTO CONTENT
+    // The API whitelist strips 'variations' and unknown fields, so we nest them in 'content'
+    dataToSave.content = {
+      ...(dataToSave.content || {}),
+      variations: dataToSave.variations || [],
+      mediaItems: richMediaItems // New field for rich media with names/order
+    };
 
     if (dataToSave.tipo === 'FM') {
       dataToSave.elementosOrdenados = selectedElementos.map(e => e.nombre);
@@ -477,10 +497,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
 
     // PACK VARIATIONS INTO CONTENT (Critical for persistence)
     // The API whitelist strips 'variations', so we must nest them in 'content'
-    dataToSave.content = {
-      ...(dataToSave.content || {}),
-      variations: dataToSave.variations || []
-    };
+    // (variations and mediaItems are already packed above)
 
     saveMutation.mutate(dataToSave);
   }, [formData, selectedElementos, usandoPiezaSnapshot, piezaRefId, ejercicio?.id, effectiveUser?.id, saveMutation]);

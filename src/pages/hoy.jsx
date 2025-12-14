@@ -45,19 +45,7 @@ import ModalCancelar from "../components/estudio/ModalCancelar";
 import ResumenFinal from "../components/estudio/ResumenFinal";
 import Metronomo from "../components/study/Metronomo";
 import SessionContentView from "../components/study/SessionContentView";
-// Helper para detectar tipo de archivo
-const detectMediaType = (url) => {
-  if (!url) return 'unknown';
-  const extension = url.split('.').pop().toLowerCase();
-
-  if (['mp3', 'wav', 'ogg', 'm4a'].includes(extension)) return 'audio';
-  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) return 'image';
-  if (['pdf'].includes(extension)) return 'pdf';
-  if (['mp4', 'webm', 'mov'].includes(extension)) return 'video';
-  if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')) return 'video';
-
-  return 'unknown';
-};
+// detectMediaType eliminado, usamos resolveMedia de media.jsx
 
 import ReportErrorButtonInTimer from "../components/common/ReportErrorButtonInTimer";
 import { toast } from "sonner";
@@ -574,7 +562,6 @@ function HoyPageContent() {
           const isRepaso = bloqueSnapshot.modo === 'repaso';
           if (isRepaso && bloqueActual.variations && bloqueActual.variations.length > 0) {
             const userLevel = alumnoActual?.nivelTecnico || 1;
-
             const validVars = getValidVariations(bloqueActual, userLevel);
 
             if (validVars) {
@@ -583,12 +570,16 @@ function HoyPageContent() {
               if (picked) {
                 variationLabel = picked.label;
 
-                // 1. Media/Multimedia (User refers to this as "Materiales")
-                // Handle both camelCase (from API) and snake_case (raw DB)
-                if (picked.assetUrl || picked.asset_url) {
-                  selectedVariationMedia = [picked.assetUrl || picked.asset_url];
+                // 1. Media/Multimedia (Materiales)
+                // Handle rich media items if available (from content.mediaItems or similar structure in variation)
+                if (picked.mediaItems && Array.isArray(picked.mediaItems)) {
+                  selectedVariationMedia = picked.mediaItems;
+                }
+                // Fallback to assetUrl/assetUrls logic
+                else if (picked.assetUrl || picked.asset_url) {
+                  selectedVariationMedia = [{ url: picked.assetUrl || picked.asset_url, name: null }];
                 } else if ((picked.assetUrls || picked.asset_urls) && Array.isArray(picked.assetUrls || picked.asset_urls)) {
-                  selectedVariationMedia = picked.assetUrls || picked.asset_urls;
+                  selectedVariationMedia = (picked.assetUrls || picked.asset_urls).map(u => ({ url: u, name: null }));
                 }
 
                 // 2. Duration
@@ -600,14 +591,20 @@ function HoyPageContent() {
           }
 
           // Actualizar con mediaLinks y otras propiedades actualizadas
-          // Priorizar Variación > Bloque Actual > Snapshot
-          const mediaLinksFinal = selectedVariationMedia
-            ? selectedVariationMedia
-            : (bloqueActual.mediaLinks && bloqueActual.mediaLinks.length > 0)
-              ? bloqueActual.mediaLinks
-              : (bloqueSnapshot.mediaLinks && bloqueSnapshot.mediaLinks.length > 0)
-                ? bloqueSnapshot.mediaLinks
-                : [];
+          // Priorizar Variación > Bloque Actual (Rich) > Bloque Actual (Legacy) > Snapshot
+
+          // Construct final media list, normalizing to objects {url, name}
+          let mediaLinksFinal = [];
+
+          if (selectedVariationMedia) {
+            mediaLinksFinal = selectedVariationMedia;
+          } else if (bloqueActual.content?.mediaItems && bloqueActual.content.mediaItems.length > 0) {
+            mediaLinksFinal = bloqueActual.content.mediaItems;
+          } else if (bloqueActual.mediaLinks && bloqueActual.mediaLinks.length > 0) {
+            mediaLinksFinal = bloqueActual.mediaLinks.map(u => ({ url: u, name: null }));
+          } else if (bloqueSnapshot.mediaLinks && bloqueSnapshot.mediaLinks.length > 0) {
+            mediaLinksFinal = bloqueSnapshot.mediaLinks.map(u => ({ url: u, name: null }));
+          }
 
           const baseName = bloqueActual.nombre || bloqueSnapshot.nombre;
           const finalName = variationLabel ? `${baseName} / ${variationLabel}` : baseName;
@@ -615,7 +612,7 @@ function HoyPageContent() {
           return {
             ...bloqueSnapshot,
             nombre: finalName,
-            mediaLinks: mediaLinksFinal,
+            mediaLinks: mediaLinksFinal, // Now populated with rich objects if available
             // Mantener otras propiedades actualizadas si existen
             // Instructions/Indicators always come from the Base/Snaphost
             instrucciones: bloqueActual.instrucciones || bloqueSnapshot.instrucciones,
@@ -1597,12 +1594,22 @@ function HoyPageContent() {
                   <div className="space-y-4">
                     {/* Renderizado de materiales optimizado */}
                     {(isFM ? (elementosFM[0]?.mediaLinks || []) : (ejercicioActual.mediaLinks || []))
-                      .map((url, idx) => {
-                        const type = detectMediaType(url);
-                        const fileName = url.split('/').pop().split('?')[0] || 'Archivo adjunto';
+                      .map((item, idx) => {
+                        // Normalizar input: puede ser string (legacy) o objeto {url, name}
+                        const url = typeof item === 'string' ? item : item?.url;
+                        const customName = typeof item === 'object' ? item?.name : null;
+
+                        if (!url) return null; // Skip invalid items
+
+                        // Use robust resolution
+                        const mediaInfo = resolveMedia(url);
+                        const type = mediaInfo.kind;
+
+                        // Use custom name if available, otherwise filename/title
+                        const fileName = customName || mediaInfo.name || (url.split('/').pop().split('?')[0] || 'Archivo adjunto');
 
                         // AUDIO - Embedido
-                        if (type === 'audio') {
+                        if (type === MediaKind.AUDIO) {
                           return (
                             <div key={idx} className="bg-[var(--color-surface-elevated)] border border-[var(--color-primary)]/20 rounded-xl p-3 shadow-sm">
                               <div className="flex items-center gap-2 mb-2">
@@ -1613,27 +1620,27 @@ function HoyPageContent() {
                                   {fileName}
                                 </span>
                               </div>
-                              <audio controls className="w-full h-8" src={url} preload="metadata" />
+                              <audio controls className="w-full h-8" src={mediaInfo.embedUrl || mediaInfo.originalUrl} preload="metadata" />
                             </div>
                           );
                         }
 
                         // IMAGEN - Embedida
-                        if (type === 'image') {
+                        if (type === MediaKind.IMAGE) {
                           return (
                             <div key={idx} className="bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded-xl overflow-hidden shadow-sm">
                               <img
-                                src={url}
+                                src={mediaInfo.embedUrl || mediaInfo.originalUrl}
                                 alt={fileName}
                                 className="w-full h-auto cursor-pointer hover:opacity-95 transition-opacity"
-                                onClick={() => setMediaFullscreen({ tipo: 'imagen', url: url })}
+                                onClick={() => setMediaFullscreen({ tipo: 'imagen', url: mediaInfo.originalUrl })}
                               />
                             </div>
                           );
                         }
 
                         // PDF - Card
-                        if (type === 'pdf') {
+                        if (type === MediaKind.PDF) {
                           return (
                             <div key={idx} className="bg-white border border-[var(--color-border-default)] rounded-xl p-4 flex items-center gap-4 hover:border-[var(--color-primary)]/50 transition-colors shadow-sm group">
                               <div className="bg-red-50 p-3 rounded-lg group-hover:bg-red-100 transition-colors">
@@ -1645,7 +1652,7 @@ function HoyPageContent() {
                               </div>
                               <Button
                                 variant="outline"
-                                onClick={() => setMediaModal(url)}
+                                onClick={() => setMediaModal(mediaInfo.originalUrl)}
                                 className="shrink-0 rounded-lg hover:bg-[var(--color-surface-elevated)]"
                               >
                                 Abrir Partitura en Pantalla Completa
@@ -1655,7 +1662,7 @@ function HoyPageContent() {
                         }
 
                         // VIDEO - Card (o modal si es link externo)
-                        if (type === 'video') {
+                        if (type === MediaKind.VIDEO || type === MediaKind.YOUTUBE || type === MediaKind.VIMEO) {
                           return (
                             <div key={idx} className="bg-white border border-[var(--color-border-default)] rounded-xl p-4 flex items-center gap-4 hover:border-[var(--color-primary)]/50 transition-colors shadow-sm group">
                               <div className="bg-blue-50 p-3 rounded-lg group-hover:bg-blue-100 transition-colors">
@@ -1667,7 +1674,7 @@ function HoyPageContent() {
                               </div>
                               <Button
                                 variant="outline"
-                                onClick={() => setMediaModal(url)}
+                                onClick={() => setMediaModal(mediaInfo.originalUrl)}
                                 className="shrink-0 rounded-lg hover:bg-[var(--color-surface-elevated)]"
                               >
                                 Ver Video
@@ -1680,7 +1687,7 @@ function HoyPageContent() {
                         return (
                           <div key={idx} className="bg-white border border-[var(--color-border-default)] rounded-xl p-3 flex items-center gap-3">
                             <ExternalLink className="w-5 h-5 text-[var(--color-text-secondary)]" />
-                            <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--color-primary)] hover:underline truncate flex-1">
+                            <a href={mediaInfo.originalUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--color-primary)] hover:underline truncate flex-1">
                               {fileName}
                             </a>
                           </div>
@@ -2410,106 +2417,108 @@ function HoyPageContent() {
                 </div>
 
                 {/* Sesiones - siempre visibles */}
-                {semanaDelPlan.sesiones && (
-                  <div className="space-y-2">
-                    {semanaDelPlan.sesiones.map((sesion, sesionIdx) => {
-                      const tiempoTotal = calcularTiempoSesion(sesion);
-                      const minutos = Math.floor(tiempoTotal / 60);
-                      const segundos = tiempoTotal % 60;
-                      const resumenExpandido = sesionesConResumenExpandido.has(sesionIdx);
+                {
+                  semanaDelPlan.sesiones && (
+                    <div className="space-y-2">
+                      {semanaDelPlan.sesiones.map((sesion, sesionIdx) => {
+                        const tiempoTotal = calcularTiempoSesion(sesion);
+                        const minutos = Math.floor(tiempoTotal / 60);
+                        const segundos = tiempoTotal % 60;
+                        const resumenExpandido = sesionesConResumenExpandido.has(sesionIdx);
 
-                      const toggleResumen = (e) => {
-                        e.stopPropagation();
-                        setSesionesConResumenExpandido(prev => {
-                          const next = new Set(prev);
-                          if (next.has(sesionIdx)) {
-                            next.delete(sesionIdx);
-                          } else {
-                            next.add(sesionIdx);
-                          }
-                          return next;
-                        });
-                      };
+                        const toggleResumen = (e) => {
+                          e.stopPropagation();
+                          setSesionesConResumenExpandido(prev => {
+                            const next = new Set(prev);
+                            if (next.has(sesionIdx)) {
+                              next.delete(sesionIdx);
+                            } else {
+                              next.add(sesionIdx);
+                            }
+                            return next;
+                          });
+                        };
 
-                      return (
-                        <div
-                          key={sesionIdx}
-                          className={`border rounded-lg p-3 cursor-pointer hover:shadow-sm transition-all ${sesionSeleccionada === sesionIdx
-                            ? `border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm`
-                            : `border-[var(--color-border-default)] bg-[var(--color-surface-default)] hover:bg-[var(--color-surface-muted)]`
-                            }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSesionSeleccionada(sesionIdx);
-                          }}
-                        >
-                          <div className="space-y-3">
-                            {/* Header de la sesión: chip + tiempo + foco */}
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Badge variant="outline" className="text-xs px-2 py-0.5 bg-[var(--color-surface-muted)]">
-                                {sesion.nombre}
-                              </Badge>
-                              <Badge
-                                variant="outline"
-                                className={`text-xs px-2 py-0.5 ${componentStyles.status.badgeSuccess}`}
-                              >
-                                <Clock className="w-3 h-3 mr-1" />
-                                {minutos}:{String(segundos).padStart(2, '0')} min
-                              </Badge>
-                              <Badge className={`${focoColors[sesion.foco]} text-xs px-2 py-0.5`} variant="outline">
-                                Foco: {focoLabels[sesion.foco]}
-                              </Badge>
-                            </div>
-
-                            {/* Botón para desplegar/colapsar ejercicios */}
-                            <button
-                              className={`w-full flex items-center gap-2 p-1.5 rounded-lg transition-colors ${resumenExpandido ? 'bg-[var(--color-surface-muted)]' : 'hover:bg-[var(--color-surface-muted)]'
-                                }`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleResumen(e);
-                              }}
-                            >
-                              {resumenExpandido ? (
-                                <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                              ) : (
-                                <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                              )}
-                              <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                                {resumenExpandido ? 'Ocultar ejercicios' : 'Ver ejercicios'}
-                              </span>
-                            </button>
-
-                            {/* Resumen expandido */}
-                            {resumenExpandido && (
-                              <div className="border-t border-[var(--color-border-default)] pt-2" onClick={(e) => e.stopPropagation()}>
-                                <SessionContentView sesion={sesion} compact dbBloques={bloquesActuales} semanaFoco={semanaDelPlan?.foco} />
-                              </div>
-                            )}
-
-                            {/* Botón de iniciar práctica (solo si está seleccionada) */}
-                            {sesionSeleccionada === sesionIdx && (
-                              <div className="pt-2 border-t border-[var(--color-border-default)] flex justify-center" onClick={(e) => e.stopPropagation()}>
-                                <Button
-                                  variant="primary"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    empezarSesion(sesion, sesionIdx);
-                                  }}
-                                  size="lg"
-                                  className={`${componentStyles.buttons.primary} w-full md:w-auto h-12 shadow-sm`}
+                        return (
+                          <div
+                            key={sesionIdx}
+                            className={`border rounded-lg p-3 cursor-pointer hover:shadow-sm transition-all ${sesionSeleccionada === sesionIdx
+                              ? `border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm`
+                              : `border-[var(--color-border-default)] bg-[var(--color-surface-default)] hover:bg-[var(--color-surface-muted)]`
+                              }`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSesionSeleccionada(sesionIdx);
+                            }}
+                          >
+                            <div className="space-y-3">
+                              {/* Header de la sesión: chip + tiempo + foco */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge variant="outline" className="text-xs px-2 py-0.5 bg-[var(--color-surface-muted)]">
+                                  {sesion.nombre}
+                                </Badge>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-xs px-2 py-0.5 ${componentStyles.status.badgeSuccess}`}
                                 >
-                                  <PlayCircle className="w-5 h-5 mr-2" />
-                                  Iniciar Práctica
-                                </Button>
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  {minutos}:{String(segundos).padStart(2, '0')} min
+                                </Badge>
+                                <Badge className={`${focoColors[sesion.foco]} text-xs px-2 py-0.5`} variant="outline">
+                                  Foco: {focoLabels[sesion.foco]}
+                                </Badge>
                               </div>
-                            )}
+
+                              {/* Botón para desplegar/colapsar ejercicios */}
+                              <button
+                                className={`w-full flex items-center gap-2 p-1.5 rounded-lg transition-colors ${resumenExpandido ? 'bg-[var(--color-surface-muted)]' : 'hover:bg-[var(--color-surface-muted)]'
+                                  }`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleResumen(e);
+                                }}
+                              >
+                                {resumenExpandido ? (
+                                  <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                                )}
+                                <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                                  {resumenExpandido ? 'Ocultar ejercicios' : 'Ver ejercicios'}
+                                </span>
+                              </button>
+
+                              {/* Resumen expandido */}
+                              {resumenExpandido && (
+                                <div className="border-t border-[var(--color-border-default)] pt-2" onClick={(e) => e.stopPropagation()}>
+                                  <SessionContentView sesion={sesion} compact dbBloques={bloquesActuales} semanaFoco={semanaDelPlan?.foco} />
+                                </div>
+                              )}
+
+                              {/* Botón de iniciar práctica (solo si está seleccionada) */}
+                              {sesionSeleccionada === sesionIdx && (
+                                <div className="pt-2 border-t border-[var(--color-border-default)] flex justify-center" onClick={(e) => e.stopPropagation()}>
+                                  <Button
+                                    variant="primary"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      empezarSesion(sesion, sesionIdx);
+                                    }}
+                                    size="lg"
+                                    className={`${componentStyles.buttons.primary} w-full md:w-auto h-12 shadow-sm`}
+                                  >
+                                    <PlayCircle className="w-5 h-5 mr-2" />
+                                    Iniciar Práctica
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  )
+                }
               </div>
             )}
 
