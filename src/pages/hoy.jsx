@@ -199,7 +199,8 @@ function HoyPageContent() {
         return localRes || [];
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   // Filtrar y validar asignaciones
@@ -536,19 +537,12 @@ function HoyPageContent() {
   }, [mostrarModalCancelar, mostrarItinerario, mediaFullscreen, reportModalAbierto, cronometroActivo, cronometroPausadoPorModal, sesionActiva, sesionFinalizada, timestampInicio]);
 
   const empezarSesion = async (sesion, sesionIdxProp) => {
-    console.log('[empezarSesion] Input sesion:', sesion);
     // Actualizar bloques con mediaLinks actuales de la base de datos
     const sesionActualizada = {
       ...sesion,
       bloques: (sesion.bloques || []).map(bloqueSnapshot => {
         // Buscar el bloque actual en la base de datos por código
         const bloqueActual = bloquesActuales.find(b => b.code === bloqueSnapshot.code);
-
-        console.log(`[empezarSesion] Processing ${bloqueSnapshot.code} (${bloqueSnapshot.nombre})`, {
-          modo: bloqueSnapshot.modo,
-          bloqueActualFound: !!bloqueActual,
-          hasVariations: bloqueActual?.variations?.length
-        });
 
         if (!bloqueActual) {
           console.warn(`[WARNING] Bloque ${bloqueSnapshot.code} no encontrado en la biblioteca (bloquesActuales). No se podrán cargar variaciones.`);
@@ -567,20 +561,19 @@ function HoyPageContent() {
             const userLevel = alumnoActual?.nivelTecnico || 1;
 
             const validVars = getValidVariations(bloqueActual, userLevel);
-            console.log(`[empezarSesion] Variations for ${bloqueSnapshot.code}:`, { userLevel, validVarsCount: validVars?.length });
 
             if (validVars) {
               const picked = pickRandomVariation(validVars);
-              console.log(`[empezarSesion] Picked variation:`, picked);
 
               if (picked) {
                 variationLabel = picked.label;
 
                 // 1. Media/Multimedia (User refers to this as "Materiales")
-                if (picked.asset_url) {
-                  selectedVariationMedia = [picked.asset_url];
-                } else if (picked.asset_urls && Array.isArray(picked.asset_urls)) {
-                  selectedVariationMedia = picked.asset_urls;
+                // Handle both camelCase (from API) and snake_case (raw DB)
+                if (picked.assetUrl || picked.asset_url) {
+                  selectedVariationMedia = [picked.assetUrl || picked.asset_url];
+                } else if ((picked.assetUrls || picked.asset_urls) && Array.isArray(picked.assetUrls || picked.asset_urls)) {
+                  selectedVariationMedia = picked.assetUrls || picked.asset_urls;
                 }
 
                 // 2. Duration
@@ -589,8 +582,6 @@ function HoyPageContent() {
                 }
               }
             }
-          } else {
-            console.log(`[empezarSesion] Skipping variation logic for ${bloqueSnapshot.code}. Mode: ${bloqueSnapshot.modo}`);
           }
 
           // Actualizar con mediaLinks y otras propiedades actualizadas
@@ -624,8 +615,6 @@ function HoyPageContent() {
         return bloqueSnapshot;
       })
     };
-
-    console.log('[empezarSesion] Final sesion blocks:', sesionActualizada.bloques.map(b => b.code));
 
 
     setSesionActiva(sesionActualizada);

@@ -1218,11 +1218,22 @@ export function createRemoteDataAPI(): AppDataAPI {
             camel.content = rawContent;
           }
           if (camel.content && !camel.variations) {
-            camel.variations = Array.isArray(camel.content) ? camel.content : [];
+            // Handle both array structure and { variations: [...] } structure
+            if (Array.isArray(camel.content)) {
+              camel.variations = camel.content;
+            } else if (camel.content.variations && Array.isArray(camel.content.variations)) {
+              camel.variations = camel.content.variations;
+            } else {
+              camel.variations = [];
+            }
           }
           // Also try to use raw content as fallback
-          if ((!camel.variations || camel.variations.length === 0) && rawContent && Array.isArray(rawContent)) {
-            camel.variations = rawContent;
+          if ((!camel.variations || camel.variations.length === 0) && rawContent) {
+            if (Array.isArray(rawContent)) {
+              camel.variations = rawContent;
+            } else if (rawContent.variations && Array.isArray(rawContent.variations)) {
+              camel.variations = rawContent.variations;
+            }
           }
           // DEBUG LOG - can be removed after fixing
           if (camel.variations?.length > 0) {
@@ -1250,7 +1261,13 @@ export function createRemoteDataAPI(): AppDataAPI {
         }
         // Map content (JSONB) to variations
         if (camel.content && !camel.variations) {
-          camel.variations = Array.isArray(camel.content) ? camel.content : [];
+          if (Array.isArray(camel.content)) {
+            camel.variations = camel.content;
+          } else if (camel.content.variations && Array.isArray(camel.content.variations)) {
+            camel.variations = camel.content.variations;
+          } else {
+            camel.variations = [];
+          }
         }
         return camel;
       },
@@ -1278,7 +1295,13 @@ export function createRemoteDataAPI(): AppDataAPI {
           // Map content (JSONB) to variations
           if (camel.content && !camel.variations) {
             // Handle new structure { variations: [...] } or legacy array structure
-            camel.variations = camel.content.variations || (Array.isArray(camel.content) ? camel.content : []);
+            if (Array.isArray(camel.content)) {
+              camel.variations = camel.content;
+            } else if (camel.content.variations && Array.isArray(camel.content.variations)) {
+              camel.variations = camel.content.variations;
+            } else {
+              camel.variations = [];
+            }
           }
           return camel;
         });
