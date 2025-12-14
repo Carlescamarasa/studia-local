@@ -53,6 +53,7 @@ import { useSidebar } from "@/components/ui/SidebarState";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 import MediaEmbed from "../components/common/MediaEmbed";
+import CustomAudioPlayer from "../components/common/CustomAudioPlayer";
 import { MediaIcon, getMediaLabel } from "../components/common/MediaEmbed";
 import { resolveMedia, MediaKind } from "../components/utils/media";
 import { shouldIgnoreHotkey } from "@/utils/hotkeys";
@@ -1620,7 +1621,10 @@ function HoyPageContent() {
                                   {fileName}
                                 </span>
                               </div>
-                              <audio controls className="w-full h-8" src={mediaInfo.embedUrl || mediaInfo.originalUrl} preload="metadata" />
+                              <CustomAudioPlayer
+                                className="w-full"
+                                src={mediaInfo.embedUrl || mediaInfo.originalUrl}
+                              />
                             </div>
                           );
                         }
