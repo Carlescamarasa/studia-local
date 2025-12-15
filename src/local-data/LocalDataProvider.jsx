@@ -12,15 +12,15 @@ const LocalDataContext = createContext(null);
  */
 function normalizeUser(user) {
   if (!user) return user;
-  
+
   // Si ya tiene nombreCompleto, retornar tal cual
   if (user.nombreCompleto && user.nombreCompleto.trim()) {
     return user;
   }
-  
+
   // Intentar generar nombreCompleto desde otros campos
   let nombreCompleto = null;
-  
+
   if (user.full_name && user.full_name.trim()) {
     nombreCompleto = user.full_name.trim();
   } else if (user.first_name || user.last_name) {
@@ -48,10 +48,10 @@ function normalizeUser(user) {
     // Último recurso: generar nombre genérico
     nombreCompleto = `Usuario ${user.id || 'Nuevo'}`;
   }
-  
+
   // Asegurar que full_name tenga valor - priorizar el existente, luego nombreCompleto generado
   const finalFullName = (user.full_name && user.full_name.trim()) || (nombreCompleto && nombreCompleto.trim()) || '';
-  
+
   return {
     ...user,
     nombreCompleto: nombreCompleto,
@@ -66,18 +66,20 @@ function migrateUsers(usuarios) {
   if (!Array.isArray(usuarios)) {
     return { usuarios: usuarios || [], needsUpdate: false };
   }
-  
+
   const normalized = usuarios.map(normalizeUser);
   const needsUpdate = normalized.some((u, i) => {
     const original = usuarios[i];
-    return u.nombreCompleto !== original?.nombreCompleto || 
-           u.full_name !== original?.full_name;
+    return u.nombreCompleto !== original?.nombreCompleto ||
+      u.full_name !== original?.full_name;
   });
-  
+
   return { usuarios: normalized, needsUpdate };
 }
 
 export function LocalDataProvider({ children }) {
+  const disableLocalData = import.meta.env.VITE_DISABLE_LOCAL_DATA === 'true';
+
   const [data, setData] = useState({
     asignaciones: [],
     bloques: [],
@@ -87,12 +89,31 @@ export function LocalDataProvider({ children }) {
     registrosBloque: [],
     registrosSesion: [],
     eventosCalendario: [],
-    usuarios: localUsers,
-    loading: true,
+    usuarios: disableLocalData ? [] : localUsers,
+    loading: !disableLocalData,
   });
 
   useEffect(() => {
     const loadData = async () => {
+      // If local data is disabled, use empty structure and rely on Supabase
+      if (disableLocalData) {
+        console.log('[LocalDataProvider] Local data disabled - using Supabase only');
+        const emptyData = {
+          asignaciones: [],
+          bloques: [],
+          feedbacksSemanal: [],
+          piezas: [],
+          planes: [],
+          registrosBloque: [],
+          registrosSesion: [],
+          eventosCalendario: [],
+          usuarios: [],
+          loading: false,
+        };
+        setLocalDataRef(emptyData);
+        setData(emptyData);
+        return;
+      }
       try {
         // Verificar si hay sesión de Supabase - si hay, no ejecutar rebuildAllLocalData
         const { data: { session } } = await supabase.auth.getSession();
@@ -137,12 +158,12 @@ export function LocalDataProvider({ children }) {
         // Normalizar usuarios asegurando que todos tengan nombreCompleto
         let usuarios = stored.usuarios?.length ? stored.usuarios : localUsers;
         const { usuarios: normalizedUsuarios, needsUpdate } = migrateUsers(usuarios);
-        
+
         // Si hubo cambios, guardar de vuelta en localStorage
         if (needsUpdate && stored) {
           saveToStorage({ usuarios: normalizedUsuarios });
         }
-        
+
         const loadedData = {
           asignaciones: stored.asignaciones || [],
           bloques: stored.bloques || [],

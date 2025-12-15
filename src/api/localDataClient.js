@@ -79,6 +79,14 @@ function resolveCurrentUser() {
 let cachedRemoteAPI = null;
 let cachedMode = null;
 function getDataAPI() {
+  // If local data is explicitly disabled, always use remote API
+  if (import.meta.env.VITE_DISABLE_LOCAL_DATA === 'true') {
+    if (!cachedRemoteAPI) {
+      cachedRemoteAPI = createRemoteDataAPI();
+    }
+    return cachedRemoteAPI;
+  }
+
   // Verificar si hay una sesión de Supabase activa
   // Si hay sesión, usar modo remoto automáticamente (a menos que VITE_DATA_SOURCE esté explícitamente en 'local')
   let dataSource = import.meta.env.VITE_DATA_SOURCE;
