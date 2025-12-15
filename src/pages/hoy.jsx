@@ -103,6 +103,29 @@ const startOfMonday = (date) => {
   return d;
 };
 
+const InfoSection = ({ title, icon, children, defaultOpen = true }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  return (
+    <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4 last:border-b-0">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 w-full text-left mb-1.5 md:mb-2 group"
+      >
+        {isOpen ? <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" /> : <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />}
+        <span className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] transition-colors flex items-center gap-2`}>
+          {icon && <span>{icon}</span>}
+          {title}
+        </span>
+      </button>
+      {isOpen && (
+        <div className="pl-6 animate-in fade-in slide-in-from-top-1 duration-200">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function HoyPage() {
   return (
     <RequireRole anyOf={['ESTU']}>
@@ -1714,22 +1737,20 @@ function HoyPageContent() {
                 </Alert>
               )}
 
-              {/* Objetivo de logro */}
-              {ejercicioActual.indicadorLogro && (
-                <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4">
-                  <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-info)] mb-1.5 md:mb-2`}>💡 Objetivo de logro</p>
-                  <p className="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed">{ejercicioActual.indicadorLogro}</p>
-                </div>
-              )}
-
-              {/* Instrucciones */}
+              {/* Instrucciones (Primero) */}
               {ejercicioActual.instrucciones && (
-                <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4">
-                  <p className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] mb-1.5 md:mb-2`}>📋 Instrucciones</p>
+                <InfoSection title="Instrucciones" icon="📋">
                   <p className="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed">
                     {ejercicioActual.instrucciones}
                   </p>
-                </div>
+                </InfoSection>
+              )}
+
+              {/* Objetivo de logro (Segundo) */}
+              {ejercicioActual.indicadorLogro && (
+                <InfoSection title="Objetivo de logro" icon="💡">
+                  <p className="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed">{ejercicioActual.indicadorLogro}</p>
+                </InfoSection>
               )}
 
               {!isAD && ejercicioActual.targetPPMs?.length > 0 && (() => {
@@ -1741,7 +1762,7 @@ function HoyPageContent() {
                 if (target) {
                   return (
                     <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4">
-                      <div className="mb-4 p-3 bg-[var(--color-info)]/10 text-[var(--color-info)] rounded-lg flex items-center gap-2 text-sm font-medium border border-[var(--color-info)]/20">
+                      <div className="mb-4 p-3 bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] rounded-lg flex items-center gap-2 text-sm font-medium border border-[var(--color-border-default)]">
                         <span>🎯</span>
                         <span>Tempo objetivo (Nivel {target.nivel}): {target.unidad || 'Negra'} = {target.bpm} bpm</span>
                       </div>
