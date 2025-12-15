@@ -12,20 +12,20 @@ const AuthContext = createContext(undefined);
  */
 function calculateAppRoleFromEmail(email) {
   if (!email) return 'ESTU';
-  
+
   const normalizedEmail = email.toLowerCase().trim();
-  
+
   // Admin
   if (normalizedEmail === 'carlescamarasa@gmail.com') {
     return 'ADMIN';
   }
-  
+
   // Profesores
-  if (normalizedEmail === 'carlescamarasa+profe@gmail.com' || 
-      normalizedEmail === 'atorrestrompeta@gmail.com') {
+  if (normalizedEmail === 'carlescamarasa+profe@gmail.com' ||
+    normalizedEmail === 'atorrestrompeta@gmail.com') {
     return 'PROF';
   }
-  
+
   // Por defecto: Estudiante
   return 'ESTU';
 }
@@ -43,20 +43,20 @@ export function AuthProvider({ children }) {
     initialProfileLoaded: false, // Flag para saber si ya cargamos el perfil inicial
     error: null,
   });
-  
+
   // Refs para control de carga
   const fetchingProfileRef = useRef(false);
   const lastProfileUserIdRef = useRef(null); // Trackear último userId cargado
   const sessionCheckIntervalRef = useRef(null);
   const sessionNotFoundShownRef = useRef(false);
-  
+
   // Extraer valores del estado para compatibilidad
   const user = authState.user;
   const session = authState.session;
   const profile = authState.profile;
   const loading = authState.loading;
   const authError = authState.error;
-  
+
   // Calcular appRole basándose en el email del usuario
   const appRole = useMemo(() => {
     return calculateAppRoleFromEmail(user?.email);
@@ -100,10 +100,10 @@ export function AuthProvider({ children }) {
       if (error) {
         // Separar errores de red de "no hay perfil"
         // Solo considerar NetworkError si viene de esta petición específica a profiles
-        const isNetworkError = error.message?.includes('NetworkError') || 
-                               (error.message?.includes('fetch') && !error.code) ||
-                               error.name === 'TypeError';
-        
+        const isNetworkError = error.message?.includes('NetworkError') ||
+          (error.message?.includes('fetch') && !error.code) ||
+          error.name === 'TypeError';
+
         if (isNetworkError) {
           // Error de red en la petición a profiles: registrar específicamente
           if (import.meta.env.DEV) {
@@ -158,9 +158,9 @@ export function AuthProvider({ children }) {
       if (!data) {
         // Respuesta 200 pero sin datos
         if (import.meta.env.DEV) {
-        console.warn('[AuthProvider] No se encontró perfil en la tabla profiles (respuesta vacía):', {
-          userId,
-        });
+          console.warn('[AuthProvider] No se encontró perfil en la tabla profiles (respuesta vacía):', {
+            userId,
+          });
         }
         setAuthState(prev => ({
           ...prev,
@@ -178,26 +178,26 @@ export function AuthProvider({ children }) {
         initialProfileLoaded: isInitialLoad ? true : prev.initialProfileLoaded,
         loading: isInitialLoad ? false : prev.loading, // Solo cambiar loading en carga inicial
       }));
-      
+
       if (import.meta.env.DEV) {
       }
-      
+
       fetchingProfileRef.current = false;
     } catch (err) {
       // Error de red o excepción no controlada en la petición a profiles
       // Detectar errores de red de varias formas, pero SOLO si vienen de esta petición
       const errorMessage = err?.message || err?.toString() || '';
       const errorName = err?.name || '';
-      
+
       // Verificar que el error realmente viene de la petición a profiles
       // Los errores de otras peticiones no deberían llegar aquí si se manejan bien
-      const isNetworkError = 
-        (errorMessage.includes('NetworkError') || 
-         errorMessage.includes('Failed to fetch') ||
-         (errorName === 'TypeError' && errorMessage.includes('fetch'))) &&
+      const isNetworkError =
+        (errorMessage.includes('NetworkError') ||
+          errorMessage.includes('Failed to fetch') ||
+          (errorName === 'TypeError' && errorMessage.includes('fetch'))) &&
         // Asegurar que no es un error de otra petición (por ejemplo, Edge Functions)
         !errorMessage.includes('/functions/v1/');
-      
+
       if (isNetworkError) {
         // Error de red específico de la petición a profiles
         // Registrar como warning en lugar de error para no saturar la consola
@@ -242,83 +242,119 @@ export function AuthProvider({ children }) {
   // ============================================================================
   useEffect(() => {
     let isMounted = true;
-    
-    // Obtener sesión inicial
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      if (!isMounted) return;
-      
-      // Manejar errores de sesión explícitamente
-      if (error) {
-        const isSessionNotFound = error.message?.includes('session_not_found') || 
-                                  error.status === 403 ||
-                                  error.code === 'session_not_found';
-        
-        if (isSessionNotFound && !sessionNotFoundShownRef.current) {
-          sessionNotFoundShownRef.current = true;
-          toast.error('Sesión expirada. Por favor, vuelve a iniciar sesión.', {
-            duration: 5000,
-          });
-          
-          // Limpiar estado
-          setAuthState({
-            session: null,
-            user: null,
-            profile: null,
-            loading: false,
-            initialProfileLoaded: false,
-            error,
-          });
-          lastProfileUserIdRef.current = null;
-          fetchingProfileRef.current = false;
-          
-          // Limpiar tokens locales
-          try {
-            await supabase.auth.signOut();
-          } catch (signOutError) {
-            // Ignorar errores al cerrar sesión
-          }
-          
-          // Redirigir a login después de 2 segundos
-          setTimeout(() => {
-            if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/login') {
-              window.location.href = '/auth/login';
+    const SESSION_TIMEOUT_MS = 10000; // 10 second timeout for session fetch
+
+    // Helper: getSession with timeout to prevent infinite loading on stale tokens
+    const getSessionWithTimeout = () => {
+      const sessionPromise = supabase.auth.getSession();
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Session fetch timeout - possible stale token')), SESSION_TIMEOUT_MS)
+      );
+      return Promise.race([sessionPromise, timeoutPromise]);
+    };
+
+    // Obtener sesión inicial con timeout
+    getSessionWithTimeout()
+      .then(async ({ data: { session }, error }) => {
+        if (!isMounted) return;
+
+        // Manejar errores de sesión explícitamente
+        if (error) {
+          const isSessionNotFound = error.message?.includes('session_not_found') ||
+            error.status === 403 ||
+            error.code === 'session_not_found';
+
+          if (isSessionNotFound && !sessionNotFoundShownRef.current) {
+            sessionNotFoundShownRef.current = true;
+            toast.error('Sesión expirada. Por favor, vuelve a iniciar sesión.', {
+              duration: 5000,
+            });
+
+            // Limpiar estado
+            setAuthState({
+              session: null,
+              user: null,
+              profile: null,
+              loading: false,
+              initialProfileLoaded: false,
+              error,
+            });
+            lastProfileUserIdRef.current = null;
+            fetchingProfileRef.current = false;
+
+            // Limpiar tokens locales
+            try {
+              await supabase.auth.signOut();
+            } catch (signOutError) {
+              // Ignorar errores al cerrar sesión
             }
-          }, 2000);
-          
-          return;
+
+            // Redirigir a login después de 2 segundos
+            setTimeout(() => {
+              if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/login') {
+                window.location.href = '/auth/login';
+              }
+            }, 2000);
+
+            return;
+          }
         }
-      }
-      
-      // Actualizar estado con sesión inicial
-      setAuthState(prev => ({
-        ...prev,
-        session,
-        user: session?.user ?? null,
-        error: null,
-      }));
-      sessionNotFoundShownRef.current = false;
-      
-      // Solo cargar perfil si hay sesión y usuario, y no está ya cargado
-      if (session?.user?.id) {
-        // Cargar perfil inicial (loading será true hasta que termine)
-        await fetchProfile(session.user.id, true);
-      } else {
-        // No hay sesión - marcar como cargado sin perfil
+
+        // Actualizar estado con sesión inicial
         setAuthState(prev => ({
           ...prev,
+          session,
+          user: session?.user ?? null,
+          error: null,
+        }));
+        sessionNotFoundShownRef.current = false;
+
+        // Solo cargar perfil si hay sesión y usuario, y no está ya cargado
+        if (session?.user?.id) {
+          // Cargar perfil inicial (loading será true hasta que termine)
+          await fetchProfile(session.user.id, true);
+        } else {
+          // No hay sesión - marcar como cargado sin perfil
+          setAuthState(prev => ({
+            ...prev,
+            profile: null,
+            loading: false,
+            initialProfileLoaded: true,
+          }));
+        }
+      })
+      .catch((err) => {
+        // Timeout o error de red en getSession
+        if (!isMounted) return;
+
+        console.warn('[AuthProvider] Session fetch failed/timed out:', err.message);
+
+        // En caso de timeout, limpiar estado y permitir que el usuario inicie sesión
+        setAuthState({
+          session: null,
+          user: null,
           profile: null,
           loading: false,
           initialProfileLoaded: true,
-        }));
-      }
-    });
+          error: null, // No mostrar error, simplemente redirigir a login
+        });
+        lastProfileUserIdRef.current = null;
+        fetchingProfileRef.current = false;
+
+        // Limpiar tokens potencialmente corruptos
+        try {
+          supabase.auth.signOut().catch(() => { });
+        } catch (e) {
+          // Ignorar
+        }
+      });
 
     // Suscribirse a cambios de autenticación
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
-      
+
       // Manejar eventos específicos de expiración
       if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
         if (event === 'SIGNED_OUT') {
@@ -373,7 +409,7 @@ export function AuthProvider({ children }) {
           return;
         }
       }
-      
+
       // Si no hay sesión (sesión expirada o usuario cerrado sesión), limpiar estado
       if (!session) {
         setAuthState({
@@ -389,10 +425,10 @@ export function AuthProvider({ children }) {
         sessionNotFoundShownRef.current = false;
         return;
       }
-      
+
       // Actualizar usuario inmediatamente
       const userIdChanged = !authState.user || authState.user.id !== session.user.id;
-      
+
       setAuthState(prev => ({
         ...prev,
         session,
@@ -402,7 +438,7 @@ export function AuthProvider({ children }) {
         loading: userIdChanged && !prev.initialProfileLoaded ? true : prev.loading,
       }));
       sessionNotFoundShownRef.current = false;
-      
+
       // Obtener perfil solo si el usuario cambió (nuevo login)
       if (session?.user?.id && userIdChanged) {
         if (import.meta.env.DEV) {
@@ -422,10 +458,10 @@ export function AuthProvider({ children }) {
       if (!isMounted) return;
       const error = event.detail?.error;
       if (error && isAuthError(error)) {
-        const isSessionNotFound = error.message?.includes('session_not_found') || 
-                                  error.status === 403 ||
-                                  error.code === 'session_not_found';
-        
+        const isSessionNotFound = error.message?.includes('session_not_found') ||
+          error.status === 403 ||
+          error.code === 'session_not_found';
+
         // Forzar cierre de sesión cuando se detecta error de autenticación
         setAuthState({
           session: null,
@@ -438,14 +474,14 @@ export function AuthProvider({ children }) {
         lastProfileUserIdRef.current = null;
         fetchingProfileRef.current = false;
         sessionNotFoundShownRef.current = false;
-        
+
         // Mostrar mensaje solo si no se ha mostrado recientemente
         if (isSessionNotFound && !sessionNotFoundShownRef.current) {
           sessionNotFoundShownRef.current = true;
           toast.error('Sesión expirada. Por favor, vuelve a iniciar sesión.', {
             duration: 5000,
           });
-          
+
           // Redirigir a login después de 2 segundos
           setTimeout(() => {
             if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/login') {
@@ -453,7 +489,7 @@ export function AuthProvider({ children }) {
             }
           }, 2000);
         }
-        
+
         try {
           await supabase.auth.signOut();
         } catch (signOutError) {
@@ -468,15 +504,15 @@ export function AuthProvider({ children }) {
     // IMPORTANTE: Solo verifica la sesión, NO recarga el perfil a menos que cambie el usuario
     sessionCheckIntervalRef.current = setInterval(async () => {
       if (!isMounted) return;
-      
+
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        
+
         if (error && isAuthError(error)) {
-          const isSessionNotFound = error.message?.includes('session_not_found') || 
-                                    error.status === 403 ||
-                                    error.code === 'session_not_found';
-          
+          const isSessionNotFound = error.message?.includes('session_not_found') ||
+            error.status === 403 ||
+            error.code === 'session_not_found';
+
           // Sesión expirada - limpiar estado
           setAuthState({
             session: null,
@@ -488,21 +524,21 @@ export function AuthProvider({ children }) {
           });
           lastProfileUserIdRef.current = null;
           fetchingProfileRef.current = false;
-          
+
           // Mostrar mensaje solo si no se ha mostrado recientemente
           if (isSessionNotFound && !sessionNotFoundShownRef.current) {
             sessionNotFoundShownRef.current = true;
             toast.error('Sesión expirada. Por favor, vuelve a iniciar sesión.', {
               duration: 5000,
             });
-            
+
             // Limpiar tokens locales
             try {
               await supabase.auth.signOut();
             } catch (signOutError) {
               // Ignorar errores al cerrar sesión
             }
-            
+
             // Redirigir a login después de 2 segundos
             setTimeout(() => {
               if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/login') {
@@ -512,10 +548,10 @@ export function AuthProvider({ children }) {
           }
           return;
         }
-        
+
         // Actualizar estado solo si cambió algo
         setAuthState(prev => {
-        // Si no hay sesión pero tenemos usuario en estado, limpiar
+          // Si no hay sesión pero tenemos usuario en estado, limpiar
           if (!session && prev.user) {
             return {
               session: null,
@@ -526,7 +562,7 @@ export function AuthProvider({ children }) {
               error: null,
             };
           }
-          
+
           // Si hay sesión pero el usuario cambió, actualizar (muy raro)
           if (session?.user && (!prev.user || prev.user.id !== session.user.id)) {
             return {
@@ -536,24 +572,24 @@ export function AuthProvider({ children }) {
               error: null,
             };
           }
-          
+
           // Solo actualizar error si cambió
           if (prev.error !== null) {
             return { ...prev, error: null };
           }
-          
+
           return prev; // No hay cambios
         });
-        
+
         // Solo recargar perfil si cambió el usuario (muy raro en verificación periódica)
         if (session?.user?.id && lastProfileUserIdRef.current !== session.user.id) {
           if (import.meta.env.DEV) {
           }
           fetchProfile(session.user.id, false).catch(err => {
             if (import.meta.env.DEV) {
-                console.error('[AuthProvider] Error obteniendo perfil en verificación periódica:', err);
-              }
-            });
+              console.error('[AuthProvider] Error obteniendo perfil en verificación periódica:', err);
+            }
+          });
         }
       } catch (err) {
         // Error al verificar sesión - no hacer nada para no interrumpir la experiencia
@@ -597,7 +633,7 @@ export function AuthProvider({ children }) {
         // Mantener loading hasta que se cargue el perfil inicial
         loading: !prev.initialProfileLoaded,
       }));
-      
+
       // Obtener perfil en background (no bloquear)
       if (data.user.id) {
         fetchProfile(data.user.id, !authState.initialProfileLoaded).catch(err => {
@@ -613,7 +649,7 @@ export function AuthProvider({ children }) {
 
   const signOut = useCallback(async () => {
     try {
-    const { error } = await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
       // Si el error es que no hay sesión (403, AuthSessionMissingError), es válido continuar
       // ya que el objetivo es cerrar sesión y si no hay sesión, ya estamos en el estado deseado
       if (error && error.message !== 'Auth session missing!' && error.message !== 'JWT expired') {
@@ -626,10 +662,10 @@ export function AuthProvider({ children }) {
         // Continuar con la limpieza aunque falló el signOut
       } else {
         // Otros errores pueden ser importantes, relanzarlos
-      throw error;
+        throw error;
       }
     }
-    
+
     // Limpiar perfil al cerrar sesión (siempre, incluso si falló el signOut)
     setAuthState({
       session: null,
@@ -648,12 +684,12 @@ export function AuthProvider({ children }) {
   const checkSession = useCallback(async () => {
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
-      
+
       if (error && isAuthError(error)) {
-        const isSessionNotFound = error.message?.includes('session_not_found') || 
-                                  error.status === 403 ||
-                                  error.code === 'session_not_found';
-        
+        const isSessionNotFound = error.message?.includes('session_not_found') ||
+          error.status === 403 ||
+          error.code === 'session_not_found';
+
         // Sesión expirada - limpiar estado
         setAuthState({
           session: null,
@@ -665,21 +701,21 @@ export function AuthProvider({ children }) {
         });
         lastProfileUserIdRef.current = null;
         fetchingProfileRef.current = false;
-        
+
         // Mostrar mensaje solo si no se ha mostrado recientemente
         if (isSessionNotFound && !sessionNotFoundShownRef.current) {
           sessionNotFoundShownRef.current = true;
           toast.error('Sesión expirada. Por favor, vuelve a iniciar sesión.', {
             duration: 5000,
           });
-          
+
           // Limpiar tokens locales
           try {
             await supabase.auth.signOut();
           } catch (signOutError) {
             // Ignorar errores al cerrar sesión
           }
-          
+
           // Redirigir a login después de 2 segundos
           setTimeout(() => {
             if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/login') {
@@ -687,10 +723,10 @@ export function AuthProvider({ children }) {
             }
           }, 2000);
         }
-        
+
         return false;
       }
-      
+
       // Hay sesión válida - actualizar estado si es necesario
       if (!session) {
         // No hay sesión - limpiar si tenemos usuario en estado
@@ -709,7 +745,7 @@ export function AuthProvider({ children }) {
         }
         return false;
       }
-      
+
       // Hay sesión válida - actualizar estado solo si cambió el usuario
       const userIdChanged = !authState.user || authState.user.id !== session.user.id;
       if (userIdChanged) {
@@ -724,7 +760,7 @@ export function AuthProvider({ children }) {
           await fetchProfile(session.user.id, !authState.initialProfileLoaded);
         }
       }
-      
+
       return true;
     } catch (err) {
       if (process.env.NODE_ENV === 'development') {
@@ -739,7 +775,7 @@ export function AuthProvider({ children }) {
     if (!isAuthError(error)) {
       return;
     }
-    
+
     // Forzar cierre de sesión
     await signOut();
   }, [signOut]);
@@ -749,7 +785,7 @@ export function AuthProvider({ children }) {
     // Usar la misma lógica que authPasswordHelpers para consistencia
     const appUrl = import.meta.env.VITE_APP_URL;
     let redirectTo;
-    
+
     if (appUrl) {
       const baseUrl = appUrl.endsWith('/') ? appUrl.slice(0, -1) : appUrl;
       redirectTo = `${baseUrl}/reset-password`;
@@ -791,7 +827,7 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  
+
   if (!context) {
     // En desarrollo, durante HMR, intenta no crashear toda la app
     if (import.meta.env.DEV && import.meta.hot) {
@@ -807,17 +843,17 @@ export function useAuth() {
         loading: true,
         authError: null,
         signIn: async () => ({ user: null, session: null }),
-        signOut: async () => {},
+        signOut: async () => { },
         checkSession: async () => false,
-        handleAuthError: async () => {},
+        handleAuthError: async () => { },
         resetPassword: async () => true,
       };
     }
-    
+
     // En producción, sí quiero que esto sea un error duro
     throw new Error('useAuth debe usarse dentro de AuthProvider');
   }
-  
+
   return context;
 }
 
