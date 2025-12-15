@@ -106,7 +106,7 @@ export function formatShortcut(combo, useCmdOnMac = false) {
     // Letras simples
     return p.length === 1 ? p.toUpperCase() : p;
   });
-  
+
   // En Mac, añadir espacios entre símbolos para mejor legibilidad
   // En Windows/Linux, usar el separador "+"
   return isMac ? formatted.join(' ') : formatted.join('+');
@@ -127,20 +127,20 @@ export function matchesCombo(event, combo, useCmdOnMac = false) {
   const parts = combo.split('+').map(p => p.trim().toLowerCase());
   const key = event.key?.toLowerCase();
   const code = event.code?.toLowerCase();
-  
+
   // Verificar mod
   // En Mac: para atajos propios de Studia usamos Ctrl, excepto si useCmdOnMac es true
   // En Windows/Linux: siempre usamos Ctrl
   const needsMod = parts.includes('mod');
   const needsAlt = parts.includes('alt');
-  
+
   // Usar getModifierState como alternativa más confiable en algunos navegadores
   const hasCtrl = event.ctrlKey || (event.getModifierState && event.getModifierState('Control'));
   const hasMeta = event.metaKey || (event.getModifierState && event.getModifierState('Meta'));
   const hasAlt = event.altKey || (event.getModifierState && event.getModifierState('Alt'));
   const hasShift = event.shiftKey || (event.getModifierState && event.getModifierState('Shift'));
-  
-  
+
+
   if (needsMod) {
     if (isMac && useCmdOnMac) {
       // Caso especial: feedback-submit usa ⌘ en Mac
@@ -176,7 +176,7 @@ export function matchesCombo(event, combo, useCmdOnMac = false) {
   // Verificar la tecla principal (antes de verificar shift, porque "?" y "/" pueden necesitar shift pero no tenerlo en el combo)
   const mainKey = parts.find(p => !['mod', 'alt', 'shift'].includes(p));
   if (!mainKey) return false;
-  
+
   // Extraer codeKey temprano para usarlo en los casos especiales
   // code tiene formato "KeyM", "KeyE", etc. - extraer la letra
   let codeKey = null;
@@ -185,7 +185,7 @@ export function matchesCombo(event, combo, useCmdOnMac = false) {
   } else if (code && code.startsWith('Digit')) {
     codeKey = code.substring(5);
   }
-  
+
   // Manejo especial para '?' - se genera con Shift+/, así que requiere Shift pero lo capturamos como '?' simple
   // DEBE estar ANTES de la verificación general de shift
   if (mainKey === '?' && !needsMod && !needsAlt) {
@@ -197,14 +197,14 @@ export function matchesCombo(event, combo, useCmdOnMac = false) {
     }
     return false;
   }
-  
+
   // Manejo especial para '/' con mod (mod+/) - DEBE estar ANTES de la verificación general de shift
   // En algunos teclados, '/' se genera con Shift+7, así que también aceptamos eso
   if (mainKey === '/' && needsMod && !needsAlt) {
     // Verificar que sea '/' o que sea '7' con Shift (Shift+7 produce '/')
     const isSlash = key === '/' || code === 'slash' || code === 'numpaddivide' || codeKey === '/';
     const isShift7 = (key === '7' || code === 'Digit7') && hasShift && !hasAlt;
-    
+
     if (isSlash || isShift7) {
       // Para Shift+7, necesitamos Shift, pero para '/' directo no
       if (isShift7) {
@@ -276,24 +276,24 @@ export function matchesCombo(event, combo, useCmdOnMac = false) {
 
   // Normalizar tecla principal
   const normalizedMainKey = keyMap[mainKey] || mainKey;
-  
+
   // Normalizar tecla del evento
   // Si estamos en Mac y hay Alt presionado, puede que key sea un carácter especial
   // En ese caso, intentamos mapearlo o usar code
   let normalizedEventKey = keyMap[key] || key;
-  
+
   // Si key es un carácter especial de Alt en Mac, mapearlo a la tecla base
   if (isMac && hasAlt && macAltCharMap[key]) {
     normalizedEventKey = macAltCharMap[key];
   }
-  
+
   // Comparar la tecla principal con la tecla del evento
   // codeKey ya fue extraído arriba para los casos especiales
   // PRIORIZAR codeKey porque siempre es la tecla física (más confiable en Mac con Alt)
   // key puede ser un carácter especial en Mac con Alt, pero code siempre es correcto
   let keyMatches = false;
   let codeMatches = false;
-  
+
   // Primero intentar con codeKey (más confiable, especialmente en Mac con Alt)
   // codeKey siempre es la tecla física, así que comparamos directamente con mainKey
   if (codeKey) {
@@ -301,14 +301,14 @@ export function matchesCombo(event, combo, useCmdOnMac = false) {
     // mainKey es lo que esperamos (ej: 't', 'q', 'l', 'n')
     codeMatches = (mainKey.toLowerCase() === codeKey);
   }
-  
+
   // Luego intentar con key normalizado (por si codeKey no está disponible)
   if (!codeMatches) {
     // normalizedEventKey ya tiene el mapeo de caracteres especiales aplicado
     keyMatches = (normalizedMainKey === normalizedEventKey || mainKey === normalizedEventKey);
-    }
-  
-  
+  }
+
+
   // Para teclas simples (una sola letra, número o '/' sin modificadores especiales)
   if (mainKey.length === 1 && !needsMod && !needsAlt && !needsShift && mainKey !== '?' && mainKey !== '/') {
     // Comparar directamente
@@ -441,7 +441,7 @@ export const HOTKEYS_CONFIG = [
     scope: 'global',
     primary: 'mod+alt+p',
     aliases: [],
-    description: 'Ir a Plantillas',
+    description: 'Ir a Biblioteca',
     roles: ['PROF', 'ADMIN'],
   },
   {
@@ -632,7 +632,7 @@ export function matchesHotkey(event, hotkey) {
  * @returns {Array} - Array de hotkeys filtrados
  */
 export function getHotkeysForRole(role, scope = 'global') {
-  return HOTKEYS_CONFIG.filter(hk => 
+  return HOTKEYS_CONFIG.filter(hk =>
     hk.scope === scope && hk.roles.includes(role)
   );
 }

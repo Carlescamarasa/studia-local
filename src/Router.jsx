@@ -23,7 +23,7 @@ const Estadisticas = lazy(() => import("@/pages/estadisticas.jsx"));
 const Estudiantes = lazy(() => import("@/pages/estudiantes.jsx"));
 const Calendario = lazy(() => import("@/pages/calendario.jsx"));
 const LocalPage = lazy(() => import("@/pages/local.jsx"));
-const Plantillas = lazy(() => import("@/pages/plantillas.jsx"));
+const Biblioteca = lazy(() => import("@/pages/biblioteca.jsx"));
 const Design = lazy(() => import("@/pages/design.jsx"));
 const Testseed = lazy(() => import("@/pages/testseed.jsx"));
 const TestLoading = lazy(() => import("@/pages/test-loading.jsx"));
@@ -98,7 +98,8 @@ export default function AppRouter() {
           <Route path="estadisticas" element={<Estadisticas />} />
           <Route path="estudiantes" element={<Estudiantes />} />
           <Route path="calendario" element={<Calendario />} />
-          <Route path="plantillas" element={<Plantillas />} />
+          <Route path="biblioteca" element={<Biblioteca />} />
+          <Route path="plantillas" element={<Navigate to="/biblioteca" replace />} />
           <Route path="design" element={<Design />} />
           <Route path="testseed" element={<Testseed />} />
           <Route path="test-loading" element={<TestLoading />} />

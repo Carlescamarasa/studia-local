@@ -70,7 +70,7 @@ const navigationByRole = {
   ADMIN: [
     { title: "Usuarios", url: "/usuarios", icon: Users, group: "Planificador" },
     { title: "Asignaciones", url: "/asignaciones", icon: Target, group: "Planificador" },
-    { title: "Plantillas", url: "/plantillas", icon: Edit3, group: "Planificador" },
+    { title: "Biblioteca", url: "/biblioteca", icon: Edit3, group: "Planificador" },
     { title: "Tickets alumnos", url: "/soporte-prof", icon: MessageSquare, group: "Profesor" },
     { title: "Agenda", url: "/agenda", icon: Calendar, group: "Profesor" },
     { title: "Calendario", url: "/calendario", icon: Calendar, group: "Profesor" },
@@ -86,7 +86,7 @@ const navigationByRole = {
   PROF: [
     { title: "Mis Estudiantes", url: "/estudiantes", icon: Users, group: "Planificador" },
     { title: "Asignaciones", url: "/asignaciones", icon: Target, group: "Planificador" },
-    { title: "Plantillas", url: "/plantillas", icon: Edit3, group: "Planificador" },
+    { title: "Biblioteca", url: "/biblioteca", icon: Edit3, group: "Planificador" },
     { title: "Tickets alumnos", url: "/soporte-prof", icon: MessageSquare, group: "Profesor" },
     { title: "Agenda", url: "/agenda", icon: Calendar, group: "Profesor" },
     { title: "Calendario", url: "/calendario", icon: Calendar, group: "Profesor" },
@@ -268,7 +268,7 @@ function LayoutContent() {
         },
         'go-templates': () => {
           e.preventDefault();
-          navigate(createPageUrl('plantillas'));
+          navigate(createPageUrl('biblioteca'));
         },
         'go-stats-prof': () => {
           e.preventDefault();
@@ -484,7 +484,7 @@ function LayoutContent() {
     '/reportes': ['ADMIN'],
     '/estudiantes': ['PROF', 'ADMIN'],
     '/asignaciones': ['PROF', 'ADMIN'],
-    '/plantillas': ['PROF', 'ADMIN'],
+    '/biblioteca': ['PROF', 'ADMIN'],
     '/agenda': ['PROF', 'ADMIN'],
     '/calendario': ['ESTU', 'PROF', 'ADMIN'],
     '/hoy': ['ESTU'],

@@ -57,7 +57,7 @@ Referencia completa de atajos de teclado disponibles en Studia.
 |--------------------|-----------------------|----------------------|
 | Ir a **Asignaciones**   | `Ctrl + Alt + A`      | `Ctrl + ⌥ + A`       |
 | Ir a **Agenda**         | `Ctrl + Alt + G`      | `Ctrl + ⌥ + G`       |
-| Ir a **Plantillas**     | `Ctrl + Alt + P`      | `Ctrl + ⌥ + P`       |
+| Ir a **Biblioteca**     | `Ctrl + Alt + P`      | `Ctrl + ⌥ + P`       |
 | Ir a **Estadísticas**   | `Ctrl + Alt + E`      | `Ctrl + ⌥ + E`       |
 | Ir a **Calendario**     | `Ctrl + Alt + C`      | `Ctrl + ⌥ + C`       |
 
@@ -85,11 +85,11 @@ Referencia completa de atajos de teclado disponibles en Studia.
 
 - En **Asignaciones**: crea una nueva asignación.
 
-- En **Plantillas** → Piezas: crea una nueva pieza.
+- En **Biblioteca** → Piezas: crea una nueva pieza.
 
-- En **Plantillas** → Ejercicios: crea un nuevo ejercicio.
+- En **Biblioteca** → Ejercicios: crea un nuevo ejercicio.
 
-- En **Plantillas** → Planes: crea un nuevo plan.
+- En **Biblioteca** → Planes: crea un nuevo plan.
 
 - En **Usuarios**: crea un nuevo usuario.
 

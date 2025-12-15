@@ -152,7 +152,7 @@ export default function TestSeedPage() {
 
         try {
           addLog(`📝 Creando usuario ${usuario.nombre} (${usuario.email})...`, 'info');
-          
+
           // Crear usuario usando signUp
           // Nota: Requiere que la confirmación de email esté deshabilitada en Supabase
           // o que uses Admin API con service_role key
@@ -172,14 +172,14 @@ export default function TestSeedPage() {
             // Si el usuario ya existe, intentar obtenerlo
             const errorMessage = authError.message?.toLowerCase() || '';
             const errorCode = authError.code || authError.status || '';
-            const isAlreadyExists = 
-              errorMessage.includes('already registered') || 
-              errorMessage.includes('already exists') || 
+            const isAlreadyExists =
+              errorMessage.includes('already registered') ||
+              errorMessage.includes('already exists') ||
               errorMessage.includes('user already registered') ||
               errorMessage.includes('email address is already') ||
               errorCode === 'signup_disabled' ||
               authError.status === 400; // 400 puede ser usuario existente o email no confirmado
-            
+
             if (isAlreadyExists) {
               addLog(`ℹ️ Usuario ${usuario.email} ya existe o está deshabilitado. Obteniendo información...`, 'info');
               const usuariosActualizados = await localDataClient.entities.User.list();
@@ -203,7 +203,7 @@ export default function TestSeedPage() {
 
           if (authData?.user) {
             addLog(`✅ Usuario ${usuario.email} creado en auth.users (ID: ${authData.user.id})`, 'success');
-            
+
             // Actualizar el perfil con los datos correctos
             const { error: updateError } = await supabase
               .from('profiles')
@@ -222,7 +222,7 @@ export default function TestSeedPage() {
                 .select('*')
                 .eq('id', authData.user.id)
                 .single();
-              
+
               if (perfilExistente) {
                 addLog(`✅ Perfil encontrado para ${usuario.email}`, 'success');
                 creados++;
@@ -235,7 +235,7 @@ export default function TestSeedPage() {
             } else {
               addLog(`✅ Perfil actualizado para ${usuario.email}`, 'success');
               creados++;
-              
+
               if (usuario.role === 'PROF') {
                 profesoresCreados.push(authData.user.id);
               }
@@ -255,8 +255,8 @@ export default function TestSeedPage() {
       if (profesoresCreados.length > 0) {
         addLog('📝 Asignando estudiantes a profesores...', 'info');
         const estudiantesCreados = await localDataClient.entities.User.list();
-        const estudiantesParaAsignar = estudiantesCreados.filter(u => 
-          u.rolPersonalizado === 'ESTU' && 
+        const estudiantesParaAsignar = estudiantesCreados.filter(u =>
+          u.rolPersonalizado === 'ESTU' &&
           estudiantes.some(e => e.email.toLowerCase() === u.email?.toLowerCase())
         );
 
@@ -293,23 +293,23 @@ export default function TestSeedPage() {
   const generarSemillasRealistas = async (numSemanas, fechaInicio = null, fechaFin = null) => {
     setIsSeeding(true);
     clearLogs();
-    
+
     // Determinar el modo de generación
     let semanasParaGenerar = [];
     let descripcion = '';
-    
+
     if (fechaInicio && fechaFin) {
       // Modo rango de fechas: generar todas las semanas en el rango
       const inicio = startOfMonday(fechaInicio);
       const fin = startOfMonday(fechaFin);
-      
+
       // Calcular todas las semanas entre inicio y fin
       let fechaActual = new Date(inicio);
       while (fechaActual <= fin) {
         semanasParaGenerar.push(new Date(fechaActual));
         fechaActual.setDate(fechaActual.getDate() + 7);
       }
-      
+
       descripcion = `desde ${formatLocalDate(inicio)} hasta ${formatLocalDate(fin)} (${semanasParaGenerar.length} semanas)`;
       addLog(`🌱 Iniciando generación de semillas realistas ${descripcion}...`, 'info');
     } else {
@@ -317,13 +317,13 @@ export default function TestSeedPage() {
       const hoy = new Date();
       const lunesActual = new Date(hoy);
       lunesActual.setDate(lunesActual.getDate() - (lunesActual.getDay() + 6) % 7);
-      
+
       for (let offsetSemana = -(numSemanas - 1); offsetSemana <= 0; offsetSemana++) {
         const lunesSemana = new Date(lunesActual);
         lunesSemana.setDate(lunesSemana.getDate() + (offsetSemana * 7));
         semanasParaGenerar.push(lunesSemana);
       }
-      
+
       descripcion = `${numSemanas} ${numSemanas === 1 ? 'semana' : 'semanas'}`;
       addLog(`🌱 Iniciando generación de ${descripcion} realistas...`, 'info');
     }
@@ -335,7 +335,7 @@ export default function TestSeedPage() {
         addLog('⚠️ Advertencia: No se detectó modo remoto. Asegúrate de que VITE_DATA_SOURCE=remote', 'warning');
       } else {
         addLog('✓ Modo remoto detectado (Supabase)', 'info');
-        
+
         // Verificar autenticación de Supabase
         try {
           const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -375,7 +375,7 @@ export default function TestSeedPage() {
 
       let profesor = profesores[0];
       addLog(`✓ Usando profesor: ${getNombreVisible(profesor)} (${profesor.email})`, 'info');
-      
+
       // En modo remoto, verificar que el profesor_id coincida con auth.uid() para RLS
       if (dataSource === 'remote') {
         try {
@@ -401,7 +401,7 @@ export default function TestSeedPage() {
       }
 
       let piezas = await localDataClient.entities.Pieza.list();
-      
+
       // Definir múltiples piezas variadas para más realismo
       const piezasSeed = [
         {
@@ -489,7 +489,7 @@ export default function TestSeedPage() {
 
       // Actualizar lista de piezas
       piezas = await localDataClient.entities.Pieza.list();
-      
+
       // Si no hay piezas creadas, usar la primera disponible o crear una básica
       if (piezasCreadas.length === 0) {
         const piezaDisponible = piezas.find(p => p.profesorId === profesor.id);
@@ -499,20 +499,20 @@ export default function TestSeedPage() {
           // Crear una pieza básica de emergencia
           try {
             const piezaEmergencia = await localDataClient.entities.Pieza.create({
-          nombre: 'Seed – Estudio base',
-          descripcion: 'Pieza de referencia para generación de datos de prueba',
-          nivel: 'intermedio',
-          tiempoObjetivoSeg: 1200,
-          elementos: [
+              nombre: 'Seed – Estudio base',
+              descripcion: 'Pieza de referencia para generación de datos de prueba',
+              nivel: 'intermedio',
+              tiempoObjetivoSeg: 1200,
+              elementos: [
                 { nombre: 'Partitura', mediaLinks: ['https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Music_notes.svg/800px-Music_notes.svg.png'] }
-          ],
-          profesorId: profesor.id,
-          });
+              ],
+              profesorId: profesor.id,
+            });
             piezasCreadas.push(piezaEmergencia);
             addLog('✅ Pieza de emergencia creada', 'success');
-        } catch (error) {
+          } catch (error) {
             addLog(`❌ Error crítico al crear pieza de emergencia: ${error.message}`, 'error');
-          throw error;
+            throw error;
           }
         }
       }
@@ -552,36 +552,36 @@ export default function TestSeedPage() {
         for (let variante = 1; variante <= numVariantes; variante++) {
           const code = `${tipo}-SEED-${String(variante).padStart(3, '0')}`;
           let ejercicio = bloques.find(b => b.tipo === tipo && b.code === code);
-          
-        if (!ejercicio) {
+
+          if (!ejercicio) {
             // Seleccionar nombre y duración variados
             const nombreIndex = (variante - 1) % nombresDisponibles.length;
             const nombre = nombresDisponibles[nombreIndex];
             const duracion = duracionesDisponibles[(variante - 1) % duracionesDisponibles.length];
 
             addLog(`📝 Creando ejercicio ${tipo} variante ${variante}...`, 'info');
-          try {
-            ejercicio = await localDataClient.entities.Bloque.create({
+            try {
+              ejercicio = await localDataClient.entities.Bloque.create({
                 nombre: nombre,
                 code: code,
-            tipo: tipo,
+                tipo: tipo,
                 duracionSeg: duracion,
                 instrucciones: `Ejercicio ${nombre} - Variante ${variante}`,
                 indicadorLogro: `Completar ${nombre}`,
-            materialesRequeridos: [],
+                materialesRequeridos: [],
                 mediaLinks: [],
-            profesorId: profesor.id,
-            });
+                profesorId: profesor.id,
+              });
               addLog(`✅ Ejercicio ${tipo} variante ${variante} creado`, 'info');
-          } catch (error) {
-            const errorMsg = error?.message || error?.toString() || 'Error desconocido';
-            const errorDetails = error?.details || error?.hint || '';
+            } catch (error) {
+              const errorMsg = error?.message || error?.toString() || 'Error desconocido';
+              const errorDetails = error?.details || error?.hint || '';
               addLog(`❌ Error al crear ejercicio ${tipo} variante ${variante}: ${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}`, 'error');
               // Continuar con la siguiente variante
               continue;
             }
           }
-          
+
           if (ejercicio) {
             ejerciciosDelTipo.push(ejercicio);
           }
@@ -604,7 +604,7 @@ export default function TestSeedPage() {
       }
 
       bloques = await localDataClient.entities.Bloque.list();
-      
+
       // Validación: asegurar que hay al menos 1 ejercicio creado
       const bloquesSeedCreados = bloques.filter(b => b.code?.includes('SEED') || b.profesorId === profesor.id);
       if (bloquesSeedCreados.length === 0) {
@@ -634,7 +634,7 @@ export default function TestSeedPage() {
       }
 
       let planes = await localDataClient.entities.Plan.list();
-      
+
       // Función helper para seleccionar bloque aleatorio de un tipo (usando variantes si están disponibles)
       const seleccionarBloque = (tipo) => {
         const variantes = ejerciciosBase[`${tipo}_variantes`];
@@ -843,10 +843,10 @@ export default function TestSeedPage() {
 
             // Validar que focoGeneral sea uno de los valores permitidos: 'GEN', 'LIG', 'RIT', 'ART', 'S&A'
             const focosValidos = ['GEN', 'LIG', 'RIT', 'ART', 'S&A'];
-            const focoGeneralValido = focosValidos.includes(planData.focoGeneral) 
-              ? planData.focoGeneral 
+            const focoGeneralValido = focosValidos.includes(planData.focoGeneral)
+              ? planData.focoGeneral
               : 'GEN'; // Fallback a 'GEN' si no es válido
-            
+
             planExistente = await localDataClient.entities.Plan.create({
               nombre: planData.nombre,
               focoGeneral: focoGeneralValido,
@@ -875,7 +875,7 @@ export default function TestSeedPage() {
 
       // Actualizar lista de planes
       planes = await localDataClient.entities.Plan.list();
-      
+
       // Si no hay planes creados, usar el primero disponible o crear uno básico
       if (planesCreados.length === 0) {
         const planDisponible = planes.find(p => p.profesorId === profesor.id);
@@ -888,7 +888,7 @@ export default function TestSeedPage() {
             if (!piezaParaPlan) {
               throw new Error('No hay piezas disponibles para crear plan');
             }
-            
+
             const planEmergencia = await localDataClient.entities.Plan.create({
               nombre: 'Seed – Plan Base',
               focoGeneral: 'GEN',
@@ -904,21 +904,21 @@ export default function TestSeedPage() {
                     {
                       nombre: 'Sesión A',
                       foco: 'GEN',
-                  bloques: [
-                    { ...ejerciciosBase.CA, code: ejerciciosBase.CA.code, nombre: ejerciciosBase.CA.nombre, tipo: 'CA', duracionSeg: 300 },
+                      bloques: [
+                        { ...ejerciciosBase.CA, code: ejerciciosBase.CA.code, nombre: ejerciciosBase.CA.nombre, tipo: 'CA', duracionSeg: 300 },
                         { ...ejerciciosBase.VC, code: ejerciciosBase.VC.code, nombre: ejerciciosBase.VC.nombre, tipo: 'VC', duracionSeg: 240 }
-                  ],
-                  rondas: []
+                      ],
+                      rondas: []
+                    }
+                  ]
                 }
               ]
-            }
-          ]
-          });
+            });
             planesCreados.push(planEmergencia);
             addLog('✅ Plan de emergencia creado', 'success');
-        } catch (error) {
+          } catch (error) {
             addLog(`❌ Error crítico al crear plan de emergencia: ${error.message}`, 'error');
-          throw error;
+            throw error;
           }
         }
       }
@@ -959,7 +959,7 @@ export default function TestSeedPage() {
           addLog(`⚠️ Error al obtener sesión para RLS: ${e.message}`, 'warning');
         }
       }
-      
+
       // Validación final: asegurar que profesorParaRLS es PROF
       if (profesorParaRLS.rolPersonalizado !== 'PROF') {
         addLog(`❌ ERROR: El profesor asignado debe ser tipo PROF, pero es ${profesorParaRLS.rolPersonalizado}. Buscando un profesor válido...`, 'error');
@@ -980,12 +980,12 @@ export default function TestSeedPage() {
       const asignacionesMinimasPorSemana = profesores.length * 2;
       const estudiantesPorProfesor = Math.max(2, Math.ceil(estudiantes.length / profesores.length));
       addLog(`📊 Distribución: ${estudiantes.length} estudiantes, ${profesores.length} profesores, mínimo ${estudiantesPorProfesor} estudiantes por profesor, ${asignacionesMinimasPorSemana} asignaciones mínimas por semana`, 'info');
-      
+
       if (estudiantes.length < asignacionesMinimasPorSemana) {
         addLog(`⚠️ ADVERTENCIA: Solo hay ${estudiantes.length} estudiantes, pero se necesitan al menos ${asignacionesMinimasPorSemana} para que cada profesor tenga 2 asignaciones por semana.`, 'warning');
         addLog(`💡 Nota: Algunos profesores podrían tener menos de 2 asignaciones por semana.`, 'info');
       }
-      
+
       // Crear mapa de asignación estudiante -> profesor para distribución equitativa
       const asignacionesProfesorPorSemana = profesores.map(p => ({ profesor: p, contador: 0 }));
       let indiceProfesorActual = 0;
@@ -993,14 +993,14 @@ export default function TestSeedPage() {
       // Para cada estudiante
       for (const estudiante of estudiantes) {
         addLog(`👤 Procesando estudiante: ${estudiante.nombreCompleto || estudiante.email}`, 'info');
-        
+
         // Determinar profesor asignado con distribución equitativa que garantice mínimo de 2 por profesor/semana
         let profesorAsignado;
         if (dataSource === 'remote') {
           // En modo remoto: distribuir equitativamente pero respetando RLS
           // Estrategia: rotar entre profesores asegurando que cada uno tenga al menos 2 asignaciones antes de repetir
           const indiceEstudiante = estudiantes.indexOf(estudiante);
-          
+
           // Para garantizar mínimo de 2 por profesor, primero asignar 2 estudiantes a cada profesor en orden
           if (indiceEstudiante < profesores.length * 2) {
             // Primera ronda: 2 estudiantes por profesor
@@ -1011,7 +1011,7 @@ export default function TestSeedPage() {
             const indiceProfesor = indiceEstudiante % profesores.length;
             profesorAsignado = profesores[indiceProfesor];
           }
-          
+
           // Si hay solo un profesor o el profesorParaRLS está en la lista y es necesario para RLS
           if (profesores.length === 1) {
             profesorAsignado = profesores[0];
@@ -1028,7 +1028,7 @@ export default function TestSeedPage() {
           }
         } else {
           // En modo local: usar el profesor asignado al estudiante si existe y es PROF
-          const profesorDelEstudiante = estudiante.profesorAsignadoId 
+          const profesorDelEstudiante = estudiante.profesorAsignadoId
             ? usuarios.find(u => u.id === estudiante.profesorAsignadoId)
             : null;
           if (profesorDelEstudiante && profesorDelEstudiante.rolPersonalizado === 'PROF') {
@@ -1045,7 +1045,7 @@ export default function TestSeedPage() {
             }
           }
         }
-        
+
         // Validación final: asegurar que siempre es PROF
         if (!profesorAsignado) {
           addLog(`❌ ERROR: No se pudo asignar profesor para ${estudiante.nombreCompleto || estudiante.email}. Usando primer profesor disponible.`, 'error');
@@ -1109,7 +1109,7 @@ export default function TestSeedPage() {
                 elementos: piezaSeleccionada.elementos || [],
                 tiempoObjetivoSeg: piezaSeleccionada.tiempoObjetivoSeg || 0,
               };
-              
+
               if (import.meta.env.DEV) {
                 console.log('Datos antes de crear asignación:', {
                   alumnoId: estudiante.id,
@@ -1123,27 +1123,27 @@ export default function TestSeedPage() {
                   profesorId: profesorAsignado.id
                 });
               }
-              
+
               // CRÍTICO: En modo remoto, usar SIEMPRE profesorParaRLS.id para cumplir con RLS
               // Las políticas RLS requieren que profesor_id = auth.uid()
-              const profesorIdParaRLS = dataSource === 'remote' 
-                ? profesorParaRLS.id 
+              const profesorIdParaRLS = dataSource === 'remote'
+                ? profesorParaRLS.id
                 : profesorAsignado.id;
-              
+
               addLog(`🔐 Usando profesorId para RLS: ${profesorIdParaRLS} (profesor lógico: ${profesorAsignado.id}, profesorParaRLS: ${profesorParaRLS.id})`, 'info');
-              
+
               asignacion = await localDataClient.entities.Asignacion.create({
-              alumnoId: estudiante.id,
-              piezaId: piezaSeleccionada.id,
-              semanaInicioISO: semanaInicioISO,
-              estado: 'publicada',
-              foco: 'GEN',
-              notas: `Asignación automática - semana del ${parseLocalDate(semanaInicioISO).toLocaleDateString('es-ES')}`,
-              plan: planCopy,
-              piezaSnapshot: piezaSnapshotData,
-              profesorId: profesorIdParaRLS
+                alumnoId: estudiante.id,
+                piezaId: piezaSeleccionada.id,
+                semanaInicioISO: semanaInicioISO,
+                estado: 'publicada',
+                foco: 'GEN',
+                notas: `Asignación automática - semana del ${parseLocalDate(semanaInicioISO).toLocaleDateString('es-ES')}`,
+                plan: planCopy,
+                piezaSnapshot: piezaSnapshotData,
+                profesorId: profesorIdParaRLS
               });
-              
+
               if (import.meta.env.DEV) {
                 console.log('Asignación creada exitosamente:', {
                   id: asignacion.id,
@@ -1152,14 +1152,14 @@ export default function TestSeedPage() {
                   hasPiezaSnapshot: !!asignacion.piezaSnapshot
                 });
               }
-              
+
               addLog(`✅ Asignación creada para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO} (Prof RLS: ${getNombreVisible(profesorParaRLS)}, Prof lógico: ${getNombreVisible(profesorAsignado)})`, 'info');
               totalAsignaciones++;
-              
+
               // Registrar asignación por profesor lógico (para distribución) y semana
               const key = `${profesorAsignado.id}_${semanaInicioISO}`;
               asignacionesPorProfesorPorSemana.set(key, (asignacionesPorProfesorPorSemana.get(key) || 0) + 1);
-              
+
               // Actualizar contador en asignacionesProfesorPorSemana para distribución
               const profesorEnContador = asignacionesProfesorPorSemana.find(p => p.profesor.id === profesorAsignado.id);
               if (profesorEnContador) {
@@ -1179,7 +1179,7 @@ export default function TestSeedPage() {
                 profesorAsignado: profesorAsignado?.id,
                 error: error
               });
-              
+
               // Si había una asignación existente, usarla como fallback
               if (asignacionExistente) {
                 addLog(`⚠️ Usando asignación existente como fallback para ${estudiante.nombreCompleto || estudiante.email} semana ${semanaInicioISO}`, 'warning');
@@ -1199,10 +1199,10 @@ export default function TestSeedPage() {
           }
 
           // Obtener pieza y plan para esta asignación (para usar en registros)
-          const piezaAsignacion = asignacion.piezaSnapshot 
+          const piezaAsignacion = asignacion.piezaSnapshot
             ? piezasCreadas.find(p => p.nombre === asignacion.piezaSnapshot.nombre) || piezasCreadas[0]
             : (piezasCreadas.find(p => p.id === asignacion.piezaId) || piezasCreadas[0]);
-          const planAsignacion = asignacion.plan 
+          const planAsignacion = asignacion.plan
             ? planesCreados.find(p => p.nombre === asignacion.plan.nombre) || planesCreados[0]
             : planesCreados[0];
 
@@ -1266,14 +1266,14 @@ export default function TestSeedPage() {
             const numBloques = 2 + Math.floor(Math.random() * 4); // 2-5
             // Variar pesos aleatoriamente para cada sesión
             const variacionPesos = Math.random() * 0.3 - 0.15; // -0.15 a +0.15
-            const tiposPesos = { 
-              CA: 0.2 + variacionPesos, 
-              CB: 0.2 + variacionPesos, 
-              TC: 0.3 + variacionPesos, 
-              TM: 0.15 + variacionPesos, 
-              FM: 0.25 + variacionPesos, 
-              VC: 0.08 + variacionPesos, 
-              AD: 0.02 
+            const tiposPesos = {
+              CA: 0.2 + variacionPesos,
+              CB: 0.2 + variacionPesos,
+              TC: 0.3 + variacionPesos,
+              TM: 0.15 + variacionPesos,
+              FM: 0.25 + variacionPesos,
+              VC: 0.08 + variacionPesos,
+              AD: 0.02
             };
             const bloquesSeleccionados = [];
             const tiposUsados = new Set();
@@ -1290,14 +1290,14 @@ export default function TestSeedPage() {
                 tiposUsados.add(tipoSeleccionado);
               }
             }
-            
+
             // Si no hay suficientes, añadir más aleatoriamente
             while (bloquesSeleccionados.length < numBloques && bloquesSeleccionados.length < tiposDisponibles.length) {
               const tipoAleatorio = tiposDisponibles[Math.floor(Math.random() * tiposDisponibles.length)];
               if (!tiposUsados.has(tipoAleatorio)) {
                 const ejercicio = bloques.find(e => e.tipo === tipoAleatorio && e.code?.includes('SEED'));
-              if (ejercicio) {
-                bloquesSeleccionados.push(ejercicio);
+                if (ejercicio) {
+                  bloquesSeleccionados.push(ejercicio);
                   tiposUsados.add(tipoAleatorio);
                 }
               }
@@ -1310,7 +1310,7 @@ export default function TestSeedPage() {
             else if (randCalif < 0.4) calificacion = 2;
             else if (randCalif < 0.7) calificacion = 3;
             else calificacion = 4;
-            
+
             const semanaIdx = 0;
             const sesionIdx = i;
             const foco = focos[Math.floor(Math.random() * focos.length)];
@@ -1323,35 +1323,35 @@ export default function TestSeedPage() {
             let registroSesion;
             try {
               // CRÍTICO: En modo remoto, usar profesorParaRLS.id para cumplir con RLS
-              const profesorIdParaSesionRLS = dataSource === 'remote' 
-                ? profesorParaRLS.id 
+              const profesorIdParaSesionRLS = dataSource === 'remote'
+                ? profesorParaRLS.id
                 : profesorAsignado.id;
-              
+
               registroSesion = await localDataClient.entities.RegistroSesion.create({
-              asignacionId: asignacion.id,
-              alumnoId: estudiante.id,
-              profesorAsignadoId: profesorIdParaSesionRLS,
-              semanaIdx,
-              sesionIdx,
-              inicioISO: fechaSesion.toISOString(),
-              finISO: fechaFin.toISOString(),
-              duracionRealSeg: duracionSesion,
-              duracionObjetivoSeg: duracionObjetivo,
-              bloquesTotales: bloquesSeleccionados.length,
-              bloquesCompletados: bloquesSeleccionados.filter((_, idx) => idx < bloquesSeleccionados.length * 0.85).length,
-              bloquesOmitidos: Math.floor(bloquesSeleccionados.length * 0.15),
-              finalizada: true,
-              finAnticipado: false,
-              motivoFin: 'terminado',
-              calificacion,
-              notas: calificacion === 4 ? 'Excelente sesión' : calificacion === 3 ? 'Buena práctica' : calificacion === 2 ? 'Práctica aceptable' : 'Sesión difícil',
-              dispositivo: 'TestSeed',
-              versionSchema: '1.0',
-              piezaNombre: piezaAsignacion?.nombre || 'Pieza',
-              planNombre: planAsignacion?.nombre || 'Plan',
-              semanaNombre: 'Semana 1',
-              sesionNombre: `Sesión ${String.fromCharCode(65 + i)}`,
-              foco
+                asignacionId: asignacion.id,
+                alumnoId: estudiante.id,
+                profesorAsignadoId: profesorIdParaSesionRLS,
+                semanaIdx,
+                sesionIdx,
+                inicioISO: fechaSesion.toISOString(),
+                finISO: fechaFin.toISOString(),
+                duracionRealSeg: duracionSesion,
+                duracionObjetivoSeg: duracionObjetivo,
+                bloquesTotales: bloquesSeleccionados.length,
+                bloquesCompletados: bloquesSeleccionados.filter((_, idx) => idx < bloquesSeleccionados.length * 0.85).length,
+                bloquesOmitidos: Math.floor(bloquesSeleccionados.length * 0.15),
+                finalizada: true,
+                finAnticipado: false,
+                motivoFin: 'terminado',
+                calificacion,
+                notas: calificacion === 4 ? 'Excelente sesión' : calificacion === 3 ? 'Buena práctica' : calificacion === 2 ? 'Práctica aceptable' : 'Sesión difícil',
+                dispositivo: 'TestSeed',
+                versionSchema: '1.0',
+                piezaNombre: piezaAsignacion?.nombre || 'Pieza',
+                planNombre: planAsignacion?.nombre || 'Plan',
+                semanaNombre: 'Semana 1',
+                sesionNombre: `Sesión ${String.fromCharCode(65 + i)}`,
+                foco
               });
 
               totalSesiones++;
@@ -1391,7 +1391,7 @@ export default function TestSeedPage() {
                   inicioISO: new Date(fechaSesion.getTime() + tiempoAcumulado * 1000).toISOString(),
                   finISO: new Date(fechaSesion.getTime() + (tiempoAcumulado + duracionReal) * 1000).toISOString()
                 });
-                
+
                 if (!registroBloque) {
                   addLog(`⚠️ Registro de bloque ${b + 1} no se creó correctamente`, 'warning');
                 }
@@ -1414,12 +1414,12 @@ export default function TestSeedPage() {
           // Si no hay sesiones, crear feedback de todas formas para garantizar mínimo
           if (asignacion && profesorAsignado && profesorAsignado.id) {
             // Notas más variadas y específicas
-          const notasProfesor = [
-            'Excelente progreso esta semana. Sigue mejorando la técnica de respiración.',
-            'Buen trabajo general. Recomiendo enfocarte más en la articulación.',
-            'Mejora la consistencia en la práctica diaria. Intenta practicar al menos 4 días por semana.',
-            'Se nota avance en el control del sonido. Trabaja más en la afinación en el registro agudo.',
-            'Práctica sólida esta semana. Continúa con el trabajo de ligaduras.',
+            const notasProfesor = [
+              'Excelente progreso esta semana. Sigue mejorando la técnica de respiración.',
+              'Buen trabajo general. Recomiendo enfocarte más en la articulación.',
+              'Mejora la consistencia en la práctica diaria. Intenta practicar al menos 4 días por semana.',
+              'Se nota avance en el control del sonido. Trabaja más en la afinación en el registro agudo.',
+              'Práctica sólida esta semana. Continúa con el trabajo de ligaduras.',
               'Necesitas mayor dedicación. Ajusta la embocadura y practica escalas con metrónomo.',
               'Muy buena evolución en el fraseo. Sigue trabajando la dinámica.',
               'El ritmo está mejorando notablemente. Mantén la constancia.',
@@ -1430,14 +1430,14 @@ export default function TestSeedPage() {
             ];
             // CRÍTICO: En modo remoto, usar profesorParaRLS.id para RLS
             // Pero crear con profesorId correcto para cumplir con RLS
-            const profesorIdParaFeedbackRLS = dataSource === 'remote' 
-              ? profesorParaRLS.id 
+            const profesorIdParaFeedbackRLS = dataSource === 'remote'
+              ? profesorParaRLS.id
               : profesorAsignado.id;
-            
+
             // Verificar si ya existe feedback para esta semana usando el profesorId correcto para RLS
             const feedbacksExistentes = await localDataClient.entities.FeedbackSemanal.list();
-            const feedbackExistenteParaRLS = feedbacksExistentes.find(f => 
-              f.alumnoId === estudiante.id && 
+            const feedbackExistenteParaRLS = feedbacksExistentes.find(f =>
+              f.alumnoId === estudiante.id &&
               f.profesorId === profesorIdParaFeedbackRLS &&
               f.semanaInicioISO === semanaInicioISO
             );
@@ -1449,9 +1449,9 @@ export default function TestSeedPage() {
                 const notaFeedback = sesionesCreadasEstaSemana > 0
                   ? notasProfesor[Math.floor(Math.random() * notasProfesor.length)]
                   : 'Asignación creada. Próxima semana comenzarás a practicar.';
-                  
+
                 addLog(`🔐 Usando profesorId para feedback RLS: ${profesorIdParaFeedbackRLS} (profesor lógico: ${profesorAsignado.id}, profesorParaRLS: ${profesorParaRLS.id})`, 'info');
-                  
+
                 await localDataClient.entities.FeedbackSemanal.create({
                   alumnoId: estudiante.id,
                   profesorId: profesorIdParaFeedbackRLS,
@@ -1466,28 +1466,28 @@ export default function TestSeedPage() {
                 const errorMsg = error?.message || error?.toString() || 'Error desconocido';
                 const errorDetails = error?.details || error?.hint || '';
                 const errorCode = error?.code || '';
-                
+
                 // Si es error 409 (Conflict) por duplicado, intentar actualizar el feedback existente
                 if (errorCode === '23505' || errorCode === '409' || errorMsg.includes('duplicate key') || errorMsg.includes('unique constraint')) {
                   addLog(`⚠️ Feedback ya existe para semana ${semanaInicioISO}. Intentando actualizar...`, 'warning');
                   try {
                     // Buscar el feedback existente nuevamente
                     const feedbacksActualizados = await localDataClient.entities.FeedbackSemanal.list();
-                    const feedbackActualizado = feedbacksActualizados.find(f => 
-                      f.alumnoId === estudiante.id && 
+                    const feedbackActualizado = feedbacksActualizados.find(f =>
+                      f.alumnoId === estudiante.id &&
                       f.profesorId === profesorIdParaFeedbackRLS &&
                       f.semanaInicioISO === semanaInicioISO
                     );
-                    
+
                     if (feedbackActualizado) {
                       const notaFeedback = sesionesCreadasEstaSemana > 0
                         ? notasProfesor[Math.floor(Math.random() * notasProfesor.length)]
                         : 'Asignación creada. Próxima semana comenzarás a practicar.';
-                      
+
                       await localDataClient.entities.FeedbackSemanal.update(feedbackActualizado.id, {
                         notaProfesor: notaFeedback
                       });
-                      
+
                       totalFeedbacks++;
                       addLog(`✅ Feedback semanal actualizado para semana ${semanaInicioISO}`, 'success');
                     } else {
@@ -1515,11 +1515,11 @@ export default function TestSeedPage() {
       }
 
       const duracion = Date.now() - startTime;
-      
+
       // VALIDACIÓN FINAL: Asegurar mínimos requeridos
       addLog('🔍 Validando mínimos requeridos...', 'info');
       let validacionExitosa = true;
-      
+
       // 1. Pieza
       if (piezasCreadas.length === 0) {
         addLog('❌ ERROR: No se generó ninguna pieza (mínimo: 1)', 'error');
@@ -1527,7 +1527,7 @@ export default function TestSeedPage() {
       } else {
         addLog(`✅ Piezas: ${piezasCreadas.length} (mínimo: 1)`, 'success');
       }
-      
+
       // 2. Plan
       if (planesCreados.length === 0) {
         addLog('❌ ERROR: No se generó ningún plan (mínimo: 1)', 'error');
@@ -1535,7 +1535,7 @@ export default function TestSeedPage() {
       } else {
         addLog(`✅ Planes: ${planesCreados.length} (mínimo: 1)`, 'success');
       }
-      
+
       // 3. Ejercicio (bloque)
       const ejerciciosFinales = bloques.filter(b => b.code?.includes('SEED') || b.profesorId === profesor.id);
       if (ejerciciosFinales.length === 0) {
@@ -1544,7 +1544,7 @@ export default function TestSeedPage() {
       } else {
         addLog(`✅ Ejercicios: ${ejerciciosFinales.length} (mínimo: 1)`, 'success');
       }
-      
+
       // 4. Asignación
       if (totalAsignaciones === 0) {
         addLog('❌ ERROR: No se generó ninguna asignación (mínimo: 1)', 'error');
@@ -1552,7 +1552,7 @@ export default function TestSeedPage() {
       } else {
         addLog(`✅ Asignaciones: ${totalAsignaciones} (mínimo: 1)`, 'success');
       }
-      
+
       // 5. Comentario de sesión (notas en registroSesion)
       if (totalSesiones === 0) {
         addLog('❌ ERROR: No se generó ningún comentario de sesión (mínimo: 1 sesión con notas)', 'error');
@@ -1560,7 +1560,7 @@ export default function TestSeedPage() {
       } else {
         addLog(`✅ Comentarios de sesión: ${totalSesiones} sesiones con notas (mínimo: 1)`, 'success');
       }
-      
+
       // 6. Feedback
       if (totalFeedbacks === 0) {
         addLog('❌ ERROR: No se generó ningún feedback (mínimo: 1)', 'error');
@@ -1568,7 +1568,7 @@ export default function TestSeedPage() {
       } else {
         addLog(`✅ Feedbacks: ${totalFeedbacks} (mínimo: 1)`, 'success');
       }
-      
+
       // 7. Verificar distribución: cada profesor debe tener al menos 2 asignaciones por semana
       if (semanasParaGenerar.length > 0 && profesores.length > 0) {
         const asignacionesPorSemana = new Map(); // Map<semanaISO, Map<profesorId, count>>
@@ -1579,7 +1579,7 @@ export default function TestSeedPage() {
           }
           asignacionesPorSemana.get(semanaISO).set(profesorId, count);
         });
-        
+
         let problemasDistribucion = [];
         asignacionesPorSemana.forEach((profesoresMap, semanaISO) => {
           profesores.forEach(prof => {
@@ -1594,7 +1594,7 @@ export default function TestSeedPage() {
             }
           });
         });
-        
+
         if (problemasDistribucion.length > 0) {
           addLog(`⚠️ ADVERTENCIA: Distribución insuficiente - ${problemasDistribucion.length} profesor(es)/semana(s) con menos de 2 asignaciones:`, 'warning');
           problemasDistribucion.forEach(p => {
@@ -1605,14 +1605,14 @@ export default function TestSeedPage() {
           addLog(`✅ Distribución: Todos los profesores tienen al menos 2 asignaciones por semana`, 'success');
         }
       }
-      
+
       if (!validacionExitosa) {
         addLog('❌ VALIDACIÓN FALLIDA: No se cumplieron los mínimos requeridos', 'error');
         toast.error('Validación fallida: Revisa los logs para más detalles');
       } else {
         addLog('✅ VALIDACIÓN EXITOSA: Todos los mínimos requeridos se cumplieron', 'success');
       }
-      
+
       addLog(`✅ Completado en ${(duracion / 1000).toFixed(1)}s`, 'success');
       addLog(`📊 Resumen: ${estudiantes.length} estudiantes × ${semanasParaGenerar.length} semanas`, 'info');
       addLog(`📊 ${totalAsignaciones} asignaciones, ${totalSesiones} sesiones, ${totalBloques} bloques, ${totalFeedbacks} feedbacks`, 'info');
@@ -1863,8 +1863,8 @@ export default function TestSeedPage() {
         detail: planValido ? `✓ ${planesSeed.length} planes` : '✗ Planes inválidos'
       });
 
-      const asignacionDemo = (data.asignaciones || []).find(a => 
-        (a.estado === 'publicada' || a.estado === 'en_curso') && 
+      const asignacionDemo = (data.asignaciones || []).find(a =>
+        (a.estado === 'publicada' || a.estado === 'en_curso') &&
         a.plan?.nombre?.includes('Seed')
       );
       tests.push({
@@ -1873,9 +1873,9 @@ export default function TestSeedPage() {
         detail: asignacionDemo ? `✓ Estado: ${asignacionDemo.estado}` : '✗ Sin asignaciones seed'
       });
 
-      const registroCompleto = (data.registrosSesion || []).find(r => 
-        r.finalizada && 
-        r.calificacion && 
+      const registroCompleto = (data.registrosSesion || []).find(r =>
+        r.finalizada &&
+        r.calificacion &&
         r.planNombre?.includes('Seed')
       );
       tests.push({
@@ -1884,7 +1884,7 @@ export default function TestSeedPage() {
         detail: registroCompleto ? `✓ Calificación ${registroCompleto.calificacion}/4` : '✗ Sin registros seed'
       });
 
-      const registrosBloquesSeed = (data.registrosBloques || []).filter(rb => 
+      const registrosBloquesSeed = (data.registrosBloques || []).filter(rb =>
         bloquesSeed.some(bs => bs.code === rb.code)
       );
       const tiposEstado = new Set(registrosBloquesSeed.map(rb => rb.estado));
@@ -1923,7 +1923,7 @@ export default function TestSeedPage() {
         ADMIN: [
           { title: "Usuarios", url: "/usuarios" },
           { title: "Asignaciones", url: "/asignaciones" },
-          { title: "Plantillas", url: "/plantillas" },
+          { title: "Biblioteca", url: "/biblioteca" },
           { title: "Agenda", url: "/agenda" },
           { title: "Estadísticas", url: "/estadisticas" },
           { title: "Tests & Seeds", url: "/testseed" },
@@ -1932,7 +1932,7 @@ export default function TestSeedPage() {
         PROF: [
           { title: "Mis Estudiantes", url: "/estudiantes" },
           { title: "Asignaciones", url: "/asignaciones" },
-          { title: "Plantillas", url: "/plantillas" },
+          { title: "Biblioteca", url: "/biblioteca" },
           { title: "Agenda", url: "/agenda" },
         ],
         ESTU: [
@@ -1943,7 +1943,7 @@ export default function TestSeedPage() {
       };
 
       const todasLasPaginas = [
-        "/usuarios", "/asignaciones", "/plantillas", "/agenda", "/testseed", "/estadisticas",
+        "/usuarios", "/asignaciones", "/biblioteca", "/agenda", "/testseed", "/estadisticas",
         "/estudiantes", "/hoy", "/semana", "/perfil", "/asignacion-detalle", "/adaptar-asignacion",
         "/import-export"
       ];
@@ -1999,7 +1999,7 @@ export default function TestSeedPage() {
   const countFeedbacks = stats?.feedbacks.length || 0;
   const countRegistrosSesion = stats?.registrosSesion.length || 0;
   const countRegistrosBloques = stats?.registrosBloques.length || 0;
-  
+
   // Usuarios por rol
   const countUsuarios = stats?.users.length || 0;
   const countAdmin = stats?.users.filter(u => u.rolPersonalizado === 'ADMIN').length || 0;
@@ -2014,8 +2014,8 @@ export default function TestSeedPage() {
           <CardContent className="pt-6 text-center space-y-4">
             <Shield className="w-16 h-16 mx-auto text-[var(--color-danger)]" />
             <div>
-            <h2 className="font-semibold text-lg text-[var(--color-text-primary)] mb-2">Acceso Denegado</h2>
-            <p className="text-[var(--color-text-secondary)]">Esta vista requiere permisos de Administrador.</p>
+              <h2 className="font-semibold text-lg text-[var(--color-text-primary)] mb-2">Acceso Denegado</h2>
+              <p className="text-[var(--color-text-secondary)]">Esta vista requiere permisos de Administrador.</p>
             </div>
           </CardContent>
         </Card>
@@ -2131,7 +2131,7 @@ export default function TestSeedPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-ui/80 mb-4">
-                ⚠️ Elimina todas las semillas de prueba (asignaciones, registros, feedbacks, plantillas seed).
+                ⚠️ Elimina todas las semillas de prueba (asignaciones, registros, feedbacks, biblioteca seed).
               </p>
               <Button
                 variant="danger"
@@ -2476,12 +2476,11 @@ export default function TestSeedPage() {
             ) : (
               <div className="space-y-1 max-h-96 overflow-y-auto">
                 {seedLogs.map((log, idx) => (
-                  <div key={idx} className={`text-sm font-mono p-2 rounded-xl ${
-                    log.type === 'success' ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]' :
-                    log.type === 'error' ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]' :
-                    log.type === 'warning' ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]' :
-                    'bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
-                  }`}>
+                  <div key={idx} className={`text-sm font-mono p-2 rounded-xl ${log.type === 'success' ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]' :
+                      log.type === 'error' ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]' :
+                        log.type === 'warning' ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]' :
+                          'bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
+                    }`}>
                     <span className="text-[var(--color-text-secondary)] mr-2">[{log.timestamp}]</span>
                     {log.message}
                   </div>
@@ -2509,7 +2508,7 @@ export default function TestSeedPage() {
             <strong>Herramienta de desarrollo:</strong> Esta página está diseñada para debugging y desarrollo. No hay tests automatizados configurados actualmente. Usa esta herramienta para poblar datos de prueba y realizar validaciones manuales.
           </AlertDescription>
         </Alert>
-        
+
         <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 md:gap-6">
           <div className="text-center min-w-[80px] sm:min-w-[100px]">
             <Music className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-[var(--color-primary)]" />

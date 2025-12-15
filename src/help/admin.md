@@ -87,7 +87,7 @@ Si un usuario necesita restablecer su contraseña:
 
 Los **planes** organizan ejercicios en semanas y sesiones. Puedes:
 
-1. Crear nuevos planes desde **Plantillas** → Pestaña **"Planes"**
+1. Crear nuevos planes desde **Biblioteca** → Pestaña **"Planes"**
 2. Editar planes existentes (añadir/quitar sesiones, cambiar ejercicios)
 3. Ver todos los planes disponibles en la escuela
 
@@ -147,11 +147,11 @@ Puedes importar datos desde archivos CSV:
 ### Exportar Datos
 
 Puedes exportar:
-- **Plantillas como JSON**: Piezas, ejercicios y planes (para reutilizar entre instancias)
+- **Biblioteca como JSON**: Piezas, ejercicios y planes (para reutilizar entre instancias)
 - **Datos como CSV**: Asignaciones y registros (para backups o análisis externo)
 
 **Diferencia clave**:
-- **JSON**: Plantillas reutilizables (piezas, ejercicios, planes)
+- **JSON**: Biblioteca reutilizable (piezas, ejercicios, planes)
 - **CSV**: Datos de seguimiento (asignaciones, registros de sesiones)
 
 **Nota**: Los archivos JSON preservan IDs y estructura completa. Los CSV son para análisis en herramientas externas.
@@ -159,7 +159,7 @@ Puedes exportar:
 ### Advertencias sobre IDs/UUID
 
 - Al importar CSV, usa códigos únicos (`code`) para identificar piezas/ejercicios de forma segura
-- Los IDs se preservan en JSON, así que ten cuidado al importar plantillas que ya existen (pueden sobrescribirse)
+- Los IDs se preservan en JSON, así que ten cuidado al importar biblioteca que ya existe (pueden sobrescribirse)
 
 ## LOPD y Datos
 

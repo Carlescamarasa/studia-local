@@ -148,7 +148,7 @@ Tienes dos opciones:
 
 ### ¿Qué pasa si importo datos con IDs duplicados?
 
-Si importas plantillas (piezas, ejercicios, planes) con IDs que ya existen, pueden sobrescribirse. Usa códigos únicos (`code`) para evitar conflictos.
+Si importas biblioteca (piezas, ejercicios, planes) con IDs que ya existen, pueden sobrescribirse. Usa códigos únicos (`code`) para evitar conflictos.
 
 ---
 

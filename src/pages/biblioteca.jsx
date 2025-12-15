@@ -12,15 +12,15 @@ import PageHeader from "@/components/ds/PageHeader";
 import Tabs from "@/components/ds/Tabs";
 import { componentStyles } from "@/design/componentStyles";
 
-export default function PlantillasPage() {
+export default function BibliotecaPage() {
   return (
     <RequireRole anyOf={["PROF", "ADMIN"]}>
-      <PlantillasPageContent />
+      <BibliotecaPageContent />
     </RequireRole>
   );
 }
 
-function PlantillasPageContent() {
+function BibliotecaPageContent() {
   const currentUser = getCurrentUser();
   const isLoading = false;
 
@@ -64,8 +64,8 @@ function PlantillasPageContent() {
     <div className="min-h-screen bg-background">
       <PageHeader
         icon={BookOpen}
-        title="Plantillas"
-        subtitle="Crea y gestiona piezas, planes y ejercicios"
+        title="Biblioteca"
+        subtitle="Gestiona tu biblioteca de piezas, planes y ejercicios"
       />
 
       <div className={componentStyles.layout.page}>

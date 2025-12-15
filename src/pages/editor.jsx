@@ -41,9 +41,9 @@ export default function EditorPage() {
         <Alert className={`mb-6 ${componentStyles.containers.panelBase} border-l-4 border-l-[var(--color-info)] bg-[var(--color-info)]/10`}>
           <Layers className="w-6 h-6 text-[var(--color-info)]" />
           <AlertDescription>
-            <h2 className={`${componentStyles.typography.sectionTitle} text-[var(--color-info)] mb-1`}>Editor de Plantillas</h2>
+            <h2 className={`${componentStyles.typography.sectionTitle} text-[var(--color-info)] mb-1`}>Editor de Biblioteca</h2>
             <p className={componentStyles.typography.bodyText}>
-              Estás editando plantillas. Los cambios NO afectan a asignaciones existentes.
+              Estás editando la biblioteca. Los cambios NO afectan a asignaciones existentes.
             </p>
           </AlertDescription>
         </Alert>

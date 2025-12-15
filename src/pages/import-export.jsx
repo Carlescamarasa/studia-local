@@ -1073,7 +1073,7 @@ export default function ImportExportPage() {
                   <div>
                     <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 flex items-center gap-2 font-headings">
                       <Music className="w-5 h-5 text-[var(--color-primary)]" />
-                      Plantillas (JSON)
+                      Biblioteca (JSON)
                     </h2>
                     <div className={componentStyles.layout.grid3}>
                       <Card className="app-card hover:shadow-md transition-shadow">

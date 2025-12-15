@@ -42,7 +42,7 @@ Tres roles principales:
 - Ver estadísticas de sus estudiantes
 - Dar feedback semanal
 - Responder tickets del Centro de Dudas
-- Crear y editar plantillas (ejercicios, piezas, planes)
+- Crear y editar biblioteca (ejercicios, piezas, planes)
 
 **Administradores (ADMIN)**:
 - Todas las capacidades de Profesor, más:

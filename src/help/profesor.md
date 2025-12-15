@@ -47,7 +47,7 @@ Como profesor en Studia, puedes:
 
 ### Crear Ejercicios
 
-1. Ve a **Plantillas** → Pestaña **"Ejercicios"**
+1. Ve a **Biblioteca** → Pestaña **"Ejercicios"**
 2. Haz clic en **"Nuevo ejercicio"** o presiona `Ctrl + N` (Mac: `⌘ + N`)
 3. Completa el formulario:
    - **Nombre**: Nombre del ejercicio (requerido)
@@ -64,7 +64,7 @@ Como profesor en Studia, puedes:
 
 ### Crear Piezas
 
-1. Ve a **Plantillas** → Pestaña **"Piezas"**
+1. Ve a **Biblioteca** → Pestaña **"Piezas"**
 2. Haz clic en **"Nueva pieza"** o presiona `Ctrl + N` (Mac: `⌘ + N`)
 3. Completa el formulario:
    - **Nombre**: Nombre de la pieza (requerido)
@@ -78,7 +78,7 @@ Como profesor en Studia, puedes:
 
 Los **planes** organizan ejercicios en semanas y sesiones.
 
-1. Ve a **Plantillas** → Pestaña **"Planes"**
+1. Ve a **Biblioteca** → Pestaña **"Planes"**
 2. Haz clic en **"Nuevo plan"** o presiona `Ctrl + N` (Mac: `⌘ + N`)
 3. Completa el formulario:
    - **Nombre**: Nombre del plan (requerido)
