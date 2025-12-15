@@ -7,6 +7,7 @@ export const Bloque = localDataClient.entities.Bloque;
 export const RegistroSesion = localDataClient.entities.RegistroSesion;
 export const RegistroBloque = localDataClient.entities.RegistroBloque;
 export const FeedbackSemanal = localDataClient.entities.FeedbackSemanal;
+export const StudentBackpack = localDataClient.entities.StudentBackpack;
 
 // auth sdk:
 export const User = localDataClient.auth;

@@ -29,6 +29,7 @@ import {
   Star,
   Sun,
   Moon,
+  Backpack,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ds";
@@ -96,6 +97,7 @@ const navigationByRole = {
   ],
   ESTU: [
     { title: "Studia ahora", url: "/hoy", icon: PlayCircle, group: "Estudio" },
+    { title: "Mochila", url: "/mochila", icon: Backpack, group: "Estudio" },
     { title: "Mi Semana", url: "/semana", icon: Calendar, group: "Estudio" },
     { title: "Calendario", url: "/calendario", icon: Calendar, group: "Estudio" },
     { title: "Centro de dudas", url: "/soporte", icon: MessageSquare, group: "Estudio" },
@@ -497,7 +499,10 @@ function LayoutContent() {
     '/import-export': ['ADMIN'],
     '/soporte': ['ESTU'],
     '/soporte-prof': ['PROF', 'ADMIN'],
+    '/soporte': ['ESTU'],
+    '/soporte-prof': ['PROF', 'ADMIN'],
     '/contenido-multimedia': ['PROF', 'ADMIN'],
+    '/mochila': ['ESTU'],
   };
 
   // Filtrar items del sidebar según los permisos reales de acceso

@@ -594,3 +594,21 @@ export type CreateMediaAssetInput = Omit<MediaAsset, 'id' | 'created_at' | 'file
   state?: 'uploaded' | 'external'
 };
 export type UpdateMediaAssetInput = Partial<Omit<MediaAsset, 'id' | 'created_at'>> & { id: string };
+
+// ============================================================================
+// Student Backpack - Spaced Repetition System
+// ============================================================================
+
+export interface StudentBackpackItem {
+  id: string;
+  studentId: string;
+  backpackKey: string;
+  status: 'nuevo' | 'en_progreso' | 'dominado' | 'oxidado' | 'archivado';
+  masteryScore: number;
+  lastPracticedAt: string; // ISO timestamp
+  masteredWeeks: string[]; // ISO dates of weeks where item was mastered
+  lastMasteredWeekStart?: string; // ISO date
+  createdAt: string;
+  updatedAt: string;
+}
+

@@ -2725,16 +2725,18 @@ export function createRemoteDataAPI(): AppDataAPI {
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
-        const { data, error } = await query;
+        const { data, error } = await withAuthErrorHandling(query);
         if (error) throw error;
         return (data || []).map((e: any) => snakeToCamel(e));
       },
       get: async (id: string) => {
-        const { data, error } = await supabase
-          .from('student_xp_total')
-          .select('*')
-          .eq('id', id)
-          .single();
+        const { data, error } = await withAuthErrorHandling(
+          supabase
+            .from('student_xp_total')
+            .select('*')
+            .eq('id', id)
+            .single()
+        );
         if (error) {
           if (error.code === 'PGRST116') return null;
           throw error;
@@ -2748,36 +2750,120 @@ export function createRemoteDataAPI(): AppDataAPI {
           query = query.eq(snakeKey, value);
         }
         if (limit) query = query.limit(limit);
-        const { data, error } = await query;
+        const { data, error } = await withAuthErrorHandling(query);
         if (error) throw error;
         return (data || []).map((e: any) => snakeToCamel(e));
       },
-      create: async (input: any) => {
-        const snakeInput = camelToSnake(input);
-        const { data, error } = await supabase
-          .from('student_xp_total')
-          .insert(snakeInput)
-          .select()
-          .single();
+      create: async (item: any) => {
+        const snakeItem = camelToSnake(item);
+        if (snakeItem.id === undefined) delete snakeItem.id;
+        const { data, error } = await withAuthErrorHandling(
+          supabase
+            .from('student_xp_total')
+            .insert(snakeItem)
+            .select()
+            .single()
+        );
         if (error) throw error;
         return snakeToCamel(data);
       },
       update: async (id: string, updates: any) => {
         const snakeUpdates = camelToSnake(updates);
-        const { data, error } = await supabase
-          .from('student_xp_total')
-          .update(snakeUpdates)
-          .eq('id', id)
-          .select()
-          .single();
+        delete snakeUpdates.id;
+        const { data, error } = await withAuthErrorHandling(
+          supabase
+            .from('student_xp_total')
+            .update(snakeUpdates)
+            .eq('id', id)
+            .select()
+            .single()
+        );
         if (error) throw error;
         return snakeToCamel(data);
       },
       delete: async (id: string) => {
-        const { error } = await supabase
-          .from('student_xp_total')
-          .delete()
-          .eq('id', id);
+        const { error } = await withAuthErrorHandling(
+          supabase
+            .from('student_xp_total')
+            .delete()
+            .eq('id', id)
+        );
+        if (error) throw error;
+        return { success: true };
+      }
+    },
+    studentBackpack: {
+      list: async (sort?: string) => {
+        let query = supabase.from('student_backpack').select('*');
+        if (sort) {
+          const direction = sort.startsWith('-') ? 'desc' : 'asc';
+          const field = sort.startsWith('-') ? sort.slice(1) : sort;
+          const snakeField = toSnakeCase(field);
+          query = query.order(snakeField, { ascending: direction === 'asc' });
+        }
+        const { data, error } = await withAuthErrorHandling(query);
+        if (error) throw error;
+        return (data || []).map((e: any) => snakeToCamel(e));
+      },
+      get: async (id: string) => {
+        const { data, error } = await withAuthErrorHandling(
+          supabase
+            .from('student_backpack')
+            .select('*')
+            .eq('id', id)
+            .single()
+        );
+        if (error) {
+          if (error.code === 'PGRST116') return null;
+          throw error;
+        }
+        return snakeToCamel(data);
+      },
+      filter: async (filters: Record<string, any>, limit?: number | null) => {
+        let query = supabase.from('student_backpack').select('*');
+        for (const [key, value] of Object.entries(filters)) {
+          const snakeKey = toSnakeCase(key);
+          query = query.eq(snakeKey, value);
+        }
+        if (limit) query = query.limit(limit);
+        const { data, error } = await withAuthErrorHandling(query);
+        if (error) throw error;
+        return (data || []).map((e: any) => snakeToCamel(e));
+      },
+      create: async (item: any) => {
+        const snakeItem = camelToSnake(item);
+        if (!snakeItem.id) delete snakeItem.id;
+        const { data, error } = await withAuthErrorHandling(
+          supabase
+            .from('student_backpack')
+            .insert(snakeItem)
+            .select()
+            .single()
+        );
+        if (error) throw error;
+        return snakeToCamel(data);
+      },
+      update: async (id: string, updates: any) => {
+        const snakeUpdates = camelToSnake(updates);
+        delete snakeUpdates.id;
+        const { data, error } = await withAuthErrorHandling(
+          supabase
+            .from('student_backpack')
+            .update(snakeUpdates)
+            .eq('id', id)
+            .select()
+            .single()
+        );
+        if (error) throw error;
+        return snakeToCamel(data);
+      },
+      delete: async (id: string) => {
+        const { error } = await withAuthErrorHandling(
+          supabase
+            .from('student_backpack')
+            .delete()
+            .eq('id', id)
+        );
         if (error) throw error;
         return { success: true };
       }

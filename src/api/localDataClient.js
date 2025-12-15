@@ -23,6 +23,7 @@ let localDataRef = {
   planes: [],
   registrosBloque: [],
   registrosSesion: [],
+  studentBackpack: [],
   eventosCalendario: [],
   usuarios: localUsers,
   _loading: true,
@@ -143,6 +144,7 @@ const entityToAPIKey = {
   'StudentCriteriaStatus': 'studentCriteriaStatus',
   'StudentLevelHistory': 'studentLevelHistory',
   'StudentXPTotal': 'studentXpTotal',
+  'StudentBackpack': 'studentBackpack',
 };
 
 // Helper para crear entidades con métodos CRUD apoyadas en la capa de datos
@@ -657,6 +659,7 @@ export const localDataClient = {
     StudentCriteriaStatus: createEntityAPI('StudentCriteriaStatus', 'studentCriteriaStatus', async () => localDataRef.studentCriteriaStatus || []),
     StudentLevelHistory: createEntityAPI('StudentLevelHistory', 'studentLevelHistory', async () => localDataRef.studentLevelHistory || []),
     StudentXPTotal: createEntityAPI('StudentXPTotal', 'studentXpTotal', async () => localDataRef.studentXpTotal || []),
+    StudentBackpack: createEntityAPI('StudentBackpack', 'studentBackpack', async () => localDataRef.studentBackpack || []),
   },
 };
 

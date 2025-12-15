@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { updateBackpackFromSession } from '@/services/backpackService';
 import { localDataClient } from "@/api/localDataClient";
 import { createRemoteDataAPI } from "@/api/remoteDataAPI";
 
@@ -622,6 +623,10 @@ function HoyPageContent() {
       finISO: new Date().toISOString(),
       iniciosPausa: 0,
       ppmAlcanzado: ppmAlcanzado,
+      // Nuevos campos para Mochila
+      backpack_key: bloque.backpack_key || null,
+      variation_key: bloque.variation_key || null,
+      ppm_objetivo: bloque.targetPPMs?.[0] || null, // Asumimos el primer target como objetivo principal si existe
     };
 
     // Guardar en memoria
@@ -720,47 +725,50 @@ function HoyPageContent() {
 
         if (bloqueActual) {
           // VARIATIONS LOGIC INJECTION
-          // Intentar resolver variación si existe contenido Y si estamos en modo repaso
+          // Determine policy: Explicit 'variation_policy' or imply based on 'modo'
+          const policy = bloqueSnapshot.variation_policy || (bloqueSnapshot.modo === 'repaso' ? 'random' : 'fixed');
+          const fixedVariationKey = bloqueSnapshot.selected_variation_key;
+
+          let pickedVariation = null;
+
+          // 1. Fixed Policy: Try to use the pre-selected variation
+          if (policy === 'fixed' && fixedVariationKey && bloqueActual.variations) {
+            pickedVariation = bloqueActual.variations.find(v => v.id === fixedVariationKey || v.label === fixedVariationKey);
+          }
+
+          // 2. Random Policy: Select from valid variations based on user level
+          else if (policy === 'random' && bloqueActual.variations && bloqueActual.variations.length > 0) {
+            const userLevel = alumnoActual?.nivelTecnico || 1;
+            const validVars = getValidVariations(bloqueActual, userLevel);
+            if (validVars) {
+              pickedVariation = pickRandomVariation(validVars);
+            }
+          }
+
+          // Apply selected variation properties
           let selectedVariationMedia = null;
           let variationLabel = null;
           let selectedVariationDuration = null;
 
-          // Only pick random variation if mode is 'repaso'
-          const isRepaso = bloqueSnapshot.modo === 'repaso';
-          if (isRepaso && bloqueActual.variations && bloqueActual.variations.length > 0) {
-            const userLevel = alumnoActual?.nivelTecnico || 1;
-            const validVars = getValidVariations(bloqueActual, userLevel);
+          if (pickedVariation) {
+            variationLabel = pickedVariation.label; // or .nombre
 
-            if (validVars) {
-              const picked = pickRandomVariation(validVars);
+            // Media extraction
+            if (pickedVariation.mediaItems && Array.isArray(pickedVariation.mediaItems)) {
+              selectedVariationMedia = pickedVariation.mediaItems;
+            } else if (pickedVariation.assetUrl || pickedVariation.asset_url) {
+              selectedVariationMedia = [{ url: pickedVariation.assetUrl || pickedVariation.asset_url, name: null }];
+            } else if ((pickedVariation.assetUrls || pickedVariation.asset_urls) && Array.isArray(pickedVariation.assetUrls || pickedVariation.asset_urls)) {
+              selectedVariationMedia = (pickedVariation.assetUrls || pickedVariation.asset_urls).map(u => ({ url: u, name: null }));
+            }
 
-              if (picked) {
-                variationLabel = picked.label;
-
-                // 1. Media/Multimedia (Materiales)
-                // Handle rich media items if available (from content.mediaItems or similar structure in variation)
-                if (picked.mediaItems && Array.isArray(picked.mediaItems)) {
-                  selectedVariationMedia = picked.mediaItems;
-                }
-                // Fallback to assetUrl/assetUrls logic
-                else if (picked.assetUrl || picked.asset_url) {
-                  selectedVariationMedia = [{ url: picked.assetUrl || picked.asset_url, name: null }];
-                } else if ((picked.assetUrls || picked.asset_urls) && Array.isArray(picked.assetUrls || picked.asset_urls)) {
-                  selectedVariationMedia = (picked.assetUrls || picked.asset_urls).map(u => ({ url: u, name: null }));
-                }
-
-                // 2. Duration
-                if (picked.duracionSeg || picked.duracion_seg) {
-                  selectedVariationDuration = picked.duracionSeg || picked.duracion_seg;
-                }
-              }
+            // Duration extraction
+            if (pickedVariation.duracionSeg || pickedVariation.duracion_seg) {
+              selectedVariationDuration = pickedVariation.duracionSeg || pickedVariation.duracion_seg;
             }
           }
 
-          // Actualizar con mediaLinks y otras propiedades actualizadas
-          // Priorizar Variación > Bloque Actual (Rich) > Bloque Actual (Legacy) > Snapshot
-
-          // Construct final media list, normalizing to objects {url, name}
+          // Construir lista final de media
           let mediaLinksFinal = [];
 
           if (selectedVariationMedia) {
@@ -788,7 +796,13 @@ function HoyPageContent() {
             duracionSeg: selectedVariationDuration || bloqueActual.duracionSeg || bloqueSnapshot.duracionSeg || 0,
             targetPPMs: bloqueActual.targetPPMs || bloqueSnapshot.targetPPMs || [],
             // Inyectar info de variación para UI (opcional)
-            variationName: variationLabel
+            variationName: variationLabel,
+            // Asegurar que backpack_key venga del snapshot o del bloque actual
+            backpack_key: bloqueSnapshot.backpack_key || bloqueActual.backpack_key || null,
+            // Registrar qué variación se eligió (si hubo) -> USAR ID si es posible for DB consistency
+            variation_key: pickedVariation ? (pickedVariation.id || pickedVariation.label) : null,
+            // Guardar también la policy usada para debugging
+            variation_policy: policy
           };
         }
         return bloqueSnapshot;
@@ -1192,6 +1206,18 @@ function HoyPageContent() {
       });
 
       await Promise.all(promesasBloques);
+
+      // --- BACKPACK INTEGRATION ---
+      try {
+        await updateBackpackFromSession({
+          studentId: userIdActual,
+          registrosBloque: bloquesPendientesRef.current // Pasamos los bloques con sus nuevos campos
+        });
+        console.log("Backpack actualizada correctamente");
+      } catch (bpError) {
+        console.error("Error actualizando backpack:", bpError);
+        // No bloqueamos el flujo principal si falla esto, pero lo logueamos
+      }
 
       toast.success("✅ Sesión guardada correctamente");
 
