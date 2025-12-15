@@ -12,6 +12,7 @@ import { EventosCalendarioAPI } from '@/data/eventosCalendarioClient';
 import { EvaluacionesAPI } from '@/data/evaluacionesClient';
 import { getStoredUserId, setStoredUserId, clearStoredUserId } from '@/data/authClient';
 import { createRemoteDataAPI } from './remoteDataAPI';
+import { supabase } from '@/lib/supabaseClient';
 
 // Referencia global a los datos locales (se inyecta desde LocalDataProvider)
 let localDataRef = {
@@ -365,7 +366,6 @@ export const localDataClient = {
       // Si no hay usuario local pero estamos en modo Supabase, intentar obtener de Supabase
       if (!currentUser || !userIdToUse) {
         try {
-          const { supabase } = await import('@/lib/supabaseClient');
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
             // Buscar usuario en datos locales por email
@@ -388,7 +388,7 @@ export const localDataClient = {
             }
           }
         } catch (e) {
-          // Si hay error importando supabase, continuar con el flujo normal
+          // Si hay error con supabase, continuar con el flujo normal
         }
       }
 
