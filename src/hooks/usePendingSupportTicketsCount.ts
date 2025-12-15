@@ -54,9 +54,9 @@ export function usePendingSupportTicketsCount() {
       }
     },
     enabled: !!user?.id && !!appRole,
-    // Refrescar cada 30 segundos para mantener el conteo actualizado
-    refetchInterval: 30000,
-    staleTime: 60000, // 1 minuto de cache
+    // OPTIMIZATION: Reduced polling frequency from 30s to 5min
+    refetchInterval: 5 * 60 * 1000, // 5 min
+    staleTime: 2 * 60 * 1000,       // 2 min cache
     // No mostrar errores de red/CORS como errores críticos
     retry: false,
   });

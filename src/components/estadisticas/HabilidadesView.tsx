@@ -54,21 +54,25 @@ export default function HabilidadesView({
     const { data: studentProfile } = useQuery({
         queryKey: ['student-profile', targetId],
         queryFn: () => localDataClient.entities.User.get(targetId),
-        enabled: !!targetId
+        enabled: !!targetId,
+        staleTime: 5 * 60 * 1000, // 5 minutos
     });
 
     const currentLevel = studentProfile?.nivelTecnico || 0;
     const nextLevel = currentLevel + 1;
 
-    const { data: nextLevelConfig } = useQuery({
-        queryKey: ['level-config', nextLevel],
-        queryFn: async () => {
-            const configs = await localDataClient.entities.LevelConfig.list();
-            const config = configs.find((c: any) => c.level === nextLevel);
-            return config || null; // Return null instead of undefined
-        },
-        enabled: !!nextLevel
+    // Fetch ALL level configs with shared cache
+    const { data: allLevelConfigs } = useQuery({
+        queryKey: ['levels-config-all'],
+        queryFn: () => localDataClient.entities.LevelConfig.list(),
+        staleTime: 10 * 60 * 1000, // 10 minutos - configuración cambia poco
     });
+
+    // Filter to get specific level config with useMemo
+    const nextLevelConfig = useMemo(() => {
+        if (!allLevelConfigs || !nextLevel) return null;
+        return allLevelConfigs.find((c: any) => c.level === nextLevel) || null;
+    }, [allLevelConfigs, nextLevel]);
 
     // --- Radar 1: Total Progress (Normalized to Next Level) ---
     const totalRadarData = useMemo(() => {

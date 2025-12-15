@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,9 +27,7 @@ const TYPE_MAP = {
 
 
 export default function EjerciciosTab() {
-  // State
-  const [localExercises, setLocalExercises] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,58 +40,48 @@ export default function EjerciciosTab() {
   const [showEditor, setShowEditor] = useState(false);
   const [ejercicioActual, setEjercicioActual] = useState(null);
 
-  // --- Data Loading ---
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Fetch Bloques directly
-      const { data: bloques, error: errBloques } = await supabase
+  // --- Data Loading with React Query (OPTIMIZATION) ---
+  const { data: bloques = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ['bloques'],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from('bloques')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
 
-      if (errBloques) throw errBloques;
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 min cache - avoid refetch on tab switch
+  });
 
-      if (bloques) {
-        const mappedBloques = bloques.map((b, idx) => {
-          let vars = [];
+  // Transform bloques to localExercises format (memoized)
+  const localExercises = useMemo(() => {
+    return bloques.map((b) => {
+      let vars = [];
 
-          // PRIORITY 1: Use real content from Supabase if available
-          if (b.content && Array.isArray(b.content) && b.content.length > 0) {
-            vars = b.content;
-            console.log(`[EjerciciosTab] ${b.nombre || b.code}: Using ${vars.length} variations from Supabase content column`);
-          }
-
-
-          const categoryInfo = TYPE_MAP[b.tipo] || { label: 'General', color: 'text-slate-600 bg-slate-50' };
-          const dur = Math.round((b.duracion_seg || b.duracionSeg || 300) / 60);
-
-          return {
-            id: b.id,
-            title: b.nombre,
-            type: b.tipo,
-            category: categoryInfo.label,
-            dur: dur || 5,
-            asset: 'resource.pdf',
-            variations: vars,
-            raw: b,
-            code: b.code
-          };
-        });
-        setLocalExercises(mappedBloques);
+      // PRIORITY 1: Use real content from Supabase if available
+      if (b.content && Array.isArray(b.content) && b.content.length > 0) {
+        vars = b.content;
       }
-    } catch (error) {
-      console.error("Error loading data:", error);
-      toast.error("Error cargando datos");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+      const categoryInfo = TYPE_MAP[b.tipo] || { label: 'General', color: 'text-slate-600 bg-slate-50' };
+      const dur = Math.round((b.duracion_seg || b.duracionSeg || 300) / 60);
+
+      return {
+        id: b.id,
+        title: b.nombre,
+        type: b.tipo,
+        category: categoryInfo.label,
+        dur: dur || 5,
+        asset: 'resource.pdf',
+        variations: vars,
+        raw: b,
+        code: b.code
+      };
+    });
+  }, [bloques]);
 
   // --- Filter Logic ---
   const filteredExercises = localExercises.filter(ex => {
@@ -138,15 +127,14 @@ export default function EjerciciosTab() {
 
   const handleDeleteExercise = async (id) => {
     if (!confirm("¿Seguro que quieres borrar este ejercicio?")) return;
-    setLocalExercises(prev => prev.filter(e => e.id !== id));
     try {
       const { error } = await supabase.from('bloques').delete().eq('id', id);
       if (error) throw error;
       toast.success("Ejercicio eliminado");
-      loadData();
+      queryClient.invalidateQueries({ queryKey: ['bloques'] });
     } catch (e) {
       toast.error("Error al eliminar");
-      loadData();
+      queryClient.invalidateQueries({ queryKey: ['bloques'] });
     }
   };
 
@@ -281,7 +269,8 @@ export default function EjerciciosTab() {
           onClose={() => {
             setShowEditor(false);
             setEjercicioActual(null);
-            loadData(); // Re-fetch on close
+            // Invalidate cache to refresh on close
+            queryClient.invalidateQueries({ queryKey: ['bloques'] });
           }}
         />
       )}

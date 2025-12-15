@@ -25,6 +25,7 @@ export default function PlanesTab() {
   const { data: planes = [], isLoading } = useQuery({
     queryKey: ['planes'],
     queryFn: () => localDataClient.entities.Plan.list('-created_at'),
+    staleTime: 5 * 60 * 1000, // 5 min - avoid refetch on tab switch
   });
 
   const deleteMutation = useMutation({
@@ -146,9 +147,11 @@ export default function PlanesTab() {
             <UnifiedTable
               columns={[
                 { key: 'nombre', label: 'Nombre', sortable: true, render: (p) => <span className="font-medium">{p.nombre}</span> },
-                { key: 'foco', label: 'Foco', sortable: true, render: (p) => p.focoGeneral ? (
-                  <Badge variant={focoVariants[p.focoGeneral]}>{focoLabels[p.focoGeneral]}</Badge>
-                ) : <span className="text-[var(--color-text-secondary)]">—</span>, sortValue: (p) => p.focoGeneral },
+                {
+                  key: 'foco', label: 'Foco', sortable: true, render: (p) => p.focoGeneral ? (
+                    <Badge variant={focoVariants[p.focoGeneral]}>{focoLabels[p.focoGeneral]}</Badge>
+                  ) : <span className="text-[var(--color-text-secondary)]">—</span>, sortValue: (p) => p.focoGeneral
+                },
                 { key: 'semanas', label: 'Semanas', sortable: true, render: (p) => <span className="text-sm text-[var(--color-text-secondary)]">{p.semanas?.length || 0}</span>, sortValue: (p) => p.semanas?.length || 0 }
               ]}
               data={filteredPlanes}
@@ -195,7 +198,7 @@ export default function PlanesTab() {
                 <CardContent className="pt-4">
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
-                      <div 
+                      <div
                         className="flex-1 min-w-0 cursor-pointer"
                         onClick={() => handleEdit(plan)}
                       >

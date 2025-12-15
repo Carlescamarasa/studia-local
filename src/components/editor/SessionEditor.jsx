@@ -274,9 +274,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
         return localData;
       }
     },
-    // staleTime: 5 * 60 * 1000, // 5 minutes cache
-    staleTime: 0,
-    refetchOnMount: true,
+    staleTime: 5 * 60 * 1000, // 5 min cache - catalog data
   });
 
   const { data: alumno } = useQuery({

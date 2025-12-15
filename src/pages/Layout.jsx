@@ -152,10 +152,8 @@ function LayoutContent() {
   const effectiveUser = useEffectiveUser();
   const { profile, refetch: refetchProfile } = useCurrentProfile();
 
-  // Forzar actualización del perfil al montar para asegurar datos frescos
-  useEffect(() => {
-    refetchProfile();
-  }, [refetchProfile]);
+  // NOTE: Removed forced refetch - useCurrentProfile has 5min staleTime
+  // which is sufficient. Forcing refetch on every mount causes unnecessary requests.
 
   // Usar profile si está disponible (tiene datos más frescos de Supabase), sino effectiveUser
   const displayUser = profile || effectiveUser;
@@ -462,8 +460,9 @@ function LayoutContent() {
       }
     },
     enabled: Boolean(userRole) && userRole === 'ADMIN' && Boolean(user),
-    refetchInterval: 30000, // Refrescar cada 30 segundos
-    staleTime: 10000, // Considerar datos frescos por 10 segundos
+    // OPTIMIZATION: Reduced polling from 30s to 5min
+    refetchInterval: 5 * 60 * 1000, // 5 min
+    staleTime: 2 * 60 * 1000,       // 2 min cache
     retry: false, // No reintentar si falla (evita spam de errores)
   });
 

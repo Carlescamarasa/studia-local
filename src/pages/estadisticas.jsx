@@ -104,6 +104,7 @@ function EstadisticasPageContent() {
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => localDataClient.entities.User.list(),
+    staleTime: 5 * 60 * 1000, // 5 min
   });
 
   // Resolver ID de usuario actual de la BD (UUID en Supabase, string en local)
@@ -116,6 +117,7 @@ function EstadisticasPageContent() {
     queryKey: ['asignacionesProf', userIdActual],
     queryFn: () => localDataClient.entities.Asignacion.list(),
     enabled: isProf && !!userIdActual,
+    staleTime: 2 * 60 * 1000, // 2 min
   });
 
   const estudiantesDelProfesor = useMemo(() => {
@@ -133,6 +135,7 @@ function EstadisticasPageContent() {
   const { data: registros = [] } = useQuery({
     queryKey: ['registrosSesion'],
     queryFn: () => localDataClient.entities.RegistroSesion.list('-inicioISO'),
+    staleTime: 1 * 60 * 1000, // 1 min - operational data
   });
 
   // Filtrar sesiones válidas: solo aquellas con calificación (sesiones realmente finalizadas)
@@ -144,11 +147,13 @@ function EstadisticasPageContent() {
   const { data: bloques = [] } = useQuery({
     queryKey: ['registrosBloques'],
     queryFn: () => localDataClient.entities.RegistroBloque.list('-inicioISO'),
+    staleTime: 1 * 60 * 1000, // 1 min - operational data
   });
 
   const { data: asignaciones = [] } = useQuery({
     queryKey: ['asignaciones'],
     queryFn: () => localDataClient.entities.Asignacion.list(),
+    staleTime: 2 * 60 * 1000, // 2 min
   });
 
   const { data: feedbacksSemanal = [] } = useQuery({
@@ -156,6 +161,7 @@ function EstadisticasPageContent() {
     queryFn: async () => {
       return await localDataClient.entities.FeedbackSemanal.list('-created_at');
     },
+    staleTime: 2 * 60 * 1000, // 2 min
   });
 
   // Evaluaciones técnicas
@@ -164,6 +170,7 @@ function EstadisticasPageContent() {
     queryFn: async () => {
       return await localDataClient.entities.EvaluacionTecnica.list();
     },
+    staleTime: 2 * 60 * 1000, // 2 min
   });
 
   const estudiantes = usuarios.filter(u => u.rolPersonalizado === 'ESTU');

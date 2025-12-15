@@ -160,6 +160,7 @@ function HoyPageContent() {
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => localDataClient.entities.User.list(),
+    staleTime: 5 * 60 * 1000, // 5 min
   });
 
   // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
@@ -178,6 +179,7 @@ function HoyPageContent() {
   const { data: asignacionesRaw = [] } = useQuery({
     queryKey: ['asignaciones'],
     queryFn: () => localDataClient.entities.Asignacion.list(),
+    staleTime: 2 * 60 * 1000, // 2 min
   });
 
   // Cargar bloques actuales desde Supabase (remoteDataAPI tiene content → variations mapping)
@@ -203,8 +205,7 @@ function HoyPageContent() {
         return localRes || [];
       }
     },
-    staleTime: 0,
-    refetchOnMount: true,
+    staleTime: 30 * 1000, // 30s - needs recent data for study session
   });
 
   // Filtrar y validar asignaciones

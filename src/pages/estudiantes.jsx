@@ -35,8 +35,7 @@ function EstudiantesPageContent() {
       const users = await localDataClient.entities.User.list();
       return users;
     },
-    staleTime: 0,
-    cacheTime: 0,
+    staleTime: 5 * 60 * 1000, // 5 min - data refreshes on mutations
   });
 
   const { data: asignaciones = [] } = useQuery({
@@ -45,15 +44,10 @@ function EstudiantesPageContent() {
       const asignaciones = await localDataClient.entities.Asignacion.list();
       return asignaciones;
     },
-    staleTime: 0,
-    cacheTime: 0,
+    staleTime: 2 * 60 * 1000, // 2 min
   });
 
-  // Invalidar query al montar el componente
-  useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ['users'] });
-    queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
-  }, [queryClient]);
+  // NOTE: Removed forced invalidation on mount - mutations handle cache invalidation
 
   // Resolver ID de usuario actual (puede ser UUID de Supabase o ID de BD)
   const userIdActual = useMemo(() => {
@@ -66,18 +60,18 @@ function EstudiantesPageContent() {
   // 2. O que tienen asignaciones con profesorId === userIdActual
   const misEstudiantes = useMemo(() => {
     if (!userIdActual) return [];
-    
+
     // Obtener IDs de estudiantes que tienen asignaciones con este profesor
     const estudiantesIdsDeAsignaciones = new Set(
       asignaciones
         .filter(a => a.profesorId === userIdActual)
         .map(a => a.alumnoId)
     );
-    
+
     // Filtrar estudiantes
     return usuarios.filter(u => {
       if (u.rolPersonalizado !== 'ESTU') return false;
-      
+
       // Incluir si tiene profesorAsignadoId o si tiene asignaciones
       return u.profesorAsignadoId === userIdActual || estudiantesIdsDeAsignaciones.has(u.id);
     });
@@ -193,7 +187,7 @@ function EstudiantesPageContent() {
                 </button>
               )}
             </div>
-            
+
             <Select value={nivelFilter} onValueChange={setNivelFilter}>
               <SelectTrigger className={`w-40 ${componentStyles.controls.selectDefault}`}>
                 <SelectValue placeholder="Nivel" />
@@ -234,9 +228,9 @@ function EstudiantesPageContent() {
                   icon: Mail,
                   onClick: async (selectedIds) => {
                     const estudiantesSeleccionados = estudiantesFiltrados.filter(u => selectedIds.includes(u.id));
-                    
+
                     const conEmail = estudiantesSeleccionados.filter(u => u.email);
-                    
+
                     if (conEmail.length === 0) {
                       toast.error('Ninguno de los estudiantes seleccionados tiene email');
                       return;
@@ -268,9 +262,9 @@ function EstudiantesPageContent() {
                   icon: KeyRound,
                   onClick: async (selectedIds) => {
                     const estudiantesSeleccionados = estudiantesFiltrados.filter(u => selectedIds.includes(u.id));
-                    
+
                     const conEmail = estudiantesSeleccionados.filter(u => u.email);
-                    
+
                     if (conEmail.length === 0) {
                       toast.error('Ninguno de los estudiantes seleccionados tiene email');
                       return;

@@ -26,34 +26,44 @@ function PlantillasPageContent() {
 
   const [activeTab, setActiveTab] = useState("piezas");
 
+  // OPTIMIZATION: Lazy render tab content to avoid mounting all tabs simultaneously
+  // This prevents 3 parallel data fetches on page load
+  const renderActiveTabContent = () => {
+    switch (activeTab) {
+      case "piezas":
+        return <PiezasTab />;
+      case "planes":
+        return <PlanesTab />;
+      case "ejercicios":
+        return <EjerciciosTab />;
+      default:
+        return null;
+    }
+  };
+
+  // Tab definitions without content - content is rendered separately
   const tabs = [
     {
       value: "piezas",
       label: "Piezas",
       icon: Music,
-      content: <PiezasTab />,
     },
     {
       value: "planes",
       label: "Planes",
-      icon: BookOpen, // Changed from Calendar to BookOpen
-      content: <PlanesTab />,
+      icon: BookOpen,
     },
     {
       value: "ejercicios",
       label: "Ejercicios",
       icon: Layers,
-      content: <EjerciciosTab />,
     },
   ];
-
-  // 👉 ESTA LÍNEA YA NO ES NECESARIA
-  // const activeTabDef = tabs.find((t) => t.value === activeTab);
 
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
-        icon={BookOpen} // Changed from Edit3 to BookOpen
+        icon={BookOpen}
         title="Plantillas"
         subtitle="Crea y gestiona piezas, planes y ejercicios"
       />
@@ -65,7 +75,10 @@ function PlantillasPageContent() {
           onChange={setActiveTab}
           items={tabs}
         />
-        {/* The content block is removed as per the instructions */}
+        {/* Lazy-rendered content: only active tab mounts */}
+        <div className="mt-4">
+          {renderActiveTabContent()}
+        </div>
       </div>
     </div>
   );

@@ -26,7 +26,7 @@ function CalendarioPageContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [vista, setVista] = useState('mes'); // 'semana' | 'mes' | 'lista' - Vista por defecto: Mes
-  
+
   // Asegurar que en mobile se oculte 'semana' y use solo 'mes' o 'lista'
   React.useEffect(() => {
     if (isMobile && vista === 'semana') {
@@ -45,26 +45,31 @@ function CalendarioPageContent() {
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => localDataClient.entities.User.list(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: registrosSesion = [] } = useQuery({
     queryKey: ['registrosSesion'],
     queryFn: () => localDataClient.entities.RegistroSesion.list('-inicioISO'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: feedbacksSemanal = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
     queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_at'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: asignaciones = [] } = useQuery({
     queryKey: ['asignaciones'],
     queryFn: () => localDataClient.entities.Asignacion.list(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: eventos = [] } = useQuery({
     queryKey: ['eventosCalendario'],
     queryFn: () => localDataClient.entities.EventoCalendario.list('-fechaInicio'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const userIdActual = useMemo(() => {
@@ -100,19 +105,19 @@ function CalendarioPageContent() {
           .filter(a => a.profesorId === userIdActual)
           .map(a => a.alumnoId)
       );
-      
+
       sesiones = sesiones.filter(r => estudiantesIds.has(r.alumnoId));
-      feedbacks = feedbacks.filter(f => 
+      feedbacks = feedbacks.filter(f =>
         f.profesorId === userIdActual || estudiantesIds.has(f.alumnoId)
       );
-      asignacionesFiltradas = asignacionesFiltradas.filter(a => 
+      asignacionesFiltradas = asignacionesFiltradas.filter(a =>
         a.profesorId === userIdActual
       );
     }
     // Admin: ve todo (sin filtrar)
 
     // Filtrar eventos importantes por visibilidad
-    eventosImportantes = eventosImportantes.filter(e => 
+    eventosImportantes = eventosImportantes.filter(e =>
       e.visiblePara && e.visiblePara.includes(userRole)
     );
 
@@ -280,11 +285,10 @@ function CalendarioPageContent() {
                   e.stopPropagation();
                   setVista('mes');
                 }}
-                className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${
-                  vista === 'mes' 
-                    ? componentStyles.buttons.primary 
+                className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${vista === 'mes'
+                    ? componentStyles.buttons.primary
                     : `${componentStyles.buttons.ghost} hover:bg-transparent`
-                }`}
+                  }`}
                 type="button"
               >
                 Mes
@@ -298,11 +302,10 @@ function CalendarioPageContent() {
                     e.stopPropagation();
                     setVista('semana');
                   }}
-                  className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${
-                    vista === 'semana' 
-                      ? componentStyles.buttons.primary 
+                  className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${vista === 'semana'
+                      ? componentStyles.buttons.primary
                       : `${componentStyles.buttons.ghost} hover:bg-transparent`
-                  }`}
+                    }`}
                   type="button"
                 >
                   Semana
@@ -316,24 +319,23 @@ function CalendarioPageContent() {
                   e.stopPropagation();
                   setVista('lista');
                 }}
-                className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${
-                  vista === 'lista' 
-                    ? componentStyles.buttons.primary 
+                className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${vista === 'lista'
+                    ? componentStyles.buttons.primary
                     : `${componentStyles.buttons.ghost} hover:bg-transparent`
-                }`}
+                  }`}
                 type="button"
               >
                 Lista
               </Button>
             </div>
-            
+
             <PeriodHeaderButton
               label={labelPeriodo}
               rangeText={rangeTextPeriodo}
               isOpen={periodHeaderOpen}
               onToggle={togglePeriodHeader}
             />
-            
+
             {(isAdmin || isProf) && (
               <Button
                 variant="primary"
@@ -367,46 +369,46 @@ function CalendarioPageContent() {
         <div className="mb-3 flex gap-1.5 flex-wrap items-center">
           {/* Tipo: Todos / Eventos / Asignaciones / Sesiones / Feedback */}
           <div className="flex items-center gap-1 flex-wrap">
-          <Button
-            variant={filtroTipoGlobal === 'all' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setFiltroTipoGlobal('all')}
+            <Button
+              variant={filtroTipoGlobal === 'all' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setFiltroTipoGlobal('all')}
               className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-          >
-            Todos
-          </Button>
-          <Button
-            variant={filtroTipoGlobal === 'evento' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setFiltroTipoGlobal('evento')}
+            >
+              Todos
+            </Button>
+            <Button
+              variant={filtroTipoGlobal === 'evento' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setFiltroTipoGlobal('evento')}
               className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-          >
-            Eventos
-          </Button>
-          <Button
-            variant={filtroTipoGlobal === 'asignacion' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setFiltroTipoGlobal('asignacion')}
+            >
+              Eventos
+            </Button>
+            <Button
+              variant={filtroTipoGlobal === 'asignacion' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setFiltroTipoGlobal('asignacion')}
               className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-          >
-            Asignaciones
-          </Button>
-          <Button
-            variant={filtroTipoGlobal === 'sesion' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setFiltroTipoGlobal('sesion')}
+            >
+              Asignaciones
+            </Button>
+            <Button
+              variant={filtroTipoGlobal === 'sesion' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setFiltroTipoGlobal('sesion')}
               className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-          >
-            Sesiones
-          </Button>
-          <Button
-            variant={filtroTipoGlobal === 'feedback' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setFiltroTipoGlobal('feedback')}
+            >
+              Sesiones
+            </Button>
+            <Button
+              variant={filtroTipoGlobal === 'feedback' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setFiltroTipoGlobal('feedback')}
               className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-          >
-            Feedbacks
-          </Button>
+            >
+              Feedbacks
+            </Button>
           </div>
         </div>
 

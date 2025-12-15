@@ -104,16 +104,19 @@ function AgendaPageContent() {
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => localDataClient.entities.User.list(),
+    staleTime: 5 * 60 * 1000, // 5 minutos - evita refetch en navegación cálida
   });
 
   const { data: asignacionesRaw = [] } = useQuery({
     queryKey: ['asignaciones'],
     queryFn: () => localDataClient.entities.Asignacion.list(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: feedbacksSemanalRaw = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
     queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_at'),
+    staleTime: 5 * 60 * 1000,
   });
 
   // Resolver ID de usuario actual de la BD (UUID en Supabase, string en local)

@@ -16,6 +16,7 @@ export default function HabilidadesPage() {
     const { data: usuarios = [] } = useQuery({
         queryKey: ['users'],
         queryFn: () => localDataClient.entities.User.list(),
+        staleTime: 5 * 60 * 1000, // 5 minutos - evita refetch en navegación cálida
     });
 
     // Resolve current user ID
@@ -28,6 +29,7 @@ export default function HabilidadesPage() {
         queryKey: ['asignacionesProf', userIdActual],
         queryFn: () => localDataClient.entities.Asignacion.list(),
         enabled: isProf && !!userIdActual,
+        staleTime: 5 * 60 * 1000,
     });
 
     const estudiantesDelProfesor = useMemo(() => {

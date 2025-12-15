@@ -54,27 +54,32 @@ function SemanaPageContent() {
   const { data: asignaciones = [] } = useQuery({
     queryKey: ['asignaciones'],
     queryFn: () => localDataClient.entities.Asignacion.list(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: feedbacksSemanal = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
     queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_at'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => localDataClient.entities.User.list(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: registrosSesion = [] } = useQuery({
     queryKey: ['registrosSesion'],
     queryFn: () => localDataClient.entities.RegistroSesion.list('-inicioISO'),
+    staleTime: 5 * 60 * 1000,
   });
 
   // Evaluaciones técnicas
   const { data: evaluacionesTecnicas = [] } = useQuery({
     queryKey: ['evaluacionesTecnicas'],
     queryFn: () => localDataClient.entities.EvaluacionTecnica.list(),
+    staleTime: 5 * 60 * 1000,
   });
 
   // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase

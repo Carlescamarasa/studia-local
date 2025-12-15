@@ -79,14 +79,10 @@ function UsuariosPageContent() {
       const users = await localDataClient.entities.User.list();
       return users;
     },
-    staleTime: 0, // No usar caché, siempre obtener datos frescos
-    cacheTime: 0, // No mantener en caché
+    staleTime: 5 * 60 * 1000, // 5 min - data refreshes on mutations
   });
 
-  // Invalidar query al montar el componente para asegurar datos frescos
-  useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ['users'] });
-  }, [queryClient]);
+  // NOTE: Removed forced invalidation on mount - mutations handle cache invalidation
 
   // Handler para cuando se crea un usuario exitosamente
   const handleUserCreated = () => {
@@ -117,7 +113,7 @@ function UsuariosPageContent() {
   // Mutation para asignar profesor (masivo)
   const assignProfesorBulkMutation = useMutation({
     mutationFn: async ({ userIds, profesorId }) => {
-      await Promise.all(userIds.map(userId => 
+      await Promise.all(userIds.map(userId =>
         localDataClient.entities.User.update(userId, {
           profesorAsignadoId: profesorId || null,
         })
@@ -138,7 +134,7 @@ function UsuariosPageContent() {
   // Mutation para asignar alumnos a profesor (masivo)
   const assignAlumnosToProfesorMutation = useMutation({
     mutationFn: async ({ profesorId, alumnoIds }) => {
-      await Promise.all(alumnoIds.map(alumnoId => 
+      await Promise.all(alumnoIds.map(alumnoId =>
         localDataClient.entities.User.update(alumnoId, {
           profesorAsignadoId: profesorId,
         })
@@ -163,11 +159,11 @@ function UsuariosPageContent() {
         p_profile_id: userId,
         p_is_active: isActive,
       });
-      
+
       if (error) {
         throw new Error(error.message || 'Error al cambiar estado del usuario');
       }
-      
+
       return { success: true };
     },
     onSuccess: (_, { isActive }) => {
@@ -237,7 +233,7 @@ function UsuariosPageContent() {
           })
         )
       );
-      
+
       // Verificar si hubo algún error
       const errors = results.filter(r => r.error);
       if (errors.length > 0) {
@@ -247,7 +243,7 @@ function UsuariosPageContent() {
             : `${errors.length} de ${userIds.length} actualizaciones fallaron`
         );
       }
-      
+
       return { success: true };
     },
     onSuccess: (_, { userIds, isActive }) => {
@@ -262,7 +258,7 @@ function UsuariosPageContent() {
   // Mutation para enviar magic link masivo
   const sendMagicLinkBulkMutation = useMutation({
     mutationFn: async ({ userIds, emails }) => {
-      await Promise.all(emails.map((email, idx) => 
+      await Promise.all(emails.map((email, idx) =>
         sendMagicLink(userIds[idx], email)
       ));
     },
@@ -280,17 +276,17 @@ function UsuariosPageContent() {
       const results = await Promise.allSettled(
         emails.map(email => sendPasswordResetAdmin(email))
       );
-      
+
       const successful = results.filter(r => r.status === 'fulfilled').length;
       const failed = results.filter(r => r.status === 'rejected').length;
-      
+
       if (failed > 0) {
         const errors = results
           .filter(r => r.status === 'rejected')
           .map(r => r.reason?.message || 'Error desconocido');
         throw new Error(`${successful} enviados, ${failed} fallaron: ${errors.join(', ')}`);
       }
-      
+
       return { successful, total: emails.length };
     },
     onSuccess: (_, { emails }) => {
@@ -509,7 +505,7 @@ function UsuariosPageContent() {
                 </button>
               )}
             </div>
-            
+
             {/* Chips de filtros - Segunda fila en mobile, inline en desktop */}
             <div className="flex gap-1.5 flex-wrap order-2 sm:order-none w-full sm:w-auto">
               {/* Filtro de Rol */}
@@ -519,11 +515,10 @@ function UsuariosPageContent() {
                   variant={roleFilter === 'all' ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => setRoleFilter('all')}
-                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${
-                    roleFilter === 'all' 
-                      ? componentStyles.buttons.primary 
+                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${roleFilter === 'all'
+                      ? componentStyles.buttons.primary
                       : componentStyles.buttons.outline
-                  }`}
+                    }`}
                 >
                   Todos
                 </Button>
@@ -531,11 +526,10 @@ function UsuariosPageContent() {
                   variant={roleFilter === 'ESTU' ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => setRoleFilter('ESTU')}
-                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${
-                    roleFilter === 'ESTU' 
-                      ? componentStyles.buttons.primary 
+                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${roleFilter === 'ESTU'
+                      ? componentStyles.buttons.primary
                       : componentStyles.buttons.outline
-                  }`}
+                    }`}
                 >
                   Alumno
                 </Button>
@@ -543,11 +537,10 @@ function UsuariosPageContent() {
                   variant={roleFilter === 'PROF' ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => setRoleFilter('PROF')}
-                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${
-                    roleFilter === 'PROF' 
-                      ? componentStyles.buttons.primary 
+                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${roleFilter === 'PROF'
+                      ? componentStyles.buttons.primary
                       : componentStyles.buttons.outline
-                  }`}
+                    }`}
                 >
                   Profesor
                 </Button>
@@ -555,11 +548,10 @@ function UsuariosPageContent() {
                   variant={roleFilter === 'ADMIN' ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => setRoleFilter('ADMIN')}
-                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${
-                    roleFilter === 'ADMIN' 
-                      ? componentStyles.buttons.primary 
+                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${roleFilter === 'ADMIN'
+                      ? componentStyles.buttons.primary
                       : componentStyles.buttons.outline
-                  }`}
+                    }`}
                 >
                   Admin
                 </Button>
@@ -575,11 +567,10 @@ function UsuariosPageContent() {
                   variant={estadoFilter === 'all' ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => setEstadoFilter('all')}
-                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${
-                    estadoFilter === 'all' 
-                      ? componentStyles.buttons.primary 
+                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${estadoFilter === 'all'
+                      ? componentStyles.buttons.primary
                       : componentStyles.buttons.outline
-                  }`}
+                    }`}
                 >
                   Todos
                 </Button>
@@ -587,11 +578,10 @@ function UsuariosPageContent() {
                   variant={estadoFilter === 'activo' ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => setEstadoFilter('activo')}
-                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${
-                    estadoFilter === 'activo' 
-                      ? componentStyles.buttons.primary 
+                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${estadoFilter === 'activo'
+                      ? componentStyles.buttons.primary
                       : componentStyles.buttons.outline
-                  }`}
+                    }`}
                 >
                   Activo
                 </Button>
@@ -599,11 +589,10 @@ function UsuariosPageContent() {
                   variant={estadoFilter === 'invitacion_pendiente' ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => setEstadoFilter('invitacion_pendiente')}
-                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${
-                    estadoFilter === 'invitacion_pendiente' 
-                      ? componentStyles.buttons.primary 
+                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${estadoFilter === 'invitacion_pendiente'
+                      ? componentStyles.buttons.primary
                       : componentStyles.buttons.outline
-                  }`}
+                    }`}
                 >
                   Invitación pendiente
                 </Button>
@@ -611,11 +600,10 @@ function UsuariosPageContent() {
                   variant={estadoFilter === 'bloqueado' ? 'primary' : 'outline'}
                   size="sm"
                   onClick={() => setEstadoFilter('bloqueado')}
-                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${
-                    estadoFilter === 'bloqueado' 
-                      ? componentStyles.buttons.primary 
+                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${estadoFilter === 'bloqueado'
+                      ? componentStyles.buttons.primary
                       : componentStyles.buttons.outline
-                  }`}
+                    }`}
                 >
                   Bloqueado
                 </Button>
@@ -751,16 +739,16 @@ function UsuariosPageContent() {
                     const usuariosSeleccionados = usuariosFiltrados.filter(u => ids.includes(u.id));
                     // Filtrar para no permitir eliminar al usuario actual
                     const usuariosAEliminar = usuariosSeleccionados.filter(u => u.id !== effectiveUser?.id);
-                    
+
                     if (usuariosAEliminar.length === 0) {
                       toast.error('No puedes eliminar tu propia cuenta');
                       return;
                     }
-                    
+
                     if (usuariosAEliminar.length < usuariosSeleccionados.length) {
                       toast.warning('Se excluyó tu propia cuenta de la selección');
                     }
-                    
+
                     // Abrir diálogo de confirmación para eliminación masiva
                     setBulkUsersToDelete(usuariosAEliminar);
                     setUserToDelete(usuariosAEliminar[0]); // Usar el primero para compatibilidad
@@ -785,7 +773,7 @@ function UsuariosPageContent() {
                 // Solo mostrar "Enviar invitación" si el usuario NO está activo (pendiente de alta)
                 if (u.email) {
                   const isActive = u.isActive !== false && u.is_active !== false;
-                  
+
                   // Solo mostrar "Enviar invitación" si el usuario no está activo
                   if (!isActive) {
                     actions.push(
@@ -813,7 +801,7 @@ function UsuariosPageContent() {
                       }
                     );
                   }
-                  
+
                   actions.push(
                     {
                       id: 'reset_password',
@@ -922,9 +910,9 @@ function UsuariosPageContent() {
                   label: isActive ? 'Pausar acceso' : 'Reanudar acceso',
                   icon: isActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />,
                   onClick: () => {
-                    toggleActiveMutation.mutate({ 
-                      userId: u.id, 
-                      isActive: !isActive 
+                    toggleActiveMutation.mutate({
+                      userId: u.id,
+                      isActive: !isActive
                     });
                   },
                 });
@@ -1077,9 +1065,9 @@ function UsuariosPageContent() {
                   toast.error('Debes seleccionar un profesor');
                   return;
                 }
-                assignProfesorBulkMutation.mutate({ 
-                  userIds: bulkSelectedIds, 
-                  profesorId: profesorSeleccionadoBulk === 'none' ? null : profesorSeleccionadoBulk 
+                assignProfesorBulkMutation.mutate({
+                  userIds: bulkSelectedIds,
+                  profesorId: profesorSeleccionadoBulk === 'none' ? null : profesorSeleccionadoBulk
                 });
               }}
               className={componentStyles.buttons.primary}
@@ -1138,9 +1126,9 @@ function UsuariosPageContent() {
                   toast.error('Debes seleccionar al menos un estudiante');
                   return;
                 }
-                assignAlumnosToProfesorMutation.mutate({ 
-                  profesorId: profesorParaAsignarAlumnos.id, 
-                  alumnoIds: estudiantesSeleccionadosBulk 
+                assignAlumnosToProfesorMutation.mutate({
+                  profesorId: profesorParaAsignarAlumnos.id,
+                  alumnoIds: estudiantesSeleccionadosBulk
                 });
               }}
               className={componentStyles.buttons.primary}
@@ -1157,7 +1145,7 @@ function UsuariosPageContent() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {bulkUsersToDelete.length > 1 
+              {bulkUsersToDelete.length > 1
                 ? `¿Eliminar ${bulkUsersToDelete.length} usuarios?`
                 : '¿Eliminar usuario?'
               }
@@ -1191,7 +1179,7 @@ function UsuariosPageContent() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel 
+            <AlertDialogCancel
               onClick={() => {
                 setIsDeleteUserDialogOpen(false);
                 setUserToDelete(null);
@@ -1206,23 +1194,23 @@ function UsuariosPageContent() {
                 if (bulkUsersToDelete.length > 1) {
                   // Eliminación masiva - ejecutar todas las eliminaciones en paralelo
                   const userIds = bulkUsersToDelete.map(u => u.id);
-                  
+
                   // Obtener sesión una sola vez
                   const { data: { session } } = await supabase.auth.getSession();
                   if (!session?.access_token) {
                     toast.error('No hay sesión activa');
                     return;
                   }
-                  
+
                   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
                   if (!supabaseUrl) {
                     toast.error('VITE_SUPABASE_URL no configurada');
                     return;
                   }
-                  
+
                   try {
                     const results = await Promise.allSettled(
-                      userIds.map(id => 
+                      userIds.map(id =>
                         fetch(`${supabaseUrl}/functions/v1/delete-user`, {
                           method: 'POST',
                           headers: {
@@ -1240,10 +1228,10 @@ function UsuariosPageContent() {
                         })
                       )
                     );
-                    
+
                     const successful = results.filter(r => r.status === 'fulfilled').length;
                     const failed = results.filter(r => r.status === 'rejected').length;
-                    
+
                     if (failed > 0) {
                       const errors = results
                         .filter(r => r.status === 'rejected')
@@ -1252,7 +1240,7 @@ function UsuariosPageContent() {
                     } else {
                       toast.success(`✅ ${userIds.length} usuario${userIds.length > 1 ? 's' : ''} eliminado${userIds.length > 1 ? 's' : ''} correctamente`);
                     }
-                    
+
                     queryClient.invalidateQueries({ queryKey: ['users'] });
                     setIsDeleteUserDialogOpen(false);
                     setBulkUsersToDelete([]);

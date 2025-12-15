@@ -26,6 +26,7 @@ export default function PiezasTab() {
   const { data: piezas = [], isLoading } = useQuery({
     queryKey: ['piezas'],
     queryFn: () => entities.Pieza.list('-created_at'),
+    staleTime: 5 * 60 * 1000, // 5 min - avoid refetch on tab switch
   });
 
   const deleteMutation = useMutation({
@@ -150,9 +151,11 @@ export default function PiezasTab() {
             <UnifiedTable
               columns={[
                 { key: 'nombre', label: 'Nombre', sortable: true, render: (p) => <span className="font-medium">{p.nombre}</span> },
-                { key: 'nivel', label: 'Nivel', sortable: true, render: (p) => (
-                  <Badge variant={nivelVariants[p.nivel]}>{nivelLabels[p.nivel]}</Badge> // Changed Badge variant
-                ) },
+                {
+                  key: 'nivel', label: 'Nivel', sortable: true, render: (p) => (
+                    <Badge variant={nivelVariants[p.nivel]}>{nivelLabels[p.nivel]}</Badge> // Changed Badge variant
+                  )
+                },
                 { key: 'elementos', label: 'Elementos', sortable: true, render: (p) => <span className="text-sm text-[var(--color-text-secondary)]">{p.elementos?.length || 0}</span>, sortValue: (p) => p.elementos?.length || 0 },
                 { key: 'tiempo', label: 'Tiempo', sortable: true, render: (p) => <span className="text-sm text-[var(--color-text-secondary)]">{Math.floor((p.tiempoObjetivoSeg || 0) / 60)} min</span>, sortValue: (p) => p.tiempoObjetivoSeg || 0 }
               ]}
@@ -200,7 +203,7 @@ export default function PiezasTab() {
                 <CardContent className="pt-4">
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
-                      <div 
+                      <div
                         className="flex-1 min-w-0 cursor-pointer"
                         onClick={() => handleEdit(pieza)}
                       >

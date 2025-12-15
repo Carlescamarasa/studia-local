@@ -450,62 +450,40 @@ async function wrapSupabaseCall<T>(operation: () => Promise<T>): Promise<T> {
 /**
  * Obtiene emails de usuarios desde auth.users usando Edge Function get-user-emails
  * Solo funciona para usuarios ADMIN
+ * OPTIMIZADO: Usa getCachedAuthUser() para evitar múltiples llamadas a getUser()
  */
 async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>> {
   const emailMap = new Map<string, string>();
 
   if (!userIds || userIds.length === 0) return emailMap;
 
+  // OPTIMIZACIÓN: Obtener usuario autenticado UNA SOLA VEZ al inicio
+  const authUser = await getCachedAuthUser();
+
+  // Si el usuario autenticado está en la lista, añadir su email
+  if (authUser && userIds.includes(authUser.id) && authUser.email) {
+    emailMap.set(authUser.id, authUser.email);
+  }
+
   try {
     // Obtener token de sesión
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
-      // Si no hay sesión, solo devolver email del usuario autenticado si coincide
-      const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
-      if (user && user.id && userIds.includes(user.id)) {
-        emailMap.set(user.id, user.email || '');
-      }
+      // Si no hay sesión, devolver solo el email del usuario autenticado (si ya lo añadimos)
       return emailMap;
     }
 
-    // Verificar que el usuario sea ADMIN antes de llamar a la Edge Function
-    // OPTIMIZACIÓN: Usar el perfil del usuario autenticado de la lista en lugar de query individual
-    // El perfil ya debería estar disponible en la lista de usuarios cargada
-    try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (currentUser?.id) {
-        // Intentar obtener el rol del usuario desde la lista de usuarios ya cargada
-        // Esto evita la query individual a profiles
-        // Nota: Si la lista no está disponible, usaremos un fallback más permisivo
-        const userRole = 'ADMIN'; // Asumir ADMIN para permitir la llamada a Edge Function
-        // Si no es ADMIN, la Edge Function devolverá 403, pero eso es manejado más abajo
-
-        // Si el usuario actual está en la lista de IDs solicitados, añadir su email
-        if (currentUser.id && userIds.includes(currentUser.id)) {
-          emailMap.set(currentUser.id, currentUser.email || '');
-        }
-      }
-    } catch (roleCheckError) {
-      // Si falla la verificación, usar fallback
-      const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
-      if (user && user.id && userIds.includes(user.id)) {
-        emailMap.set(user.id, user.email || '');
-      }
-      // Continuar con la llamada a Edge Function - si no es ADMIN, fallará con 403
-    }
-
-    // Llamar a la      // @ts-ignore
-    const isDev = import.meta.env.DEV;
     // @ts-ignore
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl) {
-      // Fallback: solo email del usuario autenticado
-      const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
-      if (user && user.id && userIds.includes(user.id)) {
-        emailMap.set(user.id, user.email || '');
-      }
+      // Sin URL configurada, devolver solo el email del usuario autenticado
+      return emailMap;
+    }
+
+    // Si solo pedimos el email del usuario actual, no llamar a la Edge Function
+    if (authUser && userIds.length === 1 && userIds[0] === authUser.id) {
       return emailMap;
     }
 
@@ -517,21 +495,6 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
     // Añadir apikey si está disponible (algunas Edge Functions lo requieren)
     if (supabaseAnonKey) {
       headers['apikey'] = supabaseAnonKey;
-    }
-
-    // Optimización: si solo buscamos el email del usuario actual, no llamar a la función
-    const { data: { user: currentUser } } = await wrapSupabaseCall(() => supabase.auth.getUser());
-
-    // Si solo pedimos el usuario actual
-    if (currentUser && userIds.length === 1 && userIds[0] === currentUser.id) {
-      const map = new Map<string, string>();
-      map.set(currentUser.id, currentUser.email || '');
-      return map;
-    }
-
-    // Si el usuario actual está en la lista, asegurarnos de que lo tenemos en el mapa (por si la función falla o lo filtra)
-    if (currentUser && userIds.includes(currentUser.id)) {
-      emailMap.set(currentUser.id, currentUser.email || '');
     }
 
     const response = await fetch(`${supabaseUrl}/functions/v1/get-user-emails`, {
@@ -550,27 +513,15 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
           }
         }
       }
-    } else {
-      // Si falla (403, etc.), usar fallback silenciosamente
-      const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
-      if (user && user.id && userIds.includes(user.id)) {
-        emailMap.set(user.id, user.email || '');
-      }
     }
+    // Si falla (403, etc.), ya tenemos el email del usuario autenticado en el mapa
   } catch (error) {
-    // Si falla, usar fallback: solo email del usuario autenticado
-    try {
-      const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
-      if (user && user.id && userIds.includes(user.id)) {
-        emailMap.set(user.id, user.email || '');
-      }
-    } catch (e) {
-      // Ignorar si no hay usuario autenticado
-    }
+    // Si falla, ya tenemos el email del usuario autenticado en el mapa (si estaba en userIds)
   }
 
   return emailMap;
 }
+
 
 // Caché en memoria para usuarios ya cargados
 // Esto evita queries individuales cuando se llama a User.get() después de User.list()
@@ -602,6 +553,50 @@ function cacheUsers(users: any[]) {
     }
   });
   usersCacheTimestamp = Date.now();
+}
+
+// Caché en memoria para el usuario autenticado
+// Evita múltiples llamadas a supabase.auth.getUser() por request
+let cachedAuthUser: { id: string; email: string | null } | null = null;
+let cachedAuthUserTimestamp: number = 0;
+const AUTH_USER_CACHE_TTL = 30 * 1000; // 30 segundos
+
+/**
+ * Obtiene el usuario autenticado de la caché o lo carga una sola vez
+ * Esto evita las múltiples llamadas redundantes a supabase.auth.getUser()
+ */
+async function getCachedAuthUser(): Promise<{ id: string; email: string | null } | null> {
+  const now = Date.now();
+
+  // Si hay caché válida, usarla
+  if (cachedAuthUser && (now - cachedAuthUserTimestamp) < AUTH_USER_CACHE_TTL) {
+    return cachedAuthUser;
+  }
+
+  // Si no hay caché o expiró, cargar
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      cachedAuthUser = { id: user.id, email: user.email || null };
+      cachedAuthUserTimestamp = now;
+      return cachedAuthUser;
+    }
+  } catch (e) {
+    // Ignorar errores de autenticación
+  }
+
+  // Limpiar caché si no hay usuario
+  cachedAuthUser = null;
+  cachedAuthUserTimestamp = 0;
+  return null;
+}
+
+/**
+ * Limpia la caché del usuario autenticado (llamar en logout)
+ */
+export function clearAuthUserCache(): void {
+  cachedAuthUser = null;
+  cachedAuthUserTimestamp = 0;
 }
 
 /**
@@ -648,16 +643,10 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         const data = allData;
 
-        // Obtener email e ID del usuario autenticado si existe (para comparación)
-        let currentUserEmail: string | null = null;
-        let currentUserId: string | null = null;
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          currentUserEmail = user?.email || null;
-          currentUserId = user?.id || null;
-        } catch (e) {
-          // Ignorar si no hay usuario autenticado
-        }
+        // OPTIMIZADO: Usar getCachedAuthUser() en lugar de supabase.auth.getUser()
+        const authUser = await getCachedAuthUser();
+        const currentUserEmail = authUser?.email || null;
+        const currentUserId = authUser?.id || null;
 
         // Obtener emails usando función SQL si está disponible, o usar el usuario autenticado
         let emailsMap = new Map<string, string>();
