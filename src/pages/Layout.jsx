@@ -826,8 +826,8 @@ function LayoutContent() {
             <Outlet />
           </div>
 
-          {/* Botón flotante de reporte de errores */}
-          <ReportErrorButton />
+          {/* Botón flotante de reporte de errores - Ocultar en modo estudio (/hoy) */}
+          {!location.pathname.startsWith('/hoy') && <ReportErrorButton />}
 
           {/* Footer global - centrado con nombre de app */}
           <footer className="border-t border-[var(--color-border-default)] bg-card text-xs text-[var(--color-text-secondary)] mt-auto">

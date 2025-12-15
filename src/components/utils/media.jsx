@@ -150,7 +150,6 @@ export function resolveMedia(input) {
           kind: MediaKind.AUDIO,
           embedUrl: url, // Usar la URL completa con el parámetro format
           originalUrl: url,
-          title: 'Audio File (Google Drive)',
         });
       }
 
@@ -170,7 +169,6 @@ export function resolveMedia(input) {
       kind: MediaKind.AUDIO,
       embedUrl: url,
       originalUrl: url,
-      title: 'Audio File',
     });
   }
 
@@ -180,7 +178,6 @@ export function resolveMedia(input) {
       kind: MediaKind.VIDEO,
       embedUrl: url,
       originalUrl: url,
-      title: 'Video File',
     });
   }
 
@@ -190,7 +187,6 @@ export function resolveMedia(input) {
       kind: MediaKind.IMAGE,
       embedUrl: url,
       originalUrl: url,
-      title: 'Image',
     });
   }
 

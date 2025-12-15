@@ -17,12 +17,42 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  PlayCircle, Calendar, Target, Music, Clock, Layers,
-  ChevronRight, ChevronLeft, ChevronsRight, AlertTriangle, ChevronDown, ChevronUp,
-  Play, Pause, X, List, HelpCircle,
-  Maximize2, Minimize2, CheckCircle, XCircle,
-  SkipForward, Shuffle, Menu, User,
-  ShieldAlert, Save, MoreVertical, RotateCcw, FileText, Video, ExternalLink, ImageIcon
+  ChevronLeft,
+  ChevronRight,
+  Pause,
+  Play,
+  RotateCcw,
+  SkipForward,
+  Maximize2,
+  BookOpen,
+  CheckCircle,
+  Clock,
+  Music,
+  MoreVertical,
+  Flag,
+  ChevronsRight,
+  ChevronUp,
+  ChevronDown,
+  Target,
+  X,
+  Piano,
+  PlayCircle,
+  User,
+  Calendar,
+  Layers,
+  AlertTriangle,
+  List,
+  HelpCircle,
+  Minimize2,
+  XCircle,
+  Shuffle,
+  Menu,
+  ShieldAlert,
+  Save,
+  FileText,
+  Video,
+  ExternalLink,
+  ImageIcon
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -44,6 +74,7 @@ import TimelineProgreso from "../components/estudio/TimelineProgreso";
 import ModalCancelar from "../components/estudio/ModalCancelar";
 import ResumenFinal from "../components/estudio/ResumenFinal";
 import Metronomo from "../components/study/Metronomo";
+import PianoPanel from "../components/study/PianoPanel"; // Refactored component
 import SessionContentView from "../components/study/SessionContentView";
 // detectMediaType eliminado, usamos resolveMedia de media.jsx
 
@@ -112,7 +143,107 @@ function HoyPageContent() {
   const [indiceActual, setIndiceActual] = useState(0);
   const [tiempoActual, setTiempoActual] = useState(0);
   const [cronometroActivo, setCronometroActiva] = useState(false);
-  const [timerCollapsed, setTimerCollapsed] = useState(false); // Timer compacto/expandido
+  // Layout and UI state
+  const [timerCollapsed, setTimerCollapsed] = useState(false); // Collapsed by default? No, usually open.
+  const [footerHeight, setFooterHeight] = useState(80); // Default height
+  const footerRef = useRef(null);
+
+  // Measure footer height for PianoPanel positioning
+  // Helper to get REAL bottom offset
+  const measureFooterOffset = () => {
+    if (!footerRef.current) return 0;
+    const viewportH = window.visualViewport?.height ?? window.innerHeight;
+    const rect = footerRef.current.getBoundingClientRect();
+    const offset = Math.max(0, Math.round(viewportH - rect.top));
+    return offset;
+  };
+
+  useEffect(() => {
+    if (!footerRef.current) return;
+
+    const updateFooterHeight = () => {
+      const h = measureFooterOffset();
+      setFooterHeight(h);
+    };
+
+    // Initial measure with robust loop for load stability (Chrome Hotfix)
+    const measureAndLoop = () => {
+      updateFooterHeight();
+      let rafId;
+      const startTime = performance.now();
+      const loop = (time) => {
+        updateFooterHeight();
+        // Poll for 1000ms to ensure initial layout/transitions (e.g. fonts, dynamic content) are caught
+        if (time - startTime < 1000) {
+          rafId = requestAnimationFrame(loop);
+        }
+      };
+      rafId = requestAnimationFrame(loop);
+      return () => cancelAnimationFrame(rafId);
+    };
+
+    const cancelLoop = measureAndLoop();
+
+    // ResizeObserver
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(updateFooterHeight);
+    });
+
+    resizeObserver.observe(footerRef.current);
+
+    // Window resize fallback
+    window.addEventListener('resize', updateFooterHeight);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateFooterHeight);
+    }
+
+    return () => {
+      cancelLoop();
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateFooterHeight);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateFooterHeight);
+      }
+    };
+  }, []);
+
+  // Force re-measure when collapse state changes (Chrome Hotfix)
+  useEffect(() => {
+    if (!footerRef.current) return;
+    const update = () => setFooterHeight(measureFooterOffset());
+    update();
+
+    let rafId;
+    const startTime = performance.now();
+    const loop = (time) => {
+      update();
+      if (time - startTime < 400) {
+        rafId = requestAnimationFrame(loop);
+      }
+    };
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
+  }, [timerCollapsed]);
+
+  // Handler for Piano Toggle
+  const handleTogglePiano = () => {
+    if (!mostrarPiano) {
+      // Opening: Force measure FIRST
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const offset = measureFooterOffset();
+          setFooterHeight(offset);
+          setMostrarPiano(true);
+        });
+      });
+      // Backup check
+      setTimeout(() => {
+        setFooterHeight(measureFooterOffset());
+      }, 80);
+    } else {
+      setMostrarPiano(false);
+    }
+  };
   const [completados, setCompletados] = useState(new Set());
   const [omitidos, setOmitidos] = useState(new Set());
   const [pantallaCompleta, setPantallaCompleta] = useState(false);
@@ -125,6 +256,8 @@ function HoyPageContent() {
   const [mediaFullscreen, setMediaFullscreen] = useState(null);
   const [mediaModal, setMediaModal] = useState(null); // Para el popup de materiales
   const [reportModalAbierto, setReportModalAbierto] = useState(false);
+  const [pianoCerradoPorUsuario, setPianoCerradoPorUsuario] = useState(true); // Control del fab del piano
+  const [mostrarPiano, setMostrarPiano] = useState(false); // Modal del piano
   const [ppmAlcanzado, setPpmAlcanzado] = useState(null);
 
   // Estado para la posición del timer arrastrable
@@ -603,9 +736,9 @@ function HoyPageContent() {
           } else if (bloqueActual.content?.mediaItems && bloqueActual.content.mediaItems.length > 0) {
             mediaLinksFinal = bloqueActual.content.mediaItems;
           } else if (bloqueActual.mediaLinks && bloqueActual.mediaLinks.length > 0) {
-            mediaLinksFinal = bloqueActual.mediaLinks.map(u => ({ url: u, name: null }));
+            mediaLinksFinal = bloqueActual.mediaLinks.map(u => typeof u === 'string' ? { url: u, name: null } : u);
           } else if (bloqueSnapshot.mediaLinks && bloqueSnapshot.mediaLinks.length > 0) {
-            mediaLinksFinal = bloqueSnapshot.mediaLinks.map(u => ({ url: u, name: null }));
+            mediaLinksFinal = bloqueSnapshot.mediaLinks.map(u => typeof u === 'string' ? { url: u, name: null } : u);
           }
 
           const baseName = bloqueActual.nombre || bloqueSnapshot.nombre;
@@ -1227,8 +1360,9 @@ function HoyPageContent() {
         {/* Timer dock inferior fijo - Una única barra con dos filas */}
         {sesionActiva && (
           <div
+            ref={footerRef}
             className={cn(
-              "fixed bottom-0 left-0 right-0 z-[30] bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-[0_-4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 ease-in-out",
+              "fixed bottom-0 left-0 right-0 z-50 bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-[0_-4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 ease-in-out pb-[env(safe-area-inset-bottom)]",
               timerCollapsed ? "h-[80px]" : "min-h-[80px]"
             )}
           >
@@ -1275,6 +1409,23 @@ function HoyPageContent() {
                       </div>
                     )}
                   </div>
+
+                  {/* Piano Toggle - Icon only, left side near clock */}
+                  <Button
+                    variant={mostrarPiano ? "default" : "ghost"}
+                    size="sm"
+                    onClick={handleTogglePiano}
+                    className={cn(
+                      "h-8 w-8 p-0 rounded-lg shrink-0 ml-1 transition-colors",
+                      mostrarPiano
+                        ? "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90"
+                        : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-primary)]"
+                    )}
+                    title="Piano (T)"
+                    aria-label={mostrarPiano ? "Ocultar piano" : "Mostrar piano"}
+                  >
+                    <Piano className="w-4 h-4" />
+                  </Button>
                 </div>
 
                 {/* Centro: Controles - Solo visible cuando expandido */}
@@ -1311,6 +1462,9 @@ function HoyPageContent() {
                         )}
                       </Button>
                     )}
+
+
+
 
                     {/* OK - Botón primario */}
                     <Button
@@ -1448,7 +1602,8 @@ function HoyPageContent() {
               </div>
             )}
           </div>
-        )}
+        )
+        }
 
         {/* Header del Player */}
         <div className="page-header header-modern lg:sticky lg:top-0 z-10">
@@ -1560,32 +1715,29 @@ function HoyPageContent() {
                 </div>
               )}
 
-              {!isAD && ejercicioActual.targetPPMs?.length > 0 && (
-                <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4">
-                  {(() => {
-                    const nivelAlumno = alumnoActual?.nivelTecnico || 1;
-                    const target = ejercicioActual.targetPPMs?.find(t => t.nivel === nivelAlumno);
-                    if (target) {
-                      return (
-                        <div className="mb-4 p-3 bg-[var(--color-info)]/10 text-[var(--color-info)] rounded-lg flex items-center gap-2 text-sm font-medium border border-[var(--color-info)]/20">
-                          <span>🎯</span>
-                          <span>Tempo objetivo (Nivel {target.nivel}): {target.unidad || 'Negra'} = {target.bpm} bpm</span>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-                  <Metronomo
-                    initialBpm={(() => {
-                      // Intentar encontrar un targetPPM para el nivel del alumno
-                      const nivelAlumno = alumnoActual?.nivelTecnico || 1;
-                      const target = ejercicioActual.targetPPMs?.find(t => t.nivel === nivelAlumno);
-                      return target?.bpm || 60;
-                    })()}
-                    onPpmChange={setPpmAlcanzado}
-                  />
-                </div>
-              )}
+              {!isAD && ejercicioActual.targetPPMs?.length > 0 && (() => {
+                // Lógica estricta: mostrar metrónomo SOLO si hay targetPPM para el nivel del alumno
+                const nivelAlumno = alumnoActual?.nivelTecnico || 1;
+                // Buscar target exacto para el nivel
+                const target = ejercicioActual.targetPPMs.find(t => t.nivel === nivelAlumno);
+
+                if (target) {
+                  return (
+                    <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4">
+                      <div className="mb-4 p-3 bg-[var(--color-info)]/10 text-[var(--color-info)] rounded-lg flex items-center gap-2 text-sm font-medium border border-[var(--color-info)]/20">
+                        <span>🎯</span>
+                        <span>Tempo objetivo (Nivel {target.nivel}): {target.unidad || 'Negra'} = {target.bpm} bpm</span>
+                      </div>
+                      <Metronomo
+                        initialBpm={target.bpm}
+                        onPpmChange={setPpmAlcanzado}
+                      />
+                    </div>
+                  );
+                }
+                // Si no hay target para este nivel, NO renderizar nada (ni metrónomo ni aviso)
+                return null;
+              })()}
 
               {/* Material de la pieza */}
               {!isAD && (isFM ? elementosFM.length > 0 : ((ejercicioActual.media && Object.keys(ejercicioActual.media).length > 0) || (ejercicioActual.mediaLinks && ejercicioActual.mediaLinks.length > 0))) && (
@@ -1608,20 +1760,12 @@ function HoyPageContent() {
                         const type = mediaInfo.kind;
 
                         // Use custom name if available, otherwise filename/title
-                        const fileName = customName || mediaInfo.name || (url.split('/').pop().split('?')[0] || 'Archivo adjunto');
+                        const fileName = customName || mediaInfo.name || (typeof url === 'string' ? url.split('/').pop().split('?')[0] : 'Archivo adjunto');
 
-                        // AUDIO - Embedido
+                        // AUDIO - Embedido (Sin tarjeta exterior)
                         if (type === MediaKind.AUDIO) {
                           return (
-                            <div key={idx} className="bg-[var(--color-surface-elevated)] border border-[var(--color-primary)]/20 rounded-xl p-3 shadow-sm">
-                              <div className="flex items-center gap-2 mb-2">
-                                <div className="bg-[var(--color-primary)]/10 p-1.5 rounded-lg">
-                                  <Music className="w-4 h-4 text-[var(--color-primary)]" />
-                                </div>
-                                <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
-                                  {fileName}
-                                </span>
-                              </div>
+                            <div key={idx} className="mb-2">
                               <CustomAudioPlayer
                                 className="w-full"
                                 src={mediaInfo.embedUrl || mediaInfo.originalUrl}
@@ -1739,431 +1883,446 @@ function HoyPageContent() {
         </div>
 
         {/* Footer de controles - Oculto (controles ahora en timer flotante) */}
-        {false && (
-          <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-card z-30 pb-[env(safe-area-inset-bottom,0px)]">
-            <div className="max-w-5xl mx-auto px-3 py-2">
-              {/* Breadcrumb compacto */}
-              <TooltipProvider>
-                <div className="flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide -mx-3 px-3">
-                  {listaEjecucion.slice(Math.max(0, indiceActual - 2), Math.min(listaEjecucion.length, indiceActual + 3)).map((ej, idx) => {
-                    const realIdx = Math.max(0, indiceActual - 2) + idx;
-                    const isActive = realIdx === indiceActual;
-                    const isCompleted = completados.has(realIdx);
-                    const isOmitted = omitidos.has(realIdx);
+        {
+          false && (
+            <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-card z-30 pb-[env(safe-area-inset-bottom,0px)]">
+              <div className="max-w-5xl mx-auto px-3 py-2">
+                {/* Breadcrumb compacto */}
+                <TooltipProvider>
+                  <div className="flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide -mx-3 px-3">
+                    {listaEjecucion.slice(Math.max(0, indiceActual - 2), Math.min(listaEjecucion.length, indiceActual + 3)).map((ej, idx) => {
+                      const realIdx = Math.max(0, indiceActual - 2) + idx;
+                      const isActive = realIdx === indiceActual;
+                      const isCompleted = completados.has(realIdx);
+                      const isOmitted = omitidos.has(realIdx);
 
-                    // Formatear label para el breadcrumb
-                    let label = ej.tipo;
-                    if (ej.esRonda && ej.rondaIdx !== undefined && ej.repeticion !== undefined) {
-                      // Mostrar: "TC R1-2" donde R1 es la ronda y 2 es la repetición actual
-                      label = `${ej.tipo} R${ej.rondaIdx + 1}-${ej.repeticion}`;
-                    }
+                      // Formatear label para el breadcrumb
+                      let label = ej.tipo;
+                      if (ej.esRonda && ej.rondaIdx !== undefined && ej.repeticion !== undefined) {
+                        // Mostrar: "TC R1-2" donde R1 es la ronda y 2 es la repetición actual
+                        label = `${ej.tipo} R${ej.rondaIdx + 1}-${ej.repeticion}`;
+                      }
 
-                    const nombreEjercicio = ej.nombre || `${ej.tipo}${ej.esRonda ? ` - Ronda ${ej.rondaIdx + 1}, Repetición ${ej.repeticion}/${ej.totalRepeticiones}` : ''}`;
+                      const nombreEjercicio = ej.nombre || `${ej.tipo}${ej.esRonda ? ` - Ronda ${ej.rondaIdx + 1}, Repetición ${ej.repeticion}/${ej.totalRepeticiones}` : ''}`;
 
-                    return (
-                      <React.Fragment key={realIdx}>
-                        {idx > 0 && <ChevronRight className="w-3 h-3 text-[var(--color-text-muted)] shrink-0" />}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div
-                              className={cn(
-                                "px-2 py-0.5 rounded text-xs font-medium shrink-0 transition-all whitespace-nowrap cursor-default",
-                                isActive
-                                  ? "bg-[var(--color-primary)] text-white shadow-sm"
-                                  : isCompleted
-                                    ? "bg-[var(--color-success)]/20 text-[var(--color-success)] border border-[var(--color-success)]/30"
-                                    : isOmitted
-                                      ? "bg-[var(--color-warning)]/20 text-[var(--color-warning)] border border-[var(--color-warning)]/30"
-                                      : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] border border-[var(--color-border-default)]"
-                              )}
-                            >
-                              {label}
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">{nombreEjercicio}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </React.Fragment>
-                    );
-                  })}
-                </div>
-              </TooltipProvider>
+                      return (
+                        <React.Fragment key={realIdx}>
+                          {idx > 0 && <ChevronRight className="w-3 h-3 text-[var(--color-text-muted)] shrink-0" />}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div
+                                className={cn(
+                                  "px-2 py-0.5 rounded text-xs font-medium shrink-0 transition-all whitespace-nowrap cursor-default",
+                                  isActive
+                                    ? "bg-[var(--color-primary)] text-white shadow-sm"
+                                    : isCompleted
+                                      ? "bg-[var(--color-success)]/20 text-[var(--color-success)] border border-[var(--color-success)]/30"
+                                      : isOmitted
+                                        ? "bg-[var(--color-warning)]/20 text-[var(--color-warning)] border border-[var(--color-warning)]/30"
+                                        : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] border border-[var(--color-border-default)]"
+                                )}
+                              >
+                                {label}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">{nombreEjercicio}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                </TooltipProvider>
 
-              {/* Controles principales - Distribución 19-2-29-2-29-2-19 con gaps */}
-              <div className="flex items-center w-full gap-[2%] mb-2">
-                {/* Navegación: Atrás - 50% */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAnterior}
-                  disabled={indiceActual === 0}
-                  className="h-12 md:h-14 flex-[0.5] min-w-0 rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
-                  title="Anterior (P)"
-                  aria-label="Ejercicio anterior"
-                >
-                  <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 mr-2 shrink-0" />
-                  <span className="truncate">Atrás</span>
-                </Button>
-
-                {/* Control principal: Play/Pause - Solo si no es AD */}
-                {!isAD && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={togglePlayPausa}
-                    className="h-12 md:h-14 w-12 md:w-14 shrink-0 rounded-xl focus-brand shadow-sm hover:shadow-md transition-all"
-                    title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
-                    aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
-                  >
-                    {cronometroActivo ? <Pause className="w-5 h-5 md:w-6 md:h-6" /> : <Play className="w-5 h-5 md:w-6 md:h-6" />}
-                  </Button>
-                )}
-
-                {/* Acciones de ejercicio: Completar - 50% */}
-                <Button
-                  variant="primary"
-                  onClick={completarYAvanzar}
-                  className={cn(
-                    "h-12 md:h-14 flex-[0.5] min-w-0 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-base md:text-lg rounded-xl focus-brand shadow-sm hover:shadow-md transition-all text-white",
-                    isAD && "flex-[1]"
-                  )}
-                  title="Completar (Enter)"
-                  aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
-                >
-                  <CheckCircle className="w-5 h-5 md:w-6 md:h-6 mr-2 shrink-0" />
-                  <span className="truncate">{isUltimo ? 'Finalizar' : 'OK'}</span>
-                </Button>
-
-                {/* Acciones de ejercicio: Saltar - 50% */}
-                {!isUltimo && (
+                {/* Controles principales - Distribución 19-2-29-2-29-2-19 con gaps */}
+                <div className="flex items-center w-full gap-[2%] mb-2">
+                  {/* Navegación: Atrás - 50% */}
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={omitirYAvanzar}
-                    disabled={isUltimo}
+                    onClick={handleAnterior}
+                    disabled={indiceActual === 0}
                     className="h-12 md:h-14 flex-[0.5] min-w-0 rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
-                    title="Omitir y pasar (N)"
-                    aria-label="Omitir ejercicio"
+                    title="Anterior (P)"
+                    aria-label="Ejercicio anterior"
                   >
-                    <ChevronsRight className="w-5 h-5 md:w-6 md:h-6 mr-2 shrink-0" />
-                    <span className="truncate">Saltar</span>
+                    <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 mr-2 shrink-0" />
+                    <span className="truncate">Atrás</span>
                   </Button>
-                )}
-              </div>
 
-              {/* Progreso de sesión - Compacto */}
-              <div className="mt-2 space-y-0.5">
-                <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
-                  <span>{indiceActual + 1}/{listaEjecucion.length}</span>
-                  <span>{completados.size}✓ {omitidos.size}⏭</span>
-                </div>
-                <div className="bg-[var(--color-border-default)]/30 rounded-full h-1 overflow-hidden">
-                  <div
+                  {/* Control principal: Play/Pause - Solo si no es AD */}
+                  {!isAD && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={togglePlayPausa}
+                      className="h-12 md:h-14 w-12 md:w-14 shrink-0 rounded-xl focus-brand shadow-sm hover:shadow-md transition-all"
+                      title={cronometroActivo ? "Pausar (Espacio)" : "Reproducir (Espacio)"}
+                      aria-label={cronometroActivo ? "Pausar cronómetro" : "Iniciar cronómetro"}
+                    >
+                      {cronometroActivo ? <Pause className="w-5 h-5 md:w-6 md:h-6" /> : <Play className="w-5 h-5 md:w-6 md:h-6" />}
+                    </Button>
+                  )}
+
+                  {/* Acciones de ejercicio: Completar - 50% */}
+                  <Button
+                    variant="primary"
+                    onClick={completarYAvanzar}
                     className={cn(
-                      "h-full transition-all duration-300",
-                      progreso <= 85 ? 'bg-[var(--color-success)]' : progreso <= 100 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-danger)]'
+                      "h-12 md:h-14 flex-[0.5] min-w-0 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-base md:text-lg rounded-xl focus-brand shadow-sm hover:shadow-md transition-all text-white",
+                      isAD && "flex-[1]"
                     )}
-                    style={{ width: `${Math.min(progreso, 100)}%` }}
-                  />
+                    title="Completar (Enter)"
+                    aria-label={isUltimo ? 'Finalizar sesión' : 'Completar y continuar'}
+                  >
+                    <CheckCircle className="w-5 h-5 md:w-6 md:h-6 mr-2 shrink-0" />
+                    <span className="truncate">{isUltimo ? 'Finalizar' : 'OK'}</span>
+                  </Button>
+
+                  {/* Acciones de ejercicio: Saltar - 50% */}
+                  {!isUltimo && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={omitirYAvanzar}
+                      disabled={isUltimo}
+                      className="h-12 md:h-14 flex-[0.5] min-w-0 rounded-xl focus-brand hover:bg-[var(--color-surface-muted)] transition-colors"
+                      title="Omitir y pasar (N)"
+                      aria-label="Omitir ejercicio"
+                    >
+                      <ChevronsRight className="w-5 h-5 md:w-6 md:h-6 mr-2 shrink-0" />
+                      <span className="truncate">Saltar</span>
+                    </Button>
+                  )}
+                </div>
+
+                {/* Progreso de sesión - Compacto */}
+                <div className="mt-2 space-y-0.5">
+                  <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
+                    <span>{indiceActual + 1}/{listaEjecucion.length}</span>
+                    <span>{completados.size}✓ {omitidos.size}⏭</span>
+                  </div>
+                  <div className="bg-[var(--color-border-default)]/30 rounded-full h-1 overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full transition-all duration-300",
+                        progreso <= 85 ? 'bg-[var(--color-success)]' : progreso <= 100 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-danger)]'
+                      )}
+                      style={{ width: `${Math.min(progreso, 100)}%` }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
         {/* Media fullscreen */}
-        {mediaFullscreen && (
-          <>
-            <div className="fixed inset-0 bg-black z-[100]" onClick={() => setMediaFullscreen(null)} />
-            <div className="fixed inset-0 z-[101] flex items-center justify-center p-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setMediaFullscreen(null)}
-                className="absolute top-4 right-4 bg-white/90 hover:bg-white text-ui h-10 w-10 p-0 rounded-full shadow-card focus-brand"
-                aria-label="Cerrar pantalla completa"
-              >
-                <X className="w-5 h-5" />
-              </Button>
-
-              {mediaFullscreen.tipo === 'video' && (
-                <video
-                  controls
-                  autoPlay
-                  className="max-w-full max-h-full rounded-lg shadow-card"
-                  src={mediaFullscreen.url}
-                />
-              )}
-
-              {mediaFullscreen.tipo === 'imagen' && (
-                <img
-                  src={mediaFullscreen.url}
-                  alt="Imagen en pantalla completa"
-                  className="max-w-full max-h-full rounded-lg shadow-card"
-                />
-              )}
-
-              {mediaFullscreen.tipo === 'pdf' && (
-                <div className="w-full h-full flex flex-col bg-card rounded-lg">
-                  <iframe
-                    src={mediaFullscreen.url}
-                    className="w-full flex-1"
-                    title={mediaFullscreen.nombre || 'PDF'}
-                  />
-                </div>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Modal de pantalla completa para recursos multimedia (modo estudio) */}
-        {mediaModal && (
-          <div
-            className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-0 md:p-4"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setMediaModal(null);
-              }
-            }}
-          >
-            <div className="w-full h-full md:w-[95vw] md:h-[95vh] md:max-w-7xl bg-[var(--color-surface-elevated)] md:rounded-2xl shadow-2xl flex flex-col">
-              {/* Header del modal */}
-              <div className="flex items-center justify-between p-4 md:p-6 border-b border-[var(--color-border-default)] shrink-0">
-                <h2 className="text-lg md:text-xl font-semibold text-[var(--color-text-primary)]">
-                  Recurso multimedia
-                </h2>
+        {
+          mediaFullscreen && (
+            <>
+              <div className="fixed inset-0 bg-black z-[100]" onClick={() => setMediaFullscreen(null)} />
+              <div className="fixed inset-0 z-[101] flex items-center justify-center p-4">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setMediaModal(null)}
-                  className="h-9 w-9 p-0"
-                  aria-label="Cerrar"
+                  onClick={() => setMediaFullscreen(null)}
+                  className="absolute top-4 right-4 bg-white/90 hover:bg-white text-ui h-10 w-10 p-0 rounded-full shadow-card focus-brand"
+                  aria-label="Cerrar pantalla completa"
                 >
                   <X className="w-5 h-5" />
                 </Button>
+
+                {mediaFullscreen.tipo === 'video' && (
+                  <video
+                    controls
+                    autoPlay
+                    className="max-w-full max-h-full rounded-lg shadow-card"
+                    src={mediaFullscreen.url}
+                  />
+                )}
+
+                {mediaFullscreen.tipo === 'imagen' && (
+                  <img
+                    src={mediaFullscreen.url}
+                    alt="Imagen en pantalla completa"
+                    className="max-w-full max-h-full rounded-lg shadow-card"
+                  />
+                )}
+
+                {mediaFullscreen.tipo === 'pdf' && (
+                  <div className="w-full h-full flex flex-col bg-card rounded-lg">
+                    <iframe
+                      src={mediaFullscreen.url}
+                      className="w-full flex-1"
+                      title={mediaFullscreen.nombre || 'PDF'}
+                    />
+                  </div>
+                )}
               </div>
-              {/* Contenido del modal */}
-              <div className="flex-1 overflow-auto p-4 md:p-6 min-h-0">
-                <MediaEmbed url={mediaModal} className="w-full h-full min-h-[400px]" />
-                {/* Enlace de emergencia si el embed falla (especialmente para PDFs) */}
-                <div className="mt-4 text-center">
+            </>
+          )
+        }
+
+        {/* Modal de pantalla completa para recursos multimedia (modo estudio) */}
+        {
+          mediaModal && (
+            <div
+              className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-0 md:p-4"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setMediaModal(null);
+                }
+              }}
+            >
+              <div className="w-full h-full md:w-[95vw] md:h-[95vh] md:max-w-7xl bg-[var(--color-surface-elevated)] md:rounded-2xl shadow-2xl flex flex-col">
+                {/* Header del modal */}
+                <div className="flex items-center justify-between p-4 md:p-6 border-b border-[var(--color-border-default)] shrink-0">
+                  <h2 className="text-lg md:text-xl font-semibold text-[var(--color-text-primary)]">
+                    Recurso multimedia
+                  </h2>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    onClick={() => window.open(mediaModal, "_blank", "noopener,noreferrer")}
-                    className="text-xs"
+                    onClick={() => setMediaModal(null)}
+                    className="h-9 w-9 p-0"
+                    aria-label="Cerrar"
                   >
-                    Abrir en nueva pestaña
+                    <X className="w-5 h-5" />
                   </Button>
+                </div>
+                {/* Contenido del modal */}
+                <div className="flex-1 overflow-auto p-4 md:p-6 min-h-0">
+                  <MediaEmbed url={mediaModal} className="w-full h-full min-h-[400px]" />
+                  {/* Enlace de emergencia si el embed falla (especialmente para PDFs) */}
+                  <div className="mt-4 text-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(mediaModal, "_blank", "noopener,noreferrer")}
+                      className="text-xs"
+                    >
+                      Abrir en nueva pestaña
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )
+        }
+
+        {/* FAB Piano - ELIMINADO en Modo Estudio (refactor) */}
+
+        {/* Modal Piano - Ahora Panel Inline */}
+        <PianoPanel isOpen={mostrarPiano && sesionActiva && !sesionFinalizada} onClose={() => setMostrarPiano(false)} bottomOffset={footerHeight} />
 
         {/* Panel de itinerario - Dialog central mediano */}
-        {sesionActiva && (
-          <Dialog open={mostrarItinerario} onOpenChange={setMostrarItinerario}>
-            <DialogContent size="md" className="max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Índice de Ejercicios</DialogTitle>
-                <DialogDescription className="sr-only">
-                  Lista de ejercicios de la sesión actual
-                </DialogDescription>
-              </DialogHeader>
-              <div className="p-3 space-y-2">
-                {(() => {
-                  const S = ensureRondaIds(sesionActiva);
-                  const secuencia = getSecuencia(S);
-                  const bloquesMap = mapBloquesByCode(S);
+        {
+          sesionActiva && (
+            <Dialog open={mostrarItinerario} onOpenChange={setMostrarItinerario}>
+              <DialogContent size="md" className="max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Índice de Ejercicios</DialogTitle>
+                  <DialogDescription className="sr-only">
+                    Lista de ejercicios de la sesión actual
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="p-3 space-y-2">
+                  {(() => {
+                    const S = ensureRondaIds(sesionActiva);
+                    const secuencia = getSecuencia(S);
+                    const bloquesMap = mapBloquesByCode(S);
 
-                  // Crear mapeo de posiciones en listaEjecucion para cada elemento de la secuencia
-                  let contadorLista = 0;
-                  const mapeoPosiciones = new Map();
+                    // Crear mapeo de posiciones en listaEjecucion para cada elemento de la secuencia
+                    let contadorLista = 0;
+                    const mapeoPosiciones = new Map();
 
-                  secuencia.forEach((item) => {
-                    if (item.kind === 'BLOQUE') {
-                      mapeoPosiciones.set(`bloque-${item.code}`, contadorLista);
-                      contadorLista++;
-                    } else if (item.kind === 'RONDA') {
-                      const ronda = S.rondas.find(r => r.id === item.id);
-                      if (ronda) {
-                        const posicionesRonda = [];
-                        for (let rep = 0; rep < ronda.repeticiones; rep++) {
-                          ronda.bloques.forEach(() => {
-                            posicionesRonda.push(contadorLista);
-                            contadorLista++;
-                          });
+                    secuencia.forEach((item) => {
+                      if (item.kind === 'BLOQUE') {
+                        mapeoPosiciones.set(`bloque-${item.code}`, contadorLista);
+                        contadorLista++;
+                      } else if (item.kind === 'RONDA') {
+                        const ronda = S.rondas.find(r => r.id === item.id);
+                        if (ronda) {
+                          const posicionesRonda = [];
+                          for (let rep = 0; rep < ronda.repeticiones; rep++) {
+                            ronda.bloques.forEach(() => {
+                              posicionesRonda.push(contadorLista);
+                              contadorLista++;
+                            });
+                          }
+                          mapeoPosiciones.set(`ronda-${item.id}`, posicionesRonda);
                         }
-                        mapeoPosiciones.set(`ronda-${item.id}`, posicionesRonda);
                       }
-                    }
-                  });
+                    });
 
-                  return secuencia.map((item, seqIdx) => {
-                    if (item.kind === 'BLOQUE') {
-                      const posicion = mapeoPosiciones.get(`bloque-${item.code}`);
-                      const ej = bloquesMap.get(item.code);
-                      if (!ej) return null;
+                    return secuencia.map((item, seqIdx) => {
+                      if (item.kind === 'BLOQUE') {
+                        const posicion = mapeoPosiciones.get(`bloque-${item.code}`);
+                        const ej = bloquesMap.get(item.code);
+                        if (!ej) return null;
 
-                      const estaActivo = posicion === indiceActual;
-                      const estaCompletado = completados.has(posicion);
-                      const estaOmitido = omitidos.has(posicion);
+                        const estaActivo = posicion === indiceActual;
+                        const estaCompletado = completados.has(posicion);
+                        const estaOmitido = omitidos.has(posicion);
 
-                      return (
-                        <button
-                          key={`bloque-${item.code}-${seqIdx}`}
-                          onClick={() => navegarA(posicion)}
-                          className={`w-full text-left p-3 rounded-lg border transition-all min-h-[52px] ${estaActivo
-                            ? 'bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border-[var(--color-primary)] shadow-sm'
-                            : estaCompletado
-                              ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]'
-                              : estaOmitido
-                                ? 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]'
-                                : 'bg-[var(--color-surface)] border-[var(--color-border-strong)] hover:bg-[var(--color-surface-muted)]'
-                            }`}
-                          aria-label={`Ir a ejercicio ${posicion + 1}: ${ej.nombre}`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold min-w-[24px] text-[var(--color-text-primary)]">#{posicion + 1}</span>
-                            <Badge variant="outline" className={`${tipoColors[ej.tipo]} text-xs border`}>
-                              {ej.tipo}
-                            </Badge>
-                            <span className="flex-1 text-sm font-medium truncate text-[var(--color-text-primary)]">{ej.nombre}</span>
-                            {estaCompletado && <CheckCircle className="w-4 h-4 text-[var(--color-success)] shrink-0" />}
-                            {estaOmitido && <XCircle className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />}
-                          </div>
-                        </button>
-                      );
-                    } else if (item.kind === 'RONDA') {
-                      const ronda = S.rondas.find(r => r.id === item.id);
-                      if (!ronda) return null;
-
-                      const posicionesRonda = mapeoPosiciones.get(`ronda-${item.id}`) || [];
-                      const estaExpandida = rondasExpandidasItinerario.has(item.id);
-
-                      // Verificar si alguna posición de la ronda está activa
-                      const tieneActivo = posicionesRonda.includes(indiceActual);
-                      const tieneCompletado = posicionesRonda.some(p => completados.has(p));
-                      const tieneOmitido = posicionesRonda.some(p => omitidos.has(p));
-
-                      return (
-                        <div key={`ronda-${item.id}-${seqIdx}`} className="space-y-1">
+                        return (
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setRondasExpandidasItinerario(prev => {
-                                const next = new Set(prev);
-                                if (next.has(item.id)) {
-                                  next.delete(item.id);
-                                } else {
-                                  next.add(item.id);
-                                }
-                                return next;
-                              });
-                            }}
-                            className={`w-full text-left p-3 rounded-lg border transition-all ${tieneActivo
-                              ? 'bg-[var(--color-primary-soft)] border-[var(--color-primary)] shadow-sm'
-                              : tieneCompletado
+                            key={`bloque-${item.code}-${seqIdx}`}
+                            onClick={() => navegarA(posicion)}
+                            className={`w-full text-left p-3 rounded-lg border transition-all min-h-[52px] ${estaActivo
+                              ? 'bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border-[var(--color-primary)] shadow-sm'
+                              : estaCompletado
                                 ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]'
-                                : tieneOmitido
+                                : estaOmitido
                                   ? 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]'
-                                  : 'bg-[var(--color-primary-soft)] border-[var(--color-primary)]/30'
+                                  : 'bg-[var(--color-surface)] border-[var(--color-border-strong)] hover:bg-[var(--color-surface-muted)]'
                               }`}
+                            aria-label={`Ir a ejercicio ${posicion + 1}: ${ej.nombre}`}
                           >
                             <div className="flex items-center gap-2">
-                              {estaExpandida ? (
-                                <ChevronDown className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
-                              ) : (
-                                <ChevronRight className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
-                              )}
-                              <Badge className="bg-[var(--color-primary)] text-[var(--color-text-inverse)] text-xs">Ronda</Badge>
-                              <span className="text-xs text-[var(--color-text-secondary)]">× {ronda.repeticiones} repeticiones</span>
-                              <span className="text-xs text-[var(--color-text-secondary)]">({ronda.bloques.length} ejercicios)</span>
-                              {ronda.aleatoria && (
-                                <Badge variant="outline" className="text-[10px] border-[var(--color-primary)]/40 text-[var(--color-primary)] bg-[var(--color-primary-soft)] flex items-center gap-1">
-                                  <Shuffle className="w-3 h-3" />
-                                  aleatorio
-                                </Badge>
-                              )}
+                              <span className="text-xs font-bold min-w-[24px] text-[var(--color-text-primary)]">#{posicion + 1}</span>
+                              <Badge variant="outline" className={`${tipoColors[ej.tipo]} text-xs border`}>
+                                {ej.tipo}
+                              </Badge>
+                              <span className="flex-1 text-sm font-medium truncate text-[var(--color-text-primary)]">{ej.nombre}</span>
+                              {estaCompletado && <CheckCircle className="w-4 h-4 text-[var(--color-success)] shrink-0" />}
+                              {estaOmitido && <XCircle className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />}
                             </div>
                           </button>
+                        );
+                      } else if (item.kind === 'RONDA') {
+                        const ronda = S.rondas.find(r => r.id === item.id);
+                        if (!ronda) return null;
 
-                          {estaExpandida && (
-                            <div className="ml-4 space-y-1 border-l-2 border-[var(--color-primary)]/30 pl-3">
-                              {posicionesRonda.map((posicion, idx) => {
-                                // Determinar qué bloque y repetición corresponde a esta posición
-                                const bloqueIdx = idx % ronda.bloques.length;
-                                const repeticionIdx = Math.floor(idx / ronda.bloques.length);
-                                const code = ronda.bloques[bloqueIdx];
+                        const posicionesRonda = mapeoPosiciones.get(`ronda-${item.id}`) || [];
+                        const estaExpandida = rondasExpandidasItinerario.has(item.id);
 
-                                const ej = bloquesMap.get(code);
-                                if (!ej) return null;
+                        // Verificar si alguna posición de la ronda está activa
+                        const tieneActivo = posicionesRonda.includes(indiceActual);
+                        const tieneCompletado = posicionesRonda.some(p => completados.has(p));
+                        const tieneOmitido = posicionesRonda.some(p => omitidos.has(p));
 
-                                const estaActivo = posicion === indiceActual;
-                                const estaCompletado = completados.has(posicion);
-                                const estaOmitido = omitidos.has(posicion);
+                        return (
+                          <div key={`ronda-${item.id}-${seqIdx}`} className="space-y-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRondasExpandidasItinerario(prev => {
+                                  const next = new Set(prev);
+                                  if (next.has(item.id)) {
+                                    next.delete(item.id);
+                                  } else {
+                                    next.add(item.id);
+                                  }
+                                  return next;
+                                });
+                              }}
+                              className={`w-full text-left p-3 rounded-lg border transition-all ${tieneActivo
+                                ? 'bg-[var(--color-primary-soft)] border-[var(--color-primary)] shadow-sm'
+                                : tieneCompletado
+                                  ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]'
+                                  : tieneOmitido
+                                    ? 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]'
+                                    : 'bg-[var(--color-primary-soft)] border-[var(--color-primary)]/30'
+                                }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                {estaExpandida ? (
+                                  <ChevronDown className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
+                                )}
+                                <Badge className="bg-[var(--color-primary)] text-[var(--color-text-inverse)] text-xs">Ronda</Badge>
+                                <span className="text-xs text-[var(--color-text-secondary)]">× {ronda.repeticiones} repeticiones</span>
+                                <span className="text-xs text-[var(--color-text-secondary)]">({ronda.bloques.length} ejercicios)</span>
+                                {ronda.aleatoria && (
+                                  <Badge variant="outline" className="text-[10px] border-[var(--color-primary)]/40 text-[var(--color-primary)] bg-[var(--color-primary-soft)] flex items-center gap-1">
+                                    <Shuffle className="w-3 h-3" />
+                                    aleatorio
+                                  </Badge>
+                                )}
+                              </div>
+                            </button>
 
-                                return (
-                                  <button
-                                    key={`ronda-${item.id}-pos-${posicion}`}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navegarA(posicion);
-                                    }}
-                                    className={`w-full text-left p-2 rounded-lg border transition-all ${estaActivo
-                                      ? 'bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border-[var(--color-primary)] shadow-sm'
-                                      : estaCompletado
-                                        ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]'
-                                        : estaOmitido
-                                          ? 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]'
-                                          : 'bg-[var(--color-surface)] border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
-                                      }`}
-                                    aria-label={`Ir a ejercicio ${posicion + 1}: ${ej.nombre}`}
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xs font-bold min-w-[24px] text-[var(--color-text-primary)]">#{posicion + 1}</span>
-                                      <Badge variant="outline" className={`${tipoColors[ej.tipo]} text-xs border`}>
-                                        {ej.tipo}
-                                      </Badge>
-                                      <span className="flex-1 text-sm font-medium truncate text-[var(--color-text-primary)]">
-                                        {ej.nombre}
-                                        {ronda.repeticiones > 1 && (
-                                          <span className="text-xs text-[var(--color-text-secondary)] ml-1">
-                                            (Rep {repeticionIdx + 1})
-                                          </span>
-                                        )}
-                                      </span>
-                                      {estaCompletado && <CheckCircle className="w-4 h-4 text-[var(--color-success)] shrink-0" />}
-                                      {estaOmitido && <XCircle className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />}
-                                    </div>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-                    return null;
-                  });
-                })()}
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
+                            {estaExpandida && (
+                              <div className="ml-4 space-y-1 border-l-2 border-[var(--color-primary)]/30 pl-3">
+                                {posicionesRonda.map((posicion, idx) => {
+                                  // Determinar qué bloque y repetición corresponde a esta posición
+                                  const bloqueIdx = idx % ronda.bloques.length;
+                                  const repeticionIdx = Math.floor(idx / ronda.bloques.length);
+                                  const code = ronda.bloques[bloqueIdx];
+
+                                  const ej = bloquesMap.get(code);
+                                  if (!ej) return null;
+
+                                  const estaActivo = posicion === indiceActual;
+                                  const estaCompletado = completados.has(posicion);
+                                  const estaOmitido = omitidos.has(posicion);
+
+                                  return (
+                                    <button
+                                      key={`ronda-${item.id}-pos-${posicion}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navegarA(posicion);
+                                      }}
+                                      className={`w-full text-left p-2 rounded-lg border transition-all ${estaActivo
+                                        ? 'bg-[var(--color-primary-soft)] text-[var(--color-text-primary)] border-[var(--color-primary)] shadow-sm'
+                                        : estaCompletado
+                                          ? 'bg-[var(--color-success)]/10 border-[var(--color-success)]'
+                                          : estaOmitido
+                                            ? 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]'
+                                            : 'bg-[var(--color-surface)] border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
+                                        }`}
+                                      aria-label={`Ir a ejercicio ${posicion + 1}: ${ej.nombre}`}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs font-bold min-w-[24px] text-[var(--color-text-primary)]">#{posicion + 1}</span>
+                                        <Badge variant="outline" className={`${tipoColors[ej.tipo]} text-xs border`}>
+                                          {ej.tipo}
+                                        </Badge>
+                                        <span className="flex-1 text-sm font-medium truncate text-[var(--color-text-primary)]">
+                                          {ej.nombre}
+                                          {ronda.repeticiones > 1 && (
+                                            <span className="text-xs text-[var(--color-text-secondary)] ml-1">
+                                              (Rep {repeticionIdx + 1})
+                                            </span>
+                                          )}
+                                        </span>
+                                        {estaCompletado && <CheckCircle className="w-4 h-4 text-[var(--color-success)] shrink-0" />}
+                                        {estaOmitido && <XCircle className="w-4 h-4 text-[var(--color-text-secondary)] shrink-0" />}
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                      return null;
+                    });
+                  })()}
+                </div>
+              </DialogContent>
+            </Dialog>
+          )
+        }
 
 
         {/* Modal cancelar */}
-        {mostrarModalCancelar && (
-          <ModalCancelar
-            onGuardarYSalir={guardarYSalir}
-            onSalirSinGuardar={salirSinGuardar}
-            onContinuar={() => setMostrarModalCancelar(false)}
-          />
-        )}
-      </div>
+        {
+          mostrarModalCancelar && (
+            <ModalCancelar
+              onGuardarYSalir={guardarYSalir}
+              onSalirSinGuardar={salirSinGuardar}
+              onContinuar={() => setMostrarModalCancelar(false)}
+            />
+          )
+        }
+      </div >
     );
   }
 

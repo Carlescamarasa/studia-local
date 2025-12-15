@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Play, Pause, Volume2, VolumeX, Minus, Plus } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Minus, Plus, Timer } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 
 export default function Metronomo({ initialBpm = 60, onPpmChange }) {
@@ -21,14 +21,7 @@ export default function Metronomo({ initialBpm = 60, onPpmChange }) {
     // Factores de conversión respecto a la negra (1)
     const unitFactors = {
         negra: 1,
-        blanca: 0.5, // 1 blanca = 2 negras (tempo más lento si BPM es de negras, pero si BPM es de blancas...)
-        // Si BPM es "pulsos por minuto" y la unidad es el pulso:
-        // 60 BPM negra = 60 negras/min.
-        // 60 BPM blanca = 60 blancas/min.
-        // El metrónomo marca PULSOS. La unidad solo define qué figura representa ese pulso.
-        // PERO, si queremos registrar "ppmAlcanzado" con unidad, simplemente pasamos el valor.
-        // El sonido del metrónomo siempre es "BPM" clicks por minuto.
-        // La unidad es metadato para el registro.
+        blanca: 0.5,
         blancaConPuntillo: 1, // Placeholder
         corchea: 1, // Placeholder
     };
@@ -72,7 +65,7 @@ export default function Metronomo({ initialBpm = 60, onPpmChange }) {
             nextNote();
         }
         timerIDRef.current = setTimeout(scheduler, lookahead);
-    }, [nextNote, volume]); // volume dependency added to update gain if needed (though gain is created per click)
+    }, [nextNote, volume]);
 
     useEffect(() => {
         if (isPlaying) {
@@ -86,6 +79,11 @@ export default function Metronomo({ initialBpm = 60, onPpmChange }) {
                 clearTimeout(timerIDRef.current);
             }
         }
+        return () => {
+            if (timerIDRef.current) {
+                clearTimeout(timerIDRef.current);
+            }
+        };
     }, [isPlaying, scheduler]);
 
     useEffect(() => {
@@ -99,43 +97,31 @@ export default function Metronomo({ initialBpm = 60, onPpmChange }) {
     };
 
     return (
-        <div className="bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded-xl p-4 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">Metrónomo</h3>
-                    <Badge variant="outline" className="text-xs font-mono">
-                        {bpm} BPM
-                    </Badge>
-                </div>
-                <div className="flex items-center gap-1">
+        <div className="bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded-xl p-3 shadow-sm flex flex-col gap-3">
+            {/* Fila 1: Icono, Play, BPM Badge, Select, Volume */}
+            <div className="flex items-center justify-between gap-2 overflow-x-auto scrollbar-hide">
+                <div className="flex items-center gap-2 shrink-0">
+                    <div className="p-1.5 bg-[var(--color-primary)]/10 text-[var(--color-primary)] rounded-lg">
+                        <Timer className="w-4 h-4" />
+                    </div>
+
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-8 w-8 shrink-0 hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-primary)]"
                         onClick={() => setIsPlaying(!isPlaying)}
                     >
-                        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                        {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
                     </Button>
-                </div>
-            </div>
 
-            <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => adjustBpm(-5)}><Minus className="w-3 h-3" /></Button>
-                    <Slider
-                        value={[bpm]}
-                        onValueChange={(vals) => setBpm(vals[0])}
-                        min={30}
-                        max={250}
-                        step={1}
-                        className="flex-1"
-                    />
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => adjustBpm(5)}><Plus className="w-3 h-3" /></Button>
+                    <Badge variant="outline" className="text-sm font-mono h-8 px-2.5 min-w-[4.5rem] justify-center bg-background shrink-0">
+                        {bpm} <span className="text-[10px] text-[var(--color-text-tertiary)] ml-1">BPM</span>
+                    </Badge>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                     <Select value={unidad} onValueChange={setUnidad}>
-                        <SelectTrigger className="h-8 text-xs">
+                        <SelectTrigger className="h-8 w-[100px] text-xs">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -146,18 +132,45 @@ export default function Metronomo({ initialBpm = 60, onPpmChange }) {
                         </SelectContent>
                     </Select>
 
-                    <div className="flex items-center gap-2 flex-1 justify-end">
-                        {volume === 0 ? <VolumeX className="w-4 h-4 text-[var(--color-text-tertiary)]" /> : <Volume2 className="w-4 h-4 text-[var(--color-text-secondary)]" />}
-                        <Slider
-                            value={[volume]}
-                            onValueChange={(vals) => setVolume(vals[0])}
-                            min={0}
-                            max={1}
-                            step={0.1}
-                            className="w-20"
-                        />
+                    <div className="flex items-center gap-2 pl-2 border-l border-[var(--color-border-default)]">
+                        <button
+                            onClick={() => setVolume(v => v === 0 ? 0.5 : 0)}
+                            className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                        >
+                            {volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                        </button>
                     </div>
                 </div>
+            </div>
+
+            {/* Fila 2: Slider + Botones +/- */}
+            <div className="flex items-center gap-3 bg-[var(--color-surface-muted)]/50 p-2 rounded-lg">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)]"
+                    onClick={() => adjustBpm(-5)}
+                >
+                    <Minus className="w-3.5 h-3.5" />
+                </Button>
+
+                <Slider
+                    value={[bpm]}
+                    onValueChange={(vals) => setBpm(vals[0])}
+                    min={30}
+                    max={250}
+                    step={1}
+                    className="flex-1 touch-none"
+                />
+
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)]"
+                    onClick={() => adjustBpm(5)}
+                >
+                    <Plus className="w-3.5 h-3.5" />
+                </Button>
             </div>
         </div>
     );
