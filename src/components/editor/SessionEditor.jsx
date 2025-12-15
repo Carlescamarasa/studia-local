@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
+import { supabase } from "@/lib/supabaseClient";
 import { remoteDataAPI } from "@/api/remoteDataAPI";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -258,21 +259,55 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
   const [expandedRondas, setExpandedRondas] = useState(new Set());
   const [editingEjercicio, setEditingEjercicio] = useState(null);
 
-  const { data: ejercicios = [] } = useQuery({
-    queryKey: ['bloques-with-variations'],
+  const { data: ejercicios = [], isLoading: isLoadingEjercicios } = useQuery({
+    queryKey: ['bloques-session-editor'], // Unique key to avoid collision with EjerciciosTab which returns raw snake_case
     queryFn: async () => {
-      try {
-        // Use remoteDataAPI which maps content to variations
-        const data = await remoteDataAPI.bloques.list();
-        if (!data || data.length === 0) {
-          throw new Error('Remote empty');
-        }
-        return data;
-      } catch (error) {
-        console.warn('[SessionEditor] Error fetching from remoteDataAPI, falling back to local:', error);
-        const localData = await localDataClient.entities.Bloque.list();
-        return localData;
+      console.log('[SessionEditor] Fetching blocks from Supabase (forced unique key)...');
+      const { data, error } = await supabase
+        .from('bloques')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) {
+        console.error('[SessionEditor] Supabase error:', error);
+        throw error;
       }
+
+      console.log('[SessionEditor] RAW DATA count:', data?.length);
+      if (data && data.length > 0) {
+        console.log('[SessionEditor] Sample raw item:', data[0]);
+      }
+
+      const mappedData = (data || []).map(b => {
+        // Map snake_case to camelCase manually for critical fields
+        // This mirrors the logic in EjerciciosTab
+        let vars = [];
+        if (b.content && Array.isArray(b.content) && b.content.length > 0) {
+          vars = b.content;
+        }
+
+        return {
+          id: b.id,
+          nombre: b.nombre || b.title || 'Sin nombre', // Fallback
+          code: b.code,
+          tipo: b.tipo,
+          duracionSeg: b.duracion_seg || b.duracionSeg || 0,
+          instrucciones: b.instrucciones,
+          indicadorLogro: b.indicador_logro || b.indicadorLogro,
+          materialesRequeridos: b.materiales_requeridos || b.materialesRequeridos || [],
+          media: b.media_links || b.media || {},
+          elementosOrdenados: b.elementos_ordenados || b.elementosOrdenados || [],
+          // Map content/variations
+          variations: vars,
+          content: vars,
+          // Keep raw just in case
+          raw: b
+        };
+      });
+
+      console.log('[SessionEditor] Fetched & Mapped:', mappedData.length);
+      return mappedData;
     },
     staleTime: 5 * 60 * 1000, // 5 min cache - catalog data
   });
@@ -282,10 +317,12 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     queryFn: async () => {
       if (!alumnoId) return null;
       const users = await localDataClient.entities.User.list();
-      return users.find(u => u.id === alumnoId);
+      return users.find(u => u.id === alumnoId) || null;
     },
     enabled: !!alumnoId,
   });
+
+
 
   useEffect(() => {
     if (sesion) {
@@ -366,9 +403,14 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [editingEjercicio, onClose, handleSave]);
 
+
+
   const filteredEjercicios = ejercicios.filter(e => {
-    const matchSearch = e.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      e.code?.toLowerCase().includes(searchTerm.toLowerCase());
+    const name = e.nombre || e.title || '';
+    const code = e.code || '';
+
+    const matchSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      code.toLowerCase().includes(searchTerm.toLowerCase());
     const matchTipo = tiposFilter.size === 0 || tiposFilter.has(e.tipo);
 
     return matchSearch && matchTipo;
@@ -383,6 +425,14 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     }
     setTiposFilter(newFilters);
   };
+
+  useEffect(() => {
+    console.log('[SessionEditor] Current filteredEjercicios:', filteredEjercicios.length);
+    console.log('[SessionEditor] Total ejercicios:', ejercicios.length);
+    if (ejercicios.length > 0) {
+      console.log('[SessionEditor] Sample Data:', ejercicios[0]);
+    }
+  }, [filteredEjercicios.length, ejercicios.length]);
 
   const addEjerciciosSeleccionados = () => {
     const newBloquesToAdd = [];
@@ -811,8 +861,9 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
           </div>
 
           <CardContent className="flex-1 overflow-y-auto p-6 space-y-6">
-            <div className={componentStyles.layout.grid2}>
-              <div>
+            {/* Fila 1: Nombre (6 cols) y Foco (6 cols) */}
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-6 flex flex-col gap-2">
                 <Label htmlFor="nombre" className="text-[var(--color-text-primary)]">Nombre de la Sesión *</Label>
                 <Input
                   id="nombre"
@@ -823,12 +874,11 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
                 />
               </div>
 
-              <div>
+              <div className="col-span-6 flex flex-col gap-2">
                 <Label htmlFor="foco" className="text-[var(--color-text-primary)]">Foco de la Sesión *</Label>
                 <Select
                   value={formData.foco}
-                  onValueChange={(v) => setFormData({ ...formData, foco: v })}
-                  modal={false}
+                  onValueChange={(val) => setFormData({ ...formData, foco: val })}
                 >
                   <SelectTrigger id="foco" className={`w-full ${componentStyles.controls.selectDefault}`}>
                     <SelectValue placeholder="Selecciona foco..." />
@@ -838,7 +888,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
                     side="bottom"
                     align="start"
                     sideOffset={4}
-                    className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                    className="z-[280] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                   >
                     {Object.entries(focoLabels).map(([key, label]) => (
                       <SelectItem key={key} value={key}>{label}</SelectItem>
@@ -978,12 +1028,12 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
               <CardContent className="space-y-4">
                 <div className="flex gap-2 flex-wrap">
                   <div className="flex-1 min-w-[200px] relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)] pointer-events-none" />
                     <Input
                       placeholder="Buscar ejercicios..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className={`pl-10 ${componentStyles.controls.inputDefault}`}
+                      className="search-field pl-9"
                     />
                   </div>
                   <div className="flex gap-1 flex-wrap">
@@ -1050,7 +1100,11 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
                 )}
 
                 <div className={`${componentStyles.layout.grid3} gap-2 max-h-80 overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-card)] p-3 bg-[var(--color-surface-muted)]`}>
-                  {filteredEjercicios.length === 0 ? (
+                  {isLoadingEjercicios ? (
+                    <div className="col-span-full text-center py-8">
+                      <p className="text-sm text-[var(--color-text-secondary)]">Cargando ejercicios...</p>
+                    </div>
+                  ) : filteredEjercicios.length === 0 ? (
                     <div className="col-span-full text-center py-8">
                       <p className="text-sm text-[var(--color-text-secondary)]">No se encontraron ejercicios</p>
                     </div>
@@ -1109,37 +1163,42 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
       </div >
 
       {editingEjercicio && (() => {
-        // Enrich ejercicio with variations from ejercicios list (from remoteDataAPI)
         const baseEjercicio = editingEjercicio.ejercicio;
-        const dbBloque = ejercicios.find(e => e.code === baseEjercicio.code || e.id === baseEjercicio.id);
-        const enrichedEjercicio = {
-          ...baseEjercicio,
-          variations: baseEjercicio.variations || dbBloque?.variations || dbBloque?.content || [],
-          content: baseEjercicio.content || dbBloque?.content || dbBloque?.variations || [],
-        };
-        console.log('[SessionEditor] Enriching ejercicio for ExerciseEditor:', {
-          baseCode: baseEjercicio.code,
-          baseVariations: baseEjercicio.variations?.length || 0,
-          dbBloqueFound: !!dbBloque,
-          dbBloqueVariations: dbBloque?.variations?.length || 0,
-          finalVariations: enrichedEjercicio.variations?.length || 0,
-        });
+        // Logic for creating new exercise (baseEjercicio is null) OR editing existing one
+
+        let enrichedEjercicio;
+
+        if (baseEjercicio) {
+          // Editing existing
+          const dbBloque = ejercicios.find(e => e.code === baseEjercicio.code || e.id === baseEjercicio.id);
+          enrichedEjercicio = {
+            ...baseEjercicio,
+            variations: baseEjercicio.variations || dbBloque?.variations || dbBloque?.content || [],
+            content: baseEjercicio.content || dbBloque?.content || dbBloque?.variations || [],
+          };
+        } else {
+          // Creating new
+          enrichedEjercicio = null;
+        }
+
         return (
           <ExerciseEditor
             ejercicio={enrichedEjercicio}
             piezaSnapshot={editingEjercicio.piezaSnapshot}
             isInlineMode={true}
             onClose={(updated) => {
+              // Refresh or handle new exercise creation
               if (updated) {
-                updateEjercicioInline(editingEjercicio.index, updated);
-              } else {
-                setEditingEjercicio(null);
+                // For now just close, user will see it in the list if they refresh or if we implement optimistic update
+                // Ideally we should refetch
               }
+              setEditingEjercicio(null);
             }}
           />
         );
-      })()
-      }
+      })()}
+
+
     </>
   );
 

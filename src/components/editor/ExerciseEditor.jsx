@@ -740,7 +740,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                           side="bottom"
                           align="start"
                           sideOffset={4}
-                          className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                          className="z-[280] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                         >
                           {Object.entries(tipoLabels).map(([key, label]) => (
                             <SelectItem key={key} value={key}>{label}</SelectItem>
@@ -786,7 +786,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                           side="bottom"
                           align="start"
                           sideOffset={4}
-                          className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                          className="z-[280] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                         >
                           {metodoOptions.map((opt) => (
                             <SelectItem key={opt.value} value={opt.value}>
@@ -971,7 +971,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                             side="bottom"
                             align="start"
                             sideOffset={4}
-                            className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                            className="z-[280] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                           >
                             <SelectItem value={null}>Sin pieza de referencia</SelectItem>
                             {piezas.length === 0 ? (
