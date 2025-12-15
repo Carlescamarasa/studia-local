@@ -6,7 +6,7 @@ import { Button } from "@/components/ds/Button";
 import PageHeader from "@/components/ds/PageHeader";
 import { Calendar, Grid3x3, List, Plus, CalendarDays } from "lucide-react";
 import { useEffectiveUser, resolveUserIdActual, isoWeekNumberLocal, parseLocalDate } from "../components/utils/helpers";
-import { usePeriodHeaderState, PeriodHeaderButton, PeriodHeaderPanel } from "../components/common/PeriodHeader";
+import PeriodHeader from "../components/common/PeriodHeader";
 import RequireRole from "@/components/auth/RequireRole";
 import VistaSemana from "../components/calendario/VistaSemana";
 import VistaMes from "../components/calendario/VistaMes";
@@ -235,8 +235,6 @@ function CalendarioPageContent() {
     }
   };
 
-  // Estado del PeriodHeader
-  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState();
 
   // Calcular label y rangeText para PeriodHeader según la vista
   const { labelPeriodo, rangeTextPeriodo } = useMemo(() => {
@@ -286,8 +284,8 @@ function CalendarioPageContent() {
                   setVista('mes');
                 }}
                 className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${vista === 'mes'
-                    ? componentStyles.buttons.primary
-                    : `${componentStyles.buttons.ghost} hover:bg-transparent`
+                  ? componentStyles.buttons.primary
+                  : `${componentStyles.buttons.ghost} hover:bg-transparent`
                   }`}
                 type="button"
               >
@@ -303,8 +301,8 @@ function CalendarioPageContent() {
                     setVista('semana');
                   }}
                   className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${vista === 'semana'
-                      ? componentStyles.buttons.primary
-                      : `${componentStyles.buttons.ghost} hover:bg-transparent`
+                    ? componentStyles.buttons.primary
+                    : `${componentStyles.buttons.ghost} hover:bg-transparent`
                     }`}
                   type="button"
                 >
@@ -320,8 +318,8 @@ function CalendarioPageContent() {
                   setVista('lista');
                 }}
                 className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${vista === 'lista'
-                    ? componentStyles.buttons.primary
-                    : `${componentStyles.buttons.ghost} hover:bg-transparent`
+                  ? componentStyles.buttons.primary
+                  : `${componentStyles.buttons.ghost} hover:bg-transparent`
                   }`}
                 type="button"
               >
@@ -329,11 +327,12 @@ function CalendarioPageContent() {
               </Button>
             </div>
 
-            <PeriodHeaderButton
+            <PeriodHeader
               label={labelPeriodo}
               rangeText={rangeTextPeriodo}
-              isOpen={periodHeaderOpen}
-              onToggle={togglePeriodHeader}
+              onPrev={() => navegarPeriodo(-1)}
+              onNext={() => navegarPeriodo(1)}
+              onToday={irHoy}
             />
 
             {(isAdmin || isProf) && (
@@ -356,13 +355,6 @@ function CalendarioPageContent() {
         }
       />
 
-      {/* Panel colapsable del PeriodHeader */}
-      <PeriodHeaderPanel
-        isOpen={periodHeaderOpen}
-        onPrev={() => navegarPeriodo(-1)}
-        onNext={() => navegarPeriodo(1)}
-        onToday={irHoy}
-      />
 
       <div className={componentStyles.layout.page}>
         {/* Filtros compactos: Tipo en una sola fila */}

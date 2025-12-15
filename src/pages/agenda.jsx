@@ -25,7 +25,7 @@ import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import { displayName, calcularLunesSemanaISO, calcularOffsetSemanas, useEffectiveUser, resolveUserIdActual, isoWeekNumberLocal } from "../components/utils/helpers";
 import { shouldIgnoreHotkey } from "@/utils/hotkeys";
-import { usePeriodHeaderState, PeriodHeaderButton, PeriodHeaderPanel } from "../components/common/PeriodHeader";
+import PeriodHeader from "../components/common/PeriodHeader";
 import MediaLinksBadges from "../components/common/MediaLinksBadges";
 import MediaViewer from "../components/common/MediaViewer";
 import MediaPreviewModal from "../components/common/MediaPreviewModal";
@@ -313,8 +313,6 @@ function AgendaPageContent() {
     setSemanaActualISO(formatLocalDate(lunes));
   };
 
-  // Estado del PeriodHeader
-  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState();
 
   const isProfesorOrAdmin = effectiveUser?.rolPersonalizado === 'PROF' || effectiveUser?.rolPersonalizado === 'ADMIN';
   const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
@@ -1161,6 +1159,7 @@ function AgendaPageContent() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header de página unificado */}
+      {/* Header de página unificado */}
       <PageHeader
         icon={Calendar}
         title="Agenda Semanal"
@@ -1175,50 +1174,40 @@ function AgendaPageContent() {
             const rangeTextSemana = `${lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} – ${domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
             return (
-              <PeriodHeaderButton
+              <PeriodHeader
                 label={labelSemana}
                 rangeText={rangeTextSemana}
-                isOpen={periodHeaderOpen}
-                onToggle={togglePeriodHeader}
+                onPrev={() => cambiarSemana(-1)}
+                onNext={() => cambiarSemana(1)}
+                onToday={irSemanaActual}
               />
             );
           })()
         }
       />
 
-      {/* Panel colapsable del PeriodHeader */}
-      {(() => {
-        const lunesSemana = parseLocalDate(semanaActualISO);
-        return (
-          <PeriodHeaderPanel
-            isOpen={periodHeaderOpen}
-            onPrev={() => cambiarSemana(-1)}
-            onNext={() => cambiarSemana(1)}
-            onToday={irSemanaActual}
-          >
-            {/* Búsqueda */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
-              <Input
-                id="search-input"
-                placeholder="Buscar estudiante... (Ctrl/⌘+K)"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pl-9 pr-9 ${componentStyles.controls.inputDefault}`}
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                  aria-label="Limpiar búsqueda"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </PeriodHeaderPanel>
-        );
-      })()}
+      <div className="px-4 pb-4 md:px-6 md:pb-6 max-w-7xl mx-auto space-y-4">
+        {/* Barra de búsqueda */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
+          <Input
+            id="search-input"
+            placeholder="Buscar estudiante... (Ctrl/⌘+K)"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={`w-full pl-9 pr-9 ${componentStyles.controls.inputDefault}`}
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+              aria-label="Limpiar búsqueda"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Filtro de estudiantes (solo para PROF) */}
       {isProfesorOrAdmin && !isAdmin && (

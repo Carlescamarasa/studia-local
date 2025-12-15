@@ -68,7 +68,7 @@ import {
   parseLocalDate,
   isoWeekNumberLocal
 } from "../components/utils/helpers";
-import { usePeriodHeaderState, PeriodHeaderButton, PeriodHeaderPanel } from "../components/common/PeriodHeader";
+import PeriodHeader from "../components/common/PeriodHeader";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "../components/study/sessionSequence";
 import TimelineProgreso from "../components/estudio/TimelineProgreso";
 import ModalCancelar from "../components/estudio/ModalCancelar";
@@ -133,8 +133,6 @@ function HoyPageContent() {
     setSemanaActualISO(formatLocalDate(lunes));
   };
 
-  // Estado del PeriodHeader
-  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState();
 
   const [asignacionSeleccionadaId, setAsignacionSeleccionadaId] = useState(null); // Para múltiples asignaciones
   const [sesionSeleccionada, setSesionSeleccionada] = useState(0);
@@ -2344,32 +2342,17 @@ function HoyPageContent() {
             const rangeTextSemana = `${lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} – ${domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
             return (
-              <PeriodHeaderButton
+              <PeriodHeader
                 label={labelSemana}
                 rangeText={rangeTextSemana}
-                isOpen={periodHeaderOpen}
-                onToggle={togglePeriodHeader}
+                onPrev={() => cambiarSemana(-1)}
+                onNext={() => cambiarSemana(1)}
+                onToday={irSemanaActual}
               />
             );
           })()
         }
       />
-
-      {/* Panel colapsable del PeriodHeader */}
-      {(() => {
-        const lunesSemana = parseLocalDate(semanaActualISO);
-        const domingoSemana = new Date(lunesSemana);
-        domingoSemana.setDate(lunesSemana.getDate() + 6);
-
-        return (
-          <PeriodHeaderPanel
-            isOpen={periodHeaderOpen}
-            onPrev={() => cambiarSemana(-1)}
-            onNext={() => cambiarSemana(1)}
-            onToday={irSemanaActual}
-          />
-        );
-      })()}
 
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
         {/* Barra de contexto: pieza / plan / alumno en el body */}

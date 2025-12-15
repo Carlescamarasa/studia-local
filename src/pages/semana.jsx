@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { calcularLunesSemanaISO, calcularOffsetSemanas, calcularTiempoSesion, useEffectiveUser, isoWeekNumberLocal } from "../components/utils/helpers";
 import { displayName } from "@/components/utils/helpers";
-import { usePeriodHeaderState, PeriodHeaderButton, PeriodHeaderPanel } from "../components/common/PeriodHeader";
+import PeriodHeader from "../components/common/PeriodHeader";
 import RequireRole from "@/components/auth/RequireRole";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
@@ -291,8 +291,6 @@ function SemanaPageContent() {
     setSemanaActualISO(formatLocalDate(lunes));
   };
 
-  // Estado del PeriodHeader
-  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState();
 
   const focoLabels = {
     GEN: 'General',
@@ -336,29 +334,17 @@ function SemanaPageContent() {
             const rangeTextSemana = `${lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} – ${domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
             return (
-              <PeriodHeaderButton
+              <PeriodHeader
                 label={labelSemana}
                 rangeText={rangeTextSemana}
-                isOpen={periodHeaderOpen}
-                onToggle={togglePeriodHeader}
+                onPrev={() => cambiarSemana(-1)}
+                onNext={() => cambiarSemana(1)}
+                onToday={irSemanaActual}
               />
             );
           })()
         }
       />
-
-      {/* Panel colapsable del PeriodHeader */}
-      {(() => {
-        const lunesSemana = parseLocalDate(semanaActualISO);
-        return (
-          <PeriodHeaderPanel
-            isOpen={periodHeaderOpen}
-            onPrev={() => cambiarSemana(-1)}
-            onNext={() => cambiarSemana(1)}
-            onToday={irSemanaActual}
-          />
-        );
-      })()}
 
       <div className={`${componentStyles.layout.page} space-y-4`}>
         {!asignacionActiva || !semanaDelPlan ? (

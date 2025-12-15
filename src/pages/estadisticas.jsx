@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import TablePagination from "@/components/common/TablePagination";
+import { cn } from "@/lib/utils";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -33,6 +34,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import ModalSesion from "@/components/calendario/ModalSesion";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 // Componentes modulares de estadísticas
+import StatsDateHeader from "../components/estadisticas/StatsDateHeader";
 import ResumenTab from "@/components/estadisticas/ResumenTab";
 import ProgresoTab from "@/components/estadisticas/ProgresoTab";
 import TiposBloquesTab from "@/components/estadisticas/TiposBloquesTab";
@@ -56,19 +58,36 @@ function EstadisticasPageContent() {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
-  const [rangoPreset, setRangoPreset] = useState('4-semanas');
+  const [rangoPreset, setRangoPreset] = useState('personalizado');
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [periodoInicio, setPeriodoInicio] = useState(() => {
     const stored = searchParams.get('inicio');
     if (stored) return stored;
-    const hace28 = new Date();
-    hace28.setDate(hace28.getDate() - 28);
-    return formatLocalDate(hace28);
+    const hace4Semanas = new Date();
+    hace4Semanas.setDate(hace4Semanas.getDate() - 28);
+    return formatLocalDate(hace4Semanas);
   });
 
   const [periodoFin, setPeriodoFin] = useState(() => {
     return searchParams.get('fin') || formatLocalDate(new Date());
   });
+
+  // Sincronizar URL con estado inicial si faltan parámetros
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    let changed = false;
+    if (!params.get('inicio')) {
+      params.set('inicio', periodoInicio);
+      changed = true;
+    }
+    if (!params.get('fin')) {
+      params.set('fin', periodoFin);
+      changed = true;
+    }
+    if (changed) {
+      setSearchParams(params, { replace: true });
+    }
+  }, []); // Solo al montar
 
   const [tabActiva, setTabActiva] = useState(searchParams.get('tab') || 'resumen');
   const [alumnosSeleccionados, setAlumnosSeleccionados] = useState(() => {
@@ -962,55 +981,6 @@ function EstadisticasPageContent() {
     { key: 'todo', label: 'Todo' },
   ];
 
-  // Formatear el rango de fechas como "26 oct — 23 nov 2025"
-  const formatDateRange = useMemo(() => {
-    if (!periodoInicio && !periodoFin) {
-      return 'Todo el período';
-    }
-    if (!periodoInicio || !periodoFin) {
-      const fecha = periodoInicio || periodoFin;
-      if (fecha) {
-        try {
-          const d = parseLocalDate(fecha);
-          const day = d.getDate();
-          const month = d.toLocaleDateString('es-ES', { month: 'short' });
-          const year = d.getFullYear();
-          return `${day} ${month} ${year}`;
-        } catch (e) {
-          return 'Seleccionar rango';
-        }
-      }
-      return 'Seleccionar rango';
-    }
-
-    try {
-      const inicio = parseLocalDate(periodoInicio);
-      const fin = parseLocalDate(periodoFin);
-
-      const dayInicio = inicio.getDate();
-      const monthInicio = inicio.toLocaleDateString('es-ES', { month: 'short' });
-
-      const dayFin = fin.getDate();
-      const monthFin = fin.toLocaleDateString('es-ES', { month: 'short' });
-      const yearFin = fin.getFullYear();
-
-      // Si son el mismo mes, mostrar "26 — 30 oct 2025"
-      if (inicio.getMonth() === fin.getMonth() && inicio.getFullYear() === fin.getFullYear()) {
-        return `${dayInicio} — ${dayFin} ${monthFin} ${yearFin}`;
-      }
-
-      // Si son años diferentes, mostrar ambos años
-      if (inicio.getFullYear() !== fin.getFullYear()) {
-        const yearInicio = inicio.getFullYear();
-        return `${dayInicio} ${monthInicio} ${yearInicio} — ${dayFin} ${monthFin} ${yearFin}`;
-      }
-
-      // Meses diferentes, mismo año: "26 oct — 23 nov 2025"
-      return `${dayInicio} ${monthInicio} — ${dayFin} ${monthFin} ${yearFin}`;
-    } catch (e) {
-      return 'Seleccionar rango';
-    }
-  }, [periodoInicio, periodoFin]);
 
   return (
     <div className={componentStyles.layout.appBackground}>
@@ -1020,25 +990,21 @@ function EstadisticasPageContent() {
         subtitle={isEstu ? 'Tu progreso en la práctica' : 'Análisis del rendimiento y progreso'}
         actions={
           <>
-            {/* Pill de rango de fechas */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setFiltersExpanded(!filtersExpanded)}
-              className={`${componentStyles.buttons.outline} flex items-center justify-center gap-1 sm:gap-1.5 text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3 py-1.5 touch-manipulation shrink-0 transition-all duration-300 whitespace-nowrap`}
-              aria-label={filtersExpanded ? "Ocultar filtros" : "Mostrar filtros"}
-              aria-expanded={filtersExpanded}
-            >
-              <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="text-xs sm:text-sm">
-                {formatDateRange}
-              </span>
-              {filtersExpanded ? (
-                <ChevronUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              ) : (
-                <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              )}
-            </Button>
+            {/* Header de página unificado */}
+            <StatsDateHeader
+              startDate={periodoInicio}
+              endDate={periodoFin}
+              onDateChange={(range) => {
+                setPeriodoInicio(range?.from);
+                setPeriodoFin(range?.to);
+                if (range?.from || range?.to) {
+                  setRangoPreset('personalizado');
+                }
+              }}
+              isOpen={filtersExpanded}
+              onToggle={() => setFiltersExpanded(!filtersExpanded)}
+              className="mr-2"
+            />
             {location.state?.from === 'hoy' && (
               <Button
                 variant="outline"
@@ -1057,93 +1023,10 @@ function EstadisticasPageContent() {
       {filtersExpanded && (
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4">
           <Card className={componentStyles.containers.cardBase}>
-            <CardContent className="p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className={`${componentStyles.typography.sectionTitle} text-base sm:text-lg`}>Filtros</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setFiltersExpanded(false)}
-                  className="text-xs sm:text-sm h-8 w-8 p-0"
-                  aria-label="Ocultar filtros"
-                >
-                  <ChevronUp className="w-4 h-4" />
-                </Button>
-              </div>
-
-              <div className="w-full space-y-4 md:space-y-6">
-                {/* Filtros de fecha y presets */}
-                <div className="space-y-3">
-                  <div className="flex flex-col gap-3">
-                    {/* Rango de fechas */}
-                    <div className="flex-1 w-full">
-                      <Label className="text-xs sm:text-sm mb-1.5 block text-[var(--color-text-secondary)]">
-                        Rango de fechas
-                      </Label>
-                      <DateRangePicker
-                        startDate={periodoInicio}
-                        endDate={periodoFin}
-                        onDateChange={(start, end) => {
-                          setPeriodoInicio(start);
-                          setPeriodoFin(end);
-                          setRangoPreset('personalizado');
-                        }}
-                        className="w-full sm:w-auto"
-                      />
-                    </div>
-
-                    {/* Presets */}
-                    <div>
-                      <Label className="text-xs sm:text-sm mb-1.5 block text-[var(--color-text-secondary)]">
-                        Presets rápidos
-                      </Label>
-                      <div className="flex gap-1.5 flex-wrap">
-                        {presets.map(p => (
-                          <Button
-                            key={p.key}
-                            variant={rangoPreset === p.key ? "primary" : "outline"}
-                            size="sm"
-                            onClick={() => {
-                              aplicarPreset(p.key);
-                            }}
-                            className={`
-                            text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all
-                            ${rangoPreset === p.key
-                                ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-sm'
-                                : 'hover:bg-[var(--color-surface-muted)]'
-                              }
-                          `}
-                            aria-label={`Preset ${p.label}`}
-                            title={`Ver estadísticas: ${p.label}`}
-                          >
-                            {p.label}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Filtros adicionales (solo si no es estudiante) */}
-                {!isEstu && (
-                  <div className={`${componentStyles.layout.grid2} gap-3`}>
-                    <MultiSelect
-                      label="Profesores"
-                      items={profesores.map(p => ({ value: p.id, label: displayName(p) }))}
-                      value={profesoresSeleccionados}
-                      onChange={setProfesoresSeleccionados}
-                    />
-                    <MultiSelect
-                      label="Alumnos"
-                      items={estudiantes.map(a => ({ value: a.id, label: displayName(a) }))}
-                      value={alumnosSeleccionados}
-                      onChange={setAlumnosSeleccionados}
-                    />
-                  </div>
-                )}
-
-                {/* Filtro de Foco */}
-                <div>
+            <CardContent className="p-3 sm:p-4 md:p-6">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-center md:gap-4">
+                {/* Grupo Izquierda: Filtro Foco */}
+                <div className="w-full col-span-12 md:col-span-7 lg:col-span-5 md:justify-self-start min-w-0">
                   <MultiSelect
                     label="Foco"
                     items={Object.entries(focoLabels).map(([key, label]) => ({ value: key, label }))}
@@ -1151,7 +1034,49 @@ function EstadisticasPageContent() {
                     onChange={setFocosSeleccionados}
                   />
                 </div>
+
+                {/* Grupo Derecha: Presets rápidos */}
+                <div className="w-full flex flex-wrap justify-start md:justify-end gap-2 col-span-12 md:col-span-5 lg:col-span-7 md:justify-self-end min-w-0">
+                  {presets.map((p) => (
+                    <Button
+                      key={p.key}
+                      variant={rangoPreset === p.key ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => aplicarPreset(p.key)}
+                      className={cn(
+                        "h-9 px-3 text-xs sm:text-sm whitespace-nowrap",
+                        rangoPreset === p.key
+                          ? "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90"
+                          : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                      )}
+                    >
+                      {p.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
+
+              {/* Filtros adicionales (solo para Profesores/Admin) - Segunda fila si es necesario */}
+              {!isEstu && (
+                <div className="flex flex-col sm:flex-row gap-3 pt-4 mt-4 border-t border-[var(--color-border-default)]">
+                  <div className="flex-1">
+                    <MultiSelect
+                      label="Profesores"
+                      items={profesores.map(p => ({ value: p.id, label: displayName(p) }))}
+                      value={profesoresSeleccionados}
+                      onChange={setProfesoresSeleccionados}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <MultiSelect
+                      label="Alumnos"
+                      items={estudiantes.map(a => ({ value: a.id, label: displayName(a) }))}
+                      value={alumnosSeleccionados}
+                      onChange={setAlumnosSeleccionados}
+                    />
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

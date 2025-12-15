@@ -20,7 +20,7 @@ import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, use
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MultiSelect from "@/components/ui/MultiSelect";
 import PageHeader from "@/components/ds/PageHeader";
-import { usePeriodHeaderState, PeriodHeaderButton, PeriodHeaderPanel } from "../components/common/PeriodHeader";
+import PeriodHeader from "../components/common/PeriodHeader";
 import { componentStyles } from "@/design/componentStyles";
 import {
   Dialog,
@@ -47,16 +47,16 @@ function AsignacionesPageContent() {
   const [estadoFilter, setEstadoFilter] = useState('all');
   const [profesoresFilter, setProfesoresFilter] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  
+
   // Estado para filtro por semana (ISO formato YYYY-MM-DD)
   const [semanaSeleccionadaISO, setSemanaSeleccionadaISO] = useState(() => {
     const hoy = new Date();
     return formatLocalDate(startOfMonday(hoy));
   });
-  
+
   // Helper para convertir ISO a Date (compatibilidad con código existente)
   const semanaSeleccionada = parseLocalDate(semanaSeleccionadaISO);
-  
+
   const cambiarSemana = (direccion) => {
     const base = parseLocalDate(semanaSeleccionadaISO);
     base.setDate(base.getDate() + (direccion * 7));
@@ -64,14 +64,12 @@ function AsignacionesPageContent() {
     const nextISO = formatLocalDate(lunes);
     if (nextISO !== semanaSeleccionadaISO) setSemanaSeleccionadaISO(nextISO);
   };
-  
+
   const irSemanaActual = () => {
     const lunes = startOfMonday(new Date());
     setSemanaSeleccionadaISO(formatLocalDate(lunes));
   };
 
-  // Estado del PeriodHeader
-  const { isOpen: periodHeaderOpen, toggleOpen: togglePeriodHeader } = usePeriodHeaderState();
 
   const [showAsignarProfesorDialog, setShowAsignarProfesorDialog] = useState(false);
   const [showAsignarEstudianteDialog, setShowAsignarEstudianteDialog] = useState(false);
@@ -322,19 +320,19 @@ function AsignacionesPageContent() {
   const profesoresDisponibles = useMemo(() => {
     // Obtener IDs únicos de profesores en asignaciones
     const profesorIdsEnAsignaciones = [...new Set(asignacionesFiltradas.map(a => a.profesorId).filter(Boolean))];
-    
+
     // Obtener todos los profesores de la lista de usuarios
     const todosLosProfesores = usuarios.filter(u => u.rolPersonalizado === 'PROF');
-    
+
     // Crear un Set con todos los IDs únicos (de asignaciones + usuarios PROF)
     const todosLosIds = new Set([
       ...profesorIdsEnAsignaciones,
       ...todosLosProfesores.map(p => p.id).filter(Boolean)
     ]);
-    
+
     // Mapear cada ID a un objeto { value, label }
     const profesoresMap = new Map();
-    
+
     todosLosIds.forEach(id => {
       // Buscar el usuario en la lista
       const profesor = usuarios.find(u => u.id === id);
@@ -345,11 +343,11 @@ function AsignacionesPageContent() {
         });
       }
     });
-    
+
     // Convertir a array y ordenar alfabéticamente
     const profesores = Array.from(profesoresMap.values())
       .sort((a, b) => a.label.localeCompare(b.label));
-    
+
     return profesores;
   }, [asignacionesFiltradas, usuarios]);
 
@@ -363,7 +361,7 @@ function AsignacionesPageContent() {
         label: `${getNombreVisible(e)}${e.email ? ` (${e.email})` : ''}`.trim(),
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
-    
+
     return result;
   }, [usuarios]);
 
@@ -374,17 +372,17 @@ function AsignacionesPageContent() {
     // Filtrar por semana seleccionada
     resultado = resultado.filter(a => {
       if (!a.semanaInicioISO || !a.plan?.semanas?.length) return false;
-      
+
       try {
         const inicioPlan = parseLocalDate(a.semanaInicioISO);
         const numSemanas = a.plan.semanas.length;
         const semanaActual = parseLocalDate(semanaSeleccionadaISO);
-        
+
         // Calcular offset de semanas
         const diffTime = semanaActual - inicioPlan;
         const diffDays = diffTime / (1000 * 60 * 60 * 24);
         const offsetWeeks = Math.floor(diffDays / 7);
-        
+
         // La asignación está activa si offsetWeeks está en el rango [0, numSemanas)
         return offsetWeeks >= 0 && offsetWeeks < numSemanas;
       } catch (error) {
@@ -392,23 +390,23 @@ function AsignacionesPageContent() {
       }
     });
 
-  if (estadoFilter !== 'all') {
+    if (estadoFilter !== 'all') {
       resultado = resultado.filter(a => a.estado === estadoFilter);
     }
 
     if (profesoresFilter.length > 0) {
       resultado = resultado.filter(a => profesoresFilter.includes(a.profesorId));
-  }
+    }
 
-  if (searchTerm) {
-    const term = searchTerm.toLowerCase();
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       resultado = resultado.filter(a => {
-      const alumno = usuarios.find(u => u.id === a.alumnoId);
-      const nombreAlumno = getNombreVisible(alumno).toLowerCase();
-      const pieza = (a.piezaSnapshot?.nombre || '').toLowerCase();
-      return nombreAlumno.includes(term) || pieza.includes(term);
-    });
-  }
+        const alumno = usuarios.find(u => u.id === a.alumnoId);
+        const nombreAlumno = getNombreVisible(alumno).toLowerCase();
+        const pieza = (a.piezaSnapshot?.nombre || '').toLowerCase();
+        return nombreAlumno.includes(term) || pieza.includes(term);
+      });
+    }
 
     return resultado;
   }, [asignacionesFiltradas, estadoFilter, profesoresFilter, searchTerm, usuarios, semanaSeleccionadaISO]);
@@ -434,8 +432,8 @@ function AsignacionesPageContent() {
       render: (a) => {
         const alumno = usuarios.find(u => u.id === a.alumnoId);
         // Si no se encuentra el usuario, intentar obtener nombre por ID usando displayNameById
-        const nombreAlumno = alumno 
-          ? getNombreVisible(alumno) 
+        const nombreAlumno = alumno
+          ? getNombreVisible(alumno)
           : (a.alumnoId ? displayNameById(a.alumnoId) : 'Sin nombre');
         return (
           <div>
@@ -478,21 +476,21 @@ function AsignacionesPageContent() {
         let semanaActual = null;
         let numSemanas = 0;
         let indicador = '';
-        
+
         if (a.semanaInicioISO && a.plan?.semanas?.length) {
           try {
             const inicioPlan = parseLocalDate(a.semanaInicioISO);
             numSemanas = a.plan.semanas.length;
             const semanaActualPlan = parseLocalDate(semanaSeleccionadaISO);
-            
+
             const diffTime = semanaActualPlan - inicioPlan;
             const diffDays = diffTime / (1000 * 60 * 60 * 24);
             const offsetWeeks = Math.floor(diffDays / 7);
-            
+
             if (offsetWeeks >= 0 && offsetWeeks < numSemanas) {
               semanaActual = offsetWeeks + 1;
               // Generar indicador visual tipo X--- (● ○ ○ ○)
-              indicador = Array.from({ length: numSemanas }, (_, i) => 
+              indicador = Array.from({ length: numSemanas }, (_, i) =>
                 i === offsetWeeks ? '●' : '○'
               ).join(' ');
             }
@@ -500,7 +498,7 @@ function AsignacionesPageContent() {
             // Si hay error, no mostrar indicador
           }
         }
-        
+
         return (
           <div>
             <p className="text-sm">{a.plan?.nombre || '-'}</p>
@@ -566,13 +564,14 @@ function AsignacionesPageContent() {
               const numeroSemana = isoWeekNumberLocal(lunesSemana);
               const labelSemana = `Semana ${numeroSemana}`;
               const rangeTextSemana = `${lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} – ${domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
-              
+
               return (
-                <PeriodHeaderButton
+                <PeriodHeader
                   label={labelSemana}
                   rangeText={rangeTextSemana}
-                  isOpen={periodHeaderOpen}
-                  onToggle={togglePeriodHeader}
+                  onPrev={() => cambiarSemana(-1)}
+                  onNext={() => cambiarSemana(1)}
+                  onToday={irSemanaActual}
                 />
               );
             })()}
@@ -584,65 +583,54 @@ function AsignacionesPageContent() {
         }
       />
 
-      {/* Panel colapsable del PeriodHeader */}
-      {(() => {
-        const lunesSemana = parseLocalDate(semanaSeleccionadaISO);
-        return (
-          <PeriodHeaderPanel
-            isOpen={periodHeaderOpen}
-            onPrev={() => cambiarSemana(-1)}
-            onNext={() => cambiarSemana(1)}
-            onToday={irSemanaActual}
-          >
-            <div className="space-y-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
-                <Input
-                  placeholder="Buscar estudiante o pieza..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`w-full pl-9 pr-9 ${componentStyles.controls.inputDefault}`}
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                    aria-label="Limpiar búsqueda"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              
-              <div className="flex gap-2 flex-wrap">
-                <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-                  <SelectTrigger className={`flex-1 min-w-[140px] ${componentStyles.controls.selectDefault}`}>
-                    <SelectValue placeholder="Estado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="borrador">Borradores</SelectItem>
-                    <SelectItem value="publicada">Publicadas</SelectItem>
-                    <SelectItem value="en_curso">En Curso</SelectItem>
-                    <SelectItem value="cerrada">Cerradas</SelectItem>
-                  </SelectContent>
-                </Select>
+      <div className="px-4 pb-4 md:px-6 md:pb-6 max-w-7xl mx-auto">
+        <div className="space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
+            <Input
+              placeholder="Buscar estudiante o pieza..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={`w-full pl-9 pr-9 ${componentStyles.controls.inputDefault}`}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
 
-                <MultiSelect
-                  label={profesoresFilter.length === 0 ? "Profesor (TODOS)" : "Profesor"}
-                  items={profesoresDisponibles}
-                  value={profesoresFilter}
-                  onChange={setProfesoresFilter}
-                />
-              </div>
-            </div>
-          </PeriodHeaderPanel>
-        );
-      })()}
+          <div className="flex gap-2 flex-wrap">
+            <Select value={estadoFilter} onValueChange={setEstadoFilter}>
+              <SelectTrigger className={`flex-1 min-w-[140px] ${componentStyles.controls.selectDefault}`}>
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="borrador">Borradores</SelectItem>
+                <SelectItem value="publicada">Publicadas</SelectItem>
+                <SelectItem value="en_curso">En Curso</SelectItem>
+                <SelectItem value="cerrada">Cerradas</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <MultiSelect
+              label={profesoresFilter.length === 0 ? "Profesor (TODOS)" : "Profesor"}
+              items={profesoresDisponibles}
+              value={profesoresFilter}
+              onChange={setProfesoresFilter}
+            />
+          </div>
+        </div>
+      </div>
 
       <div className={`${componentStyles.layout.page} space-y-6`}>
         {showForm && (
-          <FormularioRapido 
+          <FormularioRapido
             onClose={() => setShowForm(false)}
           />
         )}
