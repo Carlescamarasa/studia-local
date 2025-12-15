@@ -285,7 +285,7 @@ function MediaLinkItem({
   return (
     <div
       className={`flex items-start gap-2 p-2 rounded-lg border transition-colors w-full group overflow-hidden ${isValid
-        ? 'bg-white border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]'
+        ? 'bg-[var(--color-surface)] border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]'
         : 'bg-[var(--color-danger)]/5 border-[var(--color-danger)]/20'
         }`}
     >
@@ -322,7 +322,7 @@ function MediaLinkItem({
       )}
 
       {isVideoFile ? (
-        <div className="mt-1.5 shrink-0 bg-red-100 rounded p-0.5 text-red-600">
+        <div className="mt-1.5 shrink-0 bg-[var(--color-danger)]/10 rounded p-0.5 text-[var(--color-danger)]">
           <Video className="w-3.5 h-3.5" />
         </div>
       ) : (
@@ -333,12 +333,12 @@ function MediaLinkItem({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 min-w-0 mb-0.5 flex-wrap">
           {isVideoFile && (
-            <Badge variant="outline" className="text-[10px] h-4 px-1 py-0 border-red-200 text-red-700 bg-red-50 shrink-0">
+            <Badge variant="outline" className="text-[10px] h-4 px-1 py-0 border-[var(--color-danger)]/30 text-[var(--color-danger)] bg-[var(--color-danger)]/10 shrink-0">
               Vídeo
             </Badge>
           )}
           {!isVideoFile && (
-            <Badge variant="outline" className="text-[10px] h-4 px-1 py-0 shrink-0 text-slate-500 font-normal">
+            <Badge variant="outline" className="text-[10px] h-4 px-1 py-0 shrink-0 text-[var(--color-text-secondary)] font-normal">
               {label}
             </Badge>
           )}
@@ -354,14 +354,14 @@ function MediaLinkItem({
               value={editedName}
               onChange={(e) => setEditedName(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="h-6 text-xs bg-[var(--color-background)] px-1.5 py-0"
+              className="h-6 text-xs bg-[var(--color-surface)] px-1.5 py-0"
               placeholder={title || "Nombre del archivo"}
               autoFocus
             />
             <Button
               size="sm"
               variant="ghost"
-              className="h-6 w-6 p-0 text-[var(--color-success)] hover:bg-green-50"
+              className="h-6 w-6 p-0 text-[var(--color-success)] hover:bg-[var(--color-success)]/10"
               onClick={handleSaveRename}
             >
               <Check className="w-3 h-3" />
@@ -388,7 +388,7 @@ function MediaLinkItem({
                   setEditedName(name || title || '');
                   setIsEditing(true);
                 }}
-                className="h-5 w-5 p-0 opacity-0 group-hover/title:opacity-100 transition-opacity text-[var(--color-text-secondary)] hover:bg-slate-100"
+                className="h-5 w-5 p-0 opacity-0 group-hover/title:opacity-100 transition-opacity text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
                 aria-label="Renombrar"
               >
                 <Pencil className="w-3 h-3" />
@@ -412,7 +412,7 @@ function MediaLinkItem({
             variant="ghost"
             size="sm"
             onClick={() => onPreview(index)}
-            className="h-7 w-7 p-0 shrink-0 text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+            className="h-7 w-7 p-0 shrink-0 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
             aria-label="Ver preview"
           >
             <Eye className="w-3.5 h-3.5" />
@@ -688,42 +688,42 @@ export default function MediaLinksInput({
         onDrop={handleUnifiedDrop}
         className={cn(
           "relative rounded-xl border-2 border-dashed transition-all duration-200 p-6 flex flex-col items-center justify-center text-center gap-4 group",
-          isDragActive ? "border-orange-500 bg-orange-50 scale-[1.01]" : "border-slate-200 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300",
+          isDragActive ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]/30 scale-[1.01]" : "border-[var(--color-border-default)] bg-[var(--color-surface-muted)]/50 hover:bg-[var(--color-surface-muted)] hover:border-[var(--color-border-strong)]",
           (uploading || uploadingVideo) && "pointer-events-none opacity-80"
         )}
       >
         {/* Uploading Overlay State */}
         {(uploading || uploadingVideo) && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-xl">
-            <Loader2 className="w-8 h-8 text-orange-500 animate-spin mb-2" />
-            <p className="text-sm font-medium text-slate-700">
+          <div className="absolute inset-0 bg-[var(--color-surface)]/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-xl">
+            <Loader2 className="w-8 h-8 text-[var(--color-primary)] animate-spin mb-2" />
+            <p className="text-sm font-medium text-[var(--color-text-primary)]">
               {uploadingVideo ? "Subiendo vídeo..." : `Subiendo ${uploadingFileName}...`}
             </p>
           </div>
         )}
 
         {/* Iconography */}
-        <div className="flex items-center justify-center gap-3 text-slate-300 group-hover:text-slate-400 transition-colors pointer-events-none">
+        <div className="flex items-center justify-center gap-3 text-[var(--color-text-muted)] group-hover:text-[var(--color-text-secondary)] transition-colors pointer-events-none">
           <Upload className="w-8 h-8" />
         </div>
 
         {/* Instruction Text */}
         <div className="space-y-1 pointer-events-none">
-          <h3 className="font-semibold text-slate-700">Arrastra archivos aquí</h3>
-          <p className="text-xs text-slate-500">
+          <h3 className="font-semibold text-[var(--color-text-primary)]">Arrastra archivos aquí</h3>
+          <p className="text-xs text-[var(--color-text-secondary)]">
             Vídeo, Audio, Imágenes, PDF
           </p>
         </div>
 
         {/* URL Input Area (Visual Integration) */}
         <div className="w-full max-w-md relative z-20">
-          <div className="flex shadow-sm rounded-lg overflow-hidden border border-slate-200 bg-white focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-500 transition-all">
-            <div className="flex items-center justify-center w-10 bg-slate-50 border-r border-slate-100 text-slate-400">
+          <div className="flex shadow-sm rounded-lg overflow-hidden border border-[var(--color-border-default)] bg-[var(--color-surface)] focus-within:ring-2 focus-within:ring-[var(--color-primary)]/20 focus-within:border-[var(--color-primary)] transition-all">
+            <div className="flex items-center justify-center w-10 bg-[var(--color-surface-muted)] border-r border-[var(--color-border-default)] text-[var(--color-text-secondary)]">
               <LinkIcon className="w-4 h-4" />
             </div>
             <input
               type="text"
-              className="flex-1 px-3 py-2.5 text-sm outline-none placeholder:text-slate-400"
+              className="flex-1 px-3 py-2.5 text-sm outline-none bg-transparent text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
               placeholder="O pega un enlace de YouTube, Drive, SoundCloud..."
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
@@ -733,7 +733,7 @@ export default function MediaLinksInput({
             <button
               onClick={handleParseInput}
               disabled={!inputText.trim() || isLimitReached}
-              className="px-4 py-1 text-xs font-bold uppercase tracking-wider text-orange-600 hover:bg-orange-50 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
+              className="px-4 py-1 text-xs font-bold uppercase tracking-wider text-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
             >
               Añadir
             </button>
@@ -748,19 +748,19 @@ export default function MediaLinksInput({
               type="button"
               variant="link"
               size="sm"
-              className="text-xs text-slate-400 hover:text-slate-600 h-auto p-0"
+              className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] h-auto p-0"
               onClick={() => fileInputRef.current?.click()}
             >
               Seleccionar archivos
             </Button>
             {onVideoFileChange && (
               <>
-                <span className="text-slate-300 text-xs">•</span>
+                <span className="text-[var(--color-text-muted)] text-xs">•</span>
                 <Button
                   type="button"
                   variant="link"
                   size="sm"
-                  className="text-xs text-slate-400 hover:text-slate-600 h-auto p-0"
+                  className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] h-auto p-0"
                   onClick={() => videoFileInputRef.current?.click()}
                 >
                   Seleccionar vídeo
@@ -796,18 +796,18 @@ export default function MediaLinksInput({
       </div>
 
       {/* Unified List Items */}
-      <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-[var(--color-surface-muted)]/50 rounded-xl border border-[var(--color-border-default)] overflow-hidden">
         {/* Header / Counter */}
-        <div className="bg-slate-100/50 px-4 py-2 border-b border-slate-200 flex justify-between items-center text-xs">
-          <span className="font-medium text-slate-500">Recursos Adjuntos</span>
-          <span className={`${isLimitReached ? 'text-orange-600 font-bold' : 'text-slate-400'}`}>
+        <div className="bg-[var(--color-surface-muted)] px-4 py-2 border-b border-[var(--color-border-default)] flex justify-between items-center text-xs">
+          <span className="font-medium text-[var(--color-text-secondary)]">Recursos Adjuntos</span>
+          <span className={`${isLimitReached ? 'text-[var(--color-primary)] font-bold' : 'text-[var(--color-text-muted)]'}`}>
             {currentCount}/{MAX_LINKS} items
           </span>
         </div>
 
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-[var(--color-border-default)]/50">
           {currentCount === 0 && (
-            <div className="p-8 text-center text-slate-400 text-sm italic">
+            <div className="p-8 text-center text-[var(--color-text-muted)] text-sm italic">
               No hay recursos añadidos
             </div>
           )}

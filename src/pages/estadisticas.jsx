@@ -544,6 +544,7 @@ function EstadisticasPageContent() {
   const [historialSoloConNotas, setHistorialSoloConNotas] = useState(false);
 
   // Feedbacks del profesor para estudiantes
+  // Filtro por rango: mostrar si created_at O updated_at está dentro del rango
   const feedbackProfesor = useMemo(() => {
     if (!isEstu) return [];
 
@@ -551,22 +552,43 @@ function EstadisticasPageContent() {
       if (f.alumnoId !== userIdActual) {
         return false;
       }
-      if (!f.semanaInicioISO) {
+
+      // Usar created_at y updated_at para el filtro de rango
+      const createdAt = f.createdAt || f.created_at;
+      const updatedAt = f.updatedAt || f.updated_at || createdAt; // Fallback a created_at si no hay updated_at
+
+      if (!createdAt) {
         return false;
       }
 
-      const feedbackDate = parseLocalDate(f.semanaInicioISO);
-
       if (periodoInicio) {
         const inicioDate = parseLocalDate(periodoInicio);
-        if (feedbackDate < inicioDate) {
+        const inicioDateTime = new Date(inicioDate.getFullYear(), inicioDate.getMonth(), inicioDate.getDate());
+
+        const createdDate = new Date(createdAt);
+        const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
+
+        const updatedDate = new Date(updatedAt);
+        const updatedDateOnly = new Date(updatedDate.getFullYear(), updatedDate.getMonth(), updatedDate.getDate());
+
+        // Si AMBAS fechas están antes del rango, excluir
+        if (createdDateOnly < inicioDateTime && updatedDateOnly < inicioDateTime) {
           return false;
         }
       }
 
       if (periodoFin) {
         const finDate = parseLocalDate(periodoFin);
-        if (feedbackDate > finDate) {
+        const finDateTime = new Date(finDate.getFullYear(), finDate.getMonth(), finDate.getDate());
+
+        const createdDate = new Date(createdAt);
+        const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
+
+        const updatedDate = new Date(updatedAt);
+        const updatedDateOnly = new Date(updatedDate.getFullYear(), updatedDate.getMonth(), updatedDate.getDate());
+
+        // Si AMBAS fechas están después del rango, excluir
+        if (createdDateOnly > finDateTime && updatedDateOnly > finDateTime) {
           return false;
         }
       }
@@ -574,10 +596,16 @@ function EstadisticasPageContent() {
       return true;
     });
 
-    return filtrados.sort((a, b) => b.semanaInicioISO.localeCompare(a.semanaInicioISO));
+    // Ordenar por la fecha más reciente (updated_at si existe, sino created_at)
+    return filtrados.sort((a, b) => {
+      const aUpdated = a.updatedAt || a.updated_at || a.createdAt || a.created_at || '';
+      const bUpdated = b.updatedAt || b.updated_at || b.createdAt || b.created_at || '';
+      return bUpdated.localeCompare(aUpdated);
+    });
   }, [feedbacksSemanal, userIdActual, periodoInicio, periodoFin, isEstu]);
 
   // Feedbacks para profesores y admins: ADMIN y PROF ven TODOS los feedbacks
+  // Filtro por rango: mostrar si created_at O updated_at está dentro del rango
   const feedbacksParaProfAdmin = useMemo(() => {
     if (isEstu) return [];
 
@@ -595,22 +623,29 @@ function EstadisticasPageContent() {
       resultado = resultado.filter(f => profesoresSeleccionados.includes(f.profesorId));
     }
 
-    // Solo filtrar por período si hay filtro EXPLÍCITO de período
-    // IMPORTANTE: Para ADMIN y PROF, incluir feedbacks sin semanaInicioISO también
+    // Filtrar por período usando created_at y updated_at
     if (periodoInicio || periodoFin) {
       resultado = resultado.filter(f => {
-        // Si no tiene semanaInicioISO, INCLUIR siempre (no excluir feedbacks sin fecha)
-        if (!f.semanaInicioISO) {
+        // Usar created_at y updated_at para el filtro
+        const createdAt = f.createdAt || f.created_at;
+        const updatedAt = f.updatedAt || f.updated_at || createdAt;
+
+        // Si no tiene created_at, incluir siempre
+        if (!createdAt) {
           return true;
         }
 
-        const feedbackDate = parseLocalDate(f.semanaInicioISO);
-        const feedbackDateOnly = new Date(feedbackDate.getFullYear(), feedbackDate.getMonth(), feedbackDate.getDate());
+        const createdDate = new Date(createdAt);
+        const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
+
+        const updatedDate = new Date(updatedAt);
+        const updatedDateOnly = new Date(updatedDate.getFullYear(), updatedDate.getMonth(), updatedDate.getDate());
 
         if (periodoInicio) {
           const inicioDate = parseLocalDate(periodoInicio);
           const inicioDateOnly = new Date(inicioDate.getFullYear(), inicioDate.getMonth(), inicioDate.getDate());
-          if (feedbackDateOnly < inicioDateOnly) {
+          // Si AMBAS fechas están antes del rango, excluir
+          if (createdDateOnly < inicioDateOnly && updatedDateOnly < inicioDateOnly) {
             return false;
           }
         }
@@ -618,7 +653,8 @@ function EstadisticasPageContent() {
         if (periodoFin) {
           const finDate = parseLocalDate(periodoFin);
           const finDateOnly = new Date(finDate.getFullYear(), finDate.getMonth(), finDate.getDate());
-          if (feedbackDateOnly > finDateOnly) {
+          // Si AMBAS fechas están después del rango, excluir
+          if (createdDateOnly > finDateOnly && updatedDateOnly > finDateOnly) {
             return false;
           }
         }
@@ -636,13 +672,13 @@ function EstadisticasPageContent() {
       };
     });
 
-    // Ordenar: primero por alumno, luego por fecha descendente
+    // Ordenar: primero por alumno, luego por fecha más reciente (updated_at o created_at)
     resultado.sort((a, b) => {
       if (a.alumnoId !== b.alumnoId) {
         return (a.alumnoId || '').localeCompare(b.alumnoId || '');
       }
-      const fechaA = a.semanaInicioISO || '';
-      const fechaB = b.semanaInicioISO || '';
+      const fechaA = a.updatedAt || a.updated_at || a.createdAt || a.created_at || '';
+      const fechaB = b.updatedAt || b.updated_at || b.createdAt || b.created_at || '';
       return fechaB.localeCompare(fechaA);
     });
 

@@ -23,24 +23,47 @@ export default function FeedbackTab({ feedbacks, isEstu, onEditFeedback, puedeEd
   const columns = [
     {
       key: 'fecha',
-      label: 'Fecha',
+      label: 'Fechas',
       sortable: true,
+      sortValue: (f) => {
+        // Ordenar por la fecha más reciente (updated_at si existe, sino created_at)
+        const createdAt = f.createdAt || f.created_at;
+        const updatedAt = f.updatedAt || f.updated_at || createdAt;
+        return updatedAt ? new Date(updatedAt).getTime() : 0;
+      },
       render: (f) => {
-        // Use created_at for timestamp if available, otherwise semanaInicioISO
-        const dateStr = f.created_at || f.semanaInicioISO;
-        if (!dateStr) return <span className="text-sm text-[var(--color-text-secondary)]">Sin fecha</span>;
+        const createdAt = f.createdAt || f.created_at;
+        const updatedAt = f.updatedAt || f.updated_at;
 
-        const date = new Date(dateStr);
-        const fechaFormateada = date.toLocaleDateString('es-ES', {
-          day: 'numeric',
-          month: 'short',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
+        if (!createdAt) {
+          return <span className="text-sm text-[var(--color-text-secondary)]">Sin fecha</span>;
+        }
+
+        const formatDate = (dateStr) => {
+          const date = new Date(dateStr);
+          return date.toLocaleDateString('es-ES', {
+            day: 'numeric',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        };
+
+        const createdFormatted = formatDate(createdAt);
+        // Considerar "editado" solo si updated_at existe y es diferente de created_at
+        const hasBeenEdited = updatedAt && createdAt && updatedAt !== createdAt;
+
         return (
-          <span className="text-sm text-[var(--color-text-primary)] whitespace-nowrap">
-            {fechaFormateada}
-          </span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm text-[var(--color-text-primary)] whitespace-nowrap">
+              Creado: {createdFormatted}
+            </span>
+            {hasBeenEdited && (
+              <span className="text-xs text-[var(--color-text-secondary)] whitespace-nowrap">
+                Editado: {formatDate(updatedAt)}
+              </span>
+            )}
+          </div>
         );
       },
     },
