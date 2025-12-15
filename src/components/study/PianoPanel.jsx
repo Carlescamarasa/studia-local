@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Piano } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSidebar } from "@/components/ui/SidebarState";
 
 // Helper to get frequency from semitone offset relative to A4 (440)
 const getFreq = (semitonesFromA4) => 440 * Math.pow(2, semitonesFromA4 / 12);
@@ -50,6 +51,19 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
     // Map of active notes: noteName -> { osc, gain, intervalId? }
     const activeNotes = useRef(new Map());
     const panelRef = useRef(null);
+
+    // Sidebar state for positioning
+    const { abierto } = useSidebar();
+    const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
+
+    // Detect desktop vs mobile
+    useEffect(() => {
+        const handleResize = () => {
+            setIsDesktop(window.innerWidth >= 1024);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Init AudioContext on open
     useEffect(() => {
@@ -171,23 +185,27 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
             style={{
                 // Align bottom with top of footer dynamically
                 bottom: `${bottomOffset}px`,
+                // Shift left when sidebar is open on desktop
+                left: isDesktop && abierto ? '280px' : '0',
                 // Adjust height relative to view if needed, but simple flex container is fine
                 paddingBottom: 'env(safe-area-inset-bottom)', // just in case
             }}
         >
             {/* Header */}
-            <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--color-surface-muted)] border-b border-[var(--color-border-default)]">
-                <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary)]">
-                    <Piano className="w-3.5 h-3.5" />
-                    <span>Piano (Transpositor Si♭)</span>
+            <div className="bg-[var(--color-surface-muted)] border-b border-[var(--color-border-default)] py-1.5">
+                <div className="max-w-5xl mx-auto px-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary)]">
+                        <Piano className="w-3.5 h-3.5" />
+                        <span>Piano (Transpositor Si♭)</span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0 hover:bg-black/5">
+                        <X className="w-3.5 h-3.5" />
+                    </Button>
                 </div>
-                <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0 hover:bg-black/5">
-                    <X className="w-3.5 h-3.5" />
-                </Button>
             </div>
 
             {/* Keys Container */}
-            <div className="p-0 overflow-x-auto bg-white flex justify-center w-full touch-pan-x">
+            <div className="p-0 overflow-x-auto bg-[var(--color-surface-elevated)] flex justify-center w-full touch-pan-x">
                 <div className="flex relative select-none" style={{ height: '140px', minWidth: 'fit-content', paddingBottom: '0', paddingLeft: '12px' }}>
                     {/* Render White Keys + Labels */}
                     {WRITTEN_NOTES.map((note, idx) => {

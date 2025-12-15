@@ -114,7 +114,7 @@ export default function HoyPage() {
 function HoyPageContent() {
   const navigate = useNavigate();
   const { closeSidebar, abierto, toggleSidebar } = useSidebar();
-  const { setShowHotkeysModal } = useHotkeysModal();
+  const { showHotkeysModal, setShowHotkeysModal } = useHotkeysModal();
 
   const [semanaActualISO, setSemanaActualISO] = useState(() => {
     return calcularLunesSemanaISO(new Date());
@@ -145,6 +145,17 @@ function HoyPageContent() {
   const [timerCollapsed, setTimerCollapsed] = useState(false); // Collapsed by default? No, usually open.
   const [footerHeight, setFooterHeight] = useState(80); // Default height
   const footerRef = useRef(null);
+
+  // Desktop detection for sidebar-aware positioning
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Measure footer height for PianoPanel positioning
   // Helper to get REAL bottom offset
@@ -651,7 +662,7 @@ function HoyPageContent() {
 
   // Pausar/reanudar cronómetro cuando se abren/cierran modales
   useEffect(() => {
-    const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || mediaFullscreen || reportModalAbierto;
+    const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || reportModalAbierto || showHotkeysModal;
 
     if (hayModalAbierto && cronometroActivo && !cronometroPausadoPorModal) {
       // Pausar el cronómetro
@@ -670,7 +681,7 @@ function HoyPageContent() {
       setCronometroActiva(true);
       setCronometroPausadoPorModal(false);
     }
-  }, [mostrarModalCancelar, mostrarItinerario, mediaFullscreen, reportModalAbierto, cronometroActivo, cronometroPausadoPorModal, sesionActiva, sesionFinalizada, timestampInicio]);
+  }, [mostrarModalCancelar, mostrarItinerario, reportModalAbierto, showHotkeysModal, cronometroActivo, cronometroPausadoPorModal, sesionActiva, sesionFinalizada, timestampInicio]);
 
   const empezarSesion = async (sesion, sesionIdxProp) => {
     // Actualizar bloques con mediaLinks actuales de la base de datos
@@ -944,13 +955,15 @@ function HoyPageContent() {
 
     const handleKeyDown = (e) => {
       // No procesar si hay un modal abierto (excepto para cerrar modales)
-      const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || mediaFullscreen || reportModalAbierto;
+      const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || reportModalAbierto || showHotkeysModal;
 
       // Permitir Escape siempre para cerrar modales
       if (e.key === 'Escape') {
         e.preventDefault();
         if (mediaFullscreen) {
           setMediaFullscreen(null);
+        } else if (mediaModal) {
+          setMediaModal(null);
         } else if (mostrarItinerario) {
           setMostrarItinerario(false);
         } else if (mostrarModalCancelar) {
@@ -1373,7 +1386,7 @@ function HoyPageContent() {
             {!isAD && ejercicioActual?.duracionSeg > 0 && (
               <div className={cn(
                 "w-full rounded-full h-2 md:h-2.5 overflow-hidden transition-all duration-300",
-                enRangoWarning ? 'bg-[var(--color-warning)]/20 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 'bg-[var(--color-border-default)]/30'
+                excedido ? 'bg-[var(--color-danger)]/20 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : enRangoWarning ? 'bg-[var(--color-warning)]/20 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 'bg-[var(--color-border-default)]/30'
               )}>
                 <div
                   className={cn(
@@ -1386,7 +1399,10 @@ function HoyPageContent() {
             )}
 
             {/* Fila principal - Siempre visible (tanto expandido como colapsado) */}
-            <div className="max-w-5xl mx-auto px-4 py-2">
+            <div className={cn(
+              "max-w-5xl mx-auto px-4 py-2",
+              excedido ? "border-b-2 border-[var(--color-danger)]" : ""
+            )}>
               <div className="flex items-center justify-between gap-3">
                 {/* Izquierda: Tiempo */}
                 <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -1543,7 +1559,10 @@ function HoyPageContent() {
 
             {/* Fila secundaria - Solo en modo expandido: Breadcrumb de ejercicios */}
             {!timerCollapsed && sesionActiva && listaEjecucion.length > 0 && (
-              <div className="max-w-5xl mx-auto px-4 pb-3 border-t border-[var(--color-border-default)]/50 pt-2">
+              <div className={cn(
+                "max-w-5xl mx-auto px-4 pb-3 border-t pt-2",
+                excedido ? "border-[var(--color-danger)]/50" : "border-[var(--color-border-default)]/50"
+              )}>
                 <TooltipProvider>
                   <div className="flex items-center gap-1.5 pb-2 overflow-x-auto scrollbar-hide">
                     {listaEjecucion.map((ej, idx) => {
@@ -1883,7 +1902,9 @@ function HoyPageContent() {
         {/* Footer de controles - Oculto (controles ahora en timer flotante) */}
         {
           false && (
-            <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-card z-30 pb-[env(safe-area-inset-bottom,0px)]">
+            <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-card z-30 pb-[env(safe-area-inset-bottom,0px)]" style={{
+              left: isDesktop && abierto ? '280px' : '0',
+            }}>
               <div className="max-w-5xl mx-auto px-3 py-2">
                 {/* Breadcrumb compacto */}
                 <TooltipProvider>
