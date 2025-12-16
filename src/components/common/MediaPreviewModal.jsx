@@ -136,17 +136,16 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
     }
   };
 
-  const handleOverlayClick = (e) => {
-    console.log('🎬 handleOverlayClick triggered');
-    console.log('🎬 e.target:', e.target);
-    console.log('🎬 e.currentTarget:', e.currentTarget);
-    console.log('🎬 target === currentTarget:', e.target === e.currentTarget);
-    e.stopPropagation();
+  // Usamos onPointerUp en lugar de onClick porque:
+  // 1. stopPropagation en pointerdown (necesario para prevenir que Radix cierre el modal padre)
+  //    rompe el ciclo pointerdown → pointerup → click, haciendo que onClick nunca se dispare
+  // 2. onPointerUp se dispara DESPUÉS de pointerdown, así que no hay conflicto
+  // 3. Verificamos que el pointerup ocurrió en el overlay mismo (no en hijos)
+  const handleOverlayPointerUp = (e) => {
+    // Solo cerrar si el pointerup fue directamente en el overlay
     if (e.target === e.currentTarget) {
-      console.log('🎬 Calling onClose');
+      e.stopPropagation();
       onClose?.();
-    } else {
-      console.log('🎬 NOT calling onClose - target !== currentTarget');
     }
   };
 
@@ -166,14 +165,14 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
       <>
         {/* Overlay transparente para audio - Fixed para cubrir toda la pantalla */}
         <div
-          className="fixed inset-0 bg-transparent z-[230]"
-          onClick={handleOverlayClick}
+          className="fixed inset-0 bg-transparent z-[110]"
           onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={handleOverlayPointerUp}
           data-prevent-outside-close="true"
           aria-hidden="true"
         />
         <div
-          className="fixed inset-0 z-[240] flex items-center justify-center pointer-events-none"
+          className="fixed inset-0 z-[115] flex items-center justify-center pointer-events-none"
           role="dialog"
           aria-modal="true"
           aria-labelledby="media-preview-title"
@@ -263,14 +262,14 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
     <>
       {/* Overlay oscuro para video/imagen - Fixed para cubrir toda la pantalla */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[230]"
-        onClick={handleOverlayClick}
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110]"
         onPointerDown={(e) => e.stopPropagation()}
+        onPointerUp={handleOverlayPointerUp}
         data-prevent-outside-close="true"
         aria-hidden="true"
       />
       <div
-        className="fixed inset-0 z-[240] flex items-center justify-center pointer-events-none"
+        className="fixed inset-0 z-[115] flex items-center justify-center pointer-events-none"
         role="dialog"
         aria-modal="true"
         aria-labelledby="media-preview-title"
