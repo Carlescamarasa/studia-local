@@ -359,6 +359,14 @@ export interface FeedbackSemanal {
   mediaLinks: string[];
   created_at: string;
   updated_at: string;
+  /** Calidad de sonido (0-10, nullable) - Métrica técnica unificada */
+  sonido?: number | null;
+  /** Capacidad cognitiva (0-10, nullable) - Métrica técnica unificada */
+  cognicion?: number | null;
+  /** Evaluación técnica detallada (Motricidad, Articulación, etc.) */
+  habilidades?: HabilidadesMaestras;
+  /** Deltas XP manuales por habilidad */
+  xp_delta_by_skill?: Record<string, number>;
 }
 
 export type CreateFeedbackSemanalInput = Omit<FeedbackSemanal, 'id' | 'created_at' | 'updated_at'> & { id?: string };

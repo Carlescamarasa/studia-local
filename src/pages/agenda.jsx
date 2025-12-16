@@ -12,6 +12,8 @@ import {
   Search, X, Edit, Trash2, Save, Eye, Clock, Activity,
   ChevronDown, ChevronRight, PlayCircle, PlusCircle
 } from "lucide-react";
+import ModalFeedbackSemanal from "@/components/calendario/ModalFeedbackSemanal";
+import { Upload } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -67,9 +69,9 @@ function AgendaPageContent() {
     return calcularLunesSemanaISO(new Date());
   });
   const [searchTerm, setSearchTerm] = useState('');
-  const [feedbackDrawer, setFeedbackDrawer] = useState(null);
-  const [showEvaluacionModal, setShowEvaluacionModal] = useState(false);
-  const [selectedStudentForEval, setSelectedStudentForEval] = useState(null);
+  // Modal unificado de Feedback
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const [selectedFeedbackData, setSelectedFeedbackData] = useState(null); // { studentId, feedback?, weekStartISO, weekLabel }
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [viewingMedia, setViewingMedia] = useState(null);
   const [showMediaPreview, setShowMediaPreview] = useState(false);
@@ -147,126 +149,24 @@ function AgendaPageContent() {
 
   // Logs de depuración (después de declarar feedbacksSemanal)
 
-  const crearFeedbackMutation = useMutation({
-    mutationFn: async (data) => {
-      // Intentar crear, pero si falla con 409, buscar y actualizar
-      try {
-        const resultado = await localDataClient.entities.FeedbackSemanal.create(data);
-        return resultado;
-      } catch (error) {
-        console.error('[agenda.jsx] Error al crear feedback:', {
-          error: error?.message || error,
-          code: error?.code,
-          status: error?.status,
-          details: error?.details,
-          data,
-        });
+  // --- MODAL FEEDBACK UNIFICADO ---
+  const abrirFeedbackModal = (alumno, feedbackExistente = null) => {
+    setSelectedFeedbackData({
+      studentId: alumno.id,
+      feedback: feedbackExistente,
+      weekStartISO: semanaActualISO,
+      weekLabel: `Semana ${isoWeekNumberLocal(parseLocalDate(semanaActualISO))}`
+    });
+    setFeedbackModalOpen(true);
+  };
 
-        // Si es error 409, buscar el feedback existente directamente en la BD
-        if (error?.code === '23505' || error?.message?.includes('duplicate') || error?.status === 409) {
-          // Buscar el feedback existente directamente en la base de datos
-          try {
-            const feedbacksExistentes = await localDataClient.entities.FeedbackSemanal.filter({
-              alumnoId: data.alumnoId,
-              profesorId: data.profesorId,
-              semanaInicioISO: data.semanaInicioISO,
-            });
-
-            if (feedbacksExistentes && feedbacksExistentes.length > 0) {
-              const feedbackExistente = feedbacksExistentes[0];
-              // Actualizar el feedback existente
-              return await localDataClient.entities.FeedbackSemanal.update(feedbackExistente.id, data);
-            } else {
-            }
-          } catch (searchError) {
-            console.error('[agenda.jsx] Error buscando feedback existente:', {
-              error: searchError?.message || searchError,
-              code: searchError?.code,
-            });
-          }
-        }
-        // Si no es 409 o no se encontró, relanzar el error
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] });
-      toast.success('✅ Feedback guardado');
-      setFeedbackDrawer(null);
-    },
-    onError: (error) => {
-      console.error('[agenda.jsx] Error final guardando feedback:', {
-        error: error?.message || error,
-        code: error?.code,
-        status: error?.status,
-      });
-      let errorMsg = '❌ Error al guardar feedback. Inténtalo de nuevo.';
-
-      // Mensajes específicos según el tipo de error
-      if (error?.code === '23505' || error?.message?.includes('duplicate') || error?.status === 409) {
-        errorMsg = '⚠️ Ya existe un feedback para este alumno y semana. Se intentará actualizar automáticamente.';
-      } else if (error?.code === 'PGRST204' || error?.code === '23503') {
-        errorMsg = '❌ Error de integridad: Verifica que el alumno y profesor existan en la base de datos.';
-      } else if (error?.code === '42501' || error?.status === 403) {
-        errorMsg = '❌ Error de permisos: No tienes permisos para crear feedback. Verifica tu rol de usuario.';
-      } else if (error?.message) {
-        errorMsg = `❌ Error: ${error.message}`;
-      }
-
-      toast.error(errorMsg);
-    },
-  });
-
-  const actualizarFeedbackMutation = useMutation({
-    mutationFn: async ({ id, data }) => {
-      try {
-        const resultado = await localDataClient.entities.FeedbackSemanal.update(id, data);
-        return resultado;
-      } catch (error) {
-        console.error('[agenda.jsx] Error al actualizar feedback:', {
-          error: error?.message || error,
-          code: error?.code,
-          status: error?.status,
-          details: error?.details,
-          id,
-        });
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] });
-      toast.success('✅ Feedback actualizado');
-      setFeedbackDrawer(null);
-    },
-    onError: (error) => {
-      console.error('[agenda.jsx] Error final actualizando feedback:', {
-        error: error?.message || error,
-        code: error?.code,
-        status: error?.status,
-      });
-      let errorMsg = '❌ Error al actualizar feedback. Inténtalo de nuevo.';
-
-      // Mensajes específicos según el tipo de error
-      if (error?.code === 'PGRST204' || error?.code === '23503') {
-        errorMsg = '❌ Error de integridad: Verifica que el alumno y profesor existan en la base de datos.';
-      } else if (error?.code === '42501' || error?.status === 403) {
-        errorMsg = '❌ Error de permisos: No tienes permisos para actualizar feedback. Verifica tu rol de usuario.';
-      } else if (error?.message) {
-        errorMsg = `❌ Error: ${error.message}`;
-      }
-
-      toast.error(errorMsg);
-    },
-  });
-
-  const eliminarFeedbackMutation = useMutation({
-    mutationFn: (id) => localDataClient.entities.FeedbackSemanal.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] });
-      toast.success('✅ Feedback eliminado');
-      setFeedbackDrawer(null);
-    },
-  });
+  const handleFeedbackSaved = () => {
+    queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] });
+    queryClient.invalidateQueries({ queryKey: ['agenda-semanal'] });
+    // Keep modal open? No, modal closes itself or we close it. 
+    // The modal component calls onOpenChange(false) on success.
+    // We just need to refresh data.
+  };
 
   useEffect(() => {
     const handler = (e) => {
@@ -278,27 +178,6 @@ function AgendaPageContent() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
-
-  useEffect(() => {
-    if (!feedbackDrawer) return;
-
-    const handleKeyDown = (e) => {
-      // No procesar si está en un campo editable
-      if (shouldIgnoreHotkey(e)) return;
-
-      if ((e.ctrlKey || e.metaKey) && e.key === '.') {
-        e.preventDefault();
-        setFeedbackDrawer(null);
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        guardarFeedback();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [feedbackDrawer]);
 
   const cambiarSemana = (direccion) => {
     const base = parseLocalDate(semanaActualISO);
@@ -336,124 +215,8 @@ function AgendaPageContent() {
     });
   }
 
-  const abrirFeedbackDrawer = (alumno, existente = null) => {
-    // Si no se pasa un feedback existente, buscar si hay uno en la lista
-    // Buscar primero el feedback del profesor actual, sino cualquier feedback de ese alumno/semana
-    if (!existente) {
-      existente = feedbacksSemanal.find(
-        f => f.alumnoId === alumno.id &&
-          f.profesorId === userIdActual &&
-          f.semanaInicioISO === semanaActualISO
-      ) || feedbacksSemanal.find(
-        f => f.alumnoId === alumno.id &&
-          f.semanaInicioISO === semanaActualISO
-      ) || null;
-    }
-
-    if (existente) {
-      setFeedbackDrawer({
-        alumnoId: existente.alumnoId,
-        notaProfesor: existente.notaProfesor || '',
-        mediaLinks: existente.mediaLinks || [],
-        videoFile: null,
-        existingId: existente.id,
-      });
-    } else {
-      setFeedbackDrawer({
-        alumnoId: alumno.id,
-        notaProfesor: '',
-        mediaLinks: [],
-        videoFile: null,
-        existingId: null,
-      });
-    }
-  };
-
-  const guardarFeedback = async () => {
-    if (!feedbackDrawer.notaProfesor?.trim()) {
-      toast.error('❌ Debes escribir un comentario');
-      return;
-    }
-
-    let finalMediaLinks = [...(feedbackDrawer.mediaLinks || [])];
-
-    // Subir video si existe
-    if (feedbackDrawer.videoFile) {
-      setUploadingVideo(true);
-      try {
-        const alumno = usuarios.find(u => u.id === feedbackDrawer.alumnoId);
-        const uploadResult = await uploadVideoToYouTube(feedbackDrawer.videoFile, {
-          contexto: 'feedback_profesor',
-          profesor_id: userIdActual,
-          profesor_nombre: effectiveUser?.full_name || effectiveUser?.email || 'Profesor',
-          alumno_id: feedbackDrawer.alumnoId,
-          alumno_nombre: alumno ? displayName(alumno) : feedbackDrawer.alumnoId,
-          semana_inicio_iso: semanaActualISO,
-          comentarios: feedbackDrawer.notaProfesor.trim() || undefined,
-        });
-
-        if (uploadResult.ok && uploadResult.videoUrl) {
-          finalMediaLinks.push(uploadResult.videoUrl);
-        } else {
-          throw new Error(uploadResult.error || 'Error al subir el vídeo');
-        }
-      } catch (error) {
-        console.error('[agenda.jsx] Error subiendo vídeo:', error);
-        toast.error(`Error al subir el vídeo: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-        setUploadingVideo(false);
-        return;
-      } finally {
-        setUploadingVideo(false);
-      }
-    }
-
-    const data = {
-      alumnoId: feedbackDrawer.alumnoId,
-      profesorId: userIdActual,
-      semanaInicioISO: semanaActualISO,
-      notaProfesor: feedbackDrawer.notaProfesor.trim(),
-      mediaLinks: finalMediaLinks,
-    };
 
 
-    // Verificar si ya existe un feedback para este alumno/profesor/semana
-    // El índice único es (alumno_id, profesor_id, semana_inicio_iso)
-    // Buscar específicamente el feedback del profesor actual para esa semana
-    let feedbackExistente = feedbacksSemanal.find(
-      f => f.alumnoId === data.alumnoId &&
-        f.profesorId === data.profesorId &&
-        f.semanaInicioISO === data.semanaInicioISO
-    );
-
-
-    // Si no se encuentra en la lista local, buscar directamente en la BD
-    // IMPORTANTE: Buscar solo por alumno y semana, ya que el índice único es (alumno_id, profesor_id, semana_inicio_iso)
-    // Si ya existe un feedback para ese alumno/semana (incluso de otro profesor), el 409 ocurrirá
-    if (!feedbackExistente && !feedbackDrawer.existingId) {
-      try {
-        const feedbacksEnBD = await localDataClient.entities.FeedbackSemanal.filter({
-          alumnoId: data.alumnoId,
-          profesorId: data.profesorId,
-          semanaInicioISO: data.semanaInicioISO,
-        });
-        if (feedbacksEnBD && feedbacksEnBD.length > 0) {
-          feedbackExistente = feedbacksEnBD[0];
-        }
-      } catch (error) {
-        if (import.meta.env.DEV) {
-          console.error('[agenda.jsx] Error buscando feedback en BD:', error);
-        }
-        // Continuar con el flujo normal si falla la búsqueda
-      }
-    }
-
-    if (feedbackDrawer.existingId || feedbackExistente) {
-      const id = feedbackDrawer.existingId || feedbackExistente.id;
-      actualizarFeedbackMutation.mutate({ id, data });
-    } else {
-      crearFeedbackMutation.mutate(data);
-    }
-  };
 
   const handlePreviewMedia = (index, urls) => {
     setPreviewUrls(urls);
@@ -664,7 +427,7 @@ function AgendaPageContent() {
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    abrirFeedbackDrawer(row.alumno);
+                    abrirFeedbackModal(row.alumno);
                   }}
                   className={`w-full md:w-auto ${componentStyles.buttons.outline}`}
                 >
@@ -672,19 +435,6 @@ function AgendaPageContent() {
                   Dar feedback
                 </Button>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedStudentForEval(row.alumno);
-                  setShowEvaluacionModal(true);
-                }}
-                className={`w-full md:w-auto ${componentStyles.buttons.outline}`}
-              >
-                <PlusCircle className="w-4 h-4 mr-2" />
-                Nueva Evaluación
-              </Button>
             </div>
           )
         ) : (
@@ -764,25 +514,12 @@ function AgendaPageContent() {
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
-                        abrirFeedbackDrawer(row.alumno);
+                        abrirFeedbackModal(row.alumno);
                       }}
                       className={`w-full md:w-auto ${componentStyles.buttons.outline}`}
                     >
                       <MessageSquare className="w-4 h-4 mr-2" />
                       Dar feedback
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedStudentForEval(row.alumno);
-                        setShowEvaluacionModal(true);
-                      }}
-                      className={`w-full md:w-auto ${componentStyles.buttons.outline}`}
-                    >
-                      <PlusCircle className="w-4 h-4 mr-2" />
-                      Nueva Evaluación
                     </Button>
                   </div>
                 ) : (
@@ -835,24 +572,11 @@ function AgendaPageContent() {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setSelectedStudentForEval(row.alumno);
-                                setShowEvaluacionModal(true);
+                                abrirFeedbackModal(row.alumno, row.feedback);
                               }}
                               className={`h-8 ${componentStyles.buttons.ghost}`}
-                              aria-label="Nueva Evaluación"
-                              title="Nueva Evaluación"
-                            >
-                              <PlusCircle className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                abrirFeedbackDrawer(row.alumno, row.feedback);
-                              }}
-                              className={`h-8 ${componentStyles.buttons.ghost}`}
-                              aria-label="Editar feedback"
+                              aria-label="Editar Feedback Unificado"
+                              title="Editar Feedback"
                             >
                               <Edit className="w-3 h-3" />
                             </Button>
@@ -1051,25 +775,12 @@ function AgendaPageContent() {
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  abrirFeedbackDrawer(row.alumno);
+                  abrirFeedbackModal(row.alumno);
                 }}
                 className={`${componentStyles.buttons.outline}`}
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Dar feedback
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedStudentForEval(row.alumno);
-                  setShowEvaluacionModal(true);
-                }}
-                className={`${componentStyles.buttons.outline}`}
-              >
-                <PlusCircle className="w-4 h-4 mr-2" />
-                Nueva Evaluación
               </Button>
             </div>
           );
@@ -1114,21 +825,7 @@ function AgendaPageContent() {
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setSelectedStudentForEval(row.alumno);
-                  setShowEvaluacionModal(true);
-                }}
-                className={`h-8 ${componentStyles.buttons.ghost}`}
-                aria-label="Nueva Evaluación"
-                title="Nueva Evaluación"
-              >
-                <PlusCircle className="w-3 h-3" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  abrirFeedbackDrawer(row.alumno, row.feedback);
+                  abrirFeedbackModal(row.alumno, row.feedback);
                 }}
                 className={`h-8 ${componentStyles.buttons.ghost}`}
                 aria-label="Editar feedback"
@@ -1150,7 +847,7 @@ function AgendaPageContent() {
                 <Trash2 className="w-3 h-3" />
               </Button>
             </div>
-          </div>
+          </div >
         );
       },
     }] : []),
@@ -1295,14 +992,14 @@ function AgendaPageContent() {
                       onClick={() => {
                         const primerEstudiante = tableData.find(row => selectedItems.has(row.id));
                         if (primerEstudiante) {
-                          abrirFeedbackDrawer(primerEstudiante.alumno);
+                          abrirFeedbackModal(primerEstudiante.alumno);
                         }
                         setSelectedItems(new Set());
                       }}
                       className="h-9 text-xs"
                     >
                       <MessageSquare className="w-4 h-4 mr-2" />
-                      Dar feedback
+                      Dar Feedback Unificado
                     </Button>
                   </div>
                 </div>
@@ -1312,86 +1009,6 @@ function AgendaPageContent() {
         </div>
       </div>
 
-      {/* Modal de feedback */}
-      {feedbackDrawer && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/40 z-[100]"
-            onClick={() => setFeedbackDrawer(null)}
-          />
-          <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
-            <div
-              className="bg-[var(--color-surface-elevated)] w-full max-w-lg max-h-[95vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-4 border border-[var(--color-border-default)]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-2xl px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <MessageSquare className="w-6 h-6 text-[var(--color-text-primary)]" />
-                    <div>
-                      <h2 className="text-xl font-bold text-[var(--color-text-primary)] font-headings">
-                        {feedbackDrawer.existingId ? 'Editar Feedback' : 'Dar Feedback'}
-                      </h2>
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="icon" onClick={() => setFeedbackDrawer(null)} className="text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-xl touch-manipulation" aria-label="Cerrar modal">
-                    <X className="w-5 h-5" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                <div>
-                  <Label htmlFor="nota" className="text-sm font-medium text-[var(--color-text-primary)]">Observaciones del profesor *</Label>
-                  <Textarea
-                    id="nota"
-                    value={feedbackDrawer.notaProfesor}
-                    onChange={(e) => setFeedbackDrawer({ ...feedbackDrawer, notaProfesor: e.target.value })}
-                    placeholder="Comentarios, áreas de mejora, felicitaciones..."
-                    rows={8}
-                    className={`resize-none mt-1 ${componentStyles.controls.inputDefault}`}
-                  />
-                  <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-                    Escribe observaciones sobre el progreso del estudiante esta semana
-                  </p>
-                </div>
-
-                <MediaLinksInput
-                  value={feedbackDrawer.mediaLinks || []}
-                  onChange={(links) => setFeedbackDrawer({ ...feedbackDrawer, mediaLinks: links })}
-                  onPreview={(idx) => handlePreviewMedia(idx, feedbackDrawer.mediaLinks)}
-                  showFileUpload={true}
-                  videoFile={feedbackDrawer.videoFile}
-                  onVideoFileChange={(file) => setFeedbackDrawer({ ...feedbackDrawer, videoFile: file })}
-                  uploadingVideo={uploadingVideo}
-                  disabled={crearFeedbackMutation.isPending || actualizarFeedbackMutation.isPending}
-                  videoId="video-feedback-agenda"
-                />
-              </div>
-
-              <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
-                <div className="flex gap-3 mb-2">
-                  <Button variant="outline" onClick={() => setFeedbackDrawer(null)} className={`flex-1 ${componentStyles.buttons.outline}`}>
-                    Cancelar
-                  </Button>
-                  <Button
-                    variant="primary"
-                    onClick={guardarFeedback}
-                    disabled={crearFeedbackMutation.isPending || actualizarFeedbackMutation.isPending || uploadingVideo}
-                    className={`flex-1 ${componentStyles.buttons.primary}`}
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Guardar
-                  </Button>
-                </div>
-                <p className="text-xs text-center text-[var(--color-text-secondary)]">
-                  Ctrl/⌘+Intro : guardar • Ctrl/⌘+. : cancelar
-                </p>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
 
       {showMediaPreview && (
         <MediaPreviewModal
@@ -1409,15 +1026,15 @@ function AgendaPageContent() {
         />
       )}
 
-      <Dialog open={showEvaluacionModal} onOpenChange={setShowEvaluacionModal}>
-        <DialogContent className="max-w-4xl w-full max-h-[90vh] p-0 gap-0 overflow-hidden bg-[var(--color-surface-elevated)] border-[var(--color-border-default)]">
-          <EvaluacionForm
-            key={selectedStudentForEval?.id}
-            alumnoId={selectedStudentForEval?.id}
-            onClose={() => setShowEvaluacionModal(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <ModalFeedbackSemanal
+        open={feedbackModalOpen}
+        onOpenChange={setFeedbackModalOpen}
+        feedback={selectedFeedbackData?.feedback}
+        studentId={selectedFeedbackData?.studentId}
+        weekStartISO={selectedFeedbackData?.weekStartISO}
+        weekLabel={selectedFeedbackData?.weekLabel}
+        onSaved={handleFeedbackSaved}
+      />
     </div>
   );
 }

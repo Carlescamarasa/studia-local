@@ -61,6 +61,7 @@ import TiposBloquesTab from "@/components/estadisticas/TiposBloquesTab";
 import TopEjerciciosTab from "@/components/estadisticas/TopEjerciciosTab";
 import AutoevaluacionesTab from "@/components/estadisticas/AutoevaluacionesTab";
 import ComparativaEstudiantes from "@/components/estadisticas/ComparativaEstudiantes";
+import ModalFeedbackSemanal from "@/components/calendario/ModalFeedbackSemanal";
 
 // Icons
 import {
@@ -70,7 +71,7 @@ import {
 } from "lucide-react";
 
 import RequireRole from "@/components/auth/RequireRole";
-import { format } from "date-fns";
+import { format, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
 
 // Valid tabs for normalization
@@ -202,7 +203,7 @@ function ProgresoPageContent() {
         staleTime: 1 * 60 * 1000,
     });
 
-    const { data: feedbacksSemanal = [] } = useQuery({
+    const { data: feedbacksSemanal = [], refetch: refetchFeedbacks } = useQuery({
         queryKey: ['feedbacksSemanal'],
         queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_at'),
         staleTime: 2 * 60 * 1000,
@@ -685,6 +686,48 @@ function ProgresoPageContent() {
     // Render
     // ============================================================================
 
+    // ============================================================================
+    // Modal Feedback Logic
+    // ============================================================================
+    const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+    const [selectedFeedback, setSelectedFeedback] = useState(null);
+    const [feedbackWeekInfo, setFeedbackWeekInfo] = useState({ startISO: '', label: '' });
+
+    const handleCreateFeedback = () => {
+        // Default to current week
+        const now = new Date();
+        const monday = startOfWeek(now, { weekStartsOn: 1 });
+        const mondayISO = format(monday, 'yyyy-MM-dd');
+        const endWeek = new Date(monday);
+        endWeek.setDate(endWeek.getDate() + 6);
+        const label = `Semana del ${format(monday, 'd MMM', { locale: es })} al ${format(endWeek, 'd MMM', { locale: es })}`;
+
+        setSelectedFeedback(null);
+        setFeedbackWeekInfo({ startISO: mondayISO, label });
+        setFeedbackModalOpen(true);
+    };
+
+    const handleEditFeedback = (feedback) => {
+        let mondayISO = feedback.semanaInicioISO;
+        let label = "Semana seleccionada";
+
+        if (mondayISO) {
+            const monday = new Date(mondayISO);
+            const endWeek = new Date(monday);
+            endWeek.setDate(endWeek.getDate() + 6);
+            label = `Semana del ${format(monday, 'd MMM', { locale: es })} al ${format(endWeek, 'd MMM', { locale: es })}`;
+        }
+
+        setSelectedFeedback(feedback);
+        setFeedbackWeekInfo({ startISO: mondayISO, label });
+        setFeedbackModalOpen(true);
+    };
+
+    const handleFeedbackSaved = () => {
+        refetchFeedbacks();
+        setFeedbackModalOpen(false);
+    };
+
     return (
         <div className={componentStyles.layout.appBackground}>
             <PageHeader
@@ -821,13 +864,30 @@ function ProgresoPageContent() {
                 )}
 
                 {tabActiva === 'feedback' && (
-                    <FeedbackUnificadoTab
-                        feedbacks={isEstu ? feedbackProfesor : feedbacksParaProfAdmin}
-                        evaluaciones={evaluacionesFiltradas}
-                        registros={registrosFiltradosUnicos}
-                        usuarios={usuariosMap}
-                        isEstu={isEstu}
-                    />
+                    <div className="space-y-4">
+                        {(isProf || isAdmin) && alumnosSeleccionados.length === 1 && (
+                            <div className="flex justify-end">
+                                <Button
+                                    onClick={handleCreateFeedback}
+                                    variant="primary"
+                                    size="sm"
+                                    className="gap-2"
+                                >
+                                    <MessageSquare className="w-4 h-4" />
+                                    Nuevo Feedback Semanal
+                                </Button>
+                            </div>
+                        )}
+                        <FeedbackUnificadoTab
+                            feedbacks={isEstu ? feedbackProfesor : feedbacksParaProfAdmin}
+                            evaluaciones={evaluacionesFiltradas}
+                            registros={registrosFiltradosUnicos}
+                            usuarios={usuariosMap}
+                            isEstu={isEstu}
+                            onEditFeedback={(isProf || isAdmin) ? handleEditFeedback : undefined}
+                            puedeEditar={(f) => isProf || isAdmin} // Simple permission check
+                        />
+                    </div>
                 )}
 
                 {/* Tab Comparar - PROF/ADMIN only */}
@@ -848,6 +908,17 @@ function ProgresoPageContent() {
                         </Card>
                     )
                 )}
+
+                {/* Modal Feedback Semanal */}
+                <ModalFeedbackSemanal
+                    open={feedbackModalOpen}
+                    onOpenChange={setFeedbackModalOpen}
+                    feedback={selectedFeedback}
+                    studentId={effectiveStudentId || (alumnosSeleccionados.length === 1 ? alumnosSeleccionados[0] : null)}
+                    weekStartISO={feedbackWeekInfo.startISO}
+                    weekLabel={feedbackWeekInfo.label}
+                    onSaved={handleFeedbackSaved}
+                />
             </div>
         </div>
     );
@@ -1212,7 +1283,11 @@ function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChang
 }
 
 // ============================================================================
-// Tab Estadísticas Content - EMBEDDED (Bloque 3) - Collapsible Vertical Sections
+// Tab Estadísticas Content - EMBEDDED (Bloque 3) - 2 Pills: Rendimiento / Ejercicios
+// ============================================================================
+
+// ============================================================================
+// Tab Estadísticas Content - EMBEDDED (Bloque 3) - 2 Pills: Rendimiento / Ejercicios
 // ============================================================================
 
 function TabEstadisticasContent({
@@ -1222,111 +1297,120 @@ function TabEstadisticasContent({
     tiposBloques, topEjercicios, bloquesFiltrados, usuarios, userIdActual,
     effectiveUser, isEstu, isProf, isAdmin, estudiantesComparacion
 }) {
-    // Track which section is open (only one at a time, all start closed)
-    const [openSectionId, setOpenSectionId] = useState(null);
-
-    const toggleSection = (sectionKey) => {
-        setOpenSectionId(prev => prev === sectionKey ? null : sectionKey);
-    };
-
-    // Collapsible section header component
-    const SectionHeader = ({ sectionKey, icon: Icon, title, count }) => {
-        const isExpanded = openSectionId === sectionKey;
-        return (
-            <button
-                type="button"
-                className={cn(
-                    "flex items-center justify-between p-4 cursor-pointer transition-colors w-full text-left",
-                    "hover:bg-[var(--color-surface-muted)]",
-                    isExpanded && "border-b border-[var(--color-border-default)]"
-                )}
-                onClick={() => toggleSection(sectionKey)}
-                aria-expanded={isExpanded}
-                aria-controls={`section-content-${sectionKey}`}
-            >
-                <div className="flex items-center gap-3">
-                    <Icon className="w-5 h-5 text-[var(--color-primary)]" />
-                    <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
-                        {title}
-                    </h3>
-                    {count !== undefined && (
-                        <Badge variant="outline" className="ml-2">
-                            {count}
-                        </Badge>
-                    )}
-                </div>
-                {isExpanded ? (
-                    <ChevronUp className="w-5 h-5 text-[var(--color-text-secondary)] transition-transform" />
-                ) : (
-                    <ChevronDown className="w-5 h-5 text-[var(--color-text-secondary)] transition-transform" />
-                )}
-            </button>
-        );
-    };
+    // Pill filter: 'rendimiento' | 'ejercicios'
+    const [activePill, setActivePill] = useState('rendimiento');
 
     return (
-        <div className="space-y-4">
-            {/* Section: General (formerly Progreso) */}
-            <Card className={componentStyles.components.cardBase}>
-                <SectionHeader
-                    sectionKey="general"
-                    icon={TrendingUp}
-                    title="General"
-                />
-                {openSectionId === 'general' && (
-                    <CardContent id="section-content-general" className="p-4 space-y-6">
-                        <ProgresoTab
-                            datosLinea={datosLinea}
-                            granularidad={granularidad}
-                            onGranularidadChange={onGranularidadChange}
-                            tiempoRealVsObjetivo={tiempoRealVsObjetivo}
-                            kpis={kpis}
-                        />
-                        <HeatmapFranjas
-                            registrosFiltrados={registrosFiltrados}
-                            periodoInicio={periodoInicio}
-                            periodoFin={periodoFin}
-                        />
-                    </CardContent>
-                )}
+        <div className="space-y-6">
+            {/* Pills: Rendimiento / Ejercicios */}
+            <Card className={`${componentStyles.components.cardBase} p-0 w-fit`}>
+                <div className="flex gap-1.5 p-1.5">
+                    <Button
+                        variant={activePill === 'rendimiento' ? 'primary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setActivePill('rendimiento')}
+                        className="text-xs h-8 sm:h-9 rounded-lg"
+                    >
+                        <TrendingUp className="w-3.5 h-3.5 mr-2" />
+                        Rendimiento
+                    </Button>
+                    <Button
+                        variant={activePill === 'ejercicios' ? 'primary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setActivePill('ejercicios')}
+                        className="text-xs h-8 sm:h-9 rounded-lg"
+                    >
+                        <Layers className="w-3.5 h-3.5 mr-2" />
+                        Ejercicios
+                    </Button>
+                </div>
             </Card>
 
-            {/* Section: Tipos de Bloque */}
-            <Card className={componentStyles.components.cardBase}>
-                <SectionHeader
-                    sectionKey="tipos"
-                    icon={Layers}
-                    title="Tipos de Bloque"
-                    count={tiposBloques?.length}
-                />
-                {openSectionId === 'tipos' && (
-                    <CardContent id="section-content-tipos" className="p-4">
-                        <TiposBloquesTab tiposBloques={tiposBloques} />
-                    </CardContent>
-                )}
-            </Card>
+            {/* Rendimiento Pill Content */}
+            {activePill === 'rendimiento' && (
+                <div className="space-y-6">
+                    {/* Section: Evolución Temporal */}
+                    <Card className={componentStyles.components.cardBase}>
+                        <CardHeader className="p-4 border-b border-[var(--color-border-muted)]">
+                            <CardTitle className="text-base font-semibold flex items-center gap-2">
+                                <TrendingUp className="w-5 h-5 text-[var(--color-primary)]" />
+                                Evolución Temporal
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4 space-y-6">
+                            <ProgresoTab
+                                datosLinea={datosLinea}
+                                granularidad={granularidad}
+                                onGranularidadChange={onGranularidadChange}
+                                tiempoRealVsObjetivo={tiempoRealVsObjetivo}
+                                kpis={kpis}
+                            />
+                        </CardContent>
+                    </Card>
 
-            {/* Section: Top Ejercicios */}
-            <Card className={componentStyles.components.cardBase}>
-                <SectionHeader
-                    sectionKey="top"
-                    icon={Star}
-                    title="Top Ejercicios"
-                    count={topEjercicios?.length}
-                />
-                {openSectionId === 'top' && (
-                    <CardContent id="section-content-top" className="p-4">
-                        <TopEjerciciosTab
-                            topEjercicios={topEjercicios}
-                            bloquesFiltrados={bloquesFiltrados}
-                            registrosFiltrados={registrosFiltrados}
-                        />
-                    </CardContent>
-                )}
-            </Card>
+                    {/* Section: Heatmap de Franjas */}
+                    <Card className={componentStyles.components.cardBase}>
+                        <CardHeader className="p-4 border-b border-[var(--color-border-muted)]">
+                            <CardTitle className="text-base font-semibold flex items-center gap-2">
+                                <Activity className="w-5 h-5 text-[var(--color-primary)]" />
+                                Franjas Horarias
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                            <HeatmapFranjas
+                                registrosFiltrados={registrosFiltrados}
+                                periodoInicio={periodoInicio}
+                                periodoFin={periodoFin}
+                            />
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
 
-            {/* Sesiones section removed - now in Feedback tab */}
-            {/* Comparar section removed - now an independent tab */}
+            {/* Ejercicios Pill Content */}
+            {activePill === 'ejercicios' && (
+                <div className="space-y-6">
+                    {/* Section: Tipos de Bloque */}
+                    <Card className={componentStyles.components.cardBase}>
+                        <CardHeader className="p-4 border-b border-[var(--color-border-muted)]">
+                            <CardTitle className="text-base font-semibold flex items-center gap-2">
+                                <Layers className="w-5 h-5 text-[var(--color-primary)]" />
+                                Tipos de Bloque
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                            <TiposBloquesTab
+                                tiposBloques={tiposBloques}
+                                kpis={kpis}
+                            />
+                        </CardContent>
+                    </Card>
+
+                    {/* Section: Top Ejercicios */}
+                    <Card className={componentStyles.components.cardBase}>
+                        <CardHeader className="p-4 border-b border-[var(--color-border-muted)]">
+                            <CardTitle className="text-base font-semibold flex items-center gap-2">
+                                <Trophy className="w-5 h-5 text-[var(--color-primary)]" />
+                                Top Ejercicios
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0 sm:p-0">
+                            {/* Top Ejercicios has its own padding/layout inside, ensure it fits */}
+                            <TopEjerciciosTab
+                                topEjercicios={topEjercicios}
+                                bloquesFiltrados={bloquesFiltrados}
+                                usuarios={usuarios}
+                                userIdActual={userIdActual}
+                                effectiveUser={effectiveUser}
+                                isEstu={isEstu}
+                                isProf={isProf}
+                                isAdmin={isAdmin}
+                                estudiantesComparacion={estudiantesComparacion}
+                            />
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 }

@@ -35,7 +35,8 @@ export default function FeedbackUnificadoTab({
 }) {
     const isMobile = useIsMobile();
 
-    // Pills filter state: 'todos' | 'sesiones' | 'feedback' | 'evaluaciones'
+    // Pills filter state: 'todos' | 'sesiones' | 'feedback_profesor'
+    // Note: 'evaluaciones' removed - sonido/cognicion now part of feedbacks
     const [tipoFiltro, setTipoFiltro] = useState('todos');
 
     // Modal state for viewing session details
@@ -65,11 +66,12 @@ export default function FeedbackUnificadoTab({
         return displayName(usuario);
     };
 
-    // Combinar feedbacks, evaluaciones y sesiones en una sola lista ordenada por timestamp
+    // Combinar feedbacks y sesiones en una sola lista ordenada por timestamp
+    // Note: evaluaciones técnicas (EvaluacionTecnica) ya no se usan - sonido/cognicion están en feedbacks
     const itemsCombinados = useMemo(() => {
         const items = [];
 
-        // Agregar feedbacks
+        // Agregar feedbacks (ahora incluyen sonido/cognicion)
         feedbacks.forEach(feedback => {
             // Supabase returns createdAt (camelCase via snakeToCamel), local has created_at
             const dateStr = feedback.createdAt || feedback.created_at || feedback.semanaInicioISO;
@@ -79,19 +81,6 @@ export default function FeedbackUnificadoTab({
                 timestamp,
                 data: feedback,
                 id: `feedback-${feedback.id}`
-            });
-        });
-
-        // Agregar evaluaciones
-        evaluaciones.forEach(evaluacion => {
-            // Supabase returns createdAt (camelCase via snakeToCamel), local has created_at or created_date
-            const dateStr = evaluacion.createdAt || evaluacion.created_at || evaluacion.created_date || evaluacion.fecha;
-            const timestamp = dateStr ? new Date(dateStr) : new Date(0);
-            items.push({
-                tipo: 'evaluacion',
-                timestamp,
-                data: evaluacion,
-                id: `evaluacion-${evaluacion.id}`
             });
         });
 
@@ -109,7 +98,7 @@ export default function FeedbackUnificadoTab({
 
         // Ordenar por timestamp descendente (más reciente primero)
         return items.sort((a, b) => b.timestamp - a.timestamp);
-    }, [feedbacks, evaluaciones, registros]);
+    }, [feedbacks, registros]);
 
     // Filter items based on selected pill
     const itemsFiltrados = useMemo(() => {
@@ -117,10 +106,8 @@ export default function FeedbackUnificadoTab({
             return itemsCombinados;
         } else if (tipoFiltro === 'sesiones') {
             return itemsCombinados.filter(item => item.tipo === 'sesion');
-        } else if (tipoFiltro === 'feedback') {
+        } else if (tipoFiltro === 'feedback_profesor') {
             return itemsCombinados.filter(item => item.tipo === 'feedback');
-        } else if (tipoFiltro === 'evaluaciones') {
-            return itemsCombinados.filter(item => item.tipo === 'evaluacion');
         }
         return itemsCombinados;
     }, [itemsCombinados, tipoFiltro]);
@@ -251,6 +238,25 @@ export default function FeedbackUnificadoTab({
                             {feedback.notaProfesor}
                         </p>
                     )}
+                    {/* Mostrar métricas técnicas si existen (sonido/cognicion) */}
+                    {(feedback.sonido != null || feedback.cognicion != null) && (
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                            {feedback.sonido != null && (
+                                <div className="flex items-center gap-1.5 text-xs">
+                                    <Music className="w-3.5 h-3.5 text-blue-500" />
+                                    <span className="font-medium">Sonido:</span>
+                                    <span className="text-[var(--color-text-primary)]">{feedback.sonido}/10</span>
+                                </div>
+                            )}
+                            {feedback.cognicion != null && (
+                                <div className="flex items-center gap-1.5 text-xs">
+                                    <Brain className="w-3.5 h-3.5 text-purple-500" />
+                                    <span className="font-medium">Cognición:</span>
+                                    <span className="text-[var(--color-text-primary)]">{feedback.cognicion}/10</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
                     {feedback.mediaLinks && feedback.mediaLinks.length > 0 && (
                         <div className="mt-2">
                             <MediaLinksBadges
@@ -375,8 +381,7 @@ export default function FeedbackUnificadoTab({
     const counts = useMemo(() => ({
         todos: itemsCombinados.length,
         sesiones: itemsCombinados.filter(i => i.tipo === 'sesion').length,
-        feedback: itemsCombinados.filter(i => i.tipo === 'feedback').length,
-        evaluaciones: itemsCombinados.filter(i => i.tipo === 'evaluacion').length,
+        feedback_profesor: itemsCombinados.filter(i => i.tipo === 'feedback').length,
     }), [itemsCombinados]);
 
     return (
@@ -387,7 +392,7 @@ export default function FeedbackUnificadoTab({
                         <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primary)]" />
                         Feedback
                         <span className="text-xs text-[var(--color-text-secondary)] font-normal ml-2">
-                            📖 Sesiones + 🗨️ Comentarios + 📋 Evaluaciones
+                            📖 Sesiones + 🗨️ Comentarios
                         </span>
                     </CardTitle>
                 </CardHeader>
@@ -422,30 +427,16 @@ export default function FeedbackUnificadoTab({
                             )}
                         </Button>
                         <Button
-                            variant={tipoFiltro === 'feedback' ? 'primary' : 'outline'}
+                            variant={tipoFiltro === 'feedback_profesor' ? 'primary' : 'outline'}
                             size="sm"
-                            onClick={() => setTipoFiltro('feedback')}
+                            onClick={() => setTipoFiltro('feedback_profesor')}
                             className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
                         >
                             <MessageSquare className="w-3.5 h-3.5 mr-1" />
-                            Feedback
-                            {counts.feedback > 0 && (
+                            Feedback Profesor
+                            {counts.feedback_profesor > 0 && (
                                 <Badge variant="outline" className="ml-1.5 text-xs px-1.5 py-0">
-                                    {counts.feedback}
-                                </Badge>
-                            )}
-                        </Button>
-                        <Button
-                            variant={tipoFiltro === 'evaluaciones' ? 'primary' : 'outline'}
-                            size="sm"
-                            onClick={() => setTipoFiltro('evaluaciones')}
-                            className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-                        >
-                            <ClipboardCheck className="w-3.5 h-3.5 mr-1" />
-                            Evaluaciones
-                            {counts.evaluaciones > 0 && (
-                                <Badge variant="outline" className="ml-1.5 text-xs px-1.5 py-0">
-                                    {counts.evaluaciones}
+                                    {counts.feedback_profesor}
                                 </Badge>
                             )}
                         </Button>
@@ -455,21 +446,17 @@ export default function FeedbackUnificadoTab({
                         <div className="text-center py-8 sm:py-12">
                             {tipoFiltro === 'sesiones' ? (
                                 <BookOpen className={componentStyles.components.emptyStateIcon} />
-                            ) : tipoFiltro === 'feedback' ? (
+                            ) : tipoFiltro === 'feedback_profesor' ? (
                                 <MessageSquare className={componentStyles.components.emptyStateIcon} />
-                            ) : tipoFiltro === 'evaluaciones' ? (
-                                <ClipboardCheck className={componentStyles.components.emptyStateIcon} />
                             ) : (
                                 <MessageSquare className={componentStyles.components.emptyStateIcon} />
                             )}
                             <p className={componentStyles.components.emptyStateText}>
                                 {tipoFiltro === 'todos'
-                                    ? 'No hay feedback, sesiones ni evaluaciones en el periodo seleccionado'
+                                    ? 'No hay feedback ni sesiones en el periodo seleccionado'
                                     : tipoFiltro === 'sesiones'
                                         ? 'No hay registros de sesiones en el periodo seleccionado'
-                                        : tipoFiltro === 'feedback'
-                                            ? 'No hay comentarios del profesor en el periodo seleccionado'
-                                            : 'No hay evaluaciones técnicas en el periodo seleccionado'}
+                                        : 'No hay comentarios del profesor en el periodo seleccionado'}
                             </p>
                         </div>
                     ) : (
@@ -477,8 +464,6 @@ export default function FeedbackUnificadoTab({
                             {itemsFiltrados.map((item) => {
                                 if (item.tipo === 'feedback') {
                                     return renderFeedback(item);
-                                } else if (item.tipo === 'evaluacion') {
-                                    return renderEvaluacion(item);
                                 } else if (item.tipo === 'sesion') {
                                     return renderSesion(item);
                                 }

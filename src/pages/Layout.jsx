@@ -623,7 +623,11 @@ function LayoutContent() {
                 </p>
                 <div className="space-y-1">
                   {groupItems.map((item) => {
-                    const isActive = location.pathname === item.url;
+                    // Fix: compare pathnames only (strip query string) so /progreso?tab=xxx highlights "Progreso"
+                    const itemPathname = item.url.split('?')[0];
+                    const isActive = itemPathname === '/'
+                      ? location.pathname === '/'
+                      : location.pathname.startsWith(itemPathname);
                     const isReportes = item.url === '/reportes';
                     const isSoporte = item.url === '/soporte-prof' || item.url === '/soporte';
                     const nuevos = reportCounts?.nuevos || 0;

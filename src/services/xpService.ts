@@ -148,50 +148,53 @@ export async function computeEvaluationXP(
 ): Promise<{ sonido: number; cognicion: number }> {
     try {
         const allEvaluations = await localDataClient.entities.EvaluacionTecnica.list();
+        const allFeedbacks = await localDataClient.entities.FeedbackSemanal.list();
 
-        // Filter evaluations for this student in the last N days
+        // Filter for this student in the last N days
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - windowDays);
 
-        const recentEvaluations = allEvaluations.filter((evaluation: any) => {
-            if (evaluation.alumnoId !== studentId) return false;
-            if (!evaluation.fecha) return false;
-            const evalDate = new Date(evaluation.fecha);
-            return evalDate >= cutoffDate;
-        });
+        // 1. Process Evaluations
+        const relevantEvaluations = allEvaluations
+            .filter((e: any) => e.alumnoId === studentId && e.fecha && new Date(e.fecha) >= cutoffDate)
+            .map((e: any) => ({
+                date: new Date(e.fecha),
+                sonido: e.habilidades?.sonido,
+                cognicion: e.habilidades?.cognitivo
+            }));
 
-        if (recentEvaluations.length === 0) {
+        // 2. Process Feedbacks
+        const relevantFeedbacks = allFeedbacks
+            .filter((f: any) => f.alumnoId === studentId && (f.semanaInicioISO || f.created_at))
+            .filter((f: any) => {
+                const d = new Date(f.semanaInicioISO || f.created_at || f.createdAt);
+                return d >= cutoffDate;
+            })
+            .map((f: any) => ({
+                date: new Date(f.semanaInicioISO || f.created_at || f.createdAt),
+                sonido: f.sonido,
+                cognicion: f.cognicion
+            }));
+
+        // 3. Merge and Sort Descending
+        const combined = [...relevantEvaluations, ...relevantFeedbacks].sort((a, b) => b.date.getTime() - a.date.getTime());
+
+        if (combined.length === 0) {
             return { sonido: 0, cognicion: 0 };
         }
 
-        // Get most recent evaluation
-        // Get most recent evaluation
-        // Sort by date descending, then by creation time/ID if available to break ties
-        const latest = recentEvaluations.sort((a: any, b: any) => {
-            const dateA = new Date(a.fecha).getTime();
-            const dateB = new Date(b.fecha).getTime();
-            if (dateA !== dateB) return dateB - dateA;
+        // 4. Find latest non-null values
+        // Note: Logic here is 0-10 scale. If XP Service expects 0-100, we multiply by 10.
+        // Previous code: (latest.habilidades.sonido || 0) * 10;
+        // So we keep the *10 scaling here for XP Service compatibility.
 
-            // If dates are equal, try to use created_at/createdAt if available, or id
-            // Handle both snake_case (DB) and camelCase (API)
-            const createdA = a.createdAt ? new Date(a.createdAt).getTime() : (a.created_at ? new Date(a.created_at).getTime() : 0);
-            const createdB = b.createdAt ? new Date(b.createdAt).getTime() : (b.created_at ? new Date(b.created_at).getTime() : 0);
+        const latestSonido = combined.find(r => r.sonido != null)?.sonido || 0;
+        const latestCognicion = combined.find(r => r.cognicion != null)?.cognicion || 0;
 
-            if (createdA !== createdB) return createdB - createdA;
-
-            // Fallback to ID comparison if timestamps are missing or equal
-            return (b.id || '').localeCompare(a.id || '');
-        })[0];
-
-        if (!latest.habilidades) {
-            return { sonido: 0, cognicion: 0 };
-        }
-
-        // Scale from 0-10 to 0-100
-        const sonido = (latest.habilidades.sonido || 0) * 10;
-        const cognicion = (latest.habilidades.cognitivo || 0) * 10;
-
-        return { sonido, cognicion };
+        return {
+            sonido: latestSonido * 10,
+            cognicion: latestCognicion * 10
+        };
     } catch (error) {
         console.error('Error computing evaluation XP:', error);
         return { sonido: 0, cognicion: 0 };
