@@ -22,7 +22,14 @@ import { formatLocalDate, parseLocalDate, startOfMonday, formatDuracionHM } from
 import { useEstadisticas, safeNumber } from "@/components/estadisticas/hooks/useEstadisticas";
 import { useStudentBackpack } from "@/hooks/useStudentBackpack";
 import { useHabilidadesStats, useHabilidadesStatsMultiple } from "@/hooks/useHabilidadesStats";
-import { useTotalXP, totalXPToObject } from "@/hooks/useXP";
+import {
+    useTotalXP,
+    totalXPToObject,
+    useLifetimePracticeXP,
+    useTotalXPMultiple,
+    useLifetimePracticeXPMultiple,
+    useAggregateLevelGoals
+} from "@/hooks/useXP";
 
 // UI Components
 import { Card, CardContent, CardHeader, CardTitle, Badge, EmptyState, PageHeader } from "@/components/ds";
@@ -626,6 +633,7 @@ function ProgresoPageContent() {
                         onGranularidadChange={setGranularidad}
                         userIdActual={effectiveStudentId || userIdActual}
                         alumnosSeleccionados={alumnosSeleccionados}
+                        allStudentIds={estudiantesDisponibles.map(s => s.id)}
                     />
                 )}
 
@@ -675,52 +683,351 @@ function ProgresoPageContent() {
 }
 
 // ============================================================================
-// Tab Resumen Content - Extended with XP
+// Tab Resumen Content - Extended with XP & Toggle
 // ============================================================================
 
-function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChange, userIdActual, alumnosSeleccionados = [] }) {
-    // For single student or fallback, use userIdActual. For multi-student, use alumnosSeleccionados.
-    const effectiveIds = alumnosSeleccionados.length > 0 ? alumnosSeleccionados : (userIdActual ? [userIdActual] : []);
-    const singleId = effectiveIds.length === 1 ? effectiveIds[0] : (userIdActual || '');
+function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChange, userIdActual, alumnosSeleccionados = [], allStudentIds = [] }) {
+    // Logic for effective IDs:
+    // 1. If students selected, use them.
+    // 2. If NO students selected (and list of all exists), use ALL (Global Mode Default).
+    // 3. Fallback to userIdActual (Individual) if everything else fails (shouldn't happen for PROF).
+
+    // Check if we are in "Global Default" mode (Empty selection but we have available students)
+    const isGlobalDefault = alumnosSeleccionados.length === 0 && allStudentIds.length > 0;
+
+    const effectiveIds = isGlobalDefault
+        ? allStudentIds
+        : (alumnosSeleccionados.length > 0 ? alumnosSeleccionados : [userIdActual]);
+
+    // Determine mode based on COUNT of effective IDs
+    // If effectiveIds has 1 => Individual
+    // If effectiveIds has > 1 => Multifile/Global
     const isMultiple = effectiveIds.length > 1;
+    const singleId = effectiveIds.length === 1 ? effectiveIds[0] : '';
 
-    const { radarStats: singleStats, isLoading: loadingSingle } = useHabilidadesStats(isMultiple ? '' : singleId);
-    const { radarStats: multipleStats, isLoading: loadingMultiple } = useHabilidadesStatsMultiple(isMultiple ? effectiveIds : []);
+    // State for Source Toggle
+    const [sourceFilter, setSourceFilter] = useState('ambos'); // 'experiencia' | 'evaluaciones' | 'ambos'
 
-    const radarStats = isMultiple ? multipleStats : singleStats;
-    const isLoadingStats = isMultiple ? loadingMultiple : loadingSingle;
+    // =========================================================================
+    // USE THE SAME HOOKS AS TotalXPDisplay - This ensures radar = cards data
+    // =========================================================================
+
+    // Single student hooks (used when 1 student)
+    const { data: totalXPSingle, isLoading: isLoadingTotalSingle } = useTotalXP(singleId);
+    const { data: practiceXPSingle, isLoading: isLoadingPracticeSingle } = useLifetimePracticeXP(singleId);
+
+    // Multi-student hooks (used when 2+ students)
+    const { data: totalXPMultiple, isLoading: isLoadingTotalMultiple } = useTotalXPMultiple(isMultiple ? effectiveIds : []);
+    const { data: practiceXPMultiple, isLoading: isLoadingPracticeMultiple } = useLifetimePracticeXPMultiple(isMultiple ? effectiveIds : []);
+
+    // Aggregated Goals Hook - this gives us the denominator (maxXP)
+    const aggregatedGoals = useAggregateLevelGoals(effectiveIds);
+
+    // Fetch next level config for single student (like TotalXPDisplay does)
+    const { data: studentProfile } = useQuery({
+        queryKey: ['student-profile', singleId],
+        queryFn: () => localDataClient.entities.User.get(singleId),
+        enabled: !!singleId && !isMultiple
+    });
+
+    const currentLevel = studentProfile?.nivelTecnico || 0;
+    const nextLevel = currentLevel + 1;
+
+    const { data: nextLevelConfig } = useQuery({
+        queryKey: ['level-config', nextLevel],
+        queryFn: async () => {
+            const configs = await localDataClient.entities.LevelConfig.list();
+            const config = configs.find((c) => c.level === nextLevel);
+            return config || null;
+        },
+        enabled: !isMultiple && !!nextLevel
+    });
+
+    // Use appropriate data based on count
+    const totalXP = isMultiple ? totalXPMultiple : totalXPSingle;
+    const practiceXP = isMultiple ? practiceXPMultiple : practiceXPSingle;
+    const isLoadingXP = isMultiple
+        ? (isLoadingTotalMultiple || isLoadingPracticeMultiple)
+        : (isLoadingTotalSingle || isLoadingPracticeSingle);
+
+    // Convert to object for easier access
+    const total = totalXPToObject(totalXP);
+    const practice = practiceXP || { motricidad: 0, articulacion: 0, flexibilidad: 0 };
+
+    // Helper: get required XP for a skill (EXACTLY like TotalXPDisplay)
+    const getRequiredXP = (skill) => {
+        // Case Global: Use aggregated goals
+        if (isMultiple) {
+            return aggregatedGoals[skill] || 100;
+        }
+
+        // Case Single: Use level config
+        if (!nextLevelConfig) return 100; // Fallback
+        switch (skill) {
+            case 'motricidad': return nextLevelConfig.minXpMotr || 100;
+            case 'articulacion': return nextLevelConfig.minXpArt || 100;
+            case 'flexibilidad': return nextLevelConfig.minXpFlex || 100;
+            default: return 100;
+        }
+    };
+
+    // Helper: get XP values for a skill based on filter (EXACTLY like TotalXPDisplay)
+    const getXPValues = (skill) => {
+        const totalVal = total[skill] || 0;
+        const practiceVal = practice[skill] || 0;
+        const evaluationVal = Math.max(0, totalVal - practiceVal);
+        const maxXP = getRequiredXP(skill);
+
+        return { practiceVal, evaluationVal, totalVal, maxXP };
+    };
+
+    // =========================================================================
+    // QUALITATIVE DATA - From useHabilidadesStats (keep for Sonido/Cognición)
+    // =========================================================================
+    const { radarStats: singleStats, isLoading: loadingQualSingle } = useHabilidadesStats(isMultiple ? '' : singleId);
+    const { radarStats: multipleStats, isLoading: loadingQualMultiple } = useHabilidadesStatsMultiple(isMultiple ? effectiveIds : []);
+
+    const radarStatsRaw = isMultiple ? multipleStats : singleStats;
+    const isLoadingQual = isMultiple ? loadingQualMultiple : loadingQualSingle;
+
+    // Get qualitative values (0-10 scale, already)
+    const getSonidoValue = () => {
+        return radarStatsRaw?.combinedData?.find(d => d.subject === 'Sonido')?.original ?? 0;
+    };
+
+    const getCognicionValue = () => {
+        return radarStatsRaw?.combinedData?.find(d => d.subject === 'Cognición')?.original ?? 0;
+    };
+
+    // Filter logic for XP Cards
+    const xpFilter = useMemo(() => {
+        if (sourceFilter === 'experiencia') return ['experiencia'];
+        if (sourceFilter === 'evaluaciones') return ['evaluaciones'];
+        return ['experiencia', 'evaluaciones'];
+    }, [sourceFilter]);
+
+    // =========================================================================
+    // BUILD RADAR DATA - Using EXACT same values as cards, normalized to 0-10
+    // =========================================================================
+    const radarDataForChart = useMemo(() => {
+        // Safe normalization: (xp / maxXp) * 10, with fallback if maxXp <= 0
+        const normalize10 = (xp, maxXp) => {
+            if (maxXp <= 0 || !Number.isFinite(xp) || !Number.isFinite(maxXp)) return 0;
+            return Math.min(10, Math.max(0, (xp / maxXp) * 10));
+        };
+
+        // Get XP data for each skill
+        const motrData = getXPValues('motricidad');
+        const artData = getXPValues('articulacion');
+        const flexData = getXPValues('flexibilidad');
+
+        // Qualitative values (already 0-10)
+        const sonidoVal = getSonidoValue();
+        const cognicionVal = getCognicionValue();
+
+        // Build radar data with normalized values (0-10 scale)
+        const data = [
+            {
+                subject: 'Sonido',
+                // Experiencia: Sonido = 0 (no practice XP for qualitative)
+                // Evaluaciones/Ambos: use actual value
+                Experiencia: 0,
+                Evaluaciones: sonidoVal,
+                Total: sonidoVal,
+                original: sonidoVal,
+                fullMark: 10
+            },
+            {
+                subject: 'Motricidad',
+                Experiencia: normalize10(motrData.practiceVal, motrData.maxXP),
+                Evaluaciones: normalize10(motrData.evaluationVal, motrData.maxXP),
+                Total: normalize10(motrData.totalVal, motrData.maxXP),
+                originalExp: motrData.practiceVal,
+                originalEval: motrData.evaluationVal,
+                originalTotal: motrData.totalVal,
+                maxXP: motrData.maxXP,
+                fullMark: 10
+            },
+            {
+                subject: 'Articulación (T)',
+                Experiencia: normalize10(artData.practiceVal, artData.maxXP),
+                Evaluaciones: normalize10(artData.evaluationVal, artData.maxXP),
+                Total: normalize10(artData.totalVal, artData.maxXP),
+                originalExp: artData.practiceVal,
+                originalEval: artData.evaluationVal,
+                originalTotal: artData.totalVal,
+                maxXP: artData.maxXP,
+                fullMark: 10
+            },
+            {
+                subject: 'Flexibilidad',
+                Experiencia: normalize10(flexData.practiceVal, flexData.maxXP),
+                Evaluaciones: normalize10(flexData.evaluationVal, flexData.maxXP),
+                Total: normalize10(flexData.totalVal, flexData.maxXP),
+                originalExp: flexData.practiceVal,
+                originalEval: flexData.evaluationVal,
+                originalTotal: flexData.totalVal,
+                maxXP: flexData.maxXP,
+                fullMark: 10
+            },
+            {
+                subject: 'Cognición',
+                // Experiencia: Cognición = 0 (no practice XP for qualitative)
+                Experiencia: 0,
+                Evaluaciones: cognicionVal,
+                Total: cognicionVal,
+                original: cognicionVal,
+                fullMark: 10
+            },
+        ];
+
+        return data;
+    }, [total, practice, aggregatedGoals, nextLevelConfig, isMultiple, radarStatsRaw, sourceFilter]);
+
+    const isLoadingStats = isLoadingXP || isLoadingQual;
+
+    // Get displayed values for qualitative cards (respect toggle)
+    const getDisplayedSonido = () => {
+        if (sourceFilter === 'experiencia') return 0;
+        return getSonidoValue();
+    };
+
+    const getDisplayedCognicion = () => {
+        if (sourceFilter === 'experiencia') return 0;
+        return getCognicionValue();
+    };
 
     return (
         <div className="space-y-6">
+            {/* Source Toggle */}
+            <div className="flex justify-center">
+                <div className="bg-muted p-1 rounded-lg inline-flex">
+                    <button
+                        onClick={() => setSourceFilter('experiencia')}
+                        className={cn(
+                            "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                            sourceFilter === 'experiencia'
+                                ? "bg-background shadow-sm text-foreground"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        Experiencia
+                    </button>
+                    <button
+                        onClick={() => setSourceFilter('evaluaciones')}
+                        className={cn(
+                            "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                            sourceFilter === 'evaluaciones'
+                                ? "bg-background shadow-sm text-foreground"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        Evaluaciones
+                    </button>
+                    <button
+                        onClick={() => setSourceFilter('ambos')}
+                        className={cn(
+                            "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                            sourceFilter === 'ambos'
+                                ? "bg-background shadow-sm text-foreground"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        Ambos
+                    </button>
+                </div>
+            </div>
+
             {/* XP por Habilidad - 3 skill cards */}
             <Card className={componentStyles.components.cardBase}>
                 <CardHeader className="pb-2">
                     <CardTitle className="text-base font-semibold">XP por Habilidad</CardTitle>
-                    <p className="text-sm text-muted-foreground">Práctica + Evaluaciones por habilidad.</p>
+                    <p className="text-sm text-muted-foreground">
+                        {sourceFilter === 'experiencia' && "Solo XP de práctica"}
+                        {sourceFilter === 'evaluaciones' && "Solo XP de evaluaciones"}
+                        {sourceFilter === 'ambos' && "Práctica + Evaluaciones"}
+                    </p>
                 </CardHeader>
                 <CardContent>
                     <TotalXPDisplay
                         studentIds={effectiveIds}
-                        filter={['evaluaciones', 'experiencia']}
+                        filter={xpFilter}
                     />
                 </CardContent>
             </Card>
 
-            {/* Radar Chart - Perfil Técnico */}
-            <Card className={componentStyles.components.cardBase}>
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-semibold">Perfil Técnico</CardTitle>
-                    <p className="text-sm text-muted-foreground">Comparativa de habilidades: Evaluación vs Experiencia</p>
-                </CardHeader>
-                <CardContent>
-                    <HabilidadesRadarChart
-                        data={radarStats?.combinedData || []}
-                        isLoading={isLoadingStats}
-                        dataKey1="A"
-                        dataKey2="B"
-                    />
-                </CardContent>
-            </Card>
+            {/* Qualitative & Radar Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Qualitative Cards */}
+                <div className="space-y-6">
+                    {/* Sonido Card */}
+                    <Card className={componentStyles.components.cardBase}>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-base font-semibold flex items-center gap-2">
+                                <Activity className="w-4 h-4 text-blue-500" />
+                                Sonido
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-end gap-2">
+                                <span className="text-3xl font-bold">
+                                    {getDisplayedSonido().toFixed(1)}
+                                </span>
+                                <span className="text-sm text-muted-foreground mb-1">/ 10</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                {sourceFilter === 'experiencia'
+                                    ? "No disponible (solo evaluaciones)"
+                                    : (isMultiple ? "Promedio del grupo" : "Valoración actual")}
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    {/* Cognición Card */}
+                    <Card className={componentStyles.components.cardBase}>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-base font-semibold flex items-center gap-2">
+                                <Target className="w-4 h-4 text-purple-500" />
+                                Cognición
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-end gap-2">
+                                <span className="text-3xl font-bold">
+                                    {getDisplayedCognicion().toFixed(1)}
+                                </span>
+                                <span className="text-sm text-muted-foreground mb-1">/ 10</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                {sourceFilter === 'experiencia'
+                                    ? "No disponible (solo evaluaciones)"
+                                    : (isMultiple ? "Promedio del grupo" : "Valoración actual")}
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Radar Chart - Perfil Técnico */}
+                <Card className={componentStyles.components.cardBase}>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-base font-semibold">Perfil Técnico</CardTitle>
+                        <p className="text-sm text-muted-foreground">Comparativa de habilidades (0-10)</p>
+                    </CardHeader>
+                    <CardContent>
+                        <HabilidadesRadarChart
+                            data={radarDataForChart}
+                            isLoading={isLoadingStats}
+                            // Pass keys based on filter:
+                            // - experiencia: only show Experiencia series
+                            // - evaluaciones: only show Evaluaciones series
+                            // - ambos: show all 3 series (Experiencia, Evaluaciones, Total)
+                            dataKey1={sourceFilter === 'evaluaciones' ? "Evaluaciones" : (sourceFilter === 'experiencia' ? undefined : "Evaluaciones")}
+                            dataKey2={sourceFilter === 'evaluaciones' ? undefined : "Experiencia"}
+                            dataKey3={sourceFilter === 'ambos' ? "Total" : undefined}
+                        />
+                    </CardContent>
+                </Card>
+            </div>
 
             {/* KPIs from ResumenTab */}
             <ResumenTab

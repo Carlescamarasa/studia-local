@@ -1,19 +1,20 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { localDataClient } from '@/api/localDataClient';
-import { useEvaluaciones } from '@/hooks/useEvaluaciones';
-import { RegistroBloque, Bloque } from '@/types/domain';
+import { useAggregateLevelGoals } from '@/hooks/useXP';
 
 export type DataSource = 'evaluaciones' | 'experiencia' | 'ambas';
 
 export function useHabilidadesStats(alumnoId: string) {
     // Fetch total XP from student_xp_total table - use global list cache
-    // queryKey uses table name to enable shared caching across components
     const { data: allXPData } = useQuery({
         queryKey: ['student-xp-total-all'],
         queryFn: () => localDataClient.entities.StudentXPTotal.list(),
         staleTime: 1000 * 60 * 5,
     });
+
+    // Fetch Goals for Normalization
+    const aggregatedGoals = useAggregateLevelGoals(alumnoId ? [alumnoId] : []);
 
     // Compute student-specific data from cached list
     const totalXPData = useMemo(() => {
@@ -89,8 +90,9 @@ export function useHabilidadesStats(alumnoId: string) {
         if (!latest.habilidades) return { sonido: 0, cognicion: 0 };
 
         return {
-            sonido: (latest.habilidades.sonido || 0) * 10,
-            cognicion: (latest.habilidades.cognitivo || 0) * 10
+            // FIX: Remove *10 multiplication to fix scale (assuming source is 0-10)
+            sonido: (latest.habilidades.sonido || 0),
+            cognicion: (latest.habilidades.cognitivo || 0)
         };
     }, [allEvaluations, alumnoId]);
 
@@ -104,45 +106,85 @@ export function useHabilidadesStats(alumnoId: string) {
         const flex = totalXPData?.flexibilidad || defaultXP;
         const qualitative = qualitativeXP || { sonido: 0, cognicion: 0 };
 
-        // Cap practice values at 100 for radar display
-        const cappedPractice = {
-            motricidad: Math.min(100, motr.practice),
-            articulacion: Math.min(100, art.practice),
-            flexibilidad: Math.min(100, flex.practice),
+        // Normalize using Real Goals (Aggregated/Single)
+        const normalize = (val: number, goal: number) => {
+            if (goal <= 0) return 0;
+            return Math.min(10, (val / goal) * 10);
         };
 
-        // Cap evaluation values at 100 for radar display
-        const cappedEvaluation = {
-            motricidad: Math.min(100, motr.evaluation),
-            articulacion: Math.min(100, art.evaluation),
-            flexibilidad: Math.min(100, flex.evaluation),
+        const goals = aggregatedGoals || { motricidad: 100, articulacion: 100, flexibilidad: 100 };
+
+        const normPractice = {
+            motricidad: normalize(motr.practice, goals.motricidad),
+            articulacion: normalize(art.practice, goals.articulacion),
+            flexibilidad: normalize(flex.practice, goals.flexibilidad),
+        };
+
+        const normEvaluation = {
+            motricidad: normalize(motr.evaluation, goals.motricidad),
+            articulacion: normalize(art.evaluation, goals.articulacion),
+            flexibilidad: normalize(flex.evaluation, goals.flexibilidad),
+        };
+
+        const normTotal = {
+            motricidad: normalize(motr.practice + motr.evaluation, goals.motricidad),
+            articulacion: normalize(art.practice + art.evaluation, goals.articulacion),
+            flexibilidad: normalize(flex.practice + flex.evaluation, goals.flexibilidad),
         };
 
         return {
-            // Practice-based (from XP system - only practice)
-            practiceData: [
-                { subject: 'Motricidad', A: cappedPractice.motricidad / 10, original: Math.round(cappedPractice.motricidad), fullMark: 10 },
-                { subject: 'Articulación (T)', A: cappedPractice.articulacion / 10, original: Math.round(cappedPractice.articulacion), fullMark: 10 },
-                { subject: 'Flexibilidad', A: cappedPractice.flexibilidad / 10, original: Math.round(cappedPractice.flexibilidad), fullMark: 10 },
-            ],
-            // Evaluation-based (from student_xp_total.evaluation_xp)
-            evaluationData: [
-                { subject: 'Sonido', A: qualitative.sonido / 10, original: Math.round(qualitative.sonido), fullMark: 10 },
-                { subject: 'Motricidad', A: cappedEvaluation.motricidad / 10, original: Math.round(cappedEvaluation.motricidad), fullMark: 10 },
-                { subject: 'Articulación (T)', A: cappedEvaluation.articulacion / 10, original: Math.round(cappedEvaluation.articulacion), fullMark: 10 },
-                { subject: 'Flexibilidad', A: cappedEvaluation.flexibilidad / 10, original: Math.round(cappedEvaluation.flexibilidad), fullMark: 10 },
-                { subject: 'Cognición', A: qualitative.cognicion / 10, original: Math.round(qualitative.cognicion), fullMark: 10 },
-            ],
-            // Combined 5-axis data (evaluation + practice for skills with both)
             combinedData: [
-                { subject: 'Sonido', A: qualitative.sonido / 10, B: undefined, original: Math.round(qualitative.sonido), fullMark: 10 },
-                { subject: 'Motricidad', A: cappedEvaluation.motricidad / 10, B: cappedPractice.motricidad / 10, original: Math.round(cappedEvaluation.motricidad), originalExperiencia: Math.round(cappedPractice.motricidad), fullMark: 10 },
-                { subject: 'Articulación (T)', A: cappedEvaluation.articulacion / 10, B: cappedPractice.articulacion / 10, original: Math.round(cappedEvaluation.articulacion), originalExperiencia: Math.round(cappedPractice.articulacion), fullMark: 10 },
-                { subject: 'Flexibilidad', A: cappedEvaluation.flexibilidad / 10, B: cappedPractice.flexibilidad / 10, original: Math.round(cappedEvaluation.flexibilidad), originalExperiencia: Math.round(cappedPractice.flexibilidad), fullMark: 10 },
-                { subject: 'Cognición', A: qualitative.cognicion / 10, B: undefined, original: Math.round(qualitative.cognicion), fullMark: 10 },
+                {
+                    subject: 'Sonido',
+                    A: qualitative.sonido,
+                    B: undefined,
+                    Total: qualitative.sonido,
+                    original: Math.round(qualitative.sonido * 10) / 10,
+                    originalTotal: Math.round(qualitative.sonido * 10) / 10,
+                    fullMark: 10
+                },
+                {
+                    subject: 'Motricidad',
+                    A: normEvaluation.motricidad,
+                    B: normPractice.motricidad,
+                    Total: normTotal.motricidad,
+                    original: Math.round(motr.evaluation),
+                    originalExperiencia: Math.round(motr.practice),
+                    originalTotal: Math.round(motr.practice + motr.evaluation),
+                    fullMark: 10
+                },
+                {
+                    subject: 'Articulación (T)',
+                    A: normEvaluation.articulacion,
+                    B: normPractice.articulacion,
+                    Total: normTotal.articulacion,
+                    original: Math.round(art.evaluation),
+                    originalExperiencia: Math.round(art.practice),
+                    originalTotal: Math.round(art.practice + art.evaluation),
+                    fullMark: 10
+                },
+                {
+                    subject: 'Flexibilidad',
+                    A: normEvaluation.flexibilidad,
+                    B: normPractice.flexibilidad,
+                    Total: normTotal.flexibilidad,
+                    original: Math.round(flex.evaluation),
+                    originalExperiencia: Math.round(flex.practice),
+                    originalTotal: Math.round(flex.practice + flex.evaluation),
+                    fullMark: 10
+                },
+                {
+                    subject: 'Cognición',
+                    A: qualitative.cognicion,
+                    B: undefined,
+                    Total: qualitative.cognicion,
+                    original: Math.round(qualitative.cognicion * 10) / 10,
+                    originalTotal: Math.round(qualitative.cognicion * 10) / 10,
+                    fullMark: 10
+                },
             ]
         };
-    }, [totalXPData, qualitativeXP]);
+    }, [totalXPData, qualitativeXP, aggregatedGoals]);
 
     return {
         radarStats,
@@ -158,14 +200,23 @@ export function useHabilidadesStatsMultiple(studentIds: string[]) {
         staleTime: 1000 * 60 * 5,
     });
 
-    // 2. Aggregate XP (Average for Radar)
+    // Fetch Goals for Normalization (Aggregated)
+    const aggregatedGoals = useAggregateLevelGoals(studentIds);
+
+    // 2. Aggregate XP (Sum for Radar) - Note: Previous implementation averaged it, but for consistent Sum/Sum with cards, we should probably Sum it here too?
+    // Actually, Radar usually shows "relative performance". 
+    // If we Sum XP (250+250 = 500) and divide by Sum Goal (500+500 = 1000), we get 50% (5/10).
+    // If we Averaged XP (250) and divided by Average Goal (500), we get 50% (5/10).
+    // The result is the same for the ratio.
+    // However, for the "Original" value in tooltip, we want the SUM (e.g. 500 XP), to match the text card.
+
     const aggregatedXP = useMemo(() => {
         if (!allXPData || studentIds.length === 0) return null;
 
         const skillSums = {
-            motricidad: { practice: 0, evaluation: 0, count: 0 },
-            articulacion: { practice: 0, evaluation: 0, count: 0 },
-            flexibilidad: { practice: 0, evaluation: 0, count: 0 },
+            motricidad: { practice: 0, evaluation: 0 },
+            articulacion: { practice: 0, evaluation: 0 },
+            flexibilidad: { practice: 0, evaluation: 0 },
         };
 
         const studentIdSet = new Set(studentIds);
@@ -178,26 +229,11 @@ export function useHabilidadesStatsMultiple(studentIds: string[]) {
             if (skillSums[skill]) {
                 skillSums[skill].practice += row.practiceTotal || row.practice_xp || 0;
                 skillSums[skill].evaluation += row.evaluationTotal || row.evaluation_xp || 0;
-                // Note: we might have multiple rows per student? No, usually 1 row per skill per student.
             }
         });
 
-        // Calculate average per student count
-        const count = studentIds.length;
-        return {
-            motricidad: {
-                practice: skillSums.motricidad.practice / count,
-                evaluation: skillSums.motricidad.evaluation / count
-            },
-            articulacion: {
-                practice: skillSums.articulacion.practice / count,
-                evaluation: skillSums.articulacion.evaluation / count
-            },
-            flexibilidad: {
-                practice: skillSums.flexibilidad.practice / count,
-                evaluation: skillSums.flexibilidad.evaluation / count
-            }
-        };
+        // Return SUMS (not averages)
+        return skillSums;
     }, [allXPData, studentIds]);
 
 
@@ -208,7 +244,7 @@ export function useHabilidadesStatsMultiple(studentIds: string[]) {
         staleTime: 1000 * 60 * 5,
     });
 
-    // 4. Aggregate Qualitative (Average)
+    // 4. Aggregate Qualitative (Average including Missing as 0)
     const aggregatedQualitative = useMemo(() => {
         if (!allEvaluations || studentIds.length === 0) return { sonido: 0, cognicion: 0 };
 
@@ -217,8 +253,8 @@ export function useHabilidadesStatsMultiple(studentIds: string[]) {
 
         let sonidoSum = 0;
         let cognicionSum = 0;
-        let count = 0;
 
+        // Iterate students to sum their latest evaluation (if any)
         studentIds.forEach(id => {
             const recentEvaluations = allEvaluations.filter((evaluation: any) => {
                 if (evaluation.alumnoId !== id) return false;
@@ -236,22 +272,23 @@ export function useHabilidadesStatsMultiple(studentIds: string[]) {
                 })[0];
 
                 if (latest.habilidades) {
-                    sonidoSum += (latest.habilidades.sonido || 0) * 10;
-                    cognicionSum += (latest.habilidades.cognitivo || 0) * 10;
-                    count++;
+                    // FIX: No *10 multiplication
+                    sonidoSum += (latest.habilidades.sonido || 0);
+                    cognicionSum += (latest.habilidades.cognitivo || 0);
                 }
             }
         });
 
-        if (count === 0) return { sonido: 0, cognicion: 0 };
+        // FIX: Divide by total selected students (missing data counts as 0)
+        const totalStudents = studentIds.length; // Ensure this is > 0, which is handled by wrapper
 
         return {
-            sonido: sonidoSum / count,
-            cognicion: cognicionSum / count
+            sonido: totalStudents > 0 ? sonidoSum / totalStudents : 0,
+            cognicion: totalStudents > 0 ? cognicionSum / totalStudents : 0
         };
     }, [allEvaluations, studentIds]);
 
-    // 5. Build Radar Stats (similar to single)
+    // 5. Build Radar Stats
     const radarStats = useMemo(() => {
         if (!aggregatedXP) return null;
 
@@ -260,29 +297,85 @@ export function useHabilidadesStatsMultiple(studentIds: string[]) {
         const flex = aggregatedXP.flexibilidad;
         const qualitative = aggregatedQualitative;
 
-        // Cap at 100
-        const cappedPractice = {
-            motricidad: Math.min(100, motr.practice),
-            articulacion: Math.min(100, art.practice),
-            flexibilidad: Math.min(100, flex.practice),
+        // Normalize using Real Goals
+        const normalize = (val: number, goal: number) => {
+            if (goal <= 0) return 0;
+            return Math.min(10, (val / goal) * 10);
         };
 
-        const cappedEvaluation = {
-            motricidad: Math.min(100, motr.evaluation),
-            articulacion: Math.min(100, art.evaluation),
-            flexibilidad: Math.min(100, flex.evaluation),
+        const goals = aggregatedGoals || { motricidad: 100, articulacion: 100, flexibilidad: 100 };
+
+        const normPractice = {
+            motricidad: normalize(motr.practice, goals.motricidad),
+            articulacion: normalize(art.practice, goals.articulacion),
+            flexibilidad: normalize(flex.practice, goals.flexibilidad),
+        };
+
+        const normEvaluation = {
+            motricidad: normalize(motr.evaluation, goals.motricidad),
+            articulacion: normalize(art.evaluation, goals.articulacion),
+            flexibilidad: normalize(flex.evaluation, goals.flexibilidad),
+        };
+
+        const normTotal = {
+            motricidad: normalize(motr.practice + motr.evaluation, goals.motricidad),
+            articulacion: normalize(art.practice + art.evaluation, goals.articulacion),
+            flexibilidad: normalize(flex.practice + flex.evaluation, goals.flexibilidad),
         };
 
         return {
             combinedData: [
-                { subject: 'Sonido', A: qualitative.sonido / 10, B: undefined, original: Math.round(qualitative.sonido), fullMark: 10 },
-                { subject: 'Motricidad', A: cappedEvaluation.motricidad / 10, B: cappedPractice.motricidad / 10, original: Math.round(cappedEvaluation.motricidad), originalExperiencia: Math.round(cappedPractice.motricidad), fullMark: 10 },
-                { subject: 'Articulación (T)', A: cappedEvaluation.articulacion / 10, B: cappedPractice.articulacion / 10, original: Math.round(cappedEvaluation.articulacion), originalExperiencia: Math.round(cappedPractice.articulacion), fullMark: 10 },
-                { subject: 'Flexibilidad', A: cappedEvaluation.flexibilidad / 10, B: cappedPractice.flexibilidad / 10, original: Math.round(cappedEvaluation.flexibilidad), originalExperiencia: Math.round(cappedPractice.flexibilidad), fullMark: 10 },
-                { subject: 'Cognición', A: qualitative.cognicion / 10, B: undefined, original: Math.round(qualitative.cognicion), fullMark: 10 },
+                {
+                    subject: 'Sonido',
+                    A: qualitative.sonido,
+                    B: undefined,
+                    Total: qualitative.sonido,
+                    original: Math.round(qualitative.sonido * 10) / 10,
+                    originalTotal: Math.round(qualitative.sonido * 10) / 10,
+                    fullMark: 10
+                },
+                {
+                    subject: 'Motricidad',
+                    A: normEvaluation.motricidad,
+                    B: normPractice.motricidad,
+                    Total: normTotal.motricidad,
+                    original: Math.round(motr.evaluation),
+                    originalExperiencia: Math.round(motr.practice),
+                    originalTotal: Math.round(motr.practice + motr.evaluation),
+                    fullMark: 10
+                },
+                {
+                    subject: 'Articulación (T)',
+                    A: normEvaluation.articulacion,
+                    B: normPractice.articulacion,
+                    Total: normTotal.articulacion,
+                    original: Math.round(art.evaluation),
+                    originalExperiencia: Math.round(art.practice),
+                    originalTotal: Math.round(art.practice + art.evaluation),
+                    fullMark: 10
+                },
+                {
+                    subject: 'Flexibilidad',
+                    A: normEvaluation.flexibilidad,
+                    B: normPractice.flexibilidad,
+                    Total: normTotal.flexibilidad,
+                    original: Math.round(flex.evaluation),
+                    originalExperiencia: Math.round(flex.practice),
+                    originalTotal: Math.round(flex.practice + flex.evaluation),
+                    fullMark: 10
+                },
+                {
+                    subject: 'Cognición',
+                    A: qualitative.cognicion,
+                    B: undefined,
+                    Total: qualitative.cognicion,
+                    original: Math.round(qualitative.cognicion * 10) / 10,
+                    originalTotal: Math.round(qualitative.cognicion * 10) / 10,
+                    fullMark: 10
+                },
             ]
         };
-    }, [aggregatedXP, aggregatedQualitative]);
+    }, [aggregatedXP, aggregatedQualitative, aggregatedGoals]);
 
     return {
         radarStats,

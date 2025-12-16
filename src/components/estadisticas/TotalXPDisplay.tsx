@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
-import { useTotalXP, totalXPToObject, useLifetimePracticeXP, useTotalXPMultiple, useLifetimePracticeXPMultiple } from '@/hooks/useXP';
-import { Loader2, TrendingUp } from 'lucide-react';
+import { useTotalXP, totalXPToObject, useLifetimePracticeXP, useTotalXPMultiple, useLifetimePracticeXPMultiple, useAggregateLevelGoals } from '@/hooks/useXP';
+import { Loader2, TrendingUp, Trophy } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { localDataClient } from '@/api/localDataClient';
+import { Badge } from '@/components/ds';
 
 interface TotalXPDisplayProps {
     studentId?: string;
@@ -20,6 +21,7 @@ export default function TotalXPDisplay({ studentId, studentIds, filter = ['evalu
 
     const isMultiple = ids.length > 1;
     const singleId = ids.length === 1 ? ids[0] : '';
+    const hasData = ids.length > 0;
 
     // Single student hooks (used when 1 student)
     const { data: totalXPSingle, isLoading: isLoadingTotalSingle } = useTotalXP(singleId);
@@ -28,6 +30,9 @@ export default function TotalXPDisplay({ studentId, studentIds, filter = ['evalu
     // Multi-student hooks (used when 2+ students)
     const { data: totalXPMultiple, isLoading: isLoadingTotalMultiple } = useTotalXPMultiple(isMultiple ? ids : []);
     const { data: practiceXPMultiple, isLoading: isLoadingPracticeMultiple } = useLifetimePracticeXPMultiple(isMultiple ? ids : []);
+
+    // Aggregated Goals Hook
+    const aggregatedGoals = useAggregateLevelGoals(isMultiple ? ids : []);
 
     // Use appropriate data based on count
     const totalXP = isMultiple ? totalXPMultiple : totalXPSingle;
@@ -45,7 +50,7 @@ export default function TotalXPDisplay({ studentId, studentIds, filter = ['evalu
     const currentLevel = studentProfile?.nivelTecnico || 0;
     const nextLevel = currentLevel + 1;
 
-    // Fetch next level config to get required XP
+    // Fetch next level config to get required XP (single student only)
     const { data: nextLevelConfig } = useQuery({
         queryKey: ['level-config', nextLevel],
         queryFn: async () => {
@@ -56,7 +61,7 @@ export default function TotalXPDisplay({ studentId, studentIds, filter = ['evalu
         enabled: !isMultiple && !!nextLevel
     });
 
-    if (ids.length === 0) {
+    if (!hasData) {
         return (
             <div className="text-center p-4 text-muted-foreground text-sm">
                 Selecciona un alumno para ver su XP
@@ -90,8 +95,13 @@ export default function TotalXPDisplay({ studentId, studentIds, filter = ['evalu
 
     // Helper to get required XP for a skill
     const getRequiredXP = (skill: 'motricidad' | 'articulacion' | 'flexibilidad') => {
-        if (!nextLevelConfig) return 100; // Fallback
+        // Case Global: Use aggregated goals
+        if (isMultiple) {
+            return aggregatedGoals[skill] || 100;
+        }
 
+        // Case Single: Use level config
+        if (!nextLevelConfig) return 100; // Fallback
         switch (skill) {
             case 'motricidad': return nextLevelConfig.minXpMotr || 0;
             case 'articulacion': return nextLevelConfig.minXpArt || 0;
@@ -99,6 +109,32 @@ export default function TotalXPDisplay({ studentId, studentIds, filter = ['evalu
             default: return 0;
         }
     };
+
+    // Level Display Logic
+    let levelDisplay = null;
+    if (isMultiple) {
+        levelDisplay = (
+            <Badge variant="outline" className="mb-2 w-fit gap-1.5 px-3 py-1 bg-background">
+                <Trophy className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="font-medium text-muted-foreground">Varios niveles</span>
+            </Badge>
+        );
+    } else if (studentProfile) {
+        // Determine label (e.g. Principiante) based on level if available in config or implicit
+        // For now, standard format: "Nivel X"
+        levelDisplay = (
+            <Badge variant="outline" className="mb-2 w-fit gap-1.5 px-3 py-1 bg-background border-primary/20">
+                <Trophy className="h-3.5 w-3.5 text-primary" />
+                <span className="font-medium">
+                    Nivel {currentLevel}
+                    <span className="mx-1 opacity-50">·</span>
+                    <span className="text-muted-foreground font-normal">
+                        {studentProfile.etiquetaNivel || (currentLevel < 3 ? 'Principiante' : currentLevel < 6 ? 'Intermedio' : 'Avanzado')}
+                    </span>
+                </span>
+            </Badge>
+        );
+    }
 
     const renderCard = (skill: 'motricidad' | 'articulacion' | 'flexibilidad', label: string, colorClass: string) => {
         const value = getDisplayedValue(skill);
@@ -132,10 +168,13 @@ export default function TotalXPDisplay({ studentId, studentIds, filter = ['evalu
     };
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {renderCard('motricidad', 'Motricidad', 'text-blue-500')}
-            {renderCard('articulacion', 'Articulación', 'text-green-500')}
-            {renderCard('flexibilidad', 'Flexibilidad', 'text-purple-500')}
+        <div className="flex flex-col">
+            {levelDisplay}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {renderCard('motricidad', 'Motricidad', 'text-blue-500')}
+                {renderCard('articulacion', 'Articulación', 'text-green-500')}
+                {renderCard('flexibilidad', 'Flexibilidad', 'text-purple-500')}
+            </div>
         </div>
     );
 }
