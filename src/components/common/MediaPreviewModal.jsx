@@ -137,8 +137,16 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
   };
 
   const handleOverlayClick = (e) => {
+    console.log('🎬 handleOverlayClick triggered');
+    console.log('🎬 e.target:', e.target);
+    console.log('🎬 e.currentTarget:', e.currentTarget);
+    console.log('🎬 target === currentTarget:', e.target === e.currentTarget);
+    e.stopPropagation();
     if (e.target === e.currentTarget) {
+      console.log('🎬 Calling onClose');
       onClose?.();
+    } else {
+      console.log('🎬 NOT calling onClose - target !== currentTarget');
     }
   };
 
@@ -160,6 +168,8 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
         <div
           className="fixed inset-0 bg-transparent z-[230]"
           onClick={handleOverlayClick}
+          onPointerDown={(e) => e.stopPropagation()}
+          data-prevent-outside-close="true"
           aria-hidden="true"
         />
         <div
@@ -170,7 +180,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
         >
 
           {/* Tarjeta compacta para audio */}
-          <div className="relative z-10 mx-auto w-full max-w-md px-4 pointer-events-auto">
+          <div className="relative z-10 mx-auto w-full max-w-md px-4 pointer-events-auto" data-prevent-outside-close="true">
             <div className="bg-[var(--color-surface-elevated)]/95 backdrop-blur-sm rounded-2xl shadow-card border border-[var(--color-border-default)] p-6">
               {/* Header */}
               <div className="flex items-center justify-between gap-4 mb-4">
@@ -255,6 +265,8 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[230]"
         onClick={handleOverlayClick}
+        onPointerDown={(e) => e.stopPropagation()}
+        data-prevent-outside-close="true"
         aria-hidden="true"
       />
       <div
@@ -265,7 +277,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
       >
 
         {/* Contenedor del modal */}
-        <div className="relative z-10 mx-auto w-full max-w-[1100px] px-4 lg:px-6 flex items-center justify-center max-h-[95vh] pointer-events-auto">
+        <div className="relative z-10 mx-auto w-full max-w-[1100px] px-4 lg:px-6 flex items-center justify-center max-h-[95vh] pointer-events-auto" data-prevent-outside-close="true">
           <div className="bg-[var(--color-surface-elevated)] rounded-2xl shadow-card w-full max-h-full overflow-hidden flex flex-col border border-[var(--color-border-default)]">
             {/* Header con título y botón de cierre */}
             <div className="px-4 lg:px-6 py-4 border-b border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] sticky top-0 z-20 flex items-center justify-between gap-4 shrink-0">

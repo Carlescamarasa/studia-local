@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -17,7 +17,13 @@ import { es } from "date-fns/locale";
 /**
  * ModalDetalleFeedback - Modal de solo lectura para ver detalles de un feedback semanal unificado.
  */
-export default function ModalDetalleFeedback({ open, onOpenChange, feedback, usuarios, onMediaClick }) {
+export default function ModalDetalleFeedback({ open, onOpenChange, feedback, usuarios, onMediaClick, isMediaModalOpen }) {
+    // Use ref to always have the latest isMediaModalOpen value (avoids stale closure in event handlers)
+    const isMediaModalOpenRef = useRef(isMediaModalOpen);
+    useEffect(() => {
+        isMediaModalOpenRef.current = isMediaModalOpen;
+    }, [isMediaModalOpen]);
+
     if (!feedback) return null;
 
     const profesor = usuarios.find(u => u.id === feedback.profesorId);
@@ -38,7 +44,33 @@ export default function ModalDetalleFeedback({ open, onOpenChange, feedback, usu
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-4">
+            <DialogContent
+                className="max-w-lg max-h-[90vh] overflow-y-auto p-4"
+                onPointerDownOutside={(e) => {
+                    // PRIORITY 1: If media modal is open, NEVER close this dialog
+                    // Using ref to avoid stale closure - always get the CURRENT value
+                    if (isMediaModalOpenRef.current) {
+                        e.preventDefault();
+                        return;
+                    }
+
+                    // PRIORITY 2: Check for explicit prevent-close attribute (handles content clicks)
+                    const target = e.target;
+                    if (target instanceof Element && target.closest('[data-prevent-outside-close="true"]')) {
+                        e.preventDefault();
+                        return;
+                    }
+
+                    // PRIORITY 3: Fallback z-index check
+                    if (target) {
+                        const style = window.getComputedStyle(target);
+                        if (parseInt(style.zIndex, 10) >= 200) {
+                            e.preventDefault();
+                            return;
+                        }
+                    }
+                }}
+            >
                 <DialogHeader className="pb-2">
                     <DialogTitle className="text-base flex items-center gap-2">
                         <MessageSquare className="w-4 h-4 text-[var(--color-primary)]" />
@@ -69,6 +101,11 @@ export default function ModalDetalleFeedback({ open, onOpenChange, feedback, usu
                             <span className="text-xs text-[var(--color-text-secondary)]">Semana:</span>
                             <span>{rangoSemana}</span>
                         </div>
+                        {(feedback.lastEditedAt || feedback.updated_at || feedback.updatedAt || feedback.timestamp || feedback.createdAt || feedback.created_at) && (
+                            <div className="col-span-2 text-[10px] text-[var(--color-text-muted)] italic text-right">
+                                Última edición: {new Date(feedback.lastEditedAt || feedback.updated_at || feedback.updatedAt || feedback.timestamp || feedback.createdAt || feedback.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                        )}
                     </div>
 
                     {/* 1. Evaluación (Scores & XP) */}

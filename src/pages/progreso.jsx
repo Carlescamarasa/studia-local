@@ -902,6 +902,7 @@ function ProgresoPageContent() {
                             onEditFeedback={(isProf || isAdmin) ? handleEditFeedback : undefined}
                             puedeEditar={(f) => isProf || isAdmin} // Simple permission check
                             onMediaClick={handleMediaClick}
+                            isMediaModalOpen={mediaPreviewOpen}
                         />
                     </div>
                 )}
