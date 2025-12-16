@@ -17,9 +17,11 @@ interface HabilidadesRadarChartProps {
     dataKey1?: string; // Evaluaciones
     dataKey2?: string; // Experiencia
     dataKey3?: string; // Total
+    compact?: boolean; // Compact mode with reduced height
+    hideLegend?: boolean; // Hide internal legend for external rendering
 }
 
-export default function HabilidadesRadarChart({ data, isLoading, dataKey1, dataKey2, dataKey3 }: HabilidadesRadarChartProps) {
+export default function HabilidadesRadarChart({ data, isLoading, dataKey1, dataKey2, dataKey3, compact = false, hideLegend = false }: HabilidadesRadarChartProps) {
     if (isLoading) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -45,10 +47,10 @@ export default function HabilidadesRadarChart({ data, isLoading, dataKey1, dataK
     const showMultipleSeries = (hasEvaluaciones ? 1 : 0) + (hasExperiencia ? 1 : 0) + (hasTotal ? 1 : 0) > 1;
 
     return (
-        <div className="w-full max-w-md mx-auto">
-            <div className="h-[300px] w-full">
+        <div className={compact ? "w-full" : "w-full max-w-md mx-auto"}>
+            <div className={compact ? "h-[300px] w-full" : "h-[300px] w-full"}>
                 <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
+                    <RadarChart cx="50%" cy="50%" outerRadius={compact ? "85%" : "80%"} data={data}>
                         <PolarGrid stroke="var(--color-border-default)" strokeOpacity={0.4} />
                         <PolarAngleAxis
                             dataKey="subject"
@@ -120,7 +122,7 @@ export default function HabilidadesRadarChart({ data, isLoading, dataKey1, dataK
                                 return [`${Math.round(originalValue)} / ${maxXP} XP (${value.toFixed(1)}/10)`, name];
                             }}
                         />
-                        {showMultipleSeries && (
+                        {showMultipleSeries && !hideLegend && (
                             <Legend
                                 wrapperStyle={{ paddingTop: '10px' }}
                                 iconType="circle"

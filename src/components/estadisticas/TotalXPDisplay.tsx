@@ -9,9 +9,10 @@ interface TotalXPDisplayProps {
     studentId?: string;
     studentIds?: string[]; // For multi-student aggregation
     filter?: string[];
+    compact?: boolean; // Compact mode with reduced padding/fonts
 }
 
-export default function TotalXPDisplay({ studentId, studentIds, filter = ['evaluaciones', 'experiencia'] }: TotalXPDisplayProps) {
+export default function TotalXPDisplay({ studentId, studentIds, filter = ['evaluaciones', 'experiencia'], compact = false }: TotalXPDisplayProps) {
     // Normalize to array
     const ids = useMemo(() => {
         if (studentIds && studentIds.length > 0) return studentIds;
@@ -150,27 +151,29 @@ export default function TotalXPDisplay({ studentId, studentIds, filter = ['evalu
         else labelText = 'Ninguno seleccionado';
 
         return (
-            <div className="p-3 border rounded bg-card">
-                <div className="flex items-center gap-2 mb-1">
-                    <TrendingUp className={`h-4 w-4 ${colorClass}`} />
-                    <span className="text-xs font-medium text-muted-foreground">{label}</span>
+            <div className={compact ? "p-2 border rounded bg-card" : "p-3 border rounded bg-card"}>
+                <div className={compact ? "flex items-center gap-1.5 mb-0.5" : "flex items-center gap-2 mb-1"}>
+                    <TrendingUp className={compact ? `h-3 w-3 ${colorClass}` : `h-4 w-4 ${colorClass}`} />
+                    <span className={compact ? "text-[10px] font-medium text-muted-foreground" : "text-xs font-medium text-muted-foreground"}>{label}</span>
                 </div>
-                <p className="text-2xl font-bold">
+                <p className={compact ? "text-xl font-bold" : "text-2xl font-bold"}>
                     {Math.round(value)}
-                    <span className="text-sm text-muted-foreground font-normal"> / {required}</span>
+                    <span className={compact ? "text-xs text-muted-foreground font-normal" : "text-sm text-muted-foreground font-normal"}> / {required}</span>
                 </p>
-                <p className="text-xs text-muted-foreground">XP Total</p>
-                <p className="text-xs text-muted-foreground opacity-60 mt-1">
-                    {labelText}
-                </p>
+                <p className={compact ? "text-[10px] text-muted-foreground" : "text-xs text-muted-foreground"}>XP Total</p>
+                {!compact && (
+                    <p className="text-xs text-muted-foreground opacity-60 mt-1">
+                        {labelText}
+                    </p>
+                )}
             </div>
         );
     };
 
     return (
         <div className="flex flex-col">
-            {levelDisplay}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {!compact && levelDisplay}
+            <div className={compact ? "grid grid-cols-3 gap-2" : "grid grid-cols-1 md:grid-cols-3 gap-4"}>
                 {renderCard('motricidad', 'Motricidad', 'text-blue-500')}
                 {renderCard('articulacion', 'Articulación', 'text-green-500')}
                 {renderCard('flexibilidad', 'Flexibilidad', 'text-purple-500')}

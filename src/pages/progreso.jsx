@@ -46,6 +46,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Tab Components (reutilizados)
 import ResumenTab from "@/components/estadisticas/ResumenTab";
@@ -55,6 +61,8 @@ import FeedbackUnificadoTab from "@/components/estadisticas/FeedbackUnificadoTab
 import TotalXPDisplay from "@/components/estadisticas/TotalXPDisplay";
 import HabilidadesRadarChart from "@/components/estadisticas/HabilidadesRadarChart";
 import HeatmapFranjas from "@/components/estadisticas/HeatmapFranjas";
+import StatTile from "@/components/estadisticas/StatTile";
+import CompactCard from "@/components/estadisticas/CompactCard";
 
 // New imports for Estadísticas subtabs
 import TiposBloquesTab from "@/components/estadisticas/TiposBloquesTab";
@@ -68,7 +76,7 @@ import MediaPreviewModal from "@/components/common/MediaPreviewModal";
 import {
     Activity, BarChart3, Star, MessageSquare, Backpack, Target,
     Clock, Trophy, ChevronDown, ChevronUp, Filter, User, TrendingUp,
-    Layers, List, Users
+    Layers, List, Users, Info, BookOpen, PieChart
 } from "lucide-react";
 
 import RequireRole from "@/components/auth/RequireRole";
@@ -1164,147 +1172,200 @@ function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChang
     };
 
     return (
-        <div className="space-y-6">
-            {/* Source Toggle */}
-            <div className="flex justify-center">
-                <div className="flex bg-[var(--color-surface-muted)] p-1 rounded-lg">
-                    <button
-                        onClick={() => setSourceFilter('experiencia')}
-                        className={cn(
-                            "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
-                            sourceFilter === 'experiencia'
-                                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
-                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                        )}
-                    >
-                        <Star className="w-4 h-4 mr-2" />
-                        Experiencia
-                    </button>
-                    <button
-                        onClick={() => setSourceFilter('evaluaciones')}
-                        className={cn(
-                            "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
-                            sourceFilter === 'evaluaciones'
-                                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
-                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                        )}
-                    >
-                        <Target className="w-4 h-4 mr-2" />
-                        Evaluaciones
-                    </button>
-                    <button
-                        onClick={() => setSourceFilter('ambos')}
-                        className={cn(
-                            "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
-                            sourceFilter === 'ambos'
-                                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
-                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                        )}
-                    >
-                        <Layers className="w-4 h-4 mr-2" />
-                        Ambos
-                    </button>
-                </div>
+        <div className="space-y-4">
+            {/* KPIs Bar - Compact stats at top */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 py-3 px-2 sm:px-4 bg-[var(--color-surface-muted)]/50 rounded-lg border border-[var(--color-border-default)]/30">
+                <StatTile
+                    value={formatDuracionHM(kpis.tiempoTotal)}
+                    label="Tiempo total"
+                    valueClassName="text-[var(--color-primary)]"
+                />
+                <StatTile
+                    value={formatDuracionHM(kpis.tiempoPromedioPorSesion)}
+                    label="Prom/sesión"
+                />
+                <StatTile
+                    value={kpis.calidadPromedio}
+                    label="Valoración"
+                    sublabel="/4"
+                    valueClassName="text-[var(--color-success)]"
+                />
+                <StatTile
+                    value={kpis.racha.actual}
+                    label="Días seguidos"
+                    sublabel={kpis.racha.maxima > kpis.racha.actual ? `(máx: ${kpis.racha.maxima})` : undefined}
+                    valueClassName="text-[var(--color-warning)]"
+                />
+                <StatTile
+                    value={kpis.semanasDistintas}
+                    label="Sem. practicadas"
+                />
+                <StatTile
+                    value={kpis.mediaSemanalSesiones.toFixed(1)}
+                    label="Sesiones/sem"
+                />
             </div>
 
-            {/* XP por Habilidad - 3 skill cards */}
-            <Card className={componentStyles.components.cardBase}>
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-semibold">XP por Habilidad</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                        {sourceFilter === 'experiencia' && "Solo XP de práctica"}
-                        {sourceFilter === 'evaluaciones' && "Solo XP de evaluaciones"}
-                        {sourceFilter === 'ambos' && "Práctica + Evaluaciones"}
-                    </p>
-                </CardHeader>
-                <CardContent>
-                    <TotalXPDisplay
-                        studentIds={effectiveIds}
-                        filter={xpFilter}
-                    />
-                </CardContent>
-            </Card>
-
-            {/* Qualitative & Radar Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Qualitative Cards */}
-                <div className="space-y-6">
-                    {/* Sonido Card */}
-                    <Card className={componentStyles.components.cardBase}>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-base font-semibold flex items-center gap-2">
-                                <Activity className="w-4 h-4 text-blue-500" />
-                                Sonido
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-end gap-2">
-                                <span className="text-3xl font-bold">
-                                    {getDisplayedSonido().toFixed(1)}
-                                </span>
-                                <span className="text-sm text-muted-foreground mb-1">/ 10</span>
+            {/* Main content: Single unified card with 2-column internal layout */}
+            <CompactCard
+                title="Habilidades"
+                titleRight={
+                    <div className="flex bg-[var(--color-surface-muted)] rounded-md p-0.5">
+                        <button
+                            onClick={() => setSourceFilter('experiencia')}
+                            className={cn(
+                                "px-2 py-1 text-[10px] sm:text-xs font-medium rounded transition-all",
+                                sourceFilter === 'experiencia'
+                                    ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm"
+                                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                            )}
+                            aria-label="Mostrar solo experiencia"
+                        >
+                            Exp
+                        </button>
+                        <button
+                            onClick={() => setSourceFilter('evaluaciones')}
+                            className={cn(
+                                "px-2 py-1 text-[10px] sm:text-xs font-medium rounded transition-all",
+                                sourceFilter === 'evaluaciones'
+                                    ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm"
+                                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                            )}
+                            aria-label="Mostrar solo evaluaciones"
+                        >
+                            Eval
+                        </button>
+                        <button
+                            onClick={() => setSourceFilter('ambos')}
+                            className={cn(
+                                "px-2 py-1 text-[10px] sm:text-xs font-medium rounded transition-all",
+                                sourceFilter === 'ambos'
+                                    ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm"
+                                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                            )}
+                            aria-label="Mostrar ambos"
+                        >
+                            Ambos
+                        </button>
+                    </div>
+                }
+            >
+                {/* 2-column layout: XP metrics (left) + Radar (right) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    {/* Left column: Source description + XP + Qualitative - vertically distributed */}
+                    <div className="flex flex-col justify-between h-full min-h-[240px]">
+                        {/* Source description with info tooltip */}
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 text-[10px] sm:text-xs text-[var(--color-text-secondary)]">
+                                {sourceFilter === 'experiencia' && (
+                                    <>
+                                        <BookOpen className="w-3 h-3 text-[var(--color-primary)]" />
+                                        <span>XP procedente de práctica</span>
+                                    </>
+                                )}
+                                {sourceFilter === 'evaluaciones' && (
+                                    <>
+                                        <PieChart className="w-3 h-3 text-[var(--color-success)]" />
+                                        <span>XP procedente de evaluaciones</span>
+                                    </>
+                                )}
+                                {sourceFilter === 'ambos' && (
+                                    <>
+                                        <BookOpen className="w-3 h-3 text-[var(--color-primary)]" />
+                                        <span>Práctica</span>
+                                        <span className="text-[var(--color-text-secondary)]/50">+</span>
+                                        <PieChart className="w-3 h-3 text-[var(--color-success)]" />
+                                        <span>Evaluaciones</span>
+                                    </>
+                                )}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                {sourceFilter === 'experiencia'
-                                    ? "No disponible (solo evaluaciones)"
-                                    : (isMultiple ? "Promedio del grupo" : "Valoración actual")}
-                            </p>
-                        </CardContent>
-                    </Card>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button className="p-0.5 rounded-full hover:bg-[var(--color-surface-muted)] transition-colors" aria-label="Información sobre XP">
+                                            <Info className="w-3 h-3 text-[var(--color-text-secondary)]" />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-[200px]">
+                                        <p className="text-xs">XP total acumulado. Para filtrar por rango de fechas, usa la pestaña «Habilidades».</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
 
-                    {/* Cognición Card */}
-                    <Card className={componentStyles.components.cardBase}>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-base font-semibold flex items-center gap-2">
-                                <Target className="w-4 h-4 text-purple-500" />
-                                Cognición
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-end gap-2">
-                                <span className="text-3xl font-bold">
-                                    {getDisplayedCognicion().toFixed(1)}
-                                </span>
-                                <span className="text-sm text-muted-foreground mb-1">/ 10</span>
+                        {/* XP Cards (Motricidad, Articulación, Flexibilidad) */}
+                        <TotalXPDisplay
+                            studentIds={effectiveIds}
+                            filter={xpFilter}
+                            compact
+                        />
+
+                        {/* Qualitative skills: Sonido + Cognición + Legend */}
+                        <div className="flex items-center gap-2 pt-2 border-t border-[var(--color-border-default)]/30">
+                            {/* Sonido */}
+                            <div className="flex items-center gap-1.5 flex-1 p-1.5 bg-[var(--color-surface-muted)]/50 rounded-md">
+                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500/10">
+                                    <Activity className="w-3 h-3 text-blue-500" />
+                                </div>
+                                <div>
+                                    <p className="text-[9px] text-[var(--color-text-secondary)]">Sonido</p>
+                                    <div className="flex items-baseline gap-0.5">
+                                        <span className="text-base font-bold">{getDisplayedSonido().toFixed(1)}</span>
+                                        <span className="text-[9px] text-[var(--color-text-secondary)]">/ 10</span>
+                                    </div>
+                                </div>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                {sourceFilter === 'experiencia'
-                                    ? "No disponible (solo evaluaciones)"
-                                    : (isMultiple ? "Promedio del grupo" : "Valoración actual")}
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
 
-                {/* Radar Chart - Perfil Técnico */}
-                <Card className={componentStyles.components.cardBase}>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-base font-semibold">Perfil Técnico</CardTitle>
-                        <p className="text-sm text-muted-foreground">Comparativa de habilidades (0-10)</p>
-                    </CardHeader>
-                    <CardContent>
+                            {/* Cognición */}
+                            <div className="flex items-center gap-1.5 flex-1 p-1.5 bg-[var(--color-surface-muted)]/50 rounded-md">
+                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-500/10">
+                                    <Target className="w-3 h-3 text-purple-500" />
+                                </div>
+                                <div>
+                                    <p className="text-[9px] text-[var(--color-text-secondary)]">Cognición</p>
+                                    <div className="flex items-baseline gap-0.5">
+                                        <span className="text-base font-bold">{getDisplayedCognicion().toFixed(1)}</span>
+                                        <span className="text-[9px] text-[var(--color-text-secondary)]">/ 10</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Legend (only when showing multiple series) - vertical layout */}
+                            {sourceFilter === 'ambos' && (
+                                <div className="flex flex-col gap-0.5 text-[9px] text-[var(--color-text-secondary)]">
+                                    <div className="flex items-center gap-1">
+                                        <span className="w-2 h-2 rounded-full bg-[#374151]"></span>
+                                        <span>Total</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <span className="w-2 h-2 rounded-full bg-[#22c55e]"></span>
+                                        <span>Exp</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <span className="w-2 h-2 rounded-full bg-[#f97316]"></span>
+                                        <span>Eval</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        {/* Mobile-only spacer before radar */}
+                        <div className="h-6 lg:hidden"></div>
+                    </div>
+
+                    {/* Right column: Radar Chart - maximized, centered vertically */}
+                    <div className="flex items-center justify-center -mt-8 -mb-8">
                         <HabilidadesRadarChart
                             data={radarDataForChart}
                             isLoading={isLoadingStats}
-                            // Pass keys based on filter:
-                            // - experiencia: only show Experiencia series
-                            // - evaluaciones: only show Evaluaciones series
-                            // - ambos: show all 3 series (Experiencia, Evaluaciones, Total)
                             dataKey1={sourceFilter === 'evaluaciones' ? "Evaluaciones" : (sourceFilter === 'experiencia' ? undefined : "Evaluaciones")}
                             dataKey2={sourceFilter === 'evaluaciones' ? undefined : "Experiencia"}
                             dataKey3={sourceFilter === 'ambos' ? "Total" : undefined}
+                            compact
+                            hideLegend
                         />
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* KPIs from ResumenTab */}
-            <ResumenTab
-                kpis={kpis}
-                datosLinea={datosLinea}
-                granularidad={granularidad}
-                onGranularidadChange={onGranularidadChange}
-            />
+                    </div>
+                </div>
+            </CompactCard>
         </div>
     );
 }
