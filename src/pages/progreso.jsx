@@ -54,7 +54,7 @@ import HabilidadesView from "@/components/estadisticas/HabilidadesView";
 import FeedbackUnificadoTab from "@/components/estadisticas/FeedbackUnificadoTab";
 import TotalXPDisplay from "@/components/estadisticas/TotalXPDisplay";
 import HabilidadesRadarChart from "@/components/estadisticas/HabilidadesRadarChart";
-import HeatmapActividad from "@/components/estadisticas/HeatmapActividad";
+import HeatmapFranjas from "@/components/estadisticas/HeatmapFranjas";
 
 // Icons
 import {
@@ -1043,19 +1043,6 @@ function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChang
 // ============================================================================
 
 function TabEstadisticasContent({ kpis, datosLinea, granularidad, onGranularidadChange, tiempoRealVsObjetivo, registrosFiltrados, periodoInicio, periodoFin }) {
-    // Transform data for heatmap
-    const datosHeatmap = useMemo(() => {
-        const map = new Map();
-        registrosFiltrados.forEach(r => {
-            if (!r.inicioISO) return;
-            const fecha = formatLocalDate(new Date(r.inicioISO));
-            const existing = map.get(fecha) || { fecha, sesiones: 0, tiempo: 0 };
-            existing.sesiones += 1;
-            existing.tiempo += r.duracionRealSeg || 0;
-            map.set(fecha, existing);
-        });
-        return Array.from(map.values());
-    }, [registrosFiltrados]);
 
     return (
         <div className="space-y-6">
@@ -1068,12 +1055,11 @@ function TabEstadisticasContent({ kpis, datosLinea, granularidad, onGranularidad
                 kpis={kpis}
             />
 
-            {/* Heatmap */}
-            <HeatmapActividad
-                data={datosHeatmap}
+            {/* Heatmap por franjas horarias */}
+            <HeatmapFranjas
+                registrosFiltrados={registrosFiltrados}
                 periodoInicio={periodoInicio}
                 periodoFin={periodoFin}
-                registrosFiltrados={registrosFiltrados}
             />
         </div>
     );
