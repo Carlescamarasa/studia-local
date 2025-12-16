@@ -36,7 +36,7 @@ import { LoadingSpinner } from "@/components/ds";
 import SkipLink from "@/components/ds/SkipLink";
 import { setCurrentUser, localDataClient } from "@/api/localDataClient";
 import { useLocalData } from "@/local-data/LocalDataProvider";
-import logoLTS from "@/assets/Logo_LTS.png";
+import logoLTS from "@/assets/Logo_LTS.svg";
 import RoleBootstrap from "@/components/auth/RoleBootstrap";
 import { useAuth } from "@/auth/AuthProvider";
 import { isAuthError } from "@/lib/authHelpers";
@@ -591,11 +591,11 @@ function LayoutContent() {
           {/* Header del sidebar */}
           <div className="border-b border-[var(--color-border-default)]/30 p-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-card overflow-hidden">
+              <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden">
                 <img
                   src={logoLTS}
                   alt={appName}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               </div>
               <div>

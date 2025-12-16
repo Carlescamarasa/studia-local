@@ -1,6 +1,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import { Clock, TrendingUp, CheckCircle, XCircle } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -99,7 +99,7 @@ export default function ProgresoTab({
           ) : (
             <div className="w-full overflow-x-auto -mx-2 px-2">
               <ResponsiveContainer width="100%" height={isMobile ? 200 : 300} minHeight={200}>
-                <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 50 : 30 }}>
+                <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 40 : 60, left: isMobile ? -10 : 0, bottom: isMobile ? 50 : 30 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
                   <XAxis
                     dataKey="fecha"
@@ -110,9 +110,33 @@ export default function ProgresoTab({
                     interval={isMobile ? 'preserveStartEnd' : 0}
                     tickFormatter={formatFecha}
                   />
+                  {/* Left Y-axis: Time (minutes) */}
                   <YAxis
+                    yAxisId="left"
+                    orientation="left"
                     tick={{ fontSize: isMobile ? 9 : 11 }}
                     width={isMobile ? 30 : 50}
+                    label={isMobile ? null : {
+                      value: 'min',
+                      angle: -90,
+                      position: 'insideLeft',
+                      style: { fontSize: 10, fill: 'var(--color-text-secondary)' }
+                    }}
+                  />
+                  {/* Right Y-axis: Rating (0-4) */}
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    domain={[0, 4]}
+                    ticks={[0, 1, 2, 3, 4]}
+                    tick={{ fontSize: isMobile ? 9 : 11 }}
+                    width={isMobile ? 30 : 40}
+                    label={isMobile ? null : {
+                      value: '/4',
+                      angle: 90,
+                      position: 'insideRight',
+                      style: { fontSize: 10, fill: 'var(--color-text-secondary)' }
+                    }}
                   />
                   <RechartsTooltip
                     contentStyle={{
@@ -121,29 +145,72 @@ export default function ProgresoTab({
                       borderRadius: '8px',
                       fontSize: isMobile ? '11px' : '12px',
                     }}
-                    formatter={(value, name) => {
-                      if (name === 'tiempo') return [`${value.toFixed(1)} min`, 'Tiempo'];
-                      if (name === 'satisfaccion') return [`${value}/4`, 'Valoración'];
-                      if (name === 'completados') return [value, 'Completados'];
-                      if (name === 'omitidos') return [value, 'Omitidos'];
-                      return [value, name];
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload || payload.length === 0) return null;
+
+                      const tiempo = payload.find(p => p.dataKey === 'tiempo');
+                      const satisfaccion = payload.find(p => p.dataKey === 'satisfaccion');
+
+                      return (
+                        <div style={{
+                          backgroundColor: 'var(--color-surface-elevated)',
+                          border: '1px solid var(--color-border-default)',
+                          borderRadius: '8px',
+                          padding: '8px 12px',
+                          fontSize: isMobile ? '11px' : '12px',
+                        }}>
+                          <p style={{
+                            margin: '0 0 4px 0',
+                            fontWeight: 600,
+                            color: 'var(--color-text-primary)'
+                          }}>
+                            {formatFecha(label)}
+                          </p>
+                          <p style={{
+                            margin: '2px 0',
+                            color: 'var(--color-primary)'
+                          }}>
+                            Tiempo: {tiempo?.value?.toFixed(1) || 0} min
+                          </p>
+                          <p style={{
+                            margin: '2px 0',
+                            color: 'var(--color-success)'
+                          }}>
+                            Valoración: {satisfaccion?.value != null ? `${satisfaccion.value.toFixed(1)}/4` : '—'}
+                          </p>
+                        </div>
+                      );
+                    }}
+                  />
+                  <Legend
+                    verticalAlign="top"
+                    height={36}
+                    formatter={(value) => {
+                      if (value === 'tiempo') return 'Tiempo (min)';
+                      if (value === 'satisfaccion') return 'Valoración (/4)';
+                      return value;
                     }}
                   />
                   <Line
                     type="monotone"
                     dataKey="tiempo"
+                    yAxisId="left"
                     stroke="var(--color-primary)"
                     strokeWidth={2}
                     dot={{ r: isMobile ? 3 : 4 }}
                     activeDot={{ r: isMobile ? 5 : 6 }}
+                    name="tiempo"
                   />
                   <Line
                     type="monotone"
                     dataKey="satisfaccion"
+                    yAxisId="right"
                     stroke="var(--color-success)"
                     strokeWidth={2}
                     dot={{ r: isMobile ? 3 : 4 }}
                     activeDot={{ r: isMobile ? 5 : 6 }}
+                    connectNulls={false}
+                    name="satisfaccion"
                   />
                 </LineChart>
               </ResponsiveContainer>

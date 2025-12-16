@@ -10,7 +10,7 @@ import { componentStyles } from '@/design/componentStyles';
 import { useDesign } from '@/components/design/DesignProvider';
 import { toast } from 'sonner';
 import { UserPlus, CheckCircle, Mail } from 'lucide-react';
-import logoLTS from '@/assets/Logo_LTS.png';
+import logoLTS from '@/assets/Logo_LTS.svg';
 import { getAppName } from '@/components/utils/appMeta';
 import { log } from '@/utils/log';
 import { createPageUrl } from '@/utils';
@@ -48,7 +48,7 @@ export default function InvitationPage() {
     // Si no está autenticado, verificar si hay token de invitación
     const hash = window.location.hash;
     const hasHash = hash && hash.length > 1;
-    
+
     if (hasHash) {
       // Supabase está procesando el token de invitación
       // Esperar a que se procese y obtener la sesión
@@ -62,7 +62,7 @@ export default function InvitationPage() {
       });
       return;
     }
-    
+
     // Si NO hay hash ni usuario, el enlace es inválido
     const errorTimer = setTimeout(async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -71,7 +71,7 @@ export default function InvitationPage() {
         setTimeout(() => navigate('/login'), 3000);
       }
     }, 2000);
-    
+
     return () => clearTimeout(errorTimer);
   }, [navigate, user, authLoading]);
 
@@ -215,7 +215,7 @@ export default function InvitationPage() {
         <Card className={`${componentStyles.containers.cardElevated} ${componentStyles.auth.loginCard}`}>
           <CardHeader className={componentStyles.auth.loginHeader}>
             <div className={componentStyles.auth.loginLogoContainer}>
-              <div 
+              <div
                 className={componentStyles.auth.loginLogoWrapper}
                 style={{
                   background: `linear-gradient(135deg, ${primaryColor} 0%, var(--color-secondary) 100%)`,

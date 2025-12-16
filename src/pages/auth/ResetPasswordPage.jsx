@@ -10,7 +10,7 @@ import { componentStyles } from '@/design/componentStyles';
 import { useDesign } from '@/components/design/DesignProvider';
 import { toast } from 'sonner';
 import { Lock, CheckCircle } from 'lucide-react';
-import logoLTS from '@/assets/Logo_LTS.png';
+import logoLTS from '@/assets/Logo_LTS.svg';
 import { getAppName } from '@/components/utils/appMeta';
 import { log } from '@/utils/log';
 import { createPageUrl } from '@/utils';
@@ -41,7 +41,7 @@ export default function ResetPasswordPage() {
     // Si no está autenticado, verificar si hay token de recuperación
     const hash = window.location.hash;
     const hasHash = hash && hash.length > 1; // Hash existe y no está vacío
-    
+
     // Si hay hash, Supabase está procesando el token de recuperación
     // NO redirigir - Supabase procesará el token automáticamente
     // El AuthProvider detectará el cambio y actualizará el estado
@@ -53,7 +53,7 @@ export default function ResetPasswordPage() {
       });
       return; // No redirigir si hay hash
     }
-    
+
     // Si NO hay hash, verificar si hay sesión (puede que Supabase ya procesó el token)
     // Esperar un momento para dar tiempo a que cualquier proceso termine
     const errorTimer = setTimeout(async () => {
@@ -65,7 +65,7 @@ export default function ResetPasswordPage() {
         setTimeout(() => navigate('/login'), 3000);
       }
     }, 2000);
-    
+
     return () => clearTimeout(errorTimer);
   }, [navigate, user, authLoading]);
 
@@ -79,7 +79,7 @@ export default function ResetPasswordPage() {
 
     // Validar fortaleza de contraseña
     const passwordValidation = validatePasswordStrength(password);
-    
+
     if (!passwordValidation.valid) {
       // Mostrar el primer error o todos si son pocos
       const errorMessage = passwordValidation.errors.length === 1
@@ -161,7 +161,7 @@ export default function ResetPasswordPage() {
         <Card className={`${componentStyles.containers.cardElevated} ${componentStyles.auth.loginCard}`}>
           <CardHeader className={componentStyles.auth.loginHeader}>
             <div className={componentStyles.auth.loginLogoContainer}>
-              <div 
+              <div
                 className={componentStyles.auth.loginLogoWrapper}
                 style={{
                   background: `linear-gradient(135deg, ${primaryColor} 0%, var(--color-secondary) 100%)`,

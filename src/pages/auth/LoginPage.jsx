@@ -6,7 +6,7 @@ import { componentStyles } from '@/design/componentStyles';
 import { useDesign } from '@/components/design/DesignProvider';
 import { toast } from 'sonner';
 import { Music } from 'lucide-react';
-import logoLTS from '@/assets/Logo_LTS.png';
+import logoLTS from '@/assets/Logo_LTS.svg';
 import { getAppName } from '@/components/utils/appMeta';
 import { LoginForm } from './components/LoginForm';
 import { ForgotPasswordForm } from './components/ForgotPasswordForm';
@@ -35,7 +35,7 @@ export default function LoginPage() {
   useEffect(() => {
     const saved = localStorage.getItem(REMEMBER_EMAIL_KEY);
     const rememberEnabled = localStorage.getItem(REMEMBER_EMAIL_ENABLED_KEY) === 'true';
-    
+
     if (rememberEnabled && saved) {
       setSavedEmail(saved);
       setRememberMe(true);
@@ -52,7 +52,7 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password);
-      
+
       // Guardar o eliminar email según el checkbox
       if (rememberMe) {
         localStorage.setItem(REMEMBER_EMAIL_KEY, email);
@@ -61,14 +61,14 @@ export default function LoginPage() {
         localStorage.removeItem(REMEMBER_EMAIL_KEY);
         localStorage.removeItem(REMEMBER_EMAIL_ENABLED_KEY);
       }
-      
+
       // Resetear intentos fallidos en caso de éxito
       rateLimit.resetAttempts();
-      
+
       if (authConfig.ux.showSuccessToast) {
         toast.success(authMessages.login.success);
       }
-      
+
       // Redirigir con delay opcional
       setTimeout(() => {
         navigate('/', { replace: true });
@@ -77,7 +77,7 @@ export default function LoginPage() {
       console.error('Error al iniciar sesión:', error);
       const errorMessage = getLoginErrorMessage(error);
       toast.error(errorMessage);
-      
+
       // Registrar intento fallido
       rateLimit.recordFailedAttempt();
     } finally {
@@ -87,7 +87,7 @@ export default function LoginPage() {
 
   const handleForgotPassword = async (email) => {
     setIsResetting(true);
-    
+
     try {
       await resetPassword(email);
       toast.success(authMessages.forgotPassword.success);
@@ -105,7 +105,7 @@ export default function LoginPage() {
   const primaryColor = design?.colors?.primary || '#fd9840';
 
   return (
-    <div 
+    <div
       className={componentStyles.auth.loginPageContainer}
       style={{
         background: `linear-gradient(135deg, var(--color-background) 0%, var(--color-surface) 50%, var(--color-surface-elevated) 100%)`,
@@ -114,20 +114,20 @@ export default function LoginPage() {
       {/* Elementos decorativos de fondo */}
       <div className={componentStyles.auth.loginPageBackground}>
         {/* Círculos decorativos con gradiente primario */}
-        <div 
+        <div
           className={componentStyles.auth.loginDecorativeCircle}
           style={{
             background: `radial-gradient(circle, ${primaryColor} 0%, transparent 70%)`,
           }}
         />
-        <div 
+        <div
           className={componentStyles.auth.loginDecorativeCircleBottom}
           style={{
             background: `radial-gradient(circle, ${primaryColor} 0%, transparent 70%)`,
           }}
         />
         {/* Patrón de puntos sutiles */}
-        <div 
+        <div
           className={componentStyles.auth.loginPatternOverlay}
           style={{
             backgroundImage: `radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)`,
@@ -138,7 +138,7 @@ export default function LoginPage() {
 
       {/* Contenedor principal */}
       <div className={componentStyles.auth.loginCardContainer}>
-        <Card 
+        <Card
           className={`${componentStyles.containers.cardElevated} ${componentStyles.auth.loginCard}`}
           style={{
             borderColor: 'var(--color-border-strong)',
@@ -148,31 +148,23 @@ export default function LoginPage() {
           <CardHeader className={componentStyles.auth.loginHeader}>
             {/* 1. Logo con efecto visual mejorado */}
             <div className={componentStyles.auth.loginLogoContainer}>
-              <div 
+              <div
                 className={componentStyles.auth.loginLogoWrapper}
                 style={{
-                  background: `linear-gradient(135deg, ${primaryColor} 0%, var(--color-secondary) 100%)`,
-                  boxShadow: `0 8px 24px ${primaryColor}40`,
+                  background: 'transparent',
                 }}
               >
-                <img 
-                  src={logoLTS} 
+                <img
+                  src={logoLTS}
                   alt={appName}
-                  className="w-full h-full object-cover"
-                />
-                {/* Brillo decorativo */}
-                <div 
-                  className={componentStyles.auth.loginLogoShine}
-                  style={{
-                    background: `linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)`,
-                  }}
+                  className="w-full h-full object-contain"
                 />
               </div>
             </div>
 
             {/* 2. Título */}
             <div className={componentStyles.auth.loginTitleContainer}>
-              <CardTitle 
+              <CardTitle
                 className={`${componentStyles.typography.pageTitle} text-center`}
                 style={{ color: 'var(--color-text-primary)' }}
               >
@@ -181,7 +173,7 @@ export default function LoginPage() {
             </div>
 
             {/* 3. Slogan */}
-            <p 
+            <p
               className={`${componentStyles.typography.pageSubtitle} text-center`}
               style={{ color: 'var(--color-text-secondary)' }}
             >
@@ -190,22 +182,22 @@ export default function LoginPage() {
 
             {/* 4. Separador decorativo */}
             <div className={componentStyles.auth.loginDivider}>
-              <div 
+              <div
                 className={componentStyles.auth.loginDividerLine}
                 style={{ background: primaryColor }}
               />
-              <Music 
+              <Music
                 className={componentStyles.auth.loginDividerIcon}
                 style={{ color: primaryColor, opacity: 0.8 }}
               />
-              <div 
+              <div
                 className={componentStyles.auth.loginDividerLine}
                 style={{ background: primaryColor }}
               />
             </div>
 
             {/* 5. Mensaje de inicio de sesión */}
-            <p 
+            <p
               className="text-base sm:text-base md:text-base text-ui/80 leading-relaxed font-base text-center"
               style={{ color: 'var(--color-text-secondary)' }}
             >
@@ -214,17 +206,17 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent className="px-8 pb-8">
-              {!showForgotPassword ? (
-                <LoginForm
-                  onSubmit={handleLogin}
-                  isLoading={isLoading}
-                  rememberMe={rememberMe}
-                  onRememberMeChange={(checked) => setRememberMe(checked)}
-                  rateLimit={rateLimit}
-                  initialEmail={savedEmail}
-                  onForgotPassword={() => setShowForgotPassword(true)}
-                />
-              ) : (
+            {!showForgotPassword ? (
+              <LoginForm
+                onSubmit={handleLogin}
+                isLoading={isLoading}
+                rememberMe={rememberMe}
+                onRememberMeChange={(checked) => setRememberMe(checked)}
+                rateLimit={rateLimit}
+                initialEmail={savedEmail}
+                onForgotPassword={() => setShowForgotPassword(true)}
+              />
+            ) : (
               <ForgotPasswordForm
                 onSubmit={handleForgotPassword}
                 isLoading={isResetting}

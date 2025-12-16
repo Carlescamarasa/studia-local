@@ -74,7 +74,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 // Valid tabs for normalization
-const VALID_TABS = ['resumen', 'habilidades', 'estadisticas', 'mochila', 'feedback'];
+const VALID_TABS = ['resumen', 'habilidades', 'estadisticas', 'mochila', 'feedback', 'comparar'];
 
 // ============================================================================
 // Main Component
@@ -660,12 +660,15 @@ function ProgresoPageContent() {
     // Tab config
     // ============================================================================
 
+    // Build tab items, conditionally including Comparar for PROF/ADMIN
     const tabItems = [
         { value: 'resumen', label: 'Resumen', icon: BarChart3 },
         { value: 'habilidades', label: 'Habilidades', icon: Star },
         { value: 'estadisticas', label: 'Estadísticas', icon: Activity },
         { value: 'mochila', label: 'Mochila', icon: Backpack },
         { value: 'feedback', label: 'Feedback', icon: MessageSquare },
+        // Comparar tab only for PROF/ADMIN
+        ...((isProf || isAdmin) ? [{ value: 'comparar', label: 'Comparar', icon: Users }] : []),
     ];
 
     const presets = [
@@ -821,9 +824,29 @@ function ProgresoPageContent() {
                     <FeedbackUnificadoTab
                         feedbacks={isEstu ? feedbackProfesor : feedbacksParaProfAdmin}
                         evaluaciones={evaluacionesFiltradas}
+                        registros={registrosFiltradosUnicos}
                         usuarios={usuariosMap}
                         isEstu={isEstu}
                     />
+                )}
+
+                {/* Tab Comparar - PROF/ADMIN only */}
+                {tabActiva === 'comparar' && (
+                    (isProf || isAdmin) ? (
+                        <ComparativaEstudiantes
+                            estudiantes={estudiantesComparacion}
+                            usuarios={usuarios}
+                        />
+                    ) : (
+                        <Card className={componentStyles.components.cardBase}>
+                            <CardContent className="p-8 text-center">
+                                <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                                <p className="text-[var(--color-text-secondary)]">
+                                    No tienes permisos para ver esta sección
+                                </p>
+                            </CardContent>
+                        </Card>
+                    )
                 )}
             </div>
         </div>
@@ -1199,62 +1222,59 @@ function TabEstadisticasContent({
     tiposBloques, topEjercicios, bloquesFiltrados, usuarios, userIdActual,
     effectiveUser, isEstu, isProf, isAdmin, estudiantesComparacion
 }) {
-    // Track which sections are expanded (all start collapsed except Progreso)
-    const [expandedSections, setExpandedSections] = useState({
-        progreso: true,
-        tipos: false,
-        top: false,
-        sesiones: false,
-        comparar: false
-    });
+    // Track which section is open (only one at a time, all start closed)
+    const [openSectionId, setOpenSectionId] = useState(null);
 
-    const toggleSection = (section) => {
-        setExpandedSections(prev => ({
-            ...prev,
-            [section]: !prev[section]
-        }));
+    const toggleSection = (sectionKey) => {
+        setOpenSectionId(prev => prev === sectionKey ? null : sectionKey);
     };
 
     // Collapsible section header component
-    const SectionHeader = ({ sectionKey, icon: Icon, title, count }) => (
-        <div
-            className={cn(
-                "flex items-center justify-between p-4 cursor-pointer transition-colors",
-                "hover:bg-[var(--color-surface-muted)]",
-                expandedSections[sectionKey] && "border-b border-[var(--color-border-default)]"
-            )}
-            onClick={() => toggleSection(sectionKey)}
-        >
-            <div className="flex items-center gap-3">
-                <Icon className="w-5 h-5 text-[var(--color-primary)]" />
-                <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
-                    {title}
-                </h3>
-                {count !== undefined && (
-                    <Badge variant="outline" className="ml-2">
-                        {count}
-                    </Badge>
+    const SectionHeader = ({ sectionKey, icon: Icon, title, count }) => {
+        const isExpanded = openSectionId === sectionKey;
+        return (
+            <button
+                type="button"
+                className={cn(
+                    "flex items-center justify-between p-4 cursor-pointer transition-colors w-full text-left",
+                    "hover:bg-[var(--color-surface-muted)]",
+                    isExpanded && "border-b border-[var(--color-border-default)]"
                 )}
-            </div>
-            {expandedSections[sectionKey] ? (
-                <ChevronUp className="w-5 h-5 text-[var(--color-text-secondary)]" />
-            ) : (
-                <ChevronDown className="w-5 h-5 text-[var(--color-text-secondary)]" />
-            )}
-        </div>
-    );
+                onClick={() => toggleSection(sectionKey)}
+                aria-expanded={isExpanded}
+                aria-controls={`section-content-${sectionKey}`}
+            >
+                <div className="flex items-center gap-3">
+                    <Icon className="w-5 h-5 text-[var(--color-primary)]" />
+                    <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+                        {title}
+                    </h3>
+                    {count !== undefined && (
+                        <Badge variant="outline" className="ml-2">
+                            {count}
+                        </Badge>
+                    )}
+                </div>
+                {isExpanded ? (
+                    <ChevronUp className="w-5 h-5 text-[var(--color-text-secondary)] transition-transform" />
+                ) : (
+                    <ChevronDown className="w-5 h-5 text-[var(--color-text-secondary)] transition-transform" />
+                )}
+            </button>
+        );
+    };
 
     return (
         <div className="space-y-4">
-            {/* Section: Progreso */}
+            {/* Section: General (formerly Progreso) */}
             <Card className={componentStyles.components.cardBase}>
                 <SectionHeader
-                    sectionKey="progreso"
+                    sectionKey="general"
                     icon={TrendingUp}
-                    title="Progreso"
+                    title="General"
                 />
-                {expandedSections.progreso && (
-                    <CardContent className="p-4 space-y-6">
+                {openSectionId === 'general' && (
+                    <CardContent id="section-content-general" className="p-4 space-y-6">
                         <ProgresoTab
                             datosLinea={datosLinea}
                             granularidad={granularidad}
@@ -1279,8 +1299,8 @@ function TabEstadisticasContent({
                     title="Tipos de Bloque"
                     count={tiposBloques?.length}
                 />
-                {expandedSections.tipos && (
-                    <CardContent className="p-4">
+                {openSectionId === 'tipos' && (
+                    <CardContent id="section-content-tipos" className="p-4">
                         <TiposBloquesTab tiposBloques={tiposBloques} />
                     </CardContent>
                 )}
@@ -1294,8 +1314,8 @@ function TabEstadisticasContent({
                     title="Top Ejercicios"
                     count={topEjercicios?.length}
                 />
-                {expandedSections.top && (
-                    <CardContent className="p-4">
+                {openSectionId === 'top' && (
+                    <CardContent id="section-content-top" className="p-4">
                         <TopEjerciciosTab
                             topEjercicios={topEjercicios}
                             bloquesFiltrados={bloquesFiltrados}
@@ -1305,48 +1325,8 @@ function TabEstadisticasContent({
                 )}
             </Card>
 
-            {/* Section: Sesiones */}
-            <Card className={componentStyles.components.cardBase}>
-                <SectionHeader
-                    sectionKey="sesiones"
-                    icon={List}
-                    title="Sesiones"
-                    count={registrosFiltrados?.length}
-                />
-                {expandedSections.sesiones && (
-                    <CardContent className="p-4">
-                        <AutoevaluacionesTab
-                            registros={registrosFiltrados}
-                            usuarios={usuarios}
-                            userIdActual={userIdActual}
-                            userRole={effectiveUser?.rolPersonalizado}
-                            onMediaClick={(mediaLinks, index) => {
-                                console.log('Media click:', mediaLinks, index);
-                            }}
-                        />
-                    </CardContent>
-                )}
-            </Card>
-
-            {/* Section: Comparar (PROF/ADMIN only) */}
-            {!isEstu && (
-                <Card className={componentStyles.components.cardBase}>
-                    <SectionHeader
-                        sectionKey="comparar"
-                        icon={Users}
-                        title="Comparar Estudiantes"
-                        count={estudiantesComparacion?.length}
-                    />
-                    {expandedSections.comparar && (
-                        <CardContent className="p-4">
-                            <ComparativaEstudiantes
-                                estudiantes={estudiantesComparacion}
-                                usuarios={usuarios}
-                            />
-                        </CardContent>
-                    )}
-                </Card>
-            )}
+            {/* Sesiones section removed - now in Feedback tab */}
+            {/* Comparar section removed - now an independent tab */}
         </div>
     );
 }
