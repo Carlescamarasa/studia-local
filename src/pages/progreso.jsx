@@ -21,7 +21,7 @@ import { useEffectiveUser, resolveUserIdActual, displayName } from "@/components
 import { formatLocalDate, parseLocalDate, startOfMonday, formatDuracionHM } from "@/components/estadisticas/utils";
 import { useEstadisticas, safeNumber } from "@/components/estadisticas/hooks/useEstadisticas";
 import { useStudentBackpack } from "@/hooks/useStudentBackpack";
-import { useHabilidadesStats } from "@/hooks/useHabilidadesStats";
+import { useHabilidadesStats, useHabilidadesStatsMultiple } from "@/hooks/useHabilidadesStats";
 import { useTotalXP, totalXPToObject } from "@/hooks/useXP";
 
 // UI Components
@@ -625,6 +625,7 @@ function ProgresoPageContent() {
                         granularidad={granularidad}
                         onGranularidadChange={setGranularidad}
                         userIdActual={effectiveStudentId || userIdActual}
+                        alumnosSeleccionados={alumnosSeleccionados}
                     />
                 )}
 
@@ -677,8 +678,17 @@ function ProgresoPageContent() {
 // Tab Resumen Content - Extended with XP
 // ============================================================================
 
-function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChange, userIdActual }) {
-    const { radarStats, isLoading: isLoadingStats } = useHabilidadesStats(userIdActual || '');
+function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChange, userIdActual, alumnosSeleccionados = [] }) {
+    // For single student or fallback, use userIdActual. For multi-student, use alumnosSeleccionados.
+    const effectiveIds = alumnosSeleccionados.length > 0 ? alumnosSeleccionados : (userIdActual ? [userIdActual] : []);
+    const singleId = effectiveIds.length === 1 ? effectiveIds[0] : (userIdActual || '');
+    const isMultiple = effectiveIds.length > 1;
+
+    const { radarStats: singleStats, isLoading: loadingSingle } = useHabilidadesStats(isMultiple ? '' : singleId);
+    const { radarStats: multipleStats, isLoading: loadingMultiple } = useHabilidadesStatsMultiple(isMultiple ? effectiveIds : []);
+
+    const radarStats = isMultiple ? multipleStats : singleStats;
+    const isLoadingStats = isMultiple ? loadingMultiple : loadingSingle;
 
     return (
         <div className="space-y-6">
@@ -690,7 +700,7 @@ function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChang
                 </CardHeader>
                 <CardContent>
                     <TotalXPDisplay
-                        studentId={userIdActual || ''}
+                        studentIds={effectiveIds}
                         filter={['evaluaciones', 'experiencia']}
                     />
                 </CardContent>

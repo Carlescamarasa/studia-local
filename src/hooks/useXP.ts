@@ -106,9 +106,96 @@ export function totalXPToObject(totals: StudentXPTotal[] | undefined): Record<st
     };
 
     totals.forEach(t => {
-        result[t.skill] = t.totalXp;
+        result[t.skill] = (result[t.skill] || 0) + t.totalXp;
     });
 
     return result;
+}
+
+/**
+ * Hook to fetch total accumulated XP for multiple students (aggregated)
+ * Uses shared cache from useAllStudentXPTotals
+ * 
+ * @param studentIds - Array of Student IDs
+ * @returns Aggregated total XP data (sum across students)
+ */
+export function useTotalXPMultiple(studentIds: string[]) {
+    const { data: allTotals, isLoading } = useAllStudentXPTotals();
+
+    const aggregatedTotals = useMemo<StudentXPTotal[]>(() => {
+        if (!allTotals || studentIds.length === 0) return [];
+
+        // If single student, just filter for that student
+        if (studentIds.length === 1) {
+            return allTotals.filter(t =>
+                t.studentId === studentIds[0] || (t as any).student_id === studentIds[0]
+            );
+        }
+
+        // Multiple students: aggregate by skill
+        const studentIdSet = new Set(studentIds);
+        const skillTotals: Record<string, { totalXp: number; practiceXp: number; evaluationXp: number }> = {};
+
+        allTotals.forEach(t => {
+            const id = t.studentId || (t as any).student_id;
+            if (!studentIdSet.has(id)) return;
+
+            if (!skillTotals[t.skill]) {
+                skillTotals[t.skill] = { totalXp: 0, practiceXp: 0, evaluationXp: 0 };
+            }
+            skillTotals[t.skill].totalXp += t.totalXp || 0;
+            skillTotals[t.skill].practiceXp += t.practiceXp || 0;
+            skillTotals[t.skill].evaluationXp += t.evaluationXp || 0;
+        });
+
+        // Convert back to array format
+        return Object.entries(skillTotals).map(([skill, data]) => ({
+            studentId: 'aggregated', // Indicator that this is aggregated
+            skill: skill as any,
+            totalXp: data.totalXp,
+            practiceXp: data.practiceXp,
+            evaluationXp: data.evaluationXp,
+        } as StudentXPTotal));
+    }, [allTotals, studentIds]);
+
+    return { data: aggregatedTotals, isLoading };
+}
+
+/**
+ * Hook to fetch lifetime practice XP for multiple students (aggregated)
+ * Uses shared cache from useAllStudentXPTotals
+ * 
+ * @param studentIds - Array of Student IDs
+ * @returns Aggregated lifetime practice XP data
+ */
+export function useLifetimePracticeXPMultiple(studentIds: string[]) {
+    const { data: allTotals, isLoading } = useAllStudentXPTotals();
+
+    const practiceXP = useMemo<RecentXPResult>(() => {
+        if (!allTotals || studentIds.length === 0) {
+            return { motricidad: 0, articulacion: 0, flexibilidad: 0 };
+        }
+
+        const studentIdSet = new Set(studentIds);
+        const result: RecentXPResult = {
+            motricidad: 0,
+            articulacion: 0,
+            flexibilidad: 0
+        };
+
+        allTotals.forEach((t: any) => {
+            const id = t.studentId || t.student_id;
+            if (!studentIdSet.has(id)) return;
+
+            const skill = t.skill as keyof RecentXPResult;
+            if (skill in result) {
+                result[skill] += t.practiceXp || t.practice_xp || 0;
+            }
+        });
+
+        return result;
+    }, [allTotals, studentIds]);
+
+    return { data: practiceXP, isLoading };
 }
 

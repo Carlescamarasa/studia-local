@@ -149,3 +149,143 @@ export function useHabilidadesStats(alumnoId: string) {
         isLoading: loadingTotalXP || loadingEvalXP
     };
 }
+
+export function useHabilidadesStatsMultiple(studentIds: string[]) {
+    // 1. Fetch all XP data
+    const { data: allXPData } = useQuery({
+        queryKey: ['student-xp-total-all'],
+        queryFn: () => localDataClient.entities.StudentXPTotal.list(),
+        staleTime: 1000 * 60 * 5,
+    });
+
+    // 2. Aggregate XP (Average for Radar)
+    const aggregatedXP = useMemo(() => {
+        if (!allXPData || studentIds.length === 0) return null;
+
+        const skillSums = {
+            motricidad: { practice: 0, evaluation: 0, count: 0 },
+            articulacion: { practice: 0, evaluation: 0, count: 0 },
+            flexibilidad: { practice: 0, evaluation: 0, count: 0 },
+        };
+
+        const studentIdSet = new Set(studentIds);
+
+        allXPData.forEach((row: any) => {
+            const id = row.studentId || row.student_id;
+            if (!studentIdSet.has(id)) return;
+
+            const skill = row.skill as 'motricidad' | 'articulacion' | 'flexibilidad';
+            if (skillSums[skill]) {
+                skillSums[skill].practice += row.practiceTotal || row.practice_xp || 0;
+                skillSums[skill].evaluation += row.evaluationTotal || row.evaluation_xp || 0;
+                // Note: we might have multiple rows per student? No, usually 1 row per skill per student.
+            }
+        });
+
+        // Calculate average per student count
+        const count = studentIds.length;
+        return {
+            motricidad: {
+                practice: skillSums.motricidad.practice / count,
+                evaluation: skillSums.motricidad.evaluation / count
+            },
+            articulacion: {
+                practice: skillSums.articulacion.practice / count,
+                evaluation: skillSums.articulacion.evaluation / count
+            },
+            flexibilidad: {
+                practice: skillSums.flexibilidad.practice / count,
+                evaluation: skillSums.flexibilidad.evaluation / count
+            }
+        };
+    }, [allXPData, studentIds]);
+
+
+    // 3. Fetch all Evaluations
+    const { data: allEvaluations } = useQuery({
+        queryKey: ['evaluaciones-tecnicas-all'],
+        queryFn: () => localDataClient.entities.EvaluacionTecnica.list(),
+        staleTime: 1000 * 60 * 5,
+    });
+
+    // 4. Aggregate Qualitative (Average)
+    const aggregatedQualitative = useMemo(() => {
+        if (!allEvaluations || studentIds.length === 0) return { sonido: 0, cognicion: 0 };
+
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - 30);
+
+        let sonidoSum = 0;
+        let cognicionSum = 0;
+        let count = 0;
+
+        studentIds.forEach(id => {
+            const recentEvaluations = allEvaluations.filter((evaluation: any) => {
+                if (evaluation.alumnoId !== id) return false;
+                if (!evaluation.fecha) return false;
+                const evalDate = new Date(evaluation.fecha);
+                return evalDate >= cutoffDate;
+            });
+
+            if (recentEvaluations.length > 0) {
+                // Get most recent
+                const latest = recentEvaluations.sort((a: any, b: any) => {
+                    const dateA = new Date(a.fecha).getTime();
+                    const dateB = new Date(b.fecha).getTime();
+                    return dateB - dateA;
+                })[0];
+
+                if (latest.habilidades) {
+                    sonidoSum += (latest.habilidades.sonido || 0) * 10;
+                    cognicionSum += (latest.habilidades.cognitivo || 0) * 10;
+                    count++;
+                }
+            }
+        });
+
+        if (count === 0) return { sonido: 0, cognicion: 0 };
+
+        return {
+            sonido: sonidoSum / count,
+            cognicion: cognicionSum / count
+        };
+    }, [allEvaluations, studentIds]);
+
+    // 5. Build Radar Stats (similar to single)
+    const radarStats = useMemo(() => {
+        if (!aggregatedXP) return null;
+
+        const motr = aggregatedXP.motricidad;
+        const art = aggregatedXP.articulacion;
+        const flex = aggregatedXP.flexibilidad;
+        const qualitative = aggregatedQualitative;
+
+        // Cap at 100
+        const cappedPractice = {
+            motricidad: Math.min(100, motr.practice),
+            articulacion: Math.min(100, art.practice),
+            flexibilidad: Math.min(100, flex.practice),
+        };
+
+        const cappedEvaluation = {
+            motricidad: Math.min(100, motr.evaluation),
+            articulacion: Math.min(100, art.evaluation),
+            flexibilidad: Math.min(100, flex.evaluation),
+        };
+
+        return {
+            combinedData: [
+                { subject: 'Sonido', A: qualitative.sonido / 10, B: undefined, original: Math.round(qualitative.sonido), fullMark: 10 },
+                { subject: 'Motricidad', A: cappedEvaluation.motricidad / 10, B: cappedPractice.motricidad / 10, original: Math.round(cappedEvaluation.motricidad), originalExperiencia: Math.round(cappedPractice.motricidad), fullMark: 10 },
+                { subject: 'Articulación (T)', A: cappedEvaluation.articulacion / 10, B: cappedPractice.articulacion / 10, original: Math.round(cappedEvaluation.articulacion), originalExperiencia: Math.round(cappedPractice.articulacion), fullMark: 10 },
+                { subject: 'Flexibilidad', A: cappedEvaluation.flexibilidad / 10, B: cappedPractice.flexibilidad / 10, original: Math.round(cappedEvaluation.flexibilidad), originalExperiencia: Math.round(cappedPractice.flexibilidad), fullMark: 10 },
+                { subject: 'Cognición', A: qualitative.cognicion / 10, B: undefined, original: Math.round(qualitative.cognicion), fullMark: 10 },
+            ]
+        };
+    }, [aggregatedXP, aggregatedQualitative]);
+
+    return {
+        radarStats,
+        isLoading: !allXPData || !allEvaluations
+    };
+}

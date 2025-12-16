@@ -1,23 +1,45 @@
-import React from 'react';
-import { useTotalXP, totalXPToObject, useLifetimePracticeXP } from '@/hooks/useXP';
+import React, { useMemo } from 'react';
+import { useTotalXP, totalXPToObject, useLifetimePracticeXP, useTotalXPMultiple, useLifetimePracticeXPMultiple } from '@/hooks/useXP';
 import { Loader2, TrendingUp } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { localDataClient } from '@/api/localDataClient';
 
 interface TotalXPDisplayProps {
-    studentId: string;
+    studentId?: string;
+    studentIds?: string[]; // For multi-student aggregation
     filter?: string[];
 }
 
-export default function TotalXPDisplay({ studentId, filter = ['evaluaciones', 'experiencia'] }: TotalXPDisplayProps) {
-    const { data: totalXP, isLoading: isLoadingTotal } = useTotalXP(studentId);
-    const { data: practiceXP, isLoading: isLoadingPractice } = useLifetimePracticeXP(studentId);
+export default function TotalXPDisplay({ studentId, studentIds, filter = ['evaluaciones', 'experiencia'] }: TotalXPDisplayProps) {
+    // Normalize to array
+    const ids = useMemo(() => {
+        if (studentIds && studentIds.length > 0) return studentIds;
+        if (studentId) return [studentId];
+        return [];
+    }, [studentId, studentIds]);
 
-    // Fetch student profile to get current level
+    const isMultiple = ids.length > 1;
+    const singleId = ids.length === 1 ? ids[0] : '';
+
+    // Single student hooks (used when 1 student)
+    const { data: totalXPSingle, isLoading: isLoadingTotalSingle } = useTotalXP(singleId);
+    const { data: practiceXPSingle, isLoading: isLoadingPracticeSingle } = useLifetimePracticeXP(singleId);
+
+    // Multi-student hooks (used when 2+ students)
+    const { data: totalXPMultiple, isLoading: isLoadingTotalMultiple } = useTotalXPMultiple(isMultiple ? ids : []);
+    const { data: practiceXPMultiple, isLoading: isLoadingPracticeMultiple } = useLifetimePracticeXPMultiple(isMultiple ? ids : []);
+
+    // Use appropriate data based on count
+    const totalXP = isMultiple ? totalXPMultiple : totalXPSingle;
+    const practiceXP = isMultiple ? practiceXPMultiple : practiceXPSingle;
+    const isLoadingTotal = isMultiple ? isLoadingTotalMultiple : isLoadingTotalSingle;
+    const isLoadingPractice = isMultiple ? isLoadingPracticeMultiple : isLoadingPracticeSingle;
+
+    // Fetch student profile to get current level (only for single student)
     const { data: studentProfile } = useQuery({
-        queryKey: ['student-profile', studentId],
-        queryFn: () => localDataClient.entities.User.get(studentId),
-        enabled: !!studentId
+        queryKey: ['student-profile', singleId],
+        queryFn: () => localDataClient.entities.User.get(singleId),
+        enabled: !!singleId && !isMultiple
     });
 
     const currentLevel = studentProfile?.nivelTecnico || 0;
@@ -29,10 +51,18 @@ export default function TotalXPDisplay({ studentId, filter = ['evaluaciones', 'e
         queryFn: async () => {
             const configs = await localDataClient.entities.LevelConfig.list();
             const config = configs.find((c: any) => c.level === nextLevel);
-            return config || null; // Return null instead of undefined
+            return config || null;
         },
-        enabled: !!nextLevel
+        enabled: !isMultiple && !!nextLevel
     });
+
+    if (ids.length === 0) {
+        return (
+            <div className="text-center p-4 text-muted-foreground text-sm">
+                Selecciona un alumno para ver su XP
+            </div>
+        );
+    }
 
     if (isLoadingTotal || isLoadingPractice) {
         return (
