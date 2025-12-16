@@ -9,7 +9,7 @@ import {
     useLifetimePracticeXPMultiple,
     useAggregateLevelGoals
 } from '@/hooks/useXP';
-import { Activity, Target } from 'lucide-react';
+import { Activity, Target, Star, Layers } from 'lucide-react';
 import TotalXPDisplay from './TotalXPDisplay';
 import LevelBadge from '../common/LevelBadge';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
@@ -220,38 +220,41 @@ export default function HabilidadesView({
         <div className="space-y-6">
             {/* Primary Toggle: Experiencia / Evaluaciones / Ambos */}
             <div className="flex justify-center">
-                <div className="bg-muted p-1 rounded-lg inline-flex">
+                <div className="flex bg-[var(--color-surface-muted)] p-1 rounded-lg">
                     <button
                         onClick={() => setSourceFilter('experiencia')}
                         className={cn(
-                            "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                            "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
                             sourceFilter === 'experiencia'
-                                ? "bg-background shadow-sm text-foreground"
-                                : "text-muted-foreground hover:text-foreground"
+                                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
+                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                         )}
                     >
+                        <Star className="w-4 h-4 mr-2" />
                         Experiencia
                     </button>
                     <button
                         onClick={() => setSourceFilter('evaluaciones')}
                         className={cn(
-                            "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                            "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
                             sourceFilter === 'evaluaciones'
-                                ? "bg-background shadow-sm text-foreground"
-                                : "text-muted-foreground hover:text-foreground"
+                                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
+                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                         )}
                     >
+                        <Target className="w-4 h-4 mr-2" />
                         Evaluaciones
                     </button>
                     <button
                         onClick={() => setSourceFilter('ambos')}
                         className={cn(
-                            "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                            "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
                             sourceFilter === 'ambos'
-                                ? "bg-background shadow-sm text-foreground"
-                                : "text-muted-foreground hover:text-foreground"
+                                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
+                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                         )}
                     >
+                        <Layers className="w-4 h-4 mr-2" />
                         Ambos
                     </button>
                 </div>

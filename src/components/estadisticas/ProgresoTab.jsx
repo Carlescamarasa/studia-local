@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Clock, TrendingUp, CheckCircle, XCircle, Activity, LayoutList } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -252,8 +252,8 @@ export default function ProgresoTab({
               ) : (
                 <div className="w-full overflow-x-auto -mx-2 px-2">
                   <ResponsiveContainer width="100%" height={isMobile ? 200 : 300} minHeight={200}>
-                    <BarChart data={datosLinea} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
+                    <LineChart data={datosLinea} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
                       <XAxis
                         dataKey="fecha"
                         tick={{ fontSize: 10, fill: "var(--color-text-secondary)" }}
@@ -267,7 +267,6 @@ export default function ProgresoTab({
                         axisLine={false}
                       />
                       <RechartsTooltip
-                        cursor={{ fill: 'var(--color-surface-muted)', opacity: 0.4 }}
                         contentStyle={{
                           backgroundColor: 'var(--color-surface-elevated)',
                           border: '1px solid var(--color-border-default)',
@@ -275,9 +274,25 @@ export default function ProgresoTab({
                         }}
                         labelStyle={{ color: 'var(--color-text-primary)', fontWeight: 600 }}
                       />
-                      <Bar dataKey="completados" fill="var(--color-success)" name="Completados" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="omitidos" fill="var(--color-danger)" name="Omitidos" radius={[4, 4, 0, 0]} />
-                    </BarChart>
+                      <Line
+                        type="monotone"
+                        dataKey="completados"
+                        stroke="var(--color-success)"
+                        strokeWidth={2}
+                        name="Completados"
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="omitidos"
+                        stroke="var(--color-danger)"
+                        strokeWidth={2}
+                        name="Omitidos"
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
               )}
@@ -285,45 +300,21 @@ export default function ProgresoTab({
           </Card>
 
           {/* Section: Heatmap de Franjas */}
-          <Card className={componentStyles.components.cardBase}>
-            <CardHeader className={`${isMobile ? 'px-1 pt-1 pb-0.5' : 'p-1.5'} sm:p-2 md:p-3`}>
-              <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
-                <Activity className="w-5 h-5 text-[var(--color-primary)]" />
-                Franjas Horarias
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <HeatmapFranjas
-                registrosFiltrados={registrosFiltrados}
-                periodoInicio={periodoInicio}
-                periodoFin={periodoFin}
-              />
-            </CardContent>
-          </Card>
+          <HeatmapFranjas
+            registrosFiltrados={registrosFiltrados}
+            periodoInicio={periodoInicio}
+            periodoFin={periodoFin}
+          />
         </div>
       )}
 
       {view === 'ejercicios' && (
         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
           {/* 1. Tipos de Bloque */}
-          <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] overflow-hidden">
-            <div className="p-4 border-b border-[var(--color-border-default)]">
-              <h3 className="font-semibold text-[var(--color-text-primary)]">Tipos de Bloque</h3>
-            </div>
-            <div className="p-4">
-              <TiposBloquesTab tiposBloques={tiposBloque} />
-            </div>
-          </div>
+          <TiposBloquesTab tiposBloques={tiposBloque} />
 
           {/* 2. Top Ejercicios */}
-          <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] overflow-hidden">
-            <div className="p-4 border-b border-[var(--color-border-default)]">
-              <h3 className="font-semibold text-[var(--color-text-primary)]">Top Ejercicios</h3>
-            </div>
-            <div className="p-0">
-              <TopEjerciciosTab topEjercicios={topEjercicios} />
-            </div>
-          </div>
+          <TopEjerciciosTab topEjercicios={topEjercicios} />
         </div>
       )}
 
