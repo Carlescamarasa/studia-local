@@ -38,7 +38,8 @@ export default function ModalFeedbackSemanal({
     studentId,
     weekStartISO,
     weekLabel,
-    onSaved
+    onSaved,
+    onMediaClick
 }) {
     const { toast } = useToast();
     const effectiveUser = useEffectiveUser();
@@ -483,6 +484,7 @@ export default function ModalFeedbackSemanal({
                                                 onVideoFileChange={setVideoFile}
                                                 uploadingVideo={uploadingVideo}
                                                 disabled={isSubmitting || uploadingVideo}
+                                                onPreview={onMediaClick ? (idx) => onMediaClick(mediaLinks, idx) : undefined}
                                             />
                                         </div>
                                     </div>

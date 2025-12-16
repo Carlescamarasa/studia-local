@@ -40,7 +40,7 @@ function normalizeMediaLinks(rawLinks) {
 export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, onClose }) {
   // Normalizar URLs al recibirlas
   const normalizedUrls = normalizeMediaLinks(urls);
-  
+
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const { abierto } = useSidebar();
   const [isMobile, setIsMobile] = useState(false);
@@ -49,7 +49,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
     return saved ? parseFloat(saved) : 1.0;
   });
   const audioRef = useRef(null);
-  
+
   useEffect(() => {
     if (open) {
       setCurrentIndex(initialIndex);
@@ -163,7 +163,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
           aria-hidden="true"
         />
         <div
-          className="fixed top-0 right-0 bottom-0 z-[130] flex items-center justify-center pointer-events-none"
+          className="fixed top-0 right-0 bottom-0 z-[240] flex items-center justify-center pointer-events-none"
           style={{
             left: leftOffset,
             width: widthCalc,
@@ -173,82 +173,81 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
           aria-labelledby="media-preview-title"
         >
 
-        {/* Tarjeta compacta para audio */}
-        <div className="relative z-10 mx-auto w-full max-w-md px-4 pointer-events-auto">
-          <div className="bg-[var(--color-surface-elevated)]/95 backdrop-blur-sm rounded-2xl shadow-card border border-[var(--color-border-default)] p-6">
-            {/* Header */}
-            <div className="flex items-center justify-between gap-4 mb-4">
-              <h2 id="media-preview-title" className={`font-semibold text-base truncate flex-1 ${componentStyles.typography.cardTitle}`}>
-                {getMediaLabel(currentUrl)}
-              </h2>
-              <div className="flex items-center gap-2 shrink-0">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleOpenExternal}
-                  className="text-[var(--color-info)] hover:text-[var(--color-info)]/80 h-8 rounded-xl"
-                  aria-label="Abrir en nueva pestaña"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onClose}
-                  className="h-8 w-8 rounded-xl text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
-                  aria-label="Cerrar"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Reproductor de audio */}
-            <div className="space-y-4">
-              <audio
-                ref={audioRef}
-                controls
-                className="w-full"
-                preload="metadata"
-                src={media.embedUrl || currentUrl}
-              >
-                Tu navegador no soporta el elemento de audio.
-              </audio>
-
-              {/* Control de velocidad */}
-              <div className="flex items-center gap-3">
-                <label className={`text-sm font-medium shrink-0 ${componentStyles.typography.smallMetaText} text-[var(--color-text-primary)]`}>
-                  Velocidad:
-                </label>
-                <div className="flex gap-1 flex-wrap">
-                  {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
-                    <button
-                      key={rate}
-                      onClick={() => handlePlaybackRateChange(rate.toString())}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                        playbackRate === rate
-                          ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-sm'
-                          : 'bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)]/20'
-                      }`}
-                      aria-label={`Velocidad ${rate}x`}
-                    >
-                      {rate}x
-                    </button>
-                  ))}
+          {/* Tarjeta compacta para audio */}
+          <div className="relative z-10 mx-auto w-full max-w-md px-4 pointer-events-auto">
+            <div className="bg-[var(--color-surface-elevated)]/95 backdrop-blur-sm rounded-2xl shadow-card border border-[var(--color-border-default)] p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <h2 id="media-preview-title" className={`font-semibold text-base truncate flex-1 ${componentStyles.typography.cardTitle}`}>
+                  {getMediaLabel(currentUrl)}
+                </h2>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleOpenExternal}
+                    className="text-[var(--color-info)] hover:text-[var(--color-info)]/80 h-8 rounded-xl"
+                    aria-label="Abrir en nueva pestaña"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onClose}
+                    className="h-8 w-8 rounded-xl text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
+                    aria-label="Cerrar"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
                 </div>
               </div>
-            </div>
 
-            {/* Ayuda de teclado */}
-            <div className="mt-4 text-center border-t border-[var(--color-border-default)] pt-3">
-              <p className="text-xs text-[var(--color-text-secondary)]">
-                Ctrl/⌘+. : cerrar
-              </p>
+              {/* Reproductor de audio */}
+              <div className="space-y-4">
+                <audio
+                  ref={audioRef}
+                  controls
+                  className="w-full"
+                  preload="metadata"
+                  src={media.embedUrl || currentUrl}
+                >
+                  Tu navegador no soporta el elemento de audio.
+                </audio>
+
+                {/* Control de velocidad */}
+                <div className="flex items-center gap-3">
+                  <label className={`text-sm font-medium shrink-0 ${componentStyles.typography.smallMetaText} text-[var(--color-text-primary)]`}>
+                    Velocidad:
+                  </label>
+                  <div className="flex gap-1 flex-wrap">
+                    {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
+                      <button
+                        key={rate}
+                        onClick={() => handlePlaybackRateChange(rate.toString())}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${playbackRate === rate
+                          ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-sm'
+                          : 'bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)]/20'
+                          }`}
+                        aria-label={`Velocidad ${rate}x`}
+                      >
+                        {rate}x
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Ayuda de teclado */}
+              <div className="mt-4 text-center border-t border-[var(--color-border-default)] pt-3">
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  Ctrl/⌘+. : cerrar
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </>,
+      </>,
       document.body
     );
   }
@@ -263,7 +262,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
         aria-hidden="true"
       />
       <div
-        className="fixed top-0 right-0 bottom-0 z-[130] flex items-center justify-center pointer-events-none"
+        className="fixed top-0 right-0 bottom-0 z-[240] flex items-center justify-center pointer-events-none"
         style={{
           left: leftOffset,
           width: widthCalc,
@@ -273,109 +272,108 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
         aria-labelledby="media-preview-title"
       >
 
-      {/* Contenedor del modal */}
-      <div className="relative z-10 mx-auto w-full max-w-[1100px] px-4 lg:px-6 flex items-center justify-center max-h-[95vh] pointer-events-auto">
-        <div className="bg-[var(--color-surface-elevated)] rounded-2xl shadow-card w-full max-h-full overflow-hidden flex flex-col border border-[var(--color-border-default)]">
-          {/* Header con título y botón de cierre */}
-          <div className="px-4 lg:px-6 py-4 border-b border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] sticky top-0 z-20 flex items-center justify-between gap-4 shrink-0">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <h2 id="media-preview-title" className={`font-semibold text-base lg:text-lg truncate ${componentStyles.typography.cardTitle}`}>
-                {getMediaLabel(currentUrl)}
-              </h2>
-              {hasMultiple && (
-                <span className="text-xs lg:text-sm text-[var(--color-text-secondary)] whitespace-nowrap">
-                  {currentIndex + 1} de {urls.length}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleOpenExternal}
-                className="text-[var(--color-info)] hover:text-[var(--color-info)]/80 h-8 rounded-xl"
-                aria-label="Abrir en nueva pestaña"
-              >
-                <ExternalLink className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">Abrir</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="h-8 w-8 rounded-xl text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
-                aria-label="Cerrar"
-              >
-                <X className="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Contenido del medio */}
-          <div className="relative flex-1 overflow-y-auto">
-            <div className="p-4 lg:p-6">
-              {/* Medio */}
-              <div className="w-full">
-                <MediaEmbed url={currentUrl} />
+        {/* Contenedor del modal */}
+        <div className="relative z-10 mx-auto w-full max-w-[1100px] px-4 lg:px-6 flex items-center justify-center max-h-[95vh] pointer-events-auto">
+          <div className="bg-[var(--color-surface-elevated)] rounded-2xl shadow-card w-full max-h-full overflow-hidden flex flex-col border border-[var(--color-border-default)]">
+            {/* Header con título y botón de cierre */}
+            <div className="px-4 lg:px-6 py-4 border-b border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] sticky top-0 z-20 flex items-center justify-between gap-4 shrink-0">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <h2 id="media-preview-title" className={`font-semibold text-base lg:text-lg truncate ${componentStyles.typography.cardTitle}`}>
+                  {getMediaLabel(currentUrl)}
+                </h2>
+                {hasMultiple && (
+                  <span className="text-xs lg:text-sm text-[var(--color-text-secondary)] whitespace-nowrap">
+                    {currentIndex + 1} de {urls.length}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleOpenExternal}
+                  className="text-[var(--color-info)] hover:text-[var(--color-info)]/80 h-8 rounded-xl"
+                  aria-label="Abrir en nueva pestaña"
+                >
+                  <ExternalLink className="w-4 h-4 mr-1" />
+                  <span className="hidden sm:inline">Abrir</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="h-8 w-8 rounded-xl text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
+                  aria-label="Cerrar"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
               </div>
             </div>
 
-            {/* Navegación e indicadores (si hay múltiples) */}
-            {hasMultiple && (
-              <div className="px-4 lg:px-6 pb-2 border-t border-[var(--color-border-default)] pt-2">
-                <div className="flex items-center justify-center gap-2">
-                  {/* Botón Anterior */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handlePrevious}
-                    className="h-7 w-7 rounded-md"
-                    aria-label="Anterior"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </Button>
-                  
-                  {/* Indicadores */}
-                  {normalizedUrls.length <= 10 && (
-                    <div className="flex gap-1 items-center">
-                      {normalizedUrls.map((url, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => setCurrentIndex(idx)}
-                          className={`h-1 rounded-full transition-all ${
-                            idx === currentIndex 
-                              ? 'bg-[var(--color-primary)] w-5' 
-                              : 'bg-[var(--color-border-default)] hover:bg-[var(--color-border-strong)] w-1'
-                          }`}
-                          aria-label={`Ir a medio ${idx + 1}`}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  
-                  {/* Botón Siguiente */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleNext}
-                    className="h-7 w-7 rounded-md"
-                    aria-label="Siguiente"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </Button>
+            {/* Contenido del medio */}
+            <div className="relative flex-1 overflow-y-auto">
+              <div className="p-4 lg:p-6">
+                {/* Medio */}
+                <div className="w-full">
+                  <MediaEmbed url={currentUrl} />
                 </div>
               </div>
-            )}
 
-            {/* Ayuda de teclado */}
-            <div className="px-4 lg:px-6 pb-4 text-center">
-              <p className="text-xs text-[var(--color-text-secondary)]">
-                {hasMultiple && 'Usa las flechas ← → para navegar • '}Ctrl/⌘+. : cerrar
-              </p>
+              {/* Navegación e indicadores (si hay múltiples) */}
+              {hasMultiple && (
+                <div className="px-4 lg:px-6 pb-2 border-t border-[var(--color-border-default)] pt-2">
+                  <div className="flex items-center justify-center gap-2">
+                    {/* Botón Anterior */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handlePrevious}
+                      className="h-7 w-7 rounded-md"
+                      aria-label="Anterior"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </Button>
+
+                    {/* Indicadores */}
+                    {normalizedUrls.length <= 10 && (
+                      <div className="flex gap-1 items-center">
+                        {normalizedUrls.map((url, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setCurrentIndex(idx)}
+                            className={`h-1 rounded-full transition-all ${idx === currentIndex
+                              ? 'bg-[var(--color-primary)] w-5'
+                              : 'bg-[var(--color-border-default)] hover:bg-[var(--color-border-strong)] w-1'
+                              }`}
+                            aria-label={`Ir a medio ${idx + 1}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Botón Siguiente */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleNext}
+                      className="h-7 w-7 rounded-md"
+                      aria-label="Siguiente"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Ayuda de teclado */}
+              <div className="px-4 lg:px-6 pb-4 text-center">
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  {hasMultiple && 'Usa las flechas ← → para navegar • '}Ctrl/⌘+. : cerrar
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
       </div>
     </>,
     document.body

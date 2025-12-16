@@ -62,6 +62,7 @@ import TopEjerciciosTab from "@/components/estadisticas/TopEjerciciosTab";
 import AutoevaluacionesTab from "@/components/estadisticas/AutoevaluacionesTab";
 import ComparativaEstudiantes from "@/components/estadisticas/ComparativaEstudiantes";
 import ModalFeedbackSemanal from "@/components/calendario/ModalFeedbackSemanal";
+import MediaPreviewModal from "@/components/common/MediaPreviewModal";
 
 // Icons
 import {
@@ -693,6 +694,20 @@ function ProgresoPageContent() {
     const [selectedFeedback, setSelectedFeedback] = useState(null);
     const [feedbackWeekInfo, setFeedbackWeekInfo] = useState({ startISO: '', label: '' });
 
+    // Media Preview State
+    const [mediaPreviewOpen, setMediaPreviewOpen] = useState(false);
+    const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+    const [previewMediaLinks, setPreviewMediaLinks] = useState([]);
+
+    const handleMediaClick = (mediaLinks, index = 0) => {
+        if (!mediaLinks || mediaLinks.length === 0) {
+            return;
+        }
+        setPreviewMediaLinks(mediaLinks);
+        setSelectedMediaIndex(index);
+        setMediaPreviewOpen(true);
+    };
+
     const handleCreateFeedback = () => {
         // Default to current week
         const now = new Date();
@@ -886,6 +901,7 @@ function ProgresoPageContent() {
                             isEstu={isEstu}
                             onEditFeedback={(isProf || isAdmin) ? handleEditFeedback : undefined}
                             puedeEditar={(f) => isProf || isAdmin} // Simple permission check
+                            onMediaClick={handleMediaClick}
                         />
                     </div>
                 )}
@@ -918,6 +934,15 @@ function ProgresoPageContent() {
                     weekStartISO={feedbackWeekInfo.startISO}
                     weekLabel={feedbackWeekInfo.label}
                     onSaved={handleFeedbackSaved}
+                    onMediaClick={handleMediaClick}
+                />
+
+                {/* Media Preview Modal */}
+                <MediaPreviewModal
+                    open={mediaPreviewOpen}
+                    onClose={() => setMediaPreviewOpen(false)}
+                    urls={previewMediaLinks}
+                    initialIndex={selectedMediaIndex}
                 />
             </div>
         </div>

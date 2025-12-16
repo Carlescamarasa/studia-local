@@ -5,6 +5,7 @@ import { MessageSquare, ClipboardCheck, Gauge, Music, Brain, Zap, Target, Edit, 
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
+import { MediaIcon } from "@/components/common/MediaEmbed";
 import { displayName } from "@/components/utils/helpers";
 import { cn } from "@/lib/utils";
 import ModalSesion from "@/components/calendario/ModalSesion";
