@@ -264,7 +264,7 @@ export default function HabilidadesView({
                         <div>
                             <CardTitle className="text-lg font-semibold">Estado de Forma Actual</CardTitle>
                             <p className="text-sm text-muted-foreground">
-                                {viewMode === 'forma' ? 'Progreso acumulado' : 'XP del rango seleccionado'}
+                                {viewMode === 'forma' ? 'Progreso acumulado en los últimos 30 días' : 'XP del rango de fechas seleccionado'}
                             </p>
                         </div>
                         {/* Secondary Toggle: Estado de forma / XP del rango */}
