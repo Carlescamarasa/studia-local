@@ -226,6 +226,7 @@ export default function ModalFeedbackSemanal({
                 habilidades: {},
                 xp_delta_by_skill: xpDeltas, // NEW FIELD
                 mediaLinks: normalizeMediaLinks(finalMediaLinks),
+                lastEditedAt: new Date().toISOString(),
             };
 
             await FeedbacksSemanalAPI.upsertFeedbackSemanal(dataToSave);
@@ -259,27 +260,17 @@ export default function ModalFeedbackSemanal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden flex flex-col bg-[var(--color-surface-default)]">
+            <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden flex flex-col bg-background">
                 {/* HEADER */}
-                <DialogHeader className="px-6 py-4 border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] shrink-0">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <DialogTitle className="flex items-center gap-2 text-lg">
-                                <MessageSquare className="w-5 h-5 text-[var(--color-primary)]" />
-                                Feedback Profesor
-                            </DialogTitle>
-                            <div className="text-sm text-[var(--color-text-secondary)] mt-1">
-                                {weekLabel || "Semana seleccionada"}
-                            </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-                                Cancelar
-                            </Button>
-                            <Button variant="primary" onClick={handleSave} disabled={isSubmitting || uploadingVideo}>
-                                <Save className="w-4 h-4 mr-2" />
-                                {isSubmitting ? (uploadingVideo ? "Subiendo vídeo..." : "Guardando...") : "Guardar Feedback"}
-                            </Button>
+                {/* HEADER */}
+                <DialogHeader className="px-6 py-4 border-b border-border bg-muted/40 shrink-0 flex flex-row items-center justify-between space-y-0">
+                    <div>
+                        <DialogTitle className="flex items-center gap-2 text-lg">
+                            <MessageSquare className="w-5 h-5 text-[var(--color-primary)]" />
+                            Feedback Profesor
+                        </DialogTitle>
+                        <div className="text-sm text-[var(--color-text-secondary)] mt-1">
+                            {weekLabel || "Semana seleccionada"}
                         </div>
                     </div>
                 </DialogHeader>
@@ -348,10 +339,10 @@ export default function ModalFeedbackSemanal({
                         </div>
 
                         {/* RIGHT COLUMN: Tabs Content (8 cols) */}
-                        <div className="lg:col-span-8 flex flex-col h-full bg-[var(--color-surface-default)]">
+                        <div className="lg:col-span-8 flex flex-col h-full bg-background">
                             {/* Tab Toggles (Pills) */}
-                            <div className="flex border-b border-[var(--color-border-default)] px-6 py-3">
-                                <nav className="flex space-x-2 bg-[var(--color-surface-muted)] p-1 rounded-lg">
+                            <div className="flex border-b border-border px-6 py-3">
+                                <nav className="flex space-x-2 bg-muted p-1 rounded-lg">
                                     {[
                                         { id: 'evaluacion', label: 'Evaluación', icon: Activity },
                                         { id: 'comentarios', label: 'Comentarios', icon: MessageSquare },
@@ -500,6 +491,17 @@ export default function ModalFeedbackSemanal({
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* FOOTER ACTIONS */}
+                <div className="p-4 border-t border-border bg-background flex justify-end gap-3 shrink-0">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+                        Cancelar
+                    </Button>
+                    <Button variant="primary" onClick={handleSave} disabled={isSubmitting || uploadingVideo} className="min-w-[150px]">
+                        <Save className="w-4 h-4 mr-2" />
+                        {isSubmitting ? (uploadingVideo ? "Subiendo vídeo..." : "Guardando...") : "Guardar Feedback"}
+                    </Button>
                 </div>
             </DialogContent>
         </Dialog>

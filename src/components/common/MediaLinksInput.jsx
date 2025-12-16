@@ -218,7 +218,8 @@ function usePageTitle(url) {
   return { title, isLoading };
 }
 
-import { ArrowUp, ArrowDown, Pencil, Check, GripVertical } from 'lucide-react';
+import { ArrowUp, ArrowDown, Pencil, Check, GripVertical, ExternalLink } from 'lucide-react';
+
 
 /**
  * Componente individual para cada enlace multimedia
@@ -406,6 +407,17 @@ function MediaLinkItem({
       </div>
 
       <div className="flex gap-1 shrink-0 items-center self-center sm:self-start sm:mt-0.5">
+        {isValid && !isVideoFile && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center h-7 w-7 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] hover:bg-[var(--color-surface-muted)] rounded-md transition-colors"
+            title="Abrir en nueva pestaña"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        )}
         {isValid && onPreview && !isVideoFile && (
           <Button
             type="button"

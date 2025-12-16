@@ -627,7 +627,7 @@ function LayoutContent() {
                     const itemPathname = item.url.split('?')[0];
                     const isActive = itemPathname === '/'
                       ? location.pathname === '/'
-                      : location.pathname.startsWith(itemPathname);
+                      : (location.pathname === itemPathname || location.pathname.startsWith(`${itemPathname}/`));
                     const isReportes = item.url === '/reportes';
                     const isSoporte = item.url === '/soporte-prof' || item.url === '/soporte';
                     const nuevos = reportCounts?.nuevos || 0;

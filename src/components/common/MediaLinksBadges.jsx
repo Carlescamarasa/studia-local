@@ -33,14 +33,20 @@ export default function MediaLinksBadges({ mediaLinks = [], onMediaClick, compac
       <div className="flex items-center gap-2 flex-wrap">
         {displayLinks.map((url, idx) => {
           const label = getMediaLabel(url);
-          
+
           return (
             <Tooltip key={idx}>
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onMediaClick?.(idx)}
+                  onClick={() => {
+                    if (onMediaClick) {
+                      onMediaClick(idx);
+                    } else {
+                      window.open(url, '_blank', 'noopener,noreferrer');
+                    }
+                  }}
                   className={`h-8 w-8 p-0 ${componentStyles.buttons.outline}`}
                   aria-label={`Abrir ${label}`}
                 >
@@ -54,20 +60,20 @@ export default function MediaLinksBadges({ mediaLinks = [], onMediaClick, compac
             </Tooltip>
           );
         })}
-        
+
         {hasMore && (
           <Tooltip>
             <TooltipTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onMediaClick?.(0)}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onMediaClick?.(0)}
                 className={`h-8 w-8 p-0 ${componentStyles.buttons.outline} text-[var(--color-info)] hover:text-[var(--color-info)]/80`}
                 aria-label={`Ver ${normalizedLinks.length - maxDisplay} enlaces más`}
-          >
+              >
                 <Eye className="w-4 h-4" />
                 <span className="sr-only">+{normalizedLinks.length - maxDisplay} más</span>
-          </Button>
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
               <p className="text-xs">Ver {normalizedLinks.length - maxDisplay} enlaces más</p>
