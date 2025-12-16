@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
-import { MessageSquare, ClipboardCheck, Gauge, Music, Brain, Zap, Target, Edit, BookOpen, Star } from "lucide-react";
+import { MessageSquare, ClipboardCheck, Gauge, Music, Brain, Zap, Target, Edit, BookOpen, Star, LayoutList } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
@@ -322,88 +322,83 @@ export default function FeedbackUnificadoTab({
 
     return (
         <>
-            <Card className={componentStyles.components.cardBase}>
-                <CardHeader>
-                    <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
-                        <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primary)]" />
-                        Feedback
-                        <span className="text-xs text-[var(--color-text-secondary)] font-normal ml-2 hidden sm:inline">
-                            📖 Sesiones + 🗨️ Comentarios
-                        </span>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {/* Pills filter unified style */}
-                    <div className="flex bg-[var(--color-surface-muted)] p-1 rounded-lg w-fit mb-4">
-                        <button
-                            onClick={() => setTipoFiltro('todos')}
-                            className={cn(
-                                "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+            {/* Pills filter - OUTSIDE the card like Estadísticas/Resumen */}
+            <div className="flex justify-center mb-6">
+                <div className="flex bg-[var(--color-surface-muted)] p-1 rounded-lg">
+                    <button
+                        onClick={() => setTipoFiltro('todos')}
+                        className={cn(
+                            "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                            tipoFiltro === 'todos'
+                                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
+                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                        )}
+                    >
+                        <LayoutList className="w-3.5 h-3.5 mr-2" />
+                        Todos
+                        {counts.todos > 0 && (
+                            <span className={cn(
+                                "ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full border",
                                 tipoFiltro === 'todos'
-                                    ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
-                                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                            )}
-                        >
-                            Todos
-                            {counts.todos > 0 && (
-                                <span className={cn(
-                                    "ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full border",
-                                    tipoFiltro === 'todos'
-                                        ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/20"
-                                        : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)] border-[var(--color-border-default)]"
-                                )}>
-                                    {counts.todos}
-                                </span>
-                            )}
-                        </button>
+                                    ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/20"
+                                    : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)] border-[var(--color-border-default)]"
+                            )}>
+                                {counts.todos}
+                            </span>
+                        )}
+                    </button>
 
-                        <button
-                            onClick={() => setTipoFiltro('sesiones')}
-                            className={cn(
-                                "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                    <button
+                        onClick={() => setTipoFiltro('sesiones')}
+                        className={cn(
+                            "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                            tipoFiltro === 'sesiones'
+                                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
+                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                        )}
+                    >
+                        <BookOpen className="w-3.5 h-3.5 mr-2" />
+                        Sesiones
+                        {counts.sesiones > 0 && (
+                            <span className={cn(
+                                "ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full border",
                                 tipoFiltro === 'sesiones'
-                                    ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
-                                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                            )}
-                        >
-                            <BookOpen className="w-3.5 h-3.5 mr-2" />
-                            Sesiones
-                            {counts.sesiones > 0 && (
-                                <span className={cn(
-                                    "ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full border",
-                                    tipoFiltro === 'sesiones'
-                                        ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/20"
-                                        : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)] border-[var(--color-border-default)]"
-                                )}>
-                                    {counts.sesiones}
-                                </span>
-                            )}
-                        </button>
+                                    ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/20"
+                                    : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)] border-[var(--color-border-default)]"
+                            )}>
+                                {counts.sesiones}
+                            </span>
+                        )}
+                    </button>
 
-                        <button
-                            onClick={() => setTipoFiltro('feedback_profesor')}
-                            className={cn(
-                                "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                    <button
+                        onClick={() => setTipoFiltro('feedback_profesor')}
+                        className={cn(
+                            "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                            tipoFiltro === 'feedback_profesor'
+                                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
+                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                        )}
+                    >
+                        <MessageSquare className="w-3.5 h-3.5 mr-2" />
+                        Feedback
+                        {counts.feedback_profesor > 0 && (
+                            <span className={cn(
+                                "ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full border",
                                 tipoFiltro === 'feedback_profesor'
-                                    ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
-                                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                            )}
-                        >
-                            <MessageSquare className="w-3.5 h-3.5 mr-2" />
-                            Feedback
-                            {counts.feedback_profesor > 0 && (
-                                <span className={cn(
-                                    "ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full border",
-                                    tipoFiltro === 'feedback_profesor'
-                                        ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/20"
-                                        : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)] border-[var(--color-border-default)]"
-                                )}>
-                                    {counts.feedback_profesor}
-                                </span>
-                            )}
-                        </button>
-                    </div>
+                                    ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/20"
+                                    : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)] border-[var(--color-border-default)]"
+                            )}>
+                                {counts.feedback_profesor}
+                            </span>
+                        )}
+                    </button>
+                </div>
+            </div>
 
+            {/* Content Card - no header since title is in tab */}
+            <Card className={componentStyles.components.cardBase}>
+                <CardContent className="p-4">
                     {totalItems === 0 ? (
                         <div className="text-center py-8 sm:py-12">
                             <MessageSquare className={componentStyles.components.emptyStateIcon} />

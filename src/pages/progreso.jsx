@@ -812,17 +812,15 @@ function ProgresoPageContent() {
 
             <div className={componentStyles.layout.page}>
                 {/* Main tabs */}
-                <Card className={`${componentStyles.components.cardBase} mb-6 p-0`}>
-                    <div className="w-full">
-                        <Tabs
-                            variant="segmented"
-                            value={tabActiva}
-                            onChange={setTabActiva}
-                            className="w-full"
-                            items={tabItems}
-                        />
-                    </div>
-                </Card>
+                <div className="mb-6">
+                    <Tabs
+                        variant="segmented"
+                        value={tabActiva}
+                        onChange={setTabActiva}
+                        className="w-full"
+                        items={tabItems}
+                    />
+                </div>
 
                 {/* Tab content */}
                 {tabActiva === 'resumen' && (
@@ -1169,38 +1167,41 @@ function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChang
         <div className="space-y-6">
             {/* Source Toggle */}
             <div className="flex justify-center">
-                <div className="bg-muted p-1 rounded-lg inline-flex">
+                <div className="flex bg-[var(--color-surface-muted)] p-1 rounded-lg">
                     <button
                         onClick={() => setSourceFilter('experiencia')}
                         className={cn(
-                            "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                            "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
                             sourceFilter === 'experiencia'
-                                ? "bg-background shadow-sm text-foreground"
-                                : "text-muted-foreground hover:text-foreground"
+                                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
+                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                         )}
                     >
+                        <Star className="w-4 h-4 mr-2" />
                         Experiencia
                     </button>
                     <button
                         onClick={() => setSourceFilter('evaluaciones')}
                         className={cn(
-                            "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                            "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
                             sourceFilter === 'evaluaciones'
-                                ? "bg-background shadow-sm text-foreground"
-                                : "text-muted-foreground hover:text-foreground"
+                                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
+                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                         )}
                     >
+                        <Target className="w-4 h-4 mr-2" />
                         Evaluaciones
                     </button>
                     <button
                         onClick={() => setSourceFilter('ambos')}
                         className={cn(
-                            "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                            "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
                             sourceFilter === 'ambos'
-                                ? "bg-background shadow-sm text-foreground"
-                                : "text-muted-foreground hover:text-foreground"
+                                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
+                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                         )}
                     >
+                        <Layers className="w-4 h-4 mr-2" />
                         Ambos
                     </button>
                 </div>
