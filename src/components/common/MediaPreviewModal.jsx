@@ -165,7 +165,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
       <>
         {/* Overlay transparente para audio - Fixed para cubrir toda la pantalla */}
         <div
-          className="fixed inset-0 bg-transparent z-[110]"
+          className="fixed inset-0 w-screen h-screen bg-transparent z-[110] pointer-events-auto left-0 top-0"
           onPointerDown={(e) => e.stopPropagation()}
           onPointerUp={handleOverlayPointerUp}
           data-prevent-outside-close="true"
@@ -262,7 +262,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
     <>
       {/* Overlay oscuro para video/imagen - Fixed para cubrir toda la pantalla */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110]"
+        className="fixed inset-0 w-screen h-screen bg-black/60 backdrop-blur-sm z-[110] pointer-events-auto left-0 top-0"
         onPointerDown={(e) => e.stopPropagation()}
         onPointerUp={handleOverlayPointerUp}
         data-prevent-outside-close="true"
