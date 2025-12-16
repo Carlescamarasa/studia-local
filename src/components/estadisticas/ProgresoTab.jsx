@@ -29,7 +29,7 @@ export default function ProgresoTab({
   const formatFecha = (fecha) => {
     if (granularidad === 'dia') {
       const d = parseLocalDate(fecha);
-      return isMobile 
+      return isMobile
         ? `${d.getDate()}/${d.getMonth() + 1}`
         : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
     } else if (granularidad === 'semana') {
@@ -100,9 +100,9 @@ export default function ProgresoTab({
             <div className="w-full overflow-x-auto -mx-2 px-2">
               <ResponsiveContainer width="100%" height={isMobile ? 200 : 300} minHeight={200}>
                 <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 50 : 30 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                  <XAxis 
-                    dataKey="fecha" 
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                  <XAxis
+                    dataKey="fecha"
                     tick={{ fontSize: isMobile ? 9 : 11 }}
                     angle={isMobile ? -45 : 0}
                     textAnchor={isMobile ? 'end' : 'middle'}
@@ -110,12 +110,12 @@ export default function ProgresoTab({
                     interval={isMobile ? 'preserveStartEnd' : 0}
                     tickFormatter={formatFecha}
                   />
-                  <YAxis 
+                  <YAxis
                     tick={{ fontSize: isMobile ? 9 : 11 }}
                     width={isMobile ? 30 : 50}
                   />
-                  <RechartsTooltip 
-                    contentStyle={{ 
+                  <RechartsTooltip
+                    contentStyle={{
                       backgroundColor: 'var(--color-surface-elevated)',
                       border: '1px solid var(--color-border-default)',
                       borderRadius: '8px',
@@ -129,18 +129,18 @@ export default function ProgresoTab({
                       return [value, name];
                     }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="tiempo" 
-                    stroke="var(--color-primary)" 
+                  <Line
+                    type="monotone"
+                    dataKey="tiempo"
+                    stroke="var(--color-primary)"
                     strokeWidth={2}
                     dot={{ r: isMobile ? 3 : 4 }}
                     activeDot={{ r: isMobile ? 5 : 6 }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="satisfaccion" 
-                    stroke="var(--color-success)" 
+                  <Line
+                    type="monotone"
+                    dataKey="satisfaccion"
+                    stroke="var(--color-success)"
                     strokeWidth={2}
                     dot={{ r: isMobile ? 3 : 4 }}
                     activeDot={{ r: isMobile ? 5 : 6 }}
@@ -172,9 +172,9 @@ export default function ProgresoTab({
             <div className="w-full overflow-x-auto -mx-2 px-2">
               <ResponsiveContainer width="100%" height={isMobile ? 200 : 300} minHeight={200}>
                 <BarChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 50 : 30 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                  <XAxis 
-                    dataKey="fecha" 
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                  <XAxis
+                    dataKey="fecha"
                     tick={{ fontSize: isMobile ? 9 : 11 }}
                     angle={isMobile ? -45 : 0}
                     textAnchor={isMobile ? 'end' : 'middle'}
@@ -182,12 +182,12 @@ export default function ProgresoTab({
                     interval={isMobile ? 'preserveStartEnd' : 0}
                     tickFormatter={formatFecha}
                   />
-                  <YAxis 
+                  <YAxis
                     tick={{ fontSize: isMobile ? 9 : 11 }}
                     width={isMobile ? 30 : 50}
                   />
-                  <RechartsTooltip 
-                    contentStyle={{ 
+                  <RechartsTooltip
+                    contentStyle={{
                       backgroundColor: 'var(--color-surface-elevated)',
                       border: '1px solid var(--color-border-default)',
                       borderRadius: '8px',

@@ -56,10 +56,17 @@ import TotalXPDisplay from "@/components/estadisticas/TotalXPDisplay";
 import HabilidadesRadarChart from "@/components/estadisticas/HabilidadesRadarChart";
 import HeatmapFranjas from "@/components/estadisticas/HeatmapFranjas";
 
+// New imports for Estadísticas subtabs
+import TiposBloquesTab from "@/components/estadisticas/TiposBloquesTab";
+import TopEjerciciosTab from "@/components/estadisticas/TopEjerciciosTab";
+import AutoevaluacionesTab from "@/components/estadisticas/AutoevaluacionesTab";
+import ComparativaEstudiantes from "@/components/estadisticas/ComparativaEstudiantes";
+
 // Icons
 import {
     Activity, BarChart3, Star, MessageSquare, Backpack, Target,
-    Clock, Trophy, ChevronDown, ChevronUp, Filter, User, TrendingUp
+    Clock, Trophy, ChevronDown, ChevronUp, Filter, User, TrendingUp,
+    Layers, List, Users
 } from "lucide-react";
 
 import RequireRole from "@/components/auth/RequireRole";
@@ -462,6 +469,138 @@ function ProgresoPageContent() {
         return map;
     }, [usuarios]);
 
+    // Helper function to calculate streak (reutilized from estadisticas.jsx)
+    const calcularRacha = (registros, alumnoId = null) => {
+        const targetRegistros = registros
+            .filter(r => (!alumnoId || r.alumnoId === alumnoId) && (r.duracionRealSeg || 0) >= 60);
+
+        if (targetRegistros.length === 0) return { actual: 0, maxima: 0 };
+
+        const diasUnicos = new Set();
+        targetRegistros.forEach(r => {
+            if (r.inicioISO) {
+                const fecha = new Date(r.inicioISO);
+                const fechaLocal = formatLocalDate(fecha);
+                diasUnicos.add(fechaLocal);
+            }
+        });
+
+        if (diasUnicos.size === 0) return { actual: 0, maxima: 0 };
+
+        const diasArraySortedDesc = Array.from(diasUnicos).sort((a, b) => b.localeCompare(a));
+        const diasArraySortedAsc = Array.from(diasUnicos).sort((a, b) => a.localeCompare(b));
+
+        let rachaActual = 0;
+        const hoy = formatLocalDate(new Date());
+        const ayer = (() => {
+            const d = new Date();
+            d.setDate(d.getDate() - 1);
+            return formatLocalDate(d);
+        })();
+
+        if (diasArraySortedDesc.length > 0) {
+            const lastPracticeDay = diasArraySortedDesc[0];
+            if (lastPracticeDay === hoy || lastPracticeDay === ayer) {
+                rachaActual = 1;
+                for (let i = 1; i < diasArraySortedDesc.length; i++) {
+                    const currentDate = parseLocalDate(diasArraySortedDesc[i]);
+                    const previousDate = parseLocalDate(diasArraySortedDesc[i - 1]);
+                    const diffDays = Math.round((previousDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+
+                    if (diffDays === 1) {
+                        rachaActual++;
+                    } else if (diffDays > 1) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        let rachaMaxima = 1;
+        if (diasArraySortedAsc.length > 0) {
+            let currentMaxStreak = 1;
+
+            for (let i = 1; i < diasArraySortedAsc.length; i++) {
+                const currentDate = parseLocalDate(diasArraySortedAsc[i]);
+                const previousDate = parseLocalDate(diasArraySortedAsc[i - 1]);
+                const diffDays = Math.round((currentDate.getTime() - previousDate.getTime()) / (1000 * 60 * 60 * 24));
+
+                if (diffDays === 1) {
+                    currentMaxStreak++;
+                } else if (diffDays > 1) {
+                    currentMaxStreak = 1;
+                }
+                rachaMaxima = Math.max(rachaMaxima, currentMaxStreak);
+            }
+        }
+
+        return { actual: rachaActual, maxima: rachaMaxima };
+    };
+
+    // Calculate student comparison data (for PROF/ADMIN Comparar tab)
+    const estudiantesComparacion = useMemo(() => {
+        if (isEstu) return [];
+
+        // Get student IDs to compare
+        const estudiantesIds = alumnosSeleccionados.length > 0 && alumnosSeleccionados[0]
+            ? alumnosSeleccionados
+            : (isProf && estudiantesDelProfesor.length > 0)
+                ? estudiantesDelProfesor
+                : estudiantes.map(e => e.id);
+
+        return estudiantesIds.map(alumnoId => {
+            const registrosEstudiante = registrosFiltradosUnicos.filter(r => r.alumnoId === alumnoId);
+
+            // Calculate metrics for each student
+            const tiempoTotal = registrosEstudiante.reduce((sum, r) => {
+                const duracion = safeNumber(r.duracionRealSeg);
+                return sum + (duracion > 0 && duracion <= 43200 ? duracion : 0);
+            }, 0);
+
+            const numSesiones = registrosEstudiante.length;
+
+            let mediaSemanalSesiones = 0;
+            if (periodoInicio && periodoFin) {
+                const inicio = parseLocalDate(periodoInicio);
+                const fin = parseLocalDate(periodoFin);
+                const diffMs = fin.getTime() - inicio.getTime();
+                const numDias = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1);
+                mediaSemanalSesiones = numDias > 0 ? (numSesiones / numDias) * 7 : 0;
+            }
+
+            const conCalificacion = registrosEstudiante.filter(r => {
+                const cal = safeNumber(r.calificacion);
+                return cal > 0 && cal <= 4;
+            });
+            const calificacionPromedio = conCalificacion.length > 0
+                ? (conCalificacion.reduce((acc, r) => acc + safeNumber(r.calificacion), 0) / conCalificacion.length).toFixed(1)
+                : '0.0';
+
+            const totalCompletados = registrosEstudiante.reduce((sum, r) =>
+                sum + safeNumber(r.bloquesCompletados), 0
+            );
+            const totalOmitidos = registrosEstudiante.reduce((sum, r) =>
+                sum + safeNumber(r.bloquesOmitidos), 0
+            );
+            const ratioCompletado = (totalCompletados + totalOmitidos) > 0
+                ? ((totalCompletados / (totalCompletados + totalOmitidos)) * 100).toFixed(1)
+                : 0;
+
+            const racha = calcularRacha(registrosEstudiante, null);
+
+            return {
+                id: alumnoId,
+                tiempoTotal,
+                sesiones: numSesiones,
+                sesionesPorSemana: mediaSemanalSesiones,
+                calificacionPromedio,
+                ratioCompletado,
+                racha: racha.actual,
+                rachaMaxima: racha.maxima,
+            };
+        });
+    }, [isEstu, isProf, alumnosSeleccionados, estudiantesDelProfesor, estudiantes, registrosFiltradosUnicos, periodoInicio, periodoFin]);
+
     // ============================================================================
     // URL Sync
     // ============================================================================
@@ -656,6 +795,17 @@ function ProgresoPageContent() {
                         registrosFiltrados={registrosFiltradosUnicos}
                         periodoInicio={periodoInicio}
                         periodoFin={periodoFin}
+                        // NEW props for subtabs
+                        tiposBloques={tiposBloques}
+                        topEjercicios={topEjercicios}
+                        bloquesFiltrados={bloquesFiltrados}
+                        usuarios={usuarios}
+                        userIdActual={effectiveStudentId || userIdActual}
+                        effectiveUser={effectiveUser}
+                        isEstu={isEstu}
+                        isProf={isProf}
+                        isAdmin={isAdmin}
+                        estudiantesComparacion={estudiantesComparacion}
                     />
                 )}
 
@@ -1039,28 +1189,164 @@ function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChang
 }
 
 // ============================================================================
-// Tab Estadísticas Content - EMBEDDED (Bloque 3)
+// Tab Estadísticas Content - EMBEDDED (Bloque 3) - Collapsible Vertical Sections
 // ============================================================================
 
-function TabEstadisticasContent({ kpis, datosLinea, granularidad, onGranularidadChange, tiempoRealVsObjetivo, registrosFiltrados, periodoInicio, periodoFin }) {
+function TabEstadisticasContent({
+    kpis, datosLinea, granularidad, onGranularidadChange, tiempoRealVsObjetivo,
+    registrosFiltrados, periodoInicio, periodoFin,
+    // Props for sections
+    tiposBloques, topEjercicios, bloquesFiltrados, usuarios, userIdActual,
+    effectiveUser, isEstu, isProf, isAdmin, estudiantesComparacion
+}) {
+    // Track which sections are expanded (all start collapsed except Progreso)
+    const [expandedSections, setExpandedSections] = useState({
+        progreso: true,
+        tipos: false,
+        top: false,
+        sesiones: false,
+        comparar: false
+    });
+
+    const toggleSection = (section) => {
+        setExpandedSections(prev => ({
+            ...prev,
+            [section]: !prev[section]
+        }));
+    };
+
+    // Collapsible section header component
+    const SectionHeader = ({ sectionKey, icon: Icon, title, count }) => (
+        <div
+            className={cn(
+                "flex items-center justify-between p-4 cursor-pointer transition-colors",
+                "hover:bg-[var(--color-surface-muted)]",
+                expandedSections[sectionKey] && "border-b border-[var(--color-border-default)]"
+            )}
+            onClick={() => toggleSection(sectionKey)}
+        >
+            <div className="flex items-center gap-3">
+                <Icon className="w-5 h-5 text-[var(--color-primary)]" />
+                <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+                    {title}
+                </h3>
+                {count !== undefined && (
+                    <Badge variant="outline" className="ml-2">
+                        {count}
+                    </Badge>
+                )}
+            </div>
+            {expandedSections[sectionKey] ? (
+                <ChevronUp className="w-5 h-5 text-[var(--color-text-secondary)]" />
+            ) : (
+                <ChevronDown className="w-5 h-5 text-[var(--color-text-secondary)]" />
+            )}
+        </div>
+    );
 
     return (
-        <div className="space-y-6">
-            {/* Line charts */}
-            <ProgresoTab
-                datosLinea={datosLinea}
-                granularidad={granularidad}
-                onGranularidadChange={onGranularidadChange}
-                tiempoRealVsObjetivo={tiempoRealVsObjetivo}
-                kpis={kpis}
-            />
+        <div className="space-y-4">
+            {/* Section: Progreso */}
+            <Card className={componentStyles.components.cardBase}>
+                <SectionHeader
+                    sectionKey="progreso"
+                    icon={TrendingUp}
+                    title="Progreso"
+                />
+                {expandedSections.progreso && (
+                    <CardContent className="p-4 space-y-6">
+                        <ProgresoTab
+                            datosLinea={datosLinea}
+                            granularidad={granularidad}
+                            onGranularidadChange={onGranularidadChange}
+                            tiempoRealVsObjetivo={tiempoRealVsObjetivo}
+                            kpis={kpis}
+                        />
+                        <HeatmapFranjas
+                            registrosFiltrados={registrosFiltrados}
+                            periodoInicio={periodoInicio}
+                            periodoFin={periodoFin}
+                        />
+                    </CardContent>
+                )}
+            </Card>
 
-            {/* Heatmap por franjas horarias */}
-            <HeatmapFranjas
-                registrosFiltrados={registrosFiltrados}
-                periodoInicio={periodoInicio}
-                periodoFin={periodoFin}
-            />
+            {/* Section: Tipos de Bloque */}
+            <Card className={componentStyles.components.cardBase}>
+                <SectionHeader
+                    sectionKey="tipos"
+                    icon={Layers}
+                    title="Tipos de Bloque"
+                    count={tiposBloques?.length}
+                />
+                {expandedSections.tipos && (
+                    <CardContent className="p-4">
+                        <TiposBloquesTab tiposBloques={tiposBloques} />
+                    </CardContent>
+                )}
+            </Card>
+
+            {/* Section: Top Ejercicios */}
+            <Card className={componentStyles.components.cardBase}>
+                <SectionHeader
+                    sectionKey="top"
+                    icon={Star}
+                    title="Top Ejercicios"
+                    count={topEjercicios?.length}
+                />
+                {expandedSections.top && (
+                    <CardContent className="p-4">
+                        <TopEjerciciosTab
+                            topEjercicios={topEjercicios}
+                            bloquesFiltrados={bloquesFiltrados}
+                            registrosFiltrados={registrosFiltrados}
+                        />
+                    </CardContent>
+                )}
+            </Card>
+
+            {/* Section: Sesiones */}
+            <Card className={componentStyles.components.cardBase}>
+                <SectionHeader
+                    sectionKey="sesiones"
+                    icon={List}
+                    title="Sesiones"
+                    count={registrosFiltrados?.length}
+                />
+                {expandedSections.sesiones && (
+                    <CardContent className="p-4">
+                        <AutoevaluacionesTab
+                            registros={registrosFiltrados}
+                            usuarios={usuarios}
+                            userIdActual={userIdActual}
+                            userRole={effectiveUser?.rolPersonalizado}
+                            onMediaClick={(mediaLinks, index) => {
+                                console.log('Media click:', mediaLinks, index);
+                            }}
+                        />
+                    </CardContent>
+                )}
+            </Card>
+
+            {/* Section: Comparar (PROF/ADMIN only) */}
+            {!isEstu && (
+                <Card className={componentStyles.components.cardBase}>
+                    <SectionHeader
+                        sectionKey="comparar"
+                        icon={Users}
+                        title="Comparar Estudiantes"
+                        count={estudiantesComparacion?.length}
+                    />
+                    {expandedSections.comparar && (
+                        <CardContent className="p-4">
+                            <ComparativaEstudiantes
+                                estudiantes={estudiantesComparacion}
+                                usuarios={usuarios}
+                            />
+                        </CardContent>
+                    )}
+                </Card>
+            )}
         </div>
     );
 }

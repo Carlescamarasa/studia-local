@@ -83,19 +83,19 @@ export default function ProgresoPorPieza({ progresoPorPieza }) {
           <div className="w-full overflow-x-auto -mx-2 px-2">
             <ResponsiveContainer width="100%" height={isMobile ? 250 : 350}>
               <BarChart data={datosGrafico} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 60 : 40 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis 
-                  dataKey="nombre" 
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                <XAxis
+                  dataKey="nombre"
                   tick={{ fontSize: isMobile ? 9 : 11 }}
                   angle={isMobile ? -45 : -30}
                   textAnchor={isMobile ? 'end' : 'end'}
                   height={isMobile ? 80 : 60}
                 />
-                <YAxis 
+                <YAxis
                   tick={{ fontSize: isMobile ? 9 : 11 }}
                   width={isMobile ? 30 : 50}
                 />
-                <RechartsTooltip 
+                <RechartsTooltip
                   formatter={(value) => `${value} min`}
                   contentStyle={{
                     backgroundColor: 'var(--color-surface-elevated)',

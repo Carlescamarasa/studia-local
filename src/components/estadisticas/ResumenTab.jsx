@@ -98,7 +98,7 @@ export default function ResumenTab({
               <div className="w-full overflow-x-auto -mx-2 px-2">
                 <ResponsiveContainer width="100%" height={isMobile ? 180 : 250} minHeight={180}>
                   <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
                     <XAxis
                       dataKey="fecha"
                       tick={{ fontSize: isMobile ? 9 : 11 }}
@@ -181,7 +181,7 @@ export default function ResumenTab({
               <div className="w-full overflow-x-auto -mx-2 px-2">
                 <ResponsiveContainer width="100%" height={isMobile ? 180 : 250} minHeight={180}>
                   <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
                     <XAxis
                       dataKey="fecha"
                       tick={{ fontSize: isMobile ? 9 : 11 }}
