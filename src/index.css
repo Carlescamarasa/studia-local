@@ -214,6 +214,7 @@ button:focus-visible {
 
   /* Controles unificados */
   .ctrl-field {
+    width: 100%;
     background-color: var(--ctrl-field-bg, var(--color-surface));
     color: var(--color-text-primary);
     border-width: var(--input-border-width, 1px);

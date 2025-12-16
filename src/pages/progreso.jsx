@@ -679,34 +679,38 @@ function ProgresoPageContent() {
 
 function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChange, userIdActual }) {
     const { radarStats, isLoading: isLoadingStats } = useHabilidadesStats(userIdActual || '');
-    const { data: totalXP } = useTotalXP(userIdActual || '');
-
-    const totalXPSum = useMemo(() => {
-        if (!totalXP) return 0;
-        const obj = totalXPToObject(totalXP);
-        return (obj.motricidad || 0) + (obj.articulacion || 0) + (obj.flexibilidad || 0);
-    }, [totalXP]);
 
     return (
         <div className="space-y-6">
-            {/* Radar Chart */}
-            {radarStats && !isLoadingStats && (
-                <Card className={componentStyles.components.cardBase}>
-                    <CardHeader>
-                        <CardTitle>Estado de Forma</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-[300px]">
-                            <HabilidadesRadarChart
-                                data={radarStats.combinedData || []}
-                                isLoading={isLoadingStats}
-                                dataKey1="A"
-                                dataKey2="B"
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
+            {/* XP por Habilidad - 3 skill cards */}
+            <Card className={componentStyles.components.cardBase}>
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-semibold">XP por Habilidad</CardTitle>
+                    <p className="text-sm text-muted-foreground">Práctica + Evaluaciones por habilidad.</p>
+                </CardHeader>
+                <CardContent>
+                    <TotalXPDisplay
+                        studentId={userIdActual || ''}
+                        filter={['evaluaciones', 'experiencia']}
+                    />
+                </CardContent>
+            </Card>
+
+            {/* Radar Chart - Perfil Técnico */}
+            <Card className={componentStyles.components.cardBase}>
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-semibold">Perfil Técnico</CardTitle>
+                    <p className="text-sm text-muted-foreground">Comparativa de habilidades: Evaluación vs Experiencia</p>
+                </CardHeader>
+                <CardContent>
+                    <HabilidadesRadarChart
+                        data={radarStats?.combinedData || []}
+                        isLoading={isLoadingStats}
+                        dataKey1="A"
+                        dataKey2="B"
+                    />
+                </CardContent>
+            </Card>
 
             {/* KPIs from ResumenTab */}
             <ResumenTab

@@ -48,8 +48,12 @@ export default function HabilidadesRadarChart({ data, isLoading, dataKey1 = "A",
                 <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-                            <PolarGrid stroke="var(--color-border-default)" />
-                            <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }} />
+                            <PolarGrid stroke="var(--color-border-default)" strokeOpacity={0.4} />
+                            <PolarAngleAxis
+                                dataKey="subject"
+                                tick={{ fill: 'var(--color-text-primary)', fontSize: 11, fontWeight: 500 }}
+                                tickLine={false}
+                            />
                             <PolarRadiusAxis angle={30} domain={[0, 10]} tick={false} axisLine={false} />
 
                             {/* Layer 3: Total (Background) */}
@@ -86,6 +90,12 @@ export default function HabilidadesRadarChart({ data, isLoading, dataKey1 = "A",
                             )}
 
                             <Tooltip
+                                contentStyle={{
+                                    backgroundColor: 'var(--color-surface-elevated)',
+                                    border: '1px solid var(--color-border-default)',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                                }}
                                 formatter={(value: number, name: string, props: any) => {
                                     // Show original value if exists (for XP), otherwise normalized value (0-10)
                                     let key = "original";
@@ -96,7 +106,10 @@ export default function HabilidadesRadarChart({ data, isLoading, dataKey1 = "A",
                                     return [original !== undefined ? `${original} XP` : value.toFixed(1), name];
                                 }}
                             />
-                            <Legend />
+                            <Legend
+                                wrapperStyle={{ paddingTop: '10px' }}
+                                iconType="circle"
+                            />
                         </RadarChart>
                     </ResponsiveContainer>
                 </div>

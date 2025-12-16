@@ -295,16 +295,16 @@ function PreparacionPageContent() {
                                 {/* Student header */}
                                 <Card className={componentStyles.containers.cardBase}>
                                     <CardContent className="p-4">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <h2 className="text-xl font-semibold">
+                                        <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
+                                            <div className="min-w-0">
+                                                <h2 className="text-xl font-semibold truncate">
                                                     {selectedStudent ? displayName(selectedStudent) : 'Estudiante'}
                                                 </h2>
-                                                <p className="text-sm text-muted-foreground">
+                                                <p className="text-sm text-muted-foreground truncate">
                                                     {selectedStudent?.email || ''}
                                                 </p>
                                             </div>
-                                            <div className="flex gap-2">
+                                            <div className="flex gap-2 flex-shrink-0">
                                                 <Button
                                                     onClick={handleCrearAsignacion}
                                                     variant="outline"

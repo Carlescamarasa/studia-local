@@ -17,11 +17,11 @@ import { useLocation } from "react-router-dom";
  * @param {string} iconVariant - Variante del icono (deprecated: siempre usa estilo plain)
  * @param {boolean} showMenuButton - Mostrar botón de menú en mobile (default: true)
  */
-export default function PageHeader({ 
-  icon: Icon, 
-  title, 
-  subtitle, 
-  actions, 
+export default function PageHeader({
+  icon: Icon,
+  title,
+  subtitle,
+  actions,
   filters,
   className = "",
   iconVariant = "plain", // Siempre usa estilo plain por defecto
@@ -30,12 +30,12 @@ export default function PageHeader({
   const { abierto, toggleSidebar } = useSidebar();
   const [filtersExpanded, setFiltersExpanded] = useState(false); // Por defecto oculto
   const [highlightButton, setHighlightButton] = useState(false);
-  
+
   // Refs para gestos de swipe
   const swipeStartRef = useRef({ x: 0, y: 0, time: 0 });
   const headerRef = useRef(null);
   const isMobileRef = useRef(false);
-  
+
   // Detectar si es móvil
   useEffect(() => {
     const checkMobile = () => {
@@ -45,12 +45,12 @@ export default function PageHeader({
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-  
+
   // Gestos de swipe en el header
   useEffect(() => {
     if (!headerRef.current) return;
     const header = headerRef.current;
-    
+
     const handleTouchStart = (e) => {
       if (!isMobileRef.current) return;
       const touch = e.touches[0];
@@ -60,20 +60,20 @@ export default function PageHeader({
         time: Date.now()
       };
     };
-    
+
     const handleTouchMove = (e) => {
       if (!isMobileRef.current || !swipeStartRef.current.x) return;
-      
+
       // Si el evento viene de un botón o input, no interferir
       const target = e.target;
       if (target && (target.closest('button') || target.closest('input') || target.closest('[role="button"]'))) {
         return;
       }
-      
+
       const touch = e.touches[0];
       const dx = Math.abs(touch.clientX - swipeStartRef.current.x);
       const dy = Math.abs(touch.clientY - swipeStartRef.current.y);
-      
+
       // Solo prevenir scroll si el movimiento es principalmente horizontal
       // o si es vertical y hay filtros disponibles
       if (dx > dy && dx > 20) {
@@ -82,25 +82,25 @@ export default function PageHeader({
         e.preventDefault(); // Prevenir scroll vertical durante swipe vertical en header con filtros
       }
     };
-    
+
     const handleTouchEnd = (e) => {
       if (!isMobileRef.current || !swipeStartRef.current.x) return;
-      
+
       const touch = e.changedTouches[0];
       const dx = touch.clientX - swipeStartRef.current.x;
       const dy = touch.clientY - swipeStartRef.current.y;
       const dt = Date.now() - swipeStartRef.current.time;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      
+
       // Reset
       swipeStartRef.current = { x: 0, y: 0, time: 0 };
-      
+
       // Validar que sea un swipe rápido y con suficiente distancia
       if (dt > 500 || distance < 30) return;
-      
+
       // Determinar dirección principal
       const isHorizontal = Math.abs(dx) > Math.abs(dy);
-      
+
       if (isHorizontal) {
         // Swipe horizontal: izquierda-derecha para sidebar
         if (dx > 50 && !abierto) {
@@ -123,44 +123,44 @@ export default function PageHeader({
         }
       }
     };
-    
+
     header.addEventListener('touchstart', handleTouchStart, { passive: true });
     header.addEventListener('touchmove', handleTouchMove, { passive: false });
     header.addEventListener('touchend', handleTouchEnd, { passive: true });
-    
+
     return () => {
       header.removeEventListener('touchstart', handleTouchStart);
       header.removeEventListener('touchmove', handleTouchMove);
       header.removeEventListener('touchend', handleTouchEnd);
     };
   }, [abierto, filters, filtersExpanded, toggleSidebar]);
-  
+
   // Highlight del botón de filtros al cargar la página (solo una vez por sesión)
   useEffect(() => {
     // Verificar si ya se mostró el highlight en esta sesión
     const highlightShown = sessionStorage.getItem('pageHeaderFiltersHighlightShown');
-    
+
     if (!highlightShown && filters) {
       // Mostrar highlight solo si no se ha mostrado antes en esta sesión
       setHighlightButton(true);
       sessionStorage.setItem('pageHeaderFiltersHighlightShown', 'true');
-      
+
       const timer = setTimeout(() => {
         setHighlightButton(false);
       }, 1000); // 1 segundo de parpadeo
-      
+
       return () => clearTimeout(timer);
     }
   }, [filters]);
-  
+
   // Icono siempre en estilo plain (color de marca, sin sombreado, sin bordes)
   const iconClass = "w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 text-[var(--color-primary)]";
 
   return (
-    <div 
+    <div
       ref={headerRef}
-      className={`page-header header-modern ${className}`} 
-      data-testid="page-header" 
+      className={`page-header header-modern ${className}`}
+      data-testid="page-header"
       style={{ position: 'relative', zIndex: 1 }}
     >
       {/* Zona 1: Appbar - Icono + Título + Subtítulo (solo desktop) + Acciones (derecha) */}
@@ -184,12 +184,26 @@ export default function PageHeader({
                   {abierto ? <X className="w-5 h-5 pointer-events-none" /> : <Menu className="w-5 h-5 pointer-events-none" />}
                 </button>
               )}
-              {Icon && (
-                <Icon className={iconClass} />
-              )}
-              {title && (
-                <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl flex-1 min-w-0`}>{title}</h1>
-              )}
+              {/* Icono + Título: clickable en mobile/tablet para toggle sidebar */}
+              <div
+                className="flex items-center gap-2 sm:gap-2 md:gap-3 flex-1 min-w-0 lg:pointer-events-none cursor-pointer lg:cursor-default"
+                onClick={() => {
+                  // Solo toggle en móvil/tablet (< 1024px)
+                  if (window.innerWidth < 1024) {
+                    toggleSidebar();
+                  }
+                }}
+                role="button"
+                tabIndex={-1}
+                aria-hidden="true"
+              >
+                {Icon && (
+                  <Icon className={iconClass} />
+                )}
+                {title && (
+                  <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl flex-1 min-w-0`}>{title}</h1>
+                )}
+              </div>
             </div>
             {/* Segunda línea (cuando se estrecha): Acciones a la derecha */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto justify-end sm:justify-start relative z-10" style={{ pointerEvents: 'auto' }}>

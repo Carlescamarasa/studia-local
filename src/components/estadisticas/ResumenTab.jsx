@@ -30,21 +30,21 @@ export default function ResumenTab({
   return (
     <div className="space-y-6">
       {/* KPIs - Grid responsive */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4 md:gap-6 px-2 py-4 sm:py-6 border-b border-[var(--color-border-default)]">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 md:gap-6 px-2 py-4 sm:py-6 border-b border-[var(--color-border-default)]">
         <StatCard
           value={formatDuracionHM(kpis.tiempoTotal)}
           label="Tiempo total"
           icon={Clock}
           variant="primary"
         />
-        
+
         <StatCard
           value={formatDuracionHM(kpis.tiempoPromedioPorSesion)}
           label="Promedio/sesión"
           icon={Timer}
           variant="primary"
         />
-        
+
         <StatCard
           value={kpis.calidadPromedio}
           suffix="/4"
@@ -52,28 +52,21 @@ export default function ResumenTab({
           icon={Smile}
           variant="success"
         />
-        
+
         <div className="text-center flex flex-col items-center justify-center">
-          <RachaBadge 
+          <RachaBadge
             rachaActual={kpis.racha.actual}
             rachaMaxima={kpis.racha.maxima}
           />
         </div>
-        
+
         <StatCard
           value={kpis.semanasDistintas}
           label="Semanas practicadas"
           icon={Calendar}
           variant="info"
         />
-        
-        <StatCard
-          value={kpis.semanasPeriodo}
-          label="Semanas totales"
-          icon={CalendarDays}
-          variant="default"
-        />
-        
+
         <StatCard
           value={kpis.mediaSemanalSesiones.toFixed(1)}
           label="Sesiones/semana"
@@ -106,32 +99,32 @@ export default function ResumenTab({
                 <ResponsiveContainer width="100%" height={isMobile ? 180 : 250} minHeight={180}>
                   <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                  <XAxis 
-                    dataKey="fecha" 
-                    tick={{ fontSize: isMobile ? 9 : 11 }}
-                    angle={isMobile ? -45 : 0}
-                    textAnchor={isMobile ? 'end' : 'middle'}
-                    height={isMobile ? 60 : 30}
-                    interval={isMobile ? 'preserveStartEnd' : 0}
-                    tickFormatter={(fecha) => {
-                      if (granularidad === 'dia') {
-                        const d = parseLocalDate(fecha);
-                        return isMobile 
-                          ? `${d.getDate()}/${d.getMonth() + 1}`
-                          : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-                      } else if (granularidad === 'semana') {
-                        const d = parseLocalDate(fecha);
-                        return `${d.getDate()}/${d.getMonth() + 1}`;
-                      } else {
-                        const [y, m] = fecha.split('-');
-                        const d = new Date(Number(y), Number(m) - 1, 1);
-                        return isMobile
-                          ? `${m}/${y.slice(-2)}`
-                          : d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
-                      }
-                    }}
-                  />
-                    <YAxis 
+                    <XAxis
+                      dataKey="fecha"
+                      tick={{ fontSize: isMobile ? 9 : 11 }}
+                      angle={isMobile ? -45 : 0}
+                      textAnchor={isMobile ? 'end' : 'middle'}
+                      height={isMobile ? 60 : 30}
+                      interval={isMobile ? 'preserveStartEnd' : 0}
+                      tickFormatter={(fecha) => {
+                        if (granularidad === 'dia') {
+                          const d = parseLocalDate(fecha);
+                          return isMobile
+                            ? `${d.getDate()}/${d.getMonth() + 1}`
+                            : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                        } else if (granularidad === 'semana') {
+                          const d = parseLocalDate(fecha);
+                          return `${d.getDate()}/${d.getMonth() + 1}`;
+                        } else {
+                          const [y, m] = fecha.split('-');
+                          const d = new Date(Number(y), Number(m) - 1, 1);
+                          return isMobile
+                            ? `${m}/${y.slice(-2)}`
+                            : d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+                        }
+                      }}
+                    />
+                    <YAxis
                       tick={{ fontSize: isMobile ? 9 : 11 }}
                       width={isMobile ? 30 : 50}
                       tickFormatter={(v) => {
@@ -143,13 +136,13 @@ export default function ResumenTab({
                         return isMobile ? `${minutos}m` : `${minutos} min`;
                       }}
                     />
-                    <RechartsTooltip 
+                    <RechartsTooltip
                       content={({ active, payload }) => {
                         if (!active || !payload || payload.length === 0) return null;
                         return (
                           <div className={`${componentStyles.components.panelBase} bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] shadow-lg p-3 rounded-lg`}>
                             <p className="text-xs font-semibold mb-2 text-[var(--color-text-primary)]">
-                              {granularidad === 'dia' 
+                              {granularidad === 'dia'
                                 ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
                                 : payload[0]?.payload.fecha}
                             </p>
@@ -160,10 +153,10 @@ export default function ResumenTab({
                         );
                       }}
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="tiempo" 
-                      stroke="var(--color-primary)" 
+                    <Line
+                      type="monotone"
+                      dataKey="tiempo"
+                      stroke="var(--color-primary)"
                       strokeWidth={2}
                       dot={{ r: isMobile ? 3 : 4 }}
                       activeDot={{ r: isMobile ? 5 : 6 }}
@@ -189,38 +182,38 @@ export default function ResumenTab({
                 <ResponsiveContainer width="100%" height={isMobile ? 180 : 250} minHeight={180}>
                   <LineChart data={datosLinea} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 40 : 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                  <XAxis 
-                    dataKey="fecha" 
-                    tick={{ fontSize: isMobile ? 9 : 11 }}
-                    angle={isMobile ? -45 : 0}
-                    textAnchor={isMobile ? 'end' : 'middle'}
-                    height={isMobile ? 60 : 30}
-                    interval={isMobile ? 'preserveStartEnd' : 0}
-                    tickFormatter={(fecha) => {
-                      if (granularidad === 'dia') {
-                        const d = parseLocalDate(fecha);
-                        return isMobile 
-                          ? `${d.getDate()}/${d.getMonth() + 1}`
-                          : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-                      } else if (granularidad === 'semana') {
-                        const d = parseLocalDate(fecha);
-                        return `${d.getDate()}/${d.getMonth() + 1}`;
-                      } else {
-                        const [y, m] = fecha.split('-');
-                        const d = new Date(Number(y), Number(m) - 1, 1);
-                        return isMobile
-                          ? `${m}/${y.slice(-2)}`
-                          : d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
-                      }
-                    }}
-                  />
-                    <YAxis 
+                    <XAxis
+                      dataKey="fecha"
+                      tick={{ fontSize: isMobile ? 9 : 11 }}
+                      angle={isMobile ? -45 : 0}
+                      textAnchor={isMobile ? 'end' : 'middle'}
+                      height={isMobile ? 60 : 30}
+                      interval={isMobile ? 'preserveStartEnd' : 0}
+                      tickFormatter={(fecha) => {
+                        if (granularidad === 'dia') {
+                          const d = parseLocalDate(fecha);
+                          return isMobile
+                            ? `${d.getDate()}/${d.getMonth() + 1}`
+                            : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                        } else if (granularidad === 'semana') {
+                          const d = parseLocalDate(fecha);
+                          return `${d.getDate()}/${d.getMonth() + 1}`;
+                        } else {
+                          const [y, m] = fecha.split('-');
+                          const d = new Date(Number(y), Number(m) - 1, 1);
+                          return isMobile
+                            ? `${m}/${y.slice(-2)}`
+                            : d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+                        }
+                      }}
+                    />
+                    <YAxis
                       tick={{ fontSize: isMobile ? 9 : 11 }}
                       width={isMobile ? 30 : 50}
                       domain={[0, 4]}
                       tickFormatter={(v) => `${v}/4`}
                     />
-                    <RechartsTooltip 
+                    <RechartsTooltip
                       content={({ active, payload }) => {
                         if (!active || !payload || payload.length === 0) return null;
                         const satisfaccion = payload[0]?.payload.satisfaccion;
@@ -228,7 +221,7 @@ export default function ResumenTab({
                         return (
                           <div className={`${componentStyles.components.panelBase} bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] shadow-lg p-3 rounded-lg`}>
                             <p className="text-xs font-semibold mb-2 text-[var(--color-text-primary)]">
-                              {granularidad === 'dia' 
+                              {granularidad === 'dia'
                                 ? parseLocalDate(payload[0]?.payload.fecha).toLocaleDateString('es-ES')
                                 : payload[0]?.payload.fecha}
                             </p>
@@ -239,10 +232,10 @@ export default function ResumenTab({
                         );
                       }}
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="satisfaccion" 
-                      stroke="var(--color-success)" 
+                    <Line
+                      type="monotone"
+                      dataKey="satisfaccion"
+                      stroke="var(--color-success)"
                       strokeWidth={2}
                       dot={{ r: isMobile ? 3 : 4 }}
                       activeDot={{ r: isMobile ? 5 : 6 }}

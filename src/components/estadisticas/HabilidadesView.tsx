@@ -287,10 +287,10 @@ export default function HabilidadesView({
                     </Card>
                 </div>
 
-                {/* Panel 1: XP Total Acumulado */}
+                {/* Panel 1: XP por Habilidad */}
                 <div className="p-4 border rounded-md bg-muted/20">
-                    <h5 className="font-medium text-sm mb-1">XP Total Acumulado</h5>
-                    <p className="text-xs text-muted-foreground mb-3">Progreso total desde el inicio.</p>
+                    <h5 className="font-medium text-sm mb-1">XP por Habilidad</h5>
+                    <p className="text-xs text-muted-foreground mb-3">Práctica y evaluaciones por habilidad.</p>
                     <TotalXPDisplay studentId={targetId} filter={filter} />
                 </div>
 
