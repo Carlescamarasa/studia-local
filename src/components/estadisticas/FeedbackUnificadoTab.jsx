@@ -221,8 +221,7 @@ export default function FeedbackUnificadoTab({
                             <Badge variant="outline" className="text-xs py-0 h-5 flex items-center gap-1">
                                 {feedback.mediaLinks.length === 1 ? (
                                     <>
-                                        <MediaIcon url={feedback.mediaLinks[0]} className="w-3 h-3" />
-                                        <span>1 adjunto</span>
+                                        <MediaIcon url={feedback.mediaLinks[0]} className="w-4 h-4" />
                                     </>
                                 ) : (
                                     <>

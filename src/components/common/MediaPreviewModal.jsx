@@ -163,11 +163,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
           aria-hidden="true"
         />
         <div
-          className="fixed top-0 right-0 bottom-0 z-[240] flex items-center justify-center pointer-events-none"
-          style={{
-            left: leftOffset,
-            width: widthCalc,
-          }}
+          className="fixed inset-0 z-[240] flex items-center justify-center pointer-events-none"
           role="dialog"
           aria-modal="true"
           aria-labelledby="media-preview-title"
@@ -262,11 +258,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
         aria-hidden="true"
       />
       <div
-        className="fixed top-0 right-0 bottom-0 z-[240] flex items-center justify-center pointer-events-none"
-        style={{
-          left: leftOffset,
-          width: widthCalc,
-        }}
+        className="fixed inset-0 z-[240] flex items-center justify-center pointer-events-none"
         role="dialog"
         aria-modal="true"
         aria-labelledby="media-preview-title"
