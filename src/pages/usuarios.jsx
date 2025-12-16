@@ -488,12 +488,11 @@ function UsuariosPageContent() {
           <>
             {/* Search - Primera fila en mobile, inline en desktop */}
             <div className="relative flex-1 min-w-[200px] sm:min-w-[250px] w-full sm:w-auto order-1 sm:order-none">
-              <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--color-text-muted)]" />
               <Input
                 placeholder="Buscar usuario…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pl-8 sm:pl-9 pr-8 sm:pr-9 h-8 sm:h-9 text-xs sm:text-sm ${componentStyles.controls.inputDefault}`}
+                className={`w-full pr-8 sm:pr-9 h-8 sm:h-9 text-xs sm:text-sm ${componentStyles.controls.inputDefault}`}
               />
               {searchTerm && (
                 <button
@@ -516,8 +515,8 @@ function UsuariosPageContent() {
                   size="sm"
                   onClick={() => setRoleFilter('all')}
                   className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${roleFilter === 'all'
-                      ? componentStyles.buttons.primary
-                      : componentStyles.buttons.outline
+                    ? componentStyles.buttons.primary
+                    : componentStyles.buttons.outline
                     }`}
                 >
                   Todos
@@ -527,8 +526,8 @@ function UsuariosPageContent() {
                   size="sm"
                   onClick={() => setRoleFilter('ESTU')}
                   className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${roleFilter === 'ESTU'
-                      ? componentStyles.buttons.primary
-                      : componentStyles.buttons.outline
+                    ? componentStyles.buttons.primary
+                    : componentStyles.buttons.outline
                     }`}
                 >
                   Alumno
@@ -538,8 +537,8 @@ function UsuariosPageContent() {
                   size="sm"
                   onClick={() => setRoleFilter('PROF')}
                   className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${roleFilter === 'PROF'
-                      ? componentStyles.buttons.primary
-                      : componentStyles.buttons.outline
+                    ? componentStyles.buttons.primary
+                    : componentStyles.buttons.outline
                     }`}
                 >
                   Profesor
@@ -549,8 +548,8 @@ function UsuariosPageContent() {
                   size="sm"
                   onClick={() => setRoleFilter('ADMIN')}
                   className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${roleFilter === 'ADMIN'
-                      ? componentStyles.buttons.primary
-                      : componentStyles.buttons.outline
+                    ? componentStyles.buttons.primary
+                    : componentStyles.buttons.outline
                     }`}
                 >
                   Admin
@@ -568,8 +567,8 @@ function UsuariosPageContent() {
                   size="sm"
                   onClick={() => setEstadoFilter('all')}
                   className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${estadoFilter === 'all'
-                      ? componentStyles.buttons.primary
-                      : componentStyles.buttons.outline
+                    ? componentStyles.buttons.primary
+                    : componentStyles.buttons.outline
                     }`}
                 >
                   Todos
@@ -579,8 +578,8 @@ function UsuariosPageContent() {
                   size="sm"
                   onClick={() => setEstadoFilter('activo')}
                   className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${estadoFilter === 'activo'
-                      ? componentStyles.buttons.primary
-                      : componentStyles.buttons.outline
+                    ? componentStyles.buttons.primary
+                    : componentStyles.buttons.outline
                     }`}
                 >
                   Activo
@@ -590,8 +589,8 @@ function UsuariosPageContent() {
                   size="sm"
                   onClick={() => setEstadoFilter('invitacion_pendiente')}
                   className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${estadoFilter === 'invitacion_pendiente'
-                      ? componentStyles.buttons.primary
-                      : componentStyles.buttons.outline
+                    ? componentStyles.buttons.primary
+                    : componentStyles.buttons.outline
                     }`}
                 >
                   Invitación pendiente
@@ -601,8 +600,8 @@ function UsuariosPageContent() {
                   size="sm"
                   onClick={() => setEstadoFilter('bloqueado')}
                   className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${estadoFilter === 'bloqueado'
-                      ? componentStyles.buttons.primary
-                      : componentStyles.buttons.outline
+                    ? componentStyles.buttons.primary
+                    : componentStyles.buttons.outline
                     }`}
                 >
                   Bloqueado

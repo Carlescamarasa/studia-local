@@ -69,40 +69,32 @@ import LevelBadge from "@/components/common/LevelBadge";
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
   ADMIN: [
-    { title: "Usuarios", url: "/usuarios", icon: Users, group: "Planificador" },
-    { title: "Asignaciones", url: "/asignaciones", icon: Target, group: "Planificador" },
-    { title: "Biblioteca", url: "/biblioteca", icon: Edit3, group: "Planificador" },
-    { title: "Tickets alumnos", url: "/soporte-prof", icon: MessageSquare, group: "Profesor" },
-    { title: "Agenda", url: "/agenda", icon: Calendar, group: "Profesor" },
-    { title: "Calendario", url: "/calendario", icon: Calendar, group: "Profesor" },
-    { title: "Estadísticas", url: "/estadisticas", icon: Activity, group: "Profesor" },
-    { title: "Habilidades", url: "/habilidades", icon: Star, group: "Profesor" },
-    { title: "Reportes", url: "/reportes", icon: Bug, group: "Admin" },
-    { title: "Panel de Diseño", url: "/design", icon: Palette, group: "Admin" },
-    { title: "Versión y Registro", url: "/admin/version", icon: Tag, group: "Admin" },
-    { title: "Tests & Seeds", url: "/testseed", icon: Settings, group: "Admin" },
-    { title: "Importar y Exportar", url: "/import-export", icon: FileDown, group: "Admin" },
-    { title: "Multimedia", url: "/contenido-multimedia", icon: FileVideo, group: "Admin" },
+    { title: "Progreso", url: "/progreso?tab=resumen", icon: Activity, group: "Principal" },
+    { title: "Usuarios", url: "/usuarios", icon: Users, group: "Gestión" },
+    { title: "Preparación", url: "/preparacion", icon: Target, group: "Gestión" },
+    { title: "Biblioteca", url: "/biblioteca", icon: Edit3, group: "Gestión" },
+    { title: "Agenda", url: "/agenda", icon: Calendar, group: "Gestión" },
+    { title: "Tickets alumnos", url: "/soporte-prof", icon: MessageSquare, group: "Sistema" },
+    { title: "Reportes", url: "/reportes", icon: Bug, group: "Sistema" },
+    { title: "Sistema", url: "/admin/version", icon: Settings, group: "Sistema" },
+    { title: "Panel de Diseño", url: "/design", icon: Palette, group: "Sistema" },
+    { title: "Tests & Seeds", url: "/testseed", icon: Settings, group: "Sistema" },
+    { title: "Importar y Exportar", url: "/import-export", icon: FileDown, group: "Sistema" },
+    { title: "Multimedia", url: "/contenido-multimedia", icon: FileVideo, group: "Sistema" },
   ],
   PROF: [
-    { title: "Mis Estudiantes", url: "/estudiantes", icon: Users, group: "Planificador" },
-    { title: "Asignaciones", url: "/asignaciones", icon: Target, group: "Planificador" },
+    { title: "Progreso", url: "/progreso?tab=resumen", icon: Activity, group: "Principal" },
+    { title: "Preparación", url: "/preparacion", icon: Target, group: "Planificador" },
+    { title: "Agenda", url: "/agenda", icon: Calendar, group: "Planificador" },
     { title: "Biblioteca", url: "/biblioteca", icon: Edit3, group: "Planificador" },
+    { title: "Reportes", url: "/reportes", icon: Bug, group: "Profesor" },
     { title: "Tickets alumnos", url: "/soporte-prof", icon: MessageSquare, group: "Profesor" },
-    { title: "Agenda", url: "/agenda", icon: Calendar, group: "Profesor" },
-    { title: "Calendario", url: "/calendario", icon: Calendar, group: "Profesor" },
-    { title: "Estadísticas", url: "/estadisticas", icon: Activity, group: "Profesor" },
-    { title: "Habilidades", url: "/habilidades", icon: Star, group: "Profesor" },
-    { title: "Multimedia", url: "/contenido-multimedia", icon: FileVideo, group: "Profesor" },
   ],
   ESTU: [
     { title: "Studia ahora", url: "/hoy", icon: PlayCircle, group: "Estudio" },
-    { title: "Mochila", url: "/mochila", icon: Backpack, group: "Estudio" },
-    { title: "Mi Semana", url: "/semana", icon: Calendar, group: "Estudio" },
+    { title: "Progreso", url: "/progreso?tab=resumen", icon: Activity, group: "Estudio" },
     { title: "Calendario", url: "/calendario", icon: Calendar, group: "Estudio" },
     { title: "Centro de dudas", url: "/soporte", icon: MessageSquare, group: "Estudio" },
-    { title: "Mis Estadísticas", url: "/estadisticas", icon: Activity, group: "Estudio" },
-    { title: "Habilidades", url: "/habilidades", icon: Star, group: "Estudio" },
   ],
 };
 
@@ -483,22 +475,22 @@ function LayoutContent() {
   // Mapeo de URLs a los roles que tienen acceso
   const pagePermissions = {
     '/usuarios': ['ADMIN'],
-    '/reportes': ['ADMIN'],
+    '/reportes': ['PROF', 'ADMIN'],
     '/estudiantes': ['PROF', 'ADMIN'],
     '/asignaciones': ['PROF', 'ADMIN'],
+    '/preparacion': ['PROF', 'ADMIN'],
     '/biblioteca': ['PROF', 'ADMIN'],
     '/agenda': ['PROF', 'ADMIN'],
     '/calendario': ['ESTU', 'PROF', 'ADMIN'],
     '/hoy': ['ESTU'],
     '/semana': ['ESTU'],
+    '/progreso': ['ESTU', 'PROF', 'ADMIN'],
     '/estadisticas': ['ESTU', 'PROF', 'ADMIN'],
     '/habilidades': ['ESTU', 'PROF', 'ADMIN'],
     '/design': ['ADMIN'],
     '/admin/version': ['ADMIN'],
     '/testseed': ['ADMIN'],
     '/import-export': ['ADMIN'],
-    '/soporte': ['ESTU'],
-    '/soporte-prof': ['PROF', 'ADMIN'],
     '/soporte': ['ESTU'],
     '/soporte-prof': ['PROF', 'ADMIN'],
     '/contenido-multimedia': ['PROF', 'ADMIN'],
@@ -508,7 +500,9 @@ function LayoutContent() {
   // Filtrar items del sidebar según los permisos reales de acceso
   const allItems = navigationByRole[userRole] || navigationByRole.ESTU;
   const items = allItems.filter(item => {
-    const allowedRoles = pagePermissions[item.url];
+    // Strip query params from URL for permission check
+    const pathOnly = item.url.split('?')[0];
+    const allowedRoles = pagePermissions[pathOnly];
     return allowedRoles && allowedRoles.includes(userRole);
   });
 

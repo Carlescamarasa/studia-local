@@ -132,7 +132,7 @@ function ReportesPageContent() {
         status: error?.status,
         details: error?.details,
       });
-      
+
       // Mensajes de error más descriptivos
       if (error?.code === '42501' || error?.message?.includes('row-level security')) {
         toast.error('❌ Error de permisos: No tienes permiso para eliminar reportes. Verifica que seas administrador.');
@@ -157,7 +157,7 @@ function ReportesPageContent() {
         status: error?.status,
         details: error?.details,
       });
-      
+
       // Mensajes de error más descriptivos
       if (error?.code === '42501' || error?.message?.includes('row-level security')) {
         toast.error('❌ Error de permisos: No tienes permiso para eliminar reportes. Verifica que seas administrador.');
@@ -334,16 +334,15 @@ function ReportesPageContent() {
             {/* Búsqueda */}
             <div className="w-full">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-ui/60" />
                 <Input
                   placeholder="Buscar en descripciones..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className=""
                 />
               </div>
             </div>
-            
+
             {/* Filtros de estado y categoría */}
             <div className="flex flex-col sm:flex-row gap-4">
               {/* Botones de estado */}
@@ -389,7 +388,7 @@ function ReportesPageContent() {
                   Todos
                 </Button>
               </div>
-              
+
               {/* Select de categoría */}
               <div className="w-full sm:w-auto sm:min-w-[180px]">
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>

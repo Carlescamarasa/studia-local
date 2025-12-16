@@ -586,12 +586,11 @@ function AsignacionesPageContent() {
       <div className="px-4 pb-4 md:px-6 md:pb-6 max-w-7xl mx-auto">
         <div className="space-y-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
             <Input
               placeholder="Buscar estudiante o pieza..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`w-full pl-9 pr-9 ${componentStyles.controls.inputDefault}`}
+              className={`w-full pr-9 ${componentStyles.controls.inputDefault}`}
             />
             {searchTerm && (
               <button

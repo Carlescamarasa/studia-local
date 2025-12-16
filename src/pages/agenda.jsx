@@ -1186,16 +1186,15 @@ function AgendaPageContent() {
         }
       />
 
-      <div className="px-4 pb-4 md:px-6 md:pb-6 max-w-7xl mx-auto space-y-4">
+      <div className="px-4 pt-4 pb-4 md:px-6 md:pt-4 md:pb-6 max-w-7xl mx-auto space-y-4">
         {/* Barra de búsqueda */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
           <Input
             id="search-input"
             placeholder="Buscar estudiante... (Ctrl/⌘+K)"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={`w-full pl-9 pr-9 ${componentStyles.controls.inputDefault}`}
+            className={`w-full pr-9 ${componentStyles.controls.inputDefault}`}
           />
           {searchTerm && (
             <button

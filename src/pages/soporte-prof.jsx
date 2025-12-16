@@ -284,12 +284,11 @@ function SoporteProfPageContent() {
                 <div className="space-y-3">
                   {/* Búsqueda */}
                   <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-[var(--color-text-secondary)]" />
                     <Input
                       placeholder="Buscar por título o alumno..."
                       value={searchText}
                       onChange={(e) => setSearchText(e.target.value)}
-                      className={`pl-8 ${componentStyles.controls.inputDefault}`}
+                      className={componentStyles.controls.inputDefault}
                     />
                   </div>
 
@@ -301,8 +300,8 @@ function SoporteProfPageContent() {
                         size="sm"
                         onClick={() => setProfesorFilter('mis_tickets')}
                         className={`flex-1 text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-xl ${profesorFilter === 'mis_tickets'
-                            ? componentStyles.buttons.primary
-                            : componentStyles.buttons.outline
+                          ? componentStyles.buttons.primary
+                          : componentStyles.buttons.outline
                           }`}
                       >
                         Mis tickets
@@ -312,8 +311,8 @@ function SoporteProfPageContent() {
                         size="sm"
                         onClick={() => setProfesorFilter('todos')}
                         className={`flex-1 text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-xl ${profesorFilter === 'todos'
-                            ? componentStyles.buttons.primary
-                            : componentStyles.buttons.outline
+                          ? componentStyles.buttons.primary
+                          : componentStyles.buttons.outline
                           }`}
                       >
                         Todos
@@ -328,8 +327,8 @@ function SoporteProfPageContent() {
                       size="sm"
                       onClick={() => setEstadoFilter('todos')}
                       className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-xl ${estadoFilter === 'todos'
-                          ? componentStyles.buttons.primary
-                          : componentStyles.buttons.outline
+                        ? componentStyles.buttons.primary
+                        : componentStyles.buttons.outline
                         }`}
                     >
                       Todos
@@ -339,8 +338,8 @@ function SoporteProfPageContent() {
                       size="sm"
                       onClick={() => setEstadoFilter('abierto')}
                       className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-xl ${estadoFilter === 'abierto'
-                          ? componentStyles.buttons.primary
-                          : componentStyles.buttons.outline
+                        ? componentStyles.buttons.primary
+                        : componentStyles.buttons.outline
                         }`}
                     >
                       Abiertos
@@ -350,8 +349,8 @@ function SoporteProfPageContent() {
                       size="sm"
                       onClick={() => setEstadoFilter('en_proceso')}
                       className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-xl ${estadoFilter === 'en_proceso'
-                          ? componentStyles.buttons.primary
-                          : componentStyles.buttons.outline
+                        ? componentStyles.buttons.primary
+                        : componentStyles.buttons.outline
                         }`}
                     >
                       En proceso
@@ -361,8 +360,8 @@ function SoporteProfPageContent() {
                       size="sm"
                       onClick={() => setEstadoFilter('cerrado')}
                       className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-xl ${estadoFilter === 'cerrado'
-                          ? componentStyles.buttons.primary
-                          : componentStyles.buttons.outline
+                        ? componentStyles.buttons.primary
+                        : componentStyles.buttons.outline
                         }`}
                     >
                       Cerrados
@@ -378,8 +377,8 @@ function SoporteProfPageContent() {
                         key={ticket.id}
                         onClick={() => setSelectedTicketId(ticket.id)}
                         className={`rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-default)] px-4 py-3 md:px-5 md:py-4 shadow-sm cursor-pointer transition-colors ${selectedTicketId === ticket.id
-                            ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]'
-                            : 'hover:bg-[var(--color-surface-muted)]'
+                          ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]'
+                          : 'hover:bg-[var(--color-surface-muted)]'
                           }`}
                       >
                         {/* Fila principal: título + estatus */}
@@ -491,14 +490,14 @@ function SoporteProfPageContent() {
                           >
                             <div
                               className={`max-w-[75%] rounded-lg p-3 shadow-sm ${isProfesorOrAdmin
-                                  ? 'bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30'
-                                  : 'bg-[var(--color-surface-muted)] border border-[var(--color-border-default)]'
+                                ? 'bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30'
+                                : 'bg-[var(--color-surface-muted)] border border-[var(--color-border-default)]'
                                 }`}
                             >
                               <div className="flex items-center gap-2 mb-1.5">
                                 <span className={`text-xs font-semibold ${isProfesorOrAdmin
-                                    ? 'text-[var(--color-primary)]'
-                                    : 'text-[var(--color-text-secondary)]'
+                                  ? 'text-[var(--color-primary)]'
+                                  : 'text-[var(--color-text-secondary)]'
                                   }`}>
                                   {isCurrentUser
                                     ? 'Tú'

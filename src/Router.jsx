@@ -43,6 +43,8 @@ const Habilidades = lazy(() => import("@/pages/habilidades.jsx"));
 const StudiaConceptPage = lazy(() => import("@/pages/StudiaConceptPage.jsx"));
 const ContenidoMultimediaPage = lazy(() => import("@/pages/contenido-multimedia.jsx"));
 const MochilaPage = lazy(() => import("@/pages/MochilaPage.jsx"));
+const Progreso = lazy(() => import("@/pages/progreso.jsx"));
+const Preparacion = lazy(() => import("@/pages/preparacion.jsx"));
 
 // Componente de carga
 const PageLoader = () => (
@@ -96,6 +98,8 @@ export default function AppRouter() {
           <Route path="agenda" element={<Agenda />} />
           <Route path="perfil" element={<Perfil />} />
           <Route path="import-export" element={<ImportExport />} />
+          <Route path="progreso" element={<Progreso />} />
+          <Route path="preparacion" element={<Preparacion />} />
           <Route path="estadisticas" element={<Estadisticas />} />
           <Route path="estudiantes" element={<Estudiantes />} />
           <Route path="calendario" element={<Calendario />} />

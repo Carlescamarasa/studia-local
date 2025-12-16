@@ -170,12 +170,11 @@ function EstudiantesPageContent() {
         filters={
           <div className="flex gap-3 flex-wrap">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ui/80" />
               <Input
                 placeholder="Buscar estudiante..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pl-9 pr-9 ${componentStyles.controls.inputDefault}`}
+                className={`w-full pr-9 ${componentStyles.controls.inputDefault}`}
               />
               {searchTerm && (
                 <button

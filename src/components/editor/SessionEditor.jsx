@@ -1028,12 +1028,11 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
               <CardContent className="space-y-4">
                 <div className="flex gap-2 flex-wrap">
                   <div className="flex-1 min-w-[200px] relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)] pointer-events-none" />
                     <Input
                       placeholder="Buscar ejercicios..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="search-field pl-9"
+                      className="search-field"
                     />
                   </div>
                   <div className="flex gap-1 flex-wrap">

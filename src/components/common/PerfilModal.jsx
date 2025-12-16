@@ -1089,7 +1089,6 @@ export default function PerfilModal({
                             </Select>
                             <div className="flex-1 flex items-center gap-2">
                               <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)] pointer-events-none" />
                                 <Input
                                   id="telefono"
                                   type="tel"
@@ -1100,7 +1099,7 @@ export default function PerfilModal({
                                     setPhoneSearch(filtered);
                                   }}
                                   placeholder={getPhonePlaceholder(phoneCountryCode)}
-                                  className={`pl-9 ${componentStyles.controls.inputDefault}`}
+                                  className={componentStyles.controls.inputDefault}
                                   aria-label="Buscar o ingresar teléfono"
                                 />
                               </div>

@@ -37,7 +37,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
   const lunesSemana = useMemo(() => {
     return startOfMonday(fechaActual);
   }, [fechaActual]);
-  
+
   // Rango: desde el lunes de la semana hasta el domingo (7 días)
   const domingoSemana = useMemo(() => {
     const domingo = new Date(lunesSemana);
@@ -72,23 +72,23 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
         const lunesAsignacion = startOfMonday(parseLocalDate(asignacion.semanaInicioISO));
         const totalSemanas = Math.max(1, asignacion.plan.semanas.length);
         const totalDias = totalSemanas * 7;
-        
+
         // Generar eventos para cada día del plan que cae en el rango visible
         for (let i = 0; i < totalDias; i++) {
           const fecha = new Date(lunesAsignacion);
           fecha.setDate(lunesAsignacion.getDate() + i);
           const fechaISO = formatLocalDate(fecha);
-          
+
           // Solo incluir si está en el rango visible
           if (fecha >= lunesSemana && fecha <= domingoSemana) {
-          lista.push({
-            tipo: 'asignacion',
-            evento: asignacion,
+            lista.push({
+              tipo: 'asignacion',
+              evento: asignacion,
               fecha: fechaISO,
               fechaISO: fechaISO,
               horaISO: `${fechaISO}T00:00:00`, // Sin hora específica
-            prioridad: 2,
-          });
+              prioridad: 2,
+            });
           }
         }
       }
@@ -133,20 +133,20 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
     lista.sort((a, b) => {
       const fechaA = parseLocalDate(a.fecha);
       const fechaB = parseLocalDate(b.fecha);
-      
+
       // Si es la misma fecha, ordenar por hora
       if (fechaA.getTime() === fechaB.getTime()) {
         const horaA = a.horaISO ? new Date(a.horaISO).getTime() : 0;
         const horaB = b.horaISO ? new Date(b.horaISO).getTime() : 0;
-        
+
         // Si es la misma hora, ordenar por prioridad
         if (horaA === horaB) {
-        return a.prioridad - b.prioridad;
+          return a.prioridad - b.prioridad;
         }
-        
+
         return horaA - horaB;
       }
-      
+
       // Ordenar por fecha ascendente (más antiguo primero)
       return fechaA - fechaB;
     });
@@ -170,8 +170,8 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
         if (e.tipo === 'sesion') {
           const sesion = e.evento;
           return (sesion.sesionNombre || '').toLowerCase().includes(termino) ||
-                 (sesion.piezaNombre || '').toLowerCase().includes(termino) ||
-                 (sesion.notas || '').toLowerCase().includes(termino);
+            (sesion.piezaNombre || '').toLowerCase().includes(termino) ||
+            (sesion.notas || '').toLowerCase().includes(termino);
         } else if (e.tipo === 'feedback') {
           const feedback = e.evento;
           return (feedback.notaProfesor || '').toLowerCase().includes(termino);
@@ -181,7 +181,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
         } else if (e.tipo === 'evento') {
           const evento = e.evento;
           return (evento.titulo || '').toLowerCase().includes(termino) ||
-                 (evento.descripcion || '').toLowerCase().includes(termino);
+            (evento.descripcion || '').toLowerCase().includes(termino);
         }
         return false;
       });
@@ -198,11 +198,11 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
     const agrupados = {};
     eventosFiltrados.forEach(item => {
       if (item && item.fecha) {
-      const fecha = item.fecha;
-      if (!agrupados[fecha]) {
-        agrupados[fecha] = [];
-      }
-      agrupados[fecha].push(item);
+        const fecha = item.fecha;
+        if (!agrupados[fecha]) {
+          agrupados[fecha] = [];
+        }
+        agrupados[fecha].push(item);
       }
     });
     return agrupados;
@@ -219,8 +219,8 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
     // Ordenar fechas ascendente
     return fechas.sort((a, b) => {
       try {
-      const fechaA = parseLocalDate(a);
-      const fechaB = parseLocalDate(b);
+        const fechaA = parseLocalDate(a);
+        const fechaB = parseLocalDate(b);
         return fechaA - fechaB;
       } catch (e) {
         console.error('[VistaLista] Error ordenando fechas:', e);
@@ -294,12 +294,11 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
         {/* Filtros */}
         <div className="flex gap-3 flex-wrap">
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
             <Input
               placeholder="Buscar eventos..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              className={`w-full pl-9 pr-9 ${componentStyles.controls.inputDefault}`}
+              className={`w-full pr-9 ${componentStyles.controls.inputDefault}`}
             />
             {busqueda && (
               <button
@@ -333,24 +332,23 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
             </div>
           ) : (
             fechasOrdenadas.map(fecha => {
-            const eventosFecha = eventosPorFecha[fecha] || [];
+              const eventosFecha = eventosPorFecha[fecha] || [];
               const fechaObj = parseLocalDate(fecha);
-              const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { 
-                weekday: 'short', 
-                day: 'numeric', 
-                month: 'short' 
+              const fechaFormateada = fechaObj.toLocaleDateString('es-ES', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short'
               });
               const esHoy = fecha === hoyISO;
 
-            if (!eventosFecha || !Array.isArray(eventosFecha) || eventosFecha.length === 0) {
-              return null;
-            }
+              if (!eventosFecha || !Array.isArray(eventosFecha) || eventosFecha.length === 0) {
+                return null;
+              }
 
               return (
                 <div key={fecha} className="space-y-2">
-                  <h3 className={`font-semibold text-sm border-b border-[var(--color-border-default)] pb-1 ${
-                    esHoy ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-primary)]'
-                  }`}>
+                  <h3 className={`font-semibold text-sm border-b border-[var(--color-border-default)] pb-1 ${esHoy ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-primary)]'
+                    }`}>
                     {fechaFormateada}
                   </h3>
                   <div className="space-y-2 pl-4">

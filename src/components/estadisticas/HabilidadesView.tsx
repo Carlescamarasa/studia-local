@@ -23,13 +23,15 @@ interface HabilidadesViewProps {
     students?: any[];
     enableSelection?: boolean;
     showTitle?: boolean;
+    hideSelector?: boolean; // When true, hide the internal selector (used when parent controls selection)
 }
 
 export default function HabilidadesView({
     alumnoId,
     students = [],
     enableSelection = false,
-    showTitle = true
+    showTitle = true,
+    hideSelector = false
 }: HabilidadesViewProps) {
     const [filter, setFilter] = useState<string[]>(['evaluaciones', 'experiencia']);
     const [internalSelectedId, setInternalSelectedId] = useState<string>(alumnoId || '');
@@ -218,7 +220,7 @@ export default function HabilidadesView({
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex flex-col gap-2">
                     <h3 className="text-lg font-semibold">Habilidades Maestras</h3>
-                    {enableSelection && (
+                    {enableSelection && !hideSelector && (
                         <div className="w-[300px]">
                             <Select value={internalSelectedId} onValueChange={setInternalSelectedId}>
                                 <SelectTrigger className="h-9">
