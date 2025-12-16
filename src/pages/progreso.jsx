@@ -639,11 +639,9 @@ function ProgresoPageContent() {
 
                 {tabActiva === 'habilidades' && (
                     <HabilidadesView
-                        alumnoId={effectiveStudentId || userIdActual}
-                        students={estudiantesDisponibles}
-                        enableSelection={false} // Bloque 2: Disable internal selection
-                        hideSelector={true}     // Bloque 2: Hide internal selector
-                        showTitle={true}
+                        alumnosSeleccionados={alumnosSeleccionados}
+                        allStudentIds={estudiantesDisponibles.map(s => s.id)}
+                        userIdActual={userIdActual}
                     />
                 )}
 

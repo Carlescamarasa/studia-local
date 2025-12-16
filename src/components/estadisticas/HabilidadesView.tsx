@@ -1,332 +1,367 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import HabilidadesRadarChart from './HabilidadesRadarChart';
-import { useHabilidadesStats } from '@/hooks/useHabilidadesStats';
-import { useRecentXP, useTotalXP, totalXPToObject, useLifetimePracticeXP } from '@/hooks/useXP';
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Activity, ClipboardList, Layers, User } from 'lucide-react';
+import { useHabilidadesStats, useHabilidadesStatsMultiple } from '@/hooks/useHabilidadesStats';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-} from "@/components/ui/select";
-// @ts-ignore
-import { displayName } from '../utils/helpers';
+    useTotalXP,
+    totalXPToObject,
+    useLifetimePracticeXP,
+    useTotalXPMultiple,
+    useLifetimePracticeXPMultiple,
+    useAggregateLevelGoals
+} from '@/hooks/useXP';
+import { Activity, Target } from 'lucide-react';
 import TotalXPDisplay from './TotalXPDisplay';
 import LevelBadge from '../common/LevelBadge';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { useQuery } from '@tanstack/react-query';
 import { localDataClient } from '@/api/localDataClient';
+import { cn } from '@/lib/utils';
 
 interface HabilidadesViewProps {
-    alumnoId?: string;
-    students?: any[];
-    enableSelection?: boolean;
-    showTitle?: boolean;
-    hideSelector?: boolean; // When true, hide the internal selector (used when parent controls selection)
+    alumnosSeleccionados?: string[];
+    allStudentIds?: string[];
+    userIdActual?: string;
 }
 
 export default function HabilidadesView({
-    alumnoId,
-    students = [],
-    enableSelection = false,
-    showTitle = true,
-    hideSelector = false
+    alumnosSeleccionados = [],
+    allStudentIds = [],
+    userIdActual = ''
 }: HabilidadesViewProps) {
-    const [filter, setFilter] = useState<string[]>(['evaluaciones', 'experiencia']);
-    const [internalSelectedId, setInternalSelectedId] = useState<string>(alumnoId || '');
+    // =========================================================================
+    // TOGGLE STATE
+    // =========================================================================
+    // Primary toggle: Experiencia | Evaluaciones | Ambos
+    const [sourceFilter, setSourceFilter] = useState<'experiencia' | 'evaluaciones' | 'ambos'>('ambos');
+    // Secondary toggle: Estado de forma | XP del rango
+    const [viewMode, setViewMode] = useState<'forma' | 'rango'>('forma');
 
-    // Update internal selection if prop changes
-    useEffect(() => {
-        if (alumnoId && !enableSelection) {
-            setInternalSelectedId(alumnoId);
-        }
-    }, [alumnoId, enableSelection]);
+    // =========================================================================
+    // EFFECTIVE IDs LOGIC (same as Resumen)
+    // =========================================================================
+    const isGlobalDefault = alumnosSeleccionados.length === 0 && allStudentIds.length > 0;
+    const effectiveIds = isGlobalDefault
+        ? allStudentIds
+        : (alumnosSeleccionados.length > 0 ? alumnosSeleccionados : [userIdActual].filter(Boolean));
 
-    const targetId = enableSelection ? internalSelectedId : alumnoId;
+    const isMultiple = effectiveIds.length > 1;
+    const singleId = effectiveIds.length === 1 ? effectiveIds[0] : '';
 
-    // Fetch data
-    const { radarStats, isLoading: isLoadingStats } = useHabilidadesStats(targetId);
-    const { data: totalXP } = useTotalXP(targetId);
-    const { data: practiceXP } = useLifetimePracticeXP(targetId);
-    // Fetch recent XP for "Form" radar (90 days)
-    const { data: recentXP, isLoading: isLoadingRecent } = useRecentXP(targetId, 90);
+    // =========================================================================
+    // XP DATA HOOKS (same as Resumen / TotalXPDisplay)
+    // =========================================================================
 
-    // Fetch student profile and next level config
+    // Single student hooks
+    const { data: totalXPSingle, isLoading: isLoadingTotalSingle } = useTotalXP(singleId);
+    const { data: practiceXPSingle, isLoading: isLoadingPracticeSingle } = useLifetimePracticeXP(singleId);
+
+    // Multi-student hooks
+    const { data: totalXPMultiple, isLoading: isLoadingTotalMultiple } = useTotalXPMultiple(isMultiple ? effectiveIds : []);
+    const { data: practiceXPMultiple, isLoading: isLoadingPracticeMultiple } = useLifetimePracticeXPMultiple(isMultiple ? effectiveIds : []);
+
+    // Aggregated Goals (maxXP denominator)
+    const aggregatedGoals = useAggregateLevelGoals(effectiveIds);
+
+    // Level config for single student
     const { data: studentProfile } = useQuery({
-        queryKey: ['student-profile', targetId],
-        queryFn: () => localDataClient.entities.User.get(targetId),
-        enabled: !!targetId,
-        staleTime: 5 * 60 * 1000, // 5 minutos
+        queryKey: ['student-profile', singleId],
+        queryFn: () => localDataClient.entities.User.get(singleId),
+        enabled: !!singleId && !isMultiple
     });
 
     const currentLevel = studentProfile?.nivelTecnico || 0;
     const nextLevel = currentLevel + 1;
 
-    // Fetch ALL level configs with shared cache
-    const { data: allLevelConfigs } = useQuery({
-        queryKey: ['levels-config-all'],
-        queryFn: () => localDataClient.entities.LevelConfig.list(),
-        staleTime: 10 * 60 * 1000, // 10 minutos - configuración cambia poco
+    const { data: nextLevelConfig } = useQuery({
+        queryKey: ['level-config', nextLevel],
+        queryFn: async () => {
+            const configs = await localDataClient.entities.LevelConfig.list();
+            return configs.find((c: any) => c.level === nextLevel) || null;
+        },
+        enabled: !isMultiple && !!nextLevel
     });
 
-    // Filter to get specific level config with useMemo
-    const nextLevelConfig = useMemo(() => {
-        if (!allLevelConfigs || !nextLevel) return null;
-        return allLevelConfigs.find((c: any) => c.level === nextLevel) || null;
-    }, [allLevelConfigs, nextLevel]);
+    // Use appropriate data
+    const totalXP = isMultiple ? totalXPMultiple : totalXPSingle;
+    const practiceXP = isMultiple ? practiceXPMultiple : practiceXPSingle;
+    const isLoadingXP = isMultiple
+        ? (isLoadingTotalMultiple || isLoadingPracticeMultiple)
+        : (isLoadingTotalSingle || isLoadingPracticeSingle);
 
-    // --- Radar 1: Total Progress (Normalized to Next Level) ---
-    const totalRadarData = useMemo(() => {
-        if (!totalXP || !nextLevelConfig) return [];
+    const total = totalXPToObject(totalXP);
+    const practice = practiceXP || { motricidad: 0, articulacion: 0, flexibilidad: 0 };
 
-        const total = totalXPToObject(totalXP);
-        const practice = practiceXP || { motricidad: 0, articulacion: 0, flexibilidad: 0 };
+    // =========================================================================
+    // QUALITATIVE DATA HOOKS (for Sonido/Cognición)
+    // =========================================================================
+    const { radarStats: singleStats, isLoading: loadingQualSingle } = useHabilidadesStats(isMultiple ? '' : singleId);
+    const { radarStats: multipleStats, isLoading: loadingQualMultiple } = useHabilidadesStatsMultiple(isMultiple ? effectiveIds : []);
 
-        // Helper to get normalized value (0-100% of requirement)
-        const getNormalized = (skill: string, val: number, req: number) => {
-            if (!req) return 100; // If no requirement, assume 100%
-            return Math.min(100, (val / req) * 100);
+    const radarStatsRaw = isMultiple ? multipleStats : singleStats;
+    const isLoadingQual = isMultiple ? loadingQualMultiple : loadingQualSingle;
+    const isLoadingStats = isLoadingXP || isLoadingQual;
+
+    // =========================================================================
+    // HELPER FUNCTIONS (same as Resumen)
+    // =========================================================================
+
+    const getRequiredXP = (skill: 'motricidad' | 'articulacion' | 'flexibilidad') => {
+        if (isMultiple) {
+            return aggregatedGoals[skill] || 100;
+        }
+        if (!nextLevelConfig) return 100;
+        switch (skill) {
+            case 'motricidad': return nextLevelConfig.minXpMotr || 100;
+            case 'articulacion': return nextLevelConfig.minXpArt || 100;
+            case 'flexibilidad': return nextLevelConfig.minXpFlex || 100;
+            default: return 100;
+        }
+    };
+
+    const getXPValues = (skill: 'motricidad' | 'articulacion' | 'flexibilidad') => {
+        const totalVal = total[skill] || 0;
+        const practiceVal = practice[skill] || 0;
+        const evaluationVal = Math.max(0, totalVal - practiceVal);
+        const maxXP = getRequiredXP(skill);
+        return { practiceVal, evaluationVal, totalVal, maxXP };
+    };
+
+    const getSonidoValue = () => {
+        return radarStatsRaw?.combinedData?.find((d: any) => d.subject === 'Sonido')?.original ?? 0;
+    };
+
+    const getCognicionValue = () => {
+        return radarStatsRaw?.combinedData?.find((d: any) => d.subject === 'Cognición')?.original ?? 0;
+    };
+
+    // =========================================================================
+    // RADAR DATA (same logic as Resumen)
+    // =========================================================================
+    const xpFilter = useMemo(() => {
+        if (sourceFilter === 'experiencia') return ['experiencia'];
+        if (sourceFilter === 'evaluaciones') return ['evaluaciones'];
+        return ['experiencia', 'evaluaciones'];
+    }, [sourceFilter]);
+
+    const radarDataForChart = useMemo(() => {
+        const normalize10 = (xp: number, maxXp: number) => {
+            if (maxXp <= 0 || !Number.isFinite(xp) || !Number.isFinite(maxXp)) return 0;
+            return Math.min(10, Math.max(0, (xp / maxXp) * 10));
         };
 
-        // Helper to get value based on filter
-        const getValue = (skill: 'motricidad' | 'articulacion' | 'flexibilidad', req: number) => {
-            const tot = total[skill];
-            const prac = practice[skill];
-            const evalVal = Math.max(0, tot - prac);
+        const motrData = getXPValues('motricidad');
+        const artData = getXPValues('articulacion');
+        const flexData = getXPValues('flexibilidad');
 
-            // Scale to 0-10 for chart (0-100% -> 0-10)
-            const normPrac = getNormalized(skill, prac, req) / 10;
-            const normEval = getNormalized(skill, evalVal, req) / 10;
-            const normTot = getNormalized(skill, tot, req) / 10;
-
-            const showEval = filter.includes('evaluaciones');
-            const showPrac = filter.includes('experiencia');
-            const showTotal = showEval && showPrac;
-
-            return {
-                A: showEval ? normEval : 0,
-                B: showPrac ? normPrac : 0,
-                C: showTotal ? normTot : 0,
-                original: evalVal,
-                originalExperiencia: prac,
-                originalTotal: tot
-            };
-        };
-
-        const motr = getValue('motricidad', nextLevelConfig.minXpMotr || 0);
-        const art = getValue('articulacion', nextLevelConfig.minXpArt || 0);
-        const flex = getValue('flexibilidad', nextLevelConfig.minXpFlex || 0);
-
-        // Qualitative stats (0-10 -> 0-100)
-        // These are snapshots from latest evaluation
-        // 'original' from radarStats is already scaled 0-100 by computeEvaluationXP -> useHabilidadesStats
-        const sonidoRaw = (radarStats?.evaluationData?.find(d => d.subject === 'Sonido')?.original || 0);
-        const cogRaw = (radarStats?.evaluationData?.find(d => d.subject === 'Cognición')?.original || 0);
-
-        const sonidoVal = sonidoRaw;
-        const cogVal = cogRaw;
-
-        // For qualitative, "Evaluation" filter shows them. "Experience" hides them?
-        // User said: "En modo Experiencia, Sonido/Cognición no deben aparecer en verde ni mostrar 0 XP"
-        // So if filter is 'experiencia', these should be 0 or hidden.
-
-        const showQualitative = filter.includes('evaluaciones');
-
-        // Scale qualitative to 0-10 for chart
-        const qualChartVal = showQualitative ? (sonidoVal / 10) : 0;
-        const cogChartVal = showQualitative ? (cogVal / 10) : 0;
+        const sonidoVal = getSonidoValue();
+        const cognicionVal = getCognicionValue();
 
         return [
-            { subject: 'Sonido', A: qualChartVal, B: 0, C: qualChartVal, fullMark: 100, original: sonidoVal, originalTotal: sonidoVal },
-            { subject: 'Cognición', A: cogChartVal, B: 0, C: cogChartVal, fullMark: 100, original: showQualitative ? cogVal : 0, originalTotal: showQualitative ? cogVal : 0 },
-            { subject: 'Articulación', ...art, fullMark: 100 },
-            { subject: 'Motricidad', ...motr, fullMark: 100 },
-            { subject: 'Flexibilidad', ...flex, fullMark: 100 },
+            {
+                subject: 'Sonido',
+                Experiencia: 0,
+                Evaluaciones: sonidoVal,
+                Total: sonidoVal,
+                original: sonidoVal,
+                fullMark: 10
+            },
+            {
+                subject: 'Motricidad',
+                Experiencia: normalize10(motrData.practiceVal, motrData.maxXP),
+                Evaluaciones: normalize10(motrData.evaluationVal, motrData.maxXP),
+                Total: normalize10(motrData.totalVal, motrData.maxXP),
+                originalExp: motrData.practiceVal,
+                originalEval: motrData.evaluationVal,
+                originalTotal: motrData.totalVal,
+                maxXP: motrData.maxXP,
+                fullMark: 10
+            },
+            {
+                subject: 'Articulación (T)',
+                Experiencia: normalize10(artData.practiceVal, artData.maxXP),
+                Evaluaciones: normalize10(artData.evaluationVal, artData.maxXP),
+                Total: normalize10(artData.totalVal, artData.maxXP),
+                originalExp: artData.practiceVal,
+                originalEval: artData.evaluationVal,
+                originalTotal: artData.totalVal,
+                maxXP: artData.maxXP,
+                fullMark: 10
+            },
+            {
+                subject: 'Flexibilidad',
+                Experiencia: normalize10(flexData.practiceVal, flexData.maxXP),
+                Evaluaciones: normalize10(flexData.evaluationVal, flexData.maxXP),
+                Total: normalize10(flexData.totalVal, flexData.maxXP),
+                originalExp: flexData.practiceVal,
+                originalEval: flexData.evaluationVal,
+                originalTotal: flexData.totalVal,
+                maxXP: flexData.maxXP,
+                fullMark: 10
+            },
+            {
+                subject: 'Cognición',
+                Experiencia: 0,
+                Evaluaciones: cognicionVal,
+                Total: cognicionVal,
+                original: cognicionVal,
+                fullMark: 10
+            },
         ];
-    }, [totalXP, practiceXP, nextLevelConfig, filter, radarStats]);
+    }, [total, practice, aggregatedGoals, nextLevelConfig, isMultiple, radarStatsRaw]);
 
-    // --- Radar 2: Current Form (Last 90 Days, Normalized to 100) ---
-    const formRadarData = useMemo(() => {
-        // Use practice data from radarStats (already reads from student_xp_total)
-        if (!radarStats?.practiceData || !radarStats?.evaluationData) return [];
+    // Displayed qualitative values (respect toggle)
+    const getDisplayedSonido = () => sourceFilter === 'experiencia' ? 0 : getSonidoValue();
+    const getDisplayedCognicion = () => sourceFilter === 'experiencia' ? 0 : getCognicionValue();
 
-        // Extract practice values from radarStats
-        const motrPractice = radarStats.practiceData.find(d => d.subject === 'Motricidad');
-        const artPractice = radarStats.practiceData.find(d => d.subject === 'Articulación (T)');
-        const flexPractice = radarStats.practiceData.find(d => d.subject === 'Flexibilidad');
-
-        // Extract evaluation values from radarStats
-        const motrEvaluation = radarStats.evaluationData.find(d => d.subject === 'Motricidad');
-        const artEvaluation = radarStats.evaluationData.find(d => d.subject === 'Articulación (T)');
-        const flexEvaluation = radarStats.evaluationData.find(d => d.subject === 'Flexibilidad');
-
-        const getVal = (practiceItem: any, evaluationItem: any) => {
-            const pracVal = practiceItem?.original || 0;
-            const evalVal = evaluationItem?.original || 0;
-            const totalVal = pracVal + evalVal;
-
-            // Scale to 0-10 for the chart (assuming max 100 XP = 10 on chart)
-            const pracScaled = Math.min(10, pracVal / 10);
-            const evalScaled = Math.min(10, evalVal / 10);
-            const totalScaled = Math.min(10, totalVal / 10);
-
-            const showEval = filter.includes('evaluaciones');
-            const showPrac = filter.includes('experiencia');
-            const showTotal = showEval && showPrac;
-
-            return {
-                A: showEval ? evalScaled : 0,
-                B: showPrac ? pracScaled : 0,
-                C: showTotal ? totalScaled : 0,
-                original: evalVal,
-                originalExperiencia: pracVal,
-                originalTotal: totalVal
-            };
-        };
-
-        const motr = getVal(motrPractice, motrEvaluation);
-        const art = getVal(artPractice, artEvaluation);
-        const flex = getVal(flexPractice, flexEvaluation);
-
-        const showQualitative = filter.includes('evaluaciones'); // Only show qualitative if evaluations are selected? Or always?
-        // User said: "Evaluaciones: mantiene su función". Previously 'evaluaciones' showed qualitative.
-        // 'experiencia' did NOT show qualitative.
-        // So if 'evaluaciones' is in filter, show qualitative.
-
-        // Use raw values (already 0-100)
-        const sonidoRaw = (radarStats?.evaluationData?.find(d => d.subject === 'Sonido')?.original || 0);
-        const cogRaw = (radarStats?.evaluationData?.find(d => d.subject === 'Cognición')?.original || 0);
-
-        // Scale Sonido/Cognicion to 0-10 for chart
-        const sonidoScaled = Math.min(10, sonidoRaw / 10);
-        const cogScaled = Math.min(10, cogRaw / 10);
-
-        return [
-            { subject: 'Sonido', A: showQualitative ? sonidoScaled : 0, B: 0, C: showQualitative ? sonidoScaled : 0, fullMark: 100, original: sonidoRaw, originalTotal: sonidoRaw },
-            { subject: 'Cognición', A: showQualitative ? cogScaled : 0, B: 0, C: showQualitative ? cogScaled : 0, fullMark: 100, original: cogRaw, originalTotal: cogRaw },
-            { subject: 'Articulación', ...art, fullMark: 100 },
-            { subject: 'Motricidad', ...motr, fullMark: 100 },
-            { subject: 'Flexibilidad', ...flex, fullMark: 100 },
-        ];
-    }, [radarStats, filter]);
-
-    const selectedStudent = students.find(s => s.id === internalSelectedId);
-    const selectedStudentName = selectedStudent ? displayName(selectedStudent) : 'Alumno seleccionado';
-
+    // =========================================================================
+    // RENDER
+    // =========================================================================
     return (
         <div className="space-y-6">
-            {/* Header & Selection */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex flex-col gap-2">
-                    <h3 className="text-lg font-semibold">Habilidades Maestras</h3>
-                    {enableSelection && !hideSelector && (
-                        <div className="w-[300px]">
-                            <Select value={internalSelectedId} onValueChange={setInternalSelectedId}>
-                                <SelectTrigger className="h-9">
-                                    <div className="flex items-center gap-2 overflow-hidden">
-                                        <User className="h-4 w-4 text-muted-foreground shrink-0" />
-                                        <span className="truncate">{selectedStudentName}</span>
-                                    </div>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {students.map((student) => (
-                                        <SelectItem key={student.id} value={student.id}>
-                                            {student.email ? `${displayName(student)} (${student.email})` : displayName(student)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
-                </div>
-
-                {/* Panel 2: Filters */}
-                <div className="flex items-center gap-2 bg-muted/50 p-1 rounded-lg">
-                    <ToggleGroup type="multiple" value={filter} onValueChange={(v) => setFilter(v)}>
-                        <ToggleGroupItem value="evaluaciones" className="gap-2 px-3 data-[state=on]:bg-orange-100 data-[state=on]:text-orange-700">
-                            <ClipboardList className="h-4 w-4" />
-                            <span className="text-sm font-medium">Evaluaciones</span>
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="experiencia" className="gap-2 px-3 data-[state=on]:bg-green-100 data-[state=on]:text-green-700">
-                            <Activity className="h-4 w-4" />
-                            <span className="text-sm font-medium">Experiencia</span>
-                        </ToggleGroupItem>
-                    </ToggleGroup>
-                </div>
-            </div>
-
-            <div className="p-4 border rounded-lg bg-card text-card-foreground shadow-sm space-y-8">
-
-                {/* Panel 4: Level & Qualitative Snapshot */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card className="bg-muted/20 border-none shadow-none flex flex-col justify-center items-center p-4">
-                        <LevelBadge level={currentLevel} size="lg" />
-                        <div className="mt-2 text-center">
-                            <h4 className="font-bold">Nivel {currentLevel + 1}</h4>
-                            <p className="text-xs text-muted-foreground">Siguiente Nivel</p>
-                        </div>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="p-4 flex flex-col items-center justify-center h-full">
-                            <div className="text-3xl font-bold text-orange-500">
-                                {(radarStats?.evaluationData?.find(d => d.subject === 'Sonido')?.original || 0) / 10}<span className="text-sm text-muted-foreground font-normal">/10</span>
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1 font-medium">Sonido (Cualitativo)</div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="p-4 flex flex-col items-center justify-center h-full">
-                            <div className="text-3xl font-bold text-orange-500">
-                                {(radarStats?.evaluationData?.find(d => d.subject === 'Cognición')?.original || 0) / 10}<span className="text-sm text-muted-foreground font-normal">/10</span>
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1 font-medium">Cognición (Cualitativo)</div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Panel 1: XP por Habilidad */}
-                <div className="p-4 border rounded-md bg-muted/20">
-                    <h5 className="font-medium text-sm mb-1">XP por Habilidad</h5>
-                    <p className="text-xs text-muted-foreground mb-3">Práctica y evaluaciones por habilidad.</p>
-                    <TotalXPDisplay studentId={targetId} filter={filter} />
-                </div>
-
-                {/* Panel 3: Dual Radars */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Radar 1: Total Progress */}
-                    <div>
-                        <div className="mb-4 text-center">
-                            <h4 className="font-semibold text-sm">Perfil Técnico - Total</h4>
-                            <p className="text-xs text-muted-foreground">Progreso vs Requisitos Nivel {currentLevel + 1}</p>
-                        </div>
-                        <HabilidadesRadarChart
-                            data={totalRadarData}
-                            isLoading={isLoadingStats}
-                            dataKey1={filter.includes('evaluaciones') ? "A" : undefined} // Evaluation (Orange)
-                            dataKey2={filter.includes('experiencia') ? "B" : undefined} // Practice (Green)
-                            dataKey3={(filter.includes('evaluaciones') && filter.includes('experiencia')) ? "C" : undefined} // Total (Grey)
-                        />
-                    </div>
-
-                    {/* Radar 2: Current Form */}
-                    <div>
-                        <div className="mb-4 text-center">
-                            <h4 className="font-semibold text-sm">Estado de Forma Actual</h4>
-                            <p className="text-xs text-muted-foreground">Últimos 90 Días (Normalizado a 100 XP)</p>
-                        </div>
-                        <HabilidadesRadarChart
-                            data={formRadarData}
-                            isLoading={isLoadingRecent}
-                            dataKey1={filter.includes('evaluaciones') ? "A" : undefined} // Evaluation (Orange)
-                            dataKey2={filter.includes('experiencia') ? "B" : undefined} // Practice (Green)
-                            dataKey3={(filter.includes('evaluaciones') && filter.includes('experiencia')) ? "C" : undefined} // Total (Grey) - Only if both
-                        />
-                    </div>
+            {/* Primary Toggle: Experiencia / Evaluaciones / Ambos */}
+            <div className="flex justify-center">
+                <div className="bg-muted p-1 rounded-lg inline-flex">
+                    <button
+                        onClick={() => setSourceFilter('experiencia')}
+                        className={cn(
+                            "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                            sourceFilter === 'experiencia'
+                                ? "bg-background shadow-sm text-foreground"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        Experiencia
+                    </button>
+                    <button
+                        onClick={() => setSourceFilter('evaluaciones')}
+                        className={cn(
+                            "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                            sourceFilter === 'evaluaciones'
+                                ? "bg-background shadow-sm text-foreground"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        Evaluaciones
+                    </button>
+                    <button
+                        onClick={() => setSourceFilter('ambos')}
+                        className={cn(
+                            "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                            sourceFilter === 'ambos'
+                                ? "bg-background shadow-sm text-foreground"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        Ambos
+                    </button>
                 </div>
             </div>
+
+            {/* Estado de Forma Actual Block */}
+            <Card>
+                <CardHeader className="pb-2">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <CardTitle className="text-lg font-semibold">Estado de Forma Actual</CardTitle>
+                            <p className="text-sm text-muted-foreground">
+                                {viewMode === 'forma' ? 'Progreso acumulado' : 'XP del rango seleccionado'}
+                            </p>
+                        </div>
+                        {/* Secondary Toggle: Estado de forma / XP del rango */}
+                        <div className="bg-muted/50 p-1 rounded-lg inline-flex">
+                            <button
+                                onClick={() => setViewMode('forma')}
+                                className={cn(
+                                    "px-3 py-1 text-xs font-medium rounded transition-all",
+                                    viewMode === 'forma'
+                                        ? "bg-background shadow-sm text-foreground"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                Estado de forma
+                            </button>
+                            <button
+                                onClick={() => setViewMode('rango')}
+                                className={cn(
+                                    "px-3 py-1 text-xs font-medium rounded transition-all",
+                                    viewMode === 'rango'
+                                        ? "bg-background shadow-sm text-foreground"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                XP del rango
+                            </button>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {/* Level + Qualitative Cards Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Level Badge */}
+                        <Card className="bg-muted/20 border-none shadow-none flex flex-col justify-center items-center p-4">
+                            <LevelBadge level={currentLevel} label={null} />
+                            <div className="mt-2 text-center">
+                                <h4 className="font-bold">Nivel {currentLevel}</h4>
+                                <p className="text-xs text-muted-foreground">Nivel actual</p>
+                            </div>
+                        </Card>
+
+                        {/* Sonido Card */}
+                        <Card>
+                            <CardContent className="p-4 flex flex-col items-center justify-center h-full">
+                                <Activity className="w-5 h-5 text-blue-500 mb-2" />
+                                <div className="text-3xl font-bold">
+                                    {getDisplayedSonido().toFixed(1)}
+                                    <span className="text-sm text-muted-foreground font-normal">/10</span>
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-1 font-medium">Sonido</div>
+                                {sourceFilter === 'experiencia' && (
+                                    <p className="text-xs text-muted-foreground opacity-60">No disponible</p>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* Cognición Card */}
+                        <Card>
+                            <CardContent className="p-4 flex flex-col items-center justify-center h-full">
+                                <Target className="w-5 h-5 text-purple-500 mb-2" />
+                                <div className="text-3xl font-bold">
+                                    {getDisplayedCognicion().toFixed(1)}
+                                    <span className="text-sm text-muted-foreground font-normal">/10</span>
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-1 font-medium">Cognición</div>
+                                {sourceFilter === 'experiencia' && (
+                                    <p className="text-xs text-muted-foreground opacity-60">No disponible</p>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Radar Chart */}
+                    <div className="flex justify-center">
+                        <div className="w-full max-w-lg">
+                            <HabilidadesRadarChart
+                                data={radarDataForChart}
+                                isLoading={isLoadingStats}
+                                dataKey1={sourceFilter === 'evaluaciones' ? "Evaluaciones" : (sourceFilter === 'experiencia' ? undefined : "Evaluaciones")}
+                                dataKey2={sourceFilter === 'evaluaciones' ? undefined : "Experiencia"}
+                                dataKey3={sourceFilter === 'ambos' ? "Total" : undefined}
+                            />
+                        </div>
+                    </div>
+
+                    {/* XP por Habilidad */}
+                    <div className="p-4 border rounded-md bg-muted/20">
+                        <h5 className="font-medium text-sm mb-1">XP por Habilidad</h5>
+                        <p className="text-xs text-muted-foreground mb-3">
+                            {sourceFilter === 'experiencia' && "Solo XP de práctica"}
+                            {sourceFilter === 'evaluaciones' && "Solo XP de evaluaciones"}
+                            {sourceFilter === 'ambos' && "Práctica + Evaluaciones"}
+                        </p>
+                        <TotalXPDisplay studentIds={effectiveIds} filter={xpFilter} />
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }
