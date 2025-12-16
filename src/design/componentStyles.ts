@@ -22,33 +22,33 @@ export const componentStyles = {
     pageBackground: "bg-background",
     sidebarBackground: "bg-card text-ui",
     panelBackground: "app-panel",
-    
+
     // Nuevos patrones de layout de página
     page: "max-w-[var(--page-max-width)] mx-auto px-3 md:px-6 lg:px-[var(--page-padding-x)] py-4 md:py-6 lg:py-[var(--page-padding-y)] space-y-4 md:space-y-6 lg:space-y-[var(--page-section-gap-y)]",
-    
+
     pageHeaderRow: "flex items-center justify-between gap-4 flex-wrap",
-    
+
     pageContent: "space-y-[var(--page-section-gap-y)]",
-    
+
     // Grid de 12 columnas
     grid12: "grid grid-cols-12 gap-x-2 md:gap-x-4 lg:gap-x-[var(--grid-gap-x)] gap-y-2 md:gap-y-4 lg:gap-y-[var(--grid-gap-y)]",
-    
+
     // Grid main + aside (12 columnas)
     grid12MainAside: "", // Se usa junto con grid12, las clases específicas se aplican en los hijos
     grid12Main: "col-span-12 lg:col-span-8",
     grid12Aside: "col-span-12 lg:col-span-4",
-    
+
     // Grids responsive reutilizables
     grid2: "grid grid-cols-1 md:grid-cols-2 gap-x-[var(--grid-gap-x)] gap-y-[var(--grid-gap-y)]",
     grid3: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-[var(--grid-gap-x)] gap-y-[var(--grid-gap-y)]",
     grid4: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-[var(--grid-gap-x)] gap-y-[var(--grid-gap-y)]",
-    
+
     // Fila de KPIs (responsive)
     kpiRow: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-[var(--grid-gap-x)] gap-y-[var(--grid-gap-y)]",
-    
+
     // Sección de tabla
     tableSection: "overflow-x-auto",
-    
+
     // Barra de filtros
     filterBar: "flex flex-wrap items-center gap-2 md:gap-3",
     // Espaciados compactos reutilizables
@@ -353,9 +353,9 @@ export const componentStyles = {
   // Sistema de modales mejorados
   modal: {
     // Overlay
-    overlay: "fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+    overlay: "fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
     // Contenedor
-    container: "fixed left-[50%] top-[50%] z-[120] grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.16)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-[var(--radius-modal)]",
+    container: "fixed left-[50%] top-[50%] z-[105] grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.16)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-[var(--radius-modal)]",
     // Tamaños
     sizeSm: "max-w-sm",
     sizeMd: "max-w-lg",
