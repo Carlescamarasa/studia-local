@@ -23,7 +23,8 @@ export default function FeedbackUnificadoTab({
     isEstu = false,
     onEditFeedback,
     puedeEditar,
-    onMediaClick
+    onMediaClick,
+    isMediaModalOpen
 }) {
     const isMobile = useIsMobile();
 
@@ -437,6 +438,7 @@ export default function FeedbackUnificadoTab({
                 feedback={feedbackSeleccionado}
                 usuarios={Object.values(usuariosMap)}
                 onMediaClick={onMediaClick}
+                isMediaModalOpen={isMediaModalOpen}
             />
         </>
     );
