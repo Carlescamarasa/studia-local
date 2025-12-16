@@ -213,6 +213,17 @@ function EstadisticasPageContent() {
     }
   }, [isProf, estudiantesDelProfesor, alumnosSeleccionados]);
 
+  // Redirect ESTU if they try to access 'comparar' tab via URL
+  useEffect(() => {
+    if (isEstu && tabActiva === 'comparar') {
+      setTabActiva('resumen');
+    }
+    // Also handle legacy 'autoevaluaciones' and 'feedback' tab values -> redirect to 'sesiones'
+    if (tabActiva === 'autoevaluaciones' || tabActiva === 'feedback') {
+      setTabActiva('sesiones');
+    }
+  }, [isEstu, tabActiva]);
+
   useEffect(() => {
     const params = {};
     if (periodoInicio) params.inicio = periodoInicio;
@@ -1130,11 +1141,9 @@ function EstadisticasPageContent() {
               items={[
                 { value: 'resumen', label: 'Resumen', icon: BarChart3 },
                 { value: 'progreso', label: 'Progreso', icon: TrendingUp },
-
                 { value: 'tipos', label: 'Tipos de Bloque', icon: Layers },
                 { value: 'top', label: 'Top', icon: Star },
-                { value: 'autoevaluaciones', label: 'Sesiones', icon: List },
-                { value: 'feedback', label: 'Feedback', icon: MessageSquare },
+                { value: 'sesiones', label: 'Sesiones', icon: List },
                 ...(!isEstu ? [{ value: 'comparar', label: 'Comparar', icon: Activity }] : []),
               ]}
             />
@@ -1182,29 +1191,30 @@ function EstadisticasPageContent() {
           />
         )}
 
-        {tabActiva === 'autoevaluaciones' && (
-          <AutoevaluacionesTab
-            registros={registrosFiltradosUnicos}
-            usuarios={usuarios}
-            userIdActual={userIdActual}
-            userRole={effectiveUser?.rolPersonalizado}
-            onMediaClick={(mediaLinks, index) => handleMediaClick(mediaLinks, index)}
-          />
-        )}
-
-        {tabActiva === 'feedback' && (
-          <FeedbackUnificadoTab
-            feedbacks={isEstu ? feedbackProfesor : feedbacksParaProfAdmin}
-            evaluaciones={evaluacionesFiltradas}
-            usuarios={usuarios}
-            isEstu={isEstu}
-            onEditFeedback={(f) => setFeedbackDrawer(f)}
-            puedeEditar={(f) => {
-              // Solo ADMIN y PROF pueden editar, y solo el profesor creador o un ADMIN
-              return (isAdmin || isProf) && (isAdmin || f.profesorId === userIdActual);
-            }}
-            onMediaClick={(mediaLinks, index) => handleMediaClick(mediaLinks, index)}
-          />
+        {tabActiva === 'sesiones' && (
+          <>
+            <AutoevaluacionesTab
+              registros={registrosFiltradosUnicos}
+              usuarios={usuarios}
+              userIdActual={userIdActual}
+              userRole={effectiveUser?.rolPersonalizado}
+              onMediaClick={(mediaLinks, index) => handleMediaClick(mediaLinks, index)}
+            />
+            <div className="mt-6">
+              <FeedbackUnificadoTab
+                feedbacks={isEstu ? feedbackProfesor : feedbacksParaProfAdmin}
+                evaluaciones={evaluacionesFiltradas}
+                usuarios={usuarios}
+                isEstu={isEstu}
+                onEditFeedback={(f) => setFeedbackDrawer(f)}
+                puedeEditar={(f) => {
+                  // Solo ADMIN y PROF pueden editar, y solo el profesor creador o un ADMIN
+                  return (isAdmin || isProf) && (isAdmin || f.profesorId === userIdActual);
+                }}
+                onMediaClick={(mediaLinks, index) => handleMediaClick(mediaLinks, index)}
+              />
+            </div>
+          </>
         )}
 
         {/* Tab de comparación de estudiantes (solo PROF/ADMIN) */}

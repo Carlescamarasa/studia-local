@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Input } from "@/components/ui/input";
-import { Search, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
 import UnifiedTable from "@/components/tables/UnifiedTable";
@@ -27,7 +27,7 @@ const tipoColors = {
  * @param {Array} props.bloquesFiltrados - Bloques filtrados para el modal
  * @param {Array} props.registrosFiltrados - Registros filtrados para el modal
  */
-export default function TopEjerciciosTab({ 
+export default function TopEjerciciosTab({
   topEjercicios,
   bloquesFiltrados = [],
   registrosFiltrados = [],
@@ -72,7 +72,7 @@ export default function TopEjerciciosTab({
       label: 'Nombre',
       sortable: true,
       render: (item) => (
-        <div 
+        <div
           className="flex-1 min-w-0 cursor-pointer hover:text-[var(--color-primary)] transition-colors"
           onClick={() => setEjercicioSeleccionado(item)}
           title="Haz click para ver detalles"
@@ -112,15 +112,11 @@ export default function TopEjerciciosTab({
             <Star className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primary)]" />
             Top Ejercicios Practicados
           </CardTitle>
-          <div className="relative flex-1 md:flex-none md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
-            <Input
-              placeholder="Buscar ejercicio..."
-              value={searchEjercicio}
-              onChange={(e) => setSearchEjercicio(e.target.value)}
-              className={`pl-10 ${componentStyles.controls.inputDefault}`}
-            />
-          </div>
+          <Input
+            placeholder="Buscar ejercicio..."
+            value={searchEjercicio}
+            onChange={(e) => setSearchEjercicio(e.target.value)}
+          />
         </div>
       </CardHeader>
       <CardContent>
@@ -128,7 +124,7 @@ export default function TopEjerciciosTab({
           <div className="text-center py-8 sm:py-12">
             <Star className={componentStyles.components.emptyStateIcon} />
             <p className={componentStyles.components.emptyStateText}>
-              {searchEjercicio 
+              {searchEjercicio
                 ? 'No se encontraron ejercicios con ese nombre'
                 : 'No hay datos de ejercicios en el periodo seleccionado'
               }
@@ -143,7 +139,7 @@ export default function TopEjerciciosTab({
           />
         )}
       </CardContent>
-      
+
       {/* Modal de detalle */}
       <TopEjercicioModal
         ejercicio={ejercicioSeleccionado}
