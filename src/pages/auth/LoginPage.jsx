@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ds';
 import { componentStyles } from '@/design/componentStyles';
 import { useDesign } from '@/components/design/DesignProvider';
 import { toast } from 'sonner';
-import { Music } from 'lucide-react';
+import { Music, Sun, Moon } from 'lucide-react';
 import logoLTS from '@/assets/Logo_LTS.svg';
 import { getAppName } from '@/components/utils/appMeta';
 import { LoginForm } from './components/LoginForm';
@@ -27,7 +27,7 @@ export default function LoginPage() {
   const { signIn, resetPassword } = useAuth();
   const navigate = useNavigate();
   const appName = getAppName();
-  const { design } = useDesign();
+  const { design, setDesignPartial } = useDesign();
   const rateLimit = useRateLimit();
   const { getLoginErrorMessage, getForgotPasswordErrorMessage } = useAuthErrors();
 
@@ -135,6 +135,15 @@ export default function LoginPage() {
           }}
         />
       </div>
+
+      {/* Theme Toggle */}
+      <button
+        onClick={() => setDesignPartial('theme', design?.theme === 'dark' ? 'light' : 'dark')}
+        className="absolute top-4 right-4 p-2 rounded-full bg-[var(--color-surface)]/50 backdrop-blur-sm hover:bg-[var(--color-surface-muted)] transition-colors z-20 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+        aria-label="Toggle theme"
+      >
+        {design?.theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+      </button>
 
       {/* Contenedor principal */}
       <div className={componentStyles.auth.loginCardContainer}>

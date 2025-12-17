@@ -176,7 +176,7 @@ export const componentStyles = {
     loginCard: "border-2 shadow-2xl backdrop-blur-sm",
     loginHeader: "text-center space-y-6 pb-8 pt-8",
     loginLogoContainer: "flex justify-center",
-    loginLogoWrapper: "relative w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden transition-transform hover:scale-105",
+    loginLogoWrapper: "relative w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden transition-transform hover:scale-105",
     loginLogoShine: "absolute inset-0 opacity-30",
     loginTitleContainer: "space-y-2",
     loginSubtitleContainer: "space-y-2",

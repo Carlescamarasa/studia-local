@@ -41,10 +41,10 @@ export default function StatsDateHeader({
       />
 
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
         onClick={onToggle}
-        className="h-9 w-9 border border-input bg-background hover:bg-accent text-muted-foreground"
+        className="h-10 w-10 text-foreground"
         aria-label={isOpen ? "Ocultar filtros" : "Mostrar filtros"}
         aria-expanded={isOpen}
       >

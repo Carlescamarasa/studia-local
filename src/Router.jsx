@@ -100,16 +100,10 @@ export default function AppRouter() {
           <Route path="hoy" element={<Hoy />} />
           <Route path="agenda" element={<Agenda />} />
           <Route path="perfil" element={<Perfil />} />
-          <Route path="import-export" element={<Navigate to="/configuracion?tab=import" replace />} />
-          <Route path="progreso" element={<Progreso />} />
-          <Route path="preparacion" element={<Preparacion />} />
-          <Route path="estadisticas" element={<Navigate to="/progreso?tab=estadisticas" replace />} />
+
           <Route path="estudiantes" element={<Estudiantes />} />
           <Route path="calendario" element={<Calendario />} />
           <Route path="biblioteca" element={<Biblioteca />} />
-          <Route path="plantillas" element={<Navigate to="/biblioteca" replace />} />
-          <Route path="design" element={<Navigate to="/configuracion?tab=design" replace />} />
-          <Route path="testseed" element={<Navigate to="/configuracion?tab=tests" replace />} />
           <Route path="test-loading" element={<TestLoading />} />
           <Route path="local" element={<LocalPage />} />
           <Route path="qa-visual" element={<QAVisualPage />} />
@@ -118,14 +112,27 @@ export default function AppRouter() {
           <Route path="soporte" element={<Soporte />} />
           <Route path="soporte-prof" element={<SoporteProf />} />
           <Route path="ayuda" element={<Ayuda />} />
-          <Route path="habilidades" element={<Navigate to="/progreso?tab=habilidades" replace />} />
-          <Route path="contenido-multimedia" element={<Navigate to="/configuracion?tab=multimedia" replace />} />
           <Route path="mochila" element={<MochilaPage />} />
+          <Route path="preparacion" element={<Preparacion />} />
+
+          {/* Canonical Routes */}
+          <Route path="progreso" element={<Progreso />} />
+          <Route path="configuracion" element={<Configuracion />} />
+
+          {/* Legacy Redirects - Configuración */}
+          <Route path="import-export" element={<Navigate to="/configuracion?tab=import" replace />} />
+          <Route path="design" element={<Navigate to="/configuracion?tab=design" replace />} />
+          <Route path="testseed" element={<Navigate to="/configuracion?tab=tests" replace />} />
           <Route path="version" element={<Navigate to="/configuracion?tab=version" replace />} />
           <Route path="admin/version" element={<Navigate to="/configuracion?tab=version" replace />} />
-          {/* Rutas de configuración canónicas y redirects */}
-          <Route path="configuracion" element={<Configuracion />} />
           <Route path="admin/configuracion" element={<Navigate to="/configuracion" replace />} />
+          <Route path="contenido-multimedia" element={<Navigate to="/configuracion?tab=multimedia" replace />} />
+
+          {/* Legacy Redirects - Progreso */}
+          <Route path="estadisticas" element={<Navigate to="/progreso?tab=estadisticas" replace />} />
+          <Route path="habilidades" element={<Navigate to="/progreso?tab=habilidades" replace />} />
+          <Route path="plantillas" element={<Navigate to="/biblioteca" replace />} />
+
         </Route>
       </Routes>
     </Suspense>
