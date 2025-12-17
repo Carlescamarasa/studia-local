@@ -6,19 +6,19 @@ const SidebarContext = createContext(null);
 export function SidebarProvider({ children }) {
   const location = useLocation();
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
-  const isModoEstudio = location.pathname === '/hoy';
-  
+  const isModoEstudio = location.pathname.startsWith('/hoy');
+
   const [abierto, setAbierto] = useState(() => {
     // En mobile, siempre cerrado por defecto
     if (!isDesktop) {
       return false;
     }
-    
+
     // En modo estudio (/hoy), cerrado por defecto
     if (isModoEstudio) {
       return false;
     }
-    
+
     // En desktop (excepto modo estudio), siempre abierto por defecto
     // Ignoramos localStorage para forzar el comportamiento por defecto
     return true;
@@ -28,8 +28,8 @@ export function SidebarProvider({ children }) {
   useEffect(() => {
     const checkDesktop = () => window.innerWidth >= 1024;
     const nowDesktop = checkDesktop();
-    const nowModoEstudio = location.pathname === '/hoy';
-    
+    const nowModoEstudio = location.pathname.startsWith('/hoy');
+
     if (nowDesktop && !nowModoEstudio) {
       // En desktop (excepto modo estudio), forzar abierto
       setAbierto(true);
@@ -55,11 +55,11 @@ export function SidebarProvider({ children }) {
   const toggleSidebar = useCallback(() => {
     setAbierto(prev => !prev);
   }, []);
-  
+
   const openSidebar = useCallback(() => {
     setAbierto(true);
   }, []);
-  
+
   const closeSidebar = useCallback(() => {
     setAbierto(false);
   }, []);
