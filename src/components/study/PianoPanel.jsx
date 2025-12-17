@@ -44,7 +44,60 @@ const WRITTEN_NOTES = [
     { name: "A#4", type: "black", writtenMidi: 70, label: "Sib" },
     { name: "B4", type: "white", writtenMidi: 71, label: "Si" },
     { name: "C5", type: "white", writtenMidi: 72, label: "Do" },
+    { name: "C#5", type: "black", writtenMidi: 73, label: "Do#" },
+    { name: "D5", type: "white", writtenMidi: 74, label: "Re" },
+    { name: "D#5", type: "black", writtenMidi: 75, label: "Mib" },
+    { name: "E5", type: "white", writtenMidi: 76, label: "Mi" },
+    { name: "F5", type: "white", writtenMidi: 77, label: "Fa" },
+    { name: "F#5", type: "black", writtenMidi: 78, label: "Fa#" },
+    { name: "G5", type: "white", writtenMidi: 79, label: "Sol" },
+    { name: "G#5", type: "black", writtenMidi: 80, label: "Sol#" },
+    { name: "A5", type: "white", writtenMidi: 81, label: "La" },
+    { name: "A#5", type: "black", writtenMidi: 82, label: "Sib" },
+    { name: "B5", type: "white", writtenMidi: 83, label: "Si" },
+    { name: "C6", type: "white", writtenMidi: 84, label: "Do" },
 ];
+
+// TRUMPET FINGERINGS DATA
+// Key = Note Name (approximate matching) considering the range Fa#3 to Do6
+// 0 = Open, 1, 2, 3 = Pistons
+const TRUMPET_FINGERINGS = {
+    // Octave 3 (Low)
+    'F#3': [1, 2, 3],
+    'G3': [1, 3],
+    'G#3': [2, 3], 'Ab3': [2, 3],
+    'A3': [1, 2],
+    'A#3': [1], 'Bb3': [1],
+    'B3': [2],
+    // Octave 4 (Mid)
+    'C4': [0],
+    'C#4': [1, 2, 3], 'Db4': [1, 2, 3],
+    'D4': [1, 3],
+    'D#4': [2, 3], 'Eb4': [2, 3],
+    'E4': [1, 2],
+    'F4': [1],
+    'F#4': [2], 'Gb4': [2],
+    'G4': [0],
+    'G#4': [2, 3], 'Ab4': [2, 3],
+    'A4': [1, 2],
+    'A#4': [1], 'Bb4': [1],
+    'B4': [2],
+    // Octave 5 (High)
+    'C5': [0],
+    'C#5': [1, 2], 'Db5': [1, 2],
+    'D5': [1],
+    'D#5': [2], 'Eb5': [2],
+    'E5': [0],
+    'F5': [1],
+    'F#5': [2], 'Gb5': [2],
+    'G5': [0],
+    'G#5': [2, 3], 'Ab5': [2, 3],
+    'A5': [1, 2],
+    'A#5': [1], 'Bb5': [1],
+    'B5': [2],
+    // Octave 6
+    'C6': [0]
+};
 
 export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
     const audioContextRef = useRef(null);
@@ -57,6 +110,65 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
 
     // Track which keys are currently pressed for visual highlighting
     const [pressedKeys, setPressedKeys] = useState(new Set());
+
+    // Feature State
+    const [pianoMode, setPianoMode] = useState('Sib'); // 'Sib' | 'Do'
+    const [trumpetMode, setTrumpetMode] = useState('Sib'); // 'Sib' | 'Do'
+    const [lastNote, setLastNote] = useState(null); // { name, midi, label }
+
+    // Helper to get fingering based on note and trumpet mode
+    const getFingering = (note) => {
+        if (!note) return null;
+        // If trumpet is in C, we need to transpose the lookup?
+        // Actually, the table is usually for Bb Trumpet positions.
+        // If the user selects "Trompeta En Do", the physical fingering for a C (concert) is usually 0 (open).
+        // On a Bb trumpet, C (concert) is D (written), which is 1-3.
+
+        // Let's assume the table provided IS FOR Bb TRUMPET (Standard).
+        // If Trumpet Mode is 'Do' (C Trumpet), the fingering for a written note is different?
+        // Or does "Trompeta en Do" mean we are displaying the fingering for a C Trumpet? 
+        // A C Trumpet playing Written C uses same fingering as Bb Trumpet playing Written C (mostly).
+        // BUT the user said: "toggle 'Sib-Do' ya que hay trompeta Sib y Do". 
+        // This implies physically different instruments.
+        // C Trumpet playing Concert C -> Written C -> Fingering 0.
+        // Bb Trumpet playing Concert C -> Written D -> Fingering 1-3.
+
+        // SIMPLIFICATION: The input `note` is what key was pressed on the piano.
+        // If Piano is 'Sib' (Transposing): Key C -> Sounds Concert Bb -> Written C for Bb Trumpet. Fingering [0].
+        // If Piano is 'Do' (Concert): Key C -> Sounds Concert C.
+        //   -> For Bb Trumpet: Concert C is Written D. Fingering [1-3].
+        //   -> For C Trumpet: Concert C is Written C. Fingering [0].
+
+        // Let's calculate the "Written Note for Selected Trumpet" based on the Sound.
+
+        // 1. Determine Concert Pitch (Sound) of pressed key
+        // Piano 'Sib': Key C (60) -> Concert Bb (58)
+        // Piano 'Do': Key C (60) -> Concert C (60)
+        let concertMidi = note.writtenMidi;
+        if (pianoMode === 'Sib') {
+            concertMidi -= 2;
+        }
+
+        // 2. Determine Written Pitch for the Selected Trumpet
+        // Trumpet 'Sib' (Transposes down M2): Written = Concert + 2
+        // Trumpet 'Do' (Non-transposing): Written = Concert
+        let trumpetWrittenMidi = concertMidi;
+        if (trumpetMode === 'Sib') {
+            trumpetWrittenMidi += 2;
+        }
+
+        // 3. Lookup Fingering using trumpetWrittenMidi
+        // We need to map MIDI back to Note Name provided in TRUMPET_FINGERINGS
+        // MIDI 60 = C4.
+        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const octave = Math.floor(trumpetWrittenMidi / 12) - 1;
+        const semitone = trumpetWrittenMidi % 12;
+        const noteStr = `${noteNames[semitone]}${octave}`;
+
+        // console.log("Fingering Lookup:", note.name, "-> Concert:", concertMidi, "-> TptWritten:", trumpetWrittenMidi, "->", noteStr);
+
+        return TRUMPET_FINGERINGS[noteStr] || null;
+    };
 
     const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
 
@@ -128,10 +240,19 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
         if (activeNotes.current.has(note.name)) return;
 
         // Transposition Logic:
-        // Written C (60) -> Sound Bb (58)
+        // Written C (60) -> Sound Bb (58) IF pianoMode is 'Sib'
         // Sound = Written - 2
-        // PLUS: Shift one octave higher (+12)
-        const concertMidi = note.writtenMidi - 2 + 12;
+        // IF pianoMode is 'Do', Sound = Written.
+        // PLUS: The original code shifted one octave higher (+12) for better audio audibility on basic oscillator? 
+        // Or maybe just preference. Keeping the +12 shift as "Concert Offset".
+
+        let concertMidi = note.writtenMidi;
+        if (pianoMode === 'Sib') {
+            concertMidi -= 2; // Bb Transposition
+        }
+        // Apply the same +12 offset as before for sound quality/register
+        concertMidi += 12;
+
         const semitonesFromA4 = concertMidi - 69;
         const freq = getFreq(semitonesFromA4);
 
@@ -156,6 +277,7 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
 
         // Update visual state
         setPressedKeys(prev => new Set(prev).add(note.name));
+        setLastNote(note);
     };
 
     const stopNote = (note, e) => {
@@ -211,8 +333,91 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
                 <div className="max-w-5xl mx-auto px-4 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary)]">
                         <Piano className="w-3.5 h-3.5" />
-                        <span>Piano (Transpositor Si♭)</span>
+                        <span className="mr-2">Piano:</span>
+                        <div className="flex bg-muted rounded p-0.5 border">
+                            <button
+                                onClick={() => setPianoMode('Do')}
+                                className={cn("px-2 py-0.5 rounded text-[10px] transition-colors", pianoMode === 'Do' ? "bg-white shadow text-black" : "text-muted-foreground hover:text-black")}
+                            >
+                                En Do
+                            </button>
+                            <button
+                                onClick={() => setPianoMode('Sib')}
+                                className={cn("px-2 py-0.5 rounded text-[10px] transition-colors", pianoMode === 'Sib' ? "bg-white shadow text-black" : "text-muted-foreground hover:text-black")}
+                            >
+                                En Si♭
+                            </button>
+                        </div>
                     </div>
+
+                    {/* Center Note Display */}
+                    <div className="flex-1 flex justify-center items-center">
+                        {lastNote ? (
+                            <div className="flex flex-col items-center">
+                                <span className="text-lg font-bold text-[var(--color-text-primary)]">
+                                    {lastNote.label}
+                                    {/* Show the accidental variant if generic? No, sticking to label */}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">
+                                    {pianoMode === 'Sib' ? 'Sonido Real (Si♭)' : 'Sonido Real (Do)'}
+                                </span>
+                            </div>
+                        ) : (
+                            <span className="text-xs text-muted-foreground">Toca una tecla</span>
+                        )}
+                    </div>
+
+                    {/* Trumpet Settings & Visualization */}
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary)]">
+                            <span className="mr-1">Trompeta:</span>
+                            <div className="flex bg-muted rounded p-0.5 border">
+                                <button
+                                    onClick={() => setTrumpetMode('Do')}
+                                    className={cn("px-2 py-0.5 rounded text-[10px] transition-colors", trumpetMode === 'Do' ? "bg-white shadow text-black" : "text-muted-foreground hover:text-black")}
+                                >
+                                    Do
+                                </button>
+                                <button
+                                    onClick={() => setTrumpetMode('Sib')}
+                                    className={cn("px-2 py-0.5 rounded text-[10px] transition-colors", trumpetMode === 'Sib' ? "bg-white shadow text-black" : "text-muted-foreground hover:text-black")}
+                                >
+                                    Si♭
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Pistons Visualization */}
+                        {lastNote && (
+                            <div className="flex gap-1">
+                                {(() => {
+                                    const fingering = getFingering(lastNote);
+                                    if (!fingering) return <span className="text-[10px] text-muted-foreground">-</span>;
+
+                                    // Render 3 pistons
+                                    return [1, 2, 3].map(pistonNum => {
+                                        const isPressed = fingering.includes(pistonNum);
+                                        return (
+                                            <div
+                                                key={pistonNum}
+                                                className={cn(
+                                                    "w-4 h-4 rounded-full border border-slate-400 flex items-center justify-center transition-colors",
+                                                    isPressed ? "bg-slate-800 border-slate-800" : "bg-white"
+                                                )}
+                                            >
+                                                <span className={cn("text-[9px] font-bold", isPressed ? "text-white" : "text-slate-300")}>
+                                                    {pistonNum}
+                                                </span>
+                                            </div>
+                                        );
+                                    });
+                                })()}
+                            </div>
+                        )}
+
+                        <div className="w-px h-4 bg-border mx-2" />
+                    </div>
+
                     <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0 hover:bg-black/5">
                         <X className="w-3.5 h-3.5" />
                     </Button>
