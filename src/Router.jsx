@@ -12,7 +12,6 @@ const Piezas = lazy(() => import("@/pages/piezas.jsx"));
 const Sesiones = lazy(() => import("@/pages/sesiones.jsx"));
 const Semana = lazy(() => import("@/pages/semana.jsx"));
 const Semanas = lazy(() => import("@/pages/semanas.jsx"));
-const Asignaciones = lazy(() => import("@/pages/asignaciones.jsx"));
 const AsignacionDetalle = lazy(() => import("@/pages/asignacion-detalle.jsx"));
 const AdaptarAsignacion = lazy(() => import("@/pages/adaptar-asignacion.jsx"));
 const Hoy = lazy(() => import("@/pages/hoy.jsx"));
@@ -94,7 +93,7 @@ export default function AppRouter() {
           <Route path="sesiones" element={<Sesiones />} />
           <Route path="semana" element={<Semana />} />
           <Route path="semanas" element={<Semanas />} />
-          <Route path="asignaciones" element={<Asignaciones />} />
+          <Route path="asignaciones" element={<Navigate to="/preparacion?tab=asignaciones" replace />} />
           <Route path="asignacion-detalle" element={<AsignacionDetalle />} />
           <Route path="adaptar-asignacion" element={<AdaptarAsignacion />} />
           <Route path="hoy" element={<Hoy />} />

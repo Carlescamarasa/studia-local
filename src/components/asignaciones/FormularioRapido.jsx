@@ -21,11 +21,11 @@ import { supabase } from "@/lib/supabaseClient";
 import PieceEditor from "@/components/editor/PieceEditor";
 import PlanEditor from "@/components/editor/PlanEditor";
 
-export default function FormularioRapido({ onClose }) {
+export default function FormularioRapido({ onClose, initialStudentId = null }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    estudiantesIds: [],
+    estudiantesIds: initialStudentId ? [initialStudentId] : [],
     piezaId: '',
     planId: '',
     fechaSeleccionada: '',
@@ -287,11 +287,11 @@ export default function FormularioRapido({ onClose }) {
 
   const modalContent = (
     <>
-      <div className="fixed inset-0 bg-black/40 z-50 transition-opacity" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/40 z-[100] transition-opacity" onClick={onClose} />
 
-      <div className="fixed inset-0 z-[51] flex items-center justify-center pointer-events-none p-4" role="dialog" aria-modal="true">
+      <div className="fixed inset-0 z-[101] flex items-center justify-center pointer-events-none p-4" role="dialog" aria-modal="true">
         <div
-          className="bg-[var(--color-surface-elevated)] w-full max-w-4xl max-h-[92vh] shadow-card rounded-[var(--radius-modal)] flex flex-col pointer-events-auto relative z-[51]"
+          className="bg-[var(--color-surface-elevated)] w-full max-w-4xl max-h-[92vh] shadow-card rounded-[var(--radius-modal)] flex flex-col pointer-events-auto relative z-[101]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -331,7 +331,7 @@ export default function FormularioRapido({ onClose }) {
                         <SelectTrigger id="filtro-profesor" className={`w-full mt-1 ${componentStyles.controls.selectDefault}`}>
                           <SelectValue placeholder="Todos los profesores" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent zIndex="z-[200]">
                           <SelectItem value="all">Todos los profesores</SelectItem>
                           {profesores.map((prof) => (
                             <SelectItem key={prof.value} value={prof.value}>
@@ -398,7 +398,7 @@ export default function FormularioRapido({ onClose }) {
                         side="bottom"
                         align="start"
                         sideOffset={4}
-                        className="z-[60] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                        className="z-[200] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                       >
                         {piezas.length === 0 ? (
                           <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay piezas disponibles</div>

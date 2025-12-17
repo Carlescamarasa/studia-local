@@ -23,6 +23,8 @@ export const ROUTES = {
     SOPORTE_PROF: "/soporte-prof",
     ESTUDIANTES: "/estudiantes",
     ASIGNACIONES: "/asignaciones",
+    ASIGNACION_DETALLE: "/asignacion-detalle",
+    ADAPTAR_ASIGNACION: "/adaptar-asignacion",
 };
 
 /**
