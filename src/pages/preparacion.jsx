@@ -9,8 +9,8 @@
  * - NO incluye "Abrir Agenda"
  */
 
-import React, { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
 import { getNombreVisible, useEffectiveUser, resolveUserIdActual, displayName } from "@/components/utils/helpers";
@@ -24,12 +24,20 @@ import RequireRole from "@/components/auth/RequireRole";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { parseLocalDate } from "@/components/estadisticas/utils";
+import AsignacionesTab from "@/components/preparacion/AsignacionesTab";
+import { ROUTES, toProgreso } from "@/lib/routes";
 
 // Icons
 import {
     Users, Search, X, Target, Eye, Edit, Play, Pause, Copy,
-    Plus, ChevronRight, Clock, CheckCircle, AlertCircle, User
+    Plus, ChevronRight, Clock, CheckCircle, AlertCircle, User, List, LayoutList
 } from "lucide-react";
+
+// TABS configuration to avoid hardcoding
+const TABS = [
+    { id: 'estudiantes', label: 'Estudiantes', icon: Users },
+    { id: 'asignaciones', label: 'Todas las Asignaciones', icon: LayoutList },
+];
 
 export default function PreparacionPage() {
     return (
@@ -56,10 +64,20 @@ function getAsignacionDisplayName(asignacion) {
 }
 
 function PreparacionPageContent() {
+    console.log("DEBUG: PreparacionPage Loaded v5 - Refactored Constants");
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStudentId, setSelectedStudentId] = useState(null);
+
+    // Tab logic
+    const tabActiva = searchParams.get('tab') || 'estudiantes';
+    const handleTabChange = (tab) => {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('tab', tab);
+        setSearchParams(newParams, { replace: true });
+    };
 
     const effectiveUser = useEffectiveUser();
     const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
@@ -149,15 +167,22 @@ function PreparacionPageContent() {
     // Actions
     const handleVerProgreso = () => {
         if (!selectedStudentId) return;
-        navigate(`/progreso?tab=resumen&students=${selectedStudentId}`);
+        navigate(`${toProgreso('resumen')}&students=${selectedStudentId}`);
     };
 
     const handleEditarAsignacion = (asignacionId) => {
-        navigate(`/asignacion-detalle?id=${asignacionId}`);
+        navigate(`${ROUTES.ASIGNACION_DETALLE}?id=${asignacionId}`);
     };
 
     const handleCrearAsignacion = () => {
-        navigate(`/asignaciones?action=new&alumnoId=${selectedStudentId}`);
+        // Switch to asignaciones tab and open modal via URL param
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('tab', 'asignaciones');
+        newParams.set('action', 'new');
+        if (selectedStudentId) {
+            newParams.set('alumnoId', selectedStudentId);
+        }
+        setSearchParams(newParams);
     };
 
     const handlePublicar = (asignacion) => {
@@ -198,248 +223,268 @@ function PreparacionPageContent() {
             />
 
             <div className={componentStyles.layout.page}>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Left column - Student list */}
-                    <div className="lg:col-span-1">
-                        <Card className={componentStyles.containers.cardBase}>
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <Users className="w-5 h-5" />
-                                    Mis Estudiantes
-                                </CardTitle>
-                                <div className="relative mt-2">
-                                    <Input
-                                        placeholder="Buscar alumno..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="pr-9 h-10 leading-tight"
-                                    />
-                                    {searchTerm && (
-                                        <button
-                                            onClick={() => setSearchTerm('')}
-                                            className="absolute right-3 top-0 bottom-0 my-auto h-fit text-muted-foreground hover:text-foreground"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                    )}
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-0">
-                                {isLoading ? (
-                                    <div className="p-4 text-center text-muted-foreground">
-                                        Cargando...
-                                    </div>
-                                ) : estudiantesFiltrados.length === 0 ? (
-                                    <div className="p-4 text-center text-muted-foreground">
-                                        {searchTerm ? 'Sin resultados' : 'No tienes estudiantes'}
-                                    </div>
-                                ) : (
-                                    <div className="max-h-[500px] overflow-y-auto">
-                                        {estudiantesFiltrados.map((estudiante) => {
-                                            const asignacionActual = asignaciones.find(
-                                                a => a.alumnoId === estudiante.id &&
-                                                    (a.estado === 'publicada' || a.estado === 'en_curso')
-                                            );
-                                            const isSelected = selectedStudentId === estudiante.id;
+                {/* Tabs */}
+                <div className="flex gap-2 mb-6 border-b pb-4">
+                    {TABS.map(tab => (
+                        <Button
+                            key={tab.id}
+                            variant={tabActiva === tab.id ? 'default' : 'ghost'}
+                            onClick={() => handleTabChange(tab.id)}
+                            className={cn("rounded-full", tabActiva === tab.id ? "" : "text-muted-foreground")}
+                            size="sm"
+                        >
+                            <tab.icon className="w-4 h-4 mr-2" />
+                            {tab.label}
+                        </Button>
+                    ))}
+                </div>
 
-                                            return (
-                                                <button
-                                                    key={estudiante.id}
-                                                    onClick={() => setSelectedStudentId(estudiante.id)}
-                                                    className={cn(
-                                                        "w-full text-left p-3 border-b transition-colors flex items-center justify-between",
-                                                        isSelected
-                                                            ? "bg-[var(--color-primary)]/10 border-l-4 border-l-[var(--color-primary)]"
-                                                            : "hover:bg-muted/50"
-                                                    )}
-                                                >
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="font-medium text-sm truncate">
-                                                            {displayName(estudiante)}
-                                                        </p>
-                                                        <div className="flex items-center gap-2 mt-1">
-                                                            {asignacionActual ? (
-                                                                <Badge variant="success" className="text-xs">
-                                                                    Activa
-                                                                </Badge>
-                                                            ) : (
-                                                                <Badge variant="outline" className="text-xs">
-                                                                    Sin asignación
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Right column - Student detail */}
-                    <div className="lg:col-span-2">
-                        {!selectedStudentId ? (
+                {tabActiva === 'asignaciones' ? (
+                    <AsignacionesTab />
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Left column - Student list */}
+                        <div className="lg:col-span-1">
                             <Card className={componentStyles.containers.cardBase}>
-                                <CardContent className="p-8 text-center">
-                                    <User className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                                    <p className="text-muted-foreground">
-                                        Selecciona un estudiante para ver sus asignaciones
-                                    </p>
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="text-lg flex items-center gap-2">
+                                        <Users className="w-5 h-5" />
+                                        Mis Estudiantes
+                                    </CardTitle>
+                                    <div className="relative mt-2">
+                                        <Input
+                                            placeholder="Buscar alumno..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="pr-9 h-10 leading-tight"
+                                        />
+                                        {searchTerm && (
+                                            <button
+                                                onClick={() => setSearchTerm('')}
+                                                className="absolute right-3 top-0 bottom-0 my-auto h-fit text-muted-foreground hover:text-foreground"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    {isLoading ? (
+                                        <div className="p-4 text-center text-muted-foreground">
+                                            Cargando...
+                                        </div>
+                                    ) : estudiantesFiltrados.length === 0 ? (
+                                        <div className="p-4 text-center text-muted-foreground">
+                                            {searchTerm ? 'Sin resultados' : 'No tienes estudiantes'}
+                                        </div>
+                                    ) : (
+                                        <div className="max-h-[500px] overflow-y-auto">
+                                            {estudiantesFiltrados.map((estudiante) => {
+                                                const asignacionActual = asignaciones.find(
+                                                    a => a.alumnoId === estudiante.id &&
+                                                        (a.estado === 'publicada' || a.estado === 'en_curso')
+                                                );
+                                                const isSelected = selectedStudentId === estudiante.id;
+
+                                                return (
+                                                    <button
+                                                        key={estudiante.id}
+                                                        onClick={() => setSelectedStudentId(estudiante.id)}
+                                                        className={cn(
+                                                            "w-full text-left p-3 border-b transition-colors flex items-center justify-between",
+                                                            isSelected
+                                                                ? "bg-[var(--color-primary)]/10 border-l-4 border-l-[var(--color-primary)]"
+                                                                : "hover:bg-muted/50"
+                                                        )}
+                                                    >
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-medium text-sm truncate">
+                                                                {displayName(estudiante)}
+                                                            </p>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                {asignacionActual ? (
+                                                                    <Badge variant="success" className="text-xs">
+                                                                        Activa
+                                                                    </Badge>
+                                                                ) : (
+                                                                    <Badge variant="outline" className="text-xs">
+                                                                        Sin asignación
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
-                        ) : (
-                            <div className="space-y-6">
-                                {/* Student header */}
+                        </div>
+
+                        {/* Right column - Student detail */}
+                        <div className="lg:col-span-2">
+                            {!selectedStudentId ? (
                                 <Card className={componentStyles.containers.cardBase}>
-                                    <CardContent className="p-4">
-                                        <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
-                                            <div className="min-w-0">
-                                                <h2 className="text-xl font-semibold truncate">
-                                                    {selectedStudent ? displayName(selectedStudent) : 'Estudiante'}
-                                                </h2>
-                                                <p className="text-sm text-muted-foreground truncate">
-                                                    {selectedStudent?.email || ''}
-                                                </p>
-                                            </div>
-                                            <div className="flex gap-2 flex-shrink-0">
-                                                <Button
-                                                    onClick={handleCrearAsignacion}
-                                                    variant="outline"
-                                                >
-                                                    <Plus className="w-4 h-4 mr-2" />
-                                                    Nueva asignación
-                                                </Button>
-                                                <Button
-                                                    onClick={handleVerProgreso}
-                                                    className={componentStyles.buttons.primary}
-                                                >
-                                                    <Eye className="w-4 h-4 mr-2" />
-                                                    Ver progreso
-                                                </Button>
-                                            </div>
-                                        </div>
+                                    <CardContent className="p-8 text-center">
+                                        <User className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                                        <p className="text-muted-foreground">
+                                            Selecciona un estudiante para ver sus asignaciones
+                                        </p>
                                     </CardContent>
                                 </Card>
-
-                                {/* Active assignment */}
-                                {asignacionActiva ? (
+                            ) : (
+                                <div className="space-y-6">
+                                    {/* Student header */}
                                     <Card className={componentStyles.containers.cardBase}>
-                                        <CardHeader>
-                                            <div className="flex items-center justify-between">
-                                                <CardTitle className="flex items-center gap-2">
-                                                    <CheckCircle className="w-5 h-5 text-green-600" />
-                                                    Asignación Activa
-                                                </CardTitle>
-                                                {getEstadoBadge(asignacionActiva.estado)}
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <h4 className="font-medium">
-                                                        {getAsignacionDisplayName(asignacionActiva)}
-                                                    </h4>
-                                                    <p className="text-sm text-muted-foreground mt-1">
-                                                        Inicio: {asignacionActiva.semanaInicioISO || 'No definido'}
+                                        <CardContent className="p-4">
+                                            <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
+                                                <div className="min-w-0">
+                                                    <h2 className="text-xl font-semibold truncate">
+                                                        {selectedStudent ? displayName(selectedStudent) : 'Estudiante'}
+                                                    </h2>
+                                                    <p className="text-sm text-muted-foreground truncate">
+                                                        {selectedStudent?.email || ''}
                                                     </p>
-                                                    {asignacionActiva.plan && (
-                                                        <p className="text-sm text-muted-foreground">
-                                                            {asignacionActiva.plan.semanas?.length || 0} semanas planificadas
-                                                        </p>
-                                                    )}
                                                 </div>
-
-                                                <div className="flex flex-wrap gap-2">
+                                                <div className="flex gap-2 flex-shrink-0">
                                                     <Button
+                                                        onClick={handleCrearAsignacion}
                                                         variant="outline"
-                                                        size="sm"
-                                                        onClick={() => handleEditarAsignacion(asignacionActiva.id)}
                                                     >
-                                                        <Edit className="w-4 h-4 mr-2" />
-                                                        Editar
+                                                        <Plus className="w-4 h-4 mr-2" />
+                                                        Nueva asignación
                                                     </Button>
-                                                    {asignacionActiva.estado === 'publicada' || asignacionActiva.estado === 'en_curso' ? (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handlePausar(asignacionActiva)}
-                                                        >
-                                                            <Pause className="w-4 h-4 mr-2" />
-                                                            Pausar
-                                                        </Button>
-                                                    ) : (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handlePublicar(asignacionActiva)}
-                                                        >
-                                                            <Play className="w-4 h-4 mr-2" />
-                                                            Publicar
-                                                        </Button>
-                                                    )}
+                                                    <Button
+                                                        onClick={handleVerProgreso}
+                                                        className={componentStyles.buttons.primary}
+                                                    >
+                                                        <Eye className="w-4 h-4 mr-2" />
+                                                        Ver progreso
+                                                    </Button>
                                                 </div>
                                             </div>
                                         </CardContent>
                                     </Card>
-                                ) : (
-                                    <Card className={componentStyles.containers.cardBase}>
-                                        <CardContent className="p-6 text-center">
-                                            <AlertCircle className="w-12 h-12 mx-auto mb-4 text-amber-500" />
-                                            <p className="text-muted-foreground mb-4">
-                                                Este estudiante no tiene una asignación activa
-                                            </p>
-                                            <Button onClick={handleCrearAsignacion}>
-                                                <Plus className="w-4 h-4 mr-2" />
-                                                Crear asignación
-                                            </Button>
-                                        </CardContent>
-                                    </Card>
-                                )}
 
-                                {/* All assignments */}
-                                {asignacionesDelEstudiante.length > 0 && (
-                                    <Card className={componentStyles.containers.cardBase}>
-                                        <CardHeader>
-                                            <CardTitle>Historial de Asignaciones</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="p-0">
-                                            <div className="divide-y">
-                                                {asignacionesDelEstudiante.map((asignacion) => (
-                                                    <div
-                                                        key={asignacion.id}
-                                                        className="p-4 flex items-center justify-between hover:bg-muted/50"
-                                                    >
-                                                        <div>
-                                                            <p className="font-medium">
-                                                                {getAsignacionDisplayName(asignacion)}
-                                                            </p>
+                                    {/* Active assignment */}
+                                    {asignacionActiva ? (
+                                        <Card className={componentStyles.containers.cardBase}>
+                                            <CardHeader>
+                                                <div className="flex items-center justify-between">
+                                                    <CardTitle className="flex items-center gap-2">
+                                                        <CheckCircle className="w-5 h-5 text-green-600" />
+                                                        Asignación Activa
+                                                    </CardTitle>
+                                                    {getEstadoBadge(asignacionActiva.estado)}
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <h4 className="font-medium">
+                                                            {getAsignacionDisplayName(asignacionActiva)}
+                                                        </h4>
+                                                        <p className="text-sm text-muted-foreground mt-1">
+                                                            Inicio: {asignacionActiva.semanaInicioISO || 'No definido'}
+                                                        </p>
+                                                        {asignacionActiva.plan && (
                                                             <p className="text-sm text-muted-foreground">
-                                                                {asignacion.semanaInicioISO || 'Fecha no definida'}
+                                                                {asignacionActiva.plan.semanas?.length || 0} semanas planificadas
                                                             </p>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            {getEstadoBadge(asignacion.estado)}
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => handleEditarAsignacion(asignacion.id)}
-                                                            >
-                                                                <Edit className="w-4 h-4" />
-                                                            </Button>
-                                                        </div>
+                                                        )}
                                                     </div>
-                                                ))}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                )}
-                            </div>
-                        )}
+
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleEditarAsignacion(asignacionActiva.id)}
+                                                        >
+                                                            <Edit className="w-4 h-4 mr-2" />
+                                                            Editar
+                                                        </Button>
+                                                        {asignacionActiva.estado === 'publicada' || asignacionActiva.estado === 'en_curso' ? (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => handlePausar(asignacionActiva)}
+                                                            >
+                                                                <Pause className="w-4 h-4 mr-2" />
+                                                                Pausar
+                                                            </Button>
+                                                        ) : (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => handlePublicar(asignacionActiva)}
+                                                            >
+                                                                <Play className="w-4 h-4 mr-2" />
+                                                                Publicar
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ) : (
+                                        <Card className={componentStyles.containers.cardBase}>
+                                            <CardContent className="p-6 text-center">
+                                                <AlertCircle className="w-12 h-12 mx-auto mb-4 text-amber-500" />
+                                                <p className="text-muted-foreground mb-4">
+                                                    Este estudiante no tiene una asignación activa
+                                                </p>
+                                                <Button onClick={handleCrearAsignacion}>
+                                                    <Plus className="w-4 h-4 mr-2" />
+                                                    Crear asignación
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    )}
+
+                                    {/* All assignments */}
+                                    {asignacionesDelEstudiante.length > 0 && (
+                                        <Card className={componentStyles.containers.cardBase}>
+                                            <CardHeader>
+                                                <CardTitle>Historial de Asignaciones</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="p-0">
+                                                <div className="divide-y">
+                                                    {asignacionesDelEstudiante.map((asignacion) => (
+                                                        <div
+                                                            key={asignacion.id}
+                                                            className="p-4 flex items-center justify-between hover:bg-muted/50"
+                                                        >
+                                                            <div>
+                                                                <p className="font-medium">
+                                                                    {getAsignacionDisplayName(asignacion)}
+                                                                </p>
+                                                                <p className="text-sm text-muted-foreground">
+                                                                    {asignacion.semanaInicioISO || 'Fecha no definida'}
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                {getEstadoBadge(asignacion.estado)}
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => handleEditarAsignacion(asignacion.id)}
+                                                                >
+                                                                    <Edit className="w-4 h-4" />
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );
