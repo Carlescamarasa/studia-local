@@ -232,23 +232,17 @@ export function useAggregateLevelGoals(studentIds: string[]) {
         users.forEach(user => {
             if (!studentIdSet.has(user.id)) return;
 
-            const currentLevel = user.nivelTecnico || 0;
-            const nextLevel = currentLevel + 1;
+            const currentLevel = user.nivelTecnico || 1;
 
-            // Find config for next level
-            const config = levelConfigs.find((c: any) => c.level === nextLevel);
+            // Find config for current level (not next level)
+            const config = levelConfigs.find((c: any) => c.level === currentLevel);
 
-            // If found, add to total goals. If not (max level?), maybe fall back or add 0?
-            // Assuming if no next level, goal is 0 or stay at max. 
-            // For now, if no config found (e.g. level 10 -> 11), we assume 0 goal increment.
-            // Or fallback to a default if level 1?
             if (config) {
                 result.motricidad += config.minXpMotr || 0;
                 result.articulacion += config.minXpArt || 0;
                 result.flexibilidad += config.minXpFlex || 0;
             } else {
-                // Fallback: if user has no next level config, maybe use 100? 
-                // Or 0? Let's use 100 as safe default to avoid 0 denominator if data missing
+                // Fallback: if user has no level config, use 100 as safe default
                 result.motricidad += 100;
                 result.articulacion += 100;
                 result.flexibilidad += 100;

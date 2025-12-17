@@ -352,65 +352,6 @@ export default function LevelConfigView() {
                 </CollapsibleContent>
             </Collapsible>
 
-            {/* Level Summary Panel */}
-            <Card className="bg-slate-50 border-slate-200">
-                <CardHeader className="py-3">
-                    <CardTitle className="text-sm font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                        Resumen {isLastLevel ? "de Graduación" : `de Ascenso a Nivel ${nextLevelNum}`}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-4 md:grid-cols-2">
-                    {/* XP Summary */}
-                    <div className="space-y-2">
-                        <div className="text-xs font-semibold text-muted-foreground">REQUISITOS DE EXPERIENCIA</div>
-                        <div className="flex items-center gap-4">
-                            <div className="text-2xl font-bold text-slate-800">
-                                {((currentLevelConfig?.minXpFlex || 0) + (currentLevelConfig?.minXpMotr || 0) + (currentLevelConfig?.minXpArt || 0)).toLocaleString()} <span className="text-sm font-normal text-slate-500">XP Total</span>
-                            </div>
-                            <div className="flex gap-2">
-                                <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-200">
-                                    Flex: {currentLevelConfig?.minXpFlex || 0}
-                                </Badge>
-                                <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-200">
-                                    Motr: {currentLevelConfig?.minXpMotr || 0}
-                                </Badge>
-                                <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-200">
-                                    Art: {currentLevelConfig?.minXpArt || 0}
-                                </Badge>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Criteria Summary as Tags */}
-                    <div className="space-y-2">
-                        <div className="text-xs font-semibold text-muted-foreground">CRITERIOS ({currentCriteria.length})</div>
-                        <ScrollArea className="h-[80px] w-full pr-4">
-                            <div className="flex flex-wrap gap-2">
-                                {currentCriteria.length === 0 && <span className="text-sm text-muted-foreground italic">Sin criterios definidos</span>}
-                                <TooltipProvider>
-                                    {currentCriteria.map(c => (
-                                        <Tooltip key={c.id}>
-                                            <TooltipTrigger asChild>
-                                                <Badge variant="outline" className="cursor-help hover:bg-slate-100 max-w-[200px] truncate">
-                                                    {c.skill}: {c.description.substring(0, 15)}{c.description.length > 15 ? '...' : ''}
-                                                </Badge>
-                                            </TooltipTrigger>
-                                            <TooltipContent className="max-w-[300px] p-4">
-                                                <p className="font-bold mb-1">{c.skill}</p>
-                                                <p className="text-sm mb-2">{renderDescriptionWithTags(c.description)}</p>
-                                                <div className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded w-fit">
-                                                    Fuente: {c.source || 'Manual'}
-                                                </div>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    ))}
-                                </TooltipProvider>
-                            </div>
-                        </ScrollArea>
-                    </div>
-                </CardContent>
-            </Card>
-
             <div className="flex items-center justify-between mb-6 bg-muted/20 p-4 rounded-lg border">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
@@ -601,84 +542,124 @@ export default function LevelConfigView() {
                         <CardTitle>Vista General de Niveles</CardTitle>
                         <p className="text-sm text-muted-foreground">Edita los requisitos de XP para todos los niveles de un vistazo. Los cambios se guardan al perder el foco (blur).</p>
                     </CardHeader>
-                    <CardContent>
-                        <ScrollArea className="w-full whitespace-nowrap pb-4">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[150px] sticky left-0 bg-background z-10 box-border border-r">Requisito</TableHead>
+                    <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse text-sm">
+                                <thead className="bg-slate-100 sticky top-0 z-20">
+                                    <tr>
+                                        <th className="w-[180px] min-w-[180px] text-left font-semibold p-3 border-b border-r bg-slate-100 sticky left-0 z-30">
+                                            Requisito
+                                        </th>
                                         {levels.map(l => (
-                                            <TableHead key={l.level} className="text-center min-w-[100px]">Nivel {l.level}</TableHead>
+                                            <th key={l.level} className="w-[110px] min-w-[110px] text-center font-semibold p-3 border-b">
+                                                Nivel {l.level}
+                                            </th>
                                         ))}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
+                                    </tr>
+                                </thead>
+                                <tbody>
                                     {/* XP Flexibilidad */}
-                                    <TableRow>
-                                        <TableCell className="font-medium sticky left-0 bg-background z-10 border-r">Min. XP Flexibilidad</TableCell>
+                                    <tr className="hover:bg-muted/20">
+                                        <td className="font-medium p-3 border-b border-r bg-background sticky left-0 z-10">
+                                            Min. XP Flexibilidad
+                                        </td>
                                         {levels.map(l => (
-                                            <TableCell key={l.level} className="p-2">
+                                            <td key={l.level} className="p-2 border-b text-center">
                                                 <Input
                                                     type="number"
-                                                    className="w-20 text-center mx-auto"
+                                                    className="w-full max-w-[90px] text-center mx-auto tabular-nums"
                                                     value={l.minXpFlex || 0}
                                                     onChange={(e) => handleLevelChange(l.level, 'minXpFlex', parseInt(e.target.value) || 0)}
                                                     onBlur={() => saveLevelConfig(l)}
                                                 />
-                                            </TableCell>
+                                            </td>
                                         ))}
-                                    </TableRow>
+                                    </tr>
                                     {/* XP Motricidad */}
-                                    <TableRow>
-                                        <TableCell className="font-medium sticky left-0 bg-background z-10 border-r">Min. XP Motricidad</TableCell>
+                                    <tr className="hover:bg-muted/20 bg-muted/5">
+                                        <td className="font-medium p-3 border-b border-r bg-background sticky left-0 z-10">
+                                            Min. XP Motricidad
+                                        </td>
                                         {levels.map(l => (
-                                            <TableCell key={l.level} className="p-2">
+                                            <td key={l.level} className="p-2 border-b text-center">
                                                 <Input
                                                     type="number"
-                                                    className="w-20 text-center mx-auto"
+                                                    className="w-full max-w-[90px] text-center mx-auto tabular-nums"
                                                     value={l.minXpMotr || 0}
                                                     onChange={(e) => handleLevelChange(l.level, 'minXpMotr', parseInt(e.target.value) || 0)}
                                                     onBlur={() => saveLevelConfig(l)}
                                                 />
-                                            </TableCell>
+                                            </td>
                                         ))}
-                                    </TableRow>
+                                    </tr>
                                     {/* XP Articulación */}
-                                    <TableRow>
-                                        <TableCell className="font-medium sticky left-0 bg-background z-10 border-r">Min. XP Articulación</TableCell>
+                                    <tr className="hover:bg-muted/20">
+                                        <td className="font-medium p-3 border-b border-r bg-background sticky left-0 z-10">
+                                            Min. XP Articulación
+                                        </td>
                                         {levels.map(l => (
-                                            <TableCell key={l.level} className="p-2">
+                                            <td key={l.level} className="p-2 border-b text-center">
                                                 <Input
                                                     type="number"
-                                                    className="w-20 text-center mx-auto"
+                                                    className="w-full max-w-[90px] text-center mx-auto tabular-nums"
                                                     value={l.minXpArt || 0}
                                                     onChange={(e) => handleLevelChange(l.level, 'minXpArt', parseInt(e.target.value) || 0)}
                                                     onBlur={() => saveLevelConfig(l)}
                                                 />
-                                            </TableCell>
+                                            </td>
                                         ))}
-                                    </TableRow>
+                                    </tr>
                                     {/* Total XP */}
-                                    <TableRow className="bg-muted/30">
-                                        <TableCell className="font-bold sticky left-0 bg-background z-10 border-r">Total XP</TableCell>
+                                    <tr className="bg-slate-200 font-semibold">
+                                        <td className="p-3 border-b border-r bg-slate-200 sticky left-0 z-10">
+                                            Total XP
+                                        </td>
                                         {levels.map(l => (
-                                            <TableCell key={l.level} className="text-center font-bold">
+                                            <td key={l.level} className="p-3 border-b text-center tabular-nums bg-slate-200">
                                                 {((l.minXpFlex || 0) + (l.minXpMotr || 0) + (l.minXpArt || 0)).toLocaleString()}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                    {/* Criteria Count */}
-                                    <TableRow>
-                                        <TableCell className="font-medium sticky left-0 bg-background z-10 border-r">Criterios Definidos</TableCell>
-                                        {levels.map(l => (
-                                            <TableCell key={l.level} className="text-center text-muted-foreground">
-                                                {criteria.filter(c => c.level === l.level).length}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </ScrollArea>
+                                            </td>
+                                        ))}                                    </tr>
+                                    {/* Criteria Count with Tooltips */}
+                                    <tr className="hover:bg-muted/20 bg-muted/5">
+                                        <td className="font-medium p-3 border-r bg-background sticky left-0 z-10">
+                                            Criterios Definidos
+                                        </td>
+                                        {levels.map(l => {
+                                            const levelCriteria = criteria.filter(c => c.level === l.level);
+                                            const count = levelCriteria.length;
+                                            return (
+                                                <td key={l.level} className="p-3 text-center">
+                                                    {count > 0 ? (
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <span className="cursor-help underline decoration-dotted text-primary hover:text-primary/80 font-medium">
+                                                                        {count}
+                                                                    </span>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent className="max-w-[280px] p-3">
+                                                                    <p className="font-semibold text-xs mb-2">Criterios Nivel {l.level}:</p>
+                                                                    <ul className="text-xs space-y-1">
+                                                                        {levelCriteria.map(c => (
+                                                                            <li key={c.id} className="flex items-start gap-1">
+                                                                                <span className="text-muted-foreground">•</span>
+                                                                                <span><strong>{c.skill}:</strong> {c.description}</span>
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
+                                                    ) : (
+                                                        <span className="text-muted-foreground">0</span>
+                                                    )}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </CardContent>
                 </Card>
             ) : (

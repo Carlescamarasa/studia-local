@@ -93,16 +93,16 @@ export default function HabilidadesView({
         enabled: !!singleId && !isMultiple
     });
 
-    const currentLevel = studentProfile?.nivelTecnico || 0;
-    const nextLevel = currentLevel + 1;
+    const currentLevel = studentProfile?.nivelTecnico || 1;
+    const nextLevel = currentLevel + 1; // Used for criteria section (requirements to advance)
 
-    const { data: nextLevelConfig } = useQuery({
-        queryKey: ['level-config', nextLevel],
+    const { data: currentLevelConfig } = useQuery({
+        queryKey: ['level-config', currentLevel],
         queryFn: async () => {
             const configs = await localDataClient.entities.LevelConfig.list();
-            return configs.find((c: any) => c.level === nextLevel) || null;
+            return configs.find((c: any) => c.level === currentLevel) || null;
         },
-        enabled: !isMultiple && !!nextLevel
+        enabled: !isMultiple && !!currentLevel
     });
 
     // =========================================================================
@@ -195,11 +195,11 @@ export default function HabilidadesView({
         if (isMultiple) {
             return aggregatedGoals[skill] || 100;
         }
-        if (!nextLevelConfig) return 100;
+        if (!currentLevelConfig) return 100;
         switch (skill) {
-            case 'motricidad': return nextLevelConfig.minXpMotr || 100;
-            case 'articulacion': return nextLevelConfig.minXpArt || 100;
-            case 'flexibilidad': return nextLevelConfig.minXpFlex || 100;
+            case 'motricidad': return currentLevelConfig.minXpMotr || 100;
+            case 'articulacion': return currentLevelConfig.minXpArt || 100;
+            case 'flexibilidad': return currentLevelConfig.minXpFlex || 100;
             default: return 100;
         }
     };
@@ -293,7 +293,7 @@ export default function HabilidadesView({
                 fullMark: 10
             },
         ];
-    }, [total, practice, aggregatedGoals, nextLevelConfig, isMultiple, radarStatsRaw]);
+    }, [total, practice, aggregatedGoals, currentLevelConfig, isMultiple, radarStatsRaw]);
 
     // Displayed qualitative values (respect toggle)
     const getDisplayedSonido = () => sourceFilter === 'experiencia' ? 0 : getSonidoValue();

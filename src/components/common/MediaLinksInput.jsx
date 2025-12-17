@@ -285,7 +285,7 @@ function MediaLinkItem({
 
   return (
     <div
-      className={`flex items-start gap-2 p-2 rounded-lg border transition-colors w-full group overflow-hidden ${isValid
+      className={`flex items-start gap-2 p-2 rounded-lg border transition-colors w-full group overflow-hidden min-w-0 ${isValid
         ? 'bg-[var(--color-surface)] border-[var(--color-border-default)] hover:border-[var(--color-border-strong)]'
         : 'bg-[var(--color-danger)]/5 border-[var(--color-danger)]/20'
         }`}
@@ -331,7 +331,7 @@ function MediaLinkItem({
       )}
 
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 overflow-hidden">
         <div className="flex items-center gap-2 min-w-0 mb-0.5 flex-wrap">
           {isVideoFile && (
             <Badge variant="outline" className="text-[10px] h-4 px-1 py-0 border-[var(--color-danger)]/30 text-[var(--color-danger)] bg-[var(--color-danger)]/10 shrink-0">
@@ -690,7 +690,7 @@ export default function MediaLinksInput({
   // The 'value' links follow.
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full max-w-full overflow-hidden">
       {/* Unified Compact Dropzone Area */}
       <div
         ref={dropzoneRef}
@@ -808,7 +808,7 @@ export default function MediaLinksInput({
       </div>
 
       {/* Unified List Items */}
-      <div className="bg-[var(--color-surface-muted)]/50 rounded-xl border border-[var(--color-border-default)] overflow-hidden">
+      <div className="bg-[var(--color-surface-muted)]/50 rounded-xl border border-[var(--color-border-default)] overflow-hidden w-full max-w-full">
         {/* Header / Counter */}
         <div className="bg-[var(--color-surface-muted)] px-4 py-2 border-b border-[var(--color-border-default)] flex justify-between items-center text-xs">
           <span className="font-medium text-[var(--color-text-secondary)]">Recursos Adjuntos</span>
@@ -842,7 +842,7 @@ export default function MediaLinksInput({
 
           {/* Link Items */}
           {richItems.map((item, index) => (
-            <div key={index + item.url} className="px-3 py-1 first:pt-2 last:pb-2">
+            <div key={index + item.url} className="px-3 py-1 first:pt-2 last:pb-2 overflow-hidden max-w-full">
               <MediaLinkItem
                 {...item}
                 index={index}

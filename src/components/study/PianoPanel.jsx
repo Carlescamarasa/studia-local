@@ -1,62 +1,145 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Piano } from "lucide-react";
+import { X, Piano, ChevronUp, ChevronDown, Play, Pause, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebarSafe } from "@/components/ui/SidebarState";
+import {
+    concertToTrumpetWritten,
+    midiToNoteInfo,
+    formatNoteLabel
+} from "@/utils/musicTransposition";
+
+// Trumpet Icon Component - Based on trompet.svg, adapted for currentColor
+const TrumpetIcon = ({ className = "w-4 h-4", style = {} }) => (
+    <svg
+        className={className}
+        style={style}
+        viewBox="0 0 1920 1920"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="50"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    >
+        {/* Mouthpiece */}
+        <path fill="none" d="M296 977.7h-20c-32.5 0-59-26.6-59-59V800.2c0-32.5 26.6-59 59-59h20c32.4 0 59 26.5 59 59v118.5c0 32.5-26.6 59-59 59z" />
+        {/* Bell and body */}
+        <path fill="none" d="M1346.7 928.5c29.6 46.2 46.8 101 46.8 159.7 0 81.9-33.5 156.3-87.4 210.3-54 54-128.4 87.4-210.3 87.4H788.3c-163.7 0-297.7-134-297.7-297.7 0-29.3 4.3-57.7 12.3-84.5 8-26.8 19.7-52.1 34.5-75.2" />
+        <path fill="none" d="M537.3 928.5c53-82.8 145.8-138 251-138" />
+        <path fill="none" d="M1108 928.9c-4-.3-8.1-.5-12.2-.5H788.3c-87.8 0-159.7 71.9-159.7 159.7 0 43.9 18 83.8 46.9 112.8 28.9 28.9 68.9 46.9 112.8 46.9h307.5c87.8 0 159.7-71.9 159.7-159.7 0-41.8-16.3-80.1-42.9-108.6-26.7-28.5-63.5-47.4-104.6-50.6l238.8-.5h46.8c126.5 81.1 309.6 358.4 309.6 358.4V432s-183.1 277.3-309.6 358.4H355v138h182.3" />
+        {/* Valves */}
+        <path fill="none" d="M942 928.5v319.3M800.2 928.5v319.3M1083.7 928.5v319.3M942 659.8v130.6M800.2 659.8v130.6M1083.7 659.8v130.6" />
+        {/* Valve caps */}
+        <path fill="none" d="M766.4 659.8H834M908.2 659.8h67.6M1049.9 659.8h67.6" />
+    </svg>
+);
+
+// InfoTooltip Component - Accessible tooltip with ⓘ icon
+const InfoTooltip = ({ text }) => {
+    const [isVisible, setIsVisible] = useState(false);
+    const tooltipId = useRef(`tooltip-${Math.random().toString(36).substr(2, 9)}`);
+
+    return (
+        <span className="relative inline-flex items-center ml-1">
+            <button
+                type="button"
+                className="p-0.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] transition-colors"
+                onMouseEnter={() => setIsVisible(true)}
+                onMouseLeave={() => setIsVisible(false)}
+                onFocus={() => setIsVisible(true)}
+                onBlur={() => setIsVisible(false)}
+                aria-describedby={tooltipId.current}
+            >
+                <Info className="w-3 h-3 text-[var(--color-text-secondary)]" />
+            </button>
+            {isVisible && (
+                <span
+                    id={tooltipId.current}
+                    role="tooltip"
+                    className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-[10px] leading-tight whitespace-nowrap rounded bg-[var(--color-surface-elevated)] text-[var(--color-text-primary)] shadow-lg border border-[var(--color-border-default)]"
+                >
+                    {text}
+                </span>
+            )}
+        </span>
+    );
+};
 
 // Helper to get frequency from semitone offset relative to A4 (440)
 const getFreq = (semitonesFromA4) => 440 * Math.pow(2, semitonesFromA4 / 12);
+
+/**
+ * Convert piano key MIDI to concert pitch MIDI based on pianoKey mode.
+ * - 'Do' (C): no transposition, piano sounds as concert pitch
+ * - 'Sib' (Bb): piano acts as Bb instrument, concert = piano - 2 semitones
+ * @param {number} pianoKeyMidi - MIDI number of the pressed piano key
+ * @param {string} pianoKey - 'Do' or 'Sib'
+ * @returns {number} Concert pitch MIDI
+ */
+const pianoToConcertMidi = (pianoKeyMidi, pianoKey) => {
+    if (pianoKey === 'Do') return pianoKeyMidi;
+    // Bb instrument: written G (67) sounds as concert F (65), i.e., -2 semitones
+    return pianoKeyMidi - 2;
+};
 
 // NOTE DEFINITIONS
 // "name": Unique ID for React keys and logic
 // "type": white/black keys
 // "writtenMidi": The MIDI number corresponding to the WRITTEN note (e.g., C4 = 60)
 // "label": The label displayed on the key (WRITTEN pitch)
+// "accidental": explicitly used for Staff display (null, '#')
+// "enharmonic": Alternate name (e.g. Do# -> Reb)
 const WRITTEN_NOTES = [
-    { name: "F#2", type: "black", writtenMidi: 42, label: "Fa#" },
-    { name: "G2", type: "white", writtenMidi: 43, label: "Sol" },
-    { name: "G#2", type: "black", writtenMidi: 44, label: "Sol#" },
-    { name: "A2", type: "white", writtenMidi: 45, label: "La" },
-    { name: "A#2", type: "black", writtenMidi: 46, label: "Sib" },
-    { name: "B2", type: "white", writtenMidi: 47, label: "Si" },
-    { name: "C3", type: "white", writtenMidi: 48, label: "Do" },
-    { name: "C#3", type: "black", writtenMidi: 49, label: "Do#" },
-    { name: "D3", type: "white", writtenMidi: 50, label: "Re" },
-    { name: "D#3", type: "black", writtenMidi: 51, label: "Mib" },
-    { name: "E3", type: "white", writtenMidi: 52, label: "Mi" },
-    { name: "F3", type: "white", writtenMidi: 53, label: "Fa" },
-    { name: "F#3", type: "black", writtenMidi: 54, label: "Fa#" },
-    { name: "G3", type: "white", writtenMidi: 55, label: "Sol" },
-    { name: "G#3", type: "black", writtenMidi: 56, label: "Sol#" },
-    { name: "A3", type: "white", writtenMidi: 57, label: "La" },
-    { name: "A#3", type: "black", writtenMidi: 58, label: "Sib" },
-    { name: "B3", type: "white", writtenMidi: 59, label: "Si" },
-    { name: "C4", type: "white", writtenMidi: 60, label: "Do" },
-    { name: "C#4", type: "black", writtenMidi: 61, label: "Do#" },
-    { name: "D4", type: "white", writtenMidi: 62, label: "Re" },
-    { name: "D#4", type: "black", writtenMidi: 63, label: "Mib" },
-    { name: "E4", type: "white", writtenMidi: 64, label: "Mi" },
-    { name: "F4", type: "white", writtenMidi: 65, label: "Fa" },
-    { name: "F#4", type: "black", writtenMidi: 66, label: "Fa#" },
-    { name: "G4", type: "white", writtenMidi: 67, label: "Sol" },
-    { name: "G#4", type: "black", writtenMidi: 68, label: "Sol#" },
-    { name: "A4", type: "white", writtenMidi: 69, label: "La" },
-    { name: "A#4", type: "black", writtenMidi: 70, label: "Sib" },
-    { name: "B4", type: "white", writtenMidi: 71, label: "Si" },
-    { name: "C5", type: "white", writtenMidi: 72, label: "Do" },
-    { name: "C#5", type: "black", writtenMidi: 73, label: "Do#" },
-    { name: "D5", type: "white", writtenMidi: 74, label: "Re" },
-    { name: "D#5", type: "black", writtenMidi: 75, label: "Mib" },
-    { name: "E5", type: "white", writtenMidi: 76, label: "Mi" },
-    { name: "F5", type: "white", writtenMidi: 77, label: "Fa" },
-    { name: "F#5", type: "black", writtenMidi: 78, label: "Fa#" },
-    { name: "G5", type: "white", writtenMidi: 79, label: "Sol" },
-    { name: "G#5", type: "black", writtenMidi: 80, label: "Sol#" },
-    { name: "A5", type: "white", writtenMidi: 81, label: "La" },
-    { name: "A#5", type: "black", writtenMidi: 82, label: "Sib" },
-    { name: "B5", type: "white", writtenMidi: 83, label: "Si" },
-    { name: "C6", type: "white", writtenMidi: 84, label: "Do" },
+    { name: "F#2", type: "black", writtenMidi: 42, label: "Fa#", accidental: '#', enharmonic: "Solb" },
+    { name: "G2", type: "white", writtenMidi: 43, label: "Sol", accidental: null },
+    { name: "G#2", type: "black", writtenMidi: 44, label: "Sol#", accidental: '#', enharmonic: "Lab" },
+    { name: "A2", type: "white", writtenMidi: 45, label: "La", accidental: null },
+    { name: "A#2", type: "black", writtenMidi: 46, label: "Sib", accidental: 'b', enharmonic: "La#" },
+    { name: "B2", type: "white", writtenMidi: 47, label: "Si", accidental: null },
+    { name: "C3", type: "white", writtenMidi: 48, label: "Do", accidental: null },
+    { name: "C#3", type: "black", writtenMidi: 49, label: "Do#", accidental: '#', enharmonic: "Reb" },
+    { name: "D3", type: "white", writtenMidi: 50, label: "Re", accidental: null },
+    { name: "D#3", type: "black", writtenMidi: 51, label: "Mib", accidental: 'b', enharmonic: "Re#" },
+    { name: "E3", type: "white", writtenMidi: 52, label: "Mi", accidental: null },
+    { name: "F3", type: "white", writtenMidi: 53, label: "Fa", accidental: null },
+    { name: "F#3", type: "black", writtenMidi: 54, label: "Fa#", accidental: '#', enharmonic: "Solb" },
+    { name: "G3", type: "white", writtenMidi: 55, label: "Sol", accidental: null },
+    { name: "G#3", type: "black", writtenMidi: 56, label: "Sol#", accidental: '#', enharmonic: "Lab" },
+    { name: "A3", type: "white", writtenMidi: 57, label: "La", accidental: null },
+    { name: "A#3", type: "black", writtenMidi: 58, label: "Sib", accidental: 'b', enharmonic: "La#" },
+    { name: "B3", type: "white", writtenMidi: 59, label: "Si", accidental: null },
+    { name: "C4", type: "white", writtenMidi: 60, label: "Do", accidental: null },
+    { name: "C#4", type: "black", writtenMidi: 61, label: "Do#", accidental: '#', enharmonic: "Reb" },
+    { name: "D4", type: "white", writtenMidi: 62, label: "Re", accidental: null },
+    { name: "D#4", type: "black", writtenMidi: 63, label: "Mib", accidental: 'b', enharmonic: "Re#" },
+    { name: "E4", type: "white", writtenMidi: 64, label: "Mi", accidental: null },
+    { name: "F4", type: "white", writtenMidi: 65, label: "Fa", accidental: null },
+    { name: "F#4", type: "black", writtenMidi: 66, label: "Fa#", accidental: '#', enharmonic: "Solb" },
+    { name: "G4", type: "white", writtenMidi: 67, label: "Sol", accidental: null },
+    { name: "G#4", type: "black", writtenMidi: 68, label: "Sol#", accidental: '#', enharmonic: "Lab" },
+    { name: "A4", type: "white", writtenMidi: 69, label: "La", accidental: null },
+    { name: "A#4", type: "black", writtenMidi: 70, label: "Sib", accidental: 'b', enharmonic: "La#" },
+    { name: "B4", type: "white", writtenMidi: 71, label: "Si", accidental: null },
+    { name: "C5", type: "white", writtenMidi: 72, label: "Do", accidental: null },
+    { name: "C#5", type: "black", writtenMidi: 73, label: "Do#", accidental: '#', enharmonic: "Reb" },
+    { name: "D5", type: "white", writtenMidi: 74, label: "Re", accidental: null },
+    { name: "D#5", type: "black", writtenMidi: 75, label: "Mib", accidental: 'b', enharmonic: "Re#" },
+    { name: "E5", type: "white", writtenMidi: 76, label: "Mi", accidental: null },
+    { name: "F5", type: "white", writtenMidi: 77, label: "Fa", accidental: null },
+    { name: "F#5", type: "black", writtenMidi: 78, label: "Fa#", accidental: '#', enharmonic: "Solb" },
+    { name: "G5", type: "white", writtenMidi: 79, label: "Sol", accidental: null },
+    { name: "G#5", type: "black", writtenMidi: 80, label: "Sol#", accidental: '#', enharmonic: "Lab" },
+    { name: "A5", type: "white", writtenMidi: 81, label: "La", accidental: null },
+    { name: "A#5", type: "black", writtenMidi: 82, label: "Sib", accidental: 'b', enharmonic: "La#" },
+    { name: "B5", type: "white", writtenMidi: 83, label: "Si", accidental: null },
+    { name: "C6", type: "white", writtenMidi: 84, label: "Do", accidental: null },
 ];
+
+// Visible Range for Trumpet: F#3 (Index 12) to C6 (Index 44 - last)
+// We will slice the array for rendering, but keep logic referencing original WRITTEN_NOTES 
+// to avoid breaking lookup by index if not careful.
+// Actually, let's just create a subset to map over.
+const VISIBLE_NOTES = WRITTEN_NOTES.slice(12); // From F#3 onwards
 
 // TRUMPET FINGERINGS DATA
 // Key = Note Name (approximate matching) considering the range Fa#3 to Do6
@@ -99,11 +182,106 @@ const TRUMPET_FINGERINGS = {
     'C6': [0]
 };
 
+// SVG MUSIC STAFF COMPONENT - Larger, cleaner notation
+const MusicStaff = ({ note }) => {
+    // Larger dimensions for better visibility
+    const staffHeight = 100;
+    const spacing = 10;
+    const line1Y = 70;
+
+    // Use CSS variables for theme-aware colors
+    const lineColor = 'var(--color-text-secondary)';
+    const noteColor = 'var(--color-text-primary)';
+    const mutedColor = 'var(--color-text-muted)';
+
+    if (!note) {
+        return (
+            <svg width="100%" height={staffHeight} viewBox="0 0 140 100" preserveAspectRatio="xMidYMid meet">
+                {/* Empty staff lines */}
+                {[0, 1, 2, 3, 4].map(i => {
+                    const y = line1Y - (i * spacing);
+                    return <line key={y} x1="5" y1={y} x2="135" y2={y} stroke={mutedColor} strokeWidth="0.8" />;
+                })}
+                {/* Treble Clef */}
+                <text x="8" y="78" fontSize="90" fontFamily="'Noto Music', 'Bravura', 'Times New Roman', serif" fill={mutedColor}>𝄞</text>
+            </svg>
+        );
+    }
+
+    // Staff Drawing Logic
+    const noteSteps = { "C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6 };
+    const match = note.name.match(/([A-G])([#b]?)(\d)/);
+    if (!match) return null;
+
+    const baseLetter = match[1];
+    const octave = parseInt(match[3]);
+    const stepOfLetter = noteSteps[baseLetter];
+    const absStep = (octave - 4) * 7 + (stepOfLetter - 2); // E4 = step 0
+    const cy = line1Y - (absStep * (spacing / 2));
+
+    // Proper musical accidentals
+    const accidental = note.name.includes('#') ? '♯' : (note.label.includes('b') || note.label.includes('ib') ? '♭' : null);
+
+    return (
+        <svg width="100%" height={staffHeight} viewBox="0 0 140 100" preserveAspectRatio="xMidYMid meet">
+            {/* Staff Lines */}
+            {[0, 1, 2, 3, 4].map(i => {
+                const y = line1Y - (i * spacing);
+                return <line key={y} x1="5" y1={y} x2="135" y2={y} stroke={lineColor} strokeWidth="0.8" />;
+            })}
+
+            {/* Treble Clef */}
+            <text
+                x="8"
+                y="78"
+                fontSize="90"
+                fontFamily="'Noto Music', 'Bravura', 'Times New Roman', serif"
+                fill={noteColor}
+            >
+                𝄞
+            </text>
+
+            {/* Ledger Lines */}
+            {absStep <= -2 && (
+                <line x1="75" y1={line1Y + 10} x2="105" y2={line1Y + 10} stroke={lineColor} strokeWidth="0.8" />
+            )}
+            {absStep <= -4 && (
+                <line x1="75" y1={line1Y + 20} x2="105" y2={line1Y + 20} stroke={lineColor} strokeWidth="0.8" />
+            )}
+            {absStep >= 10 && (
+                <line x1="75" y1={line1Y - 50} x2="105" y2={line1Y - 50} stroke={lineColor} strokeWidth="0.8" />
+            )}
+            {absStep >= 12 && (
+                <line x1="75" y1={line1Y - 60} x2="105" y2={line1Y - 60} stroke={lineColor} strokeWidth="0.8" />
+            )}
+
+            {/* Note Head - stemless, larger */}
+            <g transform={`translate(90, ${cy})`}>
+                <ellipse cx="0" cy="0" rx="7" ry="5" fill={noteColor} transform="rotate(-12)" />
+
+                {/* Accidental */}
+                {accidental && (
+                    <text
+                        x="-18"
+                        y="5"
+                        fontSize="18"
+                        fontFamily="'Noto Music', 'Bravura', 'Times New Roman', serif"
+                        fill={noteColor}
+                    >
+                        {accidental}
+                    </text>
+                )}
+            </g>
+        </svg>
+    );
+};
+
 export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
     const audioContextRef = useRef(null);
     // Map of active notes: noteName -> { osc, gain, intervalId? }
     const activeNotes = useRef(new Map());
     const panelRef = useRef(null);
+    const sustainRef = useRef(false); // Ref for immediate audio logic
 
     // Sidebar state for positioning - safe access (returns defaults if no provider)
     const { abierto: sidebarAbierto } = useSidebarSafe();
@@ -115,60 +293,20 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
     const [pianoMode, setPianoMode] = useState('Sib'); // 'Sib' | 'Do'
     const [trumpetMode, setTrumpetMode] = useState('Sib'); // 'Sib' | 'Do'
     const [lastNote, setLastNote] = useState(null); // { name, midi, label }
+    const [isSustaining, setIsSustaining] = useState(false);
 
-    // Helper to get fingering based on note and trumpet mode
-    const getFingering = (note) => {
-        if (!note) return null;
-        // If trumpet is in C, we need to transpose the lookup?
-        // Actually, the table is usually for Bb Trumpet positions.
-        // If the user selects "Trompeta En Do", the physical fingering for a C (concert) is usually 0 (open).
-        // On a Bb trumpet, C (concert) is D (written), which is 1-3.
-
-        // Let's assume the table provided IS FOR Bb TRUMPET (Standard).
-        // If Trumpet Mode is 'Do' (C Trumpet), the fingering for a written note is different?
-        // Or does "Trompeta en Do" mean we are displaying the fingering for a C Trumpet? 
-        // A C Trumpet playing Written C uses same fingering as Bb Trumpet playing Written C (mostly).
-        // BUT the user said: "toggle 'Sib-Do' ya que hay trompeta Sib y Do". 
-        // This implies physically different instruments.
-        // C Trumpet playing Concert C -> Written C -> Fingering 0.
-        // Bb Trumpet playing Concert C -> Written D -> Fingering 1-3.
-
-        // SIMPLIFICATION: The input `note` is what key was pressed on the piano.
-        // If Piano is 'Sib' (Transposing): Key C -> Sounds Concert Bb -> Written C for Bb Trumpet. Fingering [0].
-        // If Piano is 'Do' (Concert): Key C -> Sounds Concert C.
-        //   -> For Bb Trumpet: Concert C is Written D. Fingering [1-3].
-        //   -> For C Trumpet: Concert C is Written C. Fingering [0].
-
-        // Let's calculate the "Written Note for Selected Trumpet" based on the Sound.
-
-        // 1. Determine Concert Pitch (Sound) of pressed key
-        // Piano 'Sib': Key C (60) -> Concert Bb (58)
-        // Piano 'Do': Key C (60) -> Concert C (60)
-        let concertMidi = note.writtenMidi;
-        if (pianoMode === 'Sib') {
-            concertMidi -= 2;
+    // Sync Ref
+    useEffect(() => {
+        sustainRef.current = isSustaining;
+        // If turning OFF sustain, stop all current notes immediately.
+        // The user expects the "Hold" to stop holding, effectively silencing the sustained notes.
+        if (!isSustaining) {
+            stopAllSounds();
         }
+    }, [isSustaining]);
 
-        // 2. Determine Written Pitch for the Selected Trumpet
-        // Trumpet 'Sib' (Transposes down M2): Written = Concert + 2
-        // Trumpet 'Do' (Non-transposing): Written = Concert
-        let trumpetWrittenMidi = concertMidi;
-        if (trumpetMode === 'Sib') {
-            trumpetWrittenMidi += 2;
-        }
 
-        // 3. Lookup Fingering using trumpetWrittenMidi
-        // We need to map MIDI back to Note Name provided in TRUMPET_FINGERINGS
-        // MIDI 60 = C4.
-        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-        const octave = Math.floor(trumpetWrittenMidi / 12) - 1;
-        const semitone = trumpetWrittenMidi % 12;
-        const noteStr = `${noteNames[semitone]}${octave}`;
 
-        // console.log("Fingering Lookup:", note.name, "-> Concert:", concertMidi, "-> TptWritten:", trumpetWrittenMidi, "->", noteStr);
-
-        return TRUMPET_FINGERINGS[noteStr] || null;
-    };
 
     const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
 
@@ -221,6 +359,7 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
             } catch (e) { }
         });
         activeNotes.current.clear();
+        setPressedKeys(new Set()); // Reset visual state
     };
 
     const startNote = (note, e) => {
@@ -236,22 +375,20 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
             audioContextRef.current.resume();
         }
 
-        // Don't restart if already playing (multi-touch safety)
-        if (activeNotes.current.has(note.name)) return;
-
-        // Transposition Logic:
-        // Written C (60) -> Sound Bb (58) IF pianoMode is 'Sib'
-        // Sound = Written - 2
-        // IF pianoMode is 'Do', Sound = Written.
-        // PLUS: The original code shifted one octave higher (+12) for better audio audibility on basic oscillator? 
-        // Or maybe just preference. Keeping the +12 shift as "Concert Offset".
-
-        let concertMidi = note.writtenMidi;
-        if (pianoMode === 'Sib') {
-            concertMidi -= 2; // Bb Transposition
+        // Toggle behavior: if in sustain mode and clicking the same note, stop it
+        if (sustainRef.current && lastNote && lastNote.name === note.name && activeNotes.current.has(note.name)) {
+            stopNote(note, e, true); // Force stop
+            return;
         }
-        // Apply the same +12 offset as before for sound quality/register
-        concertMidi += 12;
+
+        // Monophonic: Force stop previous sounds and visual state
+        stopAllSounds();
+
+        // Calculate concert pitch based on pianoMode
+        // pianoKeyMidi is the MIDI of the physical key pressed
+        const pianoKeyMidi = note.writtenMidi;
+        // Transpose to concert pitch based on piano mode
+        const concertMidi = pianoToConcertMidi(pianoKeyMidi, pianoMode);
 
         const semitonesFromA4 = concertMidi - 69;
         const freq = getFreq(semitonesFromA4);
@@ -273,18 +410,25 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
 
         osc.start(now);
 
-        activeNotes.current.set(note.name, { osc, gain: gainNode });
+        // Store note with its concert pitch for display purposes
+        activeNotes.current.set(note.name, { osc, gain: gainNode, concertMidi });
 
         // Update visual state
         setPressedKeys(prev => new Set(prev).add(note.name));
-        setLastNote(note);
+        setLastNote({ ...note, concertMidi });
     };
 
-    const stopNote = (note, e) => {
+    const stopNote = (note, e, force = false) => {
         if (e && e.preventDefault && e.cancelable) e.preventDefault();
 
+        // If Sustain is ON, we do NOT stop the audio AND we keep the visual key pressed
+        // The visual key will be cleared when the next note starts (via stopAllSounds called in startNote)
+        if (sustainRef.current && !force) {
+            return;
+        }
+
         const active = activeNotes.current.get(note.name);
-        if (!active) return;
+        if (!active) return; // Already stopped or not playing
 
         const { osc, gain } = active;
         const now = audioContextRef.current.currentTime;
@@ -312,6 +456,31 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
         });
     };
 
+    // Step Logic
+    const handleStep = (direction) => { // 1 or -1
+        if (!lastNote) return;
+        const currentIdx = WRITTEN_NOTES.findIndex(n => n.name === lastNote.name);
+        if (currentIdx === -1) return;
+
+        const nextIdx = currentIdx + direction;
+        if (nextIdx < 0 || nextIdx >= WRITTEN_NOTES.length) return;
+
+        const nextNote = WRITTEN_NOTES[nextIdx];
+
+        // Stop previous note if playing
+        stopNote(lastNote, null, true); // Force stop
+
+        // Play new note
+        startNote(nextNote);
+
+        // If NOT sustaining, we should stop it immediately?
+        // The buttons implies "Play note". If hold is off, it plays short?
+        // Let's assume buttons trigger a short 'beep' OR if sustain is on it stays.
+        if (!sustainRef.current) {
+            setTimeout(() => stopNote(nextNote, null, true), 300); // Short play
+        }
+    };
+
     return (
         <div
             ref={panelRef}
@@ -320,199 +489,270 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
                 isOpen ? "translate-y-0" : "translate-y-[100%]"
             )}
             style={{
-                // Align bottom with top of footer dynamically
-                bottom: `${bottomOffset}px`,
+                // Use CSS custom property for synchronized animation with footer
+                // No transition on bottom - rAF updates frame-by-frame for 1:1 tracking
+                bottom: 'var(--footer-offset, 80px)',
                 // Shift left when sidebar is open on desktop
                 left: isDesktop && sidebarAbierto ? '280px' : '0',
-                // Adjust height relative to view if needed, but simple flex container is fine
-                paddingBottom: 'env(safe-area-inset-bottom)', // just in case
-            }}
-        >
-            {/* Header */}
-            <div className="bg-[var(--color-surface-muted)] border-b border-[var(--color-border-default)] py-1.5">
-                <div className="max-w-5xl mx-auto px-4 flex items-center justify-between">
+                // Only transition transform (open/close) and left (sidebar)
+                transition: 'transform 300ms ease-out, left 300ms ease-out',
+            }}>
+            {/* Header - aligned with studia page layout */}
+            <div className="py-2 bg-[var(--color-surface-muted)] border-b border-[var(--color-border-default)]">
+                <div className="max-w-5xl mx-auto px-2 sm:px-3 md:px-6 flex items-center justify-between">
+
+                    {/* LEFT: Piano Toggle */}
                     <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary)]">
                         <Piano className="w-3.5 h-3.5" />
-                        <span className="mr-2">Piano:</span>
-                        <div className="flex bg-muted rounded p-0.5 border">
+                        <div className="flex rounded-md p-0.5 bg-[var(--color-surface)]">
                             <button
                                 onClick={() => setPianoMode('Do')}
-                                className={cn("px-2 py-0.5 rounded text-[10px] transition-colors", pianoMode === 'Do' ? "bg-white shadow text-black" : "text-muted-foreground hover:text-black")}
+                                className={cn("px-2.5 py-1 rounded text-[11px] font-medium transition-all",
+                                    pianoMode === 'Do' ? "bg-[var(--color-surface-elevated)] shadow-sm text-[var(--color-text-primary)]" : "hover:bg-[var(--color-surface-elevated)]/50 text-[var(--color-text-secondary)]")}
                             >
-                                En Do
+                                Do
                             </button>
                             <button
                                 onClick={() => setPianoMode('Sib')}
-                                className={cn("px-2 py-0.5 rounded text-[10px] transition-colors", pianoMode === 'Sib' ? "bg-white shadow text-black" : "text-muted-foreground hover:text-black")}
+                                className={cn("px-2.5 py-1 rounded text-[11px] font-medium transition-all",
+                                    pianoMode === 'Sib' ? "bg-[var(--color-surface-elevated)] shadow-sm text-[var(--color-text-primary)]" : "hover:bg-[var(--color-surface-elevated)]/50 text-[var(--color-text-secondary)]")}
                             >
-                                En Si♭
+                                Si♭
                             </button>
                         </div>
+                        <InfoTooltip text="Do: suena como piano (concert) | Sib: suena transpuesto (Sol suena como Fa)" />
                     </div>
 
-                    {/* Center Note Display */}
-                    <div className="flex-1 flex justify-center items-center">
-                        {lastNote ? (
-                            <div className="flex flex-col items-center">
-                                <span className="text-lg font-bold text-[var(--color-text-primary)]">
-                                    {lastNote.label}
-                                    {/* Show the accidental variant if generic? No, sticking to label */}
-                                </span>
-                                <span className="text-[10px] text-muted-foreground">
-                                    {pianoMode === 'Sib' ? 'Sonido Real (Si♭)' : 'Sonido Real (Do)'}
-                                </span>
-                            </div>
-                        ) : (
-                            <span className="text-xs text-muted-foreground">Toca una tecla</span>
-                        )}
+                    {/* CENTER: Controls < MANTENER > */}
+                    <div className="flex items-center">
+                        <button
+                            onClick={() => handleStep(-1)}
+                            disabled={!lastNote}
+                            className="h-8 w-9 flex items-center justify-center rounded-l-md border transition-colors disabled:opacity-40"
+                            style={{ backgroundColor: '#fff', borderColor: '#ddd', color: '#555' }}
+                        >
+                            <ChevronDown className="w-4 h-4 rotate-90" />
+                        </button>
+                        <button
+                            onClick={() => setIsSustaining(!isSustaining)}
+                            className="h-8 px-4 text-[11px] font-bold border-y transition-all"
+                            style={{
+                                backgroundColor: isSustaining ? '#333' : '#fff',
+                                color: isSustaining ? '#fff' : '#555',
+                                borderColor: isSustaining ? '#333' : '#ddd'
+                            }}
+                        >
+                            {isSustaining ? "SOLTAR" : "MANTENER"}
+                        </button>
+                        <button
+                            onClick={() => handleStep(1)}
+                            disabled={!lastNote}
+                            className="h-8 w-9 flex items-center justify-center rounded-r-md border transition-colors disabled:opacity-40"
+                            style={{ backgroundColor: '#fff', borderColor: '#ddd', color: '#555' }}
+                        >
+                            <ChevronUp className="w-4 h-4 rotate-90" />
+                        </button>
                     </div>
 
-                    {/* Trumpet Settings & Visualization */}
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary)]">
-                            <span className="mr-1">Trompeta:</span>
-                            <div className="flex bg-muted rounded p-0.5 border">
+                    {/* RIGHT: Trumpet Toggle + Close */}
+                    <div className="flex items-center gap-3">
+                        {/* Trumpet Toggle */}
+                        <div className="flex items-center gap-1.5">
+                            <TrumpetIcon className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                            <div className="flex rounded-md p-0.5 bg-[var(--color-surface)]">
                                 <button
                                     onClick={() => setTrumpetMode('Do')}
-                                    className={cn("px-2 py-0.5 rounded text-[10px] transition-colors", trumpetMode === 'Do' ? "bg-white shadow text-black" : "text-muted-foreground hover:text-black")}
+                                    className={cn("px-2 py-0.5 rounded text-[10px] font-medium transition-all",
+                                        trumpetMode === 'Do' ? "bg-[var(--color-surface-elevated)] shadow-sm text-[var(--color-text-primary)]" : "hover:bg-[var(--color-surface-elevated)]/50 text-[var(--color-text-secondary)]")}
                                 >
                                     Do
                                 </button>
                                 <button
                                     onClick={() => setTrumpetMode('Sib')}
-                                    className={cn("px-2 py-0.5 rounded text-[10px] transition-colors", trumpetMode === 'Sib' ? "bg-white shadow text-black" : "text-muted-foreground hover:text-black")}
+                                    className={cn("px-2 py-0.5 rounded text-[10px] font-medium transition-all",
+                                        trumpetMode === 'Sib' ? "bg-[var(--color-surface-elevated)] shadow-sm text-[var(--color-text-primary)]" : "hover:bg-[var(--color-surface-elevated)]/50 text-[var(--color-text-secondary)]")}
                                 >
                                     Si♭
                                 </button>
                             </div>
+                            <InfoTooltip text="Cambia la nota escrita y la digitación mostradas" />
                         </div>
-
-                        {/* Pistons Visualization */}
-                        {lastNote && (
-                            <div className="flex gap-1">
-                                {(() => {
-                                    const fingering = getFingering(lastNote);
-                                    if (!fingering) return <span className="text-[10px] text-muted-foreground">-</span>;
-
-                                    // Render 3 pistons
-                                    return [1, 2, 3].map(pistonNum => {
-                                        const isPressed = fingering.includes(pistonNum);
-                                        return (
-                                            <div
-                                                key={pistonNum}
-                                                className={cn(
-                                                    "w-4 h-4 rounded-full border border-slate-400 flex items-center justify-center transition-colors",
-                                                    isPressed ? "bg-slate-800 border-slate-800" : "bg-white"
-                                                )}
-                                            >
-                                                <span className={cn("text-[9px] font-bold", isPressed ? "text-white" : "text-slate-300")}>
-                                                    {pistonNum}
-                                                </span>
-                                            </div>
-                                        );
-                                    });
-                                })()}
-                            </div>
-                        )}
-
-                        <div className="w-px h-4 bg-border mx-2" />
+                        {/* Close X */}
+                        <button
+                            onClick={onClose}
+                            className="h-7 w-7 flex items-center justify-center rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/10 text-[var(--color-text-secondary)]"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
                     </div>
-
-                    <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0 hover:bg-black/5">
-                        <X className="w-3.5 h-3.5" />
-                    </Button>
                 </div>
             </div>
 
-            {/* Keys Container */}
-            <div className="p-0 overflow-x-auto bg-[var(--color-surface-elevated)] flex justify-center w-full touch-pan-x">
-                <div className="flex relative select-none" style={{ height: '140px', minWidth: 'fit-content', paddingBottom: '0', paddingLeft: '12px' }}>
-                    {/* Render White Keys + Labels */}
-                    {WRITTEN_NOTES.map((note, idx) => {
-                        const isWhite = note.type === 'white';
-                        if (!isWhite) return null;
+            {/* Main Content Area - Keyboard centered, Info panel on right */}
+            <div className="flex justify-center bg-[var(--color-surface-muted)]" style={{ minHeight: '180px' }}>
 
-                        // Check if this is the FIRST white key for left border
-                        // Start searching from 0. If current is first found white, add border.
-                        const isFirstWhite = WRITTEN_NOTES.find(n => n.type === 'white') === note;
+                {/* Keys Container - centered */}
+                <div className="flex-shrink-0 overflow-x-auto touch-pan-x relative" style={{ maxWidth: 'calc(100% - 160px)' }}>
+                    <div className="flex relative select-none h-[180px]" style={{ minWidth: 'fit-content', paddingLeft: '8px', paddingRight: '8px' }}>
+                        {/* White Keys */}
+                        {VISIBLE_NOTES.map((note, idx) => {
+                            const isWhite = note.type === 'white';
+                            if (!isWhite) return null;
+                            const isFirstWhite = VISIBLE_NOTES.find(n => n.type === 'white') === note;
+                            // Labels are ALWAYS fixed (piano key names), no transposition
+                            return (
+                                <div key={note.name} className="relative h-full flex flex-col justify-start">
+                                    <button
+                                        className={cn(
+                                            "w-11 h-[175px] relative focus:outline-none touch-none rounded-b-[3px] transition-all duration-75 flex flex-col justify-end items-center pb-2",
+                                            pressedKeys.has(note.name)
+                                                ? "shadow-inner"
+                                                : "shadow-sm hover:shadow-md"
+                                        )}
+                                        style={{
+                                            backgroundColor: pressedKeys.has(note.name) ? 'var(--color-primary)' : '#fff',
+                                            borderRight: '1px solid #e0e0e0',
+                                            borderLeft: isFirstWhite ? '1px solid #e0e0e0' : 'none',
+                                            borderBottom: '1px solid #d0d0d0',
+                                            zIndex: 1,
+                                            boxSizing: 'border-box'
+                                        }}
+                                        onPointerDown={(e) => startNote(note, e)}
+                                        onPointerUp={(e) => stopNote(note, e)}
+                                        onPointerLeave={(e) => stopNote(note, e)}
+                                        onPointerCancel={(e) => stopNote(note, e)}
+                                    >
+                                        {/* Label inside key - ALWAYS fixed piano names */}
+                                        <span
+                                            className="text-[10px] font-medium pointer-events-none select-none"
+                                            style={{
+                                                color: pressedKeys.has(note.name) ? 'rgba(255,255,255,0.8)' : '#999'
+                                            }}
+                                        >
+                                            {formatNoteLabel(note.label)}
+                                        </span>
+                                    </button>
+                                </div>
+                            );
+                        })}
 
-                        return (
-                            <div key={note.name} className="relative h-full flex flex-col justify-start">
+                        {/* Black Keys */}
+                        {VISIBLE_NOTES.map((note, idx) => {
+                            if (note.type !== 'black') return null;
+                            const notesBefore = VISIBLE_NOTES.slice(0, idx);
+                            const whiteCount = notesBefore.filter(n => n.type === 'white').length;
+                            const whiteKeyWidth = 44; // w-11
+                            const blackKeyWidth = 26;
+                            const leftPos = (whiteCount * whiteKeyWidth) - (blackKeyWidth / 2);
+                            const finalLeft = leftPos + 8;
+
+                            return (
                                 <button
+                                    key={note.name}
                                     className={cn(
-                                        "w-10 h-[100px] relative focus:outline-none touch-none rounded-b-[4px] transition-colors",
-                                        pressedKeys.has(note.name)
-                                            ? "bg-[var(--color-primary)] shadow-lg"
-                                            : "bg-white active:bg-gray-100"
+                                        "absolute rounded-b-[3px] z-10 focus:outline-none touch-none transition-all duration-75",
+                                        pressedKeys.has(note.name) ? "" : "shadow-lg"
                                     )}
                                     style={{
-                                        // Use border-right for separation, explicit color
-                                        borderRight: '2px solid #e5e7eb', // Thicker separation
-                                        borderLeft: isFirstWhite ? '2px solid #e5e7eb' : 'none',
-                                        borderBottom: '2px solid #e5e7eb',
-                                        zIndex: 1,
-                                        boxSizing: 'border-box'
+                                        width: `${blackKeyWidth}px`,
+                                        height: '95px',
+                                        left: `${finalLeft}px`,
+                                        top: 0,
+                                        backgroundColor: pressedKeys.has(note.name) ? 'var(--color-primary)' : '#1a1a1a',
+                                        border: '1px solid #0a0a0a'
                                     }}
                                     onPointerDown={(e) => startNote(note, e)}
                                     onPointerUp={(e) => stopNote(note, e)}
                                     onPointerLeave={(e) => stopNote(note, e)}
                                     onPointerCancel={(e) => stopNote(note, e)}
                                 />
-                                {/* Label Zone - Only for WHITE keys */}
-                                <div className="h-[40px] w-full flex items-center justify-center pointer-events-none select-none">
-                                    <span className="text-[11px] font-semibold text-[var(--color-text-secondary)]">
-                                        {note.label}
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* RIGHT: Info Panel - compact layout */}
+                <div className="w-[160px] max-w-[160px] flex flex-col shrink-0 py-2">
+
+                    {/* TOP: PISTONS - Compact grid */}
+                    <div className="grid grid-cols-3 gap-1.5 px-2">
+                        {[1, 2, 3].map(pistonNum => {
+                            // Use concertMidi (what's actually sounding) for fingering/display
+                            const displayMidi = lastNote?.concertMidi
+                                ? concertToTrumpetWritten(lastNote.concertMidi, trumpetMode)
+                                : null;
+                            const displayInfo = displayMidi ? midiToNoteInfo(displayMidi) : null;
+
+                            const fingering = displayInfo
+                                ? (TRUMPET_FINGERINGS[displayInfo.scientificName] || TRUMPET_FINGERINGS[displayInfo.name] || [])
+                                : [];
+
+                            const isPressed = fingering.includes(pistonNum);
+                            return (
+                                <div
+                                    key={pistonNum}
+                                    className={cn(
+                                        "aspect-square rounded-full flex items-center justify-center min-w-[24px] max-w-[32px] w-full mx-auto transition-colors",
+                                        isPressed
+                                            ? "bg-[var(--color-primary)] shadow-inner"
+                                            : "bg-[var(--color-surface)] dark:bg-[var(--color-surface-elevated)]"
+                                    )}
+                                >
+                                    <span
+                                        className={cn(
+                                            "text-xs font-bold leading-none",
+                                            isPressed ? "text-[var(--color-text-inverse)]" : "text-[var(--color-text-muted)]"
+                                        )}
+                                    >
+                                        {pistonNum}
                                     </span>
                                 </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
 
-                    {/* Black Keys - Positioned absolute on top */}
-                    {WRITTEN_NOTES.map((note, idx) => {
-                        if (note.type !== 'black') return null;
+                    {/* CENTER: Staff - flex-1 to take max space */}
+                    <div className="flex-1 flex items-center justify-center px-2 min-h-[80px]">
+                        <div className="w-full">
+                            {lastNote?.concertMidi ? (
+                                (() => {
+                                    // Use concertMidi for staff display
+                                    const displayMidi = concertToTrumpetWritten(lastNote.concertMidi, trumpetMode);
+                                    const displayInfo = midiToNoteInfo(displayMidi);
+                                    return <MusicStaff note={displayInfo} />;
+                                })()
+                            ) : <MusicStaff note={null} />}
+                        </div>
+                    </div>
 
-                        const notesBefore = WRITTEN_NOTES.slice(0, idx);
-                        const whiteCount = notesBefore.filter(n => n.type === 'white').length;
+                    {/* BOTTOM: Note Name */}
+                    <div className="px-2 flex justify-center">
+                        {lastNote?.concertMidi ? (
+                            (() => {
+                                // Use concertMidi for note name display
+                                const displayMidi = concertToTrumpetWritten(lastNote.concertMidi, trumpetMode);
+                                const displayInfo = midiToNoteInfo(displayMidi);
 
-                        // White key width is w-10 = 40px in Tailwind (usually)
-                        const whiteKeyWidth = 40;
-                        const blackKeyWidth = 24;
+                                return (
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-lg font-bold leading-none text-[var(--color-text-primary)]">
+                                            {formatNoteLabel(displayInfo.label)}
+                                        </span>
+                                        {displayInfo.enharmonic && (
+                                            <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+                                                / {formatNoteLabel(displayInfo.enharmonic)}
+                                            </span>
+                                        )}
+                                    </div>
+                                );
+                            })()
+                        ) : (
+                            <span className="text-xs italic text-[var(--color-text-muted)]">Toca nota</span>
+                        )}
+                    </div>
 
-                        // Calculate visual offset
-                        const leftPos = (whiteCount * whiteKeyWidth) - (blackKeyWidth / 2);
-
-                        // Match offset with container padding (+12px)
-                        // This aligns black keys to be centered on the boundary of white keys (which are shifted by padding)
-                        const finalLeft = leftPos + 12;
-
-                        return (
-                            <button
-                                key={note.name}
-                                className={cn(
-                                    "absolute w-6 h-[65px] rounded-b-[4px] z-10 focus:outline-none touch-none shadow-md border border-gray-900 ring-1 ring-white/10 transition-colors",
-                                    pressedKeys.has(note.name)
-                                        ? "bg-[var(--color-primary)]"
-                                        : "bg-black active:bg-gray-800"
-                                )}
-                                style={{
-                                    left: `${finalLeft}px`,
-                                    top: 0
-                                }}
-                                onPointerDown={(e) => startNote(note, e)}
-                                onPointerUp={(e) => stopNote(note, e)}
-                                onPointerLeave={(e) => stopNote(note, e)}
-                                onPointerCancel={(e) => stopNote(note, e)}
-                            >
-                                {/* No label for black keys as requested */}
-                            </button>
-                        );
-                    })}
-
-                    {/* Padding right to handle last key border? */}
-                    <div className="w-[12px] h-full shrink-0" />
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
