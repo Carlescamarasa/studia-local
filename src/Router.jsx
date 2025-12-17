@@ -21,7 +21,7 @@ const ImportExport = lazy(() => import("@/pages/import-export.jsx")); // Still u
 // Config page imports: import ImportExportContent from "./ImportExportContent". 
 // src/pages/import-export.jsx might be the standalone page. 
 // If I redirect /import-export to /configuracion?tab=import, I don't need the Route for import-export, so I don't need the lazy import of the page.
-const Estudiantes = lazy(() => import("@/pages/estudiantes.jsx"));
+// Estudiantes page deprecated - redirects to /preparacion
 const Calendario = lazy(() => import("@/pages/calendario.jsx"));
 const LocalPage = lazy(() => import("@/pages/local.jsx"));
 const Biblioteca = lazy(() => import("@/pages/biblioteca.jsx"));
@@ -113,7 +113,7 @@ export default function AppRouter() {
           <Route path="agenda" element={<Agenda />} />
           <Route path="perfil" element={<Perfil />} />
 
-          <Route path="estudiantes" element={<Estudiantes />} />
+          <Route path="estudiantes" element={<Navigate to="/preparacion" replace />} />
           <Route path="calendario" element={<Calendario />} />
           <Route path="biblioteca" element={<Biblioteca />} />
           <Route path="test-loading" element={<TestLoading />} />

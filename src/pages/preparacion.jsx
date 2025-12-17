@@ -26,6 +26,7 @@ import { es } from "date-fns/locale";
 import { parseLocalDate } from "@/components/estadisticas/utils";
 import AsignacionesTab from "@/components/preparacion/AsignacionesTab";
 import { ROUTES, toProgreso } from "@/lib/routes";
+import UserActionsMenu from "@/components/common/UserActionsMenu";
 
 // Icons
 import {
@@ -313,7 +314,10 @@ function PreparacionPageContent() {
                                                                 )}
                                                             </div>
                                                         </div>
-                                                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                                                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                                            <UserActionsMenu user={estudiante} usuarios={usuarios} />
+                                                            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                                                        </div>
                                                     </button>
                                                 );
                                             })}
