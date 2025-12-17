@@ -201,7 +201,7 @@ export default function ResumenFinal({
             <section className="space-y-2 sm:space-y-3">
               <h2 className={`font-semibold text-sm sm:text-base text-center ${componentStyles.typography.sectionTitle}`}>¿Cómo fue la práctica?</h2>
 
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 max-w-[300px] mx-auto">
+              <div className="grid grid-cols-4 gap-2 sm:gap-3 w-full max-w-md mx-auto">
                 {[1, 2, 3, 4].map((nivel) => (
                   <button
                     key={nivel}
@@ -221,8 +221,8 @@ export default function ResumenFinal({
             </section>
 
             {/* Notas sobre la práctica */}
-            <section className="space-y-1">
-              <label htmlFor="notas-practica" className={`block text-sm font-medium text-[var(--color-text-primary)] mb-1.5 ${componentStyles.forms.label}`}>
+            <section className="space-y-1.5">
+              <label htmlFor="notas-practica" className="block text-sm font-medium text-[var(--color-text-primary)] pl-3">
                 Notas sobre la práctica (opcional)
               </label>
               <Textarea
@@ -237,17 +237,22 @@ export default function ResumenFinal({
             </section>
 
             {/* Input de subida de vídeo y enlaces multimedia */}
-            <MediaLinksInput
-              value={mediaLinks}
-              onChange={setMediaLinks}
-              onPreview={handlePreview}
-              showFileUpload={true}
-              videoFile={videoFile}
-              onVideoFileChange={setVideoFile}
-              uploadingVideo={uploadingVideo}
-              disabled={guardado}
-              videoId="video-sesion"
-            />
+            <section className="space-y-1.5">
+              <label className="block text-sm font-medium text-[var(--color-text-primary)] pl-3">
+                Recursos Adjuntos (opcional)
+              </label>
+              <MediaLinksInput
+                value={mediaLinks}
+                onChange={setMediaLinks}
+                onPreview={handlePreview}
+                showFileUpload={true}
+                videoFile={videoFile}
+                onVideoFileChange={setVideoFile}
+                uploadingVideo={uploadingVideo}
+                disabled={guardado}
+                videoId="video-sesion"
+              />
+            </section>
           </div>
 
           {/* Footer: Botones finales */}

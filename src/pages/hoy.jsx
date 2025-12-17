@@ -58,6 +58,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { cn } from "@/lib/utils";
+import { toStudia } from "@/lib/routes";
 import {
   calcularLunesSemanaISO,
   calcularOffsetSemanas,
@@ -711,120 +712,14 @@ function HoyPageContent() {
     }
   }, [mostrarModalCancelar, mostrarItinerario, reportModalAbierto, showHotkeysModal, cronometroActivo, cronometroPausadoPorModal, sesionActiva, sesionFinalizada, timestampInicio]);
 
-  const empezarSesion = async (sesion, sesionIdxProp) => {
-    // Actualizar bloques con mediaLinks actuales de la base de datos
-    const sesionActualizada = {
-      ...sesion,
-      bloques: (sesion.bloques || []).map(bloqueSnapshot => {
-        // Buscar el bloque actual en la base de datos por código
-        const bloqueActual = bloquesActuales.find(b => b.code === bloqueSnapshot.code);
-
-        if (!bloqueActual) {
-          console.warn(`[WARNING] Bloque ${bloqueSnapshot.code} no encontrado en la biblioteca (bloquesActuales). No se podrán cargar variaciones.`);
-        }
-
-        if (bloqueActual) {
-          // VARIATIONS LOGIC INJECTION
-          // Determine policy: Explicit 'variation_policy' or imply based on 'modo'
-          const policy = bloqueSnapshot.variation_policy || (bloqueSnapshot.modo === 'repaso' ? 'random' : 'fixed');
-          const fixedVariationKey = bloqueSnapshot.selected_variation_key;
-
-          let pickedVariation = null;
-
-          // 1. Fixed Policy: Try to use the pre-selected variation
-          if (policy === 'fixed' && fixedVariationKey && bloqueActual.variations) {
-            pickedVariation = bloqueActual.variations.find(v => v.id === fixedVariationKey || v.label === fixedVariationKey);
-          }
-
-          // 2. Random Policy: Select from valid variations based on user level
-          else if (policy === 'random' && bloqueActual.variations && bloqueActual.variations.length > 0) {
-            const userLevel = alumnoActual?.nivelTecnico || 1;
-            const validVars = getValidVariations(bloqueActual, userLevel);
-            if (validVars) {
-              pickedVariation = pickRandomVariation(validVars);
-            }
-          }
-
-          // Apply selected variation properties
-          let selectedVariationMedia = null;
-          let variationLabel = null;
-          let selectedVariationDuration = null;
-
-          if (pickedVariation) {
-            variationLabel = pickedVariation.label; // or .nombre
-
-            // Media extraction
-            if (pickedVariation.mediaItems && Array.isArray(pickedVariation.mediaItems)) {
-              selectedVariationMedia = pickedVariation.mediaItems;
-            } else if (pickedVariation.assetUrl || pickedVariation.asset_url) {
-              selectedVariationMedia = [{ url: pickedVariation.assetUrl || pickedVariation.asset_url, name: null }];
-            } else if ((pickedVariation.assetUrls || pickedVariation.asset_urls) && Array.isArray(pickedVariation.assetUrls || pickedVariation.asset_urls)) {
-              selectedVariationMedia = (pickedVariation.assetUrls || pickedVariation.asset_urls).map(u => ({ url: u, name: null }));
-            }
-
-            // Duration extraction
-            if (pickedVariation.duracionSeg || pickedVariation.duracion_seg) {
-              selectedVariationDuration = pickedVariation.duracionSeg || pickedVariation.duracion_seg;
-            }
-          }
-
-          // Construir lista final de media
-          let mediaLinksFinal = [];
-
-          if (selectedVariationMedia) {
-            mediaLinksFinal = selectedVariationMedia;
-          } else if (bloqueActual.content?.mediaItems && bloqueActual.content.mediaItems.length > 0) {
-            mediaLinksFinal = bloqueActual.content.mediaItems;
-          } else if (bloqueActual.mediaLinks && bloqueActual.mediaLinks.length > 0) {
-            mediaLinksFinal = bloqueActual.mediaLinks.map(u => typeof u === 'string' ? { url: u, name: null } : u);
-          } else if (bloqueSnapshot.mediaLinks && bloqueSnapshot.mediaLinks.length > 0) {
-            mediaLinksFinal = bloqueSnapshot.mediaLinks.map(u => typeof u === 'string' ? { url: u, name: null } : u);
-          }
-
-          const baseName = bloqueActual.nombre || bloqueSnapshot.nombre;
-          const finalName = variationLabel ? `${baseName} / ${variationLabel}` : baseName;
-
-          return {
-            ...bloqueSnapshot,
-            nombre: finalName,
-            mediaLinks: mediaLinksFinal, // Now populated with rich objects if available
-            // Mantener otras propiedades actualizadas si existen
-            // Instructions/Indicators always come from the Base/Snaphost
-            instrucciones: bloqueActual.instrucciones || bloqueSnapshot.instrucciones,
-            indicadorLogro: bloqueActual.indicadorLogro || bloqueSnapshot.indicadorLogro,
-            materialesRequeridos: bloqueActual.materialesRequeridos || bloqueSnapshot.materialesRequeridos || [],
-            duracionSeg: selectedVariationDuration || bloqueActual.duracionSeg || bloqueSnapshot.duracionSeg || 0,
-            targetPPMs: bloqueActual.targetPPMs || bloqueSnapshot.targetPPMs || [],
-            // Inyectar info de variación para UI (opcional)
-            variationName: variationLabel,
-            // Asegurar que backpack_key venga del snapshot o del bloque actual
-            backpack_key: bloqueSnapshot.backpack_key || bloqueActual.backpack_key || null,
-            // Registrar qué variación se eligió (si hubo) -> USAR ID si es posible for DB consistency
-            variation_key: pickedVariation ? (pickedVariation.id || pickedVariation.label) : null,
-            // Guardar también la policy usada para debugging
-            variation_policy: policy
-          };
-        }
-        return bloqueSnapshot;
-      })
-    };
-
-
-    setSesionActiva(sesionActualizada);
-    setIndiceActual(0);
-    setTiempoActual(0);
-    setCronometroActiva(false);
-    setCompletados(new Set());
-    setOmitidos(new Set());
-    setSesionFinalizada(false);
-    setDatosFinal(null);
-    setRegistroSesionId(null); // No hay ID hasta finalizar
-    bloquesPendientesRef.current = []; // Reiniciar bloques pendientes
-
-    const timestampInicio = Date.now();
-    setTimestampInicio(timestampInicio);
-    setTimestampUltimoPausa(null);
-    setTiempoAcumuladoAntesPausa(0);
+  const empezarSesion = (sesion, sesionIdxProp) => {
+    // Navigate to /studia with context
+    const url = toStudia({
+      asignacionId: asignacionActiva?.id,
+      semanaIdx: semanaIdx,
+      sesionIdx: sesionIdxProp,
+    });
+    navigate(url);
   };
 
   // Listener para el hotkey global Ctrl+Alt+S "Studia ahora"

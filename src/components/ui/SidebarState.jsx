@@ -14,29 +14,19 @@ export function SidebarProvider({ children }) {
       return false;
     }
 
-    // En modo estudio (/hoy), cerrado por defecto
-    if (isModoEstudio) {
-      return false;
-    }
-
-    // En desktop (excepto modo estudio), siempre abierto por defecto
-    // Ignoramos localStorage para forzar el comportamiento por defecto
+    // En desktop, siempre abierto por defecto (incluyendo /hoy)
     return true;
   });
 
-  // Actualizar estado cuando cambia la ruta o el tamaño de ventana
+  // Actualizar estado cuando cambia el tamaño de ventana
   useEffect(() => {
     const checkDesktop = () => window.innerWidth >= 1024;
     const nowDesktop = checkDesktop();
-    const nowModoEstudio = location.pathname.startsWith('/hoy');
 
-    if (nowDesktop && !nowModoEstudio) {
-      // En desktop (excepto modo estudio), forzar abierto
+    if (nowDesktop) {
+      // En desktop, forzar abierto
       setAbierto(true);
-    } else if (nowModoEstudio) {
-      // En modo estudio, cerrar
-      setAbierto(false);
-    } else if (!nowDesktop) {
+    } else {
       // En mobile, cerrar
       setAbierto(false);
     }
@@ -75,6 +65,18 @@ export function useSidebar() {
   const context = useContext(SidebarContext);
   if (!context) {
     throw new Error('useSidebar debe usarse dentro de SidebarProvider');
+  }
+  return context;
+}
+
+/**
+ * Safe version of useSidebar that returns default values when no provider exists.
+ * Use this in components that may render outside of SidebarProvider (e.g., /studia).
+ */
+export function useSidebarSafe() {
+  const context = useContext(SidebarContext);
+  if (!context) {
+    return { abierto: false, toggleSidebar: () => { }, openSidebar: () => { }, closeSidebar: () => { } };
   }
   return context;
 }

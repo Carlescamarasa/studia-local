@@ -47,6 +47,7 @@ const MochilaPage = lazy(() => import("@/pages/MochilaPage.jsx"));
 const Progreso = lazy(() => import("@/pages/progreso.jsx"));
 const Preparacion = lazy(() => import("@/pages/preparacion.jsx"));
 const Configuracion = lazy(() => import("@/pages/admin/configuracion.jsx"));
+const Studia = lazy(() => import("@/pages/studia.jsx"));
 
 // Componente de carga
 const PageLoader = () => (
@@ -74,6 +75,18 @@ export default function AppRouter() {
             <Route path="/concept" element={<StudiaConceptPage />} />
           </>
         )}
+
+        {/* Ruta /studia: Full-screen práctica sin sidebar */}
+        <Route
+          path="/studia"
+          element={
+            <RequireAuth>
+              <Suspense fallback={<PageLoader />}>
+                <Studia />
+              </Suspense>
+            </RequireAuth>
+          }
+        />
 
         {/* Rutas protegidas: todas requieren autenticación */}
         <Route
