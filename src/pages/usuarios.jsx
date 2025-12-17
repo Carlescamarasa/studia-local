@@ -888,7 +888,7 @@ function UsuariosPageContent() {
                       label: 'Ver estudiantes asignados',
                       icon: <Eye className="w-4 h-4" />,
                       onClick: () => {
-                        navigate(createPageUrl(`estudiantes?profesor_id=${u.id}`));
+                        navigate(`/preparacion`);
                       },
                     },
                     {

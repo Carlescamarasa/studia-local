@@ -42,6 +42,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Checkbox } from "@/components/ui/checkbox";
 import TablePagination from "@/components/common/TablePagination";
 import RowActionsMenu from "@/components/common/RowActionsMenu";
+import UserActionsMenu from "@/components/common/UserActionsMenu";
 
 const pad2 = (n) => String(n).padStart(2, "0");
 const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
@@ -357,11 +358,9 @@ function AgendaPageContent() {
                   )}
                 </div>
               )}
-              {actions.length > 0 && (
-                <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                  <RowActionsMenu actions={actions} />
-                </div>
-              )}
+              <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                <UserActionsMenu user={row.alumno} usuarios={usuarios} />
+              </div>
             </div>
           </div>
 
@@ -402,12 +401,10 @@ function AgendaPageContent() {
                   )}
                 </div>
               )}
-              {/* Botón de menú */}
-              {actions.length > 0 && (
-                <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                  <RowActionsMenu actions={actions} />
-                </div>
-              )}
+              {/* Botón de menú - UserActionsMenu */}
+              <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                <UserActionsMenu user={row.alumno} usuarios={usuarios} />
+              </div>
             </div>
           ) : null}
         </div>

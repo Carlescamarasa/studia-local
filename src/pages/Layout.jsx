@@ -84,7 +84,6 @@ const navigationByRole = {
     { title: "Preparación", url: ROUTES.PREPARACION, icon: Target, group: "Planificador" },
     { title: "Agenda", url: ROUTES.AGENDA, icon: Calendar, group: "Planificador" },
     { title: "Biblioteca", url: ROUTES.BIBLIOTECA, icon: Edit3, group: "Planificador" },
-    { title: "Reportes", url: ROUTES.REPORTES, icon: Bug, group: "Profesor" },
     { title: "Tickets alumnos", url: ROUTES.SOPORTE_PROF, icon: MessageSquare, group: "Profesor" },
   ],
   ESTU: [
