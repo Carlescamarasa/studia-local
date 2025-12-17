@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Clock, TrendingUp, CheckCircle, XCircle, Activity, LayoutList } from "lucide-react";
+import { Clock, TrendingUp, CheckCircle, XCircle, Activity, LayoutList, Target, Info } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
-import StatCard from "./StatCard";
+import KpiTile from "./KpiTile";
 import { formatDuracionHM, parseLocalDate } from "./utils";
 import { cn } from "@/lib/utils";
 import TiposBloquesTab from "@/components/estadisticas/TiposBloquesTab";
@@ -62,72 +63,95 @@ export default function ProgresoTab({
   return (
     <div className="space-y-6">
 
-      {/* 1. Header con Toggle Pills */}
+      {/* 1. Header con Toggle Pills + Info */}
       <div className="flex flex-col sm:flex-row justify-center items-start sm:items-center gap-4">
-        <div className="flex bg-[var(--color-surface-muted)] p-1 rounded-lg">
-          <button
-            onClick={() => setView('rendimiento')}
-            className={cn(
-              "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
-              view === 'rendimiento'
-                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
-                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-            )}
-          >
-            <TrendingUp className="w-4 h-4 mr-2" />
-            Rendimiento
-          </button>
-          <button
-            onClick={() => setView('ejercicios')}
-            className={cn(
-              "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
-              view === 'ejercicios'
-                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
-                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-            )}
-          >
-            <LayoutList className="w-4 h-4 mr-2" />
-            Ejercicios
-          </button>
+        <div className="flex items-center gap-2">
+          <div className="flex bg-[var(--color-surface-muted)] p-1 rounded-lg">
+            <button
+              onClick={() => setView('rendimiento')}
+              className={cn(
+                "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                view === 'rendimiento'
+                  ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
+                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+              )}
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Rendimiento
+            </button>
+            <button
+              onClick={() => setView('ejercicios')}
+              className={cn(
+                "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                view === 'ejercicios'
+                  ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
+                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+              )}
+            >
+              <LayoutList className="w-4 h-4 mr-2" />
+              Ejercicios
+            </button>
+          </div>
+
+          {/* Info Popover - inline with toggle */}
+          {view === 'rendimiento' && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="p-1.5 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-md transition-colors"
+                  aria-label="Información sobre las métricas"
+                >
+                  <Info className="w-4 h-4" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-4" align="start">
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-sm text-[var(--color-text-primary)]">Tus métricas de rendimiento</h4>
+                  <div className="space-y-2 text-xs text-[var(--color-text-secondary)]">
+                    <p><strong className="text-[var(--color-text-primary)]">Ratio completado:</strong> Porcentaje de bloques que has completado en tus sesiones (vs los que has omitido).</p>
+                    <p><strong className="text-[var(--color-text-primary)]">Sesiones sin omitir:</strong> Porcentaje de sesiones donde has hecho todos los bloques sin saltar ninguno.</p>
+                    <p><strong className="text-[var(--color-text-primary)]">Cumplimiento objetivo:</strong> Cuánto tiempo has practicado respecto al tiempo objetivo que tenías marcado.</p>
+                    <p><strong className="text-[var(--color-text-primary)]">Sesiones cumplen:</strong> En cuántas sesiones has alcanzado al menos el 90% del tiempo objetivo.</p>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
       </div>
 
       {/* 2. Contenido según vista */}
       {view === 'rendimiento' && (
         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
-          {/* Métricas de KPI Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            <StatCard
-              value={kpis.ratioCompletado}
-              suffix="%"
+          {/* Métricas de KPI Cards - 4-tile uniform layout */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pb-4">
+            <KpiTile
+              icon={CheckCircle}
               label="Ratio completado"
-              icon={CheckCircle}
-              variant="success"
-              tooltip={`Porcentaje de bloques completados vs omitidos. Completados: ${kpis.totalCompletados}, Omitidos: ${kpis.totalOmitidos}`}
+              value={`${kpis.ratioCompletado}%`}
+              valueClassName="text-[var(--color-success)]"
+              subtext={`${kpis.totalCompletados} compl. · ${kpis.totalOmitidos} omit.`}
             />
-            <StatCard
-              value={kpis.porcentajeCompletadas}
-              suffix="%"
+            <KpiTile
+              icon={CheckCircle}
               label="Sesiones sin omitir"
-              icon={CheckCircle}
-              variant="success"
-              tooltip="Porcentaje de sesiones completadas sin omitir bloques"
+              value={`${kpis.porcentajeCompletadas}%`}
+              valueClassName="text-[var(--color-success)]"
+              subtext={`${kpis.sesionesCompletadas}/${kpis.numSesiones || 0} sesiones`}
             />
-            <StatCard
-              value={tiempoRealVsObjetivo.porcentajeCumplimiento}
-              suffix="%"
-              label="Cumplimiento objetivo"
+            <KpiTile
               icon={Clock}
-              variant={parseFloat(tiempoRealVsObjetivo.porcentajeCumplimiento) >= 90 ? 'success' : 'warning'}
-              tooltip={`Porcentaje de tiempo real vs tiempo objetivo. Real: ${formatDuracionHM(tiempoRealVsObjetivo.totalReal)}, Objetivo: ${formatDuracionHM(tiempoRealVsObjetivo.totalObjetivo)}`}
+              label="Cumplimiento objetivo"
+              value={`${tiempoRealVsObjetivo.porcentajeCumplimiento}%`}
+              valueClassName={parseFloat(tiempoRealVsObjetivo.porcentajeCumplimiento) >= 90 ? "text-[var(--color-success)]" : "text-orange-500"}
+              subtext={`Real: ${formatDuracionHM(tiempoRealVsObjetivo.totalReal)}`}
             />
-            <StatCard
-              value={tiempoRealVsObjetivo.porcentajeSesionesCumplen}
-              suffix="%"
+            <KpiTile
+              icon={Target}
               label="Sesiones cumplen"
-              icon={TrendingUp}
-              variant="info"
-              tooltip={`${tiempoRealVsObjetivo.sesionesCumplenObjetivo} de ${tiempoRealVsObjetivo.totalSesiones} sesiones cumplen al menos el 90% del objetivo`}
+              value={`${tiempoRealVsObjetivo.porcentajeSesionesCumplen}%`}
+              valueClassName="text-[var(--color-primary)]"
+              subtext={`${tiempoRealVsObjetivo.sesionesCumplenObjetivo}/${tiempoRealVsObjetivo.totalSesiones} sesiones`}
             />
           </div>
 

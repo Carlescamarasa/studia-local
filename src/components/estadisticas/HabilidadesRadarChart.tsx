@@ -50,8 +50,8 @@ export default function HabilidadesRadarChart({ data, isLoading, dataKey1, dataK
         <div className={compact ? "w-full" : "w-full max-w-md mx-auto"}>
             <div className={compact ? "h-[300px] w-full" : "h-[300px] w-full"}>
                 <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart cx="50%" cy="50%" outerRadius={compact ? "85%" : "80%"} data={data}>
-                        <PolarGrid stroke="var(--color-border-default)" strokeOpacity={0.4} />
+                    <RadarChart cx="50%" cy="50%" outerRadius={compact ? "65%" : "70%"} data={data}>
+                        <PolarGrid stroke="var(--color-border-default)" strokeOpacity={0.7} />
                         <PolarAngleAxis
                             dataKey="subject"
                             tick={{ fill: 'var(--color-text-primary)', fontSize: 11, fontWeight: 500 }}

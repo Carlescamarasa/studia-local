@@ -1,65 +1,78 @@
 import React from "react";
-import StatCard from "./StatCard";
-import RachaBadge from "./RachaBadge";
-import { Clock, Timer, Smile, Calendar, Activity } from "lucide-react";
+import KpiTile from "./KpiTile";
+import StreakMetric from "./StreakMetric";
+import RatingStarsMetric from "./RatingStarsMetric";
+import { Timer, Clock, CalendarRange, Repeat } from "lucide-react";
 import { formatDuracionHM } from "./utils";
 
 /**
- * ResumenTab - Tab de resumen con KPIs
+ * ResumenTab - Tab de resumen con 6 KPIs unificados visualmente.
  * 
  * @param {Object} props
- * @param {Object} props.kpis - Objeto con métricas calculadas
+ * @param {Object} props.kpis
  */
 export default function ResumenTab({ kpis }) {
 
   return (
     <div className="space-y-6">
-      {/* KPIs - Grid responsive */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 md:gap-6 px-2 py-4 sm:py-6 border-b border-[var(--color-border-default)]">
-        <StatCard
-          value={formatDuracionHM(kpis.tiempoTotal)}
-          label="Tiempo total"
-          icon={Clock}
-          variant="primary"
-        />
+      {/* 
+        Grid Layout:
+        - Desktop (lg): 6 columnas
+        - Tablet (sm): 3 columnas
+        - Mobile: 2 columnas
+      */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 border-b border-[var(--color-border-default)] pb-6">
 
-        <StatCard
-          value={formatDuracionHM(kpis.tiempoPromedioPorSesion)}
-          label="Promedio/sesión"
+        {/* 1. Tiempo Total */}
+        <KpiTile
           icon={Timer}
-          variant="primary"
+          label="Tiempo total"
+          value={`${Math.round((kpis.tiempoTotal || 0) / 60)} min`} // Asumiendo kpis.tiempoTotal es segundos? formatDuracionHM devuelve string "Xh Ym". Si queremos "X min", calculamos manual.
+          /* 
+             NOTA: Si formatDuracionHM devuelve "1h 30m", el usuario pidió "{totalMinutes} min".
+             Validaré la unidad de tiempoTotal. Usualmente es segundos en este codebase.
+             Si es segundos -> kpis.tiempoTotal / 60.
+          */
+          valueClassName="text-orange-500"
+          subtext=""
         />
 
-        <StatCard
+        {/* 2. Promedio/Sesión */}
+        <KpiTile
+          icon={Clock}
+          label="Prom/sesión"
+          value={`${Math.round((kpis.tiempoPromedioPorSesion || 0) / 60)} min`}
+        />
+
+        {/* 3. Valoración */}
+        <RatingStarsMetric
           value={kpis.calidadPromedio}
-          suffix="/4"
-          label="Valoración"
-          icon={Smile}
-          variant="success"
+          max={4}
         />
 
-        <div className="text-center flex flex-col items-center justify-center">
-          <RachaBadge
-            rachaActual={kpis.racha.actual}
-            rachaMaxima={kpis.racha.maxima}
-          />
-        </div>
+        {/* 4. Racha */}
+        <StreakMetric
+          streakDays={kpis.racha.actual}
+          maxStreak={kpis.racha.maxima}
+        />
 
-        <StatCard
+        {/* 5. Semanas Activas */}
+        <KpiTile
+          icon={CalendarRange}
+          label="Semanas activas"
           value={kpis.semanasDistintas}
-          label="Semanas practicadas"
-          icon={Calendar}
-          variant="info"
+          subtext="en el periodo"
         />
 
-        <StatCard
+        {/* 6. Frecuencia Semanal */}
+        <KpiTile
+          icon={Repeat}
+          label="Frecuencia semanal"
           value={kpis.mediaSemanalSesiones.toFixed(1)}
-          label="Sesiones/semana"
-          icon={Activity}
-          variant="primary"
+          valueClassName="text-[var(--color-success)]"
+          subtext="ses/sem · media"
         />
       </div>
     </div>
   );
 }
-

@@ -6,10 +6,10 @@ import { componentStyles } from "@/design/componentStyles";
  * CompactCard - Compact wrapper for content sections
  * 
  * @param {Object} props
- * @param {string|React.ReactNode} props.title - Card title
- * @param {React.ReactNode} props.titleRight - Optional element aligned to the right of title
+ * @param {string|React.ReactNode} [props.title] - Card title
+ * @param {React.ReactNode} [props.titleRight] - Optional element aligned to the right of title
  * @param {React.ReactNode} props.children - Card content
- * @param {string} props.className - Additional classes
+ * @param {string} [props.className] - Additional classes
  */
 export default function CompactCard({
     title,

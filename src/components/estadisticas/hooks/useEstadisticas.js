@@ -140,11 +140,11 @@ export function useEstadisticas({
       const duracion = validarDuracion(r.duracionRealSeg);
       return sum + duracion;
     }, 0);
-    
+
     const racha = calcularRacha(registrosFiltradosUnicos, isEstu ? userIdActual : null);
     const calidadPromedio = calcularCalidadPromedio(registrosFiltradosUnicos);
     const semanasDistintas = calcularSemanasDistintas(registrosFiltradosUnicos);
-    
+
     const numSesiones = registrosFiltradosUnicos.length;
     const tiempoPromedioPorSesion = numSesiones > 0 ? tiempoTotal / numSesiones : 0;
 
@@ -167,39 +167,39 @@ export function useEstadisticas({
     }
 
     // Nuevas métricas
-    const sesionesCompletadas = registrosFiltradosUnicos.filter(r => 
+    const sesionesCompletadas = registrosFiltradosUnicos.filter(r =>
       (r.bloquesOmitidos || 0) === 0 && (r.bloquesCompletados || 0) > 0
     ).length;
-    const porcentajeCompletadas = numSesiones > 0 
-      ? ((sesionesCompletadas / numSesiones) * 100).toFixed(1) 
+    const porcentajeCompletadas = numSesiones > 0
+      ? ((sesionesCompletadas / numSesiones) * 100).toFixed(1)
       : 0;
 
     // Calcular bloques completados y omitidos desde registros_sesion
-    let totalCompletados = registrosFiltradosUnicos.reduce((sum, r) => 
+    let totalCompletados = registrosFiltradosUnicos.reduce((sum, r) =>
       sum + safeNumber(r.bloquesCompletados), 0
     );
-    let totalOmitidos = registrosFiltradosUnicos.reduce((sum, r) => 
+    let totalOmitidos = registrosFiltradosUnicos.reduce((sum, r) =>
       sum + safeNumber(r.bloquesOmitidos), 0
     );
-    
+
     // Si no hay datos en registros_sesion, calcular desde bloques_filtrados como respaldo
     // Esto asegura que siempre tengamos datos precisos
     // Solo usar el respaldo si realmente no hay datos (puede ser que los valores sean 0 pero válidos)
     if (totalCompletados === 0 && totalOmitidos === 0 && bloquesFiltrados.length > 0) {
-      const completadosDesdeBloques = bloquesFiltrados.filter(b => 
+      const completadosDesdeBloques = bloquesFiltrados.filter(b =>
         b.estado === 'completado' || (b.duracionRealSeg && b.duracionRealSeg > 0)
       ).length;
-      const omitidosDesdeBloques = bloquesFiltrados.filter(b => 
+      const omitidosDesdeBloques = bloquesFiltrados.filter(b =>
         b.estado === 'omitido'
       ).length;
-      
+
       // Solo usar los datos de bloques si hay al menos algunos bloques
       if (completadosDesdeBloques > 0 || omitidosDesdeBloques > 0) {
         totalCompletados = completadosDesdeBloques;
         totalOmitidos = omitidosDesdeBloques;
       }
     }
-    
+
     const ratioCompletado = (totalCompletados + totalOmitidos) > 0
       ? ((totalCompletados / (totalCompletados + totalOmitidos)) * 100).toFixed(1)
       : 0;
@@ -212,6 +212,7 @@ export function useEstadisticas({
       tiempoPromedioPorSesion,
       semanasPeriodo,
       mediaSemanalSesiones,
+      numSesiones,
       sesionesCompletadas,
       porcentajeCompletadas,
       totalCompletados,
@@ -223,14 +224,14 @@ export function useEstadisticas({
   // Datos para gráfico de línea
   const datosLinea = useMemo(() => {
     const agrupado = {};
-    
+
     registrosFiltradosUnicos.forEach(r => {
       if (!r.inicioISO) return;
-      
+
       const fecha = new Date(r.inicioISO);
       const fechaLocal = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
       let clave;
-      
+
       if (granularidad === 'dia') {
         clave = formatLocalDate(fechaLocal);
       } else if (granularidad === 'semana') {
@@ -239,29 +240,29 @@ export function useEstadisticas({
       } else {
         clave = `${fechaLocal.getFullYear()}-${String(fechaLocal.getMonth() + 1).padStart(2, "0")}`;
       }
-      
+
       if (!agrupado[clave]) {
-        agrupado[clave] = { 
-          fecha: clave, 
-          tiempo: 0, 
-          valoraciones: [], 
+        agrupado[clave] = {
+          fecha: clave,
+          tiempo: 0,
+          valoraciones: [],
           count: 0,
           completados: 0,
           omitidos: 0,
         };
       }
-      
+
       const duracion = validarDuracion(r.duracionRealSeg);
       agrupado[clave].tiempo += duracion / 60;
       agrupado[clave].completados += r.bloquesCompletados || 0;
       agrupado[clave].omitidos += r.bloquesOmitidos || 0;
-      
+
       if (r.calificacion !== undefined && r.calificacion !== null) {
         agrupado[clave].valoraciones.push(r.calificacion);
       }
       agrupado[clave].count++;
     });
-    
+
     return Object.values(agrupado)
       .map(item => {
         let satisfaccion = null;
@@ -301,7 +302,7 @@ export function useEstadisticas({
   // Top ejercicios
   const topEjercicios = useMemo(() => {
     const ejerciciosMap = {};
-    
+
     bloquesFiltrados.forEach(b => {
       const key = `${b.code}_${b.nombre}_${b.tipo}`;
       if (!ejerciciosMap[key]) {
@@ -314,7 +315,7 @@ export function useEstadisticas({
           ultimaPractica: null,
         };
       }
-      
+
       const duracion = validarDuracion(b.duracionRealSeg);
       ejerciciosMap[key].tiempoTotal += duracion;
       if (b.registroSesionId) {
@@ -340,7 +341,7 @@ export function useEstadisticas({
   // Progreso por pieza
   const progresoPorPieza = useMemo(() => {
     const piezasMap = {};
-    
+
     registrosFiltradosUnicos.forEach(r => {
       const piezaNombre = r.piezaNombre || 'Sin pieza';
       if (!piezasMap[piezaNombre]) {
@@ -353,13 +354,13 @@ export function useEstadisticas({
           bloquesOmitidos: 0,
         };
       }
-      
+
       const duracion = validarDuracion(r.duracionRealSeg);
       piezasMap[piezaNombre].tiempoTotal += duracion;
       piezasMap[piezaNombre].sesiones += 1;
       piezasMap[piezaNombre].bloquesCompletados += safeNumber(r.bloquesCompletados);
       piezasMap[piezaNombre].bloquesOmitidos += safeNumber(r.bloquesOmitidos);
-      
+
       if (r.calificacion !== undefined && r.calificacion !== null) {
         const cal = safeNumber(r.calificacion);
         if (cal > 0 && cal <= 4) {
@@ -372,7 +373,7 @@ export function useEstadisticas({
       const calPromedio = p.calificaciones.length > 0
         ? (p.calificaciones.reduce((sum, c) => sum + c, 0) / p.calificaciones.length).toFixed(1)
         : null;
-      
+
       return {
         ...p,
         tiempoTotal: normalizeAggregate(p.tiempoTotal),
@@ -387,13 +388,13 @@ export function useEstadisticas({
   // Heatmap de actividad
   const heatmapData = useMemo(() => {
     const actividadPorDia = {};
-    
+
     registrosFiltradosUnicos.forEach(r => {
       if (!r.inicioISO) return;
       const fecha = new Date(r.inicioISO);
       const fechaLocal = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
       const diaISO = formatLocalDate(fechaLocal);
-      
+
       if (!actividadPorDia[diaISO]) {
         actividadPorDia[diaISO] = {
           fecha: diaISO,
@@ -401,7 +402,7 @@ export function useEstadisticas({
           tiempo: 0,
         };
       }
-      
+
       actividadPorDia[diaISO].sesiones += 1;
       const duracion = validarDuracion(r.duracionRealSeg);
       actividadPorDia[diaISO].tiempo += duracion;
@@ -415,23 +416,23 @@ export function useEstadisticas({
 
   // Tiempo real vs objetivo
   const tiempoRealVsObjetivo = useMemo(() => {
-    const sesionesConObjetivo = registrosFiltradosUnicos.filter(r => 
+    const sesionesConObjetivo = registrosFiltradosUnicos.filter(r =>
       r.duracionObjetivoSeg > 0
     );
-    
-    const totalReal = sesionesConObjetivo.reduce((sum, r) => 
+
+    const totalReal = sesionesConObjetivo.reduce((sum, r) =>
       sum + validarDuracion(r.duracionRealSeg), 0
     );
-    const totalObjetivo = sesionesConObjetivo.reduce((sum, r) => 
+    const totalObjetivo = sesionesConObjetivo.reduce((sum, r) =>
       sum + validarDuracion(r.duracionObjetivoSeg), 0
     );
-    
+
     const sesionesCumplenObjetivo = sesionesConObjetivo.filter(r => {
       const real = validarDuracion(r.duracionRealSeg);
       const objetivo = validarDuracion(r.duracionObjetivoSeg);
       return real >= objetivo * 0.9; // 90% del objetivo
     }).length;
-    
+
     return {
       totalReal: normalizeAggregate(totalReal),
       totalObjetivo: normalizeAggregate(totalObjetivo),
@@ -450,18 +451,18 @@ export function useEstadisticas({
   // Días sin práctica (inactividad)
   const diasSinPractica = useMemo(() => {
     if (registrosFiltradosUnicos.length === 0) return null;
-    
+
     const ultimaSesion = registrosFiltradosUnicos
       .filter(r => r.inicioISO)
       .sort((a, b) => new Date(b.inicioISO) - new Date(a.inicioISO))[0];
-    
+
     if (!ultimaSesion) return null;
-    
+
     const ultimaFecha = new Date(ultimaSesion.inicioISO);
     const hoy = new Date();
     const diffMs = hoy.getTime() - ultimaFecha.getTime();
     const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
+
     return {
       dias: diffDias,
       esInactivo: diffDias > 7,

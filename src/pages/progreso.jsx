@@ -58,6 +58,8 @@ import ResumenTab from "@/components/estadisticas/ResumenTab";
 import ProgresoTab from "@/components/estadisticas/ProgresoTab";
 import HabilidadesView from "@/components/estadisticas/HabilidadesView";
 import FeedbackUnificadoTab from "@/components/estadisticas/FeedbackUnificadoTab";
+import LevelBadge from "@/components/common/LevelBadge";
+
 import TotalXPDisplay from "@/components/estadisticas/TotalXPDisplay";
 import HabilidadesRadarChart from "@/components/estadisticas/HabilidadesRadarChart";
 import HeatmapFranjas from "@/components/estadisticas/HeatmapFranjas";
@@ -71,12 +73,15 @@ import AutoevaluacionesTab from "@/components/estadisticas/AutoevaluacionesTab";
 import ComparativaEstudiantes from "@/components/estadisticas/ComparativaEstudiantes";
 import ModalFeedbackSemanal from "@/components/calendario/ModalFeedbackSemanal";
 import MediaPreviewModal from "@/components/common/MediaPreviewModal";
+import StreakMetric from "@/components/estadisticas/StreakMetric";
+import RatingStarsMetric from "@/components/estadisticas/RatingStarsMetric";
+import KpiTile from "@/components/estadisticas/KpiTile";
 
 // Icons
 import {
     Activity, BarChart3, Star, MessageSquare, Backpack, Target,
     Clock, Trophy, ChevronDown, ChevronUp, Filter, User, TrendingUp,
-    Layers, List, Users, Info, BookOpen, PieChart
+    Layers, List, Users, Info, BookOpen, PieChart, Timer, CalendarRange, Repeat
 } from "lucide-react";
 
 import RequireRole from "@/components/auth/RequireRole";
@@ -177,6 +182,7 @@ function ProgresoPageContent() {
         return estudiantes;
     }, [isEstu, isProf, estudiantes, estudiantesDelProfesor]);
 
+    // Available students for selector (PROF sees their students, ADMIN sees all)
     // Effective student ID for data (ESTU uses their own, PROF/ADMIN uses selected or all)
     // For single student view (e.g., Mochila), use first selected or empty
     const effectiveStudentId = useMemo(() => {
@@ -190,6 +196,17 @@ function ProgresoPageContent() {
         if (selectedStudentIds.length > 0) return selectedStudentIds;
         return []; // Empty = all students (for PROF, will be filtered by estudiantesDelProfesor)
     }, [isEstu, selectedStudentIds, userIdActual]);
+
+    const effectiveIds = useMemo(() => {
+        if (!effectiveStudentId && isProf) return estudiantesDelProfesor;
+        if (!effectiveStudentId && isAdmin) return usuarios.filter(u => u.rolPersonalizado === 'ESTU').map(u => u.id);
+        return effectiveStudentId ? [effectiveStudentId] : [];
+    }, [effectiveStudentId, isProf, isAdmin, estudiantesDelProfesor, usuarios]);
+
+    // Level calculation for Resumen
+    const { currentLevel, nextLevel } = useAggregateLevelGoals(effectiveIds);
+
+
 
     // ============================================================================
     // Data Loading - Registros y Bloques
@@ -848,6 +865,8 @@ function ProgresoPageContent() {
                         alumnosSeleccionados={alumnosSeleccionados}
                         allStudentIds={estudiantesDisponibles.map(s => s.id)}
                         userIdActual={userIdActual}
+                        fechaInicio={periodoInicio}
+                        fechaFin={periodoFin}
                     />
                 )}
 
@@ -1173,36 +1192,50 @@ function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChang
 
     return (
         <div className="space-y-4">
-            {/* KPIs Bar - Compact stats at top */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 py-3 px-2 sm:px-4 bg-[var(--color-surface-muted)]/50 rounded-lg border border-[var(--color-border-default)]/30">
-                <StatTile
-                    value={formatDuracionHM(kpis.tiempoTotal)}
+            {/* KPIs Bar - 6-tile uniform layout */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 pb-4">
+                {/* 1. Tiempo Total */}
+                <KpiTile
+                    icon={Timer}
                     label="Tiempo total"
-                    valueClassName="text-[var(--color-primary)]"
+                    value={`${Math.round((kpis.tiempoTotal || 0) / 60)} min`}
+                    valueClassName="text-orange-500"
                 />
-                <StatTile
-                    value={formatDuracionHM(kpis.tiempoPromedioPorSesion)}
+
+                {/* 2. Promedio/Sesión */}
+                <KpiTile
+                    icon={Clock}
                     label="Prom/sesión"
+                    value={`${Math.round((kpis.tiempoPromedioPorSesion || 0) / 60)} min`}
                 />
-                <StatTile
+
+                {/* 3. Valoración */}
+                <RatingStarsMetric
                     value={kpis.calidadPromedio}
-                    label="Valoración"
-                    sublabel="/4"
-                    valueClassName="text-[var(--color-success)]"
+                    max={4}
                 />
-                <StatTile
-                    value={kpis.racha.actual}
-                    label="Días seguidos"
-                    sublabel={kpis.racha.maxima > kpis.racha.actual ? `(máx: ${kpis.racha.maxima})` : undefined}
-                    valueClassName="text-[var(--color-warning)]"
+
+                {/* 4. Racha */}
+                <StreakMetric
+                    streakDays={kpis.racha.actual}
+                    maxStreak={kpis.racha.maxima}
                 />
-                <StatTile
+
+                {/* 5. Semanas Activas */}
+                <KpiTile
+                    icon={CalendarRange}
+                    label="Semanas activas"
                     value={kpis.semanasDistintas}
-                    label="Sem. practicadas"
+                    subtext="en el periodo"
                 />
-                <StatTile
+
+                {/* 6. Frecuencia Semanal */}
+                <KpiTile
+                    icon={Repeat}
+                    label="Frecuencia semanal"
                     value={kpis.mediaSemanalSesiones.toFixed(1)}
-                    label="Sesiones/sem"
+                    valueClassName="text-[var(--color-success)]"
+                    subtext="ses/sem · media"
                 />
             </div>
 
@@ -1210,7 +1243,7 @@ function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChang
             <CompactCard
                 title="Habilidades"
                 titleRight={
-                    <div className="flex bg-[var(--color-surface-muted)] rounded-md p-0.5">
+                    <div className="flex bg-[var(--color-surface-muted)] rounded-md p-0.5 relative z-10">
                         <button
                             onClick={() => setSourceFilter('experiencia')}
                             className={cn(
@@ -1252,30 +1285,31 @@ function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChang
             >
                 {/* 2-column layout: XP metrics (left) + Radar (right) */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    {/* Left column: Source description + XP + Qualitative - vertically distributed */}
-                    <div className="flex flex-col justify-between h-full min-h-[240px]">
-                        {/* Source description with info tooltip */}
-                        <div className="flex items-center gap-2">
+                    {/* Left column: Nivel + Qualitative + Legend (Top) -> XP (Bottom) */}
+                    <div className="flex flex-col h-full min-h-[300px]">
+                        {/* TOP SECTION: Level + Qualitative + Legend */}
+
+                        {/* Source Info Subtitle */}
+                        <div className="flex justify-start items-center gap-2 mb-3">
                             <div className="flex items-center gap-1 text-[10px] sm:text-xs text-[var(--color-text-secondary)]">
                                 {sourceFilter === 'experiencia' && (
                                     <>
                                         <BookOpen className="w-3 h-3 text-[var(--color-primary)]" />
-                                        <span>XP procedente de práctica</span>
+                                        <span>XP Práctica</span>
                                     </>
                                 )}
                                 {sourceFilter === 'evaluaciones' && (
                                     <>
                                         <PieChart className="w-3 h-3 text-[var(--color-success)]" />
-                                        <span>XP procedente de evaluaciones</span>
+                                        <span>XP Evaluaciones</span>
                                     </>
                                 )}
                                 {sourceFilter === 'ambos' && (
                                     <>
                                         <BookOpen className="w-3 h-3 text-[var(--color-primary)]" />
-                                        <span>Práctica</span>
                                         <span className="text-[var(--color-text-secondary)]/50">+</span>
                                         <PieChart className="w-3 h-3 text-[var(--color-success)]" />
-                                        <span>Evaluaciones</span>
+                                        <span>XP Total</span>
                                     </>
                                 )}
                             </div>
@@ -1293,64 +1327,83 @@ function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChang
                             </TooltipProvider>
                         </div>
 
-                        {/* XP Cards (Motricidad, Articulación, Flexibilidad) */}
-                        <TotalXPDisplay
-                            studentIds={effectiveIds}
-                            filter={xpFilter}
-                            compact
-                        />
-
-                        {/* Qualitative skills: Sonido + Cognición + Legend */}
-                        <div className="flex items-center gap-2 pt-2 border-t border-[var(--color-border-default)]/30">
-                            {/* Sonido */}
-                            <div className="flex items-center gap-1.5 flex-1 p-1.5 bg-[var(--color-surface-muted)]/50 rounded-md">
-                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500/10">
-                                    <Activity className="w-3 h-3 text-blue-500" />
-                                </div>
-                                <div>
-                                    <p className="text-[9px] text-[var(--color-text-secondary)]">Sonido</p>
-                                    <div className="flex items-baseline gap-0.5">
-                                        <span className="text-base font-bold">{getDisplayedSonido().toFixed(1)}</span>
-                                        <span className="text-[9px] text-[var(--color-text-secondary)]">/ 10</span>
-                                    </div>
-                                </div>
+                        <div className="flex flex-wrap items-center justify-between gap-4 w-full">
+                            {/* Level Info (No Badge) */}
+                            <div className="flex flex-col">
+                                <p className="text-lg font-bold leading-none mt-1">Nivel {currentLevel}</p>
+                                <p className="text-[10px] text-[var(--color-text-secondary)] font-medium">
+                                    {currentLevel >= 10 ? "Profesional" :
+                                        currentLevel >= 7 ? "Avanzado" :
+                                            currentLevel >= 4 ? "Intermedio" : "Principiante"}
+                                </p>
                             </div>
 
-                            {/* Cognición */}
-                            <div className="flex items-center gap-1.5 flex-1 p-1.5 bg-[var(--color-surface-muted)]/50 rounded-md">
-                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-500/10">
-                                    <Target className="w-3 h-3 text-purple-500" />
-                                </div>
-                                <div>
-                                    <p className="text-[9px] text-[var(--color-text-secondary)]">Cognición</p>
-                                    <div className="flex items-baseline gap-0.5">
-                                        <span className="text-base font-bold">{getDisplayedCognicion().toFixed(1)}</span>
-                                        <span className="text-[9px] text-[var(--color-text-secondary)]">/ 10</span>
+                            {/* Qualitative skills: Sonido + Cognición + Legend */}
+                            {/* Qualitative skills: Sonido + Cognición + Legend */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {/* Sonido */}
+                                <div className="flex items-center gap-1.5 p-1.5 bg-[var(--color-surface-muted)]/50 rounded-md">
+                                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500/10">
+                                        <Activity className="w-3 h-3 text-blue-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] text-[var(--color-text-secondary)]">Sonido</p>
+                                        <div className="flex items-baseline gap-0.5">
+                                            <span className="text-base font-bold">{getDisplayedSonido().toFixed(1)}</span>
+                                            <span className="text-[9px] text-[var(--color-text-secondary)]">/ 10</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Legend (only when showing multiple series) - vertical layout */}
-                            {sourceFilter === 'ambos' && (
-                                <div className="flex flex-col gap-0.5 text-[9px] text-[var(--color-text-secondary)]">
-                                    <div className="flex items-center gap-1">
-                                        <span className="w-2 h-2 rounded-full bg-[#374151]"></span>
-                                        <span>Total</span>
+                                {/* Cognición */}
+                                <div className="flex items-center gap-1.5 p-1.5 bg-[var(--color-surface-muted)]/50 rounded-md">
+                                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-500/10">
+                                        <Target className="w-3 h-3 text-purple-500" />
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                        <span className="w-2 h-2 rounded-full bg-[#22c55e]"></span>
-                                        <span>Exp</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <span className="w-2 h-2 rounded-full bg-[#f97316]"></span>
-                                        <span>Eval</span>
+                                    <div>
+                                        <p className="text-[9px] text-[var(--color-text-secondary)]">Cognición</p>
+                                        <div className="flex items-baseline gap-0.5">
+                                            <span className="text-base font-bold">{getDisplayedCognicion().toFixed(1)}</span>
+                                            <span className="text-[9px] text-[var(--color-text-secondary)]">/ 10</span>
+                                        </div>
                                     </div>
                                 </div>
-                            )}
+
+                                {/* Legend */}
+                                {sourceFilter === 'ambos' && (
+                                    <div className="flex flex-col gap-0.5 text-[9px] text-[var(--color-text-secondary)] ml-auto">
+                                        <div className="flex items-center gap-1">
+                                            <span className="w-2 h-2 rounded-full bg-[#374151]"></span>
+                                            <span>Total</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <span className="w-2 h-2 rounded-full bg-[#22c55e]"></span>
+                                            <span>Exp</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <span className="w-2 h-2 rounded-full bg-[#f97316]"></span>
+                                            <span>Eval</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
+
+
+
+                        {/* Moved to bottom */}
+                        <div className="mt-auto">
+                            <TotalXPDisplay
+                                studentIds={effectiveIds}
+                                filter={xpFilter}
+                                compact
+                            />
+                        </div>
+
                         {/* Mobile-only spacer before radar */}
                         <div className="h-6 lg:hidden"></div>
                     </div>
+
 
                     {/* Right column: Radar Chart - maximized, centered vertically */}
                     <div className="flex items-center justify-center -mt-8 -mb-8">
@@ -1365,8 +1418,8 @@ function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChang
                         />
                     </div>
                 </div>
-            </CompactCard>
-        </div>
+            </CompactCard >
+        </div >
     );
 }
 
@@ -1377,6 +1430,7 @@ function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChang
 // ============================================================================
 // Tab Estadísticas Content - EMBEDDED (Bloque 3) - 2 Pills: Rendimiento / Ejercicios
 // ============================================================================
+
 
 function TabEstadisticasContent({
     kpis, datosLinea, granularidad, onGranularidadChange, tiempoRealVsObjetivo,
