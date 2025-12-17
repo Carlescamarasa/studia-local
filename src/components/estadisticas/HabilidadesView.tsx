@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import HabilidadesRadarChart from './HabilidadesRadarChart';
 import { useHabilidadesStats, useHabilidadesStatsMultiple } from '@/hooks/useHabilidadesStats';
 import { format } from 'date-fns';
@@ -12,7 +12,7 @@ import {
     useLifetimePracticeXPMultiple,
     useAggregateLevelGoals
 } from '@/hooks/useXP';
-import { Activity, Target, Star, Layers, Info, TrendingUp, BookOpen, PieChart } from 'lucide-react';
+import { Activity, Target, Star, Layers, Info, TrendingUp, BookOpen, PieChart, CheckCircle2, Circle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import TotalXPDisplay from './TotalXPDisplay';
 import LevelBadge from '../common/LevelBadge';
@@ -21,6 +21,9 @@ import CompactCard from './CompactCard';
 import { useQuery } from '@tanstack/react-query';
 import { localDataClient } from '@/api/localDataClient';
 import { cn } from '@/lib/utils';
+import { computeKeyCriteriaStatus, CriteriaStatusResult } from '@/utils/levelLogic';
+import { useEffectiveUser } from '@/components/utils/helpers';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface HabilidadesViewProps {
     alumnosSeleccionados?: string[];
@@ -101,6 +104,68 @@ export default function HabilidadesView({
         },
         enabled: !isMultiple && !!nextLevel
     });
+
+    // =========================================================================
+    // LEVEL CRITERIA STATE (for single student)
+    // =========================================================================
+    const effectiveUser = useEffectiveUser();
+    const [nextLevelCriteria, setNextLevelCriteria] = useState<CriteriaStatusResult[]>([]);
+    const [loadingCriteria, setLoadingCriteria] = useState(false);
+
+    // Load level criteria when single student is selected
+    useEffect(() => {
+        const loadCriteria = async () => {
+            if (!singleId || isMultiple) {
+                setNextLevelCriteria([]);
+                return;
+            }
+            setLoadingCriteria(true);
+            try {
+                const criteria = await computeKeyCriteriaStatus(singleId, nextLevel);
+                setNextLevelCriteria(criteria);
+            } catch (error) {
+                console.error('Error loading criteria:', error);
+                setNextLevelCriteria([]);
+            } finally {
+                setLoadingCriteria(false);
+            }
+        };
+        loadCriteria();
+    }, [singleId, isMultiple, nextLevel]);
+
+    // Handle criteria toggle (for PROF/ADMIN only)
+    const handleCriteriaToggle = async (criterionId: string, currentStatus: string) => {
+        const newStatus = currentStatus === 'PASSED' ? 'FAILED' : 'PASSED';
+
+        // Optimistic update
+        setNextLevelCriteria(prev => prev.map(c =>
+            c.criterion.id === criterionId ? { ...c, status: newStatus as any } : c
+        ));
+
+        try {
+            const allStatus = await localDataClient.entities.StudentCriteriaStatus.list();
+            const existing = allStatus.find((s: any) => s.studentId === singleId && s.criterionId === criterionId);
+
+            if (existing && existing.id && existing.id.length === 36) {
+                await localDataClient.entities.StudentCriteriaStatus.update(existing.id, { status: newStatus });
+            } else {
+                await localDataClient.entities.StudentCriteriaStatus.create({
+                    studentId: singleId,
+                    criterionId: criterionId,
+                    status: newStatus,
+                    assessedAt: new Date().toISOString(),
+                    assessedBy: effectiveUser?.id
+                });
+            }
+        } catch (error) {
+            console.error('Error updating criteria:', error);
+            // Reload on error
+            const criteria = await computeKeyCriteriaStatus(singleId, nextLevel);
+            setNextLevelCriteria(criteria);
+        }
+    };
+
+    const canEdit = effectiveUser?.rolPersonalizado === 'PROF' || effectiveUser?.rolPersonalizado === 'ADMIN';
 
     // Use appropriate data
     const totalXP = isMultiple ? totalXPMultiple : totalXPSingle;
@@ -448,6 +513,49 @@ export default function HabilidadesView({
                                 );
                             })}
                         </div>
+
+                        {/* Level Requirements - only show in single student mode with criteria */}
+                        {!isMultiple && nextLevelCriteria.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-[var(--color-border)]/30">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-secondary)] font-semibold">
+                                        Requisitos Nivel {nextLevel}
+                                    </span>
+                                    <span className="text-[10px] text-[var(--color-text-secondary)]">
+                                        {nextLevelCriteria.filter(c => c.status === 'PASSED').length}/{nextLevelCriteria.length}
+                                    </span>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {nextLevelCriteria.map((item) => {
+                                        const isPassed = item.status === 'PASSED';
+                                        const isEditable = canEdit && item.criterion.source === 'PROF';
+
+                                        return (
+                                            <div
+                                                key={item.criterion.id}
+                                                className={cn(
+                                                    "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] border transition-all",
+                                                    isPassed
+                                                        ? "bg-[var(--color-success)]/10 border-[var(--color-success)]/30 text-[var(--color-success)]"
+                                                        : "bg-[var(--color-surface-muted)] border-[var(--color-border)]/30 text-[var(--color-text-secondary)]",
+                                                    isEditable && "cursor-pointer hover:border-[var(--color-primary)]/50"
+                                                )}
+                                                onClick={() => isEditable && handleCriteriaToggle(item.criterion.id, item.status)}
+                                            >
+                                                {isPassed ? (
+                                                    <CheckCircle2 className="w-3 h-3 shrink-0" />
+                                                ) : (
+                                                    <Circle className="w-3 h-3 shrink-0" />
+                                                )}
+                                                <span className="truncate max-w-[120px] sm:max-w-[180px]">
+                                                    {item.criterion.description}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* RIGHT COLUMN: Radar only (fills space) */}

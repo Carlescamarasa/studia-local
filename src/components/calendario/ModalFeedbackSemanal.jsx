@@ -13,7 +13,7 @@ import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ds";
 import { MessageSquare, Music, Brain, Save, X, Activity, Paperclip, CheckSquare, Trophy, HelpCircle } from "lucide-react";
-import { FeedbacksSemanalAPI } from "@/data/feedbacksSemanalClient";
+// FeedbacksSemanalAPI removed - using localDataClient for Supabase sync
 import { useToast } from "@/components/ui/use-toast";
 import MediaLinksInput from "@/components/common/MediaLinksInput";
 import { normalizeMediaLinks } from "@/components/utils/media";
@@ -230,7 +230,16 @@ export default function ModalFeedbackSemanal({
                 lastEditedAt: new Date().toISOString(),
             };
 
-            await FeedbacksSemanalAPI.upsertFeedbackSemanal(dataToSave);
+            // Upsert using localDataClient (supports Supabase)
+            const existingFeedbacks = await localDataClient.entities.FeedbackSemanal.filter({
+                alumnoId: studentId,
+                semanaInicioISO: weekStartISO
+            });
+            if (existingFeedbacks.length > 0) {
+                await localDataClient.entities.FeedbackSemanal.update(existingFeedbacks[0].id, dataToSave);
+            } else {
+                await localDataClient.entities.FeedbackSemanal.create(dataToSave);
+            }
 
             // Apply XP Deltas to system (Side Effect)
             if (Object.keys(xpDeltas).length > 0) {
