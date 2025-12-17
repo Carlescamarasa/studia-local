@@ -28,6 +28,12 @@ interface HabilidadesViewProps {
     userIdActual?: string;
     fechaInicio?: string;
     fechaFin?: string;
+    /** Hide the Forma/Rango toggle (for Resumen tab) */
+    hideViewModeToggle?: boolean;
+    /** Force a specific view mode when toggle is hidden */
+    forceViewMode?: 'forma' | 'rango';
+    /** Optional custom title override */
+    customTitle?: string;
 }
 
 export default function HabilidadesView({
@@ -35,15 +41,21 @@ export default function HabilidadesView({
     allStudentIds = [],
     userIdActual = '',
     fechaInicio,
-    fechaFin
+    fechaFin,
+    hideViewModeToggle = false,
+    forceViewMode,
+    customTitle
 }: HabilidadesViewProps) {
     // =========================================================================
     // TOGGLE STATE
     // =========================================================================
     // Primary toggle: Experiencia | Evaluaciones | Ambos
     const [sourceFilter, setSourceFilter] = useState<'experiencia' | 'evaluaciones' | 'ambos'>('ambos');
-    // Secondary toggle: Estado de forma | XP del rango
-    const [viewMode, setViewMode] = useState<'forma' | 'rango'>('forma');
+    // Secondary toggle: Estado de forma | XP del rango (controlled by forceViewMode if hideViewModeToggle)
+    const [viewMode, setViewMode] = useState<'forma' | 'rango'>(forceViewMode || 'forma');
+
+    // Use forced mode when toggle is hidden
+    const effectiveViewMode = hideViewModeToggle && forceViewMode ? forceViewMode : viewMode;
 
     // =========================================================================
     // EFFECTIVE IDs LOGIC (same as Resumen)
@@ -237,39 +249,44 @@ export default function HabilidadesView({
 
                         {/* Row 1: Title */}
                         <span className="text-base font-semibold">
-                            {viewMode === 'forma'
-                                ? 'Estado de forma actual'
-                                : `XP del rango seleccionado${fechaInicio && fechaFin ? ` · ${format(parseLocalDate(fechaInicio), 'd MMM', { locale: es })} - ${format(parseLocalDate(fechaFin), 'd MMM yyyy', { locale: es })}` : ''}`
+                            {customTitle
+                                ? customTitle
+                                : (effectiveViewMode === 'forma'
+                                    ? 'Estado de forma actual'
+                                    : `XP del rango seleccionado${fechaInicio && fechaFin ? ` · ${format(parseLocalDate(fechaInicio), 'd MMM', { locale: es })} - ${format(parseLocalDate(fechaFin), 'd MMM yyyy', { locale: es })}` : ''}`
+                                )
                             }
                         </span>
 
                         {/* Row 2: Toggles */}
                         <div className="flex items-center justify-between gap-3 pb-3 border-b border-[var(--color-border)]/30">
-                            {/* Forma/Rango */}
-                            <div className="flex bg-[var(--color-surface-muted)] rounded-md p-0.5">
-                                <button
-                                    onClick={() => setViewMode('forma')}
-                                    className={cn(
-                                        "px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded transition-all",
-                                        viewMode === 'forma'
-                                            ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm"
-                                            : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                                    )}
-                                >
-                                    Forma
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('rango')}
-                                    className={cn(
-                                        "px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded transition-all",
-                                        viewMode === 'rango'
-                                            ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm"
-                                            : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                                    )}
-                                >
-                                    Rango
-                                </button>
-                            </div>
+                            {/* Forma/Rango - only show if not hidden */}
+                            {!hideViewModeToggle && (
+                                <div className="flex bg-[var(--color-surface-muted)] rounded-md p-0.5">
+                                    <button
+                                        onClick={() => setViewMode('forma')}
+                                        className={cn(
+                                            "px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded transition-all",
+                                            effectiveViewMode === 'forma'
+                                                ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm"
+                                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                                        )}
+                                    >
+                                        Forma
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('rango')}
+                                        className={cn(
+                                            "px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded transition-all",
+                                            effectiveViewMode === 'rango'
+                                                ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm"
+                                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                                        )}
+                                    >
+                                        Rango
+                                    </button>
+                                </div>
+                            )}
 
                             {/* Exp/Eval/Ambos + info */}
                             <div className="flex items-center gap-2">
