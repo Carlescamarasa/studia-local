@@ -7,10 +7,10 @@ import { componentStyles } from "@/design/componentStyles";
  * 100% conectado al Design System con tokens semánticos
  * Renderiza automáticamente el contenido de la pestaña activa
  */
-export default function Tabs({ 
-  value, 
-  onChange, 
-  items, 
+export default function Tabs({
+  value,
+  onChange,
+  items,
   variant = "segmented",
   className = "",
   showIconsOnlyMobile = false
@@ -67,7 +67,7 @@ export default function Tabs({
 
     const checkSpace = () => {
       if (isChecking || !containerRef.current) return;
-      
+
       isChecking = true;
       rafId = requestAnimationFrame(() => {
         const container = containerRef.current;
@@ -105,7 +105,7 @@ export default function Tabs({
           const availableWidth = container.offsetWidth || container.clientWidth;
           const gapWidth = (items.length - 1) * 4;
           const shouldShowIconsOnly = hasOverflow || totalNeeded > (availableWidth - gapWidth - 10);
-          
+
           setShowIconsOnly(prev => {
             if (prev !== shouldShowIconsOnly) {
               isChecking = false;
@@ -122,14 +122,14 @@ export default function Tabs({
 
     // Ejecutar después de renderizar
     timeoutId = setTimeout(checkSpace, 250);
-    
+
     const resizeObserver = new ResizeObserver(() => {
       if (!isChecking) {
         clearTimeout(timeoutId);
         timeoutId = setTimeout(checkSpace, 200);
       }
     });
-    
+
     // Observar el contenedor cuando esté disponible
     const checkAndObserve = () => {
       if (containerRef.current) {
@@ -193,11 +193,11 @@ export default function Tabs({
   if (variant === "segmented") {
     return (
       <div className="space-y-6">
-        <div className="flex justify-center w-full overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
-          <div 
+        <div className="flex justify-center w-full overflow-x-auto scrollbar-hide">
+          <div
             ref={containerRef}
             className={cn(
-              componentStyles.components.tabsSegmentedContainer, 
+              componentStyles.components.tabsSegmentedContainer,
               "flex w-full flex-shrink-0 relative",
               "min-w-fit md:min-w-0",
               className
@@ -216,7 +216,7 @@ export default function Tabs({
                 zIndex: 1,
               }}
             />
-            
+
             {items.map((item) => {
               const Icon = item.icon;
               const isActive = value === item.value;
@@ -241,7 +241,7 @@ export default function Tabs({
                     // Asegurar que min-h se respete incluso con flex-col
                     "min-h-[var(--btn-height)]"
                   )}
-                  style={{ 
+                  style={{
                     zIndex: 2,
                     backgroundColor: 'transparent',
                   }}
@@ -279,7 +279,7 @@ export default function Tabs({
   // Variante underline
   return (
     <div className="space-y-6">
-      <div 
+      <div
         className={cn(componentStyles.components.tabsUnderlineContainer, className)}
         role="tablist"
         aria-label="Pestañas de navegación"
