@@ -12,12 +12,15 @@ export const ROUTES = {
     CONFIGURACION: "/configuracion",
     REPORTES: "/reportes",
 
+    // Student
+    HOY: "/hoy",
+    STUDIA: "/studia",
+
     // Other known paths (can be expanded)
     AGENDA: "/agenda",
     BIBLIOTECA: "/biblioteca",
     USUARIOS: "/usuarios",
     PREPARACION: "/preparacion",
-    HOY: "/hoy",
     CALENDARIO: "/calendario",
     SOPORTE: "/soporte",
     SOPORTE_PROF: "/soporte-prof",
@@ -43,4 +46,17 @@ export const toConfiguracion = (tab) => {
  */
 export const toProgreso = (tab) => {
     return tab ? `${ROUTES.PROGRESO}?tab=${tab}` : ROUTES.PROGRESO;
+};
+
+/**
+ * Helper to generate Studia URL with session context
+ * @param {object} params - { asignacionId, semanaIdx, sesionIdx }
+ * @returns {string} The full path with query params
+ */
+export const toStudia = ({ asignacionId, semanaIdx, sesionIdx }) => {
+    const params = new URLSearchParams();
+    if (asignacionId) params.set('asignacionId', asignacionId);
+    if (semanaIdx !== undefined) params.set('semanaIdx', String(semanaIdx));
+    if (sesionIdx !== undefined) params.set('sesionIdx', String(sesionIdx));
+    return `${ROUTES.STUDIA}?${params.toString()}`;
 };
