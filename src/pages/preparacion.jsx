@@ -71,6 +71,7 @@ function PreparacionPageContent() {
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStudentId, setSelectedStudentId] = useState(null);
+    const [filtroEstudiantes, setFiltroEstudiantes] = useState('mis'); // 'mis' | 'todos'
 
     // Tab logic
     const tabActiva = searchParams.get('tab') || 'estudiantes';
@@ -123,16 +124,22 @@ function PreparacionPageContent() {
         );
     }, [estudiantes, asignaciones, userIdActual, isAdmin, isProf]);
 
-    // Search filter
+    // Search filter - apply to either estudiantesDelProfesor or all students based on toggle
     const estudiantesFiltrados = useMemo(() => {
-        if (!searchTerm) return estudiantesDelProfesor;
+        // Base list depends on toggle (ADMIN always sees all, PROF can toggle)
+        let baseList = estudiantes;
+        if (!isAdmin && filtroEstudiantes === 'mis') {
+            baseList = estudiantesDelProfesor;
+        }
+
+        if (!searchTerm) return baseList;
         const term = searchTerm.toLowerCase();
-        return estudiantesDelProfesor.filter(e => {
+        return baseList.filter(e => {
             const nombre = displayName(e).toLowerCase();
             const email = (e.email || '').toLowerCase();
             return nombre.includes(term) || email.includes(term);
         });
-    }, [estudiantesDelProfesor, searchTerm]);
+    }, [estudiantes, estudiantesDelProfesor, searchTerm, filtroEstudiantes, isAdmin]);
 
     // Get assignments for selected student
     const asignacionesDelEstudiante = useMemo(() => {
@@ -248,10 +255,31 @@ function PreparacionPageContent() {
                         <div className="lg:col-span-1">
                             <Card className={componentStyles.containers.cardBase}>
                                 <CardHeader className="pb-3">
-                                    <CardTitle className="text-lg flex items-center gap-2">
-                                        <Users className="w-5 h-5" />
-                                        Mis Estudiantes
-                                    </CardTitle>
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="text-lg flex items-center gap-2">
+                                            <Users className="w-5 h-5" />
+                                            {filtroEstudiantes === 'mis' ? 'Mis Estudiantes' : 'Todos los Estudiantes'}
+                                        </CardTitle>
+                                    </div>
+                                    {/* Toggle Mis/Todos */}
+                                    <div className="flex gap-1 mt-2">
+                                        <Button
+                                            variant={filtroEstudiantes === 'mis' ? 'default' : 'ghost'}
+                                            size="sm"
+                                            onClick={() => setFiltroEstudiantes('mis')}
+                                            className="text-xs h-7 px-2"
+                                        >
+                                            Mis estudiantes
+                                        </Button>
+                                        <Button
+                                            variant={filtroEstudiantes === 'todos' ? 'default' : 'ghost'}
+                                            size="sm"
+                                            onClick={() => setFiltroEstudiantes('todos')}
+                                            className="text-xs h-7 px-2"
+                                        >
+                                            Todos
+                                        </Button>
+                                    </div>
                                     <div className="relative mt-2">
                                         <Input
                                             placeholder="Buscar alumno..."
