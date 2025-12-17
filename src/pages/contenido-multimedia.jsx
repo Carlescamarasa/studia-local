@@ -28,7 +28,7 @@ const STATE_BADGES = {
     deleted: "danger",
 };
 
-export default function ContenidoMultimediaPage() {
+export default function ContenidoMultimediaPage({ embedded = false }) {
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
@@ -318,83 +318,160 @@ export default function ContenidoMultimediaPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-background">
-            <PageHeader
-                icon={Database}
-                title="Contenido Multimedia"
-                subtitle="Gestión centralizada de archivos y enlaces multimedia"
-                actions={
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleMigrateLegacy}
-                            disabled={isMigrating}
-                        >
-                            <RefreshCw className={`w-4 h-4 mr-2 ${isMigrating ? 'animate-spin' : ''}`} />
-                            {isMigrating ? 'Migrando...' : 'Migrar Legacy'}
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => queryClient.invalidateQueries({ queryKey: ['media_assets'] })}
-                        >
-                            <RefreshCw className="w-4 h-4 mr-2" />
-                            Refrescar
-                        </Button>
-                    </div>
-                }
-                filters={
-                    <>
-                        <div className="relative flex-1 min-w-[200px] max-w-sm">
-                            <Input
-                                placeholder="Buscar por nombre, origen o URL..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="h-9"
-                            />
-                            {searchTerm && (
-                                <button
-                                    onClick={() => setSearchTerm('')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            )}
-                        </div>
+        <div className={embedded ? "" : "min-h-screen bg-background"}>
+            {!embedded && (
+                <PageHeader
+                    icon={Database}
+                    title="Contenido Multimedia"
+                    subtitle="Gestión centralizada de archivos y enlaces multimedia"
+                    actions={
                         <div className="flex gap-2">
-                            <select
-                                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                                value={typeFilter}
-                                onChange={(e) => setTypeFilter(e.target.value)}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleMigrateLegacy}
+                                disabled={isMigrating}
                             >
-                                <option value="all">Todos los tipos</option>
-                                <option value="video">Video</option>
-                                <option value="audio">Audio</option>
-                                <option value="image">Imagen</option>
-                                <option value="pdf">PDF</option>
-                                <option value="youtube">YouTube</option>
-                            </select>
-                            <select
-                                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                                value={originFilter}
-                                onChange={(e) => setOriginFilter(e.target.value)}
+                                <RefreshCw className={`w-4 h-4 mr-2 ${isMigrating ? 'animate-spin' : ''}`} />
+                                {isMigrating ? 'Migrando...' : 'Migrar Legacy'}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => queryClient.invalidateQueries({ queryKey: ['media_assets'] })}
                             >
-                                <option value="all">Todos los orígenes</option>
-                                <option value="ejercicio">Ejercicios</option>
-                                <option value="variacion">Variaciones</option>
-                                <option value="pieza">Piezas</option>
-                                <option value="feedback_profesor">Feedback Profesor</option>
-                                <option value="feedback_sesion">Feedback Sesión</option>
-                                <option value="centro_dudas">Soporte</option>
-                                <option value="unlinked">No vinculados</option>
-                            </select>
+                                <RefreshCw className="w-4 h-4 mr-2" />
+                                Refrescar
+                            </Button>
                         </div>
-                    </>
-                }
-            />
+                    }
+                    filters={
+                        <>
+                            <div className="relative flex-1 min-w-[200px] max-w-sm">
+                                <Input
+                                    placeholder="Buscar por nombre, origen o URL..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="h-9"
+                                />
+                                {searchTerm && (
+                                    <button
+                                        onClick={() => setSearchTerm('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex gap-2">
+                                <select
+                                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                                    value={typeFilter}
+                                    onChange={(e) => setTypeFilter(e.target.value)}
+                                >
+                                    <option value="all">Todos los tipos</option>
+                                    <option value="video">Video</option>
+                                    <option value="audio">Audio</option>
+                                    <option value="image">Imagen</option>
+                                    <option value="pdf">PDF</option>
+                                    <option value="youtube">YouTube</option>
+                                </select>
+                                <select
+                                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                                    value={originFilter}
+                                    onChange={(e) => setOriginFilter(e.target.value)}
+                                >
+                                    <option value="all">Todos los orígenes</option>
+                                    <option value="ejercicio">Ejercicios</option>
+                                    <option value="variacion">Variaciones</option>
+                                    <option value="pieza">Piezas</option>
+                                    <option value="feedback_profesor">Feedback Profesor</option>
+                                    <option value="feedback_sesion">Feedback Sesión</option>
+                                    <option value="centro_dudas">Soporte</option>
+                                    <option value="unlinked">No vinculados</option>
+                                </select>
+                            </div>
+                        </>
+                    }
+                />
+            )}
 
-            <div className={componentStyles.layout.page}>
+            {embedded && (
+                <div className="flex flex-col gap-4 mb-6 p-4 bg-card rounded-lg border shadow-sm">
+                    <div className="flex flex-col sm:flex-row justify-between gap-4">
+                        {/* Filters Left Side */}
+                        <div className="flex-1 flex flex-col sm:flex-row gap-2">
+                            <div className="relative flex-1 min-w-[200px] max-w-sm">
+                                <Input
+                                    placeholder="Buscar por nombre, origen o URL..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="h-9"
+                                />
+                                {searchTerm && (
+                                    <button
+                                        onClick={() => setSearchTerm('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex gap-2">
+                                <select
+                                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                                    value={typeFilter}
+                                    onChange={(e) => setTypeFilter(e.target.value)}
+                                >
+                                    <option value="all">Todos los tipos</option>
+                                    <option value="video">Video</option>
+                                    <option value="audio">Audio</option>
+                                    <option value="image">Imagen</option>
+                                    <option value="pdf">PDF</option>
+                                    <option value="youtube">YouTube</option>
+                                </select>
+                                <select
+                                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                                    value={originFilter}
+                                    onChange={(e) => setOriginFilter(e.target.value)}
+                                >
+                                    <option value="all">Todos los orígenes</option>
+                                    <option value="ejercicio">Ejercicios</option>
+                                    <option value="variacion">Variaciones</option>
+                                    <option value="pieza">Piezas</option>
+                                    <option value="feedback_profesor">Feedback Profesor</option>
+                                    <option value="feedback_sesion">Feedback Sesión</option>
+                                    <option value="centro_dudas">Soporte</option>
+                                    <option value="unlinked">No vinculados</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Actions Right Side */}
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleMigrateLegacy}
+                                disabled={isMigrating}
+                            >
+                                <RefreshCw className={`w-4 h-4 mr-2 ${isMigrating ? 'animate-spin' : ''}`} />
+                                {isMigrating ? 'Migrando...' : 'Migrar Legacy'}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => queryClient.invalidateQueries({ queryKey: ['media_assets'] })}
+                            >
+                                <RefreshCw className="w-4 h-4 mr-2" />
+                                Refrescar
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className={embedded ? "" : componentStyles.layout.page}>
                 <Card className={`${componentStyles.containers.cardBase}`}>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">
