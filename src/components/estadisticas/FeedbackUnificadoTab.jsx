@@ -24,7 +24,8 @@ export default function FeedbackUnificadoTab({
     onEditFeedback,
     puedeEditar,
     onMediaClick,
-    isMediaModalOpen
+    isMediaModalOpen,
+    actionButton
 }) {
     const isMobile = useIsMobile();
 
@@ -323,7 +324,7 @@ export default function FeedbackUnificadoTab({
     return (
         <>
             {/* Pills filter - OUTSIDE the card like Estadísticas/Resumen */}
-            <div className="flex justify-center mb-6">
+            <div className="relative flex justify-center items-center mb-6">
                 <div className="flex bg-[var(--color-surface-muted)] p-1 rounded-lg">
                     <button
                         onClick={() => setTipoFiltro('todos')}
@@ -394,6 +395,11 @@ export default function FeedbackUnificadoTab({
                         )}
                     </button>
                 </div>
+                {actionButton && (
+                    <div className="absolute right-0">
+                        {actionButton}
+                    </div>
+                )}
             </div>
 
             {/* Content Card - no header since title is in tab */}

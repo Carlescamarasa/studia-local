@@ -16,7 +16,10 @@ import {
   Filter,
   CheckCircle,
   Clock,
-  User
+  User,
+  Trash2,
+  List,
+  MailOpen
 } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { toast } from "sonner";
@@ -27,6 +30,7 @@ import {
   getAllTickets,
   getTicketById,
   updateTicket,
+  deleteTicket,
   getMensajesByTicket,
   createMensaje
 } from "@/data/supportTicketsClient";
@@ -170,6 +174,29 @@ function SoporteProfPageContent() {
       setUploadingVideo(false);
     },
   });
+
+  // Estado para confirmación de eliminación (solo admin)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Mutación para eliminar ticket (solo admin)
+  const deleteTicketMutation = useMutation({
+    mutationFn: ({ ticketId, userId, isAdmin }) => deleteTicket(ticketId, userId, isAdmin),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['support-tickets-prof'] });
+      setSelectedTicketId(null);
+      setShowDeleteConfirm(false);
+      toast.success('Conversación eliminada');
+    },
+    onError: (error) => {
+      toast.error(`Error al eliminar: ${error.message}`);
+      setShowDeleteConfirm(false);
+    },
+  });
+
+  const handleDeleteTicket = () => {
+    if (!selectedTicketId || !user?.id || !isAdmin) return;
+    deleteTicketMutation.mutate({ ticketId: selectedTicketId, userId: user.id, isAdmin: true });
+  };
 
   const handleUpdateEstado = (nuevoEstado) => {
     if (!selectedTicketId || !selectedTicket) return;
@@ -321,50 +348,42 @@ function SoporteProfPageContent() {
                   )}
 
                   {/* Filtros de estado */}
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex gap-1 w-full">
                     <Button
-                      variant={estadoFilter === 'todos' ? 'primary' : 'outline'}
+                      variant={estadoFilter === 'todos' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setEstadoFilter('todos')}
-                      className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-xl ${estadoFilter === 'todos'
-                        ? componentStyles.buttons.primary
-                        : componentStyles.buttons.outline
-                        }`}
+                      title="Todos"
+                      className="flex-1"
                     >
-                      Todos
+                      <List className="w-4 h-4" />
                     </Button>
                     <Button
-                      variant={estadoFilter === 'abierto' ? 'primary' : 'outline'}
+                      variant={estadoFilter === 'abierto' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setEstadoFilter('abierto')}
-                      className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-xl ${estadoFilter === 'abierto'
-                        ? componentStyles.buttons.primary
-                        : componentStyles.buttons.outline
-                        }`}
+                      title="Abiertos"
+                      className="flex-1"
                     >
-                      Abiertos
+                      <MailOpen className="w-4 h-4" />
                     </Button>
                     <Button
-                      variant={estadoFilter === 'en_proceso' ? 'primary' : 'outline'}
+                      variant={estadoFilter === 'en_proceso' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setEstadoFilter('en_proceso')}
-                      className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-xl ${estadoFilter === 'en_proceso'
-                        ? componentStyles.buttons.primary
-                        : componentStyles.buttons.outline
-                        }`}
+                      title="En proceso"
+                      className="flex-1"
                     >
-                      En proceso
+                      <Clock className="w-4 h-4" />
                     </Button>
                     <Button
-                      variant={estadoFilter === 'cerrado' ? 'primary' : 'outline'}
+                      variant={estadoFilter === 'cerrado' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setEstadoFilter('cerrado')}
-                      className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-xl ${estadoFilter === 'cerrado'
-                        ? componentStyles.buttons.primary
-                        : componentStyles.buttons.outline
-                        }`}
+                      title="Cerrados"
+                      className="flex-1"
                     >
-                      Cerrados
+                      <CheckCircle className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
@@ -450,8 +469,8 @@ function SoporteProfPageContent() {
                         </>
                       )}
                     </div>
-                    {selectedTicket && selectedTicket.estado !== 'cerrado' && (
-                      <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
+                      {selectedTicket && selectedTicket.estado !== 'cerrado' && (
                         <select
                           value={selectedTicket.estado}
                           onChange={(e) => handleUpdateEstado(e.target.value)}
@@ -462,8 +481,45 @@ function SoporteProfPageContent() {
                           <option value="en_proceso">En proceso</option>
                           <option value="cerrado">Cerrado</option>
                         </select>
-                      </div>
-                    )}
+                      )}
+                      {/* Delete button - solo admin */}
+                      {isAdmin && !showDeleteConfirm && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowDeleteConfirm(true)}
+                          className="text-[var(--color-text-secondary)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10"
+                          title="Eliminar conversación"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {isAdmin && showDeleteConfirm && (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowDeleteConfirm(false)}
+                            disabled={deleteTicketMutation.isPending}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleDeleteTicket}
+                            disabled={deleteTicketMutation.isPending}
+                            className="bg-[var(--color-danger)] hover:bg-[var(--color-danger)]/90"
+                          >
+                            {deleteTicketMutation.isPending ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              'Eliminar'
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">

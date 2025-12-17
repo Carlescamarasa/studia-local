@@ -914,9 +914,18 @@ function ProgresoPageContent() {
 
                 {tabActiva === 'feedback' && (
                     <TabBoundary>
-                        <div className="space-y-4">
-                            {(isProf || isAdmin) && alumnosSeleccionados.length === 1 && (
-                                <div className="flex justify-end">
+                        <FeedbackUnificadoTab
+                            feedbacks={isEstu ? feedbackProfesor : feedbacksParaProfAdmin}
+                            evaluaciones={evaluacionesFiltradas}
+                            registros={registrosFiltradosUnicos}
+                            usuarios={usuariosMap}
+                            isEstu={isEstu}
+                            onEditFeedback={(isProf || isAdmin) ? handleEditFeedback : undefined}
+                            puedeEditar={(f) => isProf || isAdmin}
+                            onMediaClick={handleMediaClick}
+                            isMediaModalOpen={mediaPreviewOpen}
+                            actionButton={
+                                (isProf || isAdmin) && alumnosSeleccionados.length === 1 ? (
                                     <Button
                                         onClick={handleCreateFeedback}
                                         variant="primary"
@@ -926,20 +935,9 @@ function ProgresoPageContent() {
                                         <MessageSquare className="w-4 h-4" />
                                         Nuevo Feedback Semanal
                                     </Button>
-                                </div>
-                            )}
-                            <FeedbackUnificadoTab
-                                feedbacks={isEstu ? feedbackProfesor : feedbacksParaProfAdmin}
-                                evaluaciones={evaluacionesFiltradas}
-                                registros={registrosFiltradosUnicos}
-                                usuarios={usuariosMap}
-                                isEstu={isEstu}
-                                onEditFeedback={(isProf || isAdmin) ? handleEditFeedback : undefined}
-                                puedeEditar={(f) => isProf || isAdmin} // Simple permission check
-                                onMediaClick={handleMediaClick}
-                                isMediaModalOpen={mediaPreviewOpen}
-                            />
-                        </div>
+                                ) : undefined
+                            }
+                        />
                     </TabBoundary>
                 )}
 
