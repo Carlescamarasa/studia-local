@@ -77,6 +77,7 @@ import SessionContentView from "@/components/study/SessionContentView";
 import MediaEmbed from "@/components/common/MediaEmbed";
 import ReportErrorButtonInTimer from "@/components/common/ReportErrorButtonInTimer";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useDockToFooterOffset } from "@/hooks/useDockToFooterOffset";
 
 // Create remote API instance
 const remoteDataAPI = createRemoteDataAPI();
@@ -133,6 +134,36 @@ function StudiaPageContent() {
     const [instruccionesOpen, setInstruccionesOpen] = useState(true);
     const [objetivoOpen, setObjetivoOpen] = useState(true);
     const footerRef = useRef(null);
+    const chevronRef = useRef(null);
+
+    // Use dock hook for precise Piano-Footer sync using real DOM measurements
+    const { syncNow, startTracking, attachTransitionListeners } = useDockToFooterOffset({
+        anchorRef: footerRef,
+        cssVarName: '--footer-offset',
+        enabled: true,
+    });
+
+    // Attach transition listeners to footer for rAF tracking during animation
+    useEffect(() => {
+        if (footerRef.current) {
+            const cleanup = attachTransitionListeners(footerRef.current);
+            // Initial sync after DOM is ready
+            syncNow();
+            return cleanup;
+        }
+    }, [attachTransitionListeners, syncNow]);
+
+    // Sync on timerCollapsed change (triggers transition, rAF will track)
+    useEffect(() => {
+        syncNow();
+    }, [timerCollapsed, syncNow]);
+
+    // Sync when piano opens (ensure correct offset before it animates in)
+    useEffect(() => {
+        if (mostrarPiano) {
+            syncNow();
+        }
+    }, [mostrarPiano, syncNow]);
 
     // Timing state
     const [registroSesionId, setRegistroSesionId] = useState(null);

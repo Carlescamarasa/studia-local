@@ -50,6 +50,7 @@ export default function ModalFeedbackSemanal({
 
     // --- LEFT COLUMN STATE (Level Logic) ---
     const [currentLevel, setCurrentLevel] = useState(0);
+    const [currentLevelConfig, setCurrentLevelConfig] = useState(null); // Config for CURRENT level (XP targets)
     const [nextLevelCriteria, setNextLevelCriteria] = useState([]);
     const [promotionCheck, setPromotionCheck] = useState(null);
     const [loadingLevelData, setLoadingLevelData] = useState(false);
@@ -162,8 +163,13 @@ export default function ModalFeedbackSemanal({
         setLoadingLevelData(true);
         try {
             const user = await localDataClient.entities.User.get(studentId);
-            const level = user?.nivelTecnico || 0;
+            const level = user?.nivelTecnico || 1;
             setCurrentLevel(level);
+
+            // Fetch current level config for XP targets (the requirements FOR current level)
+            const allConfigs = await localDataClient.entities.LevelConfig.list();
+            const config = allConfigs.find(c => c.level === level) || null;
+            setCurrentLevelConfig(config);
 
             const criteria = await computeKeyCriteriaStatus(studentId, level + 1);
             setNextLevelCriteria(criteria);
@@ -422,7 +428,6 @@ export default function ModalFeedbackSemanal({
                                 className="w-full mt-2"
                                 size="sm"
                                 variant={promotionCheck?.allowed ? 'primary' : 'outline'}
-                                disabled={!promotionCheck?.allowed}
                             >
                                 <Trophy className="w-4 h-4 mr-2" />
                                 Ascender de Nivel
@@ -516,9 +521,9 @@ export default function ModalFeedbackSemanal({
                                             </h3>
                                             <div className="grid gap-4">
                                                 {[
-                                                    { id: 'motricidad', label: 'Motricidad', value: deltaMotricidad, setter: setDeltaMotricidad, targetXP: promotionCheck?.config?.minXpMotr },
-                                                    { id: 'articulacion', label: 'Articulación', value: deltaArticulacion, setter: setDeltaArticulacion, targetXP: promotionCheck?.config?.minXpArt },
-                                                    { id: 'flexibilidad', label: 'Flexibilidad', value: deltaFlexibilidad, setter: setDeltaFlexibilidad, targetXP: promotionCheck?.config?.minXpFlex },
+                                                    { id: 'motricidad', label: 'Motricidad', value: deltaMotricidad, setter: setDeltaMotricidad, targetXP: currentLevelConfig?.minXpMotr },
+                                                    { id: 'articulacion', label: 'Articulación', value: deltaArticulacion, setter: setDeltaArticulacion, targetXP: currentLevelConfig?.minXpArt },
+                                                    { id: 'flexibilidad', label: 'Flexibilidad', value: deltaFlexibilidad, setter: setDeltaFlexibilidad, targetXP: currentLevelConfig?.minXpFlex },
                                                 ].map((skill) => (
                                                     <div key={skill.id} className="flex items-center justify-between p-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-default)] shadow-sm">
                                                         <div>

@@ -589,7 +589,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-hidden">
             {/* Categoría */}
             <div className="space-y-2">
               <Label htmlFor="category">Categoría *</Label>

@@ -48,18 +48,17 @@ export default function TotalXPDisplay({ studentId, studentIds, filter = ['evalu
         enabled: !!singleId && !isMultiple
     });
 
-    const currentLevel = studentProfile?.nivelTecnico || 0;
-    const nextLevel = currentLevel + 1;
+    const currentLevel = studentProfile?.nivelTecnico || 1;
 
-    // Fetch next level config to get required XP (single student only)
-    const { data: nextLevelConfig } = useQuery({
-        queryKey: ['level-config', nextLevel],
+    // Fetch current level config to get required XP (single student only)
+    const { data: currentLevelConfig } = useQuery({
+        queryKey: ['level-config', currentLevel],
         queryFn: async () => {
             const configs = await localDataClient.entities.LevelConfig.list();
-            const config = configs.find((c: any) => c.level === nextLevel);
+            const config = configs.find((c: any) => c.level === currentLevel);
             return config || null;
         },
-        enabled: !isMultiple && !!nextLevel
+        enabled: !isMultiple && !!currentLevel
     });
 
     if (!hasData) {
@@ -101,12 +100,12 @@ export default function TotalXPDisplay({ studentId, studentIds, filter = ['evalu
             return aggregatedGoals[skill] || 100;
         }
 
-        // Case Single: Use level config
-        if (!nextLevelConfig) return 100; // Fallback
+        // Case Single: Use current level config
+        if (!currentLevelConfig) return 100; // Fallback
         switch (skill) {
-            case 'motricidad': return nextLevelConfig.minXpMotr || 0;
-            case 'articulacion': return nextLevelConfig.minXpArt || 0;
-            case 'flexibilidad': return nextLevelConfig.minXpFlex || 0;
+            case 'motricidad': return currentLevelConfig.minXpMotr || 0;
+            case 'articulacion': return currentLevelConfig.minXpArt || 0;
+            case 'flexibilidad': return currentLevelConfig.minXpFlex || 0;
             default: return 0;
         }
     };
