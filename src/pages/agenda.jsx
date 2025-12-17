@@ -902,33 +902,34 @@ function AgendaPageContent() {
         </div>
       </div>
 
-      {/* Filtro de estudiantes (solo para PROF) */}
-      {isProfesorOrAdmin && !isAdmin && (
-        <div className="px-4 sm:px-6 py-3 border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)]">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFiltroEstudiantes('asignados')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filtroEstudiantes === 'asignados'
-                ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)]'
-                : 'bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]'
-                }`}
-            >
-              Mis alumnos
-            </button>
-            <button
-              onClick={() => setFiltroEstudiantes('todos')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filtroEstudiantes === 'todos'
-                ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)]'
-                : 'bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]'
-                }`}
-            >
-              Ver todos
-            </button>
-          </div>
-        </div>
-      )}
 
+      {/* Filtro de estudiantes (solo para PROF) */}
       <div className={componentStyles.layout.page}>
+        {isProfesorOrAdmin && !isAdmin && (
+          <div className="mb-4 px-4 py-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-muted)]">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setFiltroEstudiantes('asignados')}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filtroEstudiantes === 'asignados'
+                  ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)]'
+                  : 'bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]'
+                  }`}
+              >
+                Mis alumnos
+              </button>
+              <button
+                onClick={() => setFiltroEstudiantes('todos')}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filtroEstudiantes === 'todos'
+                  ? 'bg-[var(--color-primary)] text-[var(--color-text-inverse)]'
+                  : 'bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]'
+                  }`}
+              >
+                Ver todos
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Cards de estudiantes */}
         <div className="space-y-3">
           {tableData.length === 0 ? (

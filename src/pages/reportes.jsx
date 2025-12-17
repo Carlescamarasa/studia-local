@@ -321,32 +321,46 @@ function ReportesPageContent() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-background">
       <PageHeader
         title="Reportes de errores"
         description="Gestiona los reportes de errores y sugerencias de los usuarios"
         icon={Bug}
       />
 
-      <Card className="bg-[var(--color-surface)]">
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-4">
-            {/* Búsqueda */}
-            <div className="w-full">
+      <div className={componentStyles.layout.page}>
+        <div className="flex flex-col gap-4">
+          {/* Búsqueda y Filtros */}
+          <div className="flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between">
+            <div className="w-full xl:w-auto flex-1 min-w-[300px]">
               <div className="relative">
                 <Input
                   placeholder="Buscar en descripciones..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className=""
+                  className={`w-full ${componentStyles.controls.inputDefault}`}
                 />
               </div>
             </div>
 
-            {/* Filtros de estado y categoría */}
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+              {/* Select de categoría */}
+              <div className="w-full sm:w-[200px]">
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className={componentStyles.controls.selectDefault}>
+                    <SelectValue placeholder="Categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las categorías</SelectItem>
+                    {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Botones de estado */}
-              <div className="flex flex-wrap gap-2 flex-1">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   variant={statusFilter === 'active' ? 'default' : 'outline'}
                   onClick={() => setStatusFilter('active')}
@@ -388,204 +402,189 @@ function ReportesPageContent() {
                   Todos
                 </Button>
               </div>
-
-              {/* Select de categoría */}
-              <div className="w-full sm:w-auto sm:min-w-[180px]">
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Categoría" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas las categorías</SelectItem>
-                    {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <Card className="bg-[var(--color-surface)]">
-        <CardContent className="pt-6">
-          {isLoading ? (
-            <div className="text-center py-8 text-ui/60">Cargando reportes...</div>
-          ) : reportsFiltrados.length === 0 ? (
-            <div className="text-center py-8 text-ui/60">No hay reportes que mostrar</div>
-          ) : (
-            <UnifiedTable
-              data={reportsFiltrados}
-              columns={columns}
-              selectable={true}
-              keyField="id"
-              onRowClick={(report) => handleViewReport(report)}
-              bulkActions={[
-                {
-                  label: 'Marcar como nuevo',
-                  icon: XCircle,
-                  onClick: handleBulkUpdateStatus('nuevo'),
-                },
-                {
-                  label: 'Marcar como en proceso',
-                  icon: Clock,
-                  onClick: handleBulkUpdateStatus('en_revision'),
-                },
-                {
-                  label: 'Marcar como resuelto',
-                  icon: CheckCircle,
-                  onClick: handleBulkUpdateStatus('resuelto'),
-                },
-                {
-                  label: 'Eliminar',
-                  icon: Trash2,
-                  onClick: (selectedIds) => {
-                    if (window.confirm(`¿Estás seguro de que quieres eliminar ${selectedIds.length} reporte(s)?`)) {
-                      bulkDeleteMutation.mutate(selectedIds);
-                    }
+        <Card className={componentStyles.containers.cardBase}>
+          <CardContent className="pt-6">
+            {isLoading ? (
+              <div className="text-center py-8 text-ui/60">Cargando reportes...</div>
+            ) : reportsFiltrados.length === 0 ? (
+              <div className="text-center py-8 text-ui/60">No hay reportes que mostrar</div>
+            ) : (
+              <UnifiedTable
+                data={reportsFiltrados}
+                columns={columns}
+                selectable={true}
+                keyField="id"
+                onRowClick={(report) => handleViewReport(report)}
+                bulkActions={[
+                  {
+                    label: 'Marcar como nuevo',
+                    icon: XCircle,
+                    onClick: handleBulkUpdateStatus('nuevo'),
                   },
-                  variant: 'danger',
-                },
-              ]}
-            />
-          )}
-        </CardContent>
-      </Card>
+                  {
+                    label: 'Marcar como en proceso',
+                    icon: Clock,
+                    onClick: handleBulkUpdateStatus('en_revision'),
+                  },
+                  {
+                    label: 'Marcar como resuelto',
+                    icon: CheckCircle,
+                    onClick: handleBulkUpdateStatus('resuelto'),
+                  },
+                  {
+                    label: 'Eliminar',
+                    icon: Trash2,
+                    onClick: (selectedIds) => {
+                      if (window.confirm(`¿Estás seguro de que quieres eliminar ${selectedIds.length} reporte(s)?`)) {
+                        bulkDeleteMutation.mutate(selectedIds);
+                      }
+                    },
+                    variant: 'danger',
+                  },
+                ]}
+              />
+            )}
+          </CardContent>
+        </Card>
 
-      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
-        <DialogContent size="lg" className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Detalles del reporte</DialogTitle>
-            <DialogDescription>
-              Información completa del reporte y opciones de gestión
-            </DialogDescription>
-          </DialogHeader>
+        <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+          <DialogContent size="lg" className="max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Detalles del reporte</DialogTitle>
+              <DialogDescription>
+                Información completa del reporte y opciones de gestión
+              </DialogDescription>
+            </DialogHeader>
 
-          {selectedReport && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs text-ui/60">Categoría</Label>
-                  <p className="font-medium">{CATEGORY_LABELS[selectedReport.category] || selectedReport.category}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-ui/60">Estado</Label>
+            {selectedReport && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Badge variant={STATUS_VARIANTS[selectedReport.status]}>
-                      {STATUS_LABELS[selectedReport.status]}
-                    </Badge>
+                    <Label className="text-xs text-ui/60">Categoría</Label>
+                    <p className="font-medium">{CATEGORY_LABELS[selectedReport.category] || selectedReport.category}</p>
                   </div>
-                </div>
-                <div>
-                  <Label className="text-xs text-ui/60">Creado por</Label>
-                  <p className="text-sm font-medium">
-                    {selectedReport.createdByName || 'Usuario desconocido'}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-xs text-ui/60">Fecha de creación</Label>
-                  <p className="text-sm">
-                    {new Date(selectedReport.createdAt).toLocaleString('es-ES')}
-                  </p>
-                </div>
-                {selectedReport.resolvedAt && (
                   <div>
-                    <Label className="text-xs text-ui/60">Resuelto el</Label>
-                    <p className="text-sm">
-                      {new Date(selectedReport.resolvedAt).toLocaleString('es-ES')}
+                    <Label className="text-xs text-ui/60">Estado</Label>
+                    <div>
+                      <Badge variant={STATUS_VARIANTS[selectedReport.status]}>
+                        {STATUS_LABELS[selectedReport.status]}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-ui/60">Creado por</Label>
+                    <p className="text-sm font-medium">
+                      {selectedReport.createdByName || 'Usuario desconocido'}
                     </p>
                   </div>
-                )}
-              </div>
-
-              <div>
-                <Label className="text-xs text-ui/60">Descripción</Label>
-                <p className="text-sm whitespace-pre-wrap bg-[var(--color-surface-muted)] p-3 rounded-lg">
-                  {selectedReport.description}
-                </p>
-              </div>
-
-              {selectedReport.screenshotUrl && (
-                <div>
-                  <Label className="text-xs text-ui/60">Captura de pantalla</Label>
-                  <div className="mt-2 border rounded-lg p-2 bg-[var(--color-surface-muted)]">
-                    <img
-                      src={selectedReport.screenshotUrl}
-                      alt="Captura de pantalla del reporte"
-                      className="max-w-full h-auto rounded"
-                    />
+                  <div>
+                    <Label className="text-xs text-ui/60">Fecha de creación</Label>
+                    <p className="text-sm">
+                      {new Date(selectedReport.createdAt).toLocaleString('es-ES')}
+                    </p>
                   </div>
-                </div>
-              )}
-
-              {selectedReport.audioUrl && (
-                <div>
-                  <Label className="text-xs text-ui/60">Nota de voz</Label>
-                  <div className="mt-2">
-                    <AudioPlayer url={selectedReport.audioUrl} />
-                  </div>
-                </div>
-              )}
-
-              {selectedReport.context && (
-                <div>
-                  <Label className="text-xs text-ui/60">Información técnica</Label>
-                  <details className="mt-2">
-                    <summary className="cursor-pointer text-sm font-medium text-[var(--color-text-primary)] hover:text-[var(--color-primary)] transition-colors">
-                      Ver detalles técnicos
-                    </summary>
-                    <div className="mt-2 max-h-[300px] overflow-y-auto">
-                      <pre className="text-xs bg-[var(--color-surface-muted)] p-3 rounded-lg whitespace-pre-wrap break-words">
-                        {JSON.stringify(selectedReport.context, null, 2)}
-                      </pre>
+                  {selectedReport.resolvedAt && (
+                    <div>
+                      <Label className="text-xs text-ui/60">Resuelto el</Label>
+                      <p className="text-sm">
+                        {new Date(selectedReport.resolvedAt).toLocaleString('es-ES')}
+                      </p>
                     </div>
-                  </details>
+                  )}
                 </div>
-              )}
 
-              <div>
-                <Label htmlFor="adminNotes">Notas del administrador</Label>
-                <Textarea
-                  id="adminNotes"
-                  value={adminNotes}
-                  onChange={(e) => setAdminNotes(e.target.value)}
-                  placeholder="Añade notas internas sobre este reporte..."
-                  rows={3}
-                  className="resize-none"
-                />
-              </div>
+                <div>
+                  <Label className="text-xs text-ui/60">Descripción</Label>
+                  <p className="text-sm whitespace-pre-wrap bg-[var(--color-surface-muted)] p-3 rounded-lg">
+                    {selectedReport.description}
+                  </p>
+                </div>
 
-              <div className="flex flex-wrap gap-2 pt-4 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => handleUpdateStatus('nuevo')}
-                  disabled={updateMutation.isPending || selectedReport.status === 'nuevo'}
-                  className={componentStyles.buttons.outline}
-                >
-                  Marcar como nuevo
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => handleUpdateStatus('en_revision')}
-                  disabled={updateMutation.isPending || selectedReport.status === 'en_revision'}
-                  className={componentStyles.buttons.outline}
-                >
-                  En proceso
-                </Button>
-                <Button
-                  onClick={() => handleUpdateStatus('resuelto')}
-                  disabled={updateMutation.isPending || selectedReport.status === 'resuelto'}
-                  className={`${componentStyles.buttons.primary} gap-2`}
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  Marcar como resuelto
-                </Button>
+                {selectedReport.screenshotUrl && (
+                  <div>
+                    <Label className="text-xs text-ui/60">Captura de pantalla</Label>
+                    <div className="mt-2 border rounded-lg p-2 bg-[var(--color-surface-muted)]">
+                      <img
+                        src={selectedReport.screenshotUrl}
+                        alt="Captura de pantalla del reporte"
+                        className="max-w-full h-auto rounded"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {selectedReport.audioUrl && (
+                  <div>
+                    <Label className="text-xs text-ui/60">Nota de voz</Label>
+                    <div className="mt-2">
+                      <AudioPlayer url={selectedReport.audioUrl} />
+                    </div>
+                  </div>
+                )}
+
+                {selectedReport.context && (
+                  <div>
+                    <Label className="text-xs text-ui/60">Información técnica</Label>
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-sm font-medium text-[var(--color-text-primary)] hover:text-[var(--color-primary)] transition-colors">
+                        Ver detalles técnicos
+                      </summary>
+                      <div className="mt-2 max-h-[300px] overflow-y-auto">
+                        <pre className="text-xs bg-[var(--color-surface-muted)] p-3 rounded-lg whitespace-pre-wrap break-words">
+                          {JSON.stringify(selectedReport.context, null, 2)}
+                        </pre>
+                      </div>
+                    </details>
+                  </div>
+                )}
+
+                <div>
+                  <Label htmlFor="adminNotes">Notas del administrador</Label>
+                  <Textarea
+                    id="adminNotes"
+                    value={adminNotes}
+                    onChange={(e) => setAdminNotes(e.target.value)}
+                    placeholder="Añade notas internas sobre este reporte..."
+                    rows={3}
+                    className="resize-none"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleUpdateStatus('nuevo')}
+                    disabled={updateMutation.isPending || selectedReport.status === 'nuevo'}
+                    className={componentStyles.buttons.outline}
+                  >
+                    Marcar como nuevo
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleUpdateStatus('en_revision')}
+                    disabled={updateMutation.isPending || selectedReport.status === 'en_revision'}
+                    className={componentStyles.buttons.outline}
+                  >
+                    En proceso
+                  </Button>
+                  <Button
+                    onClick={() => handleUpdateStatus('resuelto')}
+                    disabled={updateMutation.isPending || selectedReport.status === 'resuelto'}
+                    className={`${componentStyles.buttons.primary} gap-2`}
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Marcar como resuelto
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }
