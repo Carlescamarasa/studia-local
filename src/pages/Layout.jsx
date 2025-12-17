@@ -80,11 +80,11 @@ const navigationByRole = {
     { title: "Configuración", url: toConfiguracion('version'), icon: Settings, group: "Sistema" },
   ],
   PROF: [
-    { title: "Progreso", url: toProgreso('resumen'), icon: Activity, group: "Principal" },
-    { title: "Preparación", url: ROUTES.PREPARACION, icon: Target, group: "Planificador" },
-    { title: "Agenda", url: ROUTES.AGENDA, icon: Calendar, group: "Planificador" },
-    { title: "Biblioteca", url: ROUTES.BIBLIOTECA, icon: Edit3, group: "Planificador" },
-    { title: "Tickets alumnos", url: ROUTES.SOPORTE_PROF, icon: MessageSquare, group: "Profesor" },
+    { title: "Agenda", url: ROUTES.AGENDA, icon: Calendar, group: "Docencia" },
+    { title: "Progreso", url: toProgreso('resumen'), icon: Activity, group: "Docencia" },
+    { title: "Tickets alumnos", url: ROUTES.SOPORTE_PROF, icon: MessageSquare, group: "Docencia" },
+    { title: "Preparación", url: ROUTES.PREPARACION, icon: Target, group: "Gestión" },
+    { title: "Biblioteca", url: ROUTES.BIBLIOTECA, icon: Edit3, group: "Gestión" },
   ],
   ESTU: [
     { title: "Studia ahora", url: ROUTES.HOY, icon: PlayCircle, group: "Estudio" },
