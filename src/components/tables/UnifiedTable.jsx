@@ -56,7 +56,7 @@ export default function UnifiedTable({
 
   const handleSort = (columnKey) => {
     if (!columnKey) return;
-    
+
     if (sortColumn === columnKey) {
       setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
     } else {
@@ -87,7 +87,7 @@ export default function UnifiedTable({
   // Calcular datos paginados
   const displayData = useMemo(() => {
     if (!paginated) return sortedData;
-    
+
     const startIndex = (currentPage - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     return sortedData.slice(startIndex, endIndex);
@@ -115,19 +115,19 @@ export default function UnifiedTable({
   const isDesktop = !isMobile;
 
   const hasActions = (rowActions && typeof rowActions === 'function') || getRowActions;
-  
+
   // Verificar si solo hay una acción para todos los items (si es así, ocultar columna de acciones)
   // Pero solo ocultar si TODOS los items tienen exactamente 1 acción
   let hasOnlyOneAction = false;
   let shouldHideActionsColumn = false;
-  
+
   if (data.length > 0 && hasActions) {
     // Verificar acciones para todos los items, no solo el primero
     const allActionsCounts = data.map(item => {
       const actions = getRowActions ? getRowActions(item) : (rowActions ? rowActions(item) : []);
       return actions.length;
     });
-    
+
     // Solo ocultar si TODOS los items tienen exactamente 1 acción
     hasOnlyOneAction = allActionsCounts.every(count => count === 1) && allActionsCounts[0] === 1;
     shouldHideActionsColumn = hasOnlyOneAction;
@@ -225,14 +225,14 @@ export default function UnifiedTable({
                   )}
                 </TableRow>
               </TableHeader>
-              <TableBody 
+              <TableBody
                 zebra
                 className={selectable && selectedItems.size > 0 ? "pb-16" : ""}
               >
-                {displayData.map((item) => {
+                {displayData.map((item, index) => {
                   const actions = getRowActions ? getRowActions(item) : (rowActions ? rowActions(item) : []);
                   const isSelected = selectedItems.has(item[keyField]);
-                  
+
                   // Si solo hay una acción, ejecutarla directamente en el click de la fila si no hay onRowClick
                   const handleRowClick = () => {
                     if (onRowClick) {
@@ -243,7 +243,10 @@ export default function UnifiedTable({
                       actions[0].onClick?.();
                     }
                   };
-                  
+
+                  // Calculate the actual index considering pagination
+                  const globalIndex = paginated ? (currentPage - 1) * pageSize + index : index;
+
                   return (
                     <TableRow
                       key={item[keyField]}
@@ -263,7 +266,7 @@ export default function UnifiedTable({
                       )}
                       {columns.map((col) => (
                         <TableCell key={col.key} className="py-2 px-3 text-sm">
-                          {col.render ? col.render(item) : item[col.key]}
+                          {col.render ? col.render(item, globalIndex) : item[col.key]}
                         </TableCell>
                       ))}
                       {hasActions && !shouldHideActionsColumn && (
@@ -312,8 +315,8 @@ export default function UnifiedTable({
                       componentStyles.buttons.outline,
                       "h-8 sm:h-9 text-xs",
                       "px-2 sm:px-3",
-                      isMobile && action.icon 
-                        ? "flex items-center justify-center w-full" 
+                      isMobile && action.icon
+                        ? "flex items-center justify-center w-full"
                         : "justify-center sm:justify-start"
                     )}
                     title={action.label}
@@ -341,7 +344,7 @@ export default function UnifiedTable({
             {displayData.map((item) => {
               const actions = getRowActions ? getRowActions(item) : (rowActions ? rowActions(item) : []);
               const isSelected = selectedItems.has(item[keyField]);
-              
+
               // Si solo hay una acción, ejecutarla directamente en el click de la tarjeta
               const handleCardClick = () => {
                 if (onRowClick) {
@@ -352,46 +355,46 @@ export default function UnifiedTable({
                   actions[0].onClick?.();
                 }
               };
-              
+
               const isClickable = !!(onRowClick || (hasOnlyOneAction && actions.length === 1));
-              
+
               // Renderizar columna primaria (título)
               const primaryContent = primaryColumn
                 ? (primaryColumn.render ? primaryColumn.render(item) : item[primaryColumn.key])
                 : null;
-              
+
               // Renderizar columnas de detalle
               // IMPORTANTE: Separar rawValue (valor del registro) de displayValue (ReactNode renderizado)
               // La decisión de "está vacío" se basa en rawValue, no en el ReactNode
               const detailContent = detailColumns.map((col) => {
                 const label = col.mobileLabel || col.label;
-                
+
                 // Obtener rawValue: puede venir de col.rawValue (función o valor), o de item[col.key]
-                const rawValue = typeof col.rawValue === 'function' 
-                  ? col.rawValue(item) 
-                  : col.rawValue !== undefined 
-                    ? col.rawValue 
+                const rawValue = typeof col.rawValue === 'function'
+                  ? col.rawValue(item)
+                  : col.rawValue !== undefined
+                    ? col.rawValue
                     : item[col.key];
-                
+
                 // Obtener displayValue: el ReactNode renderizado (si existe render) o el rawValue
                 const displayValue = typeof col.render === 'function'
                   ? col.render(item)
                   : rawValue;
-                
+
                 return { label, value: displayValue, rawValue, key: col.key };
               }).filter(detail => {
                 // Si el render devuelve null o undefined, filtrar (no mostrar)
                 if (detail.value === null || detail.value === undefined) {
                   return false;
                 }
-                
+
                 // Si es un ReactNode (objeto válido), mostrarlo siempre
                 // excepto si el rawValue está vacío Y no hay rawValue definido explícitamente
                 if (typeof detail.value === 'object' && detail.value !== null) {
-                  const isReactElement = React.isValidElement 
-                    ? React.isValidElement(detail.value) 
+                  const isReactElement = React.isValidElement
+                    ? React.isValidElement(detail.value)
                     : (detail.value && typeof detail.value === 'object' && '$$typeof' in detail.value);
-                  
+
                   if (isReactElement) {
                     // Si hay un rawValue definido y está vacío, filtrar
                     // Si no hay rawValue definido (es un componente puro), mostrar siempre
@@ -401,12 +404,12 @@ export default function UnifiedTable({
                     return true; // Mantener ReactNodes sin rawValue definido
                   }
                 }
-                
+
                 // Para valores primitivos, aplicar filtro de vacío basado en rawValue
                 // Si rawValue está vacío, no mostrar
                 return !isEmptyRawValue(detail.rawValue);
               });
-              
+
               return (
                 <div
                   key={item[keyField]}
@@ -493,8 +496,8 @@ export default function UnifiedTable({
                       componentStyles.buttons.outline,
                       "h-8 sm:h-9 text-xs",
                       "px-2 sm:px-3",
-                      isMobile && action.icon 
-                        ? "flex items-center justify-center w-full" 
+                      isMobile && action.icon
+                        ? "flex items-center justify-center w-full"
                         : "justify-center sm:justify-start"
                     )}
                     title={action.label}

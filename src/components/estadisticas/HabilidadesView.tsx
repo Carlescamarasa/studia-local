@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import HabilidadesRadarChart from './HabilidadesRadarChart';
 import { useHabilidadesStats, useHabilidadesStatsMultiple } from '@/hooks/useHabilidadesStats';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { parseLocalDate } from './utils';
 import {
     useTotalXP,
     totalXPToObject,
@@ -9,10 +12,12 @@ import {
     useLifetimePracticeXPMultiple,
     useAggregateLevelGoals
 } from '@/hooks/useXP';
-import { Activity, Target, Star, Layers } from 'lucide-react';
+import { Activity, Target, Star, Layers, Info, TrendingUp, BookOpen, PieChart } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import TotalXPDisplay from './TotalXPDisplay';
 import LevelBadge from '../common/LevelBadge';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
+import CompactCard from './CompactCard';
 import { useQuery } from '@tanstack/react-query';
 import { localDataClient } from '@/api/localDataClient';
 import { cn } from '@/lib/utils';
@@ -21,12 +26,16 @@ interface HabilidadesViewProps {
     alumnosSeleccionados?: string[];
     allStudentIds?: string[];
     userIdActual?: string;
+    fechaInicio?: string;
+    fechaFin?: string;
 }
 
 export default function HabilidadesView({
     alumnosSeleccionados = [],
     allStudentIds = [],
-    userIdActual = ''
+    userIdActual = '',
+    fechaInicio,
+    fechaFin
 }: HabilidadesViewProps) {
     // =========================================================================
     // TOGGLE STATE
@@ -217,154 +226,228 @@ export default function HabilidadesView({
     // RENDER
     // =========================================================================
     return (
-        <div className="space-y-6">
-            {/* Primary Toggle: Experiencia / Evaluaciones / Ambos */}
-            <div className="flex justify-center">
-                <div className="flex bg-[var(--color-surface-muted)] p-1 rounded-lg">
-                    <button
-                        onClick={() => setSourceFilter('experiencia')}
-                        className={cn(
-                            "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
-                            sourceFilter === 'experiencia'
-                                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
-                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                        )}
-                    >
-                        <Star className="w-4 h-4 mr-2" />
-                        Experiencia
-                    </button>
-                    <button
-                        onClick={() => setSourceFilter('evaluaciones')}
-                        className={cn(
-                            "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
-                            sourceFilter === 'evaluaciones'
-                                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
-                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                        )}
-                    >
-                        <Target className="w-4 h-4 mr-2" />
-                        Evaluaciones
-                    </button>
-                    <button
-                        onClick={() => setSourceFilter('ambos')}
-                        className={cn(
-                            "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
-                            sourceFilter === 'ambos'
-                                ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
-                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                        )}
-                    >
-                        <Layers className="w-4 h-4 mr-2" />
-                        Ambos
-                    </button>
-                </div>
-            </div>
+        <div className="space-y-4">
+            {/* Habilidades Tile - 2 Column Layout */}
+            <CompactCard title="Habilidades">
+                {/* 
+                    GRID LAYOUT:
+                    Desktop: 2 Columns (Left: content, Right: toggles+radar)
+                    Mobile: Stack (content first, then radar)
+                */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
 
-            {/* Estado de Forma Actual Block */}
-            <Card>
-                <CardHeader className="pb-2">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                            <CardTitle className="text-lg font-semibold">Estado de Forma Actual</CardTitle>
-                            <p className="text-sm text-muted-foreground">
-                                {viewMode === 'forma' ? 'Progreso acumulado en los últimos 30 días' : 'XP del rango de fechas seleccionado'}
-                            </p>
+                    {/* LEFT COLUMN: Subheader + Summary Bar + Cards */}
+                    <div className="flex flex-col gap-3">
+
+                        {/* Subheader: "Estado de forma actual" + (i) */}
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-[var(--color-text-secondary)]">
+                                {viewMode === 'forma' ? 'Estado de forma actual' : 'XP del rango seleccionado'}
+                            </span>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button className="p-0.5 rounded-full hover:bg-[var(--color-surface-muted)] transition-colors">
+                                            <Info className="w-3.5 h-3.5 text-[var(--color-text-secondary)] opacity-70" />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right" className="max-w-[200px]">
+                                        <p className="text-xs">
+                                            {viewMode === 'forma'
+                                                ? 'Muestra tu nivel basado en los últimos 30 días.'
+                                                : 'Muestra el XP acumulado en las fechas seleccionadas.'}
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
-                        {/* Secondary Toggle: Estado de forma / XP del rango */}
-                        <div className="bg-muted/50 p-1 rounded-lg inline-flex">
-                            <button
-                                onClick={() => setViewMode('forma')}
-                                className={cn(
-                                    "px-3 py-1 text-xs font-medium rounded transition-all",
-                                    viewMode === 'forma'
-                                        ? "bg-background shadow-sm text-foreground"
-                                        : "text-muted-foreground hover:text-foreground"
-                                )}
-                            >
-                                Estado de forma
-                            </button>
-                            <button
-                                onClick={() => setViewMode('rango')}
-                                className={cn(
-                                    "px-3 py-1 text-xs font-medium rounded transition-all",
-                                    viewMode === 'rango'
-                                        ? "bg-background shadow-sm text-foreground"
-                                        : "text-muted-foreground hover:text-foreground"
-                                )}
-                            >
-                                XP del rango
-                            </button>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    {/* Level + Qualitative Cards Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Level Badge */}
-                        <Card className="bg-muted/20 border-none shadow-none flex flex-col justify-center items-center p-4">
-                            <LevelBadge level={currentLevel} label={null} />
-                            <div className="mt-2 text-center">
-                                <h4 className="font-bold">Nivel {currentLevel}</h4>
-                                <p className="text-xs text-muted-foreground">Nivel actual</p>
+
+                        {/* Summary Bar: Nivel | Cognición | Sonido | Leyenda */}
+                        <div className="flex flex-wrap items-center gap-4 sm:gap-6 py-3 px-4 bg-[var(--color-surface-muted)]/30 rounded-xl border border-[var(--color-border)]/30">
+
+                            {/* Nivel */}
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                                    Nivel {currentLevel}
+                                </span>
+                                <span className="text-base font-bold text-[var(--color-text-primary)]">
+                                    {studentProfile?.etiquetaNivel || (currentLevel >= 10 ? "Profesional" : currentLevel >= 7 ? "Avanzado" : currentLevel >= 4 ? "Intermedio" : "Principiante")}
+                                </span>
                             </div>
-                        </Card>
 
-                        {/* Sonido Card */}
-                        <Card>
-                            <CardContent className="p-4 flex flex-col items-center justify-center h-full">
-                                <Activity className="w-5 h-5 text-blue-500 mb-2" />
-                                <div className="text-3xl font-bold">
-                                    {getDisplayedSonido().toFixed(1)}
-                                    <span className="text-sm text-muted-foreground font-normal">/10</span>
+                            {/* Divider */}
+                            <div className="hidden sm:block w-px h-8 bg-[var(--color-border)]/50" />
+
+                            {/* Cognición */}
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-purple-500/10">
+                                    <Target className="w-3.5 h-3.5 text-purple-500" />
                                 </div>
-                                <div className="text-xs text-muted-foreground mt-1 font-medium">Sonido</div>
-                                {sourceFilter === 'experiencia' && (
-                                    <p className="text-xs text-muted-foreground opacity-60">No disponible</p>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        {/* Cognición Card */}
-                        <Card>
-                            <CardContent className="p-4 flex flex-col items-center justify-center h-full">
-                                <Target className="w-5 h-5 text-purple-500 mb-2" />
-                                <div className="text-3xl font-bold">
-                                    {getDisplayedCognicion().toFixed(1)}
-                                    <span className="text-sm text-muted-foreground font-normal">/10</span>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] text-[var(--color-text-secondary)] uppercase">Cognición</span>
+                                    <div className="flex items-baseline gap-0.5">
+                                        <span className="text-lg font-bold text-[var(--color-text-primary)]">{getDisplayedCognicion().toFixed(1)}</span>
+                                        <span className="text-[10px] text-[var(--color-text-secondary)]">/10</span>
+                                    </div>
                                 </div>
-                                <div className="text-xs text-muted-foreground mt-1 font-medium">Cognición</div>
-                                {sourceFilter === 'experiencia' && (
-                                    <p className="text-xs text-muted-foreground opacity-60">No disponible</p>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </div>
+                            </div>
 
-                    {/* Radar Chart */}
-                    <div className="flex justify-center">
-                        <div className="w-full max-w-lg">
-                            <HabilidadesRadarChart
-                                data={radarDataForChart}
-                                isLoading={isLoadingStats}
-                                dataKey1={sourceFilter === 'evaluaciones' ? "Evaluaciones" : (sourceFilter === 'experiencia' ? undefined : "Evaluaciones")}
-                                dataKey2={sourceFilter === 'evaluaciones' ? undefined : "Experiencia"}
-                                dataKey3={sourceFilter === 'ambos' ? "Total" : undefined}
-                            />
+                            {/* Sonido */}
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-500/10">
+                                    <Activity className="w-3.5 h-3.5 text-blue-500" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] text-[var(--color-text-secondary)] uppercase">Sonido</span>
+                                    <div className="flex items-baseline gap-0.5">
+                                        <span className="text-lg font-bold text-[var(--color-text-primary)]">{getDisplayedSonido().toFixed(1)}</span>
+                                        <span className="text-[10px] text-[var(--color-text-secondary)]">/10</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Leyenda (when ambos) */}
+                            {sourceFilter === 'ambos' && (
+                                <>
+                                    <div className="hidden sm:block w-px h-8 bg-[var(--color-border)]/50" />
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="w-2 h-2 rounded-full bg-[#374151]" />
+                                            <span className="text-[10px] text-[var(--color-text-secondary)]">Total</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
+                                            <span className="text-[10px] text-[var(--color-text-secondary)]">Exp</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="w-2 h-2 rounded-full bg-[#f97316]" />
+                                            <span className="text-[10px] text-[var(--color-text-secondary)]">Eval</span>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Cards: Flexibilidad | Articulación | Motricidad */}
+                        <div className="grid grid-cols-3 gap-3">
+                            {[
+                                { key: 'flexibilidad', label: 'Flexibilidad', color: 'text-purple-500' },
+                                { key: 'articulacion', label: 'Articulación', color: 'text-green-500' },
+                                { key: 'motricidad', label: 'Motricidad', color: 'text-blue-500' }
+                            ].map((item) => {
+                                const vals = getXPValues(item.key as any);
+                                const val = sourceFilter === 'experiencia' ? vals.practiceVal :
+                                    sourceFilter === 'evaluaciones' ? vals.evaluationVal : vals.totalVal;
+
+                                return (
+                                    <div key={item.key} className="flex flex-col p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/30 transition-all shadow-sm">
+                                        <div className="flex items-center gap-1.5 mb-2">
+                                            <TrendingUp className={cn("w-3.5 h-3.5", item.color)} />
+                                            <span className="text-[10px] sm:text-xs uppercase tracking-wider font-semibold text-[var(--color-text-secondary)] truncate">
+                                                {item.label}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-col mt-auto">
+                                            <span className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)] leading-none mb-0.5">
+                                                {Math.round(val)}
+                                            </span>
+                                            <span className="text-[10px] text-[var(--color-text-secondary)] font-medium">
+                                                / {vals.maxXP} XP
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 
-                    {/* XP por Habilidad */}
-                    <div className="p-4 border rounded-md bg-muted/20">
-                        <h5 className="font-medium text-sm mb-1">XP por Habilidad</h5>
-                        <p className="text-xs text-muted-foreground mb-3">
-                            {sourceFilter === 'experiencia' && "Solo XP de práctica"}
-                            {sourceFilter === 'evaluaciones' && "Solo XP de evaluaciones"}
-                            {sourceFilter === 'ambos' && "Práctica + Evaluaciones"}
-                        </p>
-                        <TotalXPDisplay studentIds={effectiveIds} filter={xpFilter} />
+                    {/* RIGHT COLUMN: Toggles (stacked) + Radar */}
+                    <div className="flex flex-col items-end gap-3 overflow-hidden">
+
+                        {/* Toggles: Row 1 (Exp/Eval/Ambos), Row 2 (Forma/Rango) */}
+                        <div className="flex flex-col items-end gap-1.5">
+                            {/* Row 1: Exp | Eval | Ambos */}
+                            <div className="flex bg-[var(--color-surface-muted)] rounded-md p-0.5">
+                                <button
+                                    onClick={() => setSourceFilter('experiencia')}
+                                    className={cn(
+                                        "px-2.5 py-1 text-[10px] sm:text-xs font-medium rounded transition-all",
+                                        sourceFilter === 'experiencia'
+                                            ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm"
+                                            : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                                    )}
+                                >
+                                    Exp
+                                </button>
+                                <button
+                                    onClick={() => setSourceFilter('evaluaciones')}
+                                    className={cn(
+                                        "px-2.5 py-1 text-[10px] sm:text-xs font-medium rounded transition-all",
+                                        sourceFilter === 'evaluaciones'
+                                            ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm"
+                                            : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                                    )}
+                                >
+                                    Eval
+                                </button>
+                                <button
+                                    onClick={() => setSourceFilter('ambos')}
+                                    className={cn(
+                                        "px-2.5 py-1 text-[10px] sm:text-xs font-medium rounded transition-all",
+                                        sourceFilter === 'ambos'
+                                            ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm"
+                                            : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                                    )}
+                                >
+                                    Ambos
+                                </button>
+                            </div>
+
+                            {/* Row 2: Forma | Rango */}
+                            <div className="flex bg-[var(--color-surface-muted)] rounded-md p-0.5">
+                                <button
+                                    onClick={() => setViewMode('forma')}
+                                    className={cn(
+                                        "px-2.5 py-1 text-[10px] sm:text-xs font-medium rounded transition-all",
+                                        viewMode === 'forma'
+                                            ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm"
+                                            : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                                    )}
+                                >
+                                    Forma
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('rango')}
+                                    className={cn(
+                                        "px-2.5 py-1 text-[10px] sm:text-xs font-medium rounded transition-all",
+                                        viewMode === 'rango'
+                                            ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm"
+                                            : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                                    )}
+                                >
+                                    Rango
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Radar Chart (constrained size, no overflow) */}
+                        <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
+                            <div className="w-full max-w-[280px] max-h-[280px] aspect-square">
+                                <HabilidadesRadarChart
+                                    data={radarDataForChart}
+                                    isLoading={isLoadingStats}
+                                    dataKey1={sourceFilter === 'evaluaciones' ? "Evaluaciones" : (sourceFilter === 'experiencia' ? undefined : "Evaluaciones")}
+                                    dataKey2={sourceFilter === 'evaluaciones' ? undefined : "Experiencia"}
+                                    dataKey3={sourceFilter === 'ambos' ? "Total" : undefined}
+                                    compact
+                                    hideLegend
+                                />
+                            </div>
+                        </div>
                     </div>
-                </CardContent>
-            </Card>
+
+                </div>
+            </CompactCard>
         </div>
     );
 }
