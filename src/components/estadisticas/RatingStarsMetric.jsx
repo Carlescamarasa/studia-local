@@ -53,7 +53,7 @@ export default function RatingStarsMetric({
         <div role="group" aria-label={`${label}: ${hasValue ? numericValue.toFixed(precision) : 'Sin datos'} de ${max}`} className={cn("h-full", className)}>
             <KpiTile
                 className="h-full"
-                icon={null} // Opcional según mockup, usaremos solo Label por limpieza o podemos pasar Star si queremos
+                icon={Star}
                 label={label}
                 value={hasValue ? numericValue.toFixed(precision) : "—"}
                 valueClassName="text-[var(--color-success)]"
