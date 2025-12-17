@@ -74,39 +74,88 @@ export default function ModalFeedbackSemanal({
     const [uploadingVideo, setUploadingVideo] = useState(false);
 
 
+    // Helper to hydrate form from feedback data
+    const hydrateFormFromFeedback = (fb) => {
+        console.log('[ModalFeedbackSemanal] hydrateFormFromFeedback:', fb);
+        setNotaProfesor(fb.notaProfesor || "");
+
+        // sonido and cognicion are stored INSIDE habilidades JSONB (see remoteDataAPI.ts)
+        const habilidades = fb.habilidades || {};
+        console.log('[ModalFeedbackSemanal] habilidades object:', habilidades);
+
+        // Read from habilidades.sonido/cognicion first, fallback to top-level for legacy data
+        const loadedSonido = habilidades.sonido ?? fb.sonido ?? 5.0;
+        const loadedCognicion = habilidades.cognicion ?? fb.cognicion ?? 5.0;
+        setSonido(Number(loadedSonido));
+        setCognicion(Number(loadedCognicion));
+
+        // XP deltas - stored inside habilidades.xpDeltas
+        const deltas = habilidades.xpDeltas || fb.xp_delta_by_skill || fb.xpDeltaBySkill || {};
+        console.log('[ModalFeedbackSemanal] XP Deltas loaded:', deltas);
+        setDeltaMotricidad(deltas.motricidad != null ? String(deltas.motricidad) : "");
+        setDeltaArticulacion(deltas.articulacion != null ? String(deltas.articulacion) : "");
+        setDeltaFlexibilidad(deltas.flexibilidad != null ? String(deltas.flexibilidad) : "");
+
+        // Media
+        setMediaLinks(fb.mediaLinks || []);
+        setVideoFile(null);
+    };
+
     // LOAD DATA
     useEffect(() => {
         if (open) {
             loadLevelData(); // Always reload level data on open
 
             if (feedback) {
-                setNotaProfesor(feedback.notaProfesor || "");
-                setSonido(feedback.sonido != null ? Number(feedback.sonido) : 5.0);
-                setCognicion(feedback.cognicion != null ? Number(feedback.cognicion) : 5.0);
-
-                // We don't load PER-SESSION deltas usually, as they are transactional.
-                const deltas = feedback.xp_delta_by_skill || {};
-                setDeltaMotricidad(deltas.motricidad || "");
-                setDeltaArticulacion(deltas.articulacion || "");
-                setDeltaFlexibilidad(deltas.flexibilidad || "");
-
-                // Media
-                setMediaLinks(feedback.mediaLinks || []);
-                setVideoFile(null);
+                // If feedback prop is provided (edit mode), use it directly
+                hydrateFormFromFeedback(feedback);
+            } else if (studentId && weekStartISO) {
+                // If no feedback prop but we have studentId + week, try to fetch existing
+                loadExistingFeedback();
             } else {
-                // Reset form
-                setNotaProfesor("");
-                setSonido(5.0);
-                setCognicion(5.0);
-                setDeltaMotricidad("");
-                setDeltaArticulacion("");
-                setDeltaFlexibilidad("");
-                setMediaLinks([]);
-                setVideoFile(null);
-                setActiveTab('evaluacion'); // Default tab
+                // Reset form for truly new feedback
+                resetForm();
             }
         }
-    }, [open, feedback, studentId]);
+    }, [open, feedback, studentId, weekStartISO]);
+
+    // Fetch existing feedback for this student + week (if any)
+    const loadExistingFeedback = async () => {
+        if (!studentId || !weekStartISO) {
+            console.warn('[ModalFeedbackSemanal] loadExistingFeedback: Missing studentId or weekStartISO', { studentId, weekStartISO });
+            return;
+        }
+        try {
+            console.log('[ModalFeedbackSemanal] loadExistingFeedback: Searching...', { studentId, weekStartISO });
+            const allFeedbacks = await localDataClient.entities.FeedbackSemanal.list();
+            console.log('[ModalFeedbackSemanal] loadExistingFeedback: All feedbacks', allFeedbacks);
+            const existing = allFeedbacks.find(f =>
+                f.alumnoId === studentId &&
+                f.semanaInicioISO === weekStartISO
+            );
+            console.log('[ModalFeedbackSemanal] loadExistingFeedback: Matched', existing);
+            if (existing) {
+                hydrateFormFromFeedback(existing);
+            } else {
+                resetForm();
+            }
+        } catch (error) {
+            console.error('Error loading existing feedback:', error);
+            resetForm();
+        }
+    };
+
+    const resetForm = () => {
+        setNotaProfesor("");
+        setSonido(5.0);
+        setCognicion(5.0);
+        setDeltaMotricidad("");
+        setDeltaArticulacion("");
+        setDeltaFlexibilidad("");
+        setMediaLinks([]);
+        setVideoFile(null);
+        setActiveTab('evaluacion');
+    };
 
     const loadLevelData = async () => {
         if (!studentId) return;
@@ -217,6 +266,39 @@ export default function ModalFeedbackSemanal({
             if (deltaArticulacion) xpDeltas.articulacion = Number(deltaArticulacion);
             if (deltaFlexibilidad) xpDeltas.flexibilidad = Number(deltaFlexibilidad);
 
+            // FIRST: Fetch existing record to get previous habilidades
+            const existingFeedbacks = await localDataClient.entities.FeedbackSemanal.filter({
+                alumnoId: studentId,
+                semanaInicioISO: weekStartISO
+            });
+            const existingRecord = existingFeedbacks.length > 0 ? existingFeedbacks[0] : null;
+            const existingHabilidades = existingRecord?.habilidades || {};
+
+            console.log('[ModalFeedbackSemanal] Save - Existing record:', existingRecord);
+            console.log('[ModalFeedbackSemanal] Save - Existing habilidades:', existingHabilidades);
+
+            // COMPUTE XP DELTA TO APPLY (difference from previous)
+            const previousXpDeltas = existingHabilidades.xpDeltas || {};
+            const xpDeltaToApply = {
+                motricidad: (xpDeltas.motricidad || 0) - (previousXpDeltas.motricidad || 0),
+                articulacion: (xpDeltas.articulacion || 0) - (previousXpDeltas.articulacion || 0),
+                flexibilidad: (xpDeltas.flexibilidad || 0) - (previousXpDeltas.flexibilidad || 0),
+            };
+
+            console.log('[ModalFeedbackSemanal] Save - XP delta calculation:', {
+                newInput: xpDeltas,
+                previousStored: previousXpDeltas,
+                toApply: xpDeltaToApply
+            });
+
+            // MERGE habilidades: keep existing data, update sonido/cognicion/xpDeltas
+            const mergedHabilidades = {
+                ...existingHabilidades,
+                sonido: Number(sonido),
+                cognicion: Number(cognicion),
+                xpDeltas: xpDeltas, // Store the USER'S INPUT (not the delta)
+            };
+
             const dataToSave = {
                 alumnoId: studentId,
                 profesorId: effectiveUser?.id || "current-prof-id",
@@ -224,29 +306,28 @@ export default function ModalFeedbackSemanal({
                 notaProfesor: notaProfesor,
                 sonido: Number(sonido),
                 cognicion: Number(cognicion),
-                habilidades: {},
-                xp_delta_by_skill: xpDeltas, // NEW FIELD
+                habilidades: mergedHabilidades,
                 mediaLinks: normalizeMediaLinks(finalMediaLinks),
                 lastEditedAt: new Date().toISOString(),
             };
 
-            // Upsert using localDataClient (supports Supabase)
-            const existingFeedbacks = await localDataClient.entities.FeedbackSemanal.filter({
-                alumnoId: studentId,
-                semanaInicioISO: weekStartISO
-            });
-            if (existingFeedbacks.length > 0) {
-                await localDataClient.entities.FeedbackSemanal.update(existingFeedbacks[0].id, dataToSave);
+            // SAVE the feedback record
+            if (existingRecord) {
+                await localDataClient.entities.FeedbackSemanal.update(existingRecord.id, dataToSave);
             } else {
                 await localDataClient.entities.FeedbackSemanal.create(dataToSave);
             }
 
             // Apply XP Deltas to system (Side Effect)
-            if (Object.keys(xpDeltas).length > 0) {
+            const hasXPToApply = xpDeltaToApply.motricidad !== 0 || xpDeltaToApply.articulacion !== 0 || xpDeltaToApply.flexibilidad !== 0;
+            if (hasXPToApply) {
                 const { addXP } = await import('@/services/xpService');
-                if (xpDeltas.motricidad) await addXP(studentId, 'motricidad', xpDeltas.motricidad, 'PROF');
-                if (xpDeltas.articulacion) await addXP(studentId, 'articulacion', xpDeltas.articulacion, 'PROF');
-                if (xpDeltas.flexibilidad) await addXP(studentId, 'flexibilidad', xpDeltas.flexibilidad, 'PROF');
+                if (xpDeltaToApply.motricidad !== 0) await addXP(studentId, 'motricidad', xpDeltaToApply.motricidad, 'PROF');
+                if (xpDeltaToApply.articulacion !== 0) await addXP(studentId, 'articulacion', xpDeltaToApply.articulacion, 'PROF');
+                if (xpDeltaToApply.flexibilidad !== 0) await addXP(studentId, 'flexibilidad', xpDeltaToApply.flexibilidad, 'PROF');
+                console.log('[ModalFeedbackSemanal] Applied XP deltas:', xpDeltaToApply);
+            } else {
+                console.log('[ModalFeedbackSemanal] No XP changes to apply');
             }
 
             toast({

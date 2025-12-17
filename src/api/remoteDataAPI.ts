@@ -2183,10 +2183,38 @@ export function createRemoteDataAPI(): AppDataAPI {
         });
       },
       create: async (data) => {
-        const snakeData = camelToSnake({
-          ...data,
-          id: (data as any).id || generateId('feedbackSemanal'),
-        });
+        // DB columns: id, alumno_id, profesor_id, semana_inicio_iso, nota_profesor,
+        // habilidades (JSONB), media_links (JSONB array), last_edited_at
+        // sonido, cognicion are stored INSIDE habilidades JSONB
+        // XP is handled separately by xpService -> StudentXPTotal
+        const allowedFields = new Set([
+          'id', 'alumnoId', 'profesorId', 'semanaInicioISO', 'notaProfesor',
+          'habilidades', 'mediaLinks', 'lastEditedAt'
+        ]);
+
+        const inputData = data as any;
+        const feedbackId = inputData.id || generateId('feedbackSemanal');
+
+        // Build habilidades object from sonido/cognicion if present
+        let habilidades = inputData.habilidades || {};
+        if (inputData.sonido !== undefined) habilidades.sonido = inputData.sonido;
+        if (inputData.cognicion !== undefined) habilidades.cognicion = inputData.cognicion;
+
+        const filteredData: any = {
+          id: feedbackId,
+          habilidades: Object.keys(habilidades).length > 0 ? habilidades : null,
+        };
+
+        for (const [key, value] of Object.entries(inputData)) {
+          if (key === 'id' || key === 'habilidades' || key === 'sonido' || key === 'cognicion') continue;
+          if (allowedFields.has(key)) {
+            filteredData[key] = value;
+          } else {
+            console.log(`[remoteDataAPI.feedbacksSemanal.create] Field '${key}' not in DB schema, skipping`);
+          }
+        }
+
+        const snakeData = camelToSnake(filteredData);
         const { data: result, error } = await supabase
           .from('feedbacks_semanal')
           .insert(snakeData)
@@ -2198,7 +2226,32 @@ export function createRemoteDataAPI(): AppDataAPI {
         return normalizeAsignacionISO<FeedbackSemanal>(parsed);
       },
       update: async (id: string, updates: any) => {
-        const snakeUpdates = camelToSnake(updates);
+        // Same allowed fields as create
+        const allowedFields = new Set([
+          'alumnoId', 'profesorId', 'semanaInicioISO', 'notaProfesor',
+          'habilidades', 'mediaLinks', 'lastEditedAt'
+        ]);
+
+        // Build habilidades object from sonido/cognicion if present
+        let habilidades = updates.habilidades || {};
+        if (updates.sonido !== undefined) habilidades.sonido = updates.sonido;
+        if (updates.cognicion !== undefined) habilidades.cognicion = updates.cognicion;
+
+        const filteredUpdates: any = {};
+        if (Object.keys(habilidades).length > 0) {
+          filteredUpdates.habilidades = habilidades;
+        }
+
+        for (const [key, value] of Object.entries(updates)) {
+          if (key === 'id' || key === 'habilidades' || key === 'sonido' || key === 'cognicion') continue;
+          if (allowedFields.has(key)) {
+            filteredUpdates[key] = value;
+          } else {
+            console.log(`[remoteDataAPI.feedbacksSemanal.update] Field '${key}' not in DB schema, skipping`);
+          }
+        }
+
+        const snakeUpdates = camelToSnake(filteredUpdates);
         const { data, error } = await supabase
           .from('feedbacks_semanal')
           .update(snakeUpdates)

@@ -88,6 +88,7 @@ export function useHabilidadesStats(alumnoId: string) {
             }));
 
         // 2. Process Feedbacks (FeedbackSemanal)
+        // NOTE: sonido/cognicion are stored INSIDE habilidades JSONB (see remoteDataAPI.ts)
         const relevantFeedbacks = (allFeedbacks || [])
             .filter((f: any) => f.alumnoId === alumnoId && (f.semanaInicioISO || f.created_at || f.createdAt))
             .filter((f: any) => {
@@ -96,8 +97,9 @@ export function useHabilidadesStats(alumnoId: string) {
             })
             .map((f: any) => ({
                 date: new Date(f.semanaInicioISO || f.created_at || f.createdAt),
-                sonido: f.sonido,
-                cognicion: f.cognicion
+                // Read from habilidades JSONB where remoteDataAPI stores them
+                sonido: f.habilidades?.sonido ?? f.sonido,
+                cognicion: f.habilidades?.cognicion ?? f.cognicion
             }));
 
         // 3. Merge and Sort Descending
@@ -290,6 +292,7 @@ export function useHabilidadesStatsMultiple(studentIds: string[]) {
                 }));
 
             // 2. Process Feedbacks
+            // NOTE: sonido/cognicion are stored INSIDE habilidades JSONB
             const relevantFeedbacks = (allFeedbacks || [])
                 .filter((f: any) => f.alumnoId === alumnoId && (f.semanaInicioISO || f.created_at || f.createdAt))
                 .filter((f: any) => {
@@ -298,8 +301,9 @@ export function useHabilidadesStatsMultiple(studentIds: string[]) {
                 })
                 .map((f: any) => ({
                     date: new Date(f.semanaInicioISO || f.created_at || f.createdAt),
-                    sonido: f.sonido,
-                    cognicion: f.cognicion
+                    // Read from habilidades JSONB where remoteDataAPI stores them
+                    sonido: f.habilidades?.sonido ?? f.sonido,
+                    cognicion: f.habilidades?.cognicion ?? f.cognicion
                 }));
 
             // 3. Merge and Sort Descending

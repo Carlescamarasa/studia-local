@@ -2,7 +2,7 @@
 import { useState, useEffect, createContext, useContext } from "react";
 
 const TOAST_LIMIT = 20;
-const TOAST_REMOVE_DELAY = 1000000;
+const TOAST_REMOVE_DELAY = 4000; // 4 seconds - auto-dismiss
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -63,26 +63,25 @@ export const reducer = (state, action) => {
     case actionTypes.DISMISS_TOAST: {
       const { toastId } = action;
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
+      // Clear any pending timeout for this toast
       if (toastId) {
-        addToRemoveQueue(toastId);
+        clearFromRemoveQueue(toastId);
       } else {
         state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id);
+          clearFromRemoveQueue(toast.id);
         });
       }
 
+      // Immediately remove the toast from state (don't just set open:false)
+      if (toastId) {
+        return {
+          ...state,
+          toasts: state.toasts.filter((t) => t.id !== toastId),
+        };
+      }
       return {
         ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === toastId || toastId === undefined
-            ? {
-                ...t,
-                open: false,
-              }
-            : t
-        ),
+        toasts: [],
       };
     }
     case actionTypes.REMOVE_TOAST:
