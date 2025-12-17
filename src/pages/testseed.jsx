@@ -29,7 +29,7 @@ import { roleHome } from "../components/auth/roleMap";
 import { createPageUrl } from "@/utils";
 import { componentStyles } from "@/design/componentStyles";
 
-export default function TestSeedPage() {
+export default function TestSeedPage({ embedded = false }) {
   const queryClient = useQueryClient();
   const [isSeeding, setIsSeeding] = useState(false);
   const [seedLogs, setSeedLogs] = useState([]);
@@ -2477,9 +2477,9 @@ export default function TestSeedPage() {
               <div className="space-y-1 max-h-96 overflow-y-auto">
                 {seedLogs.map((log, idx) => (
                   <div key={idx} className={`text-sm font-mono p-2 rounded-xl ${log.type === 'success' ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]' :
-                      log.type === 'error' ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]' :
-                        log.type === 'warning' ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]' :
-                          'bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
+                    log.type === 'error' ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]' :
+                      log.type === 'warning' ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]' :
+                        'bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]'
                     }`}>
                     <span className="text-[var(--color-text-secondary)] mr-2">[{log.timestamp}]</span>
                     {log.message}
@@ -2494,12 +2494,14 @@ export default function TestSeedPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader
-        icon={Settings}
-        title="Tests & Seeds"
-        subtitle="Herramienta interna de desarrollo para poblar datos y validaciones"
-      />
+    <div className={embedded ? "" : "min-h-screen bg-background"}>
+      {!embedded && (
+        <PageHeader
+          icon={Settings}
+          title="Tests & Seeds"
+          subtitle="Herramienta interna de desarrollo para poblar datos y validaciones"
+        />
+      )}
 
       <div className={`${componentStyles.layout.page} space-y-6`}>
         <Alert className={`rounded-xl ${componentStyles.containers.panelBase} border-[var(--color-info)] bg-[var(--color-info)]/10`}>

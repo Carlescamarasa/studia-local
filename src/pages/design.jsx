@@ -109,7 +109,7 @@ function LabeledRow({ label, children }) {
   );
 }
 
-function DesignPageContent({ embedded = false }) {
+function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
   const { design, setDesign, setDesignPartial, resetDesign, exportDesign, importDesign, loadPreset, currentPresetId, setPresetId, basePresets } = useDesign();
   // Aliases para compatibilidad
   const config = design;
@@ -421,11 +421,13 @@ function DesignPageContent({ embedded = false }) {
 
   return (
     <div className={embedded ? "" : "min-h-screen bg-background"}>
-      <PageHeader
-        icon={Palette}
-        title="Panel de Diseño"
-        subtitle="Herramienta interna para ajustar tokens visuales y presets del sistema"
-      />
+      {!embedded && (
+        <PageHeader
+          icon={Palette}
+          title="Panel de Diseño"
+          subtitle="Herramienta interna para ajustar tokens visuales y presets del sistema"
+        />
+      )}
 
       <div className={componentStyles.layout.page}>
         <div className="flex justify-center">
@@ -436,7 +438,7 @@ function DesignPageContent({ embedded = false }) {
               { value: 'presets', label: 'Presets' },
               { value: 'controls', label: 'Controles' },
               { value: 'preview', label: 'Preview' },
-              { value: 'levels', label: 'Niveles' },
+              ...(hideLevelsTab ? [] : [{ value: 'levels', label: 'Niveles' }]),
             ]}
           />
         </div>

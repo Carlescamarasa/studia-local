@@ -69,18 +69,14 @@ import LevelBadge from "@/components/common/LevelBadge";
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
   ADMIN: [
-    { title: "Progreso", url: "/progreso?tab=resumen", icon: Activity, group: "Principal" },
+    { title: "Agenda", url: "/agenda", icon: Calendar, group: "Docencia" },
+    { title: "Progreso", url: "/progreso?tab=resumen", icon: Activity, group: "Docencia" },
+    { title: "Tickets alumnos", url: "/soporte-prof", icon: MessageSquare, group: "Docencia" },
     { title: "Usuarios", url: "/usuarios", icon: Users, group: "Gestión" },
     { title: "Preparación", url: "/preparacion", icon: Target, group: "Gestión" },
     { title: "Biblioteca", url: "/biblioteca", icon: Edit3, group: "Gestión" },
-    { title: "Agenda", url: "/agenda", icon: Calendar, group: "Gestión" },
-    { title: "Tickets alumnos", url: "/soporte-prof", icon: MessageSquare, group: "Sistema" },
     { title: "Reportes", url: "/reportes", icon: Bug, group: "Sistema" },
-    { title: "Sistema", url: "/admin/version", icon: Settings, group: "Sistema" },
-    { title: "Panel de Diseño", url: "/design", icon: Palette, group: "Sistema" },
-    { title: "Tests & Seeds", url: "/testseed", icon: Settings, group: "Sistema" },
-    { title: "Importar y Exportar", url: "/import-export", icon: FileDown, group: "Sistema" },
-    { title: "Multimedia", url: "/contenido-multimedia", icon: FileVideo, group: "Sistema" },
+    { title: "Configuración", url: "/configuracion?tab=version", icon: Settings, group: "Sistema" },
   ],
   PROF: [
     { title: "Progreso", url: "/progreso?tab=resumen", icon: Activity, group: "Principal" },
@@ -278,11 +274,11 @@ function LayoutContent() {
         },
         'go-import': () => {
           e.preventDefault();
-          navigate(createPageUrl('import-export'));
+          navigate('/configuracion?tab=import');
         },
         'go-design': () => {
           e.preventDefault();
-          navigate(createPageUrl('design'));
+          navigate('/configuracion?tab=design');
         },
       };
 
@@ -487,13 +483,15 @@ function LayoutContent() {
     '/progreso': ['ESTU', 'PROF', 'ADMIN'],
     '/estadisticas': ['ESTU', 'PROF', 'ADMIN'],
     '/habilidades': ['ESTU', 'PROF', 'ADMIN'],
-    '/design': ['ADMIN'],
-    '/admin/version': ['ADMIN'],
-    '/testseed': ['ADMIN'],
-    '/import-export': ['ADMIN'],
+    '/design': ['ADMIN'], // Redirects to config
+    '/admin/version': ['ADMIN'], // Redirects to config
+    '/admin/configuracion': ['ADMIN'], // Redirects to config
+    '/configuracion': ['ADMIN'], // Canonical
+    '/testseed': ['ADMIN'], // Redirects to config
+    '/import-export': ['ADMIN'], // Redirects to config
     '/soporte': ['ESTU'],
     '/soporte-prof': ['PROF', 'ADMIN'],
-    '/contenido-multimedia': ['PROF', 'ADMIN'],
+    '/contenido-multimedia': ['PROF', 'ADMIN'], // Redirects to config
     '/mochila': ['ESTU'],
   };
 

@@ -94,7 +94,7 @@ const generateCSV = (headers, rows) => {
   return [headerRow, ...dataRows].join('\n');
 };
 
-export default function ImportExportPage() {
+export default function ImportExportPage({ embedded = false }) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('importar'); // ⭐ Cambiado: Importar primero
   const [showImportModal, setShowImportModal] = useState(false);
@@ -833,14 +833,16 @@ export default function ImportExportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader
-        icon={FileDown}
-        title="Importar y Exportar"
-        subtitle="Gestiona backups de tus piezas, ejercicios y planes"
-      />
+    <div className={embedded ? "" : "min-h-screen bg-background"}>
+      {!embedded && (
+        <PageHeader
+          icon={FileDown}
+          title="Importar y Exportar"
+          subtitle="Gestiona backups de tus piezas, ejercicios y planes"
+        />
+      )}
 
-      <div className={componentStyles.layout.page}>
+      <div className={embedded ? "" : componentStyles.layout.page}>
         <Card className="app-card">
           <CardContent className="pt-6 text-[var(--color-text-primary)]">
             <div className="space-y-6">
