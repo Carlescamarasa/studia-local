@@ -100,7 +100,7 @@ export async function createTicket(input: CreateSupportTicketInput): Promise<Sup
 export async function updateTicket(input: UpdateSupportTicketInput): Promise<SupportTicket> {
   const { id, ...updates } = input;
   const dbData = mapTicketToDB(updates as Partial<SupportTicket>);
-  
+
   // Si se está cerrando el ticket, establecer cerrado_at
   if (dbData.estado === 'cerrado' && !dbData.cerrado_at) {
     dbData.cerrado_at = new Date().toISOString();
@@ -117,6 +117,45 @@ export async function updateTicket(input: UpdateSupportTicketInput): Promise<Sup
 
   if (error) throw error;
   return mapTicketFromDB(data);
+}
+
+/**
+ * Eliminar un ticket y todos sus mensajes asociados
+ * El alumno propietario o un admin pueden eliminar tickets
+ */
+export async function deleteTicket(ticketId: string, userId: string, isAdmin: boolean = false): Promise<void> {
+  // Verificar que el ticket existe
+  const ticket = await getTicketById(ticketId);
+  if (!ticket) {
+    throw new Error('Ticket no encontrado');
+  }
+
+  // Verificar permisos: admin puede eliminar cualquier ticket, alumno solo los suyos
+  if (!isAdmin && ticket.alumnoId !== userId) {
+    throw new Error('No tienes permiso para eliminar este ticket');
+  }
+
+  // Primero eliminar los mensajes asociados
+  const { error: mensajesError } = await supabase
+    .from('support_mensajes')
+    .delete()
+    .eq('ticket_id', ticketId);
+
+  if (mensajesError) {
+    console.error('[supportTicketsClient] Error eliminando mensajes:', mensajesError);
+    throw mensajesError;
+  }
+
+  // Luego eliminar el ticket
+  const { error: ticketError } = await supabase
+    .from('support_tickets')
+    .delete()
+    .eq('id', ticketId);
+
+  if (ticketError) {
+    console.error('[supportTicketsClient] Error eliminando ticket:', ticketError);
+    throw ticketError;
+  }
 }
 
 /**
@@ -146,7 +185,7 @@ export async function createMensaje(input: CreateSupportMensajeInput): Promise<S
   // Verificar si el ticket está cerrado y si debemos reabrirlo
   if (input.rolAutor === 'alumno') {
     const ticket = await getTicketById(input.ticketId);
-    
+
     if (ticket && ticket.estado === 'cerrado' && input.autorId === ticket.alumnoId) {
       // Reabrir el ticket automáticamente
       await updateTicket({
@@ -159,7 +198,7 @@ export async function createMensaje(input: CreateSupportMensajeInput): Promise<S
 
   // Insertar el mensaje normalmente
   const dbData = mapMensajeToDB(input);
-  
+
   // Validar UUIDs antes de insertar
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuidRegex.test(dbData.ticket_id)) {
@@ -168,12 +207,12 @@ export async function createMensaje(input: CreateSupportMensajeInput): Promise<S
   if (!uuidRegex.test(dbData.autor_id)) {
     throw new Error(`autor_id no es un UUID válido: ${dbData.autor_id}`);
   }
-  
+
   // Asegurar que texto nunca esté vacío (requerido por la BD)
   if (!dbData.texto || dbData.texto.trim().length === 0) {
     dbData.texto = 'Contenido multimedia adjunto';
   }
-  
+
   // Serializar el objeto completo para ver exactamente qué se envía
   const payloadToSend = {
     ticket_id: dbData.ticket_id,
@@ -182,7 +221,7 @@ export async function createMensaje(input: CreateSupportMensajeInput): Promise<S
     texto: dbData.texto,
     media_links: dbData.media_links,
   };
-  
+
   const { data, error } = await supabase
     .from('support_mensajes')
     .insert(payloadToSend)
@@ -202,7 +241,7 @@ export async function createMensaje(input: CreateSupportMensajeInput): Promise<S
     });
     throw error;
   }
-  
+
   return mapMensajeFromDB(data);
 }
 
@@ -214,7 +253,7 @@ function mapTicketFromDB(db: any): SupportTicket {
   // Extraer información de perfiles relacionados (pueden venir como objetos anidados)
   const alumnoNombre = db.alumno?.full_name || null;
   const profesorNombre = db.profesor?.full_name || null;
-  
+
   return {
     id: db.id,
     alumnoId: db.alumno_id,
@@ -296,10 +335,10 @@ function mapMensajeToDB(mensaje: CreateSupportMensajeInput): any {
   if (!mensaje.rolAutor) {
     throw new Error('rolAutor es requerido');
   }
-  
+
   const rolAutor = String(mensaje.rolAutor).toLowerCase().trim();
   const validRoles = ['alumno', 'profesor', 'admin'];
-  
+
   if (!validRoles.includes(rolAutor)) {
     throw new Error(`rolAutor inválido: "${mensaje.rolAutor}". Debe ser uno de: ${validRoles.join(', ')}`);
   }
@@ -384,7 +423,7 @@ export async function getPendingSupportTicketsCountsForAdmin(): Promise<{ total:
  * Pendientes = estado != 'cerrado' AND alumno_id = estudianteId
  */
 export async function getPendingSupportTicketsCountForEstu(estudianteId: string): Promise<number> {
-  
+
   const { count, error } = await supabase
     .from('support_tickets')
     .select('id', { count: 'exact', head: true })
@@ -403,7 +442,7 @@ export async function getPendingSupportTicketsCountForEstu(estudianteId: string)
     });
     throw error;
   }
-  
+
   return count || 0;
 }
 
@@ -412,7 +451,7 @@ export async function getPendingSupportTicketsCountForEstu(estudianteId: string)
  * No leídos = tickets donde la última respuesta es del profesor (el estudiante debe leer/responder)
  */
 export async function getPendingSupportTicketsCountsForEstu(estudianteId: string): Promise<{ total: number; unread: number }> {
-  
+
   // Total pendientes
   const { count: total, error: totalError } = await supabase
     .from('support_tickets')
@@ -437,7 +476,7 @@ export async function getPendingSupportTicketsCountsForEstu(estudianteId: string
     console.error('[supportTicketsClient] Error contando tickets no leídos para ESTU:', unreadError);
     throw unreadError;
   }
-  
+
   return { total: total || 0, unread: unread || 0 };
 }
 

@@ -230,7 +230,7 @@ function PreparacionPageContent() {
                             key={tab.id}
                             variant={tabActiva === tab.id ? 'default' : 'ghost'}
                             onClick={() => handleTabChange(tab.id)}
-                            className={cn("rounded-full", tabActiva === tab.id ? "" : "text-muted-foreground")}
+                            className={tabActiva === tab.id ? "" : "text-muted-foreground"}
                             size="sm"
                         >
                             <tab.icon className="w-4 h-4 mr-2" />

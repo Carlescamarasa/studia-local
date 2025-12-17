@@ -16,7 +16,8 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  User
+  User,
+  Trash2
 } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { toast } from "sonner";
@@ -27,6 +28,7 @@ import {
   getTicketById,
   createTicket,
   updateTicket,
+  deleteTicket,
   getMensajesByTicket,
   createMensaje
 } from "@/data/supportTicketsClient";
@@ -132,6 +134,29 @@ function SoportePageContent() {
       setUploadingVideo(false);
     },
   });
+
+  // Estado para confirmación de eliminación
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Mutación para eliminar ticket
+  const deleteTicketMutation = useMutation({
+    mutationFn: ({ ticketId, alumnoId }) => deleteTicket(ticketId, alumnoId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['support-tickets'] });
+      setSelectedTicketId(null);
+      setShowDeleteConfirm(false);
+      toast.success('Conversación eliminada');
+    },
+    onError: (error) => {
+      toast.error(`Error al eliminar: ${error.message}`);
+      setShowDeleteConfirm(false);
+    },
+  });
+
+  const handleDeleteTicket = () => {
+    if (!selectedTicketId || !user?.id) return;
+    deleteTicketMutation.mutate({ ticketId: selectedTicketId, alumnoId: user.id });
+  };
 
   // ===== RETURNS CONDICIONALES DESPUÉS DE TODOS LOS HOOKS =====
 
@@ -278,8 +303,8 @@ function SoportePageContent() {
                         key={ticket.id}
                         onClick={() => setSelectedTicketId(ticket.id)}
                         className={`rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-default)] px-4 py-3 md:px-5 md:py-4 shadow-sm cursor-pointer transition-colors ${selectedTicketId === ticket.id
-                            ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]'
-                            : 'hover:bg-[var(--color-surface-muted)]'
+                          ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]'
+                          : 'hover:bg-[var(--color-surface-muted)]'
                           }`}
                       >
                         {/* Fila principal: título + estatus */}
@@ -336,7 +361,7 @@ function SoportePageContent() {
             {selectedTicketId ? (
               <Card className={componentStyles.containers.cardBase}>
                 <CardHeader>
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <CardTitle>{selectedTicket?.titulo}</CardTitle>
                       <div className="flex items-center gap-2 mt-2">
@@ -356,6 +381,42 @@ function SoportePageContent() {
                         </div>
                       )}
                     </div>
+                    {/* Delete button */}
+                    {!showDeleteConfirm ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="text-[var(--color-text-secondary)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10"
+                        title="Eliminar conversación"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowDeleteConfirm(false)}
+                          disabled={deleteTicketMutation.isPending}
+                        >
+                          Cancelar
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleDeleteTicket}
+                          disabled={deleteTicketMutation.isPending}
+                          className="bg-[var(--color-danger)] hover:bg-[var(--color-danger)]/90"
+                        >
+                          {deleteTicketMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            'Eliminar'
+                          )}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -375,14 +436,14 @@ function SoportePageContent() {
                           >
                             <div
                               className={`max-w-[75%] rounded-lg p-3 shadow-sm ${isAlumno
-                                  ? 'bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30'
-                                  : 'bg-[var(--color-surface-muted)] border border-[var(--color-border-default)]'
+                                ? 'bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30'
+                                : 'bg-[var(--color-surface-muted)] border border-[var(--color-border-default)]'
                                 }`}
                             >
                               <div className="flex items-center gap-2 mb-1.5">
                                 <span className={`text-xs font-semibold ${isAlumno
-                                    ? 'text-[var(--color-primary)]'
-                                    : 'text-[var(--color-text-secondary)]'
+                                  ? 'text-[var(--color-primary)]'
+                                  : 'text-[var(--color-text-secondary)]'
                                   }`}>
                                   {isAlumno
                                     ? 'Tú'
