@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { ROUTES, toConfiguracion, toProgreso } from "@/lib/routes";
 import {
   Users,
   Music,
@@ -69,28 +70,28 @@ import LevelBadge from "@/components/common/LevelBadge";
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
   ADMIN: [
-    { title: "Agenda", url: "/agenda", icon: Calendar, group: "Docencia" },
-    { title: "Progreso", url: "/progreso?tab=resumen", icon: Activity, group: "Docencia" },
-    { title: "Tickets alumnos", url: "/soporte-prof", icon: MessageSquare, group: "Docencia" },
-    { title: "Usuarios", url: "/usuarios", icon: Users, group: "Gestión" },
-    { title: "Preparación", url: "/preparacion", icon: Target, group: "Gestión" },
-    { title: "Biblioteca", url: "/biblioteca", icon: Edit3, group: "Gestión" },
-    { title: "Reportes", url: "/reportes", icon: Bug, group: "Sistema" },
-    { title: "Configuración", url: "/configuracion?tab=version", icon: Settings, group: "Sistema" },
+    { title: "Agenda", url: ROUTES.AGENDA, icon: Calendar, group: "Docencia" },
+    { title: "Progreso", url: toProgreso('resumen'), icon: Activity, group: "Docencia" },
+    { title: "Tickets alumnos", url: ROUTES.SOPORTE_PROF, icon: MessageSquare, group: "Docencia" },
+    { title: "Usuarios", url: ROUTES.USUARIOS, icon: Users, group: "Gestión" },
+    { title: "Preparación", url: ROUTES.PREPARACION, icon: Target, group: "Gestión" },
+    { title: "Biblioteca", url: ROUTES.BIBLIOTECA, icon: Edit3, group: "Gestión" },
+    { title: "Reportes", url: ROUTES.REPORTES, icon: Bug, group: "Sistema" },
+    { title: "Configuración", url: toConfiguracion('version'), icon: Settings, group: "Sistema" },
   ],
   PROF: [
-    { title: "Progreso", url: "/progreso?tab=resumen", icon: Activity, group: "Principal" },
-    { title: "Preparación", url: "/preparacion", icon: Target, group: "Planificador" },
-    { title: "Agenda", url: "/agenda", icon: Calendar, group: "Planificador" },
-    { title: "Biblioteca", url: "/biblioteca", icon: Edit3, group: "Planificador" },
-    { title: "Reportes", url: "/reportes", icon: Bug, group: "Profesor" },
-    { title: "Tickets alumnos", url: "/soporte-prof", icon: MessageSquare, group: "Profesor" },
+    { title: "Progreso", url: toProgreso('resumen'), icon: Activity, group: "Principal" },
+    { title: "Preparación", url: ROUTES.PREPARACION, icon: Target, group: "Planificador" },
+    { title: "Agenda", url: ROUTES.AGENDA, icon: Calendar, group: "Planificador" },
+    { title: "Biblioteca", url: ROUTES.BIBLIOTECA, icon: Edit3, group: "Planificador" },
+    { title: "Reportes", url: ROUTES.REPORTES, icon: Bug, group: "Profesor" },
+    { title: "Tickets alumnos", url: ROUTES.SOPORTE_PROF, icon: MessageSquare, group: "Profesor" },
   ],
   ESTU: [
-    { title: "Studia ahora", url: "/hoy", icon: PlayCircle, group: "Estudio" },
-    { title: "Progreso", url: "/progreso?tab=resumen", icon: Activity, group: "Estudio" },
-    { title: "Calendario", url: "/calendario", icon: Calendar, group: "Estudio" },
-    { title: "Centro de dudas", url: "/soporte", icon: MessageSquare, group: "Estudio" },
+    { title: "Studia ahora", url: ROUTES.HOY, icon: PlayCircle, group: "Estudio" },
+    { title: "Progreso", url: toProgreso('resumen'), icon: Activity, group: "Estudio" },
+    { title: "Calendario", url: ROUTES.CALENDARIO, icon: Calendar, group: "Estudio" },
+    { title: "Centro de dudas", url: ROUTES.SOPORTE, icon: MessageSquare, group: "Estudio" },
   ],
 };
 
@@ -270,15 +271,15 @@ function LayoutContent() {
         },
         'go-users': () => {
           e.preventDefault();
-          navigate(createPageUrl('usuarios'));
+          navigate(ROUTES.USUARIOS);
         },
         'go-import': () => {
           e.preventDefault();
-          navigate('/configuracion?tab=import');
+          navigate(toConfiguracion('import'));
         },
         'go-design': () => {
           e.preventDefault();
-          navigate('/configuracion?tab=design');
+          navigate(toConfiguracion('design'));
         },
       };
 
@@ -469,29 +470,30 @@ function LayoutContent() {
   }
 
   // Mapeo de URLs a los roles que tienen acceso
+  // Mapeo de URLs a los roles que tienen acceso
   const pagePermissions = {
-    '/usuarios': ['ADMIN'],
-    '/reportes': ['PROF', 'ADMIN'],
-    '/estudiantes': ['PROF', 'ADMIN'],
-    '/asignaciones': ['PROF', 'ADMIN'],
-    '/preparacion': ['PROF', 'ADMIN'],
-    '/biblioteca': ['PROF', 'ADMIN'],
-    '/agenda': ['PROF', 'ADMIN'],
-    '/calendario': ['ESTU', 'PROF', 'ADMIN'],
-    '/hoy': ['ESTU'],
-    '/semana': ['ESTU'],
-    '/progreso': ['ESTU', 'PROF', 'ADMIN'],
+    [ROUTES.USUARIOS]: ['ADMIN'],
+    [ROUTES.REPORTES]: ['PROF', 'ADMIN'],
+    [ROUTES.ESTUDIANTES]: ['PROF', 'ADMIN'],
+    [ROUTES.ASIGNACIONES]: ['PROF', 'ADMIN'],
+    [ROUTES.PREPARACION]: ['PROF', 'ADMIN'],
+    [ROUTES.BIBLIOTECA]: ['PROF', 'ADMIN'],
+    [ROUTES.AGENDA]: ['PROF', 'ADMIN'],
+    [ROUTES.CALENDARIO]: ['ESTU', 'PROF', 'ADMIN'],
+    [ROUTES.HOY]: ['ESTU'],
+    '/semana': ['ESTU'], // Not in ROUTES yet but fine
+    [ROUTES.PROGRESO]: ['ESTU', 'PROF', 'ADMIN'],
     '/estadisticas': ['ESTU', 'PROF', 'ADMIN'],
     '/habilidades': ['ESTU', 'PROF', 'ADMIN'],
-    '/design': ['ADMIN'], // Redirects to config
-    '/admin/version': ['ADMIN'], // Redirects to config
-    '/admin/configuracion': ['ADMIN'], // Redirects to config
-    '/configuracion': ['ADMIN'], // Canonical
-    '/testseed': ['ADMIN'], // Redirects to config
-    '/import-export': ['ADMIN'], // Redirects to config
-    '/soporte': ['ESTU'],
-    '/soporte-prof': ['PROF', 'ADMIN'],
-    '/contenido-multimedia': ['PROF', 'ADMIN'], // Redirects to config
+    '/design': ['ADMIN'], // Legacy
+    '/admin/version': ['ADMIN'], // Legacy
+    '/admin/configuracion': ['ADMIN'], // Legacy
+    [ROUTES.CONFIGURACION]: ['ADMIN'],
+    '/testseed': ['ADMIN'], // Legacy
+    '/import-export': ['ADMIN'], // Legacy
+    [ROUTES.SOPORTE]: ['ESTU'],
+    [ROUTES.SOPORTE_PROF]: ['PROF', 'ADMIN'],
+    '/contenido-multimedia': ['PROF', 'ADMIN'], // Legacy
     '/mochila': ['ESTU'],
   };
 

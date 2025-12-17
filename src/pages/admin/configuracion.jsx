@@ -18,6 +18,7 @@ import PageHeader from "@/components/ds/PageHeader";
 import Tabs from "@/components/ds/Tabs";
 import { componentStyles } from "@/design/componentStyles";
 import { LoadingSpinner } from "@/components/ds";
+import TabBoundary from "@/components/common/TabBoundary";
 
 // Lazy load tab contents for code-splitting
 const AppVersionContent = lazy(() => import("./AppVersionContent"));
@@ -73,39 +74,39 @@ function ConfiguracionPageContent() {
         switch (tabActiva) {
             case 'version':
                 return (
-                    <Suspense fallback={<TabLoader />}>
+                    <TabBoundary>
                         <AppVersionContent />
-                    </Suspense>
+                    </TabBoundary>
                 );
             case 'design':
                 return (
-                    <Suspense fallback={<TabLoader />}>
+                    <TabBoundary>
                         <DesignContent hideLevelsTab />
-                    </Suspense>
+                    </TabBoundary>
                 );
             case 'niveles':
                 return (
-                    <Suspense fallback={<TabLoader />}>
+                    <TabBoundary>
                         <LevelConfigView />
-                    </Suspense>
+                    </TabBoundary>
                 );
             case 'tests':
                 return (
-                    <Suspense fallback={<TabLoader />}>
+                    <TabBoundary>
                         <TestSeedContent />
-                    </Suspense>
+                    </TabBoundary>
                 );
             case 'import':
                 return (
-                    <Suspense fallback={<TabLoader />}>
+                    <TabBoundary>
                         <ImportExportContent />
-                    </Suspense>
+                    </TabBoundary>
                 );
             case 'multimedia':
                 return (
-                    <Suspense fallback={<TabLoader />}>
+                    <TabBoundary>
                         <MultimediaContent />
-                    </Suspense>
+                    </TabBoundary>
                 );
             default:
                 return null;

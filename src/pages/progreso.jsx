@@ -59,6 +59,7 @@ import ProgresoTab from "@/components/estadisticas/ProgresoTab";
 import HabilidadesView from "@/components/estadisticas/HabilidadesView";
 import FeedbackUnificadoTab from "@/components/estadisticas/FeedbackUnificadoTab";
 import LevelBadge from "@/components/common/LevelBadge";
+import TabBoundary from "@/components/common/TabBoundary";
 
 import TotalXPDisplay from "@/components/estadisticas/TotalXPDisplay";
 import HabilidadesRadarChart from "@/components/estadisticas/HabilidadesRadarChart";
@@ -849,106 +850,118 @@ function ProgresoPageContent() {
 
                 {/* Tab content */}
                 {tabActiva === 'resumen' && (
-                    <TabResumenContent
-                        kpis={kpis}
-                        datosLinea={datosLinea}
-                        granularidad={granularidad}
-                        onGranularidadChange={setGranularidad}
-                        userIdActual={effectiveStudentId || userIdActual}
-                        alumnosSeleccionados={alumnosSeleccionados}
-                        allStudentIds={estudiantesDisponibles.map(s => s.id)}
-                    />
+                    <TabBoundary>
+                        <TabResumenContent
+                            kpis={kpis}
+                            datosLinea={datosLinea}
+                            granularidad={granularidad}
+                            onGranularidadChange={setGranularidad}
+                            userIdActual={effectiveStudentId || userIdActual}
+                            alumnosSeleccionados={alumnosSeleccionados}
+                            allStudentIds={estudiantesDisponibles.map(s => s.id)}
+                        />
+                    </TabBoundary>
                 )}
 
                 {tabActiva === 'habilidades' && (
-                    <HabilidadesView
-                        alumnosSeleccionados={alumnosSeleccionados}
-                        allStudentIds={estudiantesDisponibles.map(s => s.id)}
-                        userIdActual={userIdActual}
-                        fechaInicio={periodoInicio}
-                        fechaFin={periodoFin}
-                    />
+                    <TabBoundary>
+                        <HabilidadesView
+                            alumnosSeleccionados={alumnosSeleccionados}
+                            allStudentIds={estudiantesDisponibles.map(s => s.id)}
+                            userIdActual={userIdActual}
+                            fechaInicio={periodoInicio}
+                            fechaFin={periodoFin}
+                        />
+                    </TabBoundary>
                 )}
 
                 {/* Bloque 3: Embedded statistics instead of link */}
                 {tabActiva === 'estadisticas' && (
-                    <TabEstadisticasContent
-                        kpis={kpis}
-                        datosLinea={datosLinea}
-                        granularidad={granularidad}
-                        onGranularidadChange={setGranularidad}
-                        tiempoRealVsObjetivo={tiempoRealVsObjetivo}
-                        registrosFiltrados={registrosFiltradosUnicos}
-                        periodoInicio={periodoInicio}
-                        periodoFin={periodoFin}
-                        // NEW props for subtabs
-                        tiposBloques={tiposBloques}
-                        topEjercicios={topEjercicios}
-                        bloquesFiltrados={bloquesFiltrados}
-                        usuarios={usuarios}
-                        userIdActual={effectiveStudentId || userIdActual}
-                        effectiveUser={effectiveUser}
-                        isEstu={isEstu}
-                        isProf={isProf}
-                        isAdmin={isAdmin}
-                        estudiantesComparacion={estudiantesComparacion}
-                    />
+                    <TabBoundary>
+                        <TabEstadisticasContent
+                            kpis={kpis}
+                            datosLinea={datosLinea}
+                            granularidad={granularidad}
+                            onGranularidadChange={setGranularidad}
+                            tiempoRealVsObjetivo={tiempoRealVsObjetivo}
+                            registrosFiltrados={registrosFiltradosUnicos}
+                            periodoInicio={periodoInicio}
+                            periodoFin={periodoFin}
+                            // NEW props for subtabs
+                            tiposBloques={tiposBloques}
+                            topEjercicios={topEjercicios}
+                            bloquesFiltrados={bloquesFiltrados}
+                            usuarios={usuarios}
+                            userIdActual={effectiveStudentId || userIdActual}
+                            effectiveUser={effectiveUser}
+                            isEstu={isEstu}
+                            isProf={isProf}
+                            isAdmin={isAdmin}
+                            estudiantesComparacion={estudiantesComparacion}
+                        />
+                    </TabBoundary>
                 )}
 
                 {tabActiva === 'mochila' && (
-                    <MochilaTabContent
-                        studentId={effectiveStudentId || userIdActual}
-                        isEstu={isEstu}
-                        hasSelectedStudent={selectedStudentIds.length === 1}
-                    />
+                    <TabBoundary>
+                        <MochilaTabContent
+                            studentId={effectiveStudentId || userIdActual}
+                            isEstu={isEstu}
+                            hasSelectedStudent={selectedStudentIds.length === 1}
+                        />
+                    </TabBoundary>
                 )}
 
                 {tabActiva === 'feedback' && (
-                    <div className="space-y-4">
-                        {(isProf || isAdmin) && alumnosSeleccionados.length === 1 && (
-                            <div className="flex justify-end">
-                                <Button
-                                    onClick={handleCreateFeedback}
-                                    variant="primary"
-                                    size="sm"
-                                    className="gap-2"
-                                >
-                                    <MessageSquare className="w-4 h-4" />
-                                    Nuevo Feedback Semanal
-                                </Button>
-                            </div>
-                        )}
-                        <FeedbackUnificadoTab
-                            feedbacks={isEstu ? feedbackProfesor : feedbacksParaProfAdmin}
-                            evaluaciones={evaluacionesFiltradas}
-                            registros={registrosFiltradosUnicos}
-                            usuarios={usuariosMap}
-                            isEstu={isEstu}
-                            onEditFeedback={(isProf || isAdmin) ? handleEditFeedback : undefined}
-                            puedeEditar={(f) => isProf || isAdmin} // Simple permission check
-                            onMediaClick={handleMediaClick}
-                            isMediaModalOpen={mediaPreviewOpen}
-                        />
-                    </div>
+                    <TabBoundary>
+                        <div className="space-y-4">
+                            {(isProf || isAdmin) && alumnosSeleccionados.length === 1 && (
+                                <div className="flex justify-end">
+                                    <Button
+                                        onClick={handleCreateFeedback}
+                                        variant="primary"
+                                        size="sm"
+                                        className="gap-2"
+                                    >
+                                        <MessageSquare className="w-4 h-4" />
+                                        Nuevo Feedback Semanal
+                                    </Button>
+                                </div>
+                            )}
+                            <FeedbackUnificadoTab
+                                feedbacks={isEstu ? feedbackProfesor : feedbacksParaProfAdmin}
+                                evaluaciones={evaluacionesFiltradas}
+                                registros={registrosFiltradosUnicos}
+                                usuarios={usuariosMap}
+                                isEstu={isEstu}
+                                onEditFeedback={(isProf || isAdmin) ? handleEditFeedback : undefined}
+                                puedeEditar={(f) => isProf || isAdmin} // Simple permission check
+                                onMediaClick={handleMediaClick}
+                                isMediaModalOpen={mediaPreviewOpen}
+                            />
+                        </div>
+                    </TabBoundary>
                 )}
 
                 {/* Tab Comparar - PROF/ADMIN only */}
                 {tabActiva === 'comparar' && (
-                    (isProf || isAdmin) ? (
-                        <ComparativaEstudiantes
-                            estudiantes={estudiantesComparacion}
-                            usuarios={usuarios}
-                        />
-                    ) : (
-                        <Card className={componentStyles.components.cardBase}>
-                            <CardContent className="p-8 text-center">
-                                <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                                <p className="text-[var(--color-text-secondary)]">
-                                    No tienes permisos para ver esta sección
-                                </p>
-                            </CardContent>
-                        </Card>
-                    )
+                    <TabBoundary>
+                        {(isProf || isAdmin) ? (
+                            <ComparativaEstudiantes
+                                estudiantes={estudiantesComparacion}
+                                usuarios={usuarios}
+                            />
+                        ) : (
+                            <Card className={componentStyles.components.cardBase}>
+                                <CardContent className="p-8 text-center">
+                                    <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                                    <p className="text-[var(--color-text-secondary)]">
+                                        No tienes permisos para ver esta sección
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </TabBoundary>
                 )}
 
                 {/* Modal Feedback Semanal */}
