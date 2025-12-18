@@ -66,6 +66,7 @@ import { HotkeysModalProvider, useHotkeysModal } from "@/hooks/useHotkeysModal.j
 import { useAppVersion } from "@/hooks/useAppVersion";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import LevelBadge from "@/components/common/LevelBadge";
+import AdminUpdateNotice from "@/components/common/AdminUpdateNotice";
 
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
@@ -869,6 +870,7 @@ function LayoutContent() {
         open={perfilModalOpen}
         onOpenChange={setPerfilModalOpen}
       />
+      <AdminUpdateNotice />
     </RoleBootstrap>
   );
 }
