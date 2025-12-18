@@ -26,11 +26,14 @@ export default function AppVersionContent() {
         activateVersion,
         isCreating,
         isActivating,
+        syncToSupabase,
+        isSyncing,
     } = useAppVersion({ fetchHistory: true });
 
     const [isNewVersionModalOpen, setIsNewVersionModalOpen] = useState(false);
     const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
     const [selectedVersionId, setSelectedVersionId] = useState(null);
+    const [lastSync, setLastSync] = useState(null);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -80,6 +83,14 @@ export default function AppVersionContent() {
         });
     };
 
+    const handleSyncData = () => {
+        syncToSupabase(undefined, {
+            onSuccess: () => {
+                setLastSync(new Date());
+            }
+        });
+    };
+
     // Display production version from /version.json
     const productionVersionDisplay = productionVersion
         ? `${productionVersion.versionName}`
@@ -102,23 +113,30 @@ export default function AppVersionContent() {
                                 <p className="text-sm text-[var(--color-text-secondary)] mt-1">
                                     Studia {productionVersionDisplay}
                                 </p>
-                                {productionDetails && (
-                                    <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">
-                                        {productionDetails}
-                                    </p>
-                                )}
+                                <div className="flex flex-col gap-0.5 mt-0.5">
+                                    {productionDetails && (
+                                        <p className="text-xs text-[var(--color-text-tertiary)]">
+                                            {productionDetails}
+                                        </p>
+                                    )}
+                                    {lastSync && (
+                                        <p className="text-xs text-green-600 font-medium">
+                                            Última sincronización: {lastSync.toLocaleTimeString()}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={refresh}
-                                disabled={isLoading}
+                                onClick={handleSyncData}
+                                disabled={isLoading || isSyncing}
                                 className={componentStyles.buttons.outline}
                             >
-                                <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                                Actualizar
+                                <RefreshCw className={`w-4 h-4 mr-2 ${(isLoading || isSyncing) ? 'animate-spin' : ''}`} />
+                                {isSyncing ? 'Actualizando...' : 'Actualizar'}
                             </Button>
                             <Button
                                 variant="primary"

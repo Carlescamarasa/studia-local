@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ds';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCw, Bug, Copy, Check, ArrowLeft } from 'lucide-react';
+import { AlertCircle, RefreshCw, Bug, Copy, Check, ArrowLeft, DownloadCloud } from 'lucide-react';
 import { componentStyles } from '@/design/componentStyles';
 import { log } from '@/utils/log';
 
@@ -99,9 +99,27 @@ class ErrorBoundary extends React.Component {
     }
   };
 
+  // Detectar error de carga de chunks (versión desactualizada)
+  isChunkError(error) {
+    if (!error) return false;
+    const msg = error.message || error.toString();
+    const name = error.name || '';
+
+    return (
+      name === 'ChunkLoadError' ||
+      msg.includes('Loading chunk') ||
+      msg.includes('dynamically imported module') ||
+      msg.includes('Importing a module script failed') ||
+      msg.includes('missing') || // A veces 'missing' en logs de webpack
+      msg.includes('types/html') // Referencia al error MIME type text/html
+    );
+  }
+
   render() {
     if (this.state.hasError) {
+      const isChunkLoadError = this.isChunkError(this.state.error);
       const isCompact = this.props.variant === 'compact';
+
       const containerClasses = isCompact
         ? "w-full h-full flex items-center justify-center min-h-[400px] p-4"
         : "min-h-screen flex items-center justify-center bg-background p-4";
@@ -109,6 +127,40 @@ class ErrorBoundary extends React.Component {
       const cardClasses = isCompact
         ? `w-full max-w-xl ${componentStyles.containers.cardBase} border-[var(--color-danger)] shadow-sm`
         : `max-w-2xl w-full ${componentStyles.containers.cardBase} border-[var(--color-danger)]`;
+
+      // Si es error de chunk, mostrar UI simplificada de "Nueva versión"
+      if (isChunkLoadError) {
+        return (
+          <div className={containerClasses}>
+            <Card className={cardClasses.replace('border-[var(--color-danger)]', 'border-[var(--color-primary)]')}>
+              <CardContent className="pt-6 text-center space-y-6">
+                <div className="flex justify-center">
+                  <DownloadCloud className={`text-[var(--color-primary)] ${isCompact ? 'w-10 h-10' : 'w-16 h-16'}`} />
+                </div>
+
+                <div>
+                  <h2 className={`${isCompact ? 'text-lg font-bold' : componentStyles.typography.sectionTitle} mb-2`}>
+                    Nueva versión disponible
+                  </h2>
+                  <p className={`${componentStyles.typography.bodyText} ${isCompact ? 'text-sm' : ''}`}>
+                    Hemos detectado una actualización de la aplicación. Por favor, actualiza recuperar la conexión y disfrutar de las últimas mejoras.
+                  </p>
+                </div>
+
+                <div className="flex justify-center">
+                  <Button
+                    onClick={() => window.location.reload(true)}
+                    className={`${componentStyles.buttons.primary} gap-2 w-full sm:w-auto px-8`}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Actualizar ahora
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      }
 
       return (
         <div className={containerClasses}>
@@ -269,4 +321,3 @@ class ErrorBoundary extends React.Component {
 }
 
 export default ErrorBoundary;
-

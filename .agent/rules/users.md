@@ -14,3 +14,5 @@ TEST_ESTU_PASSWORD=fF12345678
 
 TEST_PROF_EMAIL=carlescamarasa+profe@gmail.com
 TEST_PROF_EMAIL=12345678
+
+Remember that you can acces to Supabase from the Terminal.

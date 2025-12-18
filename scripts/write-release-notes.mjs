@@ -13,6 +13,43 @@ function sh(cmd) {
     }
 }
 
+/**
+ * Parse conventional commit type from subject
+ * Returns: feat, fix, refactor, chore, docs, or "other"
+ */
+function parseCommitType(subject) {
+    if (!subject) return "other";
+    const lower = subject.toLowerCase();
+
+    // Check for conventional commit format: type(scope): message or type: message
+    const conventionalMatch = lower.match(/^(feat|fix|refactor|chore|docs|style|test|perf|ci|build)(\(.+\))?:/);
+    if (conventionalMatch) {
+        return conventionalMatch[1];
+    }
+
+    // Fallback: check for keywords anywhere in the subject
+    if (lower.includes("feat") || lower.includes("add") || lower.includes("new")) return "feat";
+    if (lower.includes("fix") || lower.includes("bug") || lower.includes("error") || lower.includes("issue")) return "fix";
+    if (lower.includes("refactor") || lower.includes("clean") || lower.includes("improve")) return "refactor";
+    if (lower.includes("doc") || lower.includes("readme") || lower.includes("comment")) return "docs";
+
+    return "chore";
+}
+
+/**
+ * Generate human-readable summary from grouped commits
+ */
+function generateSummaryText(byType) {
+    const parts = [];
+    if (byType.feat.count > 0) parts.push(`${byType.feat.count} feature${byType.feat.count > 1 ? 's' : ''}`);
+    if (byType.fix.count > 0) parts.push(`${byType.fix.count} fix${byType.fix.count > 1 ? 'es' : ''}`);
+    if (byType.refactor.count > 0) parts.push(`${byType.refactor.count} refactor${byType.refactor.count > 1 ? 's' : ''}`);
+    if (byType.docs.count > 0) parts.push(`${byType.docs.count} doc${byType.docs.count > 1 ? 's' : ''}`);
+    if (byType.chore.count > 0) parts.push(`${byType.chore.count} chore${byType.chore.count > 1 ? 's' : ''}`);
+
+    return parts.length > 0 ? parts.join(', ') : 'No commits';
+}
+
 const deployDir = path.resolve("deploy");
 if (!fs.existsSync(deployDir)) {
     fs.mkdirSync(deployDir, { recursive: true });
@@ -60,8 +97,37 @@ const logOutput = sh(logCmd);
 
 const items = logOutput ? logOutput.split("\n").map(line => {
     const [hash, date, author, subject] = line.split("|");
-    return { hash, date, author, subject };
+    const type = parseCommitType(subject);
+    return { hash, date, author, subject, type };
 }) : [];
+
+/**
+ * GENERATE SUMMARY BY TYPE
+ */
+const byType = {
+    feat: { count: 0, items: [] },
+    fix: { count: 0, items: [] },
+    refactor: { count: 0, items: [] },
+    docs: { count: 0, items: [] },
+    chore: { count: 0, items: [] },
+};
+
+items.forEach(item => {
+    const typeGroup = byType[item.type] || byType.chore;
+    typeGroup.count++;
+    // Only store first 5 subjects per type for the summary
+    if (typeGroup.items.length < 5) {
+        typeGroup.items.push(item.subject);
+    }
+});
+
+const summary = {
+    total: items.length,
+    byType,
+    text: generateSummaryText(byType),
+};
+
+console.log(`[changelog] Summary: ${summary.text}`);
 
 /**
  * OUTPUT
@@ -74,6 +140,7 @@ const payload = {
         to: currentCommit
     },
     generatedAt: now.toISOString(),
+    summary,
     items
 };
 
@@ -83,3 +150,4 @@ console.log(`[changelog] Wrote dist/release-notes.json with ${items.length} item
 // Update LAST_DEPLOYED_COMMIT for next time
 fs.writeFileSync(LAST_COMMIT_FILE, currentCommit);
 console.log(`[changelog] Updated deploy/LAST_DEPLOYED_COMMIT to ${currentCommit}`);
+
