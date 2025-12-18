@@ -12,7 +12,36 @@ export function useAppVersion(options = {}) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  // Query para versión actual
+  // Query para versión en producción (desde /version.json)
+  const {
+    data: productionVersion,
+    isLoading: isLoadingProduction,
+    refetch: refreshProduction,
+  } = useQuery({
+    queryKey: ['appVersion', 'production'],
+    queryFn: async () => {
+      const urls = [
+        `/version.json?ts=${Date.now()}`,
+        `https://studia.latrompetasonara.com/version.json?ts=${Date.now()}`
+      ];
+
+      for (const url of urls) {
+        try {
+          const response = await fetch(url);
+          if (response.ok) {
+            return response.json();
+          }
+        } catch {
+          // Try next URL
+        }
+      }
+      return null;
+    },
+    staleTime: 60 * 1000, // 1 minuto
+    retry: false,
+  });
+
+  // Query para versión actual (Supabase - para changelog)
   const {
     data: currentVersion,
     isLoading: isLoadingCurrent,
@@ -78,10 +107,50 @@ export function useAppVersion(options = {}) {
     },
   });
 
+  // Mutación para sincronizar datos locales (version.json + release-notes.json) a Supabase
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error('Usuario no autenticado');
+
+      // 1. Fetch version.json
+      const vRes = await fetch(`/version.json?ts=${Date.now()}`);
+      if (!vRes.ok) throw new Error('No se pudo cargar version.json');
+      const vData = await vRes.json();
+
+      // 2. Fetch release-notes.json
+      const rRes = await fetch(`/release-notes.json?ts=${Date.now()}`);
+      if (!rRes.ok) throw new Error('No se pudo cargar release-notes.json');
+      const rData = await rRes.json();
+
+      // 3. Upsert to Supabase
+      const result = await versionClient.upsertVersion({
+        version: vData.versionName,
+        commit_hash: vData.commit,
+        git_author: vData.author,
+        build_date: vData.buildDate,
+        release_notes: rData,
+        author_id: user.id
+      });
+
+      // 4. Activarla si es la que acabamos de subir (opcional, pero suele ser lo deseado)
+      await versionClient.activateVersion(result.id);
+
+      return result;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['appVersion'] });
+      toast.success(`✅ Sincronizada versión ${data.version} con Supabase`);
+    },
+    onError: (error) => {
+      toast.error(`❌ Error al sincronizar: ${error.message || 'Error desconocido'}`);
+    }
+  });
+
   /**
    * Refresca todos los datos de versión
    */
   const refresh = () => {
+    refreshProduction();
     refreshCurrent();
     refreshHistory();
   };
@@ -106,14 +175,17 @@ export function useAppVersion(options = {}) {
   };
 
   return {
+    productionVersion,
     currentVersion,
     history,
-    isLoading: isLoadingCurrent || isLoadingHistory,
+    isLoading: isLoadingCurrent || isLoadingHistory || isLoadingProduction,
     refresh,
     createVersion,
     activateVersion,
+    syncToSupabase: syncMutation.mutate,
     isCreating: createVersionMutation.isPending,
     isActivating: activateVersionMutation.isPending,
+    isSyncing: syncMutation.isPending,
   };
 }
 

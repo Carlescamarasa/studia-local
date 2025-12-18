@@ -65,7 +65,7 @@ export const versionClient = {
 
       // Obtener los IDs de autores únicos
       const authorIds = [...new Set(versions.map(v => v.author_id).filter(Boolean))];
-      
+
       // Obtener los perfiles de los autores
       let authorsMap = new Map();
       if (authorIds.length > 0) {
@@ -172,6 +172,68 @@ export const versionClient = {
 
       if (metaError) throw metaError;
       return appMeta;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Realiza un upsert de una versión basado en el nombre de la versión
+   * @param {Object} params
+   * @param {string} params.version - Nombre de la versión (ej: "v0.92-beta")
+   * @param {string} [params.commit_hash] - Hash del commit
+   * @param {string} [params.git_author] - Autor del commit
+   * @param {string} [params.build_date] - Fecha de compilación
+   * @param {Object} [params.release_notes] - Objeto JSON con las notas
+   * @param {string} [params.author_id] - ID del usuario que sincroniza
+   * @returns {Promise<Object>} Versión upsertada
+   */
+  async upsertVersion({ version, commit_hash, git_author, build_date, release_notes, author_id }) {
+    try {
+      // Intentar encontrar si ya existe por el campo 'version'
+      const { data: existing, error: findError } = await supabase
+        .from('version_history')
+        .select('id')
+        .eq('version', version)
+        .maybeSingle();
+
+      const payload = {
+        version: version.trim(),
+        commit_hash,
+        git_author,
+        build_date,
+        release_notes,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (author_id) {
+        payload.author_id = author_id;
+      }
+
+      let result;
+      if (existing) {
+        const { data, error } = await supabase
+          .from('version_history')
+          .update(payload)
+          .eq('id', existing.id)
+          .select()
+          .single();
+        if (error) throw error;
+        result = data;
+      } else {
+        const { data, error } = await supabase
+          .from('version_history')
+          .insert({
+            ...payload,
+            created_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        result = data;
+      }
+
+      return result;
     } catch (error) {
       throw error;
     }

@@ -15,14 +15,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 function AppVersionPageContent() {
   const {
+    productionVersion,
     currentVersion,
     history,
     isLoading,
     refresh,
     createVersion,
     activateVersion,
+    syncToSupabase,
     isCreating,
     isActivating,
+    isSyncing,
   } = useAppVersion({ fetchHistory: true });
 
   const [isNewVersionModalOpen, setIsNewVersionModalOpen] = useState(false);
@@ -77,9 +80,13 @@ function AppVersionPageContent() {
     });
   };
 
-  const currentVersionDisplay = currentVersion
-    ? `${currentVersion.version}${currentVersion.codename ? ` "${currentVersion.codename}"` : ''}`
+  const currentVersionDisplay = productionVersion
+    ? `${productionVersion.versionName}${productionVersion.codename ? ` "${productionVersion.codename}"` : ''}`
     : 'Sin versión activa';
+
+  const handleSyncData = () => {
+    syncToSupabase();
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,11 +113,11 @@ function AppVersionPageContent() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={refresh}
-                  disabled={isLoading}
+                  onClick={handleSyncData}
+                  disabled={isLoading || isSyncing}
                   className={componentStyles.buttons.outline}
                 >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-4 h-4 mr-2 ${(isLoading || isSyncing) ? 'animate-spin' : ''}`} />
                   Actualizar
                 </Button>
                 <Button
@@ -194,7 +201,7 @@ function AppVersionPageContent() {
                             <div className="flex items-center gap-2 text-sm">
                               <User className="w-4 h-4 text-[var(--color-text-secondary)]" />
                               <span className="text-[var(--color-text-secondary)]">
-                                {displayName(author) || '—'}
+                                {version.git_author || displayName(author) || '—'}
                               </span>
                             </div>
                           </TableCell>

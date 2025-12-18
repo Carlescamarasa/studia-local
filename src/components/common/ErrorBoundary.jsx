@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ds';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCw, Bug, Copy, Check } from 'lucide-react';
+import { AlertCircle, RefreshCw, Bug, Copy, Check, ArrowLeft } from 'lucide-react';
 import { componentStyles } from '@/design/componentStyles';
 import { log } from '@/utils/log';
 
@@ -44,6 +44,10 @@ class ErrorBoundary extends React.Component {
   handleReportSent() {
     this.setState({ reportSent: true });
   }
+
+  handleGoBack = () => {
+    window.history.back();
+  };
 
   handleReset = () => {
     this.setState({ hasError: false, error: null, errorInfo: null, reportSent: false, copied: false });
@@ -234,6 +238,15 @@ class ErrorBoundary extends React.Component {
                 >
                   <Bug className="w-4 h-4" />
                   Reportar error
+                </Button>
+
+                <Button
+                  onClick={this.handleGoBack}
+                  variant="outline"
+                  className={`${componentStyles.buttons.outline} gap-2`}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Volver
                 </Button>
 
                 <Button

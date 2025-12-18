@@ -337,13 +337,13 @@ export default function LevelConfigView() {
                 </div>
             </div>
 
-            <Collapsible className="bg-blue-50/50 border border-blue-100 rounded-lg p-3">
-                <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-blue-800 hover:text-blue-900 w-full">
+            <Collapsible className="bg-[var(--color-info)]/10 border border-[var(--color-info)]/20 rounded-lg p-3">
+                <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-[var(--color-info)] hover:opacity-80 w-full">
                     <Info className="w-4 h-4" />
                     Cómo funciona el sistema de niveles
                     <ChevronDown className="w-4 h-4 ml-auto transition-transform ui-expanded:rotate-180" />
                 </CollapsibleTrigger>
-                <CollapsibleContent className="pt-2 text-sm text-blue-700/80 space-y-1 pl-6">
+                <CollapsibleContent className="pt-2 text-sm text-[var(--color-info)]/80 space-y-1 pl-6">
                     <ul className="list-disc space-y-1">
                         <li>Se empieza en Nivel 1 con 0 XP.</li>
                         <li>La configuración de Nivel {currentLevelNum} define cuándo puede pasar a Nivel {nextLevelNum}.</li>
@@ -480,12 +480,12 @@ export default function LevelConfigView() {
                                                 <CardContent className="space-y-4">
                                                     {data.similar.length > 0 && (
                                                         <div>
-                                                            <h4 className="text-sm font-medium text-yellow-600 mb-2 flex items-center gap-2">
+                                                            <h4 className="text-sm font-medium text-[var(--color-warning)] mb-2 flex items-center gap-2">
                                                                 <AlertCircle className="w-3 h-3" /> Evolución Posible
                                                             </h4>
                                                             <div className="space-y-2">
                                                                 {data.similar.map((item, idx) => (
-                                                                    <div key={idx} className="bg-yellow-50/50 p-2 rounded text-sm grid grid-cols-2 gap-4 items-center">
+                                                                    <div key={idx} className="bg-[var(--color-warning)]/10 p-2 rounded text-sm grid grid-cols-2 gap-4 items-center">
                                                                         <div className="text-muted-foreground line-through opacity-70">
                                                                             {item.previous.description}
                                                                         </div>
@@ -500,12 +500,12 @@ export default function LevelConfigView() {
 
                                                     {data.new.length > 0 && (
                                                         <div>
-                                                            <h4 className="text-sm font-medium text-green-600 mb-2 flex items-center gap-2">
+                                                            <h4 className="text-sm font-medium text-[var(--color-success)] mb-2 flex items-center gap-2">
                                                                 <Plus className="w-3 h-3" /> Nuevos en Nivel {activeLevel}
                                                             </h4>
                                                             <ul className="space-y-1">
                                                                 {data.new.map(item => (
-                                                                    <li key={item.id} className="bg-green-50/50 p-2 rounded text-sm">
+                                                                    <li key={item.id} className="bg-[var(--color-success)]/10 p-2 rounded text-sm">
                                                                         {renderDescriptionWithTags(item.description)}
                                                                     </li>
                                                                 ))}
@@ -515,12 +515,12 @@ export default function LevelConfigView() {
 
                                                     {data.removed.length > 0 && (
                                                         <div>
-                                                            <h4 className="text-sm font-medium text-red-600 mb-2 flex items-center gap-2">
+                                                            <h4 className="text-sm font-medium text-[var(--color-danger)] mb-2 flex items-center gap-2">
                                                                 <Trash2 className="w-3 h-3" /> Eliminados (estaban en Nivel {parseInt(activeLevel) - 1})
                                                             </h4>
                                                             <ul className="space-y-1">
                                                                 {data.removed.map(item => (
-                                                                    <li key={item.id} className="bg-red-50/50 p-2 rounded text-sm text-muted-foreground">
+                                                                    <li key={item.id} className="bg-[var(--color-danger)]/10 p-2 rounded text-sm text-muted-foreground">
                                                                         {item.description}
                                                                     </li>
                                                                 ))}

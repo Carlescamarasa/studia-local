@@ -196,14 +196,14 @@ const MusicStaff = ({ note }) => {
 
     if (!note) {
         return (
-            <svg width="100%" height={staffHeight} viewBox="0 0 140 100" preserveAspectRatio="xMidYMid meet">
+            <svg width="100%" height={staffHeight} viewBox="0 0 140 100" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible' }}>
                 {/* Empty staff lines */}
                 {[0, 1, 2, 3, 4].map(i => {
                     const y = line1Y - (i * spacing);
                     return <line key={y} x1="5" y1={y} x2="135" y2={y} stroke={mutedColor} strokeWidth="0.8" />;
                 })}
                 {/* Treble Clef */}
-                <text x="8" y="78" fontSize="90" fontFamily="'Noto Music', 'Bravura', 'Times New Roman', serif" fill={mutedColor}>𝄞</text>
+                <text x="8" y="76" fontSize="85" fontFamily="'Noto Music', 'Bravura', 'Times New Roman', serif" fill={mutedColor}>𝄞</text>
             </svg>
         );
     }
@@ -223,7 +223,7 @@ const MusicStaff = ({ note }) => {
     const accidental = note.name.includes('#') ? '♯' : (note.label.includes('b') || note.label.includes('ib') ? '♭' : null);
 
     return (
-        <svg width="100%" height={staffHeight} viewBox="0 0 140 100" preserveAspectRatio="xMidYMid meet">
+        <svg width="100%" height={staffHeight} viewBox="0 0 140 100" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible' }}>
             {/* Staff Lines */}
             {[0, 1, 2, 3, 4].map(i => {
                 const y = line1Y - (i * spacing);
@@ -233,8 +233,8 @@ const MusicStaff = ({ note }) => {
             {/* Treble Clef */}
             <text
                 x="8"
-                y="78"
-                fontSize="90"
+                y="76"
+                fontSize="85"
                 fontFamily="'Noto Music', 'Bravura', 'Times New Roman', serif"
                 fill={noteColor}
             >
@@ -508,14 +508,14 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
                             <button
                                 onClick={() => setPianoMode('Do')}
                                 className={cn("px-2.5 py-1 rounded text-[11px] font-medium transition-all",
-                                    pianoMode === 'Do' ? "bg-[var(--color-surface-elevated)] shadow-sm text-[var(--color-text-primary)]" : "hover:bg-[var(--color-surface-elevated)]/50 text-[var(--color-text-secondary)]")}
+                                    pianoMode === 'Do' ? "bg-[var(--color-accent)] shadow-sm text-white" : "hover:bg-[var(--color-surface-elevated)]/50 text-[var(--color-text-secondary)]")}
                             >
                                 Do
                             </button>
                             <button
                                 onClick={() => setPianoMode('Sib')}
                                 className={cn("px-2.5 py-1 rounded text-[11px] font-medium transition-all",
-                                    pianoMode === 'Sib' ? "bg-[var(--color-surface-elevated)] shadow-sm text-[var(--color-text-primary)]" : "hover:bg-[var(--color-surface-elevated)]/50 text-[var(--color-text-secondary)]")}
+                                    pianoMode === 'Sib' ? "bg-[var(--color-accent)] shadow-sm text-white" : "hover:bg-[var(--color-surface-elevated)]/50 text-[var(--color-text-secondary)]")}
                             >
                                 Si♭
                             </button>
@@ -537,9 +537,9 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
                             onClick={() => setIsSustaining(!isSustaining)}
                             className="h-8 px-4 text-[11px] font-bold border-y transition-all"
                             style={{
-                                backgroundColor: isSustaining ? '#333' : '#fff',
+                                backgroundColor: isSustaining ? 'var(--color-accent)' : '#fff',
                                 color: isSustaining ? '#fff' : '#555',
-                                borderColor: isSustaining ? '#333' : '#ddd'
+                                borderColor: isSustaining ? 'var(--color-accent)' : '#ddd'
                             }}
                         >
                             {isSustaining ? "SOLTAR" : "MANTENER"}
@@ -556,26 +556,33 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
 
                     {/* RIGHT: Trumpet Toggle + Close */}
                     <div className="flex items-center gap-3">
-                        {/* Trumpet Toggle */}
+                        {/* Trumpet Toggle - Mib/Do/Sib */}
                         <div className="flex items-center gap-1.5">
                             <TrumpetIcon className="w-4 h-4 text-[var(--color-text-secondary)]" />
                             <div className="flex rounded-md p-0.5 bg-[var(--color-surface)]">
                                 <button
+                                    onClick={() => setTrumpetMode('Mib')}
+                                    className={cn("px-2 py-0.5 rounded text-[10px] font-medium transition-all",
+                                        trumpetMode === 'Mib' ? "bg-[var(--color-accent)] shadow-sm text-white" : "hover:bg-[var(--color-surface-elevated)]/50 text-[var(--color-text-secondary)]")}
+                                >
+                                    Mi♭
+                                </button>
+                                <button
                                     onClick={() => setTrumpetMode('Do')}
                                     className={cn("px-2 py-0.5 rounded text-[10px] font-medium transition-all",
-                                        trumpetMode === 'Do' ? "bg-[var(--color-surface-elevated)] shadow-sm text-[var(--color-text-primary)]" : "hover:bg-[var(--color-surface-elevated)]/50 text-[var(--color-text-secondary)]")}
+                                        trumpetMode === 'Do' ? "bg-[var(--color-accent)] shadow-sm text-white" : "hover:bg-[var(--color-surface-elevated)]/50 text-[var(--color-text-secondary)]")}
                                 >
                                     Do
                                 </button>
                                 <button
                                     onClick={() => setTrumpetMode('Sib')}
                                     className={cn("px-2 py-0.5 rounded text-[10px] font-medium transition-all",
-                                        trumpetMode === 'Sib' ? "bg-[var(--color-surface-elevated)] shadow-sm text-[var(--color-text-primary)]" : "hover:bg-[var(--color-surface-elevated)]/50 text-[var(--color-text-secondary)]")}
+                                        trumpetMode === 'Sib' ? "bg-[var(--color-accent)] shadow-sm text-white" : "hover:bg-[var(--color-surface-elevated)]/50 text-[var(--color-text-secondary)]")}
                                 >
                                     Si♭
                                 </button>
                             </div>
-                            <InfoTooltip text="Cambia la nota escrita y la digitación mostradas" />
+                            <InfoTooltip text="Cambia la nota escrita y la digitacion mostradas" />
                         </div>
                         {/* Close X */}
                         <button
@@ -606,11 +613,11 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
                                         className={cn(
                                             "w-11 h-[175px] relative focus:outline-none touch-none rounded-b-[3px] transition-all duration-75 flex flex-col justify-end items-center pb-2",
                                             pressedKeys.has(note.name)
-                                                ? "shadow-inner"
+                                                ? ""
                                                 : "shadow-sm hover:shadow-md"
                                         )}
                                         style={{
-                                            backgroundColor: pressedKeys.has(note.name) ? 'var(--color-primary)' : '#fff',
+                                            backgroundColor: pressedKeys.has(note.name) ? 'var(--color-accent)' : '#fff',
                                             borderRight: '1px solid #e0e0e0',
                                             borderLeft: isFirstWhite ? '1px solid #e0e0e0' : 'none',
                                             borderBottom: '1px solid #d0d0d0',
@@ -658,7 +665,7 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
                                         height: '95px',
                                         left: `${finalLeft}px`,
                                         top: 0,
-                                        backgroundColor: pressedKeys.has(note.name) ? 'var(--color-primary)' : '#1a1a1a',
+                                        backgroundColor: pressedKeys.has(note.name) ? 'var(--color-accent)' : '#1a1a1a',
                                         border: '1px solid #0a0a0a'
                                     }}
                                     onPointerDown={(e) => startNote(note, e)}
@@ -671,8 +678,8 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
                     </div>
                 </div>
 
-                {/* RIGHT: Info Panel - compact layout */}
-                <div className="w-[160px] max-w-[160px] flex flex-col shrink-0 py-2">
+                {/* RIGHT: Info Panel - compact layout, overflow visible for treble clef */}
+                <div className="w-[160px] max-w-[160px] flex flex-col shrink-0 py-2 overflow-visible">
 
                     {/* TOP: PISTONS - Compact grid */}
                     <div className="grid grid-cols-3 gap-1.5 px-2">
@@ -692,16 +699,16 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
                                 <div
                                     key={pistonNum}
                                     className={cn(
-                                        "aspect-square rounded-full flex items-center justify-center min-w-[24px] max-w-[32px] w-full mx-auto transition-colors",
+                                        "aspect-square rounded-full flex items-center justify-center min-w-[24px] max-w-[32px] w-full mx-auto transition-colors border-2",
                                         isPressed
-                                            ? "bg-[var(--color-primary)] shadow-inner"
-                                            : "bg-[var(--color-surface)] dark:bg-[var(--color-surface-elevated)]"
+                                            ? "bg-[var(--color-accent)] border-[var(--color-accent)] shadow-sm"
+                                            : "bg-[var(--color-surface)] dark:bg-[var(--color-surface-elevated)] border-[var(--color-border-default)]"
                                     )}
                                 >
                                     <span
                                         className={cn(
                                             "text-xs font-bold leading-none",
-                                            isPressed ? "text-[var(--color-text-inverse)]" : "text-[var(--color-text-muted)]"
+                                            isPressed ? "text-white" : "text-[var(--color-text-muted)]"
                                         )}
                                     >
                                         {pistonNum}
@@ -712,8 +719,8 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
                     </div>
 
                     {/* CENTER: Staff - flex-1 to take max space */}
-                    <div className="flex-1 flex items-center justify-center px-2 min-h-[80px]">
-                        <div className="w-full">
+                    <div className="flex-1 flex items-center justify-center px-2 min-h-[80px] overflow-visible" style={{ zIndex: 10 }}>
+                        <div className="w-full h-full overflow-visible">
                             {lastNote?.concertMidi ? (
                                 (() => {
                                     // Use concertMidi for staff display
@@ -725,8 +732,8 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
                         </div>
                     </div>
 
-                    {/* BOTTOM: Note Name */}
-                    <div className="px-2 flex justify-center">
+                    {/* BOTTOM: Note Name - closer to staff */}
+                    <div className="px-2 flex justify-center -mt-10 relative" style={{ zIndex: 20 }}>
                         {lastNote?.concertMidi ? (
                             (() => {
                                 // Use concertMidi for note name display
@@ -734,14 +741,17 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
                                 const displayInfo = midiToNoteInfo(displayMidi);
 
                                 return (
-                                    <div className="flex items-baseline gap-1">
+                                    <div className="flex items-baseline gap-1 justify-center">
                                         <span className="text-lg font-bold leading-none text-[var(--color-text-primary)]">
                                             {formatNoteLabel(displayInfo.label)}
                                         </span>
                                         {displayInfo.enharmonic && (
-                                            <span className="text-xs font-medium text-[var(--color-text-secondary)]">
-                                                / {formatNoteLabel(displayInfo.enharmonic)}
-                                            </span>
+                                            <>
+                                                <span className="text-lg font-medium leading-none text-[var(--color-text-muted)]">/</span>
+                                                <span className="text-lg font-bold leading-none text-[var(--color-text-secondary)]">
+                                                    {formatNoteLabel(displayInfo.enharmonic)}
+                                                </span>
+                                            </>
                                         )}
                                     </div>
                                 );
