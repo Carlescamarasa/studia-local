@@ -565,7 +565,7 @@ export default function ModalFeedbackSemanal({
 
                                 {/* 3. MULTIMEDIA */}
                                 {activeTab === 'multimedia' && (
-                                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 overflow-hidden">
                                         <div>
                                             <Label className="text-base font-semibold mb-2 block">Material Adjunto</Label>
                                             <p className="text-sm text-[var(--color-text-secondary)] mb-4">

@@ -293,7 +293,7 @@ export default function PieceEditor({ pieza, onClose }) {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 overflow-hidden">
                 {formData.elementos.length === 0 ? (
                   <div className="text-center py-8">
                     <Music className="w-12 h-12 mx-auto mb-3 text-[var(--color-text-secondary)]" />
@@ -316,12 +316,12 @@ export default function PieceEditor({ pieza, onClose }) {
                               <Card
                                 className={`border-2 ${isDragging ? 'shadow-card border-[var(--color-primary)]' : ''}`}
                               >
-                                <CardContent className="pt-4 space-y-3">
+                                <CardContent className="pt-4 space-y-3 overflow-hidden">
                                   <div className="flex items-start gap-3">
                                     <div {...dragHandleProps} className="flex flex-col gap-1 pt-2">
                                       <GripVertical className="w-5 h-5 text-[var(--color-text-secondary)]" />
                                     </div>
-                                    <div className="flex-1 space-y-3">
+                                    <div className="flex-1 space-y-3 overflow-hidden">
                                       <div>
                                         <Label htmlFor={`elemento-nombre-${index}`} className={componentStyles.typography.cardTitle}>Nombre del elemento</Label>
                                         <Input

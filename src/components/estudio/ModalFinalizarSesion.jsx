@@ -16,7 +16,7 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
   const [mediaLinks, setMediaLinks] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
-  
+
   const motivos = [
     { value: "terminado", label: "Terminé antes de tiempo" },
     { value: "objetivo", label: "Objetivo cubierto" },
@@ -35,7 +35,7 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
     setPreviewIndex(index);
     setShowPreview(true);
   };
-  
+
   return (
     <>
       <div className="fixed inset-0 bg-black/50 z-[100]" onClick={onCancelar} />
@@ -48,7 +48,7 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="pt-6 space-y-6">
+        <CardContent className="pt-6 space-y-6 overflow-hidden">
           <div>
             <Label className="text-base mb-3 block">¿Por qué finalizas la sesión?</Label>
             <div className="space-y-2">
@@ -56,16 +56,14 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
                 <button
                   key={m.value}
                   onClick={() => setMotivo(m.value)}
-                  className={`w-full text-left p-3 border rounded-lg transition-colors ${
-                    motivo === m.value 
-                      ? 'border-brand-500 bg-brand-50' 
+                  className={`w-full text-left p-3 border rounded-lg transition-colors ${motivo === m.value
+                      ? 'border-brand-500 bg-brand-50'
                       : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2">
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      motivo === m.value ? 'border-brand-500 bg-brand-500' : 'border-[var(--color-border-default)]'
-                    }`}>
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${motivo === m.value ? 'border-brand-500 bg-brand-500' : 'border-[var(--color-border-default)]'
+                      }`}>
                       {motivo === m.value && <div className="w-2 h-2 bg-white rounded-full" />}
                     </div>
                     <span className="text-sm font-medium">{m.label}</span>
@@ -82,11 +80,10 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
                 <button
                   key={cal.value}
                   onClick={() => setCalificacion(cal.value)}
-                  className={`p-3 border-2 rounded-lg transition-all text-center ${
-                    calificacion === cal.value 
-                      ? cal.color + ' shadow-sm' 
+                  className={`p-3 border-2 rounded-lg transition-all text-center ${calificacion === cal.value
+                      ? cal.color + ' shadow-sm'
                       : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
-                  }`}
+                    }`}
                 >
                   <div className="text-2xl mb-1">{cal.emoji}</div>
                   <div className="text-xs font-medium">{cal.label}</div>
@@ -94,7 +91,7 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
               ))}
             </div>
           </div>
-          
+
           <div>
             <Label htmlFor="notas">Notas de la práctica (opcional)</Label>
             <Textarea
@@ -107,24 +104,24 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
             />
           </div>
 
-          <MediaLinksInput 
+          <MediaLinksInput
             value={mediaLinks}
             onChange={setMediaLinks}
             onPreview={handlePreview}
           />
-          
+
           <Alert className="border-[var(--color-info)]/20 bg-[var(--color-info)]/10">
             <AlertDescription className="text-[var(--color-info)] text-sm">
               Tu progreso y materiales adjuntos se guardarán en el sistema
             </AlertDescription>
           </Alert>
-          
+
           <div className="flex gap-3 pt-2">
             <Button variant="outline" onClick={onCancelar} className="flex-1">
               Cancelar
             </Button>
-            <Button 
-              onClick={() => onConfirmar({ motivo, calificacion, notas, mediaLinks })} 
+            <Button
+              onClick={() => onConfirmar({ motivo, calificacion, notas, mediaLinks })}
               className="flex-1 bg-brand-500 hover:bg-brand-600"
             >
               <CheckCircle className="w-4 h-4 mr-2" />

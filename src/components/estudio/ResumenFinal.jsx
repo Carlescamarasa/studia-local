@@ -237,7 +237,7 @@ export default function ResumenFinal({
             </section>
 
             {/* Input de subida de vídeo y enlaces multimedia */}
-            <section className="space-y-1.5">
+            <section className="space-y-1.5 overflow-hidden">
               <label className="block text-sm font-medium text-[var(--color-text-primary)] pl-3">
                 Recursos Adjuntos (opcional)
               </label>

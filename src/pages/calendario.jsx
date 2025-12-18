@@ -15,6 +15,7 @@ import ModalSesion from "../components/calendario/ModalSesion";
 import ModalFeedback from "../components/calendario/ModalFeedback";
 import ModalAsignacion from "../components/calendario/ModalAsignacion";
 import ModalCrearEvento from "../components/calendario/ModalCrearEvento";
+import ModalEventoResumen from "../components/calendario/ModalEventoResumen";
 import { componentStyles } from "@/design/componentStyles";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -475,12 +476,20 @@ function CalendarioPageContent() {
         />
       )}
       {tipoEventoSeleccionado === 'evento' && (
-        <ModalCrearEvento
-          open={true}
-          onOpenChange={handleCerrarModal}
-          evento={eventoSeleccionado}
-          userIdActual={userIdActual}
-        />
+        isEstu && eventoSeleccionado ? (
+          <ModalEventoResumen
+            open={true}
+            onOpenChange={handleCerrarModal}
+            evento={eventoSeleccionado}
+          />
+        ) : (
+          <ModalCrearEvento
+            open={true}
+            onOpenChange={handleCerrarModal}
+            evento={eventoSeleccionado}
+            userIdActual={userIdActual}
+          />
+        )
       )}
     </div>
   );
