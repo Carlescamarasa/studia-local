@@ -17,6 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 export default function AppVersionContent() {
     const {
+        productionVersion,
         currentVersion,
         history,
         isLoading,
@@ -79,23 +80,33 @@ export default function AppVersionContent() {
         });
     };
 
-    const currentVersionDisplay = currentVersion
-        ? `${currentVersion.version}${currentVersion.codename ? ` "${currentVersion.codename}"` : ''}`
-        : 'Sin versión activa';
+    // Display production version from /version.json
+    const productionVersionDisplay = productionVersion
+        ? `${productionVersion.versionName}`
+        : (isLoading ? 'Cargando...' : 'Modo desarrollo');
+
+    const productionDetails = productionVersion
+        ? `Commit: ${productionVersion.commit} · Build: ${formatDate(productionVersion.buildDate)}`
+        : null;
 
     return (
         <>
-            {/* Header con versión actual y acciones */}
+            {/* Header con versión en producción y acciones */}
             <Card>
                 <CardHeader>
                     <div className="flex items-center justify-between flex-wrap gap-4">
                         <div className="flex items-center gap-3">
                             <Tag className="w-5 h-5 text-[var(--color-primary)]" />
                             <div>
-                                <CardTitle className="text-lg">Versión activa</CardTitle>
+                                <CardTitle className="text-lg">Versión en producción</CardTitle>
                                 <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-                                    Studia {currentVersionDisplay}
+                                    Studia {productionVersionDisplay}
                                 </p>
+                                {productionDetails && (
+                                    <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">
+                                        {productionDetails}
+                                    </p>
+                                )}
                             </div>
                         </div>
                         <div className="flex items-center gap-2">

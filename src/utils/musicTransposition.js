@@ -47,6 +47,11 @@ export function concertToTrumpetWritten(concertMidi, trumpetKey) {
     if (trumpetKey === 'C' || trumpetKey === 'Do') {
         return concertMidi;
     }
+    if (trumpetKey === 'Eb' || trumpetKey === 'Mib' || trumpetKey === 'Mi♭') {
+        // Eb trumpet: sounds a minor 3rd (3 semitones) HIGHER than written
+        // So written pitch is 3 semitones LOWER than concert
+        return transposeSemitones(concertMidi, -3);
+    }
     // Bb trumpet: written pitch is 2 semitones higher than concert
     return transposeSemitones(concertMidi, 2);
 }

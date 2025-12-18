@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build-version": "rm -rf dist && npm run build && node scripts/write-version.mjs && node scripts/write-release-notes.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "echo '⚠️  Tests automatizados no configurados todavía. Usa la herramienta de testseed para pruebas manuales.' && exit 0",

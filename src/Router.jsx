@@ -48,6 +48,7 @@ const Progreso = lazy(() => import("@/pages/progreso.jsx"));
 const Preparacion = lazy(() => import("@/pages/preparacion.jsx"));
 const Configuracion = lazy(() => import("@/pages/admin/configuracion.jsx"));
 const Studia = lazy(() => import("@/pages/studia.jsx"));
+const NotFound = lazy(() => import("@/pages/NotFound.jsx"));
 
 // Componente de carga
 const PageLoader = () => (
@@ -146,6 +147,9 @@ export default function AppRouter() {
           <Route path="plantillas" element={<Navigate to="/biblioteca" replace />} />
 
         </Route>
+
+        {/* Catch-all: 404 Not Found */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
   );

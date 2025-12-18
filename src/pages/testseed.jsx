@@ -2504,9 +2504,9 @@ export default function TestSeedPage({ embedded = false }) {
       )}
 
       <div className={`${componentStyles.layout.page} space-y-6`}>
-        <Alert className={`rounded-xl ${componentStyles.containers.panelBase} border-[var(--color-info)] bg-[var(--color-info)]/10`}>
+        <Alert className="rounded-xl border-[var(--color-info)]/20 bg-[var(--color-info)]/10">
           <AlertCircle className="h-4 w-4 text-[var(--color-info)]" />
-          <AlertDescription className="text-xs text-[var(--color-text-secondary)]">
+          <AlertDescription className="text-xs text-[var(--color-info)]/80">
             <strong>Herramienta de desarrollo:</strong> Esta página está diseñada para debugging y desarrollo. No hay tests automatizados configurados actualmente. Usa esta herramienta para poblar datos de prueba y realizar validaciones manuales.
           </AlertDescription>
         </Alert>

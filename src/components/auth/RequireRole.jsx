@@ -1,7 +1,8 @@
 import React from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { Card, CardContent } from "@/components/ds";
-import { Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Shield, ArrowLeft } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { getEffectiveRole, useEffectiveUser } from "@/components/utils/helpers";
 
@@ -40,6 +41,17 @@ export default function RequireRole({ children, anyOf = [] }) {
             <p className="text-xs text-muted-foreground mt-2">
               Rol actual: {effectiveRole || 'sin rol'} | Roles permitidos: {anyOf.join(', ')}
             </p>
+          </div>
+
+          <div className="pt-2">
+            <Button
+              onClick={() => window.history.back()}
+              variant="outline"
+              className={`${componentStyles.buttons.outline} gap-2 mx-auto`}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Volver
+            </Button>
           </div>
         </CardContent>
       </Card>
