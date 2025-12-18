@@ -170,18 +170,18 @@ export default function PageHeader({
           <div className="flex items-center gap-2 sm:gap-2 md:gap-3 mb-1 md:mb-1.5 flex-wrap" style={{ position: 'relative', zIndex: 1, pointerEvents: 'auto' }}>
             {/* Primera línea: Botón menú (mobile) + Icono + Título */}
             <div className="flex items-center gap-2 sm:gap-2 md:gap-3 flex-1 min-w-0">
-              {/* Botón de menú solo en mobile */}
+              {/* Botón de menú solo en mobile - tamaño grande para touch */}
               {showMenuButton && (
                 <button
                   onClick={toggleSidebar}
-                  className="lg:hidden hover:bg-[var(--color-surface-muted)] active:bg-[var(--color-surface-muted)]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 p-2 rounded-[var(--btn-radius,0.25rem)] transition-all min-h-[40px] min-w-[40px] h-10 w-10 flex items-center justify-center shrink-0 touch-manipulation -ml-1 relative z-10"
+                  className="lg:hidden hover:bg-[var(--color-surface-muted)] active:bg-[var(--color-surface-muted)]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 p-2.5 rounded-[var(--btn-radius,0.25rem)] transition-all min-h-[48px] min-w-[48px] h-12 w-12 flex items-center justify-center shrink-0 touch-manipulation -ml-1 relative z-10"
                   aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
                   aria-controls="sidebar"
                   aria-expanded={abierto}
                   type="button"
                   style={{ pointerEvents: 'auto' }}
                 >
-                  {abierto ? <X className="w-5 h-5 pointer-events-none" /> : <Menu className="w-5 h-5 pointer-events-none" />}
+                  {abierto ? <X className="w-6 h-6 pointer-events-none" /> : <Menu className="w-6 h-6 pointer-events-none" />}
                 </button>
               )}
               {/* Icono + Título: clickable en mobile/tablet para toggle sidebar */}

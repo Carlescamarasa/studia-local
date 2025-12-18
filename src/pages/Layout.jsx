@@ -572,7 +572,7 @@ function LayoutContent() {
           aria-hidden={!abierto}
           data-open={abierto}
           inert={!abierto ? "" : undefined}
-          tabIndex={!abierto ? -1 : undefined}
+          tabIndex="-1"
           className={`
             z-[90] flex flex-col sidebar-modern
             transition-transform duration-200 will-change-transform transform-gpu

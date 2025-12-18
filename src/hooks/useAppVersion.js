@@ -107,42 +107,90 @@ export function useAppVersion(options = {}) {
     },
   });
 
-  // Mutación para sincronizar datos locales (version.json + release-notes.json) a Supabase
+  // Mutación para sincronizar datos de producción (version.json + release-notes.json) a Supabase
   const syncMutation = useMutation({
     mutationFn: async () => {
+      console.info("[Version] Refresh clicked");
       if (!user?.id) throw new Error('Usuario no autenticado');
 
-      // 1. Fetch version.json
-      const vRes = await fetch(`/version.json?ts=${Date.now()}`);
-      if (!vRes.ok) throw new Error('No se pudo cargar version.json');
+      const PRODUCTION_BASE = 'https://studia.latrompetasonara.com';
+      const ts = Date.now();
+
+      // 1. Fetch version.json from production (REQUIRED)
+      const versionUrl = `${PRODUCTION_BASE}/version.json?ts=${ts}`;
+
+      const vRes = await fetch(versionUrl, { cache: 'no-store' });
+
+      if (!vRes.ok) {
+        const errorMsg = `No se pudo cargar version.json (${vRes.status}: ${vRes.statusText})`;
+        console.error('[Version] Sync failed', errorMsg);
+        throw new Error(errorMsg);
+      }
+
       const vData = await vRes.json();
+      console.info("[Version] version.json", vData);
 
-      // 2. Fetch release-notes.json
-      const rRes = await fetch(`/release-notes.json?ts=${Date.now()}`);
-      if (!rRes.ok) throw new Error('No se pudo cargar release-notes.json');
-      const rData = await rRes.json();
+      // Validate required fields
+      if (!vData.versionName || !vData.commit) {
+        throw new Error('version.json inválido: faltan campos requeridos');
+      }
 
-      // 3. Upsert to Supabase
-      const result = await versionClient.upsertVersion({
-        version: vData.versionName,
-        commit_hash: vData.commit,
-        git_author: vData.author,
-        build_date: vData.buildDate,
-        release_notes: rData,
-        author_id: user.id
-      });
+      // UPDATE LOCAL CACHE IMMEDIATELY
+      // This ensures UI shows new version even if Supabase sync fails
+      queryClient.setQueryData(['appVersion', 'production'], (old) => ({
+        ...old,
+        ...vData
+      }));
 
-      // 4. Activarla si es la que acabamos de subir (opcional, pero suele ser lo deseado)
-      await versionClient.activateVersion(result.id);
+      // 2. Fetch release-notes.json from production (OPTIONAL)
+      let rData = null;
+      const releaseNotesUrl = `${PRODUCTION_BASE}/release-notes.json?ts=${ts}`;
 
-      return result;
+      try {
+        const rRes = await fetch(releaseNotesUrl, { cache: 'no-store' });
+        if (rRes.ok) {
+          rData = await rRes.json();
+        }
+      } catch (releaseNotesError) {
+        console.warn('[Version] Could not fetch release-notes.json', releaseNotesError);
+      }
+
+      // 3. Upsert to Supabase (Graceful failure)
+      try {
+        console.log('[syncToSupabase] Upserting to Supabase version_history...');
+        const result = await versionClient.upsertVersion({
+          version: vData.versionName,
+          commit_hash: vData.commit,
+          git_author: vData.author,
+          build_date: vData.buildDate,
+          release_notes: rData,
+          author_id: user.id
+        });
+
+        // 4. Activate this version in app_meta
+        await versionClient.activateVersion(result.id);
+
+        return { success: true, version: vData.versionName, hasReleaseNotes: rData !== null };
+      } catch (dbError) {
+        console.error("[Version] Sync failed (Supabase)", dbError);
+        // Return success=false but don't throw, so we keep the UI clean
+        return { success: false, error: dbError, version: vData.versionName };
+      }
     },
     onSuccess: (data) => {
+      // Refresh all lists
       queryClient.invalidateQueries({ queryKey: ['appVersion'] });
-      toast.success(`✅ Sincronizada versión ${data.version} con Supabase`);
+
+      if (data.success) {
+        toast.success(`✅ Actualizado y sincronizado: ${data.version}`);
+      } else {
+        // UI updated via cache, but DB sync failed
+        toast.warning(`⚠️ Datos actualizados en UI, pero falló la sincronización con base de datos: ${data.error?.message || 'Error permisos/red'}`);
+      }
     },
     onError: (error) => {
-      toast.error(`❌ Error al sincronizar: ${error.message || 'Error desconocido'}`);
+      console.error("[Version] Sync failed", error);
+      toast.error(`❌ Error al conectar: ${error.message || 'Error desconocido'}`);
     }
   });
 

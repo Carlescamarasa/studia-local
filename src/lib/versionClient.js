@@ -203,7 +203,7 @@ export const versionClient = {
         git_author,
         build_date,
         release_notes,
-        updated_at: new Date().toISOString(),
+        // Note: updated_at removed - column may not exist in database
       };
 
       if (author_id) {
