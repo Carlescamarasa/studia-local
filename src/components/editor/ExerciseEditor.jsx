@@ -1199,7 +1199,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
 
                     {/* Bloque Multimedia */}
                     {!isFM && (
-                      <div className="col-span-12 space-y-3">
+                      <div className="col-span-12 space-y-3 overflow-hidden">
                         <Label className="text-sm font-medium">Bloque Multimedia</Label>
                         <MediaLinksInput
                           value={formData.mediaLinks || []}
@@ -1349,7 +1349,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                                 </div>
 
                                 {/* Media Block (Full Width) */}
-                                <div className="col-span-12">
+                                <div className="col-span-12 overflow-hidden">
                                   <Label className="text-xs font-medium text-[var(--color-text-secondary)] mb-2 block">Recursos y Multimedia</Label>
                                   <MediaLinksInput
                                     value={variation.asset_urls || (variation.asset_url ? [variation.asset_url] : [])}

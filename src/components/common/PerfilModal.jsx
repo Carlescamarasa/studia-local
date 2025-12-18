@@ -1204,7 +1204,7 @@ export default function PerfilModal({
                 </div>
 
                 {isProfesor && (
-                  <div className="pt-4 border-t border-[var(--color-border-default)]">
+                  <div className="pt-4 border-t border-[var(--color-border-default)] overflow-hidden">
                     <MediaLinksInput
                       value={editedData.mediaLinks}
                       onChange={(links) => setEditedData({ ...editedData, mediaLinks: links })}
