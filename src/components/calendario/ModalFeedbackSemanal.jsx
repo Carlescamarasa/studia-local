@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
     Dialog,
     DialogContent,
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ds";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MessageSquare, Music, Brain, Save, X, Activity, Paperclip, CheckSquare, Trophy, HelpCircle } from "lucide-react";
 // FeedbacksSemanalAPI removed - using localDataClient for Supabase sync
 import { useToast } from "@/components/ui/use-toast";
@@ -65,6 +66,8 @@ export default function ModalFeedbackSemanal({
     const [deltaMotricidad, setDeltaMotricidad] = useState("");
     const [deltaArticulacion, setDeltaArticulacion] = useState("");
     const [deltaFlexibilidad, setDeltaFlexibilidad] = useState("");
+    // Track original loaded deltas to calculate "Base XP" (Current Total - Previous Input)
+    const [originalXpDeltas, setOriginalXpDeltas] = useState({ motricidad: 0, articulacion: 0, flexibilidad: 0 });
 
     // 2. Comentarios
     const [notaProfesor, setNotaProfesor] = useState("");
@@ -73,6 +76,48 @@ export default function ModalFeedbackSemanal({
     const [mediaLinks, setMediaLinks] = useState([]);
     const [videoFile, setVideoFile] = useState(null);
     const [uploadingVideo, setUploadingVideo] = useState(false);
+
+    // --- OPTIMISTIC UI: Calculate projected promotion status based on current inputs ---
+    const projectedPromotionStatus = useMemo(() => {
+        if (!promotionCheck || !currentLevelConfig) {
+            return promotionCheck; // Fallback to server data
+        }
+
+        // Calculate projected XP totals (base + delta from inputs)
+        const baseMotr = (promotionCheck.xp?.motr || 0) - (originalXpDeltas.motricidad || 0);
+        const baseArt = (promotionCheck.xp?.art || 0) - (originalXpDeltas.articulacion || 0);
+        const baseFlex = (promotionCheck.xp?.flex || 0) - (originalXpDeltas.flexibilidad || 0);
+
+        const projectedMotr = baseMotr + (Number(deltaMotricidad) || 0);
+        const projectedArt = baseArt + (Number(deltaArticulacion) || 0);
+        const projectedFlex = baseFlex + (Number(deltaFlexibilidad) || 0);
+
+        // Check against current level config requirements
+        const missing = [];
+        if (projectedFlex < (currentLevelConfig.minXpFlex || 0)) {
+            missing.push(`Flexibilidad XP: ${projectedFlex}/${currentLevelConfig.minXpFlex}`);
+        }
+        if (projectedMotr < (currentLevelConfig.minXpMotr || 0)) {
+            missing.push(`Motricidad XP: ${projectedMotr}/${currentLevelConfig.minXpMotr}`);
+        }
+        if (projectedArt < (currentLevelConfig.minXpArt || 0)) {
+            missing.push(`Articulación XP: ${projectedArt}/${currentLevelConfig.minXpArt}`);
+        }
+
+        // Check criteria using LOCAL STATE (optimistic - no DB roundtrip)
+        const failedCriteria = nextLevelCriteria
+            .filter(c => c.criterion.required && c.status !== 'PASSED')
+            .map(c => `Criterio: ${c.criterion.description}`);
+
+        const allMissing = [...missing, ...failedCriteria];
+
+        return {
+            ...promotionCheck,
+            allowed: allMissing.length === 0,
+            missing: allMissing,
+            xp: { motr: projectedMotr, art: projectedArt, flex: projectedFlex }
+        };
+    }, [promotionCheck, currentLevelConfig, originalXpDeltas, deltaMotricidad, deltaArticulacion, deltaFlexibilidad, nextLevelCriteria]);
 
 
     // Helper to hydrate form from feedback data
@@ -93,9 +138,20 @@ export default function ModalFeedbackSemanal({
         // XP deltas - stored inside habilidades.xpDeltas
         const deltas = habilidades.xpDeltas || fb.xp_delta_by_skill || fb.xpDeltaBySkill || {};
         console.log('[ModalFeedbackSemanal] XP Deltas loaded:', deltas);
+
+        const dMotr = deltas.motricidad != null ? Number(deltas.motricidad) : 0;
+        const dArt = deltas.articulacion != null ? Number(deltas.articulacion) : 0;
+        const dFlex = deltas.flexibilidad != null ? Number(deltas.flexibilidad) : 0;
+
         setDeltaMotricidad(deltas.motricidad != null ? String(deltas.motricidad) : "");
         setDeltaArticulacion(deltas.articulacion != null ? String(deltas.articulacion) : "");
         setDeltaFlexibilidad(deltas.flexibilidad != null ? String(deltas.flexibilidad) : "");
+
+        setOriginalXpDeltas({
+            motricidad: dMotr,
+            articulacion: dArt,
+            flexibilidad: dFlex
+        });
 
         // Media
         setMediaLinks(fb.mediaLinks || []);
@@ -153,6 +209,7 @@ export default function ModalFeedbackSemanal({
         setDeltaMotricidad("");
         setDeltaArticulacion("");
         setDeltaFlexibilidad("");
+        setOriginalXpDeltas({ motricidad: 0, articulacion: 0, flexibilidad: 0 });
         setMediaLinks([]);
         setVideoFile(null);
         setActiveTab('evaluacion');
@@ -162,19 +219,25 @@ export default function ModalFeedbackSemanal({
         if (!studentId) return;
         setLoadingLevelData(true);
         try {
-            const user = await localDataClient.entities.User.get(studentId);
+            // Force fresh fetch by using list + filter (avoids potential cache issues)
+            const allUsers = await localDataClient.entities.User.list();
+            const user = allUsers.find(u => u.id === studentId);
             const level = user?.nivelTecnico || 1;
+            console.log('[loadLevelData] Fetched user level:', level, 'for student:', studentId);
             setCurrentLevel(level);
 
-            // Fetch current level config for XP targets (the requirements FOR current level)
+            // Fetch CURRENT level config for XP targets (requirements to EXIT current level)
             const allConfigs = await localDataClient.entities.LevelConfig.list();
             const config = allConfigs.find(c => c.level === level) || null;
             setCurrentLevelConfig(config);
 
-            const criteria = await computeKeyCriteriaStatus(studentId, level + 1);
+            // Fetch CURRENT level criteria (requirements to EXIT current level)
+            const criteria = await computeKeyCriteriaStatus(studentId, level);
+            console.log('[loadLevelData] Loaded criteria for level:', level, criteria);
             setNextLevelCriteria(criteria);
 
             const check = await canPromote(studentId, level);
+            console.log('[loadLevelData] Promotion check:', check);
             setPromotionCheck(check);
         } catch (error) {
             console.error('Error loading level data:', error);
@@ -214,15 +277,46 @@ export default function ModalFeedbackSemanal({
         }
     };
 
-    const handlePromote = async () => {
-        if (!confirm(`¿Confirmar promoción a Nivel ${currentLevel + 1}?`)) return;
+    const handlePromote = async (force = false) => {
+        const nextLevel = currentLevel + 1;
+
         try {
-            await promoteLevel(studentId, currentLevel + 1, 'Promoción por evaluación', effectiveUser?.id || 'system');
-            toast({ title: "¡Alumno promovido!", description: `Nivel ${currentLevel + 1} alcanzado.` });
-            loadLevelData();
+            const reason = force ? 'Promoción forzada por profesor' : 'Promoción por evaluación';
+            await promoteLevel(studentId, nextLevel, reason, effectiveUser?.id || 'system');
+            toast({ title: "¡Alumno promovido!", description: `Nivel ${nextLevel} alcanzado.` });
+
+            // Reset XP inputs for the new level context
+            setDeltaMotricidad("");
+            setDeltaArticulacion("");
+            setDeltaFlexibilidad("");
+            setOriginalXpDeltas({ motricidad: 0, articulacion: 0, flexibilidad: 0 });
+
+            // Refresh all level data for the new level
+            await loadLevelData();
         } catch (error) {
             console.error('Error promoting:', error);
             toast({ variant: "destructive", title: "Error", description: "Error al promover" });
+        }
+    };
+
+    const handleDemote = async () => {
+        if (currentLevel <= 1) return; // Can't go below level 1
+        const prevLevel = currentLevel - 1;
+
+        try {
+            await promoteLevel(studentId, prevLevel, 'Descenso de nivel por profesor', effectiveUser?.id || 'system');
+            toast({ title: "Nivel actualizado", description: `El alumno ha bajado al Nivel ${prevLevel}.` });
+
+            // Reset XP inputs for the new level context
+            setDeltaMotricidad("");
+            setDeltaArticulacion("");
+            setDeltaFlexibilidad("");
+            setOriginalXpDeltas({ motricidad: 0, articulacion: 0, flexibilidad: 0 });
+
+            await loadLevelData();
+        } catch (error) {
+            console.error('Error demoting:', error);
+            toast({ variant: "destructive", title: "Error", description: "Error al cambiar nivel" });
         }
     };
 
@@ -302,7 +396,7 @@ export default function ModalFeedbackSemanal({
                 ...existingHabilidades,
                 sonido: Number(sonido),
                 cognicion: Number(cognicion),
-                xpDeltas: xpDeltas, // Store the USER'S INPUT (not the delta)
+                xpDeltas: xpDeltas, // Store the USER'S INPUT (so we remember it next time)
             };
 
             const dataToSave = {
@@ -324,7 +418,7 @@ export default function ModalFeedbackSemanal({
                 await localDataClient.entities.FeedbackSemanal.create(dataToSave);
             }
 
-            // Apply XP Deltas to system (Side Effect)
+            // Apply XP Deltas to system (Side Effect) - Only if there is a difference
             const hasXPToApply = xpDeltaToApply.motricidad !== 0 || xpDeltaToApply.articulacion !== 0 || xpDeltaToApply.flexibilidad !== 0;
             if (hasXPToApply) {
                 const { addXP } = await import('@/services/xpService');
@@ -380,11 +474,71 @@ export default function ModalFeedbackSemanal({
                         <div className="lg:col-span-4 border-r border-[var(--color-border-default)] bg-[var(--color-surface-muted)]/30 p-4 space-y-6">
                             {/* Level Card */}
                             <div className="bg-[var(--color-surface-default)] rounded-xl p-5 border border-[var(--color-border-default)] shadow-sm text-center">
-                                <span className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider font-medium">Siguiente Nivel</span>
-                                <div className="text-5xl font-bold text-[var(--color-primary)] my-2">{currentLevel + 1}</div>
-                                <Badge variant="outline" className="text-xs">
-                                    Actual: {currentLevel}
-                                </Badge>
+                                <span className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider font-medium">Nivel Actual</span>
+                                <div className="text-5xl font-bold text-[var(--color-primary)] my-2">{currentLevel}</div>
+                                <div className="inline-flex items-center gap-1.5">
+                                    <Badge variant="outline" className="text-xs">
+                                        Siguiente: {currentLevel + 1}
+                                    </Badge>
+                                    <TooltipProvider delayDuration={100}>
+                                        <Tooltip>
+                                            <TooltipTrigger>
+                                                <HelpCircle className="w-3.5 h-3.5 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] cursor-help" />
+                                            </TooltipTrigger>
+                                            <TooltipContent
+                                                side="right"
+                                                sideOffset={8}
+                                                className="max-w-xs"
+                                                style={{ zIndex: 9999 }}
+                                            >
+                                                {projectedPromotionStatus?.allowed ? (
+                                                    <p className="text-green-500 font-medium">✓ Cumples todos los requisitos</p>
+                                                ) : (
+                                                    <div className="space-y-3">
+                                                        <p className="font-semibold">Requisitos para Nivel {currentLevel + 1}</p>
+
+                                                        {/* Experiencia (XP) Section */}
+                                                        {(() => {
+                                                            const xpItems = projectedPromotionStatus?.missing?.filter(m => m.includes('XP:')) || [];
+                                                            if (xpItems.length === 0) return null;
+                                                            return (
+                                                                <div>
+                                                                    <p className="font-medium text-xs uppercase text-[var(--color-text-secondary)]">Experiencia</p>
+                                                                    <ul className="text-xs list-disc pl-4 mt-1">
+                                                                        {xpItems.map((m, i) => {
+                                                                            const cleaned = m.replace(' XP:', ':');
+                                                                            return <li key={i}>{cleaned}</li>;
+                                                                        })}
+                                                                    </ul>
+                                                                </div>
+                                                            );
+                                                        })()}
+
+                                                        {/* Criterios Section */}
+                                                        {(() => {
+                                                            const criteriaItems = projectedPromotionStatus?.missing?.filter(m => m.startsWith('Criterio:')) || [];
+                                                            if (criteriaItems.length === 0) return null;
+                                                            return (
+                                                                <div>
+                                                                    <p className="font-medium text-xs uppercase text-[var(--color-text-secondary)]">Criterios</p>
+                                                                    <ul className="text-xs list-disc pl-4 mt-1">
+                                                                        {criteriaItems.map((m, i) => {
+                                                                            const desc = m.replace('Criterio: ', '');
+                                                                            const criterion = nextLevelCriteria.find(c => c.criterion.description === desc);
+                                                                            const skill = criterion?.criterion?.skill || '';
+                                                                            const skillLabel = skill.charAt(0).toUpperCase() + skill.slice(1);
+                                                                            return <li key={i}>{skillLabel}: {desc}</li>;
+                                                                        })}
+                                                                    </ul>
+                                                                </div>
+                                                            );
+                                                        })()}
+                                                    </div>
+                                                )}
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
                             </div>
 
                             {/* Criteria List */}
@@ -421,17 +575,47 @@ export default function ModalFeedbackSemanal({
                                 </div>
                             </div>
 
-                            {/* Promotion Button */}
-                            <Button
-                                type="button"
-                                onClick={handlePromote}
-                                className="w-full mt-2"
-                                size="sm"
-                                variant={promotionCheck?.allowed ? 'primary' : 'outline'}
-                            >
-                                <Trophy className="w-4 h-4 mr-2" />
-                                Ascender de Nivel
-                            </Button>
+                            {/* Promotion / Demote Actions */}
+                            <div className="mt-4 space-y-2">
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                type="button"
+                                                onClick={() => handlePromote(!projectedPromotionStatus?.allowed)}
+                                                className="w-full"
+                                                size="sm"
+                                                variant={projectedPromotionStatus?.allowed ? 'default' : 'destructive'}
+                                            >
+                                                <Trophy className="w-4 h-4 mr-2" />
+                                                {projectedPromotionStatus?.allowed ? `Ascender a Nivel ${currentLevel + 1}` : `Forzar Nivel ${currentLevel + 1}`}
+                                            </Button>
+                                        </TooltipTrigger>
+                                        {!projectedPromotionStatus?.allowed && projectedPromotionStatus?.missing?.length > 0 && (
+                                            <TooltipContent side="bottom" className="max-w-xs">
+                                                <p className="font-medium mb-1">Requisitos faltantes (Click para forzar):</p>
+                                                <ul className="text-xs list-disc pl-4">
+                                                    {projectedPromotionStatus.missing.map((m, i) => (
+                                                        <li key={i}>{m}</li>
+                                                    ))}
+                                                </ul>
+                                            </TooltipContent>
+                                        )}
+                                    </Tooltip>
+                                </TooltipProvider>
+
+                                {currentLevel > 1 && (
+                                    <Button
+                                        type="button"
+                                        onClick={handleDemote}
+                                        className="w-full"
+                                        size="sm"
+                                        variant="outline"
+                                    >
+                                        Bajar a Nivel {currentLevel - 1}
+                                    </Button>
+                                )}
+                            </div>
                         </div>
 
                         {/* RIGHT COLUMN: Tabs Content (8 cols) */}
@@ -529,7 +713,32 @@ export default function ModalFeedbackSemanal({
                                                         <div>
                                                             <Label className="text-base">{skill.label}</Label>
                                                             <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-                                                                <CurrentXPInline studentId={studentId} skill={skill.id} simple target={skill.targetXP} />
+                                                                {/* XP Preview Calculation OR Static Inline */}
+                                                                {(() => {
+                                                                    // Map skill ID to short key used in promotionCheck.xp
+                                                                    const shortKey = skill.id === 'motricidad' ? 'motr' : skill.id === 'articulacion' ? 'art' : 'flex';
+                                                                    const currentTotal = promotionCheck?.xp?.[shortKey] || 0;
+                                                                    const originalVal = originalXpDeltas[skill.id] || 0;
+                                                                    const inputVal = Number(skill.value) || 0;
+
+                                                                    const hasInput = skill.value !== "" && skill.value !== "0";
+
+                                                                    if (hasInput) {
+                                                                        const baseXP = currentTotal - originalVal;
+                                                                        const projectedXP = baseXP + inputVal;
+                                                                        return (
+                                                                            <div className="flex items-center gap-1.5 font-mono text-[11px] md:text-xs">
+                                                                                <span className="text-[var(--color-text-secondary)]">{baseXP}</span>
+                                                                                <span className="text-[var(--color-primary)] font-bold">+ {inputVal}</span>
+                                                                                <span className="text-[var(--color-text-secondary)]">→</span>
+                                                                                <span className="text-[var(--color-text-primary)] font-bold">{projectedXP}</span>
+                                                                                <span className="text-[var(--color-text-muted)] ml-1">/ {skill.targetXP} XP</span>
+                                                                            </div>
+                                                                        );
+                                                                    }
+
+                                                                    return <CurrentXPInline studentId={studentId} skill={skill.id} simple target={skill.targetXP} />;
+                                                                })()}
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-2">
