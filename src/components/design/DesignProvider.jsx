@@ -5,12 +5,21 @@ import React, {
   useLayoutEffect,
   useMemo,
   useState,
+  useCallback,
 } from "react";
 
 import {
   DEFAULT_DESIGN,
   generateCSSVariables,
   normalizeDesign,
+  // New imports for refactored model
+  createDefaultDesignBase,
+  migrateToDesignBase,
+  mergeDesignWithMode,
+  diffDesignPartitioned,
+  applyChangeToOverlay,
+  revertChangeInOverlay,
+  DARK_MODE_DEFAULTS,
 } from "./designConfig";
 import {
   getAllPresets,
@@ -24,478 +33,462 @@ import {
   getDefaultPreset,
 } from "./BasePresets";
 
+// ============================================================================
+// STORAGE KEYS
+// ============================================================================
+const STORAGE_KEYS = {
+  BASE_DESIGN: "studia_design_base_v2",    // Nuevo: estructura DesignBase
+  LEGACY_DESIGN: "custom_design_preset",    // Legacy: para migración
+  PREVIEW_OVERLAY: "studia_preview_overlay", // sessionStorage
+  ACTIVE_MODE: "studia_active_mode",         // localStorage: 'light'|'dark'
+  BASE_PRESET_ID: "studia_base_preset_id",   // ID del preset base
+};
+
+// ============================================================================
+// CONTEXT
+// ============================================================================
 const DesignContext = createContext({
+  // Estado principal
+  baseDesign: null,
+  activeMode: 'light',
+  previewOverlay: null,
+  isPreviewActive: false,
+  effectiveDesign: DEFAULT_DESIGN,
+
+  // Acciones de modo
+  setActiveMode: () => { },
+
+  // Acciones de preview
+  setDesignPartial: () => { },
+  clearPreview: () => { },
+  revertChange: () => { },
+
+  // Diffs particionados
+  getPartitionedDiff: () => ({ common: [], light: [], dark: [] }),
+
+  // Export
+  exportFull: () => ({}),
+  exportDiff: () => ({}),
+  exportFullAndDiff: () => ({}),
+
+  // Legacy compatibility
   design: DEFAULT_DESIGN,
-  setDesign: () => {},
-  setDesignPartial: () => {},
-  resetDesign: () => {},
+  setDesign: () => { },
+  resetDesign: () => { },
   loadPreset: () => ({ success: false }),
   exportDesign: () => '',
   importDesign: () => ({ success: false }),
   config: DEFAULT_DESIGN,
-  setConfig: () => {},
-  reset: () => {},
+  setConfig: () => { },
+  reset: () => { },
   presets: {},
-  deleteDesignPreset: () => {},
+  deleteDesignPreset: () => { },
   isBuiltInPreset: () => false,
-  // Nuevos: sistema de presets base
-      currentPresetId: 'studia',
-  setPresetId: () => {},
+  currentPresetId: 'studia',
+  setPresetId: () => { },
   basePresets: DESIGN_PRESETS,
+  // Deprecated - removed commitPreview
+  previewDesign: null,
+  setPreviewDesign: () => { },
+  getDesignDiff: () => [],
 });
 
 export function useDesign() {
   return useContext(DesignContext);
 }
 
-/**
- * Helper para actualizar un objeto anidado usando un path
- * Ejemplo: setDesignPartial('colors.primary', '#FF0000')
- */
-function setNestedValue(obj, path, value) {
-  const keys = path.split('.');
-  const lastKey = keys.pop();
-  const target = keys.reduce((current, key) => {
-    if (!current[key] || typeof current[key] !== 'object') {
-      current[key] = {};
-    }
-    return current[key];
-  }, obj);
-  target[lastKey] = value;
-  return { ...obj };
-}
-
 export function DesignProvider({ children }) {
-  // Estado para presetId base (solo 'studia' disponible)
-  const [presetId, setPresetId] = useState(() => {
+  // ============================================================================
+  // ESTADO: MODO ACTIVO (light/dark) - NO genera diffs
+  // ============================================================================
+  const [activeMode, setActiveModeState] = useState(() => {
     try {
-      const saved = localStorage.getItem("studia_base_preset_id");
-      if (saved && findPresetById(saved)) {
-        return saved;
-      }
-    } catch (_) {}
-    return 'studia'; // Preset único oficial
+      const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_MODE);
+      if (saved === 'light' || saved === 'dark') return saved;
+    } catch (_) { }
+    return 'light';
   });
 
-  // Helper para derivar colores dark desde colores light
-  // Paleta de grises neutros con acentos en color de marca
-  // Ajustado para mantener ratios de contraste WCAG similares al modo claro
-  const deriveDarkColors = (lightColors) => {
-    return {
-      ...lightColors,
-      // REGLA: primary SIEMPRE #fd9840 (obligatorio, no cambia en dark)
-      primary: lightColors.primary || '#fd9840',
-      primarySoft: 'rgba(253, 152, 64, 0.1)', // Versión oscura del primary soft con opacidad
-      secondary: lightColors.secondary || '#FB8C3A',
-      accent: lightColors.accent || '#F97316', // Color de marca para acentos
-      // Estados mantienen coherencia
-      success: lightColors.success || '#10B981',
-      warning: lightColors.warning || '#F59E0B',
-      danger: lightColors.danger || '#EF4444',
-      info: lightColors.info || '#3B82F6',
-      // Neutrales: fondos oscuros ajustados para contraste similar al modo claro
-      // Modo claro: background #FFFFFF, surface #F9FAFB (diff: ~0.4% más oscuro)
-      // Modo oscuro equivalente: background más claro, surface ligeramente más claro
-      background: '#121212',      // Fondo oscuro (contraste ~16:1 con texto blanco, similar a #FFFFFF vs #1A1F2E)
-      surface: '#1A1A1A',         // Superficie oscura (contraste ~15:1, similar a #F9FAFB vs #1A1F2E)
-      surfaceElevated: '#242424', // Superficie elevada (contraste ~14:1, similar a #FFFFFF vs #1A1F2E pero menos marcado)
-      surfaceMuted: '#171717',    // Elementos muted (contraste ~15.5:1, similar a #F3F4F6 vs #1A1F2E)
-      // Colores de texto ajustados para ratios similares al modo claro
-      // Modo claro: primary #1A1F2E (~16:1), secondary #4A5568 (~8:1), muted #718096 (~5:1)
-      text: {
-        primary: '#FFFFFF',       // Texto blanco puro (contraste ~16:1 con background, igual que modo claro)
-        secondary: '#B4B4B4',     // Gris claro (contraste ~8:1 con surface, similar a #4A5568 en claro)
-        muted: '#929292',         // Gris medio (contraste ~5:1 con surface, similar a #718096 en claro)
-        inverse: '#1A1F2E',       // Fondo oscuro para texto inverso (contraste con blanco)
-      },
-      // Colores de borde ajustados para visibilidad similar al modo claro
-      // Modo claro: default #E2E8F0, muted #EDF2F7, strong #CBD5E0 (diferencias sutiles pero visibles)
-      border: {
-        default: '#3A3A3A',       // Bordes visibles (contraste ~6:1 con surface, similar a #E2E8F0 en claro)
-        muted: '#2A2A2A',         // Bordes muted (contraste ~9:1 con surface, similar a #EDF2F7 en claro)
-        strong: '#4D4D4D',        // Bordes fuertes (contraste ~4:1 con surface, similar a #CBD5E0 en claro)
-      },
-    };
-  };
+  const setActiveMode = useCallback((mode) => {
+    if (mode !== 'light' && mode !== 'dark') return;
+    setActiveModeState(mode);
+    localStorage.setItem(STORAGE_KEYS.ACTIVE_MODE, mode);
+  }, []);
 
-  // Helper para derivar chrome dark (sidebar, header) desde chrome light
-  // Modo claro: sidebar #F9FAFB, header #FFFFFF (diferencia sutil)
-  const deriveDarkChrome = () => {
-    return {
-      sidebar: {
-        background: '#1A1A1A',    // Sidebar (igual que surface) - contraste consistente
-        border: '#4D4D4D',        // Borde (igual que border.strong) - visibilidad similar al modo claro
-        activeItemBg: 'rgba(253, 152, 64, 0.15)', // Item activo con color de marca más visible
-        activeItemText: '#FFFFFF', // Texto blanco (contraste ~13:1 con sidebar, similar al modo claro)
-        mutedItemText: '#929292', // Texto muted (igual que text.muted) - consistencia
-      },
-      header: {
-        background: '#242424',     // Header (igual que surfaceElevated) - contraste mejorado
-        border: '#3A3A3A',         // Borde (igual que border.default) - visibilidad similar al modo claro
-      },
-    };
-  };
-
-  // Helper para derivar controls dark desde controls light
-  // Modo claro: field background #FFFFFF, border #E2E8F0 (contraste alto)
-  const deriveDarkControls = () => {
-    return {
-      field: {
-        height: '2.5rem',
-        background: '#1F1F1F',    // Fondo oscuro (contraste ~15:1 con texto, similar a #FFFFFF en claro)
-        border: '#3A3A3A',        // Borde (igual que border.default) - visibilidad consistente
-        radius: 'lg',
-      },
-      button: {
-        height: '2.5rem',
-        radius: 'lg',
-        shadow: 'md',             // Sombra más pronunciada en oscuro para profundidad
-      },
-      search: {
-        background: '#1F1F1F',    // Fondo oscuro (igual que field) - consistencia
-        border: '#3A3A3A',        // Borde (igual que border.default) - visibilidad consistente
-        radius: 'lg',
-        height: '2.5rem',
-      },
-    };
-  };
-
-  // Estado para el diseño actual
-  const [design, setDesign] = useState(() => {
-    let initialDesign;
+  // ============================================================================
+  // ESTADO: PRESET BASE ID (para futuras expansiones, solo 'studia' por ahora)
+  // ============================================================================
+  const [presetId, setPresetIdState] = useState(() => {
     try {
-      const custom = localStorage.getItem("custom_design_preset");
-      if (custom) {
-        const parsed = JSON.parse(custom);
-        // Normalizar para asegurar estructura completa con merge profundo
-        const normalized = normalizeDesign(parsed);
-        // Si el tema es dark, aplicar colores dark, chrome y controls
-        if (normalized.theme === 'dark') {
-          initialDesign = {
-            ...normalized,
-            colors: deriveDarkColors(normalized.colors),
-            chrome: deriveDarkChrome(),
-            controls: deriveDarkControls(),
-          };
-        } else {
-          initialDesign = normalized;
-        }
-      } else {
-        // Si no hay custom, usar el preset base por defecto
-        const defaultPreset = findPresetById(presetId) || getDefaultPreset();
-        const normalized = normalizeDesign(defaultPreset.design);
-        // Si el preset tiene theme dark, aplicar colores dark, chrome y controls
-        if (normalized.theme === 'dark') {
-          initialDesign = {
-            ...normalized,
-            colors: deriveDarkColors(normalized.colors),
-            chrome: deriveDarkChrome(),
-            controls: deriveDarkControls(),
-          };
-        } else {
-          initialDesign = normalized;
+      const saved = localStorage.getItem(STORAGE_KEYS.BASE_PRESET_ID);
+      if (saved && findPresetById(saved)) return saved;
+    } catch (_) { }
+    return 'studia';
+  });
+
+  // ============================================================================
+  // ESTADO: BASE DESIGN (DesignBase con common + modes)
+  // ============================================================================
+  const [baseDesign, setBaseDesign] = useState(() => {
+    try {
+      // 1. Intentar cargar nueva estructura
+      const newFormat = localStorage.getItem(STORAGE_KEYS.BASE_DESIGN);
+      if (newFormat) {
+        const parsed = JSON.parse(newFormat);
+        if (parsed.common && parsed.modes) {
+          return parsed;
         }
       }
-    } catch (_) {
-      // En caso de error, usar diseño por defecto
-      const defaultPreset = findPresetById(presetId) || getDefaultPreset();
-      initialDesign = normalizeDesign(defaultPreset.design);
+
+      // 2. Migrar desde formato legacy si existe
+      const legacy = localStorage.getItem(STORAGE_KEYS.LEGACY_DESIGN);
+      if (legacy) {
+        const parsed = JSON.parse(legacy);
+        const migrated = migrateToDesignBase(parsed);
+        // Guardar en nuevo formato y limpiar legacy
+        localStorage.setItem(STORAGE_KEYS.BASE_DESIGN, JSON.stringify(migrated));
+        localStorage.removeItem(STORAGE_KEYS.LEGACY_DESIGN);
+        console.log('[DesignProvider] Migrated legacy design to new format');
+        return migrated;
+      }
+
+      // 3. Usar preset base por defecto
+      return createDefaultDesignBase();
+    } catch (error) {
+      console.error('[DesignProvider] Error loading base design:', error);
+      return createDefaultDesignBase();
     }
-    
-    // Inicializar variables CSS de forma síncrona antes del primer render
-    // Esto evita el flash de contenido sin estilos
+  });
+
+  // Persistir base design cuando cambie
+  useEffect(() => {
     try {
-      const normalized = normalizeDesign(initialDesign);
-      const root = document.documentElement;
-      
-      // Determinar tema efectivo
-      let effectiveTheme = normalized.theme;
-      let designToUse = normalized;
-      
-      if (normalized.theme === 'system') {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        effectiveTheme = prefersDark ? 'dark' : 'light';
-        
-        if (prefersDark) {
-          designToUse = {
-            ...normalized,
-            colors: deriveDarkColors(normalized.colors),
-            chrome: deriveDarkChrome(),
-            controls: deriveDarkControls(),
-          };
+      localStorage.setItem(STORAGE_KEYS.BASE_DESIGN, JSON.stringify(baseDesign));
+    } catch (error) {
+      console.error('[DesignProvider] Error saving base design:', error);
+    }
+  }, [baseDesign]);
+
+  // ============================================================================
+  // ESTADO: PREVIEW OVERLAY (sessionStorage - solo sesión)
+  // ============================================================================
+  const [previewOverlay, setPreviewOverlay] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEYS.PREVIEW_OVERLAY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && (parsed.common || parsed.modes)) {
+          return parsed;
         }
-      } else if (normalized.theme === 'dark') {
-        designToUse = {
-          ...normalized,
-          colors: deriveDarkColors(normalized.colors),
-          chrome: deriveDarkChrome(),
-          controls: deriveDarkControls(),
-        };
       }
-      
-      // Aplicar variables CSS inmediatamente
-      const finalVars = generateCSSVariables(designToUse);
-      Object.entries(finalVars).forEach(([key, value]) => {
-        root.style.setProperty(key, value);
-      });
-      
-      // Aplicar clase dark según el tema efectivo
-      if (effectiveTheme === 'dark') {
-        root.classList.add('dark');
+    } catch (_) { }
+    return null;
+  });
+
+  // Persistir preview overlay en sessionStorage
+  useEffect(() => {
+    try {
+      if (previewOverlay) {
+        sessionStorage.setItem(STORAGE_KEYS.PREVIEW_OVERLAY, JSON.stringify(previewOverlay));
       } else {
-        root.classList.remove('dark');
+        sessionStorage.removeItem(STORAGE_KEYS.PREVIEW_OVERLAY);
       }
     } catch (error) {
-      console.error('[DesignProvider] Error inicializando CSS variables:', {
-        error: error?.message || error,
-        presetId,
-      });
-      // En caso de error, usar diseño por defecto
-      const vars = generateCSSVariables(DEFAULT_DESIGN);
-      const root = document.documentElement;
-      Object.entries(vars).forEach(([key, value]) => {
-        root.style.setProperty(key, value);
-      });
+      console.error('[DesignProvider] Error saving preview overlay:', error);
     }
-    
-    return initialDesign;
-  });
+  }, [previewOverlay]);
 
-  // Función para cambiar de preset base
-  const handleSetPresetId = (id) => {
-    const preset = findPresetById(id);
-    if (preset) {
-      setPresetId(id);
-      // Limpiar preset personalizado al cambiar de preset base
-      localStorage.removeItem("custom_design_preset");
-      const normalized = normalizeDesign(preset.design);
-      // Si el tema actual es dark, aplicar colores dark, chrome y controls
-      if (normalized.theme === 'dark') {
-        setDesign({
-          ...normalized,
-          colors: deriveDarkColors(normalized.colors),
-          chrome: deriveDarkChrome(),
-          controls: deriveDarkControls(),
-        });
-      } else {
-        setDesign(normalized);
-      }
+  // ============================================================================
+  // COMPUTED: PREVIEW ACTIVO, EFFECTIVE DESIGN
+  // ============================================================================
+  const isPreviewActive = previewOverlay !== null &&
+    (Object.keys(previewOverlay.common || {}).length > 0 ||
+      Object.keys(previewOverlay.modes?.light || {}).length > 0 ||
+      Object.keys(previewOverlay.modes?.dark || {}).length > 0);
+
+  const effectiveDesign = useMemo(() => {
+    return mergeDesignWithMode(baseDesign, activeMode, previewOverlay);
+  }, [baseDesign, activeMode, previewOverlay]);
+
+  // ============================================================================
+  // ACCIONES: MODIFICAR PREVIEW OVERLAY
+  // ============================================================================
+
+  /**
+   * setDesignPartial - Modifica un token en el overlay
+   * @param {string} path - Ruta del token (ej: 'colors.primary')
+   * @param {any} value - Nuevo valor
+   * @param {string} scope - 'common' | 'light' | 'dark' (default: según activeMode si es color, sino common)
+   */
+  const setDesignPartial = (path, value, explicitScope) => {
+    // Determinar scope automáticamente si no se especifica
+    let scope = explicitScope;
+    if (!scope) {
+      // Los colores, chrome y controls van al modo activo por defecto
+      // Todo lo demás va a common
+      const modeSpecificPaths = ['colors.', 'chrome.', 'controls.', 'colors'];
+      const isModeSpecific = modeSpecificPaths.some(p => path.startsWith(p) || path === p);
+      scope = isModeSpecific ? activeMode : 'common';
     }
+
+    const newOverlay = applyChangeToOverlay(previewOverlay, path, value, scope);
+    setPreviewOverlay(newOverlay);
   };
 
-  // Cuando cambie presetId, guardar en localStorage
-  useEffect(() => {
-    localStorage.setItem("studia_base_preset_id", presetId);
-  }, [presetId]);
+  /**
+   * clearPreview - Limpia todo el overlay y vuelve al base
+   */
+  const clearPreview = () => {
+    setPreviewOverlay(null);
+  };
 
-  // Generar e inyectar CSS variables en el DOM
-  // useLayoutEffect se ejecuta de forma síncrona antes de que el navegador pinte
-  // Esto evita el flash de contenido sin estilos (FOUC)
+  /**
+   * revertChange - Revierte un cambio específico del overlay
+   */
+  const revertChange = (path, scope) => {
+    const newOverlay = revertChangeInOverlay(previewOverlay, path, scope);
+    setPreviewOverlay(newOverlay);
+  };
+
+  // ============================================================================
+  // DIFFS PARTICIONADOS
+  // ============================================================================
+  const getPartitionedDiff = () => {
+    return diffDesignPartitioned(baseDesign, previewOverlay);
+  };
+
+  // ============================================================================
+  // EXPORTS
+  // ============================================================================
+  const exportFull = () => {
+    return {
+      type: 'full',
+      timestamp: new Date().toISOString(),
+      baseDesign: baseDesign,
+    };
+  };
+
+  const exportDiff = () => {
+    return {
+      type: 'diff',
+      timestamp: new Date().toISOString(),
+      overlay: previewOverlay || { common: {}, modes: { light: {}, dark: {} } },
+      diff: getPartitionedDiff(),
+    };
+  };
+
+  const exportFullAndDiff = () => {
+    return {
+      type: 'full+diff',
+      timestamp: new Date().toISOString(),
+      baseDesign: baseDesign,
+      overlay: previewOverlay || { common: {}, modes: { light: {}, dark: {} } },
+      diff: getPartitionedDiff(),
+    };
+  };
+
+  // ============================================================================
+  // INYECCIÓN DE CSS VARIABLES
+  // ============================================================================
   useLayoutEffect(() => {
     try {
-      // Normalizar design antes de generar variables
-      const normalized = normalizeDesign(design);
       const root = document.documentElement;
-      
-      // Aplicar clase de serif si corresponde
-      if (normalized.typography?.serifHeadings) {
+      const design = effectiveDesign;
+
+      // Aplicar clases de tipografía
+      if (design.typography?.serifHeadings) {
         document.body.classList.add('ds-serif');
       } else {
         document.body.classList.remove('ds-serif');
       }
-      
+
       // Aplicar clase de densidad
       document.body.classList.remove('ds-density-compact', 'ds-density-normal', 'ds-density-spacious');
-      document.body.classList.add(`ds-density-${normalized.layout?.density || 'normal'}`);
+      document.body.classList.add(`ds-density-${design.layout?.density || 'normal'}`);
 
-      // Alternar modo oscuro/claro según el preset activo
-      // Si es 'system', detectar la preferencia del sistema
-      let effectiveTheme = normalized.theme;
-      let designToUse = normalized;
-      
-      if (normalized.theme === 'system') {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        effectiveTheme = prefersDark ? 'dark' : 'light';
-        
-        // Si el sistema prefiere dark, aplicar colores dark temporalmente
-        if (prefersDark) {
-          designToUse = {
-            ...normalized,
-            colors: deriveDarkColors(normalized.colors),
-            chrome: deriveDarkChrome(),
-            controls: deriveDarkControls(),
-          };
-        }
-      } else if (normalized.theme === 'dark') {
-        designToUse = {
-          ...normalized,
-          colors: deriveDarkColors(normalized.colors),
-          chrome: deriveDarkChrome(),
-          controls: deriveDarkControls(),
-        };
-      }
-      
-      // Aplicar variables CSS del diseño correcto
-      const finalVars = generateCSSVariables(designToUse);
-      Object.entries(finalVars).forEach(([key, value]) => {
+      // Generar y aplicar CSS variables
+      const vars = generateCSSVariables(design);
+      Object.entries(vars).forEach(([key, value]) => {
         root.style.setProperty(key, value);
       });
-      
-      // Aplicar clase dark según el tema efectivo
-      if (effectiveTheme === 'dark') {
+
+      // Aplicar clase dark/light según activeMode
+      if (activeMode === 'dark') {
         root.classList.add('dark');
       } else {
         root.classList.remove('dark');
       }
     } catch (error) {
-      console.error('[DesignProvider] Error generando CSS variables:', {
-        error: error?.message || error,
-      });
-      // En caso de error, usar diseño por defecto
+      console.error('[DesignProvider] Error applying CSS variables:', error);
+      // Fallback to defaults
       const vars = generateCSSVariables(DEFAULT_DESIGN);
       const root = document.documentElement;
       Object.entries(vars).forEach(([key, value]) => {
         root.style.setProperty(key, value);
       });
     }
-  }, [design]);
+  }, [effectiveDesign, activeMode]);
 
-  // Guardar preset cuando cambie
-  useEffect(() => {
-    try {
-      localStorage.setItem("custom_design_preset", JSON.stringify(design));
-    } catch (e) {
-      console.error('[DesignProvider] Error guardando preset de diseño:', {
-        error: e?.message || e,
-      });
-    }
-  }, [design]);
+  // ============================================================================
+  // LEGACY COMPATIBILITY (para componentes que aún usan la API antigua)
+  // ============================================================================
 
-  // Detectar cambios en la preferencia del sistema cuando el tema es 'system'
-  // Esto fuerza una re-renderización cuando cambia la preferencia del sistema
-  useEffect(() => {
-    if (design?.theme !== 'system') return;
-    
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
-      // Forzar actualización del diseño para que se re-evalúe el tema efectivo
-      setDesign(prev => ({ ...prev }));
-    };
-    
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [design?.theme]);
+  // "design" plano para compatibilidad
+  const legacyDesign = effectiveDesign;
 
-  // Actualizar parcialmente el diseño usando un path
-  const setDesignPartial = (path, value) => {
-    setDesign(prev => {
-      const updated = setNestedValue(prev, path, value);
-      
-      // Si se cambia el tema
-      if (path === 'theme') {
-        const normalized = normalizeDesign(updated);
-        
-        // Si es dark, aplicar colores dark
-        if (value === 'dark') {
-        return {
-            ...normalized,
-          colors: deriveDarkColors(normalized.colors),
-            chrome: deriveDarkChrome(),
-            controls: deriveDarkControls(),
-            theme: 'dark',
-        };
-      }
-      
-        // Si es light, restaurar colores light del preset base
-        if (value === 'light') {
-          const preset = findPresetById(presetId) || getDefaultPreset();
-          const normalizedPreset = normalizeDesign(preset.design);
-          return {
-            ...normalizedPreset,
-            theme: 'light',
-          };
-        }
-        
-        // Si es system, mantener colores light pero marcar como system
-        if (value === 'system') {
-        const preset = findPresetById(presetId) || getDefaultPreset();
-          const normalizedPreset = normalizeDesign(preset.design);
-        return {
-            ...normalizedPreset,
-            theme: 'system',
-        };
-        }
-      }
-      
-      return updated;
-    });
+  const setDesignLegacy = (newDesign) => {
+    // Migrar a nuevo formato y setear como base
+    const migrated = migrateToDesignBase(newDesign);
+    setBaseDesign(migrated);
+    setPreviewOverlay(null);
   };
 
-  // Resetear a valores por defecto
   const resetDesign = () => {
-    setDesign(DEFAULT_DESIGN);
+    setBaseDesign(createDefaultDesignBase());
+    setPreviewOverlay(null);
   };
 
-  // Cargar un preset
-  const loadPreset = (presetId) => {
+  const loadPreset = (presetIdParam) => {
     const presets = getAllPresets();
-    const preset = presets[presetId];
-    if (preset) {
-      // Normalizar para asegurar estructura completa
-      setDesign(normalizeDesign(preset.config));
+    const preset = presets[presetIdParam];
+    if (preset?.config) {
+      const migrated = migrateToDesignBase(preset.config);
+      setBaseDesign(migrated);
+      setPreviewOverlay(null);
       return { success: true };
     }
     return { success: false, error: 'Preset no encontrado' };
   };
 
-  // Exportar diseño actual como JSON
   const exportDesign = () => {
-    return JSON.stringify(design, null, 2);
+    return JSON.stringify(effectiveDesign, null, 2);
   };
 
-  // Importar diseño desde JSON
   const importDesign = (jsonString) => {
     try {
       const imported = JSON.parse(jsonString);
-      // Validar estructura básica
       if (typeof imported !== 'object') {
         throw new Error('Formato inválido');
       }
-      // Normalizar para asegurar estructura completa
-      setDesign(normalizeDesign(imported));
+      const migrated = migrateToDesignBase(imported);
+      setBaseDesign(migrated);
+      setPreviewOverlay(null);
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
     }
   };
 
-  const value = useMemo(
-    () => ({
-      design,
-      setDesign,
-      setDesignPartial,
-      resetDesign,
-      loadPreset,
-      exportDesign,
-      importDesign,
-      // Aliases para compatibilidad con código existente
-      config: design,
-      setConfig: setDesign,
-      reset: resetDesign,
-      // Funciones originales
-      presets: getAllPresets(),
-      deleteDesignPreset: () => {
-        deleteCustomPreset();
-        setDesign(DEFAULT_DESIGN);
-      },
-      isBuiltInPreset,
-      // Nuevos: sistema de presets base
-      currentPresetId: presetId || 'studia',
-      setPresetId: handleSetPresetId,
-      basePresets: DESIGN_PRESETS,
-    }),
-    [design, presetId]
-  );
+  const handleSetPresetId = (id) => {
+    const preset = findPresetById(id);
+    if (!preset) return;
+
+    // If this preset is already active AND there's no preview overlay, do nothing
+    // This is the expected behavior when there's only one theme - clicking it shouldn't change anything
+    const isAlreadyActive = presetId === id;
+    const hasNoPreview = previewOverlay === null ||
+      (Object.keys(previewOverlay.common || {}).length === 0 &&
+        Object.keys(previewOverlay.modes?.light || {}).length === 0 &&
+        Object.keys(previewOverlay.modes?.dark || {}).length === 0);
+
+    if (isAlreadyActive && hasNoPreview) {
+      // Already on this preset with no changes - do nothing
+      return;
+    }
+
+    // If clicking on a DIFFERENT preset, load it as preview
+    if (!isAlreadyActive) {
+      setPresetIdState(id);
+      localStorage.setItem(STORAGE_KEYS.BASE_PRESET_ID, id);
+      const migrated = migrateToDesignBase(preset.design);
+      setPreviewOverlay({
+        common: migrated.common || {},
+        modes: migrated.modes || { light: {}, dark: {} },
+      });
+    } else {
+      // Same preset but has preview - just clear the preview to reset to base
+      setPreviewOverlay(null);
+    }
+  };
+
+  // Legacy getDesignDiff (returns flat array for old components)
+  const legacyGetDesignDiff = () => {
+    const partitioned = getPartitionedDiff();
+    return [...partitioned.common, ...partitioned.light, ...partitioned.dark];
+  };
+
+  // Legacy revertChange (needs scope extraction)
+  const legacyRevertChange = (path, originalValue) => {
+    // Find which scope this path is in
+    const partitioned = getPartitionedDiff();
+    let scope = 'common';
+    if (partitioned.light.some(c => c.path === path)) scope = 'light';
+    else if (partitioned.dark.some(c => c.path === path)) scope = 'dark';
+    revertChange(path, scope);
+  };
+
+  // ============================================================================
+  // CONTEXT VALUE
+  // ============================================================================
+  const value = useMemo(() => ({
+    // New API
+    baseDesign,
+    activeMode,
+    setActiveMode,
+    previewOverlay,
+    isPreviewActive,
+    effectiveDesign,
+    setDesignPartial,
+    clearPreview,
+    revertChange,
+    getPartitionedDiff,
+    exportFull,
+    exportDiff,
+    exportFullAndDiff,
+
+    // Legacy API (for backward compatibility)
+    design: legacyDesign,
+    setDesign: setDesignLegacy,
+    resetDesign,
+    loadPreset,
+    exportDesign,
+    importDesign,
+    config: legacyDesign,
+    setConfig: setDesignLegacy,
+    reset: resetDesign,
+    presets: getAllPresets(),
+    deleteDesignPreset: () => {
+      deleteCustomPreset();
+      resetDesign();
+    },
+    isBuiltInPreset,
+    currentPresetId: presetId,
+    setPresetId: handleSetPresetId,
+    basePresets: DESIGN_PRESETS,
+
+    // Legacy preview API (deprecated, for compatibility)
+    previewDesign: isPreviewActive ? effectiveDesign : null,
+    setPreviewDesign: (d) => {
+      if (d) {
+        const migrated = migrateToDesignBase(d);
+        setPreviewOverlay({
+          common: migrated.common,
+          modes: migrated.modes,
+        });
+      } else {
+        clearPreview();
+      }
+    },
+    getDesignDiff: legacyGetDesignDiff,
+    // NOTE: commitPreview removed - use export instead
+  }), [
+    baseDesign,
+    activeMode,
+    previewOverlay,
+    isPreviewActive,
+    effectiveDesign,
+    presetId,
+  ]);
 
   return (
     <DesignContext.Provider value={value}>

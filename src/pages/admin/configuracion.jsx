@@ -62,7 +62,7 @@ function ConfiguracionPageContent() {
     // Tab configuration
     const tabItems = [
         { value: 'version', label: 'Versión' },
-        { value: 'design', label: 'Panel de Diseño' },
+        { value: 'design', label: 'UI' },
         { value: 'niveles', label: 'Niveles' },
         { value: 'tests', label: 'Tests & Seeds' },
         { value: 'import', label: 'Importar y Exportar' },

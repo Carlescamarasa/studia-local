@@ -12,6 +12,7 @@ export type RadiusValue = 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '
 export type ShadowValue = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'card';
 export type DensityValue = 'compact' | 'normal' | 'spacious';
 export type ThemeValue = 'light' | 'dark' | 'system';
+export type ModeValue = 'light' | 'dark';
 
 // Mapeo de valores de radius a píxeles
 export const RADIUS_MAP: Record<RadiusValue, string> = {
@@ -63,6 +64,40 @@ export const DENSITY_MAP: Record<DensityValue, Record<string, string>> = {
 // ============================================================================
 // INTERFACES TYPESCRIPT
 // ============================================================================
+
+/**
+ * DesignBase - Nueva estructura con tokens comunes y modos light/dark separados.
+ * Esto permite diffs particionados y cambio de modo sin generar "cambios fantasma".
+ */
+export interface DesignBase {
+  common: Partial<DesignTokens>;
+  modes: {
+    light: Partial<DesignTokens>;
+    dark: Partial<DesignTokens>;
+  };
+}
+
+/**
+ * DesignOverlay - Overlay de preview temporal (solo sesión).
+ * Misma estructura que DesignBase pero todos los campos son opcionales.
+ */
+export interface DesignOverlay {
+  common?: Partial<DesignTokens>;
+  modes?: {
+    light?: Partial<DesignTokens>;
+    dark?: Partial<DesignTokens>;
+  };
+}
+
+/**
+ * DesignChangePartitioned - Resultado de diff particionado por scope
+ */
+export interface DesignChangePartitioned {
+  path: string;
+  from: any;
+  to: any;
+  scope: 'common' | 'light' | 'dark';
+}
 
 export interface DesignTokens {
   // Colores principales
@@ -868,5 +903,362 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
   }
 
   return vars;
+}
+
+// ============================================================================
+// DIFF UTILITIES
+// ============================================================================
+
+interface DesignChange {
+  path: string;
+  from: any;
+  to: any;
+}
+
+/**
+ * Recursively compute flattened paths and values from an object
+ */
+function flattenObject(obj: Record<string, any>, prefix = ''): Record<string, any> {
+  const result: Record<string, any> = {};
+
+  for (const key in obj) {
+    if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
+
+    const value = obj[key];
+    const newPath = prefix ? `${prefix}.${key}` : key;
+
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      Object.assign(result, flattenObject(value, newPath));
+    } else {
+      result[newPath] = value;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Compute difference between two design objects (base vs next)
+ * Returns array of { path, from, to } for changed values only
+ * Both objects are normalized before comparison
+ */
+export function diffDesign(
+  base: Partial<DesignTokens> | null | undefined,
+  next: Partial<DesignTokens> | null | undefined
+): DesignChange[] {
+  const normalizedBase = normalizeDesign(base);
+  const normalizedNext = normalizeDesign(next);
+
+  const flatBase = flattenObject(normalizedBase as Record<string, any>);
+  const flatNext = flattenObject(normalizedNext as Record<string, any>);
+
+  const changes: DesignChange[] = [];
+  const allPaths = Array.from(new Set([...Object.keys(flatBase), ...Object.keys(flatNext)]));
+
+  for (const path of allPaths) {
+    const fromValue = flatBase[path];
+    const toValue = flatNext[path];
+
+    // Compare values (handle arrays and primitives)
+    const fromStr = JSON.stringify(fromValue);
+    const toStr = JSON.stringify(toValue);
+
+    if (fromStr !== toStr) {
+      changes.push({ path, from: fromValue, to: toValue });
+    }
+  }
+
+  // Sort by path for consistent output
+  changes.sort((a, b) => a.path.localeCompare(b.path));
+
+  return changes;
+}
+
+/**
+ * Apply a single change (revert) to a design object
+ * Returns a new object with the change applied
+ */
+export function applyDesignChange(
+  design: Partial<DesignTokens>,
+  path: string,
+  value: any
+): Partial<DesignTokens> {
+  const result = JSON.parse(JSON.stringify(design)); // Deep clone
+  const keys = path.split('.');
+  let current: any = result;
+
+  for (let i = 0; i < keys.length - 1; i++) {
+    const key = keys[i];
+    if (!current[key] || typeof current[key] !== 'object') {
+      current[key] = {};
+    }
+    current = current[key];
+  }
+
+  current[keys[keys.length - 1]] = value;
+  return result;
+}
+
+// ============================================================================
+// NUEVO MODELO: FUNCIONES PARA DesignBase + DesignOverlay + MODOS
+// ============================================================================
+
+/**
+ * Colores derivados para modo dark (no personalizables, se aplican automáticamente)
+ * Estos valores se usan SOLO para inyectar CSS vars, NO se persisten.
+ */
+export const DARK_MODE_DEFAULTS: Partial<DesignTokens> = {
+  colors: {
+    primary: '#fd9840',
+    primarySoft: 'rgba(253, 152, 64, 0.1)',
+    secondary: '#FB8C3A',
+    accent: '#F97316',
+    success: '#10B981',
+    warning: '#F59E0B',
+    danger: '#EF4444',
+    info: '#3B82F6',
+    background: '#121212',
+    surface: '#1A1A1A',
+    surfaceElevated: '#242424',
+    surfaceMuted: '#171717',
+    text: {
+      primary: '#FFFFFF',
+      secondary: '#B4B4B4',
+      muted: '#929292',
+      inverse: '#1A1F2E',
+    },
+    border: {
+      default: '#3A3A3A',
+      muted: '#2A2A2A',
+      strong: '#4D4D4D',
+    },
+  },
+};
+
+/**
+ * Colores por defecto para modo LIGHT.
+ * Fondo claro, texto oscuro.
+ */
+export const LIGHT_MODE_DEFAULTS: Partial<DesignTokens> = {
+  colors: {
+    primary: '#E67E22',
+    primarySoft: 'rgba(230, 126, 34, 0.1)',
+    secondary: '#D35400',
+    accent: '#F39C12',
+    success: '#27AE60',
+    warning: '#F1C40F',
+    danger: '#E74C3C',
+    info: '#3498DB',
+    background: '#FAFAFA',
+    surface: '#FFFFFF',
+    surfaceElevated: '#FFFFFF',
+    surfaceMuted: '#F5F5F5',
+    text: {
+      primary: '#1A1A1A',
+      secondary: '#4A4A4A',
+      muted: '#6B6B6B',
+      inverse: '#FFFFFF',
+    },
+    border: {
+      default: '#E0E0E0',
+      muted: '#EEEEEE',
+      strong: '#BDBDBD',
+    },
+  },
+};
+
+/**
+ * Crear un DesignBase por defecto desde la configuración actual
+ */
+export function createDefaultDesignBase(): DesignBase {
+  return {
+    common: { ...DEFAULT_DESIGN, theme: undefined } as Partial<DesignTokens>,
+    modes: {
+      light: LIGHT_MODE_DEFAULTS,
+      dark: DARK_MODE_DEFAULTS,
+    },
+  };
+}
+
+/**
+ * Migrar un design plano legacy a la nueva estructura DesignBase
+ */
+export function migrateToDesignBase(legacyDesign: Partial<DesignTokens>): DesignBase {
+  const normalized = normalizeDesign(legacyDesign);
+  // El legacy se convierte en "common", los modos empiezan vacíos (dark usa defaults)
+  return {
+    common: { ...normalized, theme: undefined } as Partial<DesignTokens>,
+    modes: {
+      light: LIGHT_MODE_DEFAULTS,
+      dark: DARK_MODE_DEFAULTS,
+    },
+  };
+}
+
+/**
+ * Mergear DesignBase con un modo específico para obtener DesignTokens finales.
+ * También aplica un overlay de preview si existe.
+ */
+export function mergeDesignWithMode(
+  base: DesignBase,
+  mode: ModeValue,
+  overlay?: DesignOverlay | null
+): DesignTokens {
+  // 1. Empezar con base.common
+  let result = deepMerge(DEFAULT_DESIGN, base.common || {});
+
+  // 2. Aplicar overrides del modo
+  const modeOverrides = base.modes?.[mode] || {};
+  result = deepMerge(result, modeOverrides);
+
+  // 3. Si hay overlay, aplicar overlay.common
+  if (overlay?.common) {
+    result = deepMerge(result, overlay.common);
+  }
+
+  // 4. Si hay overlay, aplicar overlay.modes[mode]
+  if (overlay?.modes?.[mode]) {
+    result = deepMerge(result, overlay.modes[mode]!);
+  }
+
+  return result;
+}
+
+/**
+ * Calcular diff particionado entre base y overlay
+ * Retorna cambios separados por scope: common, light, dark
+ */
+export function diffDesignPartitioned(
+  base: DesignBase,
+  overlay: DesignOverlay | null | undefined
+): { common: DesignChangePartitioned[]; light: DesignChangePartitioned[]; dark: DesignChangePartitioned[] } {
+  const result = {
+    common: [] as DesignChangePartitioned[],
+    light: [] as DesignChangePartitioned[],
+    dark: [] as DesignChangePartitioned[],
+  };
+
+  if (!overlay) return result;
+
+  // Diff common
+  if (overlay.common) {
+    const baseCommonFlat = flattenObject((base.common || {}) as Record<string, any>);
+    const overlayCommonFlat = flattenObject((overlay.common || {}) as Record<string, any>);
+
+    for (const path of Object.keys(overlayCommonFlat)) {
+      const from = baseCommonFlat[path];
+      const to = overlayCommonFlat[path];
+      if (JSON.stringify(from) !== JSON.stringify(to)) {
+        result.common.push({ path, from, to, scope: 'common' });
+      }
+    }
+  }
+
+  // Diff light
+  if (overlay.modes?.light) {
+    const baseLightFlat = flattenObject((base.modes?.light || {}) as Record<string, any>);
+    const overlayLightFlat = flattenObject((overlay.modes?.light || {}) as Record<string, any>);
+
+    for (const path of Object.keys(overlayLightFlat)) {
+      const from = baseLightFlat[path];
+      const to = overlayLightFlat[path];
+      if (JSON.stringify(from) !== JSON.stringify(to)) {
+        result.light.push({ path, from, to, scope: 'light' });
+      }
+    }
+  }
+
+  // Diff dark
+  if (overlay.modes?.dark) {
+    const baseDarkFlat = flattenObject((base.modes?.dark || {}) as Record<string, any>);
+    const overlayDarkFlat = flattenObject((overlay.modes?.dark || {}) as Record<string, any>);
+
+    for (const path of Object.keys(overlayDarkFlat)) {
+      const from = baseDarkFlat[path];
+      const to = overlayDarkFlat[path];
+      if (JSON.stringify(from) !== JSON.stringify(to)) {
+        result.dark.push({ path, from, to, scope: 'dark' });
+      }
+    }
+  }
+
+  // Sort each for consistency
+  result.common.sort((a, b) => a.path.localeCompare(b.path));
+  result.light.sort((a, b) => a.path.localeCompare(b.path));
+  result.dark.sort((a, b) => a.path.localeCompare(b.path));
+
+  return result;
+}
+
+/**
+ * Aplicar un cambio al overlay en el scope correcto.
+ * Retorna un nuevo overlay con el cambio aplicado.
+ */
+export function applyChangeToOverlay(
+  overlay: DesignOverlay | null,
+  path: string,
+  value: any,
+  scope: 'common' | 'light' | 'dark'
+): DesignOverlay {
+  const result: DesignOverlay = overlay
+    ? JSON.parse(JSON.stringify(overlay))
+    : { common: {}, modes: { light: {}, dark: {} } };
+
+  if (scope === 'common') {
+    if (!result.common) result.common = {};
+    setNestedValue(result.common, path, value);
+  } else {
+    if (!result.modes) result.modes = { light: {}, dark: {} };
+    if (!result.modes[scope]) result.modes[scope] = {};
+    setNestedValue(result.modes[scope]!, path, value);
+  }
+
+  return result;
+}
+
+/**
+ * Revertir un cambio en el overlay (eliminar el path del scope correspondiente)
+ */
+export function revertChangeInOverlay(
+  overlay: DesignOverlay | null,
+  path: string,
+  scope: 'common' | 'light' | 'dark'
+): DesignOverlay {
+  if (!overlay) return { common: {}, modes: { light: {}, dark: {} } };
+
+  const result: DesignOverlay = JSON.parse(JSON.stringify(overlay));
+
+  const deleteNestedPath = (obj: any, pathStr: string) => {
+    const keys = pathStr.split('.');
+    let current = obj;
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (!current[keys[i]]) return;
+      current = current[keys[i]];
+    }
+    delete current[keys[keys.length - 1]];
+  };
+
+  if (scope === 'common' && result.common) {
+    deleteNestedPath(result.common, path);
+  } else if (result.modes?.[scope]) {
+    deleteNestedPath(result.modes[scope]!, path);
+  }
+
+  return result;
+}
+
+/**
+ * Helper interno para setear valor anidado en un objeto
+ */
+function setNestedValue(obj: any, path: string, value: any): void {
+  const keys = path.split('.');
+  let current = obj;
+  for (let i = 0; i < keys.length - 1; i++) {
+    if (!current[keys[i]] || typeof current[keys[i]] !== 'object') {
+      current[keys[i]] = {};
+    }
+    current = current[keys[i]];
+  }
+  current[keys[keys.length - 1]] = value;
 }
 
