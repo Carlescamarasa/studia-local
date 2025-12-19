@@ -21,7 +21,7 @@ const CATEGORY_LABELS = {
   algo_no_funciona: 'Algo no funciona',
   se_ve_mal: 'Se ve mal o confuso',
   no_encuentro: 'No encuentro lo que busco',
-  sugerencia: 'Me gustaría que hubiera...',
+  sugerencia: 'Me gustaría que hubiera',
   otro: 'Otro',
 };
 

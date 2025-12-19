@@ -545,13 +545,13 @@ export default function LevelConfigView() {
                     <CardContent className="p-0">
                         <div className="overflow-x-auto">
                             <table className="w-full border-collapse text-sm">
-                                <thead className="bg-slate-100 sticky top-0 z-20">
+                                <thead className="bg-muted sticky top-0 z-20">
                                     <tr>
-                                        <th className="w-[180px] min-w-[180px] text-left font-semibold p-3 border-b border-r bg-slate-100 sticky left-0 z-30">
+                                        <th className="w-[180px] min-w-[180px] text-left font-semibold p-3 border-b border-r border-border bg-muted sticky left-0 z-30">
                                             Requisito
                                         </th>
                                         {levels.map(l => (
-                                            <th key={l.level} className="w-[110px] min-w-[110px] text-center font-semibold p-3 border-b">
+                                            <th key={l.level} className="w-[110px] min-w-[110px] text-center font-semibold p-3 border-b border-border">
                                                 Nivel {l.level}
                                             </th>
                                         ))}
@@ -560,11 +560,11 @@ export default function LevelConfigView() {
                                 <tbody>
                                     {/* XP Flexibilidad */}
                                     <tr className="hover:bg-muted/20">
-                                        <td className="font-medium p-3 border-b border-r bg-background sticky left-0 z-10">
+                                        <td className="font-medium p-3 border-b border-r border-border bg-background sticky left-0 z-10">
                                             Min. XP Flexibilidad
                                         </td>
                                         {levels.map(l => (
-                                            <td key={l.level} className="p-2 border-b text-center">
+                                            <td key={l.level} className="p-2 border-b border-border text-center">
                                                 <Input
                                                     type="number"
                                                     className="w-full max-w-[90px] text-center mx-auto tabular-nums"
@@ -577,11 +577,11 @@ export default function LevelConfigView() {
                                     </tr>
                                     {/* XP Motricidad */}
                                     <tr className="hover:bg-muted/20 bg-muted/5">
-                                        <td className="font-medium p-3 border-b border-r bg-background sticky left-0 z-10">
+                                        <td className="font-medium p-3 border-b border-r border-border bg-background sticky left-0 z-10">
                                             Min. XP Motricidad
                                         </td>
                                         {levels.map(l => (
-                                            <td key={l.level} className="p-2 border-b text-center">
+                                            <td key={l.level} className="p-2 border-b border-border text-center">
                                                 <Input
                                                     type="number"
                                                     className="w-full max-w-[90px] text-center mx-auto tabular-nums"
@@ -594,11 +594,11 @@ export default function LevelConfigView() {
                                     </tr>
                                     {/* XP Articulación */}
                                     <tr className="hover:bg-muted/20">
-                                        <td className="font-medium p-3 border-b border-r bg-background sticky left-0 z-10">
+                                        <td className="font-medium p-3 border-b border-r border-border bg-background sticky left-0 z-10">
                                             Min. XP Articulación
                                         </td>
                                         {levels.map(l => (
-                                            <td key={l.level} className="p-2 border-b text-center">
+                                            <td key={l.level} className="p-2 border-b border-border text-center">
                                                 <Input
                                                     type="number"
                                                     className="w-full max-w-[90px] text-center mx-auto tabular-nums"
@@ -610,18 +610,19 @@ export default function LevelConfigView() {
                                         ))}
                                     </tr>
                                     {/* Total XP */}
-                                    <tr className="bg-slate-200 font-semibold">
-                                        <td className="p-3 border-b border-r bg-slate-200 sticky left-0 z-10">
+                                    <tr className="bg-muted font-semibold text-primary">
+                                        <td className="p-3 border-b border-r border-border bg-muted sticky left-0 z-10">
                                             Total XP
                                         </td>
                                         {levels.map(l => (
-                                            <td key={l.level} className="p-3 border-b text-center tabular-nums bg-slate-200">
+                                            <td key={l.level} className="p-3 border-b border-border text-center tabular-nums bg-muted">
                                                 {((l.minXpFlex || 0) + (l.minXpMotr || 0) + (l.minXpArt || 0)).toLocaleString()}
                                             </td>
-                                        ))}                                    </tr>
+                                        ))}
+                                    </tr>
                                     {/* Criteria Count with Tooltips */}
                                     <tr className="hover:bg-muted/20 bg-muted/5">
-                                        <td className="font-medium p-3 border-r bg-background sticky left-0 z-10">
+                                        <td className="font-medium p-3 border-r border-border bg-background sticky left-0 z-10">
                                             Criterios Definidos
                                         </td>
                                         {levels.map(l => {

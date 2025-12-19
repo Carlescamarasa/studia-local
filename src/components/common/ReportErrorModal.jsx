@@ -35,7 +35,7 @@ const CATEGORIES = [
   },
   {
     value: 'sugerencia',
-    label: 'Me gustaría que hubiera...',
+    label: 'Me gustaría que hubiera',
     description: 'Sugerencias de nuevas funcionalidades'
   },
   {

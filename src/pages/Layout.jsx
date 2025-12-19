@@ -67,6 +67,7 @@ import { useAppVersion } from "@/hooks/useAppVersion";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import LevelBadge from "@/components/common/LevelBadge";
 import AdminUpdateNotice from "@/components/common/AdminUpdateNotice";
+import HardcodeInspector from "@/components/design/HardcodeInspector";
 
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
@@ -119,7 +120,7 @@ function LayoutContent() {
   const [isMobile, setIsMobile] = useState(false);
   const toggleLockRef = useRef(0);
   const headerToggleButtonRef = useRef(null);
-  const { design, setDesignPartial } = useDesign();
+  const { design, setDesignPartial, activeMode, setActiveMode } = useDesign();
   const { currentVersion } = useAppVersion();
 
   const appName = getAppName();
@@ -216,9 +217,9 @@ function LayoutContent() {
         },
         'toggle-theme': () => {
           e.preventDefault();
-          const currentTheme = design?.theme || 'light';
-          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-          setDesignPartial('theme', newTheme);
+          // Use activeMode instead of design.theme - no diff contamination
+          const newMode = activeMode === 'light' ? 'dark' : 'light';
+          setActiveMode(newMode);
         },
         'toggle-hotkeys-modal': () => {
           e.preventDefault();
@@ -304,7 +305,7 @@ function LayoutContent() {
 
     window.addEventListener("keydown", handleKey, { capture: true, passive: false });
     return () => window.removeEventListener("keydown", handleKey, { capture: true });
-  }, [design, setDesignPartial, safeToggle, navigate, effectiveUser, signOut, setShowHotkeysModal]);
+  }, [design, setDesignPartial, activeMode, setActiveMode, safeToggle, navigate, effectiveUser, signOut, setShowHotkeysModal]);
 
   /* Gestos: swipe desde borde para abrir; swipe izq para cerrar */
   useEffect(() => {
@@ -725,18 +726,18 @@ function LayoutContent() {
                 </Tooltip>
               </TooltipProvider>
 
-              {/* Toggle Tema - Ahora separado */}
+              {/* Toggle Tema - Usando activeMode (sin contaminar diffs) */}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setDesignPartial('theme', (design?.theme === 'dark' ? 'light' : 'dark'))}
+                      onClick={() => setActiveMode(activeMode === 'dark' ? 'light' : 'dark')}
                       className={`flex-1 justify-center gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
-                      aria-label={design?.theme === 'dark' ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+                      aria-label={activeMode === 'dark' ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
                     >
-                      {design?.theme === 'dark' ? (
+                      {activeMode === 'dark' ? (
                         <Sun className="w-5 h-5" />
                       ) : (
                         <Moon className="w-5 h-5" />
@@ -744,7 +745,7 @@ function LayoutContent() {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{design?.theme === 'dark' ? "Modo claro" : "Modo oscuro"}</p>
+                    <p>{activeMode === 'dark' ? "Modo claro" : "Modo oscuro"}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -833,6 +834,9 @@ function LayoutContent() {
 
           {/* Botón flotante de reporte de errores - Ocultar en modo estudio (/hoy) */}
           {!location.pathname.startsWith('/hoy') && <ReportErrorButton />}
+
+          {/* HardcodeInspector - Solo para ADMIN */}
+          {userRole === 'ADMIN' && <HardcodeInspector />}
 
           {/* Footer global - centrado con nombre de app */}
           <footer className="border-t border-[var(--color-border-default)] bg-card text-xs text-[var(--color-text-secondary)] mt-auto">

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useDesign } from "@/components/design/DesignProvider";
+import { useDesignDiff } from "@/components/design/useDesignDiff";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Alert, AlertDescription } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -10,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Palette, Download, Upload, RotateCcw, Save, Trash2,
   FileCode, CheckCircle, AlertTriangle, Play, Eye, Plus,
-  Scan, Sparkles, X, Copy, Settings, Shield
+  Scan, Sparkles, X, Copy, Settings, Shield, Undo2, ChevronDown, ChevronUp,
+  Sun, Moon
 } from "lucide-react";
 import { toast } from "sonner";
 import RequireRole from "@/components/auth/RequireRole";
@@ -19,6 +21,7 @@ import { runDesignAudit, QUICK_PROFILES, parseAuditSpec, runAudit } from "@/comp
 import Tabs from "@/components/ds/Tabs";
 import { getAllPresets, saveCustomPreset, deleteCustomPreset, exportCustomPresets, importCustomPresets } from "@/components/design/DesignPresets";
 import LevelConfigView from "@/components/admin/LevelConfigView";
+import { HardcodeFinder } from "@/components/design/HardcodeFinder";
 
 // ... existing imports ...
 
@@ -57,10 +60,10 @@ const componentStyles = {
   },
   status: {
     badgeDefault: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-    badgeInfo: "border-transparent bg-blue-500 text-white hover:bg-blue-600",
-    badgeSuccess: "border-transparent bg-green-500 text-white hover:bg-green-600",
-    badgeWarning: "border-transparent bg-yellow-500 text-white hover:bg-yellow-600",
-    badgeDanger: "border-transparent bg-red-500 text-white hover:bg-red-600",
+    badgeInfo: "border-transparent bg-[var(--color-info)] text-white hover:opacity-80",
+    badgeSuccess: "border-transparent bg-[var(--color-success)] text-white hover:opacity-80",
+    badgeWarning: "border-transparent bg-[var(--color-warning)] text-white hover:opacity-80",
+    badgeDanger: "border-transparent bg-[var(--color-danger)] text-white hover:opacity-80",
     badgeOutline: "text-foreground",
   }
 };
@@ -109,8 +112,308 @@ function LabeledRow({ label, children }) {
   );
 }
 
+// ============================================================================
+// PREVIEW BANNER COMPONENT
+// ============================================================================
+function PreviewBanner() {
+  const { isPreviewActive, clearPreview, activeMode } = useDesign();
+  const { totalCount, counts } = useDesignDiff();
+
+  if (!isPreviewActive) return null;
+
+  return (
+    <div className="p-3 rounded-xl bg-[color-mix(in_srgb,var(--color-info)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-info)_30%,transparent)] flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Eye className="w-5 h-5 text-[var(--color-info)]" />
+          <div>
+            <span className="text-sm font-medium text-[var(--color-text-primary)]">
+              Vista previa activa — {totalCount} cambio{totalCount !== 1 ? 's' : ''}
+            </span>
+            <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">
+              Modo: <strong className="capitalize">{activeMode}</strong>
+              {counts.common > 0 && <span className="ml-2">Comunes: {counts.common}</span>}
+              {counts.light > 0 && <span className="ml-2">Light: {counts.light}</span>}
+              {counts.dark > 0 && <span className="ml-2">Dark: {counts.dark}</span>}
+            </div>
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            clearPreview();
+            toast.success('✅ Cambios descartados');
+          }}
+          className="h-8 text-xs"
+        >
+          <X className="w-3 h-3 mr-1" />
+          Cancelar preview
+        </Button>
+      </div>
+      <p className="text-xs text-[var(--color-text-muted)]">
+        💡 Los cambios solo se aplican a tu sesión. Usa "Exportar" para guardar.
+      </p>
+    </div>
+  );
+}
+
+// ============================================================================
+// DIFF ACCORDION COMPONENT
+// ============================================================================
+function DiffAccordion() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [openSections, setOpenSections] = useState({ common: true, light: false, dark: false });
+  const {
+    diff,
+    hasChanges,
+    totalCount,
+    counts,
+    revertChange,
+    exportFull,
+    exportDiff,
+    exportFullAndDiff,
+    downloadExport,
+    generateReport,
+  } = useDesignDiff();
+
+  if (!hasChanges) return null;
+
+  const toggleSection = (section) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const renderChangeList = (changes, scope) => (
+    <div className="space-y-1">
+      {changes.map((change, idx) => (
+        <div
+          key={idx}
+          className="flex items-center justify-between gap-2 p-2 rounded-lg bg-[var(--color-surface-elevated)] border border-[var(--color-border-muted)] text-xs"
+        >
+          <div className="flex-1 min-w-0">
+            <code className="text-[var(--color-primary)] font-mono truncate block">
+              {change.path}
+            </code>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-[var(--color-text-muted)] truncate" title={JSON.stringify(change.from)}>
+                {typeof change.from === 'string' ? change.from : JSON.stringify(change.from)}
+              </span>
+              <span className="text-[var(--color-text-muted)]">→</span>
+              <span className="text-[var(--color-success)] font-medium truncate" title={JSON.stringify(change.to)}>
+                {typeof change.to === 'string' ? change.to : JSON.stringify(change.to)}
+              </span>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              revertChange(change.path, scope);
+              toast.info(`↩️ Revertido: ${change.path}`);
+            }}
+            className="h-6 w-6 p-0 shrink-0"
+            title="Revertir este cambio"
+          >
+            <Undo2 className="w-3 h-3" />
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="mb-4">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-3 rounded-xl bg-[var(--color-surface-muted)] border border-[var(--color-border-default)] hover:bg-[var(--color-surface)] transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Badge className="badge-primary text-xs">{totalCount}</Badge>
+          <span className="text-sm font-medium text-[var(--color-text-primary)]">
+            Cambios detectados
+          </span>
+          <span className="text-xs text-[var(--color-text-muted)]">
+            (C:{counts.common} L:{counts.light} D:{counts.dark})
+          </span>
+        </div>
+        {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+      </button>
+
+      {isOpen && (
+        <div className="mt-2 p-4 rounded-xl bg-[var(--color-surface-muted)] border border-[var(--color-border-default)]">
+          {/* Secciones particionadas */}
+          <div className="max-h-80 overflow-y-auto space-y-3 mb-4">
+            {/* Common */}
+            {diff.common.length > 0 && (
+              <div>
+                <button
+                  onClick={() => toggleSection('common')}
+                  className="w-full flex items-center justify-between p-2 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface-elevated)] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-xs">{counts.common}</Badge>
+                    <span className="text-sm font-medium">Comunes (ambos modos)</span>
+                  </div>
+                  {openSections.common ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+                {openSections.common && <div className="mt-2">{renderChangeList(diff.common, 'common')}</div>}
+              </div>
+            )}
+
+            {/* Light */}
+            {diff.light.length > 0 && (
+              <div>
+                <button
+                  onClick={() => toggleSection('light')}
+                  className="w-full flex items-center justify-between p-2 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface-elevated)] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300 text-xs">{counts.light}</Badge>
+                    <span className="text-sm font-medium">Solo Light</span>
+                    <Sun className="w-3 h-3" />
+                  </div>
+                  {openSections.light ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+                {openSections.light && <div className="mt-2">{renderChangeList(diff.light, 'light')}</div>}
+              </div>
+            )}
+
+            {/* Dark */}
+            {diff.dark.length > 0 && (
+              <div>
+                <button
+                  onClick={() => toggleSection('dark')}
+                  className="w-full flex items-center justify-between p-2 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface-elevated)] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-gray-700 text-gray-200 dark:bg-gray-300 dark:text-gray-800 text-xs">{counts.dark}</Badge>
+                    <span className="text-sm font-medium">Solo Dark</span>
+                    <Moon className="w-3 h-3" />
+                  </div>
+                  {openSections.dark ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+                {openSections.dark && <div className="mt-2">{renderChangeList(diff.dark, 'dark')}</div>}
+              </div>
+            )}
+          </div>
+
+          {/* Botones de export */}
+          <div className="flex flex-wrap gap-2 pt-3 border-t border-[var(--color-border-default)]">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                downloadExport(exportFull(), 'design-full.json');
+                toast.success('✅ Base completo exportado');
+              }}
+              className="h-8 text-xs"
+            >
+              <Download className="w-3 h-3 mr-1" />
+              FULL (Base)
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                downloadExport(exportDiff(), 'design-diff.json');
+                toast.success('✅ Solo cambios exportados');
+              }}
+              className="h-8 text-xs"
+            >
+              <Download className="w-3 h-3 mr-1" />
+              DIFF (Overlay)
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                downloadExport(exportFullAndDiff(), 'design-full+diff.json');
+                toast.success('✅ FULL + DIFF exportado');
+              }}
+              className="h-8 text-xs"
+            >
+              <Download className="w-3 h-3 mr-1" />
+              FULL + DIFF
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const report = generateReport();
+                navigator.clipboard.writeText(report);
+                toast.success('📋 Reporte copiado al portapapeles');
+              }}
+              className="h-8 text-xs"
+            >
+              <Copy className="w-3 h-3 mr-1" />
+              Copiar Reporte
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// DEBUG PANEL (DEV ONLY) - Shows storage state and preview status
+// ============================================================================
+function DebugPanel() {
+  const { isPreviewActive, design, previewDesign, effectiveDesign } = useDesign();
+  const { changeCount } = useDesignDiff();
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Only show in development
+  if (import.meta.env.PROD) return null;
+
+  const storageInfo = useMemo(() => {
+    try {
+      return {
+        customDesign: localStorage.getItem('custom_design_preset') ? 'SET' : 'null',
+        basePresetId: localStorage.getItem('studia_base_preset_id') || 'null',
+        customPresets: localStorage.getItem('studia.design.customPresets.v1') ? 'SET' : 'null',
+        previewSession: sessionStorage.getItem('studia_preview_design') ? 'SET' : 'null',
+        legacyPreviewLocal: localStorage.getItem('studia_preview_design') ? 'LEGACY!' : 'null',
+      };
+    } catch (_) {
+      return { error: 'Storage access failed' };
+    }
+  }, [isPreviewActive, changeCount]);
+
+  return (
+    <details
+      className="p-2 rounded-lg bg-[var(--color-surface-muted)] border border-[var(--color-border-muted)] text-[10px] font-mono"
+      open={isOpen}
+      onToggle={(e) => setIsOpen(e.target.open)}
+    >
+      <summary className="cursor-pointer text-[var(--color-text-secondary)] font-medium">
+        🔧 Debug Panel (dev only)
+      </summary>
+      <div className="mt-2 space-y-1 text-[var(--color-text-muted)]">
+        <div>
+          <strong className="text-[var(--color-text-primary)]">Preview:</strong> {isPreviewActive ? '✅ ACTIVE' : '❌ inactive'}
+          {isPreviewActive && <span className="ml-2 text-[var(--color-warning)]">({changeCount} changes)</span>}
+        </div>
+        <div>
+          <strong className="text-[var(--color-text-primary)]">Theme:</strong> {effectiveDesign?.theme || 'unknown'}
+        </div>
+        <div className="border-t border-[var(--color-border-muted)] pt-1 mt-1">
+          <strong className="text-[var(--color-text-primary)]">Storage Keys:</strong>
+        </div>
+        <div className="pl-2 space-y-0.5">
+          <div>localStorage.custom_design_preset: <span className={storageInfo.customDesign === 'SET' ? 'text-[var(--color-success)]' : 'text-[var(--color-text-muted)]'}>{storageInfo.customDesign}</span></div>
+          <div>localStorage.studia_base_preset_id: <span className="text-[var(--color-info)]">{storageInfo.basePresetId}</span></div>
+          <div>localStorage.customPresets.v1: <span className={storageInfo.customPresets === 'SET' ? 'text-[var(--color-success)]' : 'text-[var(--color-text-muted)]'}>{storageInfo.customPresets}</span></div>
+          <div>sessionStorage.preview: <span className={storageInfo.previewSession === 'SET' ? 'text-[var(--color-warning)]' : 'text-[var(--color-text-muted)]'}>{storageInfo.previewSession}</span></div>
+          <div>localStorage.preview (LEGACY): <span className={storageInfo.legacyPreviewLocal !== 'null' ? 'text-[var(--color-danger)] font-bold' : 'text-[var(--color-text-muted)]'}>{storageInfo.legacyPreviewLocal}</span></div>
+        </div>
+      </div>
+    </details>
+  );
+}
+
 function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
-  const { design, setDesign, setDesignPartial, resetDesign, exportDesign, importDesign, loadPreset, currentPresetId, setPresetId, basePresets } = useDesign();
+  const { design, setDesign, setDesignPartial, resetDesign, exportDesign, importDesign, loadPreset, currentPresetId, setPresetId, basePresets, activeMode, setActiveMode } = useDesign();
   // Aliases para compatibilidad
   const config = design;
   const setConfig = setDesign;
@@ -429,8 +732,8 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
         />
       )}
 
-      <div className={componentStyles.layout.page}>
-        <div className="flex justify-center">
+      <div className={embedded ? "" : componentStyles.layout.page}>
+        <div className="flex justify-center mb-6">
           <Tabs
             value={activeSection}
             onChange={setActiveSection}
@@ -451,7 +754,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
 
 
         {activeSection === 'presets' && (
-          <>
+          <div className="space-y-6">
             <Card className="app-card">
               <CardHeader className="border-b border-[var(--color-border-default)]">
                 <div className="flex items-center justify-between">
@@ -770,11 +1073,54 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                 </pre>
               </CardContent>
             </Card>
-          </>
+          </div>
         )}
 
         {activeSection === 'controls' && (
-          <>
+          <div className="space-y-6">
+            {/* Preview Banner - Shown when preview is active */}
+            <PreviewBanner />
+
+            {/* Diff Accordion - Collapsible list of changes */}
+            <DiffAccordion />
+
+            {/* Debug Panel - Shows storage state (dev only) */}
+            <DebugPanel />
+
+            {/* Mode Selector - Light/Dark toggle */}
+            <Card className="app-card">
+              <CardHeader className="border-b border-[var(--color-border-default)] py-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Modo de Visualización</CardTitle>
+                  <div className="flex items-center gap-2 p-1 rounded-xl bg-[var(--color-surface-muted)]">
+                    <Button
+                      variant={activeMode === 'light' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setActiveMode('light')}
+                      className={`h-8 px-3 gap-1.5 ${activeMode === 'light' ? 'btn-primary' : ''}`}
+                    >
+                      <Sun className="w-4 h-4" />
+                      Light
+                    </Button>
+                    <Button
+                      variant={activeMode === 'dark' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setActiveMode('dark')}
+                      className={`h-8 px-3 gap-1.5 ${activeMode === 'dark' ? 'btn-primary' : ''}`}
+                    >
+                      <Moon className="w-4 h-4" />
+                      Dark
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="py-3">
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  Cambiar de modo no genera cambios en el preview. Los cambios de color se aplican al modo activo.
+                </p>
+              </CardContent>
+            </Card>
+
             <Card className="app-card">
               <CardHeader className="border-b border-[var(--color-border-default)]">
                 <CardTitle>Controles de Diseño</CardTitle>
@@ -1488,11 +1834,11 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
             </Card>
 
             <div className="flex gap-3 flex-wrap">
-              <Button variant="outline" onClick={handleReset} className="h-10 rounded-xl">
+              <Button variant="outline" onClick={handleReset}>
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Restablecer a valores por defecto
               </Button>
-              <Button variant="outline" onClick={handleCopyConfig} className="h-10 rounded-xl">
+              <Button variant="outline" onClick={handleCopyConfig}>
                 <Copy className="w-4 h-4 mr-2" />
                 Copiar JSON de Configuración
               </Button>
@@ -1503,7 +1849,6 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                   navigator.clipboard.writeText(json);
                   toast.success('✅ Diseño exportado al portapapeles');
                 }}
-                className="h-10 rounded-xl"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Exportar Diseño
@@ -1553,7 +1898,10 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                 </Button>
               </CardContent>
             </Card>
-          </>
+
+            {/* Hardcode Finder - Scan for non-tokenized styles */}
+            <HardcodeFinder />
+          </div>
         )}
 
         {/* Auditoría y QA: funcionalidad mantenida pero oculta en UI simplificada */}
@@ -1766,7 +2114,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
         )}
 
         {activeSection === 'preview' && (
-          <>
+          <div className="space-y-6">
             {/* Selector de Preset Base */}
             <Card className="app-card">
               <CardHeader className="border-b border-[var(--color-border-default)]">
@@ -1965,7 +2313,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                 </div>
               </CardContent>
             </Card>
-          </>
+          </div>
         )}
       </div>
     </div >
