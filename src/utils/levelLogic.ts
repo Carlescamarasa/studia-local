@@ -102,15 +102,16 @@ export interface PromotionCheckResult {
 export async function canPromote(studentId: string, currentLevel: number): Promise<PromotionCheckResult> {
     const nextLevel = currentLevel + 1;
 
-    // 1. Get Config
+    // 1. Get Config for CURRENT level (requirements to EXIT current level)
     const allConfigs = await localDataClient.entities.LevelConfig.list();
-    const config = allConfigs.find((c: any) => c.level === nextLevel);
+    const config = allConfigs.find((c: any) => c.level === currentLevel);
 
     if (!config) {
-        return { allowed: false, missing: ['Configuration for next level not found'], xp: { flex: 0, motr: 0, art: 0 }, criteria: [] };
+        // No config for current level means we can promote freely (or it's level 0)
+        return { allowed: true, missing: [], xp: { flex: 0, motr: 0, art: 0 }, criteria: [] };
     }
 
-    // 2. Check XP
+    // 2. Check XP against CURRENT level requirements
     // Use camelCase for evidenceWindowDays
     const xp = await computePracticeXP(studentId, config.evidenceWindowDays || 30);
     const missing: string[] = [];
@@ -120,8 +121,8 @@ export async function canPromote(studentId: string, currentLevel: number): Promi
     if (xp.motr < (config.minXpMotr || 0)) missing.push(`Motricidad XP: ${xp.motr}/${config.minXpMotr}`);
     if (xp.art < (config.minXpArt || 0)) missing.push(`Articulación XP: ${xp.art}/${config.minXpArt}`);
 
-    // 3. Check Criteria
-    const criteria = await computeKeyCriteriaStatus(studentId, nextLevel);
+    // 3. Check Criteria for CURRENT level (criteria needed to EXIT current level)
+    const criteria = await computeKeyCriteriaStatus(studentId, currentLevel);
     const failedRequired = criteria.filter(c => c.criterion.required && c.status !== 'PASSED');
 
     if (failedRequired.length > 0) {
