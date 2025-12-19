@@ -36,15 +36,22 @@ const STYLE_PROPERTIES = [
     { key: 'borderLeftColor', category: 'border' },
     { key: 'borderRightColor', category: 'border' },
     { key: 'boxShadow', category: 'shadow' },
+    { key: 'borderRadius', category: 'radius' },
 ];
 
-// Tailwind arbitrary patterns
+// Tailwind arbitrary patterns AND standard color classes
 const TAILWIND_PATTERNS = [
+    // Arbitrary values
     { regex: /\bbg-\[#[0-9a-f]{3,8}\]/gi, category: 'background' },
     { regex: /\bbg-\[rgb\([^)]+\)\]/gi, category: 'background' },
     { regex: /\btext-\[#[0-9a-f]{3,8}\]/gi, category: 'color' },
     { regex: /\btext-\[rgb\([^)]+\)\]/gi, category: 'color' },
     { regex: /\bborder-\[#[0-9a-f]{3,8}\]/gi, category: 'border' },
+    { regex: /\brounded-\[\d+(\.\d+)?(px|rem|em|%)\]/gi, category: 'radius' },
+    // Standard Tailwind color classes (hardcoded colors not using CSS vars)
+    { regex: /\bbg-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-\d{2,3}\b/gi, category: 'background' },
+    { regex: /\btext-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-\d{2,3}\b/gi, category: 'color' },
+    { regex: /\bborder-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-\d{2,3}\b/gi, category: 'border' },
 ];
 
 // Excluded zones
@@ -97,6 +104,13 @@ const CSS_VARIABLE_OPTIONS = {
         { var: '--shadow-md', label: 'Shadow MD' },
         { var: '--shadow-lg', label: 'Shadow LG' },
     ],
+    radius: [
+        { var: '--radius-sm', label: 'Radius SM' },
+        { var: '--radius-md', label: 'Radius MD' },
+        { var: '--radius-lg', label: 'Radius LG' },
+        { var: '--radius-xl', label: 'Radius XL' },
+        { var: '--radius-full', label: 'Radius Full' },
+    ],
 };
 
 // ============================================================================
@@ -116,11 +130,18 @@ function isInExcludedZone(element) {
     return false;
 }
 
-function isHardcodedValue(value) {
+function isHardcodedValue(value, category = null) {
     if (!value) return false;
     if (ALLOWED_VALUES.has(value)) return false;
     if (value.includes('var(')) return false;
 
+    // For radius category, check for hardcoded dimensions
+    if (category === 'radius') {
+        // Detect hardcoded radius values like 10px, 1rem, 50%, etc.
+        return /^\d+(\.\d+)?(px|rem|em|%|vh|vw)$/.test(value.trim());
+    }
+
+    // For color-based categories
     const colorPatterns = [
         /^#[0-9a-f]{3,8}$/i,
         /^rgb\(/i,
@@ -156,7 +177,7 @@ function scanPage() {
         // Check inline styles
         STYLE_PROPERTIES.forEach(({ key, category }) => {
             const value = el.style[key];
-            if (value && isHardcodedValue(value)) {
+            if (value && isHardcodedValue(value, category)) {
                 const normalized = normalizeColor(value);
                 if (!byColor.has(normalized)) {
                     byColor.set(normalized, { count: 0, elements: [], type: 'inline', category });
@@ -234,6 +255,7 @@ export function HardcodeInspector() {
     const [expandedItem, setExpandedItem] = useState(null); // For dropdown expansion
     const [previewVars, setPreviewVars] = useState({}); // { color: cssVar } mapping for preview
     const [savedAdjustments, setSavedAdjustments] = useState([]); // Persisted adjustments: { url, hardcode, category, type, replacement }
+    const [typeFilter, setTypeFilter] = useState('all'); // 'all' | 'inline' | 'tailwind'
     const [isScanning, setIsScanning] = useState(false);
     const [panelPosition, setPanelPosition] = useState({ x: null, y: null }); // null = default position
     const containerRef = useRef(null);
@@ -445,7 +467,8 @@ export function HardcodeInspector() {
             if (!el.dataset.originalHardcode) {
                 const property = colorData.category === 'background' ? 'backgroundColor' :
                     colorData.category === 'color' ? 'color' :
-                        colorData.category === 'border' ? 'borderColor' : 'boxShadow';
+                        colorData.category === 'border' ? 'borderColor' :
+                            colorData.category === 'radius' ? 'borderRadius' : 'boxShadow';
                 el.dataset.originalHardcode = el.style[property] || '';
                 el.dataset.originalProperty = property;
             }
@@ -466,10 +489,31 @@ export function HardcodeInspector() {
             delete el.dataset.originalProperty;
         });
         setPreviewVars({});
-        toast.info('↩️ Previews limpiados');
+        setSavedAdjustments([]);
+        toast.info('↩️ Todos los ajustes limpiados');
+    }, []);
+
+    // Remove single adjustment
+    const handleRemoveAdjustment = useCallback((hardcode) => {
+        setSavedAdjustments(prev => prev.filter(a => a.hardcode !== hardcode));
+        setPreviewVars(prev => {
+            const updated = { ...prev };
+            delete updated[hardcode];
+            return updated;
+        });
+        toast.info('❌ Ajuste eliminado');
     }, []);
 
     const totalCount = useMemo(() => results.reduce((acc, r) => acc + r.count, 0), [results]);
+
+    // Filter results by type
+    const filteredResults = useMemo(() => {
+        if (typeFilter === 'all') return results;
+        return results.filter(r => r.type === typeFilter);
+    }, [results, typeFilter]);
+
+    const inlineCount = useMemo(() => results.filter(r => r.type === 'inline').length, [results]);
+    const tailwindCount = useMemo(() => results.filter(r => r.type === 'tailwind').length, [results]);
 
     // Toggle button - matches ReportErrorButton styling, positioned above it
     const toggleButton = (
@@ -566,6 +610,39 @@ export function HardcodeInspector() {
                 </div>
             </div>
 
+            {/* Type filter tabs */}
+            {totalCount > 0 && (
+                <div className="flex gap-1 px-2 py-1.5 border-b border-[var(--color-border-muted)]">
+                    <button
+                        onClick={() => setTypeFilter('all')}
+                        className={`px-2 py-1 text-[10px] rounded transition-colors ${typeFilter === 'all'
+                            ? 'bg-[var(--color-primary)] text-white'
+                            : 'bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]'
+                            }`}
+                    >
+                        Todos ({results.length})
+                    </button>
+                    <button
+                        onClick={() => setTypeFilter('inline')}
+                        className={`px-2 py-1 text-[10px] rounded transition-colors ${typeFilter === 'inline'
+                            ? 'bg-[var(--color-warning)] text-white'
+                            : 'bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]'
+                            }`}
+                    >
+                        🔧 Inline ({inlineCount})
+                    </button>
+                    <button
+                        onClick={() => setTypeFilter('tailwind')}
+                        className={`px-2 py-1 text-[10px] rounded transition-colors ${typeFilter === 'tailwind'
+                            ? 'bg-purple-500 text-white'
+                            : 'bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]'
+                            }`}
+                    >
+                        🎨 Tailwind ({tailwindCount})
+                    </button>
+                </div>
+            )}
+
             {/* Results List */}
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
                 {results.length === 0 && !isScanning && (
@@ -578,7 +655,7 @@ export function HardcodeInspector() {
                         Escaneando...
                     </p>
                 )}
-                {results.map((item, idx) => {
+                {filteredResults.map((item, idx) => {
                     const isExpanded = expandedItem === item.color;
                     // Check previewVars first (live preview), then savedAdjustments (persisted)
                     const appliedVar = previewVars[item.color] ||
@@ -656,6 +733,19 @@ export function HardcodeInspector() {
                                             </button>
                                         ))}
                                     </div>
+                                    {/* Remove adjustment button */}
+                                    {appliedVar && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleRemoveAdjustment(item.color);
+                                            }}
+                                            className="mt-1 w-full py-1 text-[9px] text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded transition-colors flex items-center justify-center gap-1"
+                                        >
+                                            <X className="w-3 h-3" />
+                                            Quitar ajuste
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>
