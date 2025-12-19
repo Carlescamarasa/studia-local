@@ -133,31 +133,88 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       // Encontrar el contenedor principal (el main o el body)
       const mainContent = document.querySelector('main') || document.body;
 
-      // Capturar sin el modal visible
+      // Capturar usando html2canvas con corrección de colores en el clon
       const canvas = await html2canvas(mainContent, {
         useCORS: true,
         logging: false,
         scale: 0.5, // Reducir tamaño para mejor rendimiento
         backgroundColor: null,
+        onclone: (clonedDoc) => {
+          try {
+            const ctx = clonedDoc.createElement('canvas').getContext('2d');
+
+            // Helper para convertir colores modernos a sRGB seguro
+            const toStandardColor = (val) => {
+              if (!val || typeof val !== 'string') return val;
+              // Si no tiene funciones de color modernas, devolver tal cual
+              if (!val.includes('color(') && !val.includes('color-mix(') && !val.includes('oklch') && !val.includes('lab(')) {
+                return val;
+              }
+
+              // Intento 1: Usar canvas para normalizar (funciona si el navegador soporta el color)
+              // Al asignar a fillStyle, el navegador convierte a sRGB (hex o rgba)
+              ctx.fillStyle = val;
+              const standard = ctx.fillStyle;
+              // Validación básica: si devuelve negro y la entrada no era negro/black/#000, podría haber fallado (o no)
+              // Pero asumiremos que es mejor un negro seguro que un crash
+              return standard || val;
+            };
+
+            // Propiedades CSS que pueden contener colores
+            const colorProps = [
+              'color', 'backgroundColor', 'borderColor',
+              'borderTopColor', 'borderBottomColor', 'borderLeftColor', 'borderRightColor',
+              'textDecorationColor', 'accentColor', 'caretColor', 'outlineColor',
+              'columnRuleColor', 'fill', 'stroke'
+            ];
+
+            const elements = clonedDoc.querySelectorAll('*');
+            elements.forEach(el => {
+              const style = el.style;
+              if (!style) return;
+
+              // Limpiar propiedades directas
+              colorProps.forEach(prop => {
+                const val = style[prop];
+                if (val && (val.includes('color(') || val.includes('color-mix('))) {
+                  style[prop] = toStandardColor(val);
+                }
+              });
+
+              // Limpiar box-shadow: este es complejo porque tiene mix de medidas y colores
+              // Si detectamos color() problemático, eliminamos la sombra para evitar crash (fallback seguro)
+              if (style.boxShadow && (style.boxShadow.includes('color(') || style.boxShadow.includes('color-mix('))) {
+                style.boxShadow = 'none';
+              }
+            });
+          } catch (e) {
+            console.error("Error cleaning styles in screenshot clone", e);
+          }
+        },
         ignoreElements: (element) => {
           // Excluir cualquier overlay o modal restante
-          const zIndex = parseInt(window.getComputedStyle(element).zIndex);
-          const isHighZIndex = zIndex >= 50;
-          const isFixedOverlay = element.classList.contains('fixed') &&
-            element.classList.contains('inset-0') &&
-            isHighZIndex;
+          try {
+            const style = window.getComputedStyle(element);
+            const zIndex = parseInt(style.zIndex);
+            const isHighZIndex = zIndex >= 50;
+            const isFixedOverlay = element.classList.contains('fixed') &&
+              element.classList.contains('inset-0') &&
+              isHighZIndex;
 
-          // Excluir cualquier elemento con atributos de Radix Dialog
-          const hasRadixDialogAttr = element.hasAttribute('data-radix-dialog-overlay') ||
-            element.hasAttribute('data-radix-dialog-content') ||
-            element.hasAttribute('data-radix-portal');
+            // Excluir cualquier elemento con atributos de Radix Dialog
+            const hasRadixDialogAttr = element.hasAttribute('data-radix-dialog-overlay') ||
+              element.hasAttribute('data-radix-dialog-content') ||
+              element.hasAttribute('data-radix-portal');
 
-          // Excluir elementos dentro de portales o modales
-          const isInModal = element.closest('[data-radix-dialog-overlay]') !== null ||
-            element.closest('[data-radix-dialog-content]') !== null ||
-            element.closest('[data-radix-portal]') !== null;
+            // Excluir elementos dentro de portales o modales
+            const isInModal = element.closest('[data-radix-dialog-overlay]') !== null ||
+              element.closest('[data-radix-dialog-content]') !== null ||
+              element.closest('[data-radix-portal]') !== null;
 
-          return isFixedOverlay || hasRadixDialogAttr || isInModal;
+            return isFixedOverlay || hasRadixDialogAttr || isInModal;
+          } catch (e) {
+            return false;
+          }
         }
       });
 
@@ -181,6 +238,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       console.error('[ReportErrorModal] Error capturando pantalla:', error);
       toast.error('Error al capturar la pantalla');
       setIsCapturing(false);
+
       // Asegurarse de que el modal se reabra en caso de error
       if (open) {
         onOpenChange(true);

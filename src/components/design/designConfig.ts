@@ -647,6 +647,11 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
     Object.entries(normalized.layout.radius).forEach(([key, value]) => {
       vars[`--radius-${key === 'global' ? 'base' : key}`] = getRadiusValue(value as RadiusValue);
     });
+    // FIXED: Alias --radius to global radius so standard Tailwind classes (rounded-lg) work
+    if (normalized.layout.radius.global) {
+      vars['--radius'] = getRadiusValue(normalized.layout.radius.global as RadiusValue);
+    }
+
     // Alias de compatibilidad: emitir también --radius-ctrl (consumido por CSS global)
     try {
       const controlsRadius = (normalized.layout.radius as any).controls;
