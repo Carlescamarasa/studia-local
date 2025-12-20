@@ -139,6 +139,36 @@ button:focus-visible {
     --chart-5: 27 87% 67%;
     --chart-grid: #E5E7EB;
     --radius: 0.5rem;
+
+    /* Spacing Tokens */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+
+    /* Semantic Color Aliases */
+    --color-surface: hsl(var(--background));
+    --color-surface-card: hsl(var(--card));
+    --color-surface-elevated: hsl(var(--popover));
+    --color-surface-muted: hsl(var(--muted));
+    --color-surface-alt: hsl(var(--secondary));
+
+    --color-text-primary: hsl(var(--foreground));
+    --color-text-secondary: hsl(var(--muted-foreground));
+    --color-text-tertiary: hsl(var(--muted-foreground));
+    --color-text-inverse: hsl(var(--primary-foreground));
+
+    --color-border-default: hsl(var(--border));
+    --color-border-muted: hsl(var(--border));
+    --color-border-strong: hsl(var(--input));
+
+    --color-primary: hsl(var(--primary));
+    --color-primary-soft: hsl(var(--primary) / 0.1);
+
+    /* Overlay Token */
+    --color-overlay-backdrop: rgba(0, 0, 0, 0.5);
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;

@@ -12,14 +12,21 @@ import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import {
+    MEDIA_FILE_TYPES,
+    MEDIA_FILE_TYPE_LABELS,
+    MEDIA_ORIGIN_TYPES,
+    MEDIA_ORIGIN_TYPE_LABELS,
+    MEDIA_ORIGIN_BADGE_VARIANTS
+} from "@/lib/constants";
 
 const FILE_TYPE_ICONS = {
-    video: <FileVideo className="w-4 h-4 text-blue-500" />,
-    audio: <FileAudio className="w-4 h-4 text-purple-500" />,
-    image: <ImageIcon className="w-4 h-4 text-green-500" />,
-    pdf: <FileText className="w-4 h-4 text-red-500" />,
-    youtube: <FileVideo className="w-4 h-4 text-red-600" />,
-    other: <Database className="w-4 h-4 text-gray-500" />,
+    [MEDIA_FILE_TYPES.VIDEO]: <FileVideo className="w-4 h-4 text-blue-500" />,
+    [MEDIA_FILE_TYPES.AUDIO]: <FileAudio className="w-4 h-4 text-purple-500" />,
+    [MEDIA_FILE_TYPES.IMAGE]: <ImageIcon className="w-4 h-4 text-green-500" />,
+    [MEDIA_FILE_TYPES.PDF]: <FileText className="w-4 h-4 text-red-500" />,
+    [MEDIA_FILE_TYPES.YOUTUBE]: <FileVideo className="w-4 h-4 text-red-600" />,
+    [MEDIA_FILE_TYPES.OTHER]: <Database className="w-4 h-4 text-gray-500" />,
 };
 
 const STATE_BADGES = {
@@ -101,7 +108,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                 for (const ej of exercises) {
                     // Main links
                     const mediaLinks = ej.media_links || ej.mediaLinks; // Handle snake/camel
-                    await migrateLinks(mediaLinks, 'ejercicio', ej.id, ej.nombre || ej.code, 'Ejercicio Legacy');
+                    await migrateLinks(mediaLinks, MEDIA_ORIGIN_TYPES.EJERCICIO, ej.id, ej.nombre || ej.code, 'Ejercicio Legacy');
 
                     // Variations
                     const variations = ej.variations ||
@@ -116,7 +123,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                             if (v.media_links && Array.isArray(v.media_links)) vLinks.push(...v.media_links);
 
                             const vLabel = v.label ? `Variación: ${v.label} (${ej.nombre})` : `Variación de ${ej.nombre}`;
-                            await migrateLinks(vLinks, 'variacion', v.id || null, vLabel, 'Variación Legacy');
+                            await migrateLinks(vLinks, MEDIA_ORIGIN_TYPES.VARIACION, v.id || null, vLabel, 'Variación Legacy');
                         }
                     }
                 }
@@ -133,7 +140,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                     if (p.elementos && Array.isArray(p.elementos)) {
                         for (const elem of p.elementos) {
                             if (elem.mediaLinks && Array.isArray(elem.mediaLinks)) {
-                                await migrateLinks(elem.mediaLinks, 'pieza', p.id, `${p.nombre} - ${elem.nombre}`, 'Pieza Legacy');
+                                await migrateLinks(elem.mediaLinks, MEDIA_ORIGIN_TYPES.PIEZA, p.id, `${p.nombre} - ${elem.nombre}`, 'Pieza Legacy');
                             }
                         }
                     }
@@ -149,7 +156,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                 for (const fb of feedbacks) {
                     const links = fb.media_links || fb.mediaLinks;
                     if (links) { // Assuming format(date) might be needed for label, using ID for now
-                        await migrateLinks(links, 'feedback_profesor', fb.id, `Feedback del ${new Date(fb.created_at).toLocaleDateString()}`, 'Feedback Profesor');
+                        await migrateLinks(links, MEDIA_ORIGIN_TYPES.FEEDBACK_PROFESOR, fb.id, `Feedback del ${new Date(fb.created_at).toLocaleDateString()}`, 'Feedback Profesor');
                     }
                 }
             }
@@ -163,7 +170,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                 for (const ses of sesiones) {
                     const links = ses.media_links || ses.mediaLinks;
                     if (links) {
-                        await migrateLinks(links, 'feedback_sesion', ses.id, `Sesión ${ses.sesion_nombre || new Date(ses.created_at).toLocaleDateString()}`, 'Adjunto de Sesión');
+                        await migrateLinks(links, MEDIA_ORIGIN_TYPES.FEEDBACK_SESION, ses.id, `Sesión ${ses.sesion_nombre || new Date(ses.created_at).toLocaleDateString()}`, 'Adjunto de Sesión');
                     }
                 }
             }
@@ -177,7 +184,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                 for (const msg of mensajes) {
                     const links = msg.media_links || msg.mediaLinks;
                     if (links) {
-                        await migrateLinks(links, 'centro_dudas', msg.ticket_id, `Mensaje Soporte`, 'Adjunto Soporte');
+                        await migrateLinks(links, MEDIA_ORIGIN_TYPES.CENTRO_DUDAS, msg.ticket_id, `Mensaje Soporte`, 'Adjunto Soporte');
                     }
                 }
             }
@@ -195,17 +202,17 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
     };
 
     const getFileTypeFromUrl = (url) => {
-        if (!url) return 'other';
+        if (!url) return MEDIA_FILE_TYPES.OTHER;
         const lower = url.toLowerCase();
         // Robust YouTube detection
-        if (lower.includes('youtube.com/') || lower.includes('youtu.be/')) return 'youtube';
-        if (lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.webm') || lower.endsWith('.mkv')) return 'video';
-        if (lower.endsWith('.mp3') || lower.endsWith('.wav') || lower.endsWith('.m4a') || lower.endsWith('.ogg')) return 'audio';
-        if (lower.endsWith('.jpg') || lower.endsWith('.png') || lower.endsWith('.jpeg') || lower.endsWith('.gif') || lower.endsWith('.webp')) return 'image';
-        if (lower.endsWith('.pdf')) return 'pdf';
+        if (lower.includes('youtube.com/') || lower.includes('youtu.be/')) return MEDIA_FILE_TYPES.YOUTUBE;
+        if (lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.webm') || lower.endsWith('.mkv')) return MEDIA_FILE_TYPES.VIDEO;
+        if (lower.endsWith('.mp3') || lower.endsWith('.wav') || lower.endsWith('.m4a') || lower.endsWith('.ogg')) return MEDIA_FILE_TYPES.AUDIO;
+        if (lower.endsWith('.jpg') || lower.endsWith('.png') || lower.endsWith('.jpeg') || lower.endsWith('.gif') || lower.endsWith('.webp')) return MEDIA_FILE_TYPES.IMAGE;
+        if (lower.endsWith('.pdf')) return MEDIA_FILE_TYPES.PDF;
         // Google Drive / Docs detection (often used for PDFs)
-        if (lower.includes('drive.google.com') && lower.includes('/view')) return 'pdf';
-        return 'other';
+        if (lower.includes('drive.google.com') && lower.includes('/view')) return MEDIA_FILE_TYPES.PDF;
+        return MEDIA_FILE_TYPES.OTHER;
     };
 
     // Filter Logic
@@ -225,7 +232,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
     }
 
     if (originFilter !== 'all') {
-        if (originFilter === 'unlinked') {
+        if (originFilter === MEDIA_ORIGIN_TYPES.UNLINKED) {
             filteredAssets = filteredAssets.filter(a => !a.originId);
         } else {
             filteredAssets = filteredAssets.filter(a => a.originType === originFilter);
@@ -261,18 +268,8 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
             render: (a) => {
                 if (!a.originId) return <Badge variant="outline" className="text-xs text-gray-400">No vinculado</Badge>;
 
-                let variant = "default";
-                let label = a.originType;
-
-                switch (a.originType) {
-                    case 'ejercicio': variant = "info"; label = "Ejercicio"; break;
-                    case 'variacion': variant = "warning"; label = "Variación"; break;
-                    case 'pieza': variant = "secondary"; label = "Pieza"; break;
-                    case 'feedback_profesor': variant = "success"; label = "Feedback Pro"; break;
-                    case 'feedback_sesion': variant = "outline"; label = "Sesión"; break;
-                    case 'centro_dudas': variant = "destructive"; label = "Soporte"; break;
-                    default: variant = "secondary";
-                }
+                const variant = MEDIA_ORIGIN_BADGE_VARIANTS[a.originType] || "default";
+                const label = MEDIA_ORIGIN_TYPE_LABELS[a.originType] || a.originType;
 
                 return (
                     <div className="flex flex-col">
@@ -317,6 +314,53 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
         },
     ];
 
+    const FilterControls = () => (
+        <>
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
+                <Input
+                    placeholder="Buscar por nombre, origen o URL..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="h-9"
+                />
+                {searchTerm && (
+                    <button
+                        onClick={() => setSearchTerm('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                )}
+            </div>
+            <div className="flex gap-2">
+                <select
+                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                >
+                    <option value="all">Todos los tipos</option>
+                    {Object.entries(MEDIA_FILE_TYPES).map(([key, value]) => (
+                        <option key={value} value={value}>
+                            {MEDIA_FILE_TYPE_LABELS[value]}
+                        </option>
+                    ))}
+                </select>
+                <select
+                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    value={originFilter}
+                    onChange={(e) => setOriginFilter(e.target.value)}
+                >
+                    <option value="all">Todos los orígenes</option>
+                    {Object.entries(MEDIA_ORIGIN_TYPES).map(([key, value]) => (
+                        <option key={value} value={value}>
+                            {MEDIA_ORIGIN_TYPE_LABELS[value]}
+                        </option>
+                    ))}
+                </select>
+            </div>
+        </>
+    );
+
     return (
         <div className={embedded ? "" : "min-h-screen bg-background"}>
             {!embedded && (
@@ -345,54 +389,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                             </Button>
                         </div>
                     }
-                    filters={
-                        <>
-                            <div className="relative flex-1 min-w-[200px] max-w-sm">
-                                <Input
-                                    placeholder="Buscar por nombre, origen o URL..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="h-9"
-                                />
-                                {searchTerm && (
-                                    <button
-                                        onClick={() => setSearchTerm('')}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                )}
-                            </div>
-                            <div className="flex gap-2">
-                                <select
-                                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                                    value={typeFilter}
-                                    onChange={(e) => setTypeFilter(e.target.value)}
-                                >
-                                    <option value="all">Todos los tipos</option>
-                                    <option value="video">Video</option>
-                                    <option value="audio">Audio</option>
-                                    <option value="image">Imagen</option>
-                                    <option value="pdf">PDF</option>
-                                    <option value="youtube">YouTube</option>
-                                </select>
-                                <select
-                                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                                    value={originFilter}
-                                    onChange={(e) => setOriginFilter(e.target.value)}
-                                >
-                                    <option value="all">Todos los orígenes</option>
-                                    <option value="ejercicio">Ejercicios</option>
-                                    <option value="variacion">Variaciones</option>
-                                    <option value="pieza">Piezas</option>
-                                    <option value="feedback_profesor">Feedback Profesor</option>
-                                    <option value="feedback_sesion">Feedback Sesión</option>
-                                    <option value="centro_dudas">Soporte</option>
-                                    <option value="unlinked">No vinculados</option>
-                                </select>
-                            </div>
-                        </>
-                    }
+                    filters={<FilterControls />}
                 />
             )}
 
@@ -401,50 +398,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                     <div className="flex flex-col sm:flex-row justify-between gap-4">
                         {/* Filters Left Side */}
                         <div className="flex-1 flex flex-col sm:flex-row gap-2">
-                            <div className="relative flex-1 min-w-[200px] max-w-sm">
-                                <Input
-                                    placeholder="Buscar por nombre, origen o URL..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="h-9"
-                                />
-                                {searchTerm && (
-                                    <button
-                                        onClick={() => setSearchTerm('')}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                )}
-                            </div>
-                            <div className="flex gap-2">
-                                <select
-                                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                                    value={typeFilter}
-                                    onChange={(e) => setTypeFilter(e.target.value)}
-                                >
-                                    <option value="all">Todos los tipos</option>
-                                    <option value="video">Video</option>
-                                    <option value="audio">Audio</option>
-                                    <option value="image">Imagen</option>
-                                    <option value="pdf">PDF</option>
-                                    <option value="youtube">YouTube</option>
-                                </select>
-                                <select
-                                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                                    value={originFilter}
-                                    onChange={(e) => setOriginFilter(e.target.value)}
-                                >
-                                    <option value="all">Todos los orígenes</option>
-                                    <option value="ejercicio">Ejercicios</option>
-                                    <option value="variacion">Variaciones</option>
-                                    <option value="pieza">Piezas</option>
-                                    <option value="feedback_profesor">Feedback Profesor</option>
-                                    <option value="feedback_sesion">Feedback Sesión</option>
-                                    <option value="centro_dudas">Soporte</option>
-                                    <option value="unlinked">No vinculados</option>
-                                </select>
-                            </div>
+                            <FilterControls />
                         </div>
 
                         {/* Actions Right Side */}
