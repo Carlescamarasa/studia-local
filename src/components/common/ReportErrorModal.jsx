@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Camera, X, Loader2, Mic, Square, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import { componentStyles } from '@/design/componentStyles';
 import { supabase } from '@/lib/supabaseClient';
 import { createErrorReport } from '@/api/errorReportsAPI';
@@ -127,113 +127,60 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         isTemporaryCloseRef.current = true;
         onOpenChange(false);
         // Esperar a que el modal se cierre completamente
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
 
       // Encontrar el contenedor principal (el main o el body)
       const mainContent = document.querySelector('main') || document.body;
 
-      // Capturar usando html2canvas con corrección de colores en el clon
-      const canvas = await html2canvas(mainContent, {
-        useCORS: true,
-        logging: false,
-        scale: 0.5, // Reducir tamaño para mejor rendimiento
+      // Capturar usando html-to-image (soporta CSS moderno y variables P3)
+      const dataUrl = await toPng(mainContent, {
+        cacheBust: true,
         backgroundColor: null,
-        onclone: (clonedDoc) => {
+        filter: (node) => {
+          // Excluir nodos que no sean elementos (e.g. comentarios, texto)
+          if (!node.tagName) return true;
+
+          // Excluir overlays y modales
           try {
-            const ctx = clonedDoc.createElement('canvas').getContext('2d');
-
-            // Helper para convertir colores modernos a sRGB seguro
-            const toStandardColor = (val) => {
-              if (!val || typeof val !== 'string') return val;
-              // Si no tiene funciones de color modernas, devolver tal cual
-              if (!val.includes('color(') && !val.includes('color-mix(') && !val.includes('oklch') && !val.includes('lab(')) {
-                return val;
-              }
-
-              // Intento 1: Usar canvas para normalizar (funciona si el navegador soporta el color)
-              // Al asignar a fillStyle, el navegador convierte a sRGB (hex o rgba)
-              ctx.fillStyle = val;
-              const standard = ctx.fillStyle;
-              // Validación básica: si devuelve negro y la entrada no era negro/black/#000, podría haber fallado (o no)
-              // Pero asumiremos que es mejor un negro seguro que un crash
-              return standard || val;
-            };
-
-            // Propiedades CSS que pueden contener colores
-            const colorProps = [
-              'color', 'backgroundColor', 'borderColor',
-              'borderTopColor', 'borderBottomColor', 'borderLeftColor', 'borderRightColor',
-              'textDecorationColor', 'accentColor', 'caretColor', 'outlineColor',
-              'columnRuleColor', 'fill', 'stroke'
-            ];
-
-            const elements = clonedDoc.querySelectorAll('*');
-            elements.forEach(el => {
-              const style = el.style;
-              if (!style) return;
-
-              // Limpiar propiedades directas
-              colorProps.forEach(prop => {
-                const val = style[prop];
-                if (val && (val.includes('color(') || val.includes('color-mix('))) {
-                  style[prop] = toStandardColor(val);
-                }
-              });
-
-              // Limpiar box-shadow: este es complejo porque tiene mix de medidas y colores
-              // Si detectamos color() problemático, eliminamos la sombra para evitar crash (fallback seguro)
-              if (style.boxShadow && (style.boxShadow.includes('color(') || style.boxShadow.includes('color-mix('))) {
-                style.boxShadow = 'none';
-              }
-            });
-          } catch (e) {
-            console.error("Error cleaning styles in screenshot clone", e);
-          }
-        },
-        ignoreElements: (element) => {
-          // Excluir cualquier overlay o modal restante
-          try {
-            const style = window.getComputedStyle(element);
+            const style = window.getComputedStyle(node);
             const zIndex = parseInt(style.zIndex);
             const isHighZIndex = zIndex >= 50;
-            const isFixedOverlay = element.classList.contains('fixed') &&
-              element.classList.contains('inset-0') &&
+            const isFixedOverlay = node.classList.contains('fixed') &&
+              node.classList.contains('inset-0') &&
               isHighZIndex;
 
-            // Excluir cualquier elemento con atributos de Radix Dialog
-            const hasRadixDialogAttr = element.hasAttribute('data-radix-dialog-overlay') ||
-              element.hasAttribute('data-radix-dialog-content') ||
-              element.hasAttribute('data-radix-portal');
+            const hasRadixDialogAttr = node.hasAttribute('data-radix-dialog-overlay') ||
+              node.hasAttribute('data-radix-dialog-content') ||
+              node.hasAttribute('data-radix-portal');
 
-            // Excluir elementos dentro de portales o modales
-            const isInModal = element.closest('[data-radix-dialog-overlay]') !== null ||
-              element.closest('[data-radix-dialog-content]') !== null ||
-              element.closest('[data-radix-portal]') !== null;
-
-            return isFixedOverlay || hasRadixDialogAttr || isInModal;
+            // Si es un overlay o parte del diálogo, lo filtramos (return false)
+            if (isFixedOverlay || hasRadixDialogAttr) {
+              return false;
+            }
+            return true;
           } catch (e) {
-            return false;
+            return true;
           }
         }
       });
 
       // Reabrir el modal si estaba abierto
       if (wasOpen) {
-        await new Promise(resolve => setTimeout(resolve, 100));
         onOpenChange(true);
         // Restaurar estado preservado
         setCategory(preservedCategory);
         setAudioRecording(preservedAudio);
       }
 
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          setScreenshot({ blob, url });
-          setIsCapturing(false);
-        }
-      }, 'image/png', 0.8);
+      if (dataUrl) {
+        // Convertir Data URL a Blob para mantener consistencia con el flujo anterior
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        setScreenshot({ blob, url: dataUrl });
+        setIsCapturing(false);
+      }
+
     } catch (error) {
       console.error('[ReportErrorModal] Error capturando pantalla:', error);
       toast.error('Error al capturar la pantalla');
