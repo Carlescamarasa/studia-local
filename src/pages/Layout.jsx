@@ -105,7 +105,8 @@ const mainPageByRole = {
 };
 
 const ROLE_LABEL = { ADMIN: "Administrador", PROF: "Profesor", ESTU: "Estudiante" };
-const SIDEBAR_WIDTH = 280;
+// PHASE 1 FIX: Use CSS var for sidebar width instead of hardcoded value
+// The actual value comes from --sidebar-width emitted by designConfig.ts
 
 /* ------------------------------- Layout --------------------------------- */
 function LayoutContent() {
@@ -578,9 +579,9 @@ function LayoutContent() {
           inert={!abierto ? "" : undefined}
           tabIndex="-1"
           className={`
-            z-[90] flex flex-col sidebar-modern
+            z-[90] flex flex-col sidebar-modern sidebar-width
             transition-transform duration-200 will-change-transform transform-gpu
-            fixed inset-y-0 left-0 w-[280px]
+            fixed inset-y-0 left-0
             border-r border-[var(--color-border-strong)]
             shadow-[1px_0_4px_rgba(0,0,0,0.2)]
             ${abierto ? "translate-x-0" : "-translate-x-full lg:-translate-x-full"}
@@ -788,7 +789,7 @@ function LayoutContent() {
         <main
           className="min-h-screen transition-all duration-200 flex flex-col"
           style={{
-            marginLeft: !isMobile && abierto ? `${SIDEBAR_WIDTH}px` : '0',
+            marginLeft: !isMobile && abierto ? 'var(--sidebar-width, 16rem)' : '0',
           }}
           aria-hidden={isMobile && abierto}
           inert={isMobile && abierto ? "" : undefined}
@@ -827,8 +828,8 @@ function LayoutContent() {
             </div>
           )}
 
-          {/* Área de contenido */}
-          <div className="flex-1">
+          {/* Área de contenido - uses page-container for layout tokens */}
+          <div className="flex-1 page-container">
             <Outlet />
           </div>
 
@@ -838,9 +839,9 @@ function LayoutContent() {
           {/* HardcodeInspector - Solo para ADMIN */}
           {userRole === 'ADMIN' && <HardcodeInspector />}
 
-          {/* Footer global - centrado con nombre de app */}
+          {/* Footer global - uses page-container vars for consistent margins */}
           <footer className="border-t border-[var(--color-border-default)] bg-card text-xs text-[var(--color-text-secondary)] mt-auto">
-            <div className="max-w-7xl mx-auto px-4 py-4 md:py-5 flex flex-wrap items-center justify-center gap-2 text-center">
+            <div className="page-container py-4 md:py-5 flex flex-wrap items-center justify-center gap-2 text-center">
               <span>
                 {appName}
                 {currentVersion?.version && (

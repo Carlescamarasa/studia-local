@@ -725,6 +725,14 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
       ? (normalized.typography.fontFamilySerif || DEFAULT_DESIGN.typography.fontFamilySerif)
       : (normalized.typography.fontFamilyHeadings || DEFAULT_DESIGN.typography.fontFamilyHeadings);
     vars['--font-size-base'] = `${normalized.typography.fontSizeBase || DEFAULT_DESIGN.typography.fontSizeBase}px`;
+    // PHASE 1 FIX: Emit font-size-scale for future typography system use
+    vars['--font-size-scale'] = String(normalized.typography.fontSizeScale || DEFAULT_DESIGN.typography.fontSizeScale);
+    // Derived sizes based on scale (for Preview gallery and future migration)
+    const baseSize = normalized.typography.fontSizeBase || DEFAULT_DESIGN.typography.fontSizeBase;
+    const scale = normalized.typography.fontSizeScale || DEFAULT_DESIGN.typography.fontSizeScale;
+    vars['--font-size-sm'] = `${Math.round(baseSize / scale)}px`;
+    vars['--font-size-lg'] = `${Math.round(baseSize * scale)}px`;
+    vars['--font-size-xl'] = `${Math.round(baseSize * scale * scale)}px`;
     // TODO(auditoría-DS3): Evaluar si hace falta exponer más escala (sm, md, lg) como CSS vars derivadas de `fontSizeBase` + `fontSizeScale`.
   }
 
