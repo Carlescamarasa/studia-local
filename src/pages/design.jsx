@@ -34,38 +34,40 @@ const componentStyles = {
     grid2: "grid grid-cols-1 md:grid-cols-2 gap-6",
   },
   controls: {
-    inputDefault: "bg-background border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-    selectDefault: "bg-background border-input ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-    inputSm: "h-8 text-xs",
-    inputUnderline: "border-b border-input bg-transparent rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary",
+    inputDefault: "ctrl-field", // Use global CSS class that consumes --input-radius
+    selectDefault: "ctrl-field", // Use global CSS class
+    inputSm: "ctrl-field h-8 text-xs",
+    inputUnderline: "ctrl-field--underline",
   },
   containers: {
-    cardBase: "rounded-xl border bg-card text-card-foreground shadow-sm",
-    cardElevated: "rounded-xl border bg-card text-card-foreground shadow-md",
-    cardMetric: "rounded-xl border bg-card text-card-foreground shadow-sm p-4",
-    panelBase: "rounded-xl border bg-muted/20 text-muted-foreground",
+    // Use app-card CSS class which consumes --card-radius from tokens
+    cardBase: "app-card",
+    cardElevated: "app-card bg-[var(--color-surface-elevated)]",
+    cardMetric: "app-card",
+    panelBase: "app-panel",
   },
   typography: {
-    pageTitle: "text-2xl font-bold tracking-tight",
+    pageTitle: "text-2xl font-bold tracking-tight font-headings",
     pageSubtitle: "text-muted-foreground",
     cardTitle: "text-lg font-semibold leading-none tracking-tight",
     bodyText: "text-sm text-muted-foreground",
     smallMetaText: "text-xs text-muted-foreground",
   },
   buttons: {
-    primary: "bg-primary text-primary-foreground hover:bg-primary/90",
-    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-    outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-    ghost: "hover:bg-accent hover:text-accent-foreground",
-    danger: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+    // Button variants now consume .btn class which uses --button-radius
+    primary: "btn-primary",
+    secondary: "btn-secondary",
+    outline: "btn-outline",
+    ghost: "btn-ghost",
+    danger: "btn-danger",
   },
   status: {
-    badgeDefault: "!bg-primary !text-primary-foreground hover:!bg-primary/80 border-transparent",
-    badgeInfo: "!bg-[var(--color-info,#3b82f6)] !text-white hover:!opacity-80 border-transparent",
-    badgeSuccess: "!bg-[var(--color-success,#22c55e)] !text-white hover:!opacity-80 border-transparent",
-    badgeWarning: "!bg-[var(--color-warning,#eab308)] !text-white hover:!opacity-80 border-transparent",
-    badgeDanger: "!bg-[var(--color-danger,#ef4444)] !text-white hover:!opacity-80 border-transparent",
-    badgeOutline: "text-foreground border border-[var(--color-border-default)]",
+    badgeDefault: "badge-primary",
+    badgeInfo: "badge-info",
+    badgeSuccess: "badge-success",
+    badgeWarning: "badge-warning",
+    badgeDanger: "badge-danger",
+    badgeOutline: "badge-outline",
   }
 };
 
@@ -123,7 +125,7 @@ function PreviewBanner() {
   if (!isPreviewActive) return null;
 
   return (
-    <div className="p-3 rounded-xl bg-[color-mix(in_srgb,var(--color-info)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-info)_30%,transparent)] flex flex-col gap-3">
+    <div className="p-3  bg-[color-mix(in_srgb,var(--color-info)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-info)_30%,transparent)] flex flex-col gap-3">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Eye className="w-5 h-5 text-[var(--color-info)]" />
@@ -226,7 +228,7 @@ function DiffAccordion({ isOpen, onToggle }) {
     <div className="mb-4">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between p-3 rounded-xl bg-[var(--color-surface-muted)] border border-[var(--color-border-default)] hover:bg-[var(--color-surface)] transition-colors"
+        className="w-full flex items-center justify-between p-3  bg-[var(--color-surface-muted)] border border-[var(--color-border-default)] hover:bg-[var(--color-surface)] transition-colors"
       >
         <div className="flex items-center gap-2">
           <Badge className="badge-primary text-xs">{totalCount}</Badge>
@@ -241,7 +243,7 @@ function DiffAccordion({ isOpen, onToggle }) {
       </button>
 
       {isOpen && (
-        <div className="mt-2 p-4 rounded-xl bg-[var(--color-surface-muted)] border border-[var(--color-border-default)]">
+        <div className="mt-2 p-4  bg-[var(--color-surface-muted)] border border-[var(--color-border-default)]">
           {/* Secciones particionadas */}
           <div className="max-h-80 overflow-y-auto space-y-3 mb-4">
             {/* Common */}
@@ -704,7 +706,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
 
 
             {/* Presets Accordion */}
-            <div className="border border-[var(--color-border-default)] rounded-xl overflow-hidden bg-[var(--color-surface)]">
+            <div className="border border-[var(--color-border-default)]  overflow-hidden bg-[var(--color-surface)]" style={{ borderRadius: 'var(--card-radius)' }}>
               <button
                 onClick={() => setActiveAccordion(activeAccordion === 'presets' ? null : 'presets')}
                 className="w-full flex items-center justify-between p-4 bg-[var(--color-surface-muted)] hover:bg-[var(--color-surface-muted)]/80 transition-colors text-left"
@@ -732,7 +734,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                         variant="outline"
                         onClick={() => setShowImportExportModal(true)}
                         size="sm"
-                        className="h-8 rounded-xl"
+                        className="h-8 "
                       >
                         <FileCode className="w-4 h-4 mr-2" />
                         Importar/Exportar
@@ -740,7 +742,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                       <Button
                         onClick={() => setShowSavePresetModal(true)}
                         size="sm"
-                        className="btn-primary h-8 rounded-xl"
+                        className="btn-primary h-8 "
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Guardar Actual
@@ -819,7 +821,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
             </div>
 
             {/* JSON Config Accordion */}
-            <div className="border border-[var(--color-border-default)] rounded-xl overflow-hidden bg-[var(--color-surface)]">
+            <div className="border border-[var(--color-border-default)]  overflow-hidden bg-[var(--color-surface)]" style={{ borderRadius: 'var(--card-radius)' }}>
               <button
                 onClick={() => setActiveAccordion(activeAccordion === 'json' ? null : 'json')}
                 className="w-full flex items-center justify-between p-4 bg-[var(--color-surface-muted)] hover:bg-[var(--color-surface-muted)]/80 transition-colors text-left"
@@ -886,7 +888,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                       onValueChange={setAuditProfile}
                       disabled={auditRunning}
                     >
-                      <SelectTrigger className="w-[180px] h-9 rounded-xl">
+                      <SelectTrigger className="w-[180px] h-9 ">
                         <SelectValue placeholder="Perfil de auditoría" />
                       </SelectTrigger>
                       <SelectContent>
@@ -900,7 +902,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                     <Button
                       onClick={() => handleRunAudit(auditProfile)}
                       disabled={auditRunning}
-                      className="btn-primary h-9 rounded-xl shadow-sm"
+                      className="btn-primary h-9  shadow-sm"
                     >
                       <Scan className="w-4 h-4 mr-2" />
                       {auditRunning ? 'Auditando...' : 'Ejecutar Auditoría'}
@@ -941,7 +943,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                     )}
 
                     {auditReport?.issues && (
-                      <details className="rounded-xl border border-[var(--color-border-default)] p-4 bg-[var(--color-surface-muted)]">
+                      <details className=" border border-[var(--color-border-default)] p-4 bg-[var(--color-surface-muted)]">
                         <summary className="cursor-pointer font-medium text-[var(--color-text-primary)]">Detalles por categoría</summary>
                         <div className="mt-4 space-y-4 max-h-[420px] overflow-auto">
                           {Object.entries(auditReport.issues).map(([bucket, items]) => (
@@ -973,7 +975,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                       </details>
                     )}
 
-                    <Button variant="outline" onClick={handleCopyAudit} className="h-9 rounded-xl w-full">
+                    <Button variant="outline" onClick={handleCopyAudit} className="h-9  w-full">
                       <Copy className="w-4 h-4 mr-2" />
                       Copiar informe JSON completo
                     </Button>
@@ -1005,7 +1007,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                       <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Acciones rápidas</h4>
                       <div className="flex items-center gap-3">
                         <Button
-                          className="btn-primary h-8 rounded-xl shadow-sm px-3"
+                          className="btn-primary h-8  shadow-sm px-3"
                           onClick={() => toast.success('✅ Botón Primary funcionando')}
                           aria-label="Probar botón Primary QA"
                         >
@@ -1014,7 +1016,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                         <Badge>QA</Badge>
                       </div>
                     </div>
-                    <div className="app-panel p-3 rounded-xl border border-[var(--color-border-muted)]">
+                    <div className="app-panel p-3  border border-[var(--color-border-muted)]">
                       <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Componentes de prueba</h4>
                       <div className="text-sm text-[var(--color-text-secondary)]">Panel QA</div>
                     </div>
@@ -1045,7 +1047,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                       variant="outline"
                       onClick={handleVisualSmoke}
                       disabled={qaRunning}
-                      className="h-10 rounded-xl"
+                      className="h-10 "
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Visual Smoke
@@ -1054,7 +1056,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                       variant="outline"
                       onClick={handleA11yQuick}
                       disabled={qaRunning}
-                      className="h-10 rounded-xl"
+                      className="h-10 "
                     >
                       <Shield className="w-4 h-4 mr-2" />
                       A11y Quick-Check
@@ -1062,7 +1064,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                   </div>
 
                   {qaOutput && (
-                    <div className="bg-[var(--color-surface-muted)] rounded-xl p-4 border border-[var(--color-border-default)]">
+                    <div className="bg-[var(--color-surface-muted)]  p-4 border border-[var(--color-border-default)]">
                       <pre className="text-xs text-[var(--color-text-primary)] whitespace-pre-wrap font-mono overflow-x-auto max-h-96">
                         {qaOutput}
                       </pre>
@@ -1202,20 +1204,35 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                   </div>
 
                   {/* Verificación de Color de Marca */}
-                  <div className="p-4 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary-soft)]">
+                  <div className="p-4 border-2 border-[var(--color-primary)] bg-[var(--color-primary-soft)]" style={{ borderRadius: 'var(--card-radius)' }}>
                     <p className="text-sm font-semibold text-[var(--color-text-primary)] mb-2">✅ Verificación de Color de Marca</p>
                     <p className="text-xs text-[var(--color-text-secondary)]">
-                      El color primary debe ser siempre <code className="bg-[var(--color-surface-elevated)]/50 px-1 rounded">#fd9840</code> en todos los presets.
+                      El color primary debe ser siempre <code className="bg-[var(--color-surface-elevated)]/50 px-1" style={{ borderRadius: 'var(--radius-ctrl)' }}>#fd9840</code> en todos los presets.
                     </p>
-                    <div className="mt-3 flex items-center gap-6 text-xs text-[var(--color-text-secondary)] font-mono">
+                    <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-[var(--color-text-secondary)] font-mono">
+                      {/* Primary color swatch */}
                       <div className="flex items-center gap-2">
-                        <span>Primary:</span>
-                        <span style={{ color: '#fd9840', fontWeight: 'bold' }}>#fd9840</span>
-                        {/* Intentional hardcode for QA: must match #fd9840 */}
+                        <div className="w-6 h-6 border border-[var(--color-border-default)]" style={{ backgroundColor: 'var(--color-primary)', borderRadius: 'var(--radius-ctrl)' }}></div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-[var(--color-primary)]">#fd9840</span>
+                          <span className="text-[10px] opacity-70">--color-primary</span>
+                        </div>
                       </div>
+                      {/* Secondary color swatch */}
                       <div className="flex items-center gap-2">
-                        <span>Soft:</span>
-                        <span style={{ color: 'var(--color-primary-soft)', fontWeight: 'bold' }}>var(--color-primary-soft)</span>
+                        <div className="w-6 h-6 border border-[var(--color-border-default)]" style={{ backgroundColor: 'var(--color-secondary)', borderRadius: 'var(--radius-ctrl)' }}></div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-[var(--color-secondary)]">#f08021</span>
+                          <span className="text-[10px] opacity-70">--color-secondary</span>
+                        </div>
+                      </div>
+                      {/* Primary soft swatch */}
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 border border-[var(--color-border-default)]" style={{ backgroundColor: 'var(--color-primary-soft)', borderRadius: 'var(--radius-ctrl)' }}></div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold">Primary Soft</span>
+                          <span className="text-[10px] opacity-70">--color-primary-soft</span>
+                        </div>
                       </div>
                     </div>
                   </div>

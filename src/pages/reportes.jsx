@@ -329,7 +329,7 @@ function ReportesPageContent() {
       />
 
       <div className="studia-section">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 mb-6">
           {/* Búsqueda y Filtros */}
           <div className="flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between">
             <div className="w-full xl:w-auto flex-1 min-w-[300px]">
@@ -359,47 +359,52 @@ function ReportesPageContent() {
                 </Select>
               </div>
 
-              {/* Botones de estado */}
-              <div className="flex flex-wrap gap-2">
+              {/* Botones de estado con iconos */}
+              <div className="flex gap-1">
                 <Button
                   variant={statusFilter === 'active' ? 'default' : 'outline'}
                   onClick={() => setStatusFilter('active')}
-                  size="sm"
-                  className={statusFilter === 'active' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
+                  size="icon"
+                  title="Activos"
+                  className={`w-12 h-12 ${statusFilter === 'active' ? componentStyles.buttons.primary : componentStyles.buttons.outline}`}
                 >
-                  Activos
+                  <CheckSquare className="w-5 h-5" />
                 </Button>
                 <Button
                   variant={statusFilter === 'nuevo' ? 'default' : 'outline'}
                   onClick={() => setStatusFilter('nuevo')}
-                  size="sm"
-                  className={statusFilter === 'nuevo' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
+                  size="icon"
+                  title="Nuevo"
+                  className={`w-12 h-12 ${statusFilter === 'nuevo' ? componentStyles.buttons.primary : componentStyles.buttons.outline}`}
                 >
-                  Nuevo
+                  <XCircle className="w-5 h-5" />
                 </Button>
                 <Button
                   variant={statusFilter === 'en_revision' ? 'default' : 'outline'}
                   onClick={() => setStatusFilter('en_revision')}
-                  size="sm"
-                  className={statusFilter === 'en_revision' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
+                  size="icon"
+                  title="En proceso"
+                  className={`w-12 h-12 ${statusFilter === 'en_revision' ? componentStyles.buttons.primary : componentStyles.buttons.outline}`}
                 >
-                  En proceso
+                  <Clock className="w-5 h-5" />
                 </Button>
                 <Button
                   variant={statusFilter === 'resuelto' ? 'default' : 'outline'}
                   onClick={() => setStatusFilter('resuelto')}
-                  size="sm"
-                  className={statusFilter === 'resuelto' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
+                  size="icon"
+                  title="Resuelto"
+                  className={`w-12 h-12 ${statusFilter === 'resuelto' ? componentStyles.buttons.primary : componentStyles.buttons.outline}`}
                 >
-                  Resuelto
+                  <CheckCircle className="w-5 h-5" />
                 </Button>
                 <Button
                   variant={statusFilter === 'all' ? 'default' : 'outline'}
                   onClick={() => setStatusFilter('all')}
-                  size="sm"
-                  className={statusFilter === 'all' ? componentStyles.buttons.primary : componentStyles.buttons.outline}
+                  size="icon"
+                  title="Todos"
+                  className={`w-12 h-12 ${statusFilter === 'all' ? componentStyles.buttons.primary : componentStyles.buttons.outline}`}
                 >
-                  Todos
+                  <Bug className="w-5 h-5" />
                 </Button>
               </div>
             </div>

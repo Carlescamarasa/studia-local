@@ -292,7 +292,7 @@ function CalendarioPageContent() {
               variant={filtroTipoGlobal === 'all' ? 'primary' : 'outline'}
               size="sm"
               onClick={() => setFiltroTipoGlobal('all')}
-              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+              className="text-xs h-8 sm:h-9 focus-brand transition-all"
             >
               Todos
             </Button>
@@ -300,7 +300,7 @@ function CalendarioPageContent() {
               variant={filtroTipoGlobal === 'evento' ? 'primary' : 'outline'}
               size="sm"
               onClick={() => setFiltroTipoGlobal('evento')}
-              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+              className="text-xs h-8 sm:h-9 focus-brand transition-all"
             >
               Eventos
             </Button>
@@ -308,7 +308,7 @@ function CalendarioPageContent() {
               variant={filtroTipoGlobal === 'asignacion' ? 'primary' : 'outline'}
               size="sm"
               onClick={() => setFiltroTipoGlobal('asignacion')}
-              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+              className="text-xs h-8 sm:h-9 focus-brand transition-all"
             >
               Asignaciones
             </Button>
@@ -316,7 +316,7 @@ function CalendarioPageContent() {
               variant={filtroTipoGlobal === 'sesion' ? 'primary' : 'outline'}
               size="sm"
               onClick={() => setFiltroTipoGlobal('sesion')}
-              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+              className="text-xs h-8 sm:h-9 focus-brand transition-all"
             >
               Sesiones
             </Button>
@@ -324,14 +324,14 @@ function CalendarioPageContent() {
               variant={filtroTipoGlobal === 'feedback' ? 'primary' : 'outline'}
               size="sm"
               onClick={() => setFiltroTipoGlobal('feedback')}
-              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+              className="text-xs h-8 sm:h-9 focus-brand transition-all"
             >
               Feedbacks
             </Button>
           </div>
 
           {/* Center: View selector */}
-          <div className="flex items-center gap-1 border border-[var(--color-border-default)] rounded-xl p-0.5">
+          <div className="flex items-center gap-1 border border-[var(--color-border-default)] p-0.5" style={{ borderRadius: 'var(--button-radius, 0.75rem)' }}>
             <Button
               variant={vista === 'mes' ? 'primary' : 'ghost'}
               size="sm"
@@ -340,7 +340,7 @@ function CalendarioPageContent() {
                 e.stopPropagation();
                 setVista('mes');
               }}
-              className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${vista === 'mes'
+              className={`text-xs h-8 sm:h-9 px-2 sm:px-3 transition-all ${vista === 'mes'
                 ? componentStyles.buttons.primary
                 : `${componentStyles.buttons.ghost} hover:bg-transparent`
                 }`}
@@ -357,7 +357,7 @@ function CalendarioPageContent() {
                   e.stopPropagation();
                   setVista('semana');
                 }}
-                className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${vista === 'semana'
+                className={`text-xs h-8 sm:h-9 px-2 sm:px-3 transition-all ${vista === 'semana'
                   ? componentStyles.buttons.primary
                   : `${componentStyles.buttons.ghost} hover:bg-transparent`
                   }`}
@@ -374,7 +374,7 @@ function CalendarioPageContent() {
                 e.stopPropagation();
                 setVista('lista');
               }}
-              className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${vista === 'lista'
+              className={`text-xs h-8 sm:h-9 px-2 sm:px-3 transition-all ${vista === 'lista'
                 ? componentStyles.buttons.primary
                 : `${componentStyles.buttons.ghost} hover:bg-transparent`
                 }`}
@@ -394,7 +394,7 @@ function CalendarioPageContent() {
                 e.stopPropagation();
                 handleCrearEvento();
               }}
-              className={`${componentStyles.buttons.primary} text-xs rounded-xl`}
+              className={`${componentStyles.buttons.primary} text-xs`}
               type="button"
             >
               <Plus className="w-4 h-4 mr-1.5" />

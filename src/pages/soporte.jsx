@@ -303,10 +303,11 @@ function SoportePageContent() {
                       <div
                         key={ticket.id}
                         onClick={() => setSelectedTicketId(ticket.id)}
-                        className={`rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-default)] px-4 py-3 md:px-5 md:py-4 shadow-sm cursor-pointer transition-colors ${selectedTicketId === ticket.id
+                        className={`border border-[var(--color-border-default)] bg-[var(--color-surface-default)] px-4 py-3 md:px-5 md:py-4 shadow-sm cursor-pointer transition-colors ${selectedTicketId === ticket.id
                           ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]'
                           : 'hover:bg-[var(--color-surface-muted)]'
                           }`}
+                        style={{ borderRadius: 'var(--card-radius, 0.75rem)' }}
                       >
                         {/* Fila principal: título + estatus */}
                         <div className="flex items-start justify-between gap-3 mb-2">
