@@ -389,22 +389,25 @@ function UsuariosPageContent() {
     ESTU: 'Estudiante',
   };
 
+  // Unified badge style for all roles
   const roleVariants = {
-    ADMIN: 'danger',
-    PROF: 'info',
-    ESTU: 'success',
+    ADMIN: 'outline',
+    PROF: 'outline',
+    ESTU: 'outline',
   };
 
   const columns = [
     {
       key: 'nombre',
       label: 'Usuario',
+      sortable: true,
+      sortValue: (u) => getNombreVisible(u).toLowerCase(),
       render: (u) => {
         const isActive = u.isActive !== false && u.is_active !== false;
         return (
           <div className={!isActive ? 'opacity-60' : ''}>
-            <p className="font-medium text-sm">{getNombreVisible(u)}</p>
-            <p className="text-xs text-ui/80">{u.email}</p>
+            <p className="font-medium text-sm text-[var(--color-text-primary)]">{getNombreVisible(u)}</p>
+            <p className="text-xs text-[var(--color-text-secondary)]">{u.email}</p>
           </div>
         );
       },
@@ -412,35 +415,29 @@ function UsuariosPageContent() {
     {
       key: 'rol',
       label: 'Rol',
+      sortable: true,
+      sortValue: (u) => u.rolPersonalizado || 'ESTU',
       render: (u) => {
+        const profe = u.profesorAsignadoId ? usuarios.find(p => p.id === u.profesorAsignadoId) : null;
         return (
-          <Badge variant={roleVariants[u.rolPersonalizado] || roleVariants.ESTU}>
-            {roleLabels[u.rolPersonalizado] || 'Estudiante'}
-          </Badge>
+          <div>
+            <Badge variant={roleVariants[u.rolPersonalizado] || 'outline'}>
+              {roleLabels[u.rolPersonalizado] || 'Estudiante'}
+            </Badge>
+            {profe && (
+              <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+                {getNombreVisible(profe)}
+              </p>
+            )}
+          </div>
         );
-      },
-    },
-    {
-      key: 'profesor',
-      label: 'Profesor',
-      // rawValue: el nombre del profesor o null/undefined si no hay
-      // Esto se usa para filtrar campos vacíos en mobile
-      rawValue: (u) => {
-        if (!u.profesorAsignadoId) return null;
-        const profe = usuarios.find(p => p.id === u.profesorAsignadoId);
-        return profe ? getNombreVisible(profe) : null;
-      },
-      render: (u) => {
-        if (!u.profesorAsignadoId) return null;
-        const profe = usuarios.find(p => p.id === u.profesorAsignadoId);
-        return profe ? (
-          <p className="text-sm">{getNombreVisible(profe)}</p>
-        ) : null;
       },
     },
     {
       key: 'estado',
       label: 'Estado',
+      sortable: true,
+      sortValue: (u) => (u.isActive !== false && u.is_active !== false) ? 'a' : 'z',
       render: (u) => {
         const isActive = u.isActive !== false && u.is_active !== false;
         return (
@@ -463,156 +460,79 @@ function UsuariosPageContent() {
       />
 
       <div className="studia-section">
-        {/* Toolbar: Actions + Search + Filters */}
-        <div className="flex flex-col gap-3 sm:gap-4">
-          {/* Row 1: Search + Actions */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
-            {/* Search */}
-            <div className="relative flex-1 min-w-[200px]">
-              <Input
-                placeholder="Buscar usuario…"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pr-8 sm:pr-9 ${componentStyles.controls.inputDefault}`}
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-                  aria-label="Limpiar búsqueda"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Actions (buttons) */}
-            <div className="flex items-center gap-2 shrink-0">
-              <Button
-                onClick={() => setIsInviteUserModalOpen(true)}
-                variant="outline"
-                size="sm"
-                className={componentStyles.buttons.outline}
+        {/* Toolbar: Search + Filters + Actions - all in one row */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center mb-4">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Input
+              placeholder="Buscar usuario…"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={`w-full pr-8 sm:pr-9 ${componentStyles.controls.inputDefault}`}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+                aria-label="Limpiar búsqueda"
               >
-                <Send className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Invitar usuario</span>
-                <span className="sm:hidden">Invitar</span>
-              </Button>
-              <Button
-                onClick={() => setIsCreateUserModalOpen(true)}
-                variant="primary"
-                size="sm"
-                className={componentStyles.buttons.primary}
-              >
-                <UserPlus className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">+ Crear usuario</span>
-                <span className="sm:hidden">+ Crear</span>
-              </Button>
-            </div>
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
-          {/* Row 2: Filter chips */}
-          <div className="flex gap-2 flex-wrap items-center">
-            {/* Filtro de Rol */}
-            <div className="flex gap-1.5 items-center">
-              <span className="text-xs text-[var(--color-text-secondary)] hidden sm:inline">Rol:</span>
-              <Button
-                variant={roleFilter === 'all' ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setRoleFilter('all')}
-                className={`text-xs rounded-xl px-3 ${roleFilter === 'all'
-                  ? componentStyles.buttons.primary
-                  : componentStyles.buttons.outline
-                  }`}
-              >
-                Todos
-              </Button>
-              <Button
-                variant={roleFilter === 'ESTU' ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setRoleFilter('ESTU')}
-                className={`text-xs rounded-xl px-3 ${roleFilter === 'ESTU'
-                  ? componentStyles.buttons.primary
-                  : componentStyles.buttons.outline
-                  }`}
-              >
-                Alumno
-              </Button>
-              <Button
-                variant={roleFilter === 'PROF' ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setRoleFilter('PROF')}
-                className={`text-xs rounded-xl px-3 ${roleFilter === 'PROF'
-                  ? componentStyles.buttons.primary
-                  : componentStyles.buttons.outline
-                  }`}
-              >
-                Profesor
-              </Button>
-              <Button
-                variant={roleFilter === 'ADMIN' ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setRoleFilter('ADMIN')}
-                className={`text-xs rounded-xl px-3 ${roleFilter === 'ADMIN'
-                  ? componentStyles.buttons.primary
-                  : componentStyles.buttons.outline
-                  }`}
-              >
-                Admin
-              </Button>
-            </div>
+          {/* Filters dropdowns */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Rol filter */}
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="h-9 w-[110px] text-xs rounded-xl">
+                <User className="w-4 h-4 mr-1 text-[var(--color-text-secondary)]" />
+                <SelectValue placeholder="Rol" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Rol</SelectItem>
+                <SelectItem value="ESTU">Alumno</SelectItem>
+                <SelectItem value="PROF">Profesor</SelectItem>
+                <SelectItem value="ADMIN">Admin</SelectItem>
+              </SelectContent>
+            </Select>
 
-            {/* Separador visual */}
-            <div className="hidden sm:block w-px h-6 bg-[var(--color-border-default)]" />
+            {/* Estado filter */}
+            <Select value={estadoFilter} onValueChange={setEstadoFilter}>
+              <SelectTrigger className="h-9 w-[130px] text-xs rounded-xl">
+                <Play className="w-4 h-4 mr-1 text-[var(--color-text-secondary)]" />
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Estado</SelectItem>
+                <SelectItem value="activo">Activo</SelectItem>
+                <SelectItem value="invitacion_pendiente">Pendiente</SelectItem>
+                <SelectItem value="bloqueado">Bloqueado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-            {/* Filtro de Estado */}
-            <div className="flex gap-1.5 items-center">
-              <span className="text-xs text-[var(--color-text-secondary)] hidden sm:inline">Estado:</span>
-              <Button
-                variant={estadoFilter === 'all' ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setEstadoFilter('all')}
-                className={`text-xs rounded-xl px-3 ${estadoFilter === 'all'
-                  ? componentStyles.buttons.primary
-                  : componentStyles.buttons.outline
-                  }`}
-              >
-                Todos
-              </Button>
-              <Button
-                variant={estadoFilter === 'activo' ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setEstadoFilter('activo')}
-                className={`text-xs rounded-xl px-3 ${estadoFilter === 'activo'
-                  ? componentStyles.buttons.primary
-                  : componentStyles.buttons.outline
-                  }`}
-              >
-                Activo
-              </Button>
-              <Button
-                variant={estadoFilter === 'invitacion_pendiente' ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setEstadoFilter('invitacion_pendiente')}
-                className={`text-xs rounded-xl px-3 ${estadoFilter === 'invitacion_pendiente'
-                  ? componentStyles.buttons.primary
-                  : componentStyles.buttons.outline
-                  }`}
-              >
-                Invitación pendiente
-              </Button>
-              <Button
-                variant={estadoFilter === 'bloqueado' ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setEstadoFilter('bloqueado')}
-                className={`text-xs rounded-xl px-3 ${estadoFilter === 'bloqueado'
-                  ? componentStyles.buttons.primary
-                  : componentStyles.buttons.outline
-                  }`}
-              >
-                Bloqueado
-              </Button>
-            </div>
+          {/* Actions (buttons) */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              onClick={() => setIsInviteUserModalOpen(true)}
+              variant="outline"
+              size="sm"
+              className={componentStyles.buttons.outline}
+            >
+              <Send className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Invitar</span>
+            </Button>
+            <Button
+              onClick={() => setIsCreateUserModalOpen(true)}
+              variant="primary"
+              size="sm"
+              className={componentStyles.buttons.primary}
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">+ Crear</span>
+              <span className="sm:hidden">+</span>
+            </Button>
           </div>
         </div>
 
