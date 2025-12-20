@@ -681,19 +681,17 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
 
       <div className={embedded ? "" : componentStyles.layout.page}>
         <div className="mb-6">
-          <DesignStatusBlock />
-        </div>
-        <div className="flex justify-center mb-6">
-          <Tabs
-            value={activeSection}
-            onChange={setActiveSection}
-            items={[
+          <DesignStatusBlock
+            activeTab={activeSection}
+            onTabChange={setActiveSection}
+            tabs={[
               { value: 'controls', label: 'Controles' },
               { value: 'preview', label: 'Preview' },
               ...(hideLevelsTab ? [] : [{ value: 'levels', label: 'Niveles' }]),
             ]}
           />
         </div>
+
 
         {activeSection === 'levels' && (
           <div className="mt-6">
@@ -703,11 +701,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
         {activeSection === 'controls' && (
           <div className="space-y-4">
 
-            {/* Diff Accordion - Collapsible list of changes */}
-            <DiffAccordion
-              isOpen={activeAccordion === 'diff'}
-              onToggle={() => setActiveAccordion(activeAccordion === 'diff' ? null : 'diff')}
-            />
+
 
             {/* Presets Accordion */}
             <div className="border border-[var(--color-border-default)] rounded-xl overflow-hidden bg-[var(--color-surface)]">
@@ -850,7 +844,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                     <Textarea
                       readOnly
                       value={JSON.stringify(config, null, 2)}
-                      className="font-mono text-xs min-h-[300px] bg-[var(--color-surface-elevated)]"
+                      className="font-mono text-xs min-h-[50vh] resize-y bg-[var(--color-surface-elevated)]"
                     />
                     <Button
                       size="sm"
@@ -1092,7 +1086,6 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
         {
           activeSection === 'preview' && (
             <div className="space-y-6">
-
               {/* Preview de Componentes */}
               <Card className="app-card">
                 <CardHeader className="border-b border-[var(--color-border-default)]">

@@ -46,7 +46,12 @@ class ErrorBoundary extends React.Component {
   }
 
   handleGoBack = () => {
-    window.history.back();
+    // Si hay historial suficiente, volver atrás; sino, ir a calendario
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = '/calendario';
+    }
   };
 
   handleReset = () => {
