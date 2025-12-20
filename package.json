@@ -1,8 +1,8 @@
 {
   "name": "studia-local",
   "private": true,
-  "version": "0.0.0",
-  "description": "Aplicación local de Studia que funciona de forma independiente con persistencia en localStorage",
+  "version": "0.94-beta",
+  "description": "Aplicación de Studia que funciona de forma independiente con persistencia en localStorage",
   "type": "module",
   "scripts": {
     "dev": "vite",
