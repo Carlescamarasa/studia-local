@@ -27,7 +27,7 @@ export default function LoginPage() {
   const { signIn, resetPassword } = useAuth();
   const navigate = useNavigate();
   const appName = getAppName();
-  const { design, setDesignPartial } = useDesign();
+  const { design, activeMode, setActiveMode } = useDesign();
   const rateLimit = useRateLimit();
   const { getLoginErrorMessage, getForgotPasswordErrorMessage } = useAuthErrors();
 
@@ -138,11 +138,11 @@ export default function LoginPage() {
 
       {/* Theme Toggle */}
       <button
-        onClick={() => setDesignPartial('theme', design?.theme === 'dark' ? 'light' : 'dark')}
+        onClick={() => setActiveMode(activeMode === 'dark' ? 'light' : 'dark')}
         className="absolute top-4 right-4 p-2 rounded-full bg-[var(--color-surface)]/50 backdrop-blur-sm hover:bg-[var(--color-surface-muted)] transition-colors z-20 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
         aria-label="Toggle theme"
       >
-        {design?.theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        {activeMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
       </button>
 
       {/* Contenedor principal */}

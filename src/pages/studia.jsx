@@ -108,7 +108,7 @@ function StudiaPageContent() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const { showHotkeysModal, setShowHotkeysModal } = useHotkeysModal();
-    const { design, setDesignPartial } = useDesign();
+    const { design, activeMode, setActiveMode } = useDesign();
 
     // Parse query params
     const asignacionIdParam = searchParams.get('asignacionId');
@@ -878,11 +878,11 @@ function StudiaPageContent() {
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setDesignPartial('theme', (design?.theme === 'dark' ? 'light' : 'dark'))}
+                                onClick={() => setActiveMode(activeMode === 'dark' ? 'light' : 'dark')}
                                 className="h-9 w-9 p-0 rounded-lg shrink-0 text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] transition-colors"
-                                title={design?.theme === 'dark' ? "Modo claro" : "Modo oscuro"}
+                                title={activeMode === 'dark' ? "Modo claro" : "Modo oscuro"}
                             >
-                                {design?.theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                                {activeMode === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                             </Button>
                         </div>
 

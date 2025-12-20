@@ -31,8 +31,8 @@ export default function PerfilPage() {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const userIdParam = searchParams.get('userId');
-  const { design, setDesignPartial } = useDesign();
-  
+  const { design, activeMode, setActiveMode } = useDesign();
+
   const [editedData, setEditedData] = useState(null);
   const [saveResult, setSaveResult] = useState(null);
   const [passwordResult, setPasswordResult] = useState(null);
@@ -83,7 +83,7 @@ export default function PerfilPage() {
       if (!targetUser || !targetUser.id) {
         throw new Error('No se puede actualizar: usuario no encontrado');
       }
-      
+
       if (targetUser.id === effectiveUser?.id) {
         // Actualizar perfil propio
         return await localDataClient.auth.updateMe(data);
@@ -97,7 +97,7 @@ export default function PerfilPage() {
       await queryClient.invalidateQueries({ queryKey: ['targetUser'] });
       await queryClient.invalidateQueries({ queryKey: ['users'] });
       await queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-      
+
       setSaveResult({ success: true, message: '✅ Usuario actualizado correctamente.' });
       toast.success('Perfil actualizado correctamente.');
 
@@ -138,7 +138,7 @@ export default function PerfilPage() {
     }
 
     const isChangingOwnRole = targetUser?.id === effectiveUser?.id && editedData.rolPersonalizado !== effectiveUser?.rolPersonalizado;
-    
+
     if (isChangingOwnRole) {
       if (!window.confirm('¿Estás seguro de cambiar tu propio rol? Esto modificará tu acceso y navegación en la aplicación.')) {
         return;
@@ -148,9 +148,9 @@ export default function PerfilPage() {
     if (editedData.rolPersonalizado !== targetUser?.rolPersonalizado && targetUser?.rolPersonalizado === 'ADMIN') {
       const adminCount = allUsers?.filter(u => u.rolPersonalizado === 'ADMIN').length || 0;
       if (adminCount <= 1) {
-        setSaveResult({ 
-          success: false, 
-          message: '❌ No puedes eliminar el último Administrador. Debe existir al menos un Administrador en el sistema.' 
+        setSaveResult({
+          success: false,
+          message: '❌ No puedes eliminar el último Administrador. Debe existir al menos un Administrador en el sistema.'
         });
         toast.error('No puedes eliminar el último Administrador. Debe existir al menos un Administrador en el sistema.');
         return;
@@ -178,17 +178,17 @@ export default function PerfilPage() {
 
   const isEditingOwnProfile = targetUser?.id === effectiveUser?.id;
   const canEditRole = effectiveUser?.rolPersonalizado === 'ADMIN';
-  const canEditProfesor = (effectiveUser?.rolPersonalizado === 'ADMIN' || effectiveUser?.rolPersonalizado === 'PROF') 
-                          && targetUser?.rolPersonalizado === 'ESTU';
+  const canEditProfesor = (effectiveUser?.rolPersonalizado === 'ADMIN' || effectiveUser?.rolPersonalizado === 'PROF')
+    && targetUser?.rolPersonalizado === 'ESTU';
   const isEstudiante = targetUser?.rolPersonalizado === 'ESTU';
   const isProfesor = targetUser?.rolPersonalizado === 'PROF';
 
   if (isLoading || !editedData) {
     return (
-      <LoadingSpinner 
-        size="xl" 
-        variant="centered" 
-        text="Cargando perfil..." 
+      <LoadingSpinner
+        size="xl"
+        variant="centered"
+        text="Cargando perfil..."
       />
     );
   }
@@ -368,10 +368,10 @@ export default function PerfilPage() {
               <div className="space-y-2">
                 <Label htmlFor="theme" className="text-[var(--color-text-primary)]">Tema de la Aplicación</Label>
                 <Select
-                  value={design?.theme || 'system'}
+                  value={activeMode}
                   onValueChange={(value) => {
-                    setDesignPartial('theme', value);
-                    toast.success(`Tema cambiado a ${value === 'system' ? 'Predeterminado' : value === 'dark' ? 'Oscuro' : 'Claro'}`);
+                    setActiveMode(value);
+                    toast.success(`Tema cambiado a ${value === 'dark' ? 'Oscuro' : 'Claro'}`);
                   }}
                 >
                   <SelectTrigger id="theme" className={componentStyles.controls.selectDefault}>
@@ -390,18 +390,10 @@ export default function PerfilPage() {
                         Oscuro
                       </div>
                     </SelectItem>
-                    <SelectItem value="system">
-                      <div className="flex items-center gap-2">
-                        <Monitor className="w-4 h-4" />
-                        Predeterminado (Sistema)
-                      </div>
-                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-[var(--color-text-secondary)]">
-                  {design?.theme === 'system' 
-                    ? 'Sigue la preferencia de tu sistema operativo'
-                    : design?.theme === 'dark'
+                  {activeMode === 'dark'
                     ? 'Tema oscuro activado'
                     : 'Tema claro activado'}
                 </p>
@@ -469,7 +461,7 @@ export default function PerfilPage() {
             <div className="space-y-3">
               <Alert variant="info" className={componentStyles.containers.panelBase}>
                 <AlertDescription className="text-xs sm:text-sm">
-                  Para cambiar tu contraseña, te enviaremos un correo con un enlace seguro. 
+                  Para cambiar tu contraseña, te enviaremos un correo con un enlace seguro.
                   Desde ese enlace podrás establecer una nueva contraseña.
                 </AlertDescription>
               </Alert>
@@ -484,16 +476,16 @@ export default function PerfilPage() {
                         throw new Error('No hay sesión activa o no se pudo obtener el email. Por favor, inicia sesión de nuevo.');
                       }
                       await sendPasswordResetEmailFor(session.user.email);
-                      setPasswordResult({ 
-                        success: true, 
-                        message: `✅ Te hemos enviado un correo a ${session.user.email} para cambiar tu contraseña.` 
+                      setPasswordResult({
+                        success: true,
+                        message: `✅ Te hemos enviado un correo a ${session.user.email} para cambiar tu contraseña.`
                       });
                       toast.success('Te hemos enviado un correo para cambiar tu contraseña.');
                     } catch (error) {
                       const errorMessage = error.message || 'No se pudo enviar el correo';
-                      setPasswordResult({ 
-                        success: false, 
-                        message: `❌ Error: ${errorMessage}` 
+                      setPasswordResult({
+                        success: false,
+                        message: `❌ Error: ${errorMessage}`
                       });
                       toast.error(`Error al enviar el correo: ${errorMessage}`);
                       if (import.meta.env.DEV) {

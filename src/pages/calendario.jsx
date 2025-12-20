@@ -284,110 +284,104 @@ function CalendarioPageContent() {
       />
 
       <div className="studia-section">
-        {/* Toolbar: View selector + Filters + Create button */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* Left: View selector + Filters */}
-          <div className="flex flex-wrap gap-2 items-center">
-            {/* View selector */}
-            <div className="flex items-center gap-1 border border-[var(--color-border-default)] rounded-xl p-0.5">
+        {/* Toolbar: Filters (left) + View selector (center) + Create button (right) */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+          {/* Left: Type filters */}
+          <div className="flex items-center gap-1 flex-wrap">
+            <Button
+              variant={filtroTipoGlobal === 'all' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setFiltroTipoGlobal('all')}
+              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+            >
+              Todos
+            </Button>
+            <Button
+              variant={filtroTipoGlobal === 'evento' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setFiltroTipoGlobal('evento')}
+              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+            >
+              Eventos
+            </Button>
+            <Button
+              variant={filtroTipoGlobal === 'asignacion' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setFiltroTipoGlobal('asignacion')}
+              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+            >
+              Asignaciones
+            </Button>
+            <Button
+              variant={filtroTipoGlobal === 'sesion' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setFiltroTipoGlobal('sesion')}
+              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+            >
+              Sesiones
+            </Button>
+            <Button
+              variant={filtroTipoGlobal === 'feedback' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setFiltroTipoGlobal('feedback')}
+              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+            >
+              Feedbacks
+            </Button>
+          </div>
+
+          {/* Center: View selector */}
+          <div className="flex items-center gap-1 border border-[var(--color-border-default)] rounded-xl p-0.5">
+            <Button
+              variant={vista === 'mes' ? 'primary' : 'ghost'}
+              size="sm"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setVista('mes');
+              }}
+              className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${vista === 'mes'
+                ? componentStyles.buttons.primary
+                : `${componentStyles.buttons.ghost} hover:bg-transparent`
+                }`}
+              type="button"
+            >
+              Mes
+            </Button>
+            {!isMobile && (
               <Button
-                variant={vista === 'mes' ? 'primary' : 'ghost'}
+                variant={vista === 'semana' ? 'primary' : 'ghost'}
                 size="sm"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  setVista('mes');
+                  setVista('semana');
                 }}
-                className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${vista === 'mes'
+                className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${vista === 'semana'
                   ? componentStyles.buttons.primary
                   : `${componentStyles.buttons.ghost} hover:bg-transparent`
                   }`}
                 type="button"
               >
-                Mes
+                Semana
               </Button>
-              {!isMobile && (
-                <Button
-                  variant={vista === 'semana' ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setVista('semana');
-                  }}
-                  className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${vista === 'semana'
-                    ? componentStyles.buttons.primary
-                    : `${componentStyles.buttons.ghost} hover:bg-transparent`
-                    }`}
-                  type="button"
-                >
-                  Semana
-                </Button>
-              )}
-              <Button
-                variant={vista === 'lista' ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setVista('lista');
-                }}
-                className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${vista === 'lista'
-                  ? componentStyles.buttons.primary
-                  : `${componentStyles.buttons.ghost} hover:bg-transparent`
-                  }`}
-                type="button"
-              >
-                Lista
-              </Button>
-            </div>
-
-            {/* Separador */}
-            <div className="hidden sm:block w-px h-6 bg-[var(--color-border-default)]" />
-
-            {/* Type filters */}
-            <div className="flex items-center gap-1 flex-wrap">
-              <Button
-                variant={filtroTipoGlobal === 'all' ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setFiltroTipoGlobal('all')}
-                className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-              >
-                Todos
-              </Button>
-              <Button
-                variant={filtroTipoGlobal === 'evento' ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setFiltroTipoGlobal('evento')}
-                className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-              >
-                Eventos
-              </Button>
-              <Button
-                variant={filtroTipoGlobal === 'asignacion' ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setFiltroTipoGlobal('asignacion')}
-                className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-              >
-                Asignaciones
-              </Button>
-              <Button
-                variant={filtroTipoGlobal === 'sesion' ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setFiltroTipoGlobal('sesion')}
-                className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-              >
-                Sesiones
-              </Button>
-              <Button
-                variant={filtroTipoGlobal === 'feedback' ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setFiltroTipoGlobal('feedback')}
-                className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-              >
-                Feedbacks
-              </Button>
-            </div>
+            )}
+            <Button
+              variant={vista === 'lista' ? 'primary' : 'ghost'}
+              size="sm"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setVista('lista');
+              }}
+              className={`text-xs h-8 sm:h-9 px-2 sm:px-3 rounded-lg transition-all ${vista === 'lista'
+                ? componentStyles.buttons.primary
+                : `${componentStyles.buttons.ghost} hover:bg-transparent`
+                }`}
+              type="button"
+            >
+              Lista
+            </Button>
           </div>
 
           {/* Right: Create event button */}
