@@ -842,7 +842,7 @@ export default function ImportExportPage({ embedded = false }) {
         />
       )}
 
-      <div className={embedded ? "" : componentStyles.layout.page}>
+      <div className={embedded ? "" : "studia-section"}>
         <Card className="app-card">
           <CardContent className="pt-6 text-[var(--color-text-primary)]">
             <div className="space-y-6">

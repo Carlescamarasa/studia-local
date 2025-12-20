@@ -1068,7 +1068,7 @@ function EstadisticasPageContent() {
 
       {/* Panel de filtros colapsable */}
       {filtersExpanded && (
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4">
+        <div className="studia-section py-3">
           <Card className={componentStyles.containers.cardBase}>
             <CardContent className="p-3 sm:p-4 md:p-6">
               <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-center md:gap-4">
@@ -1129,7 +1129,7 @@ function EstadisticasPageContent() {
         </div>
       )}
 
-      <div className={componentStyles.layout.page}>
+      <div className="studia-section">
         {/* Tabs principales - Ahora ocupan todo el ancho */}
         <Card className={`${componentStyles.components.cardBase} mb-6 p-0`}>
           <div className="w-full">

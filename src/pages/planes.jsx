@@ -5,7 +5,7 @@ import { componentStyles } from "@/design/componentStyles";
 
 export default function PlanesPage() {
   return (
-    <div className={componentStyles.layout.page}>
+    <div className="studia-section">
       <PageHeader
         title="Planes de Estudio"
         subtitle="Diseña planes pedagógicos estructurados"

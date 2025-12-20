@@ -37,7 +37,7 @@ import {
 // STORAGE KEYS
 // ============================================================================
 const STORAGE_KEYS = {
-  BASE_DESIGN: "studia_design_base_v2",    // Nuevo: estructura DesignBase
+  BASE_DESIGN: "studia_design_base_v3",    // Bumped: forces reload of DEFAULT_DESIGN with new tokens
   LEGACY_DESIGN: "custom_design_preset",    // Legacy: para migración
   PREVIEW_OVERLAY: "studia_preview_overlay", // sessionStorage
   ACTIVE_MODE: "studia_active_mode",         // localStorage: 'light'|'dark'

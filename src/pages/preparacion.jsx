@@ -230,7 +230,7 @@ function PreparacionPageContent() {
                 subtitle="Gestiona asignaciones de tus estudiantes"
             />
 
-            <div className={componentStyles.layout.page}>
+            <div className="studia-section">
                 {/* Tabs */}
                 <div className="flex gap-2 mb-6 border-b pb-4">
                     {TABS.map(tab => (

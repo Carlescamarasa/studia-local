@@ -460,39 +460,20 @@ function UsuariosPageContent() {
         icon={Users}
         title="Usuarios"
         subtitle="Gestiona alumnos, profesores y admins"
-        actions={
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <Button
-              onClick={() => setIsInviteUserModalOpen(true)}
-              variant="outline"
-              size="sm"
-              className={`${componentStyles.buttons.outline} text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3`}
-            >
-              <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-              <span className="hidden sm:inline">Invitar usuario</span>
-              <span className="sm:hidden">Invitar</span>
-            </Button>
-            <Button
-              onClick={() => setIsCreateUserModalOpen(true)}
-              variant="primary"
-              size="sm"
-              className={`${componentStyles.buttons.primary} text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3`}
-            >
-              <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-              <span className="hidden sm:inline">+ Crear usuario</span>
-              <span className="sm:hidden">+ Crear</span>
-            </Button>
-          </div>
-        }
-        filters={
-          <>
-            {/* Search - Primera fila en mobile, inline en desktop */}
-            <div className="relative flex-1 min-w-[200px] sm:min-w-[250px] w-full sm:w-auto order-1 sm:order-none">
+      />
+
+      <div className="studia-section">
+        {/* Toolbar: Actions + Search + Filters */}
+        <div className="flex flex-col gap-3 sm:gap-4">
+          {/* Row 1: Search + Actions */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[200px]">
               <Input
                 placeholder="Buscar usuario…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pr-8 sm:pr-9 h-8 sm:h-9 text-xs sm:text-sm ${componentStyles.controls.inputDefault}`}
+                className={`w-full pr-8 sm:pr-9 ${componentStyles.controls.inputDefault}`}
               />
               {searchTerm && (
                 <button
@@ -500,119 +481,142 @@ function UsuariosPageContent() {
                   className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
                   aria-label="Limpiar búsqueda"
                 >
-                  <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <X className="w-4 h-4" />
                 </button>
               )}
             </div>
 
-            {/* Chips de filtros - Segunda fila en mobile, inline en desktop */}
-            <div className="flex gap-1.5 flex-wrap order-2 sm:order-none w-full sm:w-auto">
-              {/* Filtro de Rol */}
-              <div className="flex gap-1.5 items-center">
-                <span className="text-xs text-[var(--color-text-secondary)] hidden sm:inline">Rol:</span>
-                <Button
-                  variant={roleFilter === 'all' ? 'primary' : 'outline'}
-                  size="sm"
-                  onClick={() => setRoleFilter('all')}
-                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${roleFilter === 'all'
-                    ? componentStyles.buttons.primary
-                    : componentStyles.buttons.outline
-                    }`}
-                >
-                  Todos
-                </Button>
-                <Button
-                  variant={roleFilter === 'ESTU' ? 'primary' : 'outline'}
-                  size="sm"
-                  onClick={() => setRoleFilter('ESTU')}
-                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${roleFilter === 'ESTU'
-                    ? componentStyles.buttons.primary
-                    : componentStyles.buttons.outline
-                    }`}
-                >
-                  Alumno
-                </Button>
-                <Button
-                  variant={roleFilter === 'PROF' ? 'primary' : 'outline'}
-                  size="sm"
-                  onClick={() => setRoleFilter('PROF')}
-                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${roleFilter === 'PROF'
-                    ? componentStyles.buttons.primary
-                    : componentStyles.buttons.outline
-                    }`}
-                >
-                  Profesor
-                </Button>
-                <Button
-                  variant={roleFilter === 'ADMIN' ? 'primary' : 'outline'}
-                  size="sm"
-                  onClick={() => setRoleFilter('ADMIN')}
-                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${roleFilter === 'ADMIN'
-                    ? componentStyles.buttons.primary
-                    : componentStyles.buttons.outline
-                    }`}
-                >
-                  Admin
-                </Button>
-              </div>
-
-              {/* Separador visual */}
-              <div className="hidden sm:block w-px h-6 bg-[var(--color-border-default)] mx-0.5" />
-
-              {/* Filtro de Estado */}
-              <div className="flex gap-1.5 items-center">
-                <span className="text-xs text-[var(--color-text-secondary)] hidden sm:inline">Estado:</span>
-                <Button
-                  variant={estadoFilter === 'all' ? 'primary' : 'outline'}
-                  size="sm"
-                  onClick={() => setEstadoFilter('all')}
-                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${estadoFilter === 'all'
-                    ? componentStyles.buttons.primary
-                    : componentStyles.buttons.outline
-                    }`}
-                >
-                  Todos
-                </Button>
-                <Button
-                  variant={estadoFilter === 'activo' ? 'primary' : 'outline'}
-                  size="sm"
-                  onClick={() => setEstadoFilter('activo')}
-                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${estadoFilter === 'activo'
-                    ? componentStyles.buttons.primary
-                    : componentStyles.buttons.outline
-                    }`}
-                >
-                  Activo
-                </Button>
-                <Button
-                  variant={estadoFilter === 'invitacion_pendiente' ? 'primary' : 'outline'}
-                  size="sm"
-                  onClick={() => setEstadoFilter('invitacion_pendiente')}
-                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${estadoFilter === 'invitacion_pendiente'
-                    ? componentStyles.buttons.primary
-                    : componentStyles.buttons.outline
-                    }`}
-                >
-                  Invitación pendiente
-                </Button>
-                <Button
-                  variant={estadoFilter === 'bloqueado' ? 'primary' : 'outline'}
-                  size="sm"
-                  onClick={() => setEstadoFilter('bloqueado')}
-                  className={`text-xs h-8 sm:h-9 rounded-xl px-2.5 sm:px-3 ${estadoFilter === 'bloqueado'
-                    ? componentStyles.buttons.primary
-                    : componentStyles.buttons.outline
-                    }`}
-                >
-                  Bloqueado
-                </Button>
-              </div>
+            {/* Actions (buttons) */}
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                onClick={() => setIsInviteUserModalOpen(true)}
+                variant="outline"
+                size="sm"
+                className={componentStyles.buttons.outline}
+              >
+                <Send className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Invitar usuario</span>
+                <span className="sm:hidden">Invitar</span>
+              </Button>
+              <Button
+                onClick={() => setIsCreateUserModalOpen(true)}
+                variant="primary"
+                size="sm"
+                className={componentStyles.buttons.primary}
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">+ Crear usuario</span>
+                <span className="sm:hidden">+ Crear</span>
+              </Button>
             </div>
-          </>
-        }
-      />
+          </div>
 
-      <div className={componentStyles.layout.page}>
+          {/* Row 2: Filter chips */}
+          <div className="flex gap-2 flex-wrap items-center">
+            {/* Filtro de Rol */}
+            <div className="flex gap-1.5 items-center">
+              <span className="text-xs text-[var(--color-text-secondary)] hidden sm:inline">Rol:</span>
+              <Button
+                variant={roleFilter === 'all' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setRoleFilter('all')}
+                className={`text-xs rounded-xl px-3 ${roleFilter === 'all'
+                  ? componentStyles.buttons.primary
+                  : componentStyles.buttons.outline
+                  }`}
+              >
+                Todos
+              </Button>
+              <Button
+                variant={roleFilter === 'ESTU' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setRoleFilter('ESTU')}
+                className={`text-xs rounded-xl px-3 ${roleFilter === 'ESTU'
+                  ? componentStyles.buttons.primary
+                  : componentStyles.buttons.outline
+                  }`}
+              >
+                Alumno
+              </Button>
+              <Button
+                variant={roleFilter === 'PROF' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setRoleFilter('PROF')}
+                className={`text-xs rounded-xl px-3 ${roleFilter === 'PROF'
+                  ? componentStyles.buttons.primary
+                  : componentStyles.buttons.outline
+                  }`}
+              >
+                Profesor
+              </Button>
+              <Button
+                variant={roleFilter === 'ADMIN' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setRoleFilter('ADMIN')}
+                className={`text-xs rounded-xl px-3 ${roleFilter === 'ADMIN'
+                  ? componentStyles.buttons.primary
+                  : componentStyles.buttons.outline
+                  }`}
+              >
+                Admin
+              </Button>
+            </div>
+
+            {/* Separador visual */}
+            <div className="hidden sm:block w-px h-6 bg-[var(--color-border-default)]" />
+
+            {/* Filtro de Estado */}
+            <div className="flex gap-1.5 items-center">
+              <span className="text-xs text-[var(--color-text-secondary)] hidden sm:inline">Estado:</span>
+              <Button
+                variant={estadoFilter === 'all' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setEstadoFilter('all')}
+                className={`text-xs rounded-xl px-3 ${estadoFilter === 'all'
+                  ? componentStyles.buttons.primary
+                  : componentStyles.buttons.outline
+                  }`}
+              >
+                Todos
+              </Button>
+              <Button
+                variant={estadoFilter === 'activo' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setEstadoFilter('activo')}
+                className={`text-xs rounded-xl px-3 ${estadoFilter === 'activo'
+                  ? componentStyles.buttons.primary
+                  : componentStyles.buttons.outline
+                  }`}
+              >
+                Activo
+              </Button>
+              <Button
+                variant={estadoFilter === 'invitacion_pendiente' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setEstadoFilter('invitacion_pendiente')}
+                className={`text-xs rounded-xl px-3 ${estadoFilter === 'invitacion_pendiente'
+                  ? componentStyles.buttons.primary
+                  : componentStyles.buttons.outline
+                  }`}
+              >
+                Invitación pendiente
+              </Button>
+              <Button
+                variant={estadoFilter === 'bloqueado' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setEstadoFilter('bloqueado')}
+                className={`text-xs rounded-xl px-3 ${estadoFilter === 'bloqueado'
+                  ? componentStyles.buttons.primary
+                  : componentStyles.buttons.outline
+                  }`}
+              >
+                Bloqueado
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Main content: Users table */}
         <Card className={`${componentStyles.containers.cardBase} compact-card`}>
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold">{usuariosFiltrados.length} usuarios</CardTitle>

@@ -5,7 +5,7 @@ import { componentStyles } from "@/design/componentStyles";
 
 export default function SesionesPage() {
   return (
-    <div className={componentStyles.layout.page}>
+    <div className="studia-section">
       <PageHeader
         title="Sesiones de Práctica"
         subtitle="Configura bloques y rondas de ejercicios"

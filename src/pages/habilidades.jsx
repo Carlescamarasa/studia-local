@@ -54,7 +54,7 @@ export default function HabilidadesPage() {
                 icon={Star}
             />
 
-            <div className={componentStyles.layout.page}>
+            <div className="studia-section">
                 <HabilidadesView
                     alumnoId={userIdActual}
                     students={

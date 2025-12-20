@@ -5,7 +5,7 @@ import { componentStyles } from "@/design/componentStyles";
 
 export default function PiezasPage() {
   return (
-    <div className={componentStyles.layout.page}>
+    <div className="studia-section">
       <PageHeader
         title="Piezas Musicales"
         subtitle="Gestiona tu biblioteca de piezas"

@@ -810,7 +810,7 @@ function ProgresoPageContent() {
 
             {/* Filters panel */}
             {filtersExpanded && (
-                <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4">
+                <div className="studia-section py-3">
                     <Card className={componentStyles.containers.cardBase}>
                         <CardContent className="p-3 sm:p-4 md:p-6">
                             <div className="flex flex-wrap gap-2 justify-end">
@@ -836,7 +836,7 @@ function ProgresoPageContent() {
                 </div>
             )}
 
-            <div className={componentStyles.layout.page}>
+            <div className="studia-section">
                 {/* Main tabs */}
                 <div className="mb-6">
                     <Tabs

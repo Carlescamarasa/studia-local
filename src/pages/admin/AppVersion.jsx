@@ -95,7 +95,7 @@ function AppVersionPageContent() {
         description="Gestiona las versiones y el historial de la aplicación"
       />
 
-      <div className={componentStyles.layout.page}>
+      <div className="studia-section">
         {/* Header con versión actual y acciones */}
         <Card>
           <CardHeader>

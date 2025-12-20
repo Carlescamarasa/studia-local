@@ -273,8 +273,22 @@ function CalendarioPageContent() {
         title="Calendario"
         subtitle="Visualiza sesiones, feedbacks, asignaciones y eventos importantes"
         actions={
-          <div className="flex gap-2 items-center">
-            {/* Selector de vista: Mes / Semana / Lista */}
+          <PeriodHeader
+            label={labelPeriodo}
+            rangeText={rangeTextPeriodo}
+            onPrev={() => navegarPeriodo(-1)}
+            onNext={() => navegarPeriodo(1)}
+            onToday={irHoy}
+          />
+        }
+      />
+
+      <div className="studia-section">
+        {/* Toolbar: View selector + Filters + Create button */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* Left: View selector + Filters */}
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* View selector */}
             <div className="flex items-center gap-1 border border-[var(--color-border-default)] rounded-xl p-0.5">
               <Button
                 variant={vista === 'mes' ? 'primary' : 'ghost'}
@@ -328,81 +342,72 @@ function CalendarioPageContent() {
               </Button>
             </div>
 
-            <PeriodHeader
-              label={labelPeriodo}
-              rangeText={rangeTextPeriodo}
-              onPrev={() => navegarPeriodo(-1)}
-              onNext={() => navegarPeriodo(1)}
-              onToday={irHoy}
-            />
+            {/* Separador */}
+            <div className="hidden sm:block w-px h-6 bg-[var(--color-border-default)]" />
 
-            {(isAdmin || isProf) && (
+            {/* Type filters */}
+            <div className="flex items-center gap-1 flex-wrap">
               <Button
-                variant="primary"
+                variant={filtroTipoGlobal === 'all' ? 'primary' : 'outline'}
                 size="sm"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleCrearEvento();
-                }}
-                className="text-xs h-8 sm:h-9 rounded-xl focus-brand"
-                type="button"
+                onClick={() => setFiltroTipoGlobal('all')}
+                className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
               >
-                <Plus className="w-3.5 h-3.5 mr-1.5" />
-                <span className="hidden sm:inline">Evento</span>
+                Todos
               </Button>
-            )}
+              <Button
+                variant={filtroTipoGlobal === 'evento' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setFiltroTipoGlobal('evento')}
+                className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+              >
+                Eventos
+              </Button>
+              <Button
+                variant={filtroTipoGlobal === 'asignacion' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setFiltroTipoGlobal('asignacion')}
+                className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+              >
+                Asignaciones
+              </Button>
+              <Button
+                variant={filtroTipoGlobal === 'sesion' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setFiltroTipoGlobal('sesion')}
+                className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+              >
+                Sesiones
+              </Button>
+              <Button
+                variant={filtroTipoGlobal === 'feedback' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setFiltroTipoGlobal('feedback')}
+                className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+              >
+                Feedbacks
+              </Button>
+            </div>
           </div>
-        }
-      />
 
-
-      <div className={componentStyles.layout.page}>
-        {/* Filtros compactos: Tipo en una sola fila */}
-        <div className="mb-3 flex gap-1.5 flex-wrap items-center">
-          {/* Tipo: Todos / Eventos / Asignaciones / Sesiones / Feedback */}
-          <div className="flex items-center gap-1 flex-wrap">
+          {/* Right: Create event button */}
+          {(isAdmin || isProf) && (
             <Button
-              variant={filtroTipoGlobal === 'all' ? 'primary' : 'outline'}
+              variant="primary"
               size="sm"
-              onClick={() => setFiltroTipoGlobal('all')}
-              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCrearEvento();
+              }}
+              className={`${componentStyles.buttons.primary} text-xs rounded-xl`}
+              type="button"
             >
-              Todos
+              <Plus className="w-4 h-4 mr-1.5" />
+              <span className="hidden sm:inline">Crear evento</span>
+              <span className="sm:hidden">Evento</span>
             </Button>
-            <Button
-              variant={filtroTipoGlobal === 'evento' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setFiltroTipoGlobal('evento')}
-              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-            >
-              Eventos
-            </Button>
-            <Button
-              variant={filtroTipoGlobal === 'asignacion' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setFiltroTipoGlobal('asignacion')}
-              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-            >
-              Asignaciones
-            </Button>
-            <Button
-              variant={filtroTipoGlobal === 'sesion' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setFiltroTipoGlobal('sesion')}
-              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-            >
-              Sesiones
-            </Button>
-            <Button
-              variant={filtroTipoGlobal === 'feedback' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setFiltroTipoGlobal('feedback')}
-              className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-            >
-              Feedbacks
-            </Button>
-          </div>
+          )}
         </div>
 
         {vista === 'semana' && !isMobile && (

@@ -843,7 +843,7 @@ function AdaptarAsignacionPageContent() {
       />
 
       {isCerrada && (
-        <div className={`${componentStyles.layout.page} mt-4`}>
+        <div className={`$"studia-section" mt-4`}>
           <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-warning)] bg-[var(--color-warning)]/10 rounded-[var(--radius-card)]`}>
             <AlertCircle className="h-4 w-4 text-[var(--color-warning)]" />
             <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-warning)]`}>
@@ -853,7 +853,7 @@ function AdaptarAsignacionPageContent() {
         </div>
       )}
 
-      <div className={componentStyles.layout.page}>
+      <div className="studia-section">
         <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
             <div className="flex items-center justify-between">

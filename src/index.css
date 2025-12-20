@@ -243,6 +243,7 @@ button:focus-visible {
  * ============================================================================ */
 
 /* Page container - consumes page layout tokens */
+/* Used by footer and page content areas for consistent alignment */
 .page-container {
   max-width: var(--page-max-width, 1280px);
   padding-inline: var(--page-padding-x, 1rem);
@@ -270,6 +271,133 @@ button:focus-visible {
   min-height: var(--header-height, 4rem);
 }
 
+/* ============================================================================
+ * PAGE HEADER - Scoped by App Mode
+ * 
+ * ADMIN mode: header with full-bleed inside main (compensates container padding)
+ * STUDIA mode: header 100% viewport, no bleed hacks
+ * ============================================================================ */
+
+/* ── Base Header Styles (shared) ── */
+.page-header-shell {
+  background: var(--header-shell-bg, var(--header-bg, var(--color-surface-elevated)));
+  border-bottom: 1px solid var(--header-shell-border, var(--header-border, var(--color-border-default)));
+  box-shadow: var(--header-shell-shadow, none);
+}
+
+.page-header-inner {
+  width: 100%;
+  max-width: 64rem;
+  /* Match studia-section for consistent layout */
+  margin: 0 auto;
+  padding-inline: 1rem;
+  /* Match studia-section px-4 */
+  padding-block: var(--header-inner-padding-y, 0.75rem);
+  border-radius: var(--header-inner-radius, 0);
+}
+
+/* ── STUDIA MODE: Override to prevent bleed ── */
+:root[data-app-mode="studia"] .page-header-shell {
+  /* CRITICAL: No negative margins in studia mode */
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: 100%;
+  background: var(--studia-header-bg, var(--color-surface));
+  border-bottom: 1px solid var(--studia-header-border, var(--color-border-muted));
+}
+
+:root[data-app-mode="studia"] .page-header-inner {
+  max-width: 64rem;
+  /* Same as studia-section for consistent alignment */
+  margin: 0 auto;
+  padding-inline: 1rem;
+  /* Same as studia-section */
+  padding-block: var(--studia-header-padding-y, 1rem);
+}
+
+/* ── STUDIA MODE: Player headers (hoy.jsx, studia.jsx) ── */
+/* These are inline headers in the study player that don't use PageHeader component */
+.studia-player-header {
+  width: 100%;
+  background: var(--studia-header-bg, var(--color-surface));
+  border-bottom: 1px solid var(--studia-header-border, var(--color-border-muted));
+}
+
+.studia-player-header-inner {
+  width: 100%;
+  max-width: 64rem;
+  /* Same as footer max-w-5xl for consistent alignment */
+  margin: 0 auto;
+  padding-inline: var(--studia-page-padding-x, 1rem);
+  padding-block: var(--studia-header-padding-y, 1rem);
+}
+
+/* ============================================================================ 
+ * STUDIA MODE - Unified Layout Classes
+ * These provide consistent max-width and padding for all studia pages
+ * ============================================================================ */
+
+/* Main content container for studia pages - horizontal padding only */
+.studia-content {
+  width: 100%;
+  max-width: 64rem;
+  /* Same as Tailwind max-w-5xl */
+  margin: 0 auto;
+  padding-inline: 1rem;
+}
+
+/* Section with vertical padding (for page body content) */
+.studia-section {
+  width: 100%;
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 1rem 1rem 1.5rem;
+}
+
+/* Alias for components that manage their own vertical padding */
+.studia-container {
+  width: 100%;
+  max-width: 64rem;
+  margin: 0 auto;
+  padding-inline: 1rem;
+}
+
+
+/* Grid - standard layout for title row (title left, actions right) */
+.page-header-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--header-row-gap, 0.5rem);
+}
+
+/* Title area (icon + title + optional subtitle) */
+.page-header-title {
+  display: flex;
+  align-items: center;
+  gap: var(--header-title-gap, 0.5rem);
+  flex: 1;
+  min-width: 0;
+}
+
+/* Actions area (buttons, always right side) */
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--header-title-gap, 0.5rem);
+  flex-shrink: 0;
+}
+
+/* Controls row (filters, tabs, search) - full width */
+.page-header-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--header-controls-gap, 0.5rem);
+  width: 100%;
+}
+
 @layer components {
 
   /* Tipografía semántica */
@@ -294,7 +422,7 @@ button:focus-visible {
     font-family: "Open Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
 
-  /* Controles unificados */
+  /* Controles unificados - tokens derivados de densidad */
   .ctrl-field {
     width: 100%;
     background-color: var(--ctrl-field-bg, var(--color-surface));
@@ -303,10 +431,11 @@ button:focus-visible {
     border-style: solid;
     border-color: rgba(0, 0, 0, 0.1);
     /* Borde más sutil - 30% opacidad */
-    border-radius: var(--ctrl-field-radius, var(--radius-ctrl));
-    padding: var(--input-padding);
-    height: var(--ctrl-field-height, auto);
-    min-height: var(--ctrl-field-height, auto);
+    border-radius: var(--ctrl-field-radius, var(--radius-ctrl, var(--radius-controls, 10px)));
+    /* Padding y altura desde tokens de densidad */
+    padding: var(--control-padding-y, 0.5rem) var(--control-padding-x, 1rem);
+    height: var(--control-height, 2.5rem);
+    min-height: var(--control-height, 2.5rem);
     line-height: 1.5;
     position: relative;
     /* Para posicionar iconos absolutos dentro */
