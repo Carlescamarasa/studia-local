@@ -229,6 +229,45 @@ button:focus-visible {
   body {
     @apply bg-background text-foreground;
   }
+
+  /* PHASE 1 FIX: Typography base - consume --font-size-base */
+  /* All rem units will now scale with this token */
+  html {
+    font-size: var(--font-size-base, 16px);
+  }
+}
+
+/* ============================================================================
+ * PHASE 1: Layout Token Consumption Classes
+ * These classes consume CSS vars from designConfig.ts for global layout control
+ * ============================================================================ */
+
+/* Page container - consumes page layout tokens */
+.page-container {
+  max-width: var(--page-max-width, 1280px);
+  padding-inline: var(--page-padding-x, 1rem);
+  padding-block: var(--page-padding-y, 2rem);
+  margin-inline: auto;
+}
+
+/* Section spacing - consumes section gap token */
+.section-gap {
+  margin-block: var(--page-section-gap-y, 2rem);
+}
+
+/* Sidebar width classes - consume sidebar tokens */
+.sidebar-width {
+  width: var(--sidebar-width, 16rem);
+}
+
+.sidebar-width-collapsed {
+  width: var(--sidebar-width-collapsed, 4rem);
+}
+
+/* Header height - consume header token */
+.header-height {
+  height: var(--header-height, 4rem);
+  min-height: var(--header-height, 4rem);
 }
 
 @layer components {
@@ -735,6 +774,10 @@ button:focus-visible {
     position: sticky;
     top: 0;
     z-index: 50;
+    /* Consume header-height token - min-height allows content to grow if needed */
+    min-height: var(--header-height, 4rem);
+    display: flex;
+    align-items: center;
     /* Por encima del header mobile (z-[70]) pero por debajo de modales (z-[110]) */
     background: var(--header-bg, var(--color-surface-elevated)) !important;
     backdrop-filter: blur(16px) saturate(180%);

@@ -9,6 +9,79 @@ export const SECTIONS = [
     { id: 'focus', label: 'Accesibilidad y Focus', icon: 'Accessibility', description: 'Indicadores de foco y accesibilidad' },
 ];
 
+/**
+ * PHASE 3: Visibility metadata for design controls.
+ * Each control can be:
+ *   - 'visible': Control produces visible changes in the DOM
+ *   - 'emit-only': CSS var is emitted but not yet consumed (needs wiring)
+ *   - 'broken': Control doesn't emit any CSS var or is disconnected
+ * 
+ * consumerHint: Short description of where the token is consumed.
+ */
+export const VISIBILITY_STATUS = {
+    // ✅ VISIBLE - Colors (via Tailwind HSL mapping)
+    'colors.primary': { visibility: 'visible', consumerHint: 'Tailwind hsl(var(--primary)), .btn-studia, etc.' },
+    'colors.primarySoft': { visibility: 'visible', consumerHint: 'var(--color-primary-soft) in hover states' },
+    'colors.secondary': { visibility: 'visible', consumerHint: 'Tailwind hsl(var(--secondary))' },
+    'colors.background': { visibility: 'visible', consumerHint: 'Tailwind bg-background' },
+    'colors.surface': { visibility: 'visible', consumerHint: 'var(--color-surface) in controls' },
+    'colors.surfaceElevated': { visibility: 'visible', consumerHint: '.sidebar-modern, .header-modern' },
+    'colors.surfaceMuted': { visibility: 'visible', consumerHint: 'var(--color-surface-muted) in hovers' },
+    'colors.text.primary': { visibility: 'visible', consumerHint: 'var(--color-text-primary), Tailwind foreground' },
+    'colors.text.secondary': { visibility: 'visible', consumerHint: 'var(--color-text-secondary)' },
+    'colors.text.muted': { visibility: 'visible', consumerHint: 'Tailwind muted-foreground' },
+    'colors.border.default': { visibility: 'visible', consumerHint: 'var(--color-border-default), Tailwind border' },
+    'colors.success': { visibility: 'visible', consumerHint: '.btn-success, status indicators' },
+    'colors.warning': { visibility: 'visible', consumerHint: '.btn-warning, alert states' },
+    'colors.danger': { visibility: 'visible', consumerHint: 'Tailwind destructive, .btn-destructive' },
+
+    // ✅ VISIBLE - Radius (via Tailwind + CSS classes)
+    'layout.radius.global': { visibility: 'visible', consumerHint: 'Tailwind rounded-lg/md/sm' },
+    'layout.shadowLength': { visibility: 'visible', consumerHint: 'Card shadows via --shadow-card' },
+
+    // ✅ VISIBLE - Typography (after Phase 1 fix)
+    'typography.fontFamilyBase': { visibility: 'visible', consumerHint: '.font-base in index.css' },
+    'typography.fontFamilyHeadings': { visibility: 'visible', consumerHint: '.font-headings in index.css' },
+    'typography.fontSizeBase': { visibility: 'visible', consumerHint: 'html { font-size } after Phase 1' },
+    'typography.fontSizeScale': { visibility: 'visible', consumerHint: '--font-size-sm/lg/xl derived vars' },
+
+    // ⚠️ EMIT-ONLY - Needs migration to consume
+    'typography.lineHeight.tight': { visibility: 'emit-only', consumerHint: 'No consumer yet - needs CSS rule' },
+    'typography.lineHeight.normal': { visibility: 'emit-only', consumerHint: 'No consumer yet - needs CSS rule' },
+
+    // ✅ VISIBLE - Layout (after Phase 1 fix)
+    'layout.density': { visibility: 'visible', consumerHint: '.ds-density-* classes on body' },
+
+    // ⚠️ EMIT-ONLY - Page layout tokens (classes exist but not applied globally yet)
+    'layout.page.maxWidth': { visibility: 'emit-only', consumerHint: '.page-container class exists, apply to layouts' },
+    'layout.page.paddingX': { visibility: 'emit-only', consumerHint: '.page-container or Tailwind p-ds-page-x' },
+    'layout.page.paddingY': { visibility: 'emit-only', consumerHint: '.page-container or Tailwind p-ds-page-y' },
+
+    // ✅ VISIBLE - Sidebar/Header (after Phase 1 fix)
+    'layout.sidebar.width': { visibility: 'visible', consumerHint: '.sidebar-width class in Layout.jsx' },
+    'components.header.height': { visibility: 'emit-only', consumerHint: '.header-height class exists, apply to header' },
+
+    // ✅ VISIBLE - Controls
+    'controls.field.height': { visibility: 'visible', consumerHint: '.ctrl-field height' },
+    'controls.field.radius': { visibility: 'visible', consumerHint: '.ctrl-field border-radius' },
+    'controls.button.height': { visibility: 'visible', consumerHint: '.btn height via --btn-height' },
+    'controls.button.radius': { visibility: 'visible', consumerHint: '.btn border-radius via --btn-radius' },
+
+    // ✅ VISIBLE - Card components
+    'components.card.radius': { visibility: 'visible', consumerHint: '.app-card border-radius' },
+    'components.card.padding.x': { visibility: 'visible', consumerHint: '.app-card padding-inline' },
+    'components.card.padding.y': { visibility: 'visible', consumerHint: '.app-card padding-block' },
+};
+
+/**
+ * Get visibility status for a control by id.
+ * Returns { visibility: 'visible'|'emit-only'|'broken', consumerHint: string }
+ */
+export function getControlVisibility(controlId) {
+    return VISIBILITY_STATUS[controlId] || { visibility: 'emit-only', consumerHint: 'Unknown - check coverage report' };
+}
+
+
 export const DESIGN_CONTROLS = [
     // --- A. MARCA ---
     {

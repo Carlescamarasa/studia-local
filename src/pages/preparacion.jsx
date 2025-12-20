@@ -316,11 +316,19 @@ function PreparacionPageContent() {
                                                 const isSelected = selectedStudentId === estudiante.id;
 
                                                 return (
-                                                    <button
+                                                    <div
                                                         key={estudiante.id}
                                                         onClick={() => setSelectedStudentId(estudiante.id)}
+                                                        role="button"
+                                                        tabIndex={0}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                                e.preventDefault();
+                                                                setSelectedStudentId(estudiante.id);
+                                                            }
+                                                        }}
                                                         className={cn(
-                                                            "w-full text-left p-3 border-b transition-colors flex items-center justify-between",
+                                                            "w-full text-left p-3 border-b transition-colors flex items-center justify-between cursor-pointer",
                                                             isSelected
                                                                 ? "bg-[var(--color-primary)]/10 border-l-4 border-l-[var(--color-primary)]"
                                                                 : "hover:bg-muted/50"
@@ -346,7 +354,7 @@ function PreparacionPageContent() {
                                                             <UserActionsMenu user={estudiante} usuarios={usuarios} />
                                                             <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                                                         </div>
-                                                    </button>
+                                                    </div>
                                                 );
                                             })}
                                         </div>
