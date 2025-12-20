@@ -93,8 +93,38 @@ export default function HabilidadesView({
         enabled: !!singleId && !isMultiple
     });
 
+    // Profiles for multiple students (for level grouping)
+    const { data: multipleStudentProfiles = [] } = useQuery({
+        queryKey: ['student-profiles-multiple', effectiveIds],
+        queryFn: async () => {
+            const allUsers = await localDataClient.entities.User.list();
+            return allUsers.filter((u: any) => effectiveIds.includes(u.id));
+        },
+        enabled: isMultiple && effectiveIds.length > 0
+    });
+
+    // Group students by level for multi-student display
+    const levelGroups = useMemo(() => {
+        if (!isMultiple || multipleStudentProfiles.length === 0) return [];
+
+        const groups: Record<number, { level: number; label: string; students: { id: string; name: string }[] }> = {};
+
+        multipleStudentProfiles.forEach((profile: any) => {
+            const level = profile.nivelTecnico || 1;
+            if (!groups[level]) {
+                const label = level >= 10 ? "Profesional" : level >= 7 ? "Avanzado" : level >= 4 ? "Intermedio" : "Principiante";
+                groups[level] = { level, label, students: [] };
+            }
+            const name = profile.fullName || profile.email?.split('@')[0] || 'Sin nombre';
+            groups[level].students.push({ id: profile.id, name });
+        });
+
+        // Sort by level ascending
+        return Object.values(groups).sort((a, b) => a.level - b.level);
+    }, [isMultiple, multipleStudentProfiles]);
+
     const currentLevel = studentProfile?.nivelTecnico || 1;
-    const nextLevel = currentLevel + 1; // Used for criteria section (requirements to advance)
+    // Note: We show criteria for currentLevel (what student achieved/needs at this level)
 
     const { data: currentLevelConfig } = useQuery({
         queryKey: ['level-config', currentLevel],
@@ -109,36 +139,36 @@ export default function HabilidadesView({
     // LEVEL CRITERIA STATE (for single student)
     // =========================================================================
     const effectiveUser = useEffectiveUser();
-    const [nextLevelCriteria, setNextLevelCriteria] = useState<CriteriaStatusResult[]>([]);
+    const [currentLevelCriteria, setCurrentLevelCriteria] = useState<CriteriaStatusResult[]>([]);
     const [loadingCriteria, setLoadingCriteria] = useState(false);
 
     // Load level criteria when single student is selected
     useEffect(() => {
         const loadCriteria = async () => {
             if (!singleId || isMultiple) {
-                setNextLevelCriteria([]);
+                setCurrentLevelCriteria([]);
                 return;
             }
             setLoadingCriteria(true);
             try {
-                const criteria = await computeKeyCriteriaStatus(singleId, nextLevel);
-                setNextLevelCriteria(criteria);
+                const criteria = await computeKeyCriteriaStatus(singleId, currentLevel);
+                setCurrentLevelCriteria(criteria);
             } catch (error) {
                 console.error('Error loading criteria:', error);
-                setNextLevelCriteria([]);
+                setCurrentLevelCriteria([]);
             } finally {
                 setLoadingCriteria(false);
             }
         };
         loadCriteria();
-    }, [singleId, isMultiple, nextLevel]);
+    }, [singleId, isMultiple, currentLevel]);
 
     // Handle criteria toggle (for PROF/ADMIN only)
     const handleCriteriaToggle = async (criterionId: string, currentStatus: string) => {
         const newStatus = currentStatus === 'PASSED' ? 'FAILED' : 'PASSED';
 
         // Optimistic update
-        setNextLevelCriteria(prev => prev.map(c =>
+        setCurrentLevelCriteria(prev => prev.map(c =>
             c.criterion.id === criterionId ? { ...c, status: newStatus as any } : c
         ));
 
@@ -160,8 +190,8 @@ export default function HabilidadesView({
         } catch (error) {
             console.error('Error updating criteria:', error);
             // Reload on error
-            const criteria = await computeKeyCriteriaStatus(singleId, nextLevel);
-            setNextLevelCriteria(criteria);
+            const criteria = await computeKeyCriteriaStatus(singleId, currentLevel);
+            setCurrentLevelCriteria(criteria);
         }
     };
 
@@ -415,12 +445,48 @@ export default function HabilidadesView({
 
                             {/* Nivel - order-1 (first on mobile and desktop) */}
                             <div className="flex flex-col order-1 sm:order-1">
-                                <span className="text-[10px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
-                                    Nivel {currentLevel}
-                                </span>
-                                <span className="text-sm font-bold text-[var(--color-text-primary)]">
-                                    {studentProfile?.etiquetaNivel || (currentLevel >= 10 ? "Profesional" : currentLevel >= 7 ? "Avanzado" : currentLevel >= 4 ? "Intermedio" : "Principiante")}
-                                </span>
+                                {!isMultiple ? (
+                                    // Single student: show level and name
+                                    <>
+                                        <span className="text-[10px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                                            Nivel {currentLevel}
+                                        </span>
+                                        <span className="text-sm font-bold text-[var(--color-text-primary)]">
+                                            {studentProfile?.fullName || studentProfile?.email?.split('@')[0] || 'Estudiante'}
+                                        </span>
+                                    </>
+                                ) : (
+                                    // Multiple students: show grouped levels with tooltips
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[10px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                                            Niveles
+                                        </span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {levelGroups.map((group) => (
+                                                <TooltipProvider key={group.level}>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-[var(--color-surface-muted)] text-[10px] font-medium text-[var(--color-text-primary)] rounded cursor-help">
+                                                                <span>{group.students.length}</span>
+                                                                <span className="text-[var(--color-text-secondary)]">Nv{group.level}</span>
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="bottom" className="max-w-[200px]">
+                                                            <div className="text-xs">
+                                                                <p className="font-semibold mb-1">Nivel {group.level} · {group.label}</p>
+                                                                <ul className="space-y-0.5">
+                                                                    {group.students.map((s) => (
+                                                                        <li key={s.id} className="text-[var(--color-text-secondary)]">• {s.name}</li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Leyenda - order-2 on mobile (next to Nivel), order-4 on desktop (last) */}
@@ -515,18 +581,18 @@ export default function HabilidadesView({
                         </div>
 
                         {/* Level Requirements - only show in single student mode with criteria */}
-                        {!isMultiple && nextLevelCriteria.length > 0 && (
+                        {!isMultiple && currentLevelCriteria.length > 0 && (
                             <div className="mt-3 pt-3 border-t border-[var(--color-border)]/30">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-secondary)] font-semibold">
-                                        Requisitos Nivel {nextLevel}
+                                        Criterios Nivel {currentLevel}
                                     </span>
                                     <span className="text-[10px] text-[var(--color-text-secondary)]">
-                                        {nextLevelCriteria.filter(c => c.status === 'PASSED').length}/{nextLevelCriteria.length}
+                                        {currentLevelCriteria.filter(c => c.status === 'PASSED').length}/{currentLevelCriteria.length}
                                     </span>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
-                                    {nextLevelCriteria.map((item) => {
+                                    {currentLevelCriteria.map((item) => {
                                         const isPassed = item.status === 'PASSED';
                                         const isEditable = canEdit && item.criterion.source === 'PROF';
 
