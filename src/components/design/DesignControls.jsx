@@ -130,10 +130,10 @@ function ControlRow({ control, value, onChange, isFavorite, onToggleFavorite, co
                         variant="ghost"
                         size="icon"
                         onClick={() => onToggleFavorite(control.id)}
-                        className={`h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity ${isFavorite ? 'opacity-100 text-yellow-500 hover:text-yellow-600' : 'text-gray-400 hover:text-yellow-500'}`}
+                        className={`h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity ${isFavorite ? 'opacity-100 text-yellow-500 hover:text-yellow-600' : 'text-gray-400 hover:text-yellow-500'}`}
                         title={isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
                     >
-                        <Star className={`w-3.5 h-3.5 ${isFavorite ? 'fill-current' : ''}`} />
+                        <Star className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
                     </Button>
                     {control.level === 'advanced' && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--color-surface-muted)] text-[var(--color-text-muted)] border border-[var(--color-border-muted)]">
@@ -221,7 +221,7 @@ export function DesignControls({ design, setDesignPartial, componentStyles }) {
 
     const activeSections = useMemo(() => {
         if (searchQuery) return SECTIONS.map(s => s.id); // Open all when searching
-        return ['brand', 'theme-colors']; // Defaults
+        return []; // Closed by default
     }, [searchQuery]);
 
     const favoriteControls = useMemo(() => {
@@ -296,13 +296,13 @@ export function DesignControls({ design, setDesignPartial, componentStyles }) {
 
                     return (
                         <AccordionItem key={section.id} value={section.id} className="border-b border-[var(--color-border-default)]">
-                            <AccordionTrigger className="hover:no-underline py-4">
+                            <AccordionTrigger className="hover:no-underline py-4 px-2 hover:bg-[var(--color-surface-muted)]/50 rounded-lg transition-colors">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-1.5 rounded-lg bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]">
-                                        <Icon className="w-4 h-4" />
+                                    <div className="p-2 rounded-lg bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] border border-[var(--color-border-muted)]">
+                                        <Icon className="w-5 h-5" />
                                     </div>
                                     <div className="text-left">
-                                        <div className="text-sm font-semibold text-[var(--color-text-primary)]">
+                                        <div className="text-base font-semibold text-[var(--color-text-primary)]">
                                             {section.label}
                                         </div>
                                         {/* Show count of matches if searching */}

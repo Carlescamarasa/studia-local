@@ -40,18 +40,19 @@ const STYLE_PROPERTIES = [
 ];
 
 // Tailwind arbitrary patterns AND standard color classes
+// Tailwind arbitrary patterns AND standard color classes
 const TAILWIND_PATTERNS = [
     // Arbitrary values
-    { regex: /\bbg-\[#[0-9a-f]{3,8}\]/gi, category: 'background' },
-    { regex: /\bbg-\[rgb\([^)]+\)\]/gi, category: 'background' },
-    { regex: /\btext-\[#[0-9a-f]{3,8}\]/gi, category: 'color' },
-    { regex: /\btext-\[rgb\([^)]+\)\]/gi, category: 'color' },
-    { regex: /\bborder-\[#[0-9a-f]{3,8}\]/gi, category: 'border' },
-    { regex: /\brounded-\[\d+(\.\d+)?(px|rem|em|%)\]/gi, category: 'radius' },
+    { regex: /\bbg-\[#[0-9a-f]{3,8}\]/gi, category: 'background', type: 'arbitrary' },
+    { regex: /\bbg-\[rgb\([^)]+\)\]/gi, category: 'background', type: 'arbitrary' },
+    { regex: /\btext-\[#[0-9a-f]{3,8}\]/gi, category: 'color', type: 'arbitrary' },
+    { regex: /\btext-\[rgb\([^)]+\)\]/gi, category: 'color', type: 'arbitrary' },
+    { regex: /\bborder-\[#[0-9a-f]{3,8}\]/gi, category: 'border', type: 'arbitrary' },
+    { regex: /\brounded-\[\d+(\.\d+)?(px|rem|em|%)\]/gi, category: 'radius', type: 'arbitrary' },
     // Standard Tailwind color classes (hardcoded colors not using CSS vars)
-    { regex: /\bbg-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-\d{2,3}\b/gi, category: 'background' },
-    { regex: /\btext-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-\d{2,3}\b/gi, category: 'color' },
-    { regex: /\bborder-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-\d{2,3}\b/gi, category: 'border' },
+    { regex: /\bbg-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-\d{2,3}\b/gi, category: 'background', type: 'non-var' },
+    { regex: /\btext-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-\d{2,3}\b/gi, category: 'color', type: 'non-var' },
+    { regex: /\bborder-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-\d{2,3}\b/gi, category: 'border', type: 'non-var' },
 ];
 
 // Excluded zones
@@ -191,14 +192,14 @@ function scanPage() {
         // Check Tailwind classes
         const className = el.className;
         if (className && typeof className === 'string') {
-            TAILWIND_PATTERNS.forEach(({ regex, category }) => {
+            TAILWIND_PATTERNS.forEach(({ regex, category, type }) => {
                 regex.lastIndex = 0;
                 const matches = className.match(regex);
                 if (matches) {
                     matches.forEach(match => {
                         const normalized = normalizeColor(match);
                         if (!byColor.has(normalized)) {
-                            byColor.set(normalized, { count: 0, elements: [], type: 'tailwind', category });
+                            byColor.set(normalized, { count: 0, elements: [], type, category });
                         }
                         const entry = byColor.get(normalized);
                         entry.count++;
@@ -412,9 +413,13 @@ export function HardcodeInspector() {
             ``,
             `## Hardcoded Values Found`,
             `Found ${results.reduce((acc, r) => acc + r.count, 0)} hardcoded values on this page.`,
+            `Filter: ${typeFilter}`,
             ``,
         ];
-        results.forEach(r => {
+
+        const reportData = typeFilter === 'all' ? results : filteredResults;
+
+        reportData.forEach(r => {
             const adjustment = savedAdjustments.find(a => a.hardcode === r.color);
             if (adjustment) {
                 lines.push(`- ✅ **${r.color}** → \`var(${adjustment.replacement})\` (${r.count}× ${r.type}, ${r.category})`);
@@ -612,10 +617,10 @@ export function HardcodeInspector() {
 
             {/* Type filter tabs */}
             {totalCount > 0 && (
-                <div className="flex gap-1 px-2 py-1.5 border-b border-[var(--color-border-muted)]">
+                <div className="flex gap-1 px-2 py-1.5 border-b border-[var(--color-border-muted)] overflow-x-auto">
                     <button
                         onClick={() => setTypeFilter('all')}
-                        className={`px-2 py-1 text-[10px] rounded transition-colors ${typeFilter === 'all'
+                        className={`px-2 py-1 text-[10px] rounded transition-colors whitespace-nowrap ${typeFilter === 'all'
                             ? 'bg-[var(--color-primary)] text-white'
                             : 'bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]'
                             }`}
@@ -624,21 +629,30 @@ export function HardcodeInspector() {
                     </button>
                     <button
                         onClick={() => setTypeFilter('inline')}
-                        className={`px-2 py-1 text-[10px] rounded transition-colors ${typeFilter === 'inline'
+                        className={`px-2 py-1 text-[10px] rounded transition-colors whitespace-nowrap ${typeFilter === 'inline'
                             ? 'bg-[var(--color-warning)] text-white'
                             : 'bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]'
                             }`}
                     >
-                        🔧 Inline ({inlineCount})
+                        🔧 Inline
                     </button>
                     <button
-                        onClick={() => setTypeFilter('tailwind')}
-                        className={`px-2 py-1 text-[10px] rounded transition-colors ${typeFilter === 'tailwind'
+                        onClick={() => setTypeFilter('arbitrary')}
+                        className={`px-2 py-1 text-[10px] rounded transition-colors whitespace-nowrap ${typeFilter === 'arbitrary'
                             ? 'bg-purple-500 text-white'
                             : 'bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]'
                             }`}
                     >
-                        🎨 Tailwind ({tailwindCount})
+                        🎨 Arbitrary
+                    </button>
+                    <button
+                        onClick={() => setTypeFilter('non-var')}
+                        className={`px-2 py-1 text-[10px] rounded transition-colors whitespace-nowrap ${typeFilter === 'non-var'
+                            ? 'bg-pink-500 text-white'
+                            : 'bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]'
+                            }`}
+                    >
+                        🚫 Non-Var
                     </button>
                 </div>
             )}

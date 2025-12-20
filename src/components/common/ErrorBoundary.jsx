@@ -110,8 +110,7 @@ class ErrorBoundary extends React.Component {
       msg.includes('Loading chunk') ||
       msg.includes('dynamically imported module') ||
       msg.includes('Importing a module script failed') ||
-      msg.includes('missing') || // A veces 'missing' en logs de webpack
-      msg.includes('types/html') // Referencia al error MIME type text/html
+      (msg.includes('types/html') && msg.includes('MIME')) // Más específico para error de MIME type
     );
   }
 
@@ -140,12 +139,23 @@ class ErrorBoundary extends React.Component {
 
                 <div>
                   <h2 className={`${isCompact ? 'text-lg font-bold' : componentStyles.typography.sectionTitle} mb-2`}>
-                    Nueva versión disponible
+                    Error de conexión / Actualización
                   </h2>
                   <p className={`${componentStyles.typography.bodyText} ${isCompact ? 'text-sm' : ''}`}>
-                    Hemos detectado una actualización de la aplicación. Por favor, actualiza recuperar la conexión y disfrutar de las últimas mejoras.
+                    No hemos podido cargar parte de la aplicación. Puede ser un problema de conexión o que haya una nueva versión disponible.
                   </p>
                 </div>
+
+                {this.state.error && (
+                  <div className="text-left bg-[var(--color-surface-muted)] rounded-lg p-4 text-sm max-h-48 overflow-y-auto">
+                    <div className="space-y-2">
+                      <p className="font-semibold text-xs text-[var(--color-text-primary)]">Detalle del error:</p>
+                      <p className="text-[var(--color-text-secondary)] break-words font-mono text-xs">
+                        {this.state.error.toString()}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex justify-center">
                   <Button
@@ -153,7 +163,7 @@ class ErrorBoundary extends React.Component {
                     className={`${componentStyles.buttons.primary} gap-2 w-full sm:w-auto px-8`}
                   >
                     <RefreshCw className="w-4 h-4" />
-                    Actualizar ahora
+                    Recargar aplicación
                   </Button>
                 </div>
               </CardContent>
