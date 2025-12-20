@@ -316,8 +316,9 @@ function AgendaPageContent() {
     return (
       <div
         key={row.id}
-        className={`rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-default)] dark:bg-[var(--color-surface-elevated)] px-4 py-3 md:px-5 md:py-4 shadow-sm flex flex-col gap-3 md:gap-4 ${isSelected ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]' : ''
+        className={`border border-[var(--color-border-default)] bg-[var(--color-surface-default)] dark:bg-[var(--color-surface-elevated)] px-4 py-3 md:px-5 md:py-4 shadow-sm flex flex-col gap-3 md:gap-4 ${isSelected ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]' : ''
           }`}
+        style={{ borderRadius: 'var(--card-radius, 0.75rem)' }}
       >
         {/* Cabecera: avatar + nombre + badges */}
         <div className="flex flex-col gap-2 md:gap-0">

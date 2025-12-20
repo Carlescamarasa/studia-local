@@ -8,7 +8,7 @@
 // TIPOS Y MAPAS
 // ============================================================================
 
-export type RadiusValue = 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
+export type RadiusValue = 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full' | 'auto';
 export type ShadowValue = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'card';
 export type DensityValue = 'compact' | 'normal' | 'spacious';
 export type ThemeValue = 'light' | 'dark' | 'system';
@@ -24,6 +24,7 @@ export const RADIUS_MAP: Record<RadiusValue, string> = {
   '2xl': '1.25rem', // 20px
   '3xl': '1.5rem',  // 24px
   full: '9999px',
+  auto: '',        // 'auto' uses fallback logic, this value is never used directly
 };
 
 // Mapeo de valores de shadow a CSS
@@ -734,6 +735,10 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
       }
       // Header inner radius - usa card radius por defecto
       vars['--header-inner-radius'] = getRadiusValue((normalized.layout.radius as any).card || 'none');
+
+      // Badge and pill radius - uses pill from preset or defaults to control radius
+      const pillRadius = vars['--radius-pill'] || vars['--radius-ctrl'] || getRadiusValue('full');
+      vars['--badge-radius'] = pillRadius;
     }
   }
 
@@ -857,21 +862,36 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
   if (normalized.components) {
     if (normalized.components.input) {
       vars['--input-padding'] = normalized.components.input.padding || DEFAULT_DESIGN.components.input.padding;
-      vars['--input-radius'] = getRadiusValue(normalized.components.input.radius || DEFAULT_DESIGN.components.input.radius);
+      // Input radius: component override → preset controls → default
+      const inputRadius = normalized.components.input.radius;
+      if (inputRadius && inputRadius !== 'auto') {
+        vars['--input-radius'] = inputRadius === 'none' ? '0px' : getRadiusValue(inputRadius as RadiusValue);
+      } else {
+        // Fallback to preset controls radius, then default
+        vars['--input-radius'] = vars['--radius-ctrl'] || vars['--radius-controls'] || getRadiusValue(DEFAULT_DESIGN.components.input.radius);
+      }
       // Extraer width del border (ej: "2px solid" -> "2px")
       const borderValue = normalized.components.input.border || DEFAULT_DESIGN.components.input.border;
       const borderWidth = borderValue.split(' ')[0] || '1px';
       vars['--input-border-width'] = borderWidth;
       vars['--input-border-color'] = normalized.components.input.borderColor || DEFAULT_DESIGN.components.input.borderColor;
-      // TODO(auditoría-DS3): Confirmar uso de `--input-radius`. En CSS global se usa principalmente `--radius-ctrl`.
     }
     if (normalized.components.button) {
       vars['--button-padding-sm'] = normalized.components.button.padding?.sm || DEFAULT_DESIGN.components.button.padding.sm;
       vars['--button-padding-md'] = normalized.components.button.padding?.md || DEFAULT_DESIGN.components.button.padding.md;
       vars['--button-padding-lg'] = normalized.components.button.padding?.lg || DEFAULT_DESIGN.components.button.padding.lg;
-      // Alias de compatibilidad: --button-radius usa --btn-radius si está disponible
-      const btnRadius = normalized.controls?.button?.radius || normalized.components.button.radius || DEFAULT_DESIGN.components.button.radius;
-      vars['--button-radius'] = getRadiusValue(btnRadius);
+      // Button radius: component override → controls.button → preset controls → default
+      const btnComponentRadius = normalized.components.button.radius;
+      const btnControlsRadius = normalized.controls?.button?.radius;
+      const btnRadius = btnComponentRadius || btnControlsRadius;
+      if (btnRadius && btnRadius !== 'auto') {
+        vars['--button-radius'] = btnRadius === 'none' ? '0px' : getRadiusValue(btnRadius as RadiusValue);
+      } else {
+        // Fallback to preset controls radius, then default
+        vars['--button-radius'] = vars['--radius-ctrl'] || vars['--radius-controls'] || getRadiusValue(DEFAULT_DESIGN.components.button.radius);
+      }
+      // Also emit --btn-radius as alias for compatibility
+      vars['--btn-radius'] = vars['--button-radius'];
     }
     if (normalized.components.card) {
       const card = normalized.components.card;
@@ -893,14 +913,25 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
       vars['--card-footer-padding-x'] = card.padding?.footer?.x || cardDefault.padding.footer.x;
       vars['--card-footer-padding-y'] = card.padding?.footer?.y || cardDefault.padding.footer.y;
 
-      // Radius y shadow
-      vars['--card-radius'] = getRadiusValue(card.radius || cardDefault.radius);
-      vars['--radius-card'] = vars['--radius-card'] || vars['--card-radius']; // Alias consistente
+      // Card radius: component override → preset card → default
+      const cardRadius = card.radius;
+      if (cardRadius && cardRadius !== 'auto') {
+        vars['--card-radius'] = cardRadius === 'none' ? '0px' : getRadiusValue(cardRadius as RadiusValue);
+      } else {
+        // Fallback to preset card radius (already set above), then default
+        vars['--card-radius'] = vars['--radius-card'] || getRadiusValue(cardDefault.radius);
+      }
+      // Ensure --radius-card alias is set for compatibility
+      if (!vars['--radius-card']) {
+        vars['--radius-card'] = vars['--card-radius'];
+      }
+
       vars['--shadow-card'] = getShadowValue(card.shadow || cardDefault.shadow);
 
       // Gap interno
       vars['--card-gap'] = card.gap || cardDefault.gap;
     }
+
     if (normalized.components.sidebar) {
       // Prioridad: layout.sidebar.width > components.sidebar.width
       vars['--sidebar-width'] = normalized.layout?.sidebar?.width || normalized.components.sidebar.width || DEFAULT_DESIGN.components.sidebar.width;

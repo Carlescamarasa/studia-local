@@ -28,10 +28,13 @@ export default function KpiTile({
     className,
 }) {
     return (
-        <div className={cn(
-            "flex flex-col items-center justify-between p-3 sm:p-4 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface)] h-full min-h-[140px]",
-            className
-        )}>
+        <div
+            className={cn(
+                "flex flex-col items-center justify-between p-3 sm:p-4 border border-[var(--color-border-default)] bg-[var(--color-surface)] h-full min-h-[140px]",
+                className
+            )}
+            style={{ borderRadius: 'var(--card-radius, 0.75rem)' }}
+        >
             {/* Header: Icon + Label */}
             <div className="flex flex-col items-center gap-1.5 mb-2 w-full">
                 {Icon && <Icon className="w-5 h-5 text-[var(--color-text-secondary)]" strokeWidth={1.5} />}

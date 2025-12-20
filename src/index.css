@@ -431,7 +431,7 @@ button:focus-visible {
     border-style: solid;
     border-color: rgba(0, 0, 0, 0.1);
     /* Borde más sutil - 30% opacidad */
-    border-radius: var(--ctrl-field-radius, var(--radius-ctrl, var(--radius-controls, 10px)));
+    border-radius: var(--input-radius, var(--ctrl-field-radius, var(--radius-ctrl, 10px)));
     /* Padding y altura desde tokens de densidad */
     padding: var(--control-padding-y, 0.5rem) var(--control-padding-x, 1rem);
     height: var(--control-height, 2.5rem);
@@ -492,8 +492,8 @@ button:focus-visible {
     border-bottom: 2px solid var(--color-border-strong);
     border-radius: 0;
     background-color: transparent;
-    padding-left: 0;
-    padding-right: 0;
+    /* Maintain vertical padding, remove only horizontal */
+    padding: var(--control-padding-y, 0.5rem) 0;
   }
 
   .ctrl-field--underline:focus-visible {
@@ -531,9 +531,9 @@ button:focus-visible {
     font-weight: 500;
     transition: all 300ms ease-out;
     cursor: pointer;
-    border-radius: var(--btn-radius, var(--button-radius));
-    height: var(--btn-height, auto);
-    min-height: var(--btn-height, auto);
+    border-radius: var(--button-radius, var(--radius-ctrl, 10px));
+    height: var(--control-height, 2.5rem);
+    min-height: var(--control-height, 2.5rem);
     box-shadow: none;
     /* Sin sombra por defecto - más minimalista */
   }
@@ -985,7 +985,7 @@ button:focus-visible {
 .badge {
   display: inline-flex;
   align-items: center;
-  border-radius: 9999px;
+  border-radius: var(--badge-radius, var(--radius-pill, 9999px));
   font-size: 0.75rem;
   font-weight: 500;
   padding: 0.25rem 0.5rem;

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  * @param {string} variant - Variante: neutral|primary|success|warning|danger|info|outline
  * @param {string} className - Clases adicionales
  */
-export default function Badge({ 
+export default function Badge({
   variant = "neutral",
   className = "",
   children,
@@ -42,7 +42,8 @@ export default function Badge({
 
   return (
     <span
-      className={cn("inline-flex items-center rounded-full text-xs px-2 py-0.5 font-medium", variantClasses, className)}
+      className={cn("inline-flex items-center text-xs px-2 py-0.5 font-medium", variantClasses, className)}
+      style={{ borderRadius: 'var(--badge-radius, var(--radius-pill, 9999px))' }}
       {...props}
     >
       {safeChildren}

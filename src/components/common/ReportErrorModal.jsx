@@ -130,8 +130,9 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         await new Promise(resolve => setTimeout(resolve, 300));
       }
 
-      // Encontrar el contenedor principal (el main o el body)
-      const mainContent = document.querySelector('main') || document.body;
+      // Encontrar el contenedor principal que incluye sidebar + main
+      // #main-content contiene tanto el sidebar como el área principal
+      const mainContent = document.querySelector('#main-content') || document.querySelector('main') || document.body;
 
       // Capturar usando html-to-image (soporta CSS moderno y variables P3)
       const dataUrl = await toPng(mainContent, {
