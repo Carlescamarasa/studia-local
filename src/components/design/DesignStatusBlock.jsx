@@ -4,7 +4,7 @@ import { useDesign } from './DesignProvider';
 import { useDesignDiff } from './useDesignDiff';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ds';
-import { Sun, Moon, RotateCcw, Download, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { Sun, Moon, RotateCcw, Download, ChevronDown, ChevronUp, X, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function DesignStatusBlock({ activeTab, onTabChange, tabs }) {
@@ -113,6 +113,23 @@ export function DesignStatusBlock({ activeTab, onTabChange, tabs }) {
                                 Salir
                             </Button>
                             <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    const text = [
+                                        common.length > 0 && `Comunes (${common.length}):\n${common.map(c => `  ${c.path}: ${c.to ?? c.newValue}`).join('\n')}`,
+                                        light.length > 0 && `Solo Light (${light.length}):\n${light.map(c => `  ${c.path}: ${c.to ?? c.newValue}`).join('\n')}`,
+                                        dark.length > 0 && `Solo Dark (${dark.length}):\n${dark.map(c => `  ${c.path}: ${c.to ?? c.newValue}`).join('\n')}`
+                                    ].filter(Boolean).join('\n\n');
+                                    navigator.clipboard.writeText(text);
+                                    toast.success('Cambios copiados al portapapeles');
+                                }}
+                                className="h-8 text-xs gap-2"
+                            >
+                                <Copy className="w-3.5 h-3.5" />
+                                Copiar
+                            </Button>
+                            <Button
                                 variant="default"
                                 size="sm"
                                 onClick={() => {
@@ -129,98 +146,103 @@ export function DesignStatusBlock({ activeTab, onTabChange, tabs }) {
                 </div>
             </div>
 
-            {/* Collapsible Changes Panel */}
-            {isPreviewActive && showChanges && hasChanges && (
-                <div className="border-t border-[var(--color-border-default)] p-4 bg-[var(--color-surface-muted)]">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                        {/* Common changes */}
-                        <div>
-                            <div className="font-semibold text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                                Comunes ({common.length})
+            {/* Collapsible Changes Panel - with smooth transition */}
+            {isPreviewActive && hasChanges && (
+                <div
+                    className={`bg-[var(--color-surface-muted)] overflow-hidden transition-all duration-200 ease-out ${showChanges ? 'border-t border-[var(--color-border-default)]' : ''}`}
+                    style={{
+                        display: 'grid',
+                        gridTemplateRows: showChanges ? '1fr' : '0fr',
+                    }}
+                >
+                    <div className="min-h-0 p-4" style={{ visibility: showChanges ? 'visible' : 'hidden' }}>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                            {/* Common changes */}
+                            <div>
+                                <div className="font-semibold text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                                    Comunes ({common.length})
+                                </div>
+                                {common.length > 0 ? (
+                                    <ul className="space-y-1 text-[var(--color-text-secondary)] max-h-40 overflow-y-auto">
+                                        {common.map((c, i) => (
+                                            <li key={i} className="flex items-center justify-between gap-2 group">
+                                                <span className="truncate font-mono text-[11px]">
+                                                    {c.path}: {String(c.to ?? c.newValue).slice(0, 20)}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => revertChange(c.path, 'common')}
+                                                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[var(--color-danger)]/10 text-[var(--color-danger)] transition-opacity shrink-0"
+                                                    title="Deshacer cambio"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-[var(--color-text-muted)] italic">Sin cambios</p>
+                                )}
                             </div>
-                            {common.length > 0 ? (
-                                <ul className="space-y-1 text-[var(--color-text-secondary)]">
-                                    {common.slice(0, 5).map((c, i) => (
-                                        <li key={i} className="flex items-center justify-between gap-2 group">
-                                            <span className="truncate font-mono text-[11px]">
-                                                {c.path}: {String(c.to ?? c.newValue).slice(0, 20)}
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() => revertChange(c.path, 'common')}
-                                                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[var(--color-danger)]/10 text-[var(--color-danger)] transition-opacity"
-                                                title="Deshacer cambio"
-                                            >
-                                                <X className="w-3 h-3" />
-                                            </button>
-                                        </li>
-                                    ))}
-                                    {common.length > 5 && <li className="text-[var(--color-text-muted)]">+{common.length - 5} más...</li>}
-                                </ul>
-                            ) : (
-                                <p className="text-[var(--color-text-muted)] italic">Sin cambios</p>
-                            )}
-                        </div>
 
-                        {/* Light-only changes */}
-                        <div>
-                            <div className="font-semibold text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                                Solo Light ({light.length})
+                            {/* Light-only changes */}
+                            <div>
+                                <div className="font-semibold text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                                    Solo Light ({light.length})
+                                </div>
+                                {light.length > 0 ? (
+                                    <ul className="space-y-1 text-[var(--color-text-secondary)] max-h-40 overflow-y-auto">
+                                        {light.map((c, i) => (
+                                            <li key={i} className="flex items-center justify-between gap-2 group">
+                                                <span className="truncate font-mono text-[11px]">
+                                                    {c.path}: {String(c.to ?? c.newValue).slice(0, 20)}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => revertChange(c.path, 'light')}
+                                                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[var(--color-danger)]/10 text-[var(--color-danger)] transition-opacity shrink-0"
+                                                    title="Deshacer cambio"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-[var(--color-text-muted)] italic">Sin cambios</p>
+                                )}
                             </div>
-                            {light.length > 0 ? (
-                                <ul className="space-y-1 text-[var(--color-text-secondary)]">
-                                    {light.slice(0, 5).map((c, i) => (
-                                        <li key={i} className="flex items-center justify-between gap-2 group">
-                                            <span className="truncate font-mono text-[11px]">
-                                                {c.path}: {String(c.to ?? c.newValue).slice(0, 20)}
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() => revertChange(c.path, 'light')}
-                                                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[var(--color-danger)]/10 text-[var(--color-danger)] transition-opacity"
-                                                title="Deshacer cambio"
-                                            >
-                                                <X className="w-3 h-3" />
-                                            </button>
-                                        </li>
-                                    ))}
-                                    {light.length > 5 && <li className="text-[var(--color-text-muted)]">+{light.length - 5} más...</li>}
-                                </ul>
-                            ) : (
-                                <p className="text-[var(--color-text-muted)] italic">Sin cambios</p>
-                            )}
-                        </div>
 
-                        {/* Dark-only changes */}
-                        <div>
-                            <div className="font-semibold text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
-                                Solo Dark ({dark.length})
+                            {/* Dark-only changes */}
+                            <div>
+                                <div className="font-semibold text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
+                                    Solo Dark ({dark.length})
+                                </div>
+                                {dark.length > 0 ? (
+                                    <ul className="space-y-1 text-[var(--color-text-secondary)] max-h-40 overflow-y-auto">
+                                        {dark.map((c, i) => (
+                                            <li key={i} className="flex items-center justify-between gap-2 group">
+                                                <span className="truncate font-mono text-[11px]">
+                                                    {c.path}: {String(c.to ?? c.newValue).slice(0, 20)}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => revertChange(c.path, 'dark')}
+                                                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[var(--color-danger)]/10 text-[var(--color-danger)] transition-opacity shrink-0"
+                                                    title="Deshacer cambio"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-[var(--color-text-muted)] italic">Sin cambios</p>
+                                )}
                             </div>
-                            {dark.length > 0 ? (
-                                <ul className="space-y-1 text-[var(--color-text-secondary)]">
-                                    {dark.slice(0, 5).map((c, i) => (
-                                        <li key={i} className="flex items-center justify-between gap-2 group">
-                                            <span className="truncate font-mono text-[11px]">
-                                                {c.path}: {String(c.to ?? c.newValue).slice(0, 20)}
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() => revertChange(c.path, 'dark')}
-                                                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[var(--color-danger)]/10 text-[var(--color-danger)] transition-opacity"
-                                                title="Deshacer cambio"
-                                            >
-                                                <X className="w-3 h-3" />
-                                            </button>
-                                        </li>
-                                    ))}
-                                    {dark.length > 5 && <li className="text-[var(--color-text-muted)]">+{dark.length - 5} más...</li>}
-                                </ul>
-                            ) : (
-                                <p className="text-[var(--color-text-muted)] italic">Sin cambios</p>
-                            )}
                         </div>
                     </div>
                 </div>
