@@ -2503,7 +2503,7 @@ export default function TestSeedPage({ embedded = false }) {
         />
       )}
 
-      <div className={`${componentStyles.layout.page} space-y-6`}>
+      <div className={`$"studia-section" space-y-6`}>
         <Alert className="rounded-xl border-[var(--color-info)]/20 bg-[var(--color-info)]/10">
           <AlertCircle className="h-4 w-4 text-[var(--color-info)]" />
           <AlertDescription className="text-xs text-[var(--color-info)]/80">

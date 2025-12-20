@@ -277,7 +277,7 @@ function SoportePageContent() {
         subtitle="Comunícate con tu profesor y resuelve tus dudas"
       />
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4">
+      <div className="studia-section py-3">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Lista de tickets */}
           <div className="lg:col-span-1">

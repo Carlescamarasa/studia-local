@@ -121,7 +121,7 @@ function ConfiguracionPageContent() {
                 subtitle="Ajustes del sistema y herramientas de administración"
             />
 
-            <div className={componentStyles.layout.page}>
+            <div className="studia-section">
                 <div className="flex justify-center mb-6">
                     <Tabs
                         value={tabActiva}

@@ -68,7 +68,7 @@ function BibliotecaPageContent() {
         subtitle="Gestiona tu biblioteca de piezas, planes y ejercicios"
       />
 
-      <div className={componentStyles.layout.page}>
+      <div className="studia-section">
         <Tabs
           variant="segmented"
           value={activeTab}

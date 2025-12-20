@@ -402,7 +402,7 @@ export default function AsignacionDetallePage() {
         subtitle={`Estudiante: ${getNombreVisible(alumno)}`}
       />
 
-      <div className={`${componentStyles.layout.page} space-y-4`}>
+      <div className={`$"studia-section" space-y-4`}>
         <Card className={componentStyles.containers.cardBase}>
           <CardHeader className="space-y-4">
             {/* Primera fila: Acciones */}

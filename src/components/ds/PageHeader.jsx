@@ -159,80 +159,73 @@ export default function PageHeader({
   return (
     <div
       ref={headerRef}
-      className={`page-header header-modern ${className}`}
+      className={`page-header-shell header-modern -mx-3 md:-mx-6 lg:-mx-[var(--page-padding-x)] ${className}`}
       data-testid="page-header"
-      style={{ position: 'relative', zIndex: 1 }}
     >
-      {/* Zona 1: Appbar - Icono + Título + Subtítulo (solo desktop) + Acciones (derecha) */}
-      <div className="px-2 sm:px-3 md:px-6 py-1.5 sm:py-2 md:py-2.5 border-b border-[var(--color-border-default)]" style={{ position: 'relative', zIndex: 1 }}>
-        <div className="max-w-7xl mx-auto">
-          {/* Primera fila: Botón menú (mobile) + Icono + Título + Acciones (derecha) */}
-          <div className="flex items-center gap-2 sm:gap-2 md:gap-3 mb-1 md:mb-1.5 flex-wrap" style={{ position: 'relative', zIndex: 1, pointerEvents: 'auto' }}>
-            {/* Primera línea: Botón menú (mobile) + Icono + Título */}
-            <div className="flex items-center gap-2 sm:gap-2 md:gap-3 flex-1 min-w-0">
-              {/* Botón de menú solo en mobile - tamaño grande para touch */}
-              {showMenuButton && (
-                <button
-                  onClick={toggleSidebar}
-                  className="lg:hidden hover:bg-[var(--color-surface-muted)] active:bg-[var(--color-surface-muted)]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 p-2.5 rounded-[var(--btn-radius,0.25rem)] transition-all min-h-[48px] min-w-[48px] h-12 w-12 flex items-center justify-center shrink-0 touch-manipulation -ml-1 relative z-10"
-                  aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
-                  aria-controls="sidebar"
-                  aria-expanded={abierto}
-                  type="button"
-                  style={{ pointerEvents: 'auto' }}
-                >
-                  {abierto ? <X className="w-6 h-6 pointer-events-none" /> : <Menu className="w-6 h-6 pointer-events-none" />}
-                </button>
-              )}
-              {/* Icono + Título: clickable en mobile/tablet para toggle sidebar */}
-              <div
-                className="flex items-center gap-2 sm:gap-2 md:gap-3 flex-1 min-w-0 lg:pointer-events-none cursor-pointer lg:cursor-default"
-                onClick={() => {
-                  // Solo toggle en móvil/tablet (< 1024px)
-                  if (window.innerWidth < 1024) {
-                    toggleSidebar();
-                  }
-                }}
-                role="button"
-                tabIndex={-1}
-                aria-hidden="true"
+      {/* Main header row - uses standard page-header-inner/grid classes */}
+      {/* Padding matches body content: px-3 md:px-6 lg:px-[var(--page-padding-x)] */}
+      <div className="page-header-inner px-3 md:px-6 lg:px-[var(--page-padding-x)]">
+        <div className="page-header-grid">
+          {/* Title area (icon + title) */}
+          <div className="page-header-title">
+            {/* Botón de menú solo en mobile - tamaño grande para touch */}
+            {showMenuButton && (
+              <button
+                onClick={toggleSidebar}
+                className="lg:hidden hover:bg-[var(--color-surface-muted)] active:bg-[var(--color-surface-muted)]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 p-2.5 rounded-[var(--btn-radius,0.25rem)] transition-all min-h-[48px] min-w-[48px] h-12 w-12 flex items-center justify-center shrink-0 touch-manipulation -ml-1"
+                aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
+                aria-controls="sidebar"
+                aria-expanded={abierto}
+                type="button"
               >
-                {Icon && (
-                  <Icon className={iconClass} />
-                )}
+                {abierto ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            )}
+            {/* Icon + Title: clickable en mobile/tablet para toggle sidebar */}
+            <div
+              className="flex items-center flex-1 min-w-0 lg:pointer-events-none cursor-pointer lg:cursor-default"
+              style={{ gap: 'var(--header-title-gap, 0.5rem)' }}
+              onClick={() => {
+                // Solo toggle en móvil/tablet (< 1024px)
+                if (window.innerWidth < 1024) {
+                  toggleSidebar();
+                }
+              }}
+              role="button"
+              tabIndex={-1}
+              aria-hidden="true"
+            >
+              {Icon && (
+                <Icon className={iconClass} />
+              )}
+              <div className="min-w-0">
                 {title && (
-                  <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl flex-1 min-w-0`}>{title}</h1>
+                  <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl`}>{title}</h1>
+                )}
+                {/* Subtitle inline on desktop */}
+                {subtitle && (
+                  <p className={`${componentStyles.typography.pageSubtitle} text-xs sm:text-sm text-[var(--color-text-secondary)] hidden md:block`}>
+                    {subtitle}
+                  </p>
                 )}
               </div>
-            </div>
-            {/* Segunda línea (cuando se estrecha): Acciones a la derecha */}
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto justify-end sm:justify-start relative z-10" style={{ pointerEvents: 'auto' }}>
-              {actions}
-              {/* Botón de hotkeys discreto - siempre visible en el header (en modo estudio, hoy.jsx maneja su propio botón) */}
-              <HotkeysModalButton />
             </div>
           </div>
-          {/* Segunda fila: Subtítulo - SOLO en desktop (md+) */}
-          {subtitle && (
-            <div className="hidden md:flex items-center mt-0.5 mb-0.5">
-              {/* Espaciador para alinear con el título (mismo ancho que icono + gap) */}
-              {Icon && <div className="w-5 md:w-6 shrink-0" />}
-              <div className="flex-1 min-w-0 ml-1">
-                <p className={`${componentStyles.typography.pageSubtitle} text-xs sm:text-sm text-[var(--color-text-secondary)]`}>
-                  {subtitle}
-                </p>
-              </div>
-            </div>
-          )}
+
+          {/* Actions area (buttons, always right side) */}
+          <div className="page-header-actions">
+            {actions}
+            {/* Botón de hotkeys discreto */}
+            <HotkeysModalButton />
+          </div>
         </div>
       </div>
-      {/* Zona 2: Filtros rápidos (search + chips/selects compactos) - Siempre visibles si existen */}
+
+      {/* Controls row (filters, tabs, search) - only shown if filters exist */}
       {filters && (
-        <div className="w-full bg-[var(--color-surface-elevated)] border-b border-[var(--color-border-default)] px-2 sm:px-3 md:px-6 py-2 sm:py-2.5">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex gap-1.5 sm:gap-2 flex-wrap items-center">
-              {filters}
-            </div>
+        <div className="page-header-inner px-3 md:px-6 lg:px-[var(--page-padding-x)] border-t border-[var(--color-border-muted)]">
+          <div className="page-header-controls">
+            {filters}
           </div>
         </div>
       )}

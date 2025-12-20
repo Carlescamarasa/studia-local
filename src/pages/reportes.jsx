@@ -328,7 +328,7 @@ function ReportesPageContent() {
         icon={Bug}
       />
 
-      <div className={componentStyles.layout.page}>
+      <div className="studia-section">
         <div className="flex flex-col gap-4">
           {/* Búsqueda y Filtros */}
           <div className="flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between">

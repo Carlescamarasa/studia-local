@@ -880,7 +880,7 @@ function AgendaPageContent() {
         }
       />
 
-      <div className="px-4 pt-4 pb-4 md:px-6 md:pt-4 md:pb-6 max-w-7xl mx-auto space-y-4">
+      <div className="studia-section py-4 space-y-4">
         {/* Barra de búsqueda */}
         <div className="relative">
           <Input
@@ -904,7 +904,7 @@ function AgendaPageContent() {
 
 
       {/* Filtro de estudiantes (solo para PROF) */}
-      <div className={componentStyles.layout.page}>
+      <div className="studia-section">
         {isProfesorOrAdmin && !isAdmin && (
           <div className="mb-4 px-4 py-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-muted)]">
             <div className="flex gap-2">

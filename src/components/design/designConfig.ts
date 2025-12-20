@@ -36,28 +36,82 @@ export const SHADOW_MAP: Record<ShadowValue, string> = {
   card: '0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)',
 };
 
-// Mapeo de densidad a espaciado
-export const DENSITY_MAP: Record<DensityValue, Record<string, string>> = {
+// Mapeo de densidad a espaciado - EXPANDIDO para incluir todos los tokens derivados
+export interface DensityPreset {
+  // Escala base
+  base: string; sm: string; md: string; lg: string; xl: string;
+  // Page layout
+  pagePaddingX: string; pagePaddingY: string; sectionGapY: string;
+  // Card
+  cardPaddingX: string; cardPaddingY: string; cardGap: string;
+  // Controls
+  controlHeight: string; controlPaddingX: string; controlPaddingY: string;
+  // Header
+  headerInnerPaddingY: string;
+  // Table
+  tableCellPx: string; tableCellPy: string;
+}
+
+export const DENSITY_MAP: Record<DensityValue, DensityPreset> = {
   compact: {
-    base: '0.5rem',      // 8px
-    sm: '0.25rem',       // 4px
-    md: '0.75rem',       // 12px
-    lg: '1rem',          // 16px
-    xl: '1.5rem',        // 24px
+    // Escala base
+    base: '0.5rem', sm: '0.25rem', md: '0.75rem', lg: '1rem', xl: '1.5rem',
+    // Page layout - más compacto
+    pagePaddingX: '1.25rem', pagePaddingY: '1.5rem', sectionGapY: '2rem',
+    // Card - más compacto
+    cardPaddingX: '1rem', cardPaddingY: '0.75rem', cardGap: '0.75rem',
+    // Controls - más pequeños
+    controlHeight: '2.25rem', controlPaddingX: '0.75rem', controlPaddingY: '0.375rem',
+    // Header - más bajo
+    headerInnerPaddingY: '0.5rem',
+    // Table - celdas más compactas
+    tableCellPx: '0.75rem', tableCellPy: '0.5rem',
   },
   normal: {
-    base: '0.75rem',     // 12px
-    sm: '0.5rem',        // 8px
-    md: '1rem',          // 16px
-    lg: '1.5rem',        // 24px
-    xl: '2rem',          // 32px
+    // Escala base
+    base: '0.75rem', sm: '0.5rem', md: '1rem', lg: '1.5rem', xl: '2rem',
+    // Page layout - estándar
+    pagePaddingX: '2rem', pagePaddingY: '2rem', sectionGapY: '3rem',
+    // Card - estándar
+    cardPaddingX: '1.5rem', cardPaddingY: '1.25rem', cardGap: '1rem',
+    // Controls - tamaño normal
+    controlHeight: '2.5rem', controlPaddingX: '1rem', controlPaddingY: '0.5rem',
+    // Header - estándar
+    headerInnerPaddingY: '0.75rem',
+    // Table - celdas normales
+    tableCellPx: '1rem', tableCellPy: '0.75rem',
   },
   spacious: {
-    base: '1rem',        // 16px
-    sm: '0.75rem',       // 12px
-    md: '1.5rem',        // 24px
-    lg: '2rem',          // 32px
-    xl: '3rem',          // 48px
+    // Escala base
+    base: '1rem', sm: '0.75rem', md: '1.5rem', lg: '2rem', xl: '3rem',
+    // Page layout - más espacioso
+    pagePaddingX: '2.5rem', pagePaddingY: '2.5rem', sectionGapY: '3.5rem',
+    // Card - más espacioso
+    cardPaddingX: '2rem', cardPaddingY: '1.75rem', cardGap: '1.5rem',
+    // Controls - más grandes
+    controlHeight: '3rem', controlPaddingX: '1.25rem', controlPaddingY: '0.625rem',
+    // Header - más alto
+    headerInnerPaddingY: '1rem',
+    // Table - celdas más espaciosas
+    tableCellPx: '1.25rem', tableCellPy: '1rem',
+  },
+};
+
+// Presets de radius global (sharp/soft/round)
+export type RadiusPresetValue = 'sharp' | 'soft' | 'round';
+export interface RadiusPreset {
+  card: string; controls: string; pill: string; modal: string; headerInner: string;
+}
+
+export const RADIUS_PRESET_MAP: Record<RadiusPresetValue, RadiusPreset> = {
+  sharp: {
+    card: '8px', controls: '6px', pill: '9999px', modal: '10px', headerInner: '4px',
+  },
+  soft: {
+    card: '14px', controls: '10px', pill: '9999px', modal: '16px', headerInner: '8px',
+  },
+  round: {
+    card: '20px', controls: '14px', pill: '9999px', modal: '22px', headerInner: '14px',
   },
 };
 
@@ -366,25 +420,25 @@ export const DEFAULT_DESIGN: DesignTokens = {
     gaps: {
       xs: '0.25rem',           // 4px
       sm: '0.5rem',            // 8px
-      md: '0.75rem',           // 12px
-      lg: '1rem',              // 16px
+      md: '1.25rem',           // 20px (increased for legibility)
+      lg: '2rem',              // 32px (increased for legibility)
       xl: '1.5rem',            // 24px
       '2xl': '2rem',           // 32px
     },
     // Nuevos tokens de layout de página
     page: {
-      maxWidth: '1280px',      // max-w-7xl equivalente (80rem)
-      paddingX: '1rem',        // 16px base (responsive se maneja en CSS)
-      paddingY: '2rem',        // 32px base (aumentado de 24px para más respiración)
-      sectionGapY: '2rem',     // 32px separación entre secciones (aumentado de 24px)
+      maxWidth: '1440px',      // 90rem - wider for large screens
+      paddingX: '2rem',        // 32px
+      paddingY: '2rem',        // 32px base
+      sectionGapY: '3rem',     // 48px - better section separation
     },
     grid: {
       columns: 12,             // Grid de 12 columnas
-      gapX: '1rem',            // 16px gap horizontal
-      gapY: '1rem',            // 16px gap vertical
+      gapX: '1.25rem',         // 20px gap horizontal (increased)
+      gapY: '1.5rem',          // 24px gap vertical (increased)
     },
     sidebar: {
-      width: '16rem',          // 256px - ya existe en components.sidebar, pero lo exponemos aquí también
+      width: '17rem',          // 272px (increased for visual breathing room)
     },
     section: {
       paddingY: '1rem',        // 16px padding vertical de secciones
@@ -401,7 +455,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
     serifHeadings: false,
     lineHeight: {
       tight: 1.25,
-      normal: 1.5,
+      normal: 1.65,            // Increased for legibility
       relaxed: 1.75,
     },
   },
@@ -424,13 +478,13 @@ export const DEFAULT_DESIGN: DesignTokens = {
   // Controls (botones, inputs, search)
   controls: {
     field: {
-      height: '2.5rem', // 40px - altura estándar para inputs
+      height: '2.75rem', // 44px - increased for better touch targets
       background: 'var(--color-surface)',
       border: 'var(--color-border-default)',
       radius: 'lg',
     },
     button: {
-      height: '2.5rem', // 40px - altura estándar para botones
+      height: '2.75rem', // 44px - increased for better touch targets
       radius: 'lg', // Cambiado de 'sm' a 'lg' para botones redondeados (12px)
       shadow: 'none', // Sin sombra por defecto
     },
@@ -438,7 +492,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
       background: 'var(--color-surface)',
       border: 'var(--color-border-default)',
       radius: 'lg',
-      height: '2.5rem', // 40px - altura estándar para search
+      height: '2.75rem', // 44px - increased for better touch targets
     },
   },
 
@@ -460,35 +514,33 @@ export const DEFAULT_DESIGN: DesignTokens = {
     },
     card: {
       padding: {
-        x: '1rem',    // 16px - padding horizontal base de la card (reducido de 24px)
-        y: '1rem',    // 16px - padding vertical base de la card (reducido de 24px)
+        x: '1.75rem',  // 28px (increased for alignment)
+        y: '1.75rem',  // 28px (increased for alignment)
         header: {
-          x: '1rem',  // 16px - padding horizontal del header (reducido de 24px)
-          y: '0.75rem',  // 12px - padding vertical del header (reducido de 24px)
-          // Nota: el padding-bottom del header suele ser menor (pb-2 ≈ 0.5rem)
-          // pero usamos y para el padding-block completo; ajustar según necesidad
+          x: '1.75rem',  // 28px
+          y: '1.25rem',  // 20px
         },
         content: {
-          x: '1rem',  // 16px - padding horizontal del content (reducido de 24px)
-          y: '0.75rem',  // 12px - padding vertical del content (reducido de 24px)
+          x: '1.75rem',  // 28px
+          y: '1.25rem',  // 20px
         },
         footer: {
-          x: '1rem',  // 16px - padding horizontal del footer (reducido de 24px)
-          y: '0.75rem',  // 12px - padding vertical del footer (reducido de 24px)
+          x: '1.75rem',  // 28px
+          y: '1.25rem',  // 20px
         },
       },
-      radius: 'lg',     // rounded-xl en Tailwind = 0.75rem (12px), que corresponde a 'lg' en RADIUS_MAP
-      shadow: 'card',   // shadow-sm equivalente, pero usamos 'card' del SHADOW_MAP
+      radius: 'lg',
+      shadow: 'card',
       border: '1px solid',
       borderColor: 'var(--color-border-default)',
       background: 'var(--color-surface-elevated)',
-      gap: '0.75rem',      // 12px - gap interno entre elementos (reducido de 16px, equivalente a space-y-3)
+      gap: '1.25rem',    // 20px (increased)
     },
     button: {
       padding: {
         sm: '0.375rem 0.75rem',
-        md: '0.5rem 1rem',
-        lg: '0.75rem 1.5rem',
+        md: '0.5rem 1.25rem',
+        lg: '0.75rem 2rem',    // Wider horizontal
       },
       radius: 'lg',
       variants: {
@@ -510,14 +562,14 @@ export const DEFAULT_DESIGN: DesignTokens = {
       },
     },
     sidebar: {
-      width: '16rem',          // 256px
+      width: '17rem',          // 272px (increased for breathing room)
       widthCollapsed: '4rem',  // 64px
       background: 'var(--color-surface-elevated)',
       border: '1px solid var(--color-border-default)',
     },
     header: {
-      height: '4rem',          // 64px
-      padding: '0 1.5rem',
+      height: '4.5rem',        // 72px (increased for proportion)
+      padding: '0 2.5rem',     // Matches layout.page.paddingX + margin
       background: 'var(--color-surface-elevated)',
       border: '1px solid var(--color-border-default)',
     },
@@ -529,7 +581,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
       width: '2px',
       style: 'solid',
       color: 'rgba(253, 152, 64, 0.5)', // primary (#fd9840) con opacidad
-      offset: '2px',
+      offset: '3px',           // Increased for visual breathing
     },
   },
 
@@ -559,7 +611,7 @@ export function getShadowValue(shadowKey: ShadowValue | string): string {
 /**
  * Helper para obtener espaciado según densidad
  */
-export function getSpacingForDensity(density: DensityValue | string): Record<string, string> {
+export function getSpacingForDensity(density: DensityValue | string): DensityPreset {
   return DENSITY_MAP[density as DensityValue] || DENSITY_MAP.normal;
 }
 
@@ -642,59 +694,86 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
     vars[`--brand-${k}`] = `${brandHue} ${brandSaturation}% ${l}%`;
   });
 
-  // Radius
+  // Radius - con soporte para preset (sharp/soft/round)
   if (normalized.layout?.radius) {
-    Object.entries(normalized.layout.radius).forEach(([key, value]) => {
-      vars[`--radius-${key === 'global' ? 'base' : key}`] = getRadiusValue(value as RadiusValue);
-    });
-    // FIXED: Alias --radius to global radius so standard Tailwind classes (rounded-lg) work
-    if (normalized.layout.radius.global) {
-      vars['--radius'] = getRadiusValue(normalized.layout.radius.global as RadiusValue);
-    }
+    // Check for radius preset (sharp/soft/round)
+    const radiusPresetName = (normalized.layout.radius as any).preset as RadiusPresetValue | undefined;
+    const radiusPreset = radiusPresetName ? RADIUS_PRESET_MAP[radiusPresetName] : null;
 
-    // Alias de compatibilidad: emitir también --radius-ctrl (consumido por CSS global)
-    try {
+    // Emit individual radius values - preset overrides if defined
+    if (radiusPreset) {
+      // Preset defined - use preset values
+      vars['--radius-card'] = radiusPreset.card;
+      vars['--radius-ctrl'] = radiusPreset.controls;
+      vars['--radius-controls'] = radiusPreset.controls;
+      vars['--radius-pill'] = radiusPreset.pill;
+      vars['--radius-modal'] = radiusPreset.modal;
+      vars['--header-inner-radius'] = radiusPreset.headerInner;
+      // Also set base radius for compatibility
+      vars['--radius'] = radiusPreset.controls;
+      vars['--radius-base'] = radiusPreset.controls;
+    } else {
+      // No preset - use individual values
+      Object.entries(normalized.layout.radius).forEach(([key, value]) => {
+        if (key !== 'preset') {
+          vars[`--radius-${key === 'global' ? 'base' : key}`] = getRadiusValue(value as RadiusValue);
+        }
+      });
+      // Alias --radius to global radius
+      if (normalized.layout.radius.global) {
+        vars['--radius'] = getRadiusValue(normalized.layout.radius.global as RadiusValue);
+      }
+      // Alias de compatibilidad: emitir también --radius-ctrl
       const controlsRadius = (normalized.layout.radius as any).controls;
       if (controlsRadius) {
         vars['--radius-ctrl'] = getRadiusValue(controlsRadius as RadiusValue);
       }
       const cardRadius = (normalized.layout.radius as any).card;
       if (cardRadius) {
-        // Alinear nombre consumido por CSS global
         vars['--radius-card'] = getRadiusValue(cardRadius as RadiusValue);
       }
-    } catch (_e) {
-      // no-op
+      // Header inner radius - usa card radius por defecto
+      vars['--header-inner-radius'] = getRadiusValue((normalized.layout.radius as any).card || 'none');
     }
-    // Alias de compatibilidad con CSS global aplicado en FASE 3:
-    // - Se emite `--radius-ctrl` y `--radius-card` desde layout.radius
   }
 
   // Shadows
   vars['--shadow-card'] = getShadowValue(normalized.layout?.shadow || 'md');
   vars['--shadow-control'] = getShadowValue(normalized.layout?.shadow === 'none' ? 'none' : 'sm');
 
-  // Spacing según densidad
+  // Spacing según densidad - EXPANDIDO para todos los tokens derivados
   const density = normalized.layout?.density || 'normal';
-  const spacing = getSpacingForDensity(density);
-  Object.entries(spacing).forEach(([key, value]) => {
-    vars[`--space-${key}`] = value;
-  });
+  const densityPreset = getSpacingForDensity(density);
 
-  // Gaps
-  if (normalized.layout?.gaps) {
-    Object.entries(normalized.layout.gaps).forEach(([key, value]) => {
-      vars[`--gap-${key}`] = value;
-    });
-  }
+  // Escala base (--space-base, --space-sm, etc.)
+  vars['--space-base'] = densityPreset.base;
+  vars['--space-sm'] = densityPreset.sm;
+  vars['--space-md'] = densityPreset.md;
+  vars['--space-lg'] = densityPreset.lg;
+  vars['--space-xl'] = densityPreset.xl;
 
-  // Layout de página
-  if (normalized.layout?.page) {
-    vars['--page-max-width'] = normalized.layout.page.maxWidth || DEFAULT_DESIGN.layout.page.maxWidth;
-    vars['--page-padding-x'] = normalized.layout.page.paddingX || DEFAULT_DESIGN.layout.page.paddingX;
-    vars['--page-padding-y'] = normalized.layout.page.paddingY || DEFAULT_DESIGN.layout.page.paddingY;
-    vars['--page-section-gap-y'] = normalized.layout.page.sectionGapY || DEFAULT_DESIGN.layout.page.sectionGapY;
-  }
+  // Page layout - usa preset de densidad como default, pero respeta override manual
+  vars['--page-max-width'] = normalized.layout?.page?.maxWidth || DEFAULT_DESIGN.layout.page.maxWidth;
+  vars['--page-padding-x'] = normalized.layout?.page?.paddingX || densityPreset.pagePaddingX;
+  vars['--page-padding-y'] = normalized.layout?.page?.paddingY || densityPreset.pagePaddingY;
+  vars['--page-section-gap-y'] = normalized.layout?.page?.sectionGapY || densityPreset.sectionGapY;
+
+  // Card - derivado de densidad
+  vars['--card-padding-x'] = densityPreset.cardPaddingX;
+  vars['--card-padding-y'] = densityPreset.cardPaddingY;
+  vars['--card-gap'] = densityPreset.cardGap;
+
+  // Controls - derivado de densidad
+  vars['--control-height'] = densityPreset.controlHeight;
+  vars['--control-padding-x'] = densityPreset.controlPaddingX;
+  vars['--control-padding-y'] = densityPreset.controlPaddingY;
+
+  // Header - derivado de densidad
+  vars['--header-inner-padding-y'] = densityPreset.headerInnerPaddingY;
+
+  // Table cells - derivado de densidad
+  vars['--table-cell-px'] = densityPreset.tableCellPx;
+  vars['--table-cell-py'] = densityPreset.tableCellPy;
 
   // Layout de grid
   if (normalized.layout?.grid) {
@@ -829,8 +908,37 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
     }
     if (normalized.components.header) {
       vars['--header-height'] = normalized.components.header.height || DEFAULT_DESIGN.components.header.height;
+      // Header inner padding - X uses page padding for alignment
+      vars['--header-inner-padding-x'] = vars['--page-padding-x'];
+      // Note: --header-inner-padding-y is already set from densityPreset above
+      // Note: --header-inner-radius is already set from radius section above
+
+      // Row, title, and controls gaps - all scale with density
+      vars['--header-row-gap'] = densityPreset.sm;
+      vars['--header-title-gap'] = densityPreset.sm;
+      vars['--header-controls-gap'] = densityPreset.sm;
+
+      // Shell tokens for background/border (use chrome.header values)
+      vars['--header-shell-bg'] = normalized.chrome?.header?.background || 'var(--color-surface-elevated)';
+      vars['--header-shell-border'] = normalized.chrome?.header?.border || 'var(--color-border-default)';
+      vars['--header-shell-shadow'] = 'none';
     }
   }
+
+  // ============================================================================
+  // STUDIA MODE TOKENS (isolated from admin mode)
+  // These are only consumed when data-app-mode="studia" is set on :root
+  // ============================================================================
+  vars['--studia-page-max-width'] = '800px';
+  vars['--studia-page-padding-x'] = '1.5rem';
+  vars['--studia-header-padding-y'] = '1rem';
+  vars['--studia-header-margin-bottom'] = '1.5rem';
+  vars['--studia-header-bg'] = 'var(--color-surface)';
+  vars['--studia-header-border'] = 'var(--color-border-muted)';
+  vars['--studia-card-max-width'] = '700px';
+  vars['--studia-card-padding-x'] = '2rem';
+  vars['--studia-card-padding-y'] = '2rem';
+  vars['--studia-card-radius'] = 'var(--radius-lg)';
 
   // ============================================================================
   // MAPEO DE VARS SHADCN/TAILWIND PARA COMPATIBILIDAD

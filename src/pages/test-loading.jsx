@@ -103,7 +103,7 @@ export default function TestLoadingPage() {
   return (
     <TooltipProvider>
       <SkipLink href="#main-content" />
-      <div className={componentStyles.layout.page} id="main-content">
+      <div className="studia-section" id="main-content">
         <PageHeader
           title="Prueba de Componentes del Design System"
           subtitle="Visualiza todos los componentes mejorados: loading, empty states, microinteracciones, elevación, tablas, formularios, modales, notificaciones, drag & drop, accesibilidad y más"

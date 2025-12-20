@@ -679,7 +679,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
         />
       )}
 
-      <div className={embedded ? "" : componentStyles.layout.page}>
+      <div className={embedded ? "" : "studia-section"}>
         <div className="mb-6">
           <DesignStatusBlock
             activeTab={activeSection}

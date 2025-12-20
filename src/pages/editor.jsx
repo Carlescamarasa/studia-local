@@ -36,7 +36,7 @@ export default function EditorPage() {
   }
 
   return (
-    <div className={componentStyles.layout.page}>
+    <div className="studia-section">
       <div className="mb-6">
         <Alert className={`mb-6 ${componentStyles.containers.panelBase} border-l-4 border-l-[var(--color-info)] bg-[var(--color-info)]/10`}>
           <Layers className="w-6 h-6 text-[var(--color-info)]" />

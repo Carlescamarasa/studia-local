@@ -346,7 +346,7 @@ function SemanaPageContent() {
         }
       />
 
-      <div className={`${componentStyles.layout.page} space-y-4`}>
+      <div className={`$"studia-section" space-y-4`}>
         {!asignacionActiva || !semanaDelPlan ? (
           <Card className={componentStyles.containers.cardBase}>
             <CardContent className="text-center py-16">

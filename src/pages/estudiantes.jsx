@@ -211,7 +211,7 @@ function EstudiantesPageContent() {
         }
       />
 
-      <div className={componentStyles.layout.page}>
+      <div className="studia-section">
         <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
             <CardTitle className="text-lg">{estudiantesFiltrados.length} estudiante{estudiantesFiltrados.length !== 1 ? 's' : ''}</CardTitle>

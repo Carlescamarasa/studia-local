@@ -10,7 +10,7 @@ import { HelpCircle, BookOpen, User, Users, Settings, Keyboard, Video, Info } fr
 export default function AyudaPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  
+
   // Obtener tab desde URL o usar 'README' por defecto
   const tabFromUrl = searchParams.get('tab') || 'README';
   const [activeTab, setActiveTab] = useState(tabFromUrl);
@@ -93,7 +93,7 @@ export default function AyudaPage() {
         subtitle="Encuentra respuestas a tus preguntas y aprende a usar Studia"
       />
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 md:py-6">
+      <div className="studia-section py-4">
         <Card className={componentStyles.containers.cardBase}>
           <CardContent className="p-4 md:p-6">
             <Tabs

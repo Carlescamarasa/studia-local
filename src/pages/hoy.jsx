@@ -1344,7 +1344,7 @@ function HoyPageContent() {
 
             {/* Fila principal - Siempre visible (tanto expandido como colapsado) */}
             <div className={cn(
-              "max-w-5xl mx-auto px-4 py-2",
+              "studia-container py-2",
               excedido ? "border-b-2 border-[var(--color-danger)]" : ""
             )}>
               <div className="flex items-center justify-between gap-3">
@@ -1504,7 +1504,7 @@ function HoyPageContent() {
             {/* Fila secundaria - Solo en modo expandido: Breadcrumb de ejercicios */}
             {!timerCollapsed && sesionActiva && listaEjecucion.length > 0 && (
               <div className={cn(
-                "max-w-5xl mx-auto px-4 pb-3 border-t pt-2",
+                "studia-container pb-3 border-t pt-2",
                 excedido ? "border-[var(--color-danger)]/50" : "border-[var(--color-border-default)]/50"
               )}>
                 <TooltipProvider>
@@ -1567,10 +1567,10 @@ function HoyPageContent() {
         }
 
         {/* Header del Player */}
-        <div className="page-header header-modern lg:sticky lg:top-0 z-10">
-          <div className="px-2 sm:px-3 md:px-6 py-1 sm:py-1.5 md:py-2">
-            <div className="max-w-5xl mx-auto">
-              <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 mb-0 sm:mb-0.5 md:mb-1">
+        <div className="studia-player-header header-modern lg:sticky lg:top-0 z-10">
+          <div className="studia-player-header-inner">
+            <div className="page-header-grid">
+              <div className="page-header-title">
                 <PlayCircle className="w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 text-[var(--color-primary)]" />
                 <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl flex-1 min-w-0`}>
                   <span className="truncate block">{ejercicioActual?.nombre || 'Ejercicio sin nombre'}</span>
@@ -1602,43 +1602,40 @@ function HoyPageContent() {
                     </div>
                   )}
                 </h1>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand touch-manipulation" onClick={() => setMostrarItinerario(true)} aria-label="Mostrar índice de ejercicios">
-                    <List className="w-5 h-5 sm:w-4 sm:h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand touch-manipulation" onClick={() => setShowHotkeysModal(true)} aria-label="Mostrar atajos de teclado">
-                    <HelpCircle className="w-5 h-5 sm:w-4 sm:h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)] transition-colors touch-manipulation"
-                    onClick={handleCancelar}
-                    aria-label="Salir del modo estudio"
-                    title="Salir (Esc)"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
               </div>
+              <div className="page-header-actions">
+                <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand touch-manipulation" onClick={() => setMostrarItinerario(true)} aria-label="Mostrar índice de ejercicios">
+                  <List className="w-5 h-5 sm:w-4 sm:h-4" />
+                </Button>
+                <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand touch-manipulation" onClick={() => setShowHotkeysModal(true)} aria-label="Mostrar atajos de teclado">
+                  <HelpCircle className="w-5 h-5 sm:w-4 sm:h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl focus-brand hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)] transition-colors touch-manipulation"
+                  onClick={handleCancelar}
+                  aria-label="Salir del modo estudio"
+                  title="Salir (Esc)"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
 
-              {/* Breadcrumbs */}
-              <div className="hidden sm:flex items-center mb-0.5 md:mb-1">
-                <div className="w-8 md:w-12 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className={`${componentStyles.typography.pageSubtitle} text-xs sm:text-sm md:text-base flex items-center gap-2 flex-wrap`}>
-                    <Music className="w-3 h-3 text-[var(--color-primary)] shrink-0" />
-                    <span className="font-medium">{asignacionActiva.piezaSnapshot?.nombre}</span>
-                    <span className="text-[var(--color-text-secondary)]">•</span>
-                    <Target className="w-3 h-3 text-[var(--color-info)] shrink-0" />
-                    <span>{asignacionActiva.plan?.nombre}</span>
-                    <span className="text-[var(--color-text-secondary)]">•</span>
-                    <Badge className={focoColors[sesionActiva.foco]} variant="outline">
-                      {focoLabels[sesionActiva.foco]}
-                    </Badge>
-                  </p>
-                </div>
-              </div>
+            {/* Breadcrumbs */}
+            <div className="hidden sm:flex items-center mt-1">
+              <p className={`${componentStyles.typography.pageSubtitle} text-xs sm:text-sm md:text-base flex items-center gap-2 flex-wrap`}>
+                <Music className="w-3 h-3 text-[var(--color-primary)] shrink-0" />
+                <span className="font-medium">{asignacionActiva.piezaSnapshot?.nombre}</span>
+                <span className="text-[var(--color-text-secondary)]">•</span>
+                <Target className="w-3 h-3 text-[var(--color-info)] shrink-0" />
+                <span>{asignacionActiva.plan?.nombre}</span>
+                <span className="text-[var(--color-text-secondary)]">•</span>
+                <Badge className={focoColors[sesionActiva.foco]} variant="outline">
+                  {focoLabels[sesionActiva.foco]}
+                </Badge>
+              </p>
             </div>
           </div>
         </div>
@@ -1847,7 +1844,7 @@ function HoyPageContent() {
             <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-card z-30 pb-[env(safe-area-inset-bottom,0px)]" style={{
               left: isDesktop && abierto ? '280px' : '0',
             }}>
-              <div className="max-w-5xl mx-auto px-3 py-2">
+              <div className="studia-container py-2">
                 {/* Breadcrumb compacto */}
                 <TooltipProvider>
                   <div className="flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide -mx-3 px-3">
@@ -2317,7 +2314,7 @@ function HoyPageContent() {
         }
       />
 
-      <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
+      <div className="studia-section space-y-4">
         {/* Barra de contexto: pieza / plan / alumno en el body */}
         {asignacionActiva && (
           <div className="flex items-center gap-2 flex-wrap text-sm">

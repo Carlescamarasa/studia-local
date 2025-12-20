@@ -172,6 +172,12 @@ function LayoutContent() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  /* Set app mode for scoped CSS styling */
+  useEffect(() => {
+    document.documentElement.setAttribute('data-app-mode', 'admin');
+    return () => document.documentElement.removeAttribute('data-app-mode');
+  }, []);
+
   /* Cerrar sidebar al navegar en mobile */
   useEffect(() => {
     if (isMobile) {
@@ -828,8 +834,8 @@ function LayoutContent() {
             </div>
           )}
 
-          {/* Área de contenido - uses page-container for layout tokens */}
-          <div className="flex-1 page-container">
+          {/* Área de contenido - full-width container, pages handle their own padding */}
+          <div className="flex-1">
             <Outlet />
           </div>
 

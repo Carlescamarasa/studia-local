@@ -153,6 +153,12 @@ function StudiaPageContent() {
         }
     }, [attachTransitionListeners, syncNow]);
 
+    // Set app mode for scoped CSS styling (studia mode = no sidebar, different layout)
+    useEffect(() => {
+        document.documentElement.setAttribute('data-app-mode', 'studia');
+        return () => document.documentElement.removeAttribute('data-app-mode');
+    }, []);
+
     // Sync on timerCollapsed change (triggers transition, rAF will track)
     useEffect(() => {
         syncNow();
@@ -1004,50 +1010,47 @@ function StudiaPageContent() {
             </div>
 
             {/* Header */}
-            <div className="page-header header-modern lg:sticky lg:top-0 z-10">
-                <div className="px-2 sm:px-3 md:px-6 py-1 sm:py-1.5 md:py-2">
-                    <div className="max-w-5xl mx-auto">
-                        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 mb-0 sm:mb-0.5 md:mb-1">
+            <div className="studia-player-header header-modern lg:sticky lg:top-0 z-10">
+                <div className="studia-player-header-inner">
+                    <div className="page-header-grid">
+                        <div className="page-header-title">
                             <PlayCircle className="w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 text-[var(--color-primary)]" />
                             <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl flex-1 min-w-0`}>
                                 <span className="truncate block">{ejercicioActual?.nombre || 'Ejercicio'}</span>
                             </h1>
-                            <div className="flex items-center gap-1 shrink-0">
-                                <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl" onClick={() => setMostrarItinerario(true)}>
-                                    <List className="w-5 h-5 sm:w-4 sm:h-4" />
-                                </Button>
-                                <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl" onClick={() => setShowHotkeysModal(true)}>
-                                    <HelpCircle className="w-5 h-5 sm:w-4 sm:h-4" />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)]"
-                                    onClick={handleCancelar}
-                                    title="Salir (Esc)"
-                                >
-                                    <X className="w-4 h-4" />
-                                </Button>
-                            </div>
                         </div>
+                        <div className="page-header-actions">
+                            <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl" onClick={() => setMostrarItinerario(true)}>
+                                <List className="w-5 h-5 sm:w-4 sm:h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl" onClick={() => setShowHotkeysModal(true)}>
+                                <HelpCircle className="w-5 h-5 sm:w-4 sm:h-4" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)]"
+                                onClick={handleCancelar}
+                                title="Salir (Esc)"
+                            >
+                                <X className="w-4 h-4" />
+                            </Button>
+                        </div>
+                    </div>
 
-                        {/* Breadcrumbs */}
-                        <div className="hidden sm:flex items-center mb-0.5 md:mb-1">
-                            <div className="w-8 md:w-12 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                                <p className={`${componentStyles.typography.pageSubtitle} text-xs sm:text-sm md:text-base flex items-center gap-2 flex-wrap`}>
-                                    <Music className="w-3 h-3 text-[var(--color-primary)] shrink-0" />
-                                    <span className="font-medium">{asignacionActiva.piezaSnapshot?.nombre}</span>
-                                    <span className="text-[var(--color-text-secondary)]">•</span>
-                                    <Target className="w-3 h-3 text-[var(--color-info)] shrink-0" />
-                                    <span>{asignacionActiva.plan?.nombre}</span>
-                                    <span className="text-[var(--color-text-secondary)]">•</span>
-                                    <Badge className={focoColors[sesionActiva.foco]} variant="outline">
-                                        {focoLabels[sesionActiva.foco]}
-                                    </Badge>
-                                </p>
-                            </div>
-                        </div>
+                    {/* Breadcrumbs */}
+                    <div className="hidden sm:flex items-center mt-1">
+                        <p className={`${componentStyles.typography.pageSubtitle} text-xs sm:text-sm md:text-base flex items-center gap-2 flex-wrap`}>
+                            <Music className="w-3 h-3 text-[var(--color-primary)] shrink-0" />
+                            <span className="font-medium">{asignacionActiva.piezaSnapshot?.nombre}</span>
+                            <span className="text-[var(--color-text-secondary)]">•</span>
+                            <Target className="w-3 h-3 text-[var(--color-info)] shrink-0" />
+                            <span>{asignacionActiva.plan?.nombre}</span>
+                            <span className="text-[var(--color-text-secondary)]">•</span>
+                            <Badge className={focoColors[sesionActiva.foco]} variant="outline">
+                                {focoLabels[sesionActiva.foco]}
+                            </Badge>
+                        </p>
                     </div>
                 </div>
             </div>

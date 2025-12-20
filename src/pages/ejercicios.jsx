@@ -223,7 +223,7 @@ export default function EjerciciosPage() {
 
   // --- RENDER ---
   return (
-    <div className={componentStyles.layout.page}>
+    <div className="studia-section">
       <PageHeader
         title="Gestión de Ejercicios"
         subtitle="Biblioteca técnica y repertorio"

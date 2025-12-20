@@ -137,6 +137,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       const dataUrl = await toPng(mainContent, {
         cacheBust: true,
         backgroundColor: null,
+        skipFonts: true, // Avoid "font is undefined" error in embed-webfonts
         filter: (node) => {
           // Excluir nodos que no sean elementos (e.g. comentarios, texto)
           if (!node.tagName) return true;

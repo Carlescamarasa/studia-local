@@ -153,7 +153,7 @@ function QAVisualContent({ embedded = false }) {
         />
       )}
 
-      <div className={`${componentStyles.layout.page} space-y-6`}>
+      <div className={`$"studia-section" space-y-6`}>
         {/* Resumen */}
         <div className={componentStyles.layout.grid3}>
           <Card className="app-card">

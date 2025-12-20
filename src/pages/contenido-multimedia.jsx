@@ -471,7 +471,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                 </div>
             )}
 
-            <div className={embedded ? "" : componentStyles.layout.page}>
+            <div className={embedded ? "" : "studia-section"}>
                 <Card className={`${componentStyles.containers.cardBase}`}>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">

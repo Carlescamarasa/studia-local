@@ -583,7 +583,7 @@ function AsignacionesPageContent() {
         }
       />
 
-      <div className="px-4 pb-4 md:px-6 md:pb-6 max-w-7xl mx-auto">
+      <div className="studia-section pb-4">
         <div className="space-y-4">
           <div className="relative">
             <Input
@@ -627,7 +627,7 @@ function AsignacionesPageContent() {
         </div>
       </div>
 
-      <div className={`${componentStyles.layout.page} space-y-6`}>
+      <div className={`$"studia-section" space-y-6`}>
         {showForm && (
           <FormularioRapido
             onClose={() => setShowForm(false)}
