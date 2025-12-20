@@ -273,6 +273,7 @@ function SoportePageContent() {
   return (
     <div className="bg-background min-h-screen">
       <PageHeader
+        icon={MessageSquare}
         title="Centro de dudas"
         subtitle="Comunícate con tu profesor y resuelve tus dudas"
       />
