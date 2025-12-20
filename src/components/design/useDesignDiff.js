@@ -59,6 +59,7 @@ export function useDesignDiff() {
         URL.revokeObjectURL(url);
     }, []);
 
+
     // Generate human-readable report
     const generateReport = useCallback(() => {
         const lines = [
@@ -106,6 +107,20 @@ export function useDesignDiff() {
         return lines.join('\n');
     }, [diff, counts, totalCount, hasChanges, activeMode]);
 
+    // Download as Markdown report
+    const downloadReport = useCallback(() => {
+        const report = generateReport();
+        const blob = new Blob([report], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `design-report-${new Date().toISOString().slice(0, 10)}.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, [generateReport]);
+
     return {
         // Partitioned diff (new API)
         diff,
@@ -130,6 +145,7 @@ export function useDesignDiff() {
         exportDiff,
         exportFullAndDiff,
         downloadExport,
+        downloadReport,
         generateReport,
 
         // Legacy compatibility

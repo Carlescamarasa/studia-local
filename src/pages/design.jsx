@@ -12,7 +12,7 @@ import {
   Palette, Download, Upload, RotateCcw, Save, Trash2,
   FileCode, CheckCircle, AlertTriangle, Play, Eye, Plus,
   Scan, Sparkles, X, Copy, Settings, Shield, Undo2, ChevronDown, ChevronUp,
-  Sun, Moon
+  Sun, Moon, LayoutTemplate
 } from "lucide-react";
 import { toast } from "sonner";
 import RequireRole from "@/components/auth/RequireRole";
@@ -22,6 +22,7 @@ import Tabs from "@/components/ds/Tabs";
 import { getAllPresets, saveCustomPreset, deleteCustomPreset, exportCustomPresets, importCustomPresets } from "@/components/design/DesignPresets";
 import LevelConfigView from "@/components/admin/LevelConfigView";
 import { DesignControls } from "@/components/design/DesignControls";
+import { DesignStatusBlock } from "@/components/design/DesignStatusBlock";
 
 // ... existing imports ...
 
@@ -161,8 +162,8 @@ function PreviewBanner() {
 // ============================================================================
 // DIFF ACCORDION COMPONENT
 // ============================================================================
-function DiffAccordion() {
-  const [isOpen, setIsOpen] = useState(false);
+function DiffAccordion({ isOpen, onToggle }) {
+  // const [isOpen, setIsOpen] = useState(false); // Controlled now
   const [openSections, setOpenSections] = useState({ common: true, light: false, dark: false });
   const {
     diff,
@@ -224,7 +225,7 @@ function DiffAccordion() {
   return (
     <div className="mb-4">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={onToggle}
         className="w-full flex items-center justify-between p-3 rounded-xl bg-[var(--color-surface-muted)] border border-[var(--color-border-default)] hover:bg-[var(--color-surface)] transition-colors"
       >
         <div className="flex items-center gap-2">
@@ -355,62 +356,7 @@ function DiffAccordion() {
   );
 }
 
-// ============================================================================
-// DEBUG PANEL (DEV ONLY) - Shows storage state and preview status
-// ============================================================================
-function DebugPanel() {
-  const { isPreviewActive, design, previewDesign, effectiveDesign } = useDesign();
-  const { changeCount } = useDesignDiff();
-  const [isOpen, setIsOpen] = useState(false);
 
-  // Only show in development
-  if (import.meta.env.PROD) return null;
-
-  const storageInfo = useMemo(() => {
-    try {
-      return {
-        customDesign: localStorage.getItem('custom_design_preset') ? 'SET' : 'null',
-        basePresetId: localStorage.getItem('studia_base_preset_id') || 'null',
-        customPresets: localStorage.getItem('studia.design.customPresets.v1') ? 'SET' : 'null',
-        previewSession: sessionStorage.getItem('studia_preview_design') ? 'SET' : 'null',
-        legacyPreviewLocal: localStorage.getItem('studia_preview_design') ? 'LEGACY!' : 'null',
-      };
-    } catch (_) {
-      return { error: 'Storage access failed' };
-    }
-  }, [isPreviewActive, changeCount]);
-
-  return (
-    <details
-      className="p-2 rounded-lg bg-[var(--color-surface-muted)] border border-[var(--color-border-muted)] text-[10px] font-mono"
-      open={isOpen}
-      onToggle={(e) => setIsOpen(e.target.open)}
-    >
-      <summary className="cursor-pointer text-[var(--color-text-secondary)] font-medium">
-        🔧 Debug Panel (dev only)
-      </summary>
-      <div className="mt-2 space-y-1 text-[var(--color-text-muted)]">
-        <div>
-          <strong className="text-[var(--color-text-primary)]">Preview:</strong> {isPreviewActive ? '✅ ACTIVE' : '❌ inactive'}
-          {isPreviewActive && <span className="ml-2 text-[var(--color-warning)]">({changeCount} changes)</span>}
-        </div>
-        <div>
-          <strong className="text-[var(--color-text-primary)]">Theme:</strong> {effectiveDesign?.theme || 'unknown'}
-        </div>
-        <div className="border-t border-[var(--color-border-muted)] pt-1 mt-1">
-          <strong className="text-[var(--color-text-primary)]">Storage Keys:</strong>
-        </div>
-        <div className="pl-2 space-y-0.5">
-          <div>localStorage.custom_design_preset: <span className={storageInfo.customDesign === 'SET' ? 'text-[var(--color-success)]' : 'text-[var(--color-text-muted)]'}>{storageInfo.customDesign}</span></div>
-          <div>localStorage.studia_base_preset_id: <span className="text-[var(--color-info)]">{storageInfo.basePresetId}</span></div>
-          <div>localStorage.customPresets.v1: <span className={storageInfo.customPresets === 'SET' ? 'text-[var(--color-success)]' : 'text-[var(--color-text-muted)]'}>{storageInfo.customPresets}</span></div>
-          <div>sessionStorage.preview: <span className={storageInfo.previewSession === 'SET' ? 'text-[var(--color-warning)]' : 'text-[var(--color-text-muted)]'}>{storageInfo.previewSession}</span></div>
-          <div>localStorage.preview (LEGACY): <span className={storageInfo.legacyPreviewLocal !== 'null' ? 'text-[var(--color-danger)] font-bold' : 'text-[var(--color-text-muted)]'}>{storageInfo.legacyPreviewLocal}</span></div>
-        </div>
-      </div>
-    </details>
-  );
-}
 
 function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
   const { design, setDesign, setDesignPartial, resetDesign, exportDesign, importDesign, loadPreset, currentPresetId, setPresetId, basePresets, activeMode, setActiveMode } = useDesign();
@@ -418,7 +364,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
   const config = design;
   const setConfig = setDesign;
   const reset = resetDesign;
-  const [activeSection, setActiveSection] = useState('presets');
+  const [activeSection, setActiveSection] = useState('controls');
   const [qaTabsValue, setQaTabsValue] = useState('one');
   const [qaOutput, setQaOutput] = useState('');
   const [qaRunning, setQaRunning] = useState(false);
@@ -431,6 +377,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
   const [showImportExportModal, setShowImportExportModal] = useState(false);
   const [importPresetsJson, setImportPresetsJson] = useState('');
   const [importError, setImportError] = useState('');
+  const [activeAccordion, setActiveAccordion] = useState(null);
 
   const LEGACY_HEX = useMemo(() => {
     const parts = [
@@ -733,12 +680,14 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
       )}
 
       <div className={embedded ? "" : componentStyles.layout.page}>
+        <div className="mb-6">
+          <DesignStatusBlock />
+        </div>
         <div className="flex justify-center mb-6">
           <Tabs
             value={activeSection}
             onChange={setActiveSection}
             items={[
-              { value: 'presets', label: 'Presets' },
               { value: 'controls', label: 'Controles' },
               { value: 'preview', label: 'Preview' },
               ...(hideLevelsTab ? [] : [{ value: 'levels', label: 'Niveles' }]),
@@ -751,868 +700,538 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
             <LevelConfigView />
           </div>
         )}
-
-
-        {activeSection === 'presets' && (
-          <div className="space-y-6">
-            <Card className="app-card">
-              <CardHeader className="border-b border-[var(--color-border-default)]">
-                <div className="flex items-center justify-between">
-                  <CardTitle>Presets Disponibles</CardTitle>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowImportExportModal(true)}
-                      size="sm"
-                      className="h-8 rounded-xl"
-                    >
-                      <FileCode className="w-4 h-4 mr-2" />
-                      Importar/Exportar
-                    </Button>
-                    <Button
-                      onClick={() => setShowSavePresetModal(true)}
-                      size="sm"
-                      className="btn-primary h-8 rounded-xl"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Guardar Como...
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-4 text-[var(--color-text-primary)]">
-                {/* Presets Base */}
-                {basePresets && basePresets.length > 0 && (
-                  <div className="mb-4">
-                    <h3 className="text-xs font-semibold text-[var(--color-text-secondary)] mb-3 uppercase tracking-wide">
-                      Presets Base
-                    </h3>
-                    <div className={componentStyles.layout.grid2}>
-                      {basePresets.map((preset) => {
-                        const isActive = currentPresetId === preset.id;
-
-                        return (
-                          <Card
-                            key={preset.id}
-                            className={`app-panel cursor-pointer transition-all border ${isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
-                              }`}
-                            onClick={() => handleLoadPreset(preset.id)}
-                          >
-                            <CardContent className="p-3">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <h4 className="font-semibold text-sm text-[var(--color-text-primary)] truncate">
-                                      {preset.label}
-                                    </h4>
-                                    {isActive && (
-                                      <Badge className="badge-primary text-[10px] px-1.5 py-0.5 shrink-0">Activo</Badge>
-                                    )}
-                                    <Badge className="badge-outline text-[10px] px-1.5 py-0.5 shrink-0">Base</Badge>
-                                  </div>
-                                  <p className="text-xs text-[var(--color-text-secondary)] line-clamp-2">{preset.description}</p>
-                                </div>
-                                {!isActive && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleLoadPreset(preset.id);
-                                    }}
-                                    className="h-7 px-2 text-xs shrink-0"
-                                  >
-                                    Activar
-                                  </Button>
-                                )}
-                              </div>
-                              <div className="flex gap-2 mt-3">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    try {
-                                      const json = JSON.stringify(preset.design || config, null, 2);
-                                      navigator.clipboard.writeText(json);
-                                      toast.success('✅ Preset exportado al portapapeles');
-                                    } catch (err) {
-                                      toast.error('❌ Error al exportar');
-                                    }
-                                  }}
-                                  className="h-7 px-2 text-xs flex-1"
-                                >
-                                  <Download className="w-3 h-3 mr-1" />
-                                  Exportar
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Presets Personalizados */}
-                {Object.keys(customPresets).length > 0 && (
-                  <div className="mt-6">
-                    <h3 className="text-xs font-semibold text-[var(--color-text-secondary)] mb-3 uppercase tracking-wide">
-                      Presets Personalizados
-                    </h3>
-                    <div className={componentStyles.layout.grid2}>
-                      {Object.entries(customPresets).map(([id, preset]) => {
-                        const isActive = JSON.stringify(config) === JSON.stringify(preset.config);
-
-                        return (
-                          <Card
-                            key={id}
-                            className={`app-panel cursor-pointer transition-all border ${isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
-                              }`}
-                            onClick={() => handleLoadPreset(id)}
-                          >
-                            <CardContent className="p-3">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <h4 className="font-semibold text-sm text-[var(--color-text-primary)] truncate">
-                                      {preset.name}
-                                    </h4>
-                                    {isActive && (
-                                      <Badge className="badge-primary text-[10px] px-1.5 py-0.5 shrink-0">Activo</Badge>
-                                    )}
-                                  </div>
-                                  <p className="text-xs text-[var(--color-text-secondary)] line-clamp-2">{preset.description || 'Sin descripción'}</p>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeletePreset(id);
-                                  }}
-                                  className="h-7 w-7 p-0 shrink-0"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
-                              </div>
-                              <div className="flex gap-2 mt-3">
-                                {!isActive && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleLoadPreset(id);
-                                    }}
-                                    className="h-7 px-2 text-xs flex-1"
-                                  >
-                                    Activar
-                                  </Button>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    try {
-                                      const presetData = customPresets[id];
-                                      const json = JSON.stringify({ id, name: presetData.name, description: presetData.description, config: presetData.config }, null, 2);
-                                      navigator.clipboard.writeText(json);
-                                      toast.success('✅ Preset exportado al portapapeles');
-                                    } catch (err) {
-                                      toast.error('❌ Error al exportar');
-                                    }
-                                  }}
-                                  className="h-7 px-2 text-xs flex-1"
-                                >
-                                  <Download className="w-3 h-3 mr-1" />
-                                  Exportar
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Mensaje si no hay presets personalizados */}
-                {Object.keys(customPresets).length === 0 && basePresets && basePresets.length > 0 && (
-                  <div className="text-center py-6 text-sm text-[var(--color-text-secondary)] border-t border-[var(--color-border-default)] mt-6">
-                    <p>No hay presets personalizados guardados.</p>
-                    <p className="mt-1 text-xs">Usa "Guardar Como..." para crear uno nuevo.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {showSavePresetModal && (
-              <>
-                <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowSavePresetModal(false)} />
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-                  <Card className="w-full max-w-md pointer-events-auto app-card">
-                    <CardHeader className="border-b border-[var(--color-border-default)]">
-                      <CardTitle>Guardar Preset</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-4 space-y-4 text-[var(--color-text-primary)]">
-                      <div>
-                        <Label htmlFor="preset-name">Nombre del Preset</Label>
-                        <Input
-                          id="preset-name"
-                          value={presetName}
-                          onChange={(e) => setPresetName(e.target.value)}
-                          className={componentStyles.controls.inputDefault}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="preset-desc">Descripción (opcional)</Label>
-                        <Textarea
-                          id="preset-desc"
-                          value={presetDescription}
-                          onChange={(e) => setPresetDescription(e.target.value)}
-                          rows={3}
-                          className={componentStyles.controls.inputDefault}
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setShowSavePresetModal(false);
-                            setPresetName('');
-                            setPresetDescription('');
-                          }}
-                          className="flex-1 btn-secondary"
-                        >
-                          Cancelar
-                        </Button>
-                        <Button
-                          onClick={handleSavePreset}
-                          className="flex-1 btn-primary"
-                        >
-                          <Save className="w-4 h-4 mr-2" />
-                          Guardar
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </>
-            )}
-
-            {showImportExportModal && (
-              <>
-                <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowImportExportModal(false)} />
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-                  <Card className="w-full max-w-md pointer-events-auto app-card">
-                    <CardHeader className="border-b border-[var(--color-border-default)] flex items-center justify-between">
-                      <CardTitle>Importar/Exportar Presets</CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowImportExportModal(false)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </CardHeader>
-                    <CardContent className="pt-4 space-y-4 text-[var(--color-text-primary)]">
-                      <div className="space-y-2">
-                        <Label htmlFor="export-json">Exportar presets personalizados:</Label>
-                        <Textarea
-                          id="export-json"
-                          value={exportCustomPresets()}
-                          readOnly
-                          rows={6}
-                          className={`font-mono text-xs ${componentStyles.controls.inputDefault}`}
-                        />
-                        <Button onClick={handleExportPresets} className="w-full btn-secondary">
-                          <Copy className="w-4 h-4 mr-2" />
-                          Copiar al portapapeles
-                        </Button>
-                      </div>
-                      <div className="space-y-2 pt-4 border-t border-[var(--color-border-default)]">
-                        <Label htmlFor="import-json">Importar presets (pegar JSON aquí):</Label>
-                        <Textarea
-                          id="import-json"
-                          value={importPresetsJson}
-                          onChange={(e) => {
-                            setImportPresetsJson(e.target.value);
-                            setImportError('');
-                          }}
-                          placeholder="Pega el JSON de presets aquí..."
-                          rows={6}
-                          className={`font-mono text-xs ${componentStyles.controls.inputDefault}`}
-                        />
-                        {importError && (
-                          <Alert variant="danger">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertDescription>{importError}</AlertDescription>
-                          </Alert>
-                        )}
-                        <Button onClick={handleImportPresets} className="w-full btn-primary">
-                          <Upload className="w-4 h-4 mr-2" />
-                          Importar Presets
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </>
-            )}
-
-            <Card className="app-card">
-              <CardHeader className="border-b border-[var(--color-border-default)]">
-                <CardTitle>Configuración Actual</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4 text-[var(--color-text-primary)]">
-                <pre className="text-xs font-mono bg-[var(--color-surface-muted)] p-4 rounded-xl border border-[var(--color-border-default)] overflow-x-auto">
-                  {JSON.stringify(config, null, 2)}
-                </pre>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
         {activeSection === 'controls' && (
-          <div className="space-y-6">
-            {/* Preview Banner - Shown when preview is active */}
-            <PreviewBanner />
+          <div className="space-y-4">
 
             {/* Diff Accordion - Collapsible list of changes */}
-            <DiffAccordion />
+            <DiffAccordion
+              isOpen={activeAccordion === 'diff'}
+              onToggle={() => setActiveAccordion(activeAccordion === 'diff' ? null : 'diff')}
+            />
 
-            {/* Debug Panel - Shows storage state (dev only) */}
-            <DebugPanel />
+            {/* Presets Accordion */}
+            <div className="border border-[var(--color-border-default)] rounded-xl overflow-hidden bg-[var(--color-surface)]">
+              <button
+                onClick={() => setActiveAccordion(activeAccordion === 'presets' ? null : 'presets')}
+                className="w-full flex items-center justify-between p-4 bg-[var(--color-surface-muted)] hover:bg-[var(--color-surface-muted)]/80 transition-colors text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border-muted)] text-[var(--color-primary)]">
+                    <LayoutTemplate className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[var(--color-text-primary)]">Presets y Temas</div>
+                    <div className="text-xs text-[var(--color-text-muted)]">
+                      Gestionar temas base y configuraciones guardadas
+                    </div>
+                  </div>
+                </div>
+                {activeAccordion === 'presets' ? <ChevronUp className="w-5 h-5 text-[var(--color-text-muted)]" /> : <ChevronDown className="w-5 h-5 text-[var(--color-text-muted)]" />}
+              </button>
 
-            {/* Mode Selector - Light/Dark toggle */}
-            <Card className="app-card">
-              <CardHeader className="border-b border-[var(--color-border-default)] py-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">Modo de Visualización</CardTitle>
-                  <div className="flex items-center gap-2 p-1 rounded-xl bg-[var(--color-surface-muted)]">
+              {activeAccordion === 'presets' && (
+                <div className="p-4 border-t border-[var(--color-border-default)]">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="text-sm font-medium text-[var(--color-text-secondary)]">Selecciona un punto de partida:</div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowImportExportModal(true)}
+                        size="sm"
+                        className="h-8 rounded-xl"
+                      >
+                        <FileCode className="w-4 h-4 mr-2" />
+                        Importar/Exportar
+                      </Button>
+                      <Button
+                        onClick={() => setShowSavePresetModal(true)}
+                        size="sm"
+                        className="btn-primary h-8 rounded-xl"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Guardar Actual
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className={componentStyles.layout.grid2}>
+                    {/* Base Presets */}
+                    {Object.values(allPresets).filter(p => p.isBase).map((preset) => (
+                      <Card
+                        key={preset.id || Math.random()}
+                        className={`app-panel cursor-pointer transition-all border ${currentPresetId === preset.id ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
+                          }`}
+                        onClick={() => handleLoadPreset(preset.id)}
+                      >
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-semibold text-sm text-[var(--color-text-primary)] truncate">
+                                  {preset.label || preset.name}
+                                </h4>
+                                {currentPresetId === preset.id && (
+                                  <Badge className="badge-primary text-[10px] px-1.5 py-0.5 shrink-0">Activo</Badge>
+                                )}
+                                <Badge className="badge-outline text-[10px] px-1.5 py-0.5 shrink-0">Base</Badge>
+                              </div>
+                              <p className="text-xs text-[var(--color-text-secondary)] line-clamp-2">{preset.description}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+
+                    {/* Custom Presets */}
+                    {Object.values(allPresets).filter(p => !p.isBase).map((preset) => (
+                      <Card
+                        key={preset.id || Math.random()}
+                        className={`app-panel cursor-pointer transition-all border ${currentPresetId === preset.id ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
+                          }`}
+                        onClick={() => handleLoadPreset(preset.id)}
+                      >
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-semibold text-sm text-[var(--color-text-primary)] truncate">
+                                  {preset.label || preset.name}
+                                </h4>
+                                {currentPresetId === preset.id && (
+                                  <Badge className="badge-primary text-[10px] px-1.5 py-0.5 shrink-0">Activo</Badge>
+                                )}
+                                <Badge className="badge-outline text-[10px] px-1.5 py-0.5 shrink-0 border-purple-200 text-purple-700 bg-purple-50">Custom</Badge>
+                              </div>
+                              <p className="text-xs text-[var(--color-text-secondary)] line-clamp-2">{preset.description}</p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeletePreset(preset.id);
+                              }}
+                              className="h-7 w-7 p-0 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* JSON Config Accordion */}
+            <div className="border border-[var(--color-border-default)] rounded-xl overflow-hidden bg-[var(--color-surface)]">
+              <button
+                onClick={() => setActiveAccordion(activeAccordion === 'json' ? null : 'json')}
+                className="w-full flex items-center justify-between p-4 bg-[var(--color-surface-muted)] hover:bg-[var(--color-surface-muted)]/80 transition-colors text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border-muted)] text-[var(--color-text-secondary)]">
+                    <FileCode className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[var(--color-text-primary)]">Configuración JSON</div>
+                    <div className="text-xs text-[var(--color-text-muted)]">
+                      Ver y copiar el estado actual en formato JSON
+                    </div>
+                  </div>
+                </div>
+                {activeAccordion === 'json' ? <ChevronUp className="w-5 h-5 text-[var(--color-text-muted)]" /> : <ChevronDown className="w-5 h-5 text-[var(--color-text-muted)]" />}
+              </button>
+
+              {activeAccordion === 'json' && (
+                <div className="p-4 border-t border-[var(--color-border-default)]">
+                  <div className="relative">
+                    <Textarea
+                      readOnly
+                      value={JSON.stringify(config, null, 2)}
+                      className="font-mono text-xs min-h-[300px] bg-[var(--color-surface-elevated)]"
+                    />
                     <Button
-                      variant={activeMode === 'light' ? 'default' : 'ghost'}
                       size="sm"
-                      onClick={() => setActiveMode('light')}
-                      className={`h-8 px-3 gap-1.5 ${activeMode === 'light' ? 'btn-primary' : ''}`}
+                      onClick={handleCopyConfig}
+                      className="absolute top-2 right-2 h-7 text-xs"
                     >
-                      <Sun className="w-4 h-4" />
-                      Light
-                    </Button>
-                    <Button
-                      variant={activeMode === 'dark' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setActiveMode('dark')}
-                      className={`h-8 px-3 gap-1.5 ${activeMode === 'dark' ? 'btn-primary' : ''}`}
-                    >
-                      <Moon className="w-4 h-4" />
-                      Dark
+                      <Copy className="w-3 h-3 mr-1" />
+                      Copiar
                     </Button>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="py-3">
-                <p className="text-xs text-[var(--color-text-muted)]">
-                  Cambiar de modo no genera cambios en el preview. Los cambios de color se aplican al modo activo.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="app-card">
-              <CardHeader className="border-b border-[var(--color-border-default)]">
-                <CardTitle>Controles de Diseño</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-2 text-[var(--color-text-primary)]">
-                <DesignControls design={design} setDesignPartial={setDesignPartial} componentStyles={componentStyles} />
-              </CardContent>
-            </Card>
-
-            <div className="flex gap-3 flex-wrap">
-              <Button variant="outline" onClick={handleReset}>
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Restablecer a valores por defecto
-              </Button>
-              <Button variant="outline" onClick={handleCopyConfig}>
-                <Copy className="w-4 h-4 mr-2" />
-                Copiar JSON de Configuración
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const json = exportDesign();
-                  navigator.clipboard.writeText(json);
-                  toast.success('✅ Diseño exportado al portapapeles');
-                }}
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Exportar Diseño
-              </Button>
+              )}
             </div>
 
-            <Card className="app-card">
-              <CardHeader className="border-b border-[var(--color-border-default)]">
-                <CardTitle>Importar Diseño</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-4">
-                <Textarea
-                  placeholder="Pega aquí el JSON del diseño a importar..."
-                  rows={6}
-                  className="font-mono text-xs focus-brand"
-                  onChange={(e) => {
-                    try {
-                      const result = importDesign(e.target.value);
-                      if (result.success) {
-                        toast.success('✅ Diseño importado');
-                        e.target.value = '';
-                      } else {
-                        toast.error('❌ Error: ' + result.error);
-                      }
-                    } catch (err) {
-                      // Solo importar cuando sea JSON válido completo
-                    }
-                  }}
-                />
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const json = prompt('Pega el JSON del diseño:');
-                    if (json) {
-                      const result = importDesign(json);
-                      if (result.success) {
-                        toast.success('✅ Diseño importado');
-                      } else {
-                        toast.error('❌ Error: ' + result.error);
-                      }
-                    }
-                  }}
-                  className="h-10 rounded-xl"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Importar desde JSON
-                </Button>
-              </CardContent>
-            </Card>
+            {/* Design Controls */}
+            <DesignControls
+              design={config}
+              setDesignPartial={setDesignPartial}
+              componentStyles={componentStyles}
+            />
           </div>
         )}
 
+
+
         {/* Auditoría y QA: funcionalidad mantenida pero oculta en UI simplificada */}
-        {false && activeSection === 'audit' && (
-          <Card className="app-card">
-            <CardHeader className="border-b border-[var(--color-border-default)]">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Scan className="w-5 h-5" />
-                  Auditoría Avanzada de Diseño
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <Select
-                    value={auditProfile}
-                    onValueChange={setAuditProfile}
-                    disabled={auditRunning}
-                  >
-                    <SelectTrigger className="w-[180px] h-9 rounded-xl">
-                      <SelectValue placeholder="Perfil de auditoría" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(QUICK_PROFILES).map(([key, profile]) => (
-                        <SelectItem key={key} value={key}>
-                          {profile.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    onClick={() => handleRunAudit(auditProfile)}
-                    disabled={auditRunning}
-                    className="btn-primary h-9 rounded-xl shadow-sm"
-                  >
-                    <Scan className="w-4 h-4 mr-2" />
-                    {auditRunning ? 'Auditando...' : 'Ejecutar Auditoría'}
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-4 text-[var(--color-text-primary)]">
-              {auditReport ? (
-                <div className="space-y-4">
-                  <div className={componentStyles.layout.grid2}>
-                    <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
-                      <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Archivos escaneados</div>
-                      <div className="text-2xl font-bold text-[var(--color-text-primary)]">{auditReport?.summary?.filesScanned || 0}</div>
-                    </Card>
-                    <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
-                      <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Problemas encontrados</div>
-                      <div className="text-2xl font-bold text-[var(--color-text-primary)]">{auditReport?.summary?.totalIssues || 0}</div>
-                    </Card>
-                  </div>
-
-                  {(auditReport?.summary?.totalIssues || 0) === 0 && (
-                    <Alert variant="success">
-                      <CheckCircle className="h-4 w-4" />
-                      <AlertDescription>¡Excelente! No se encontraron problemas de diseño con el perfil "{QUICK_PROFILES[auditProfile]?.name}".</AlertDescription>
-                    </Alert>
-                  )}
-
-                  {(auditReport?.summary?.totalIssues || 0) > 0 && auditReport?.summary?.issues && (
-                    <div className={componentStyles.layout.grid2}>
-                      {Object.entries(auditReport.summary.issues).map(([k, v]) => (
-                        <Card key={k} className="bg-[var(--color-surface-elevated)] rounded-lg p-3 border border-[var(--color-border-default)]">
-                          <div className="text-xs uppercase tracking-wide text-[var(--color-text-secondary)] mb-1">{k}</div>
-                          <div className="text-xl font-semibold text-[var(--color-text-primary)]">{v}</div>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-
-                  {auditReport?.issues && (
-                    <details className="rounded-xl border border-[var(--color-border-default)] p-4 bg-[var(--color-surface-muted)]">
-                      <summary className="cursor-pointer font-medium text-[var(--color-text-primary)]">Detalles por categoría</summary>
-                      <div className="mt-4 space-y-4 max-h-[420px] overflow-auto">
-                        {Object.entries(auditReport.issues).map(([bucket, items]) => (
-                          items.length > 0 && (
-                            <Card key={bucket} className="bg-[var(--color-surface-elevated)] rounded-lg p-3 border border-[var(--color-border-default)]">
-                              <div className="mb-3 font-semibold text-[var(--color-text-primary)] flex items-center justify-between">
-                                <span>{bucket}</span>
-                                <Badge className={`rounded-full ${componentStyles.status.badgeDanger}`}>
-                                  {items.length}
-                                </Badge>
-                              </div>
-                              <ul className="space-y-2 text-sm">
-                                {items.slice(0, 50).map((it, idx) => (
-                                  <li key={idx} className="border-l-2 border-[var(--color-primary)]/30 pl-3 py-1">
-                                    <div className="text-[11px] text-[var(--color-text-secondary)]">{it.file}:{it.line}</div>
-                                    <div className="font-mono text-xs text-[var(--color-text-primary)] bg-[var(--color-surface-muted)] p-1 rounded mt-1">{it.snippet}</div>
-                                  </li>
-                                ))}
-                              </ul>
-                              {items.length > 50 && (
-                                <div className="text-xs text-[var(--color-text-secondary)] mt-3 text-center">
-                                  +{items.length - 50} más (usa "Copiar JSON" para ver todo)
-                                </div>
-                              )}
-                            </Card>
-                          )
-                        ))}
-                      </div>
-                    </details>
-                  )}
-
-                  <Button variant="outline" onClick={handleCopyAudit} className="h-9 rounded-xl w-full">
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copiar informe JSON completo
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-sm text-[var(--color-text-secondary)]">
-                  Selecciona un perfil y pulsa "Ejecutar Auditoría" para analizar estilos y clases en todo el proyecto.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {activeSection === 'qa' && false && (
-          <>
+        {
+          false && activeSection === 'audit' && (
             <Card className="app-card">
               <CardHeader className="border-b border-[var(--color-border-default)]">
-                <CardTitle>QA Rápido (Dev)</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Scan className="w-5 h-5" />
+                    Auditoría Avanzada de Diseño
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={auditProfile}
+                      onValueChange={setAuditProfile}
+                      disabled={auditRunning}
+                    >
+                      <SelectTrigger className="w-[180px] h-9 rounded-xl">
+                        <SelectValue placeholder="Perfil de auditoría" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(QUICK_PROFILES).map(([key, profile]) => (
+                          <SelectItem key={key} value={key}>
+                            {profile.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={() => handleRunAudit(auditProfile)}
+                      disabled={auditRunning}
+                      className="btn-primary h-9 rounded-xl shadow-sm"
+                    >
+                      <Scan className="w-4 h-4 mr-2" />
+                      {auditRunning ? 'Auditando...' : 'Ejecutar Auditoría'}
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-6 pt-6 text-[var(--color-text-primary)]">
-                <p className="text-sm text-[var(--color-text-secondary)]">
-                  Pruebas integradas para detectar problemas comunes de diseño y accesibilidad.
-                </p>
-                {/* Fixtures visibles para QA: aseguran detección por selectores del test */}
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Acciones rápidas</h4>
-                    <div className="flex items-center gap-3">
-                      <Button
-                        className="btn-primary h-8 rounded-xl shadow-sm px-3"
-                        onClick={() => toast.success('✅ Botón Primary funcionando')}
-                        aria-label="Probar botón Primary QA"
-                      >
-                        Primary (QA)
-                      </Button>
-                      <Badge>QA</Badge>
+              <CardContent className="pt-4 text-[var(--color-text-primary)]">
+                {auditReport ? (
+                  <div className="space-y-4">
+                    <div className={componentStyles.layout.grid2}>
+                      <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
+                        <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Archivos escaneados</div>
+                        <div className="text-2xl font-bold text-[var(--color-text-primary)]">{auditReport?.summary?.filesScanned || 0}</div>
+                      </Card>
+                      <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
+                        <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Problemas encontrados</div>
+                        <div className="text-2xl font-bold text-[var(--color-text-primary)]">{auditReport?.summary?.totalIssues || 0}</div>
+                      </Card>
+                    </div>
+
+                    {(auditReport?.summary?.totalIssues || 0) === 0 && (
+                      <Alert variant="success">
+                        <CheckCircle className="h-4 w-4" />
+                        <AlertDescription>¡Excelente! No se encontraron problemas de diseño con el perfil "{QUICK_PROFILES[auditProfile]?.name}".</AlertDescription>
+                      </Alert>
+                    )}
+
+                    {(auditReport?.summary?.totalIssues || 0) > 0 && auditReport?.summary?.issues && (
+                      <div className={componentStyles.layout.grid2}>
+                        {Object.entries(auditReport.summary.issues).map(([k, v]) => (
+                          <Card key={k} className="bg-[var(--color-surface-elevated)] rounded-lg p-3 border border-[var(--color-border-default)]">
+                            <div className="text-xs uppercase tracking-wide text-[var(--color-text-secondary)] mb-1">{k}</div>
+                            <div className="text-xl font-semibold text-[var(--color-text-primary)]">{v}</div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+
+                    {auditReport?.issues && (
+                      <details className="rounded-xl border border-[var(--color-border-default)] p-4 bg-[var(--color-surface-muted)]">
+                        <summary className="cursor-pointer font-medium text-[var(--color-text-primary)]">Detalles por categoría</summary>
+                        <div className="mt-4 space-y-4 max-h-[420px] overflow-auto">
+                          {Object.entries(auditReport.issues).map(([bucket, items]) => (
+                            items.length > 0 && (
+                              <Card key={bucket} className="bg-[var(--color-surface-elevated)] rounded-lg p-3 border border-[var(--color-border-default)]">
+                                <div className="mb-3 font-semibold text-[var(--color-text-primary)] flex items-center justify-between">
+                                  <span>{bucket}</span>
+                                  <Badge className={`rounded-full ${componentStyles.status.badgeDanger}`}>
+                                    {items.length}
+                                  </Badge>
+                                </div>
+                                <ul className="space-y-2 text-sm">
+                                  {items.slice(0, 50).map((it, idx) => (
+                                    <li key={idx} className="border-l-2 border-[var(--color-primary)]/30 pl-3 py-1">
+                                      <div className="text-[11px] text-[var(--color-text-secondary)]">{it.file}:{it.line}</div>
+                                      <div className="font-mono text-xs text-[var(--color-text-primary)] bg-[var(--color-surface-muted)] p-1 rounded mt-1">{it.snippet}</div>
+                                    </li>
+                                  ))}
+                                </ul>
+                                {items.length > 50 && (
+                                  <div className="text-xs text-[var(--color-text-secondary)] mt-3 text-center">
+                                    +{items.length - 50} más (usa "Copiar JSON" para ver todo)
+                                  </div>
+                                )}
+                              </Card>
+                            )
+                          ))}
+                        </div>
+                      </details>
+                    )}
+
+                    <Button variant="outline" onClick={handleCopyAudit} className="h-9 rounded-xl w-full">
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copiar informe JSON completo
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-[var(--color-text-secondary)]">
+                    Selecciona un perfil y pulsa "Ejecutar Auditoría" para analizar estilos y clases en todo el proyecto.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )
+        }
+
+        {
+          activeSection === 'qa' && false && (
+            <>
+              <Card className="app-card">
+                <CardHeader className="border-b border-[var(--color-border-default)]">
+                  <CardTitle>QA Rápido (Dev)</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6 pt-6 text-[var(--color-text-primary)]">
+                  <p className="text-sm text-[var(--color-text-secondary)]">
+                    Pruebas integradas para detectar problemas comunes de diseño y accesibilidad.
+                  </p>
+                  {/* Fixtures visibles para QA: aseguran detección por selectores del test */}
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Acciones rápidas</h4>
+                      <div className="flex items-center gap-3">
+                        <Button
+                          className="btn-primary h-8 rounded-xl shadow-sm px-3"
+                          onClick={() => toast.success('✅ Botón Primary funcionando')}
+                          aria-label="Probar botón Primary QA"
+                        >
+                          Primary (QA)
+                        </Button>
+                        <Badge>QA</Badge>
+                      </div>
+                    </div>
+                    <div className="app-panel p-3 rounded-xl border border-[var(--color-border-muted)]">
+                      <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Componentes de prueba</h4>
+                      <div className="text-sm text-[var(--color-text-secondary)]">Panel QA</div>
+                    </div>
+                    <div className="icon-tile" aria-hidden />
+                    <div>
+                      <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Pestañas de ejemplo</h4>
+                      <Tabs
+                        value={qaTabsValue}
+                        onChange={setQaTabsValue}
+                        items={[
+                          { value: 'one', label: 'Uno' },
+                          { value: 'two', label: 'Dos' },
+                        ]}
+                        variant="segmented"
+                      />
+                      <div className="mt-3 text-sm text-[var(--color-text-secondary)]">
+                        {qaTabsValue === 'one' ? (
+                          <span>Contenido de la pestaña “Uno”: texto de ejemplo.</span>
+                        ) : (
+                          <span>Contenido de la pestaña “Dos”: texto de ejemplo alternativo.</span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="app-panel p-3 rounded-xl border border-[var(--color-border-muted)]">
-                    <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Componentes de prueba</h4>
-                    <div className="text-sm text-[var(--color-text-secondary)]">Panel QA</div>
+
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      variant="outline"
+                      onClick={handleVisualSmoke}
+                      disabled={qaRunning}
+                      className="h-10 rounded-xl"
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Visual Smoke
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleA11yQuick}
+                      disabled={qaRunning}
+                      className="h-10 rounded-xl"
+                    >
+                      <Shield className="w-4 h-4 mr-2" />
+                      A11y Quick-Check
+                    </Button>
                   </div>
-                  <div className="icon-tile" aria-hidden />
+
+                  {qaOutput && (
+                    <div className="bg-[var(--color-surface-muted)] rounded-xl p-4 border border-[var(--color-border-default)]">
+                      <pre className="text-xs text-[var(--color-text-primary)] whitespace-pre-wrap font-mono overflow-x-auto max-h-96">
+                        {qaOutput}
+                      </pre>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="app-card">
+                <CardHeader className="border-b border-[var(--color-border-default)]">
+                  <CardTitle>QA Visual - Design System</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <QAVisualContent embedded />
+                </CardContent>
+              </Card>
+            </>
+          )
+        }
+
+        {
+          activeSection === 'preview' && (
+            <div className="space-y-6">
+
+              {/* Preview de Componentes */}
+              <Card className="app-card">
+                <CardHeader className="border-b border-[var(--color-border-default)]">
+                  <CardTitle>Preview de Componentes</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6 pt-6 text-[var(--color-text-primary)]">
+                  {/* PageHeader */}
                   <div>
-                    <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">Pestañas de ejemplo</h4>
+                    <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">PageHeader:</p>
+                    <div className={componentStyles.containers.cardBase + " p-4"}>
+                      <h1 className={componentStyles.typography.pageTitle}>Título de Página</h1>
+                      <p className={componentStyles.typography.pageSubtitle}>Subtítulo descriptivo del contenido</p>
+                    </div>
+                  </div>
+
+                  {/* Botones */}
+                  <div>
+                    <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Botones (todas las variantes):</p>
+                    <div className="flex flex-wrap gap-3">
+                      <Button className={componentStyles.buttons.primary}>Primary</Button>
+                      <Button className={componentStyles.buttons.secondary}>Secondary</Button>
+                      <Button className={componentStyles.buttons.outline}>Outline</Button>
+                      <Button className={componentStyles.buttons.ghost}>Ghost</Button>
+                      <Button className={componentStyles.buttons.danger}>Danger</Button>
+                    </div>
+                  </div>
+
+                  {/* Cards y Paneles */}
+                  <div>
+                    <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Cards y Paneles:</p>
+                    <div className={componentStyles.layout.grid2}>
+                      <Card className={componentStyles.containers.cardBase}>
+                        <CardHeader>
+                          <CardTitle className={componentStyles.typography.cardTitle}>Card Base</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className={componentStyles.typography.bodyText}>Contenido de card base con shadow suave</p>
+                        </CardContent>
+                      </Card>
+                      <Card className={componentStyles.containers.cardElevated}>
+                        <CardHeader>
+                          <CardTitle className={componentStyles.typography.cardTitle}>Card Elevated</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className={componentStyles.typography.bodyText}>Card elevada con shadow más marcada</p>
+                        </CardContent>
+                      </Card>
+                      <Card className={componentStyles.containers.cardMetric}>
+                        <CardContent className="pt-4 text-center">
+                          <p className="text-3xl font-bold text-[var(--color-text-primary)]">198</p>
+                          <p className={componentStyles.typography.smallMetaText}>Métrica destacada</p>
+                        </CardContent>
+                      </Card>
+                      <Card className={componentStyles.containers.panelBase}>
+                        <CardContent className="pt-4">
+                          <p className={componentStyles.typography.bodyText}>Panel base con borde sutil</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+
+                  {/* Inputs y Controles */}
+                  <div>
+                    <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Inputs y Controles:</p>
+                    <div className="space-y-3 max-w-md">
+                      <Input
+                        placeholder="Input por defecto"
+                        className={componentStyles.controls.inputDefault}
+                      />
+                      <Input
+                        placeholder="Input pequeño"
+                        className={componentStyles.controls.inputSm}
+                      />
+                      <Input
+                        placeholder="Input underline"
+                        className={componentStyles.controls.inputUnderline}
+                      />
+                      <Select>
+                        <SelectTrigger className={componentStyles.controls.selectDefault}>
+                          <SelectValue placeholder="Select por defecto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">Opción 1</SelectItem>
+                          <SelectItem value="2">Opción 2</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Tabs */}
+                  <div>
+                    <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Tabs:</p>
                     <Tabs
-                      value={qaTabsValue}
-                      onChange={setQaTabsValue}
+                      value="tab1"
+                      onChange={() => { }}
                       items={[
-                        { value: 'one', label: 'Uno' },
-                        { value: 'two', label: 'Dos' },
+                        { value: 'tab1', label: 'Tab 1' },
+                        { value: 'tab2', label: 'Tab 2' },
                       ]}
                       variant="segmented"
                     />
-                    <div className="mt-3 text-sm text-[var(--color-text-secondary)]">
-                      {qaTabsValue === 'one' ? (
-                        <span>Contenido de la pestaña “Uno”: texto de ejemplo.</span>
-                      ) : (
-                        <span>Contenido de la pestaña “Dos”: texto de ejemplo alternativo.</span>
-                      )}
-                    </div>
                   </div>
-                </div>
 
-                <div className="flex gap-2 flex-wrap">
-                  <Button
-                    variant="outline"
-                    onClick={handleVisualSmoke}
-                    disabled={qaRunning}
-                    className="h-10 rounded-xl"
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    Visual Smoke
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleA11yQuick}
-                    disabled={qaRunning}
-                    className="h-10 rounded-xl"
-                  >
-                    <Shield className="w-4 h-4 mr-2" />
-                    A11y Quick-Check
-                  </Button>
-                </div>
-
-                {qaOutput && (
-                  <div className="bg-[var(--color-surface-muted)] rounded-xl p-4 border border-[var(--color-border-default)]">
-                    <pre className="text-xs text-[var(--color-text-primary)] whitespace-pre-wrap font-mono overflow-x-auto max-h-96">
-                      {qaOutput}
-                    </pre>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="app-card">
-              <CardHeader className="border-b border-[var(--color-border-default)]">
-                <CardTitle>QA Visual - Design System</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <QAVisualContent embedded />
-              </CardContent>
-            </Card>
-          </>
-        )}
-
-        {activeSection === 'preview' && (
-          <div className="space-y-6">
-            {/* Selector de Preset Base */}
-            <Card className="app-card">
-              <CardHeader className="border-b border-[var(--color-border-default)]">
-                <CardTitle>Selector de Estilo Base</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4 text-[var(--color-text-primary)]">
-                <div className="space-y-4">
+                  {/* Badges y Estados */}
                   <div>
-                    <Label className="text-sm font-medium text-[var(--color-text-primary)] mb-2 block">
-                      Preset de Estilo:
-                    </Label>
-                    <Select
-                      value={currentPresetId || 'studia'}
-                      onValueChange={setPresetId}
-                    >
-                      <SelectTrigger className="w-full h-10 rounded-xl">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {basePresets && basePresets.length > 0 ? (
-                          basePresets.map((preset) => (
-                            <SelectItem key={preset.id} value={preset.id}>
-                              <div>
-                                <div className="font-medium">{preset.label}</div>
-                                <div className="text-xs text-[var(--color-text-secondary)]">{preset.description}</div>
-                              </div>
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="default" disabled>
-                            No hay presets disponibles
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {/* Debug: mostrar información de presets */}
-                  <div className="mt-4 p-3 bg-[var(--color-surface-muted)] rounded-lg text-xs">
-                    <p className="font-semibold mb-2">Presets disponibles ({basePresets?.length || 0}):</p>
-                    <div className="space-y-1 font-mono text-[10px]">
-                      {basePresets?.map(p => (
-                        <div key={p.id} className={currentPresetId === p.id ? 'text-[var(--color-primary)] font-bold' : ''}>
-                          {p.id} - {p.label}
-                        </div>
-                      ))}
+                    <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Badges y Estados:</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge className={componentStyles.status.badgeDefault}>Default</Badge>
+                      <Badge className={componentStyles.status.badgeInfo}>Info</Badge>
+                      <Badge className={componentStyles.status.badgeSuccess}>Success</Badge>
+                      <Badge className={componentStyles.status.badgeWarning}>Warning</Badge>
+                      <Badge className={componentStyles.status.badgeDanger}>Danger</Badge>
                     </div>
                   </div>
-                  {/* Debug: mostrar valores de layout actuales */}
-                  <LayoutValuesDebug />
-                  {currentPresetId && basePresets && (
-                    <div className="p-3 rounded-xl bg-[var(--color-surface-muted)] border border-[var(--color-border-default)]">
-                      <p className="text-xs text-[var(--color-text-secondary)]">
-                        <strong>Preset activo:</strong> {basePresets.find(p => p.id === currentPresetId)?.label || currentPresetId}
-                      </p>
-                      <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-                        {basePresets.find(p => p.id === currentPresetId)?.description}
-                      </p>
-                      <p className="text-xs text-[var(--color-text-muted)] mt-2">
-                        💡 El color de marca (primary) es siempre <code className="bg-[var(--color-primary-soft)] px-1 rounded">#fd9840</code> en todos los presets.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Preview de Componentes */}
-            <Card className="app-card">
-              <CardHeader className="border-b border-[var(--color-border-default)]">
-                <CardTitle>Preview de Componentes</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6 pt-6 text-[var(--color-text-primary)]">
-                {/* PageHeader */}
-                <div>
-                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">PageHeader:</p>
-                  <div className={componentStyles.containers.cardBase + " p-4"}>
-                    <h1 className={componentStyles.typography.pageTitle}>Título de Página</h1>
-                    <p className={componentStyles.typography.pageSubtitle}>Subtítulo descriptivo del contenido</p>
-                  </div>
-                </div>
-
-                {/* Botones */}
-                <div>
-                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Botones (todas las variantes):</p>
-                  <div className="flex flex-wrap gap-3">
-                    <Button className={componentStyles.buttons.primary}>Primary</Button>
-                    <Button className={componentStyles.buttons.secondary}>Secondary</Button>
-                    <Button className={componentStyles.buttons.outline}>Outline</Button>
-                    <Button className={componentStyles.buttons.ghost}>Ghost</Button>
-                    <Button className={componentStyles.buttons.danger}>Danger</Button>
-                  </div>
-                </div>
-
-                {/* Cards y Paneles */}
-                <div>
-                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Cards y Paneles:</p>
-                  <div className={componentStyles.layout.grid2}>
-                    <Card className={componentStyles.containers.cardBase}>
-                      <CardHeader>
-                        <CardTitle className={componentStyles.typography.cardTitle}>Card Base</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className={componentStyles.typography.bodyText}>Contenido de card base con shadow suave</p>
-                      </CardContent>
-                    </Card>
-                    <Card className={componentStyles.containers.cardElevated}>
-                      <CardHeader>
-                        <CardTitle className={componentStyles.typography.cardTitle}>Card Elevated</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className={componentStyles.typography.bodyText}>Card elevada con shadow más marcada</p>
-                      </CardContent>
-                    </Card>
-                    <Card className={componentStyles.containers.cardMetric}>
-                      <CardContent className="pt-4 text-center">
-                        <p className="text-3xl font-bold text-[var(--color-text-primary)]">198</p>
-                        <p className={componentStyles.typography.smallMetaText}>Métrica destacada</p>
-                      </CardContent>
-                    </Card>
-                    <Card className={componentStyles.containers.panelBase}>
-                      <CardContent className="pt-4">
-                        <p className={componentStyles.typography.bodyText}>Panel base con borde sutil</p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-
-                {/* Inputs y Controles */}
-                <div>
-                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Inputs y Controles:</p>
-                  <div className="space-y-3 max-w-md">
-                    <Input
-                      placeholder="Input por defecto"
-                      className={componentStyles.controls.inputDefault}
-                    />
-                    <Input
-                      placeholder="Input pequeño"
-                      className={componentStyles.controls.inputSm}
-                    />
-                    <Input
-                      placeholder="Input underline"
-                      className={componentStyles.controls.inputUnderline}
-                    />
-                    <Select>
-                      <SelectTrigger className={componentStyles.controls.selectDefault}>
-                        <SelectValue placeholder="Select por defecto" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">Opción 1</SelectItem>
-                        <SelectItem value="2">Opción 2</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Tabs */}
-                <div>
-                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Tabs:</p>
-                  <Tabs
-                    value="tab1"
-                    onChange={() => { }}
-                    items={[
-                      { value: 'tab1', label: 'Tab 1' },
-                      { value: 'tab2', label: 'Tab 2' },
-                    ]}
-                    variant="segmented"
-                  />
-                </div>
-
-                {/* Badges y Estados */}
-                <div>
-                  <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Badges y Estados:</p>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className={componentStyles.status.badgeDefault}>Default</Badge>
-                    <Badge className={componentStyles.status.badgeInfo}>Info</Badge>
-                    <Badge className={componentStyles.status.badgeSuccess}>Success</Badge>
-                    <Badge className={componentStyles.status.badgeWarning}>Warning</Badge>
-                    <Badge className={componentStyles.status.badgeDanger}>Danger</Badge>
-                  </div>
-                </div>
-
-                {/* Verificación de Color de Marca */}
-                <div className="p-4 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary-soft)]">
-                  <p className="text-sm font-semibold text-[var(--color-text-primary)] mb-2">✅ Verificación de Color de Marca</p>
-                  <p className="text-xs text-[var(--color-text-secondary)]">
-                    El color primary debe ser siempre <code className="bg-[var(--color-surface-elevated)]/50 px-1 rounded">#fd9840</code> en todos los presets.
-                  </p>
-                  <div className="mt-3 flex items-center gap-6 text-xs text-[var(--color-text-secondary)] font-mono">
-                    <div className="flex items-center gap-2">
-                      <span>Primary:</span>
-                      <span style={{ color: '#fd9840', fontWeight: 'bold' }}>#fd9840</span>
-                      {/* Intentional hardcode for QA: must match #fd9840 */}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span>Soft:</span>
-                      <span style={{ color: 'var(--color-primary-soft)', fontWeight: 'bold' }}>var(--color-primary-soft)</span>
+                  {/* Verificación de Color de Marca */}
+                  <div className="p-4 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary-soft)]">
+                    <p className="text-sm font-semibold text-[var(--color-text-primary)] mb-2">✅ Verificación de Color de Marca</p>
+                    <p className="text-xs text-[var(--color-text-secondary)]">
+                      El color primary debe ser siempre <code className="bg-[var(--color-surface-elevated)]/50 px-1 rounded">#fd9840</code> en todos los presets.
+                    </p>
+                    <div className="mt-3 flex items-center gap-6 text-xs text-[var(--color-text-secondary)] font-mono">
+                      <div className="flex items-center gap-2">
+                        <span>Primary:</span>
+                        <span style={{ color: '#fd9840', fontWeight: 'bold' }}>#fd9840</span>
+                        {/* Intentional hardcode for QA: must match #fd9840 */}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>Soft:</span>
+                        <span style={{ color: 'var(--color-primary-soft)', fontWeight: 'bold' }}>var(--color-primary-soft)</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </div>
+                </CardContent>
+              </Card>
+            </div>
+          )
+        }
+      </div >
     </div >
   );
 }
