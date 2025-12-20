@@ -376,7 +376,7 @@ export interface DesignTokens {
 export const DEFAULT_DESIGN: DesignTokens = {
   // Colores principales
   colors: {
-    primary: '#fd9840',        // Color de marca Studia (naranja)
+    primary: '#ff9837',        // Color de marca Studia (naranja)
     primarySoft: '#FFF5ED',    // Versión muy clara del primary para fondos suaves
     secondary: '#FB8C3A',      // Versión ligeramente más oscura del primary
     accent: '#F97316',          // Naranja complementario
@@ -892,6 +892,46 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
       }
       // Also emit --btn-radius as alias for compatibility
       vars['--btn-radius'] = vars['--button-radius'];
+
+      // ========================================================================
+      // Button Variant Tokens
+      // ========================================================================
+
+      // Primary variant
+      vars['--btn-primary-bg'] = normalized.colors.primary || DEFAULT_DESIGN.colors.primary;
+      vars['--btn-primary-fg'] = normalized.colors.text?.inverse || DEFAULT_DESIGN.colors.text.inverse;
+      vars['--btn-primary-border'] = normalized.colors.primary || DEFAULT_DESIGN.colors.primary;
+      vars['--btn-primary-hover-bg'] = normalized.colors.secondary || DEFAULT_DESIGN.colors.secondary;
+
+      // Secondary variant
+      vars['--btn-secondary-bg'] = normalized.colors.surface || DEFAULT_DESIGN.colors.surface;
+      vars['--btn-secondary-fg'] = normalized.colors.text?.primary || DEFAULT_DESIGN.colors.text.primary;
+      vars['--btn-secondary-border'] = normalized.colors.border?.default || DEFAULT_DESIGN.colors.border.default;
+      vars['--btn-secondary-hover-bg'] = normalized.colors.surfaceMuted || DEFAULT_DESIGN.colors.surfaceMuted || '#F3F4F6';
+
+      // Outline variant
+      vars['--btn-outline-bg'] = 'transparent';
+      vars['--btn-outline-fg'] = normalized.colors.text?.primary || DEFAULT_DESIGN.colors.text.primary;
+      vars['--btn-outline-border'] = normalized.colors.border?.strong || DEFAULT_DESIGN.colors.border.strong;
+      vars['--btn-outline-hover-bg'] = normalized.colors.surfaceMuted || DEFAULT_DESIGN.colors.surfaceMuted || '#F3F4F6';
+
+      // Ghost variant
+      vars['--btn-ghost-bg'] = 'transparent';
+      vars['--btn-ghost-fg'] = normalized.colors.text?.primary || DEFAULT_DESIGN.colors.text.primary;
+      vars['--btn-ghost-border'] = 'transparent';
+      vars['--btn-ghost-hover-bg'] = normalized.colors.surfaceMuted || DEFAULT_DESIGN.colors.surfaceMuted || '#F3F4F6';
+
+      // Danger variant
+      vars['--btn-danger-bg'] = normalized.colors.danger || DEFAULT_DESIGN.colors.danger;
+      vars['--btn-danger-fg'] = normalized.colors.text?.inverse || DEFAULT_DESIGN.colors.text.inverse;
+      vars['--btn-danger-border'] = normalized.colors.danger || DEFAULT_DESIGN.colors.danger;
+      vars['--btn-danger-hover-bg'] = normalized.colors.danger || DEFAULT_DESIGN.colors.danger;
+
+      // Warning variant
+      vars['--btn-warning-bg'] = normalized.colors.warning || DEFAULT_DESIGN.colors.warning;
+      vars['--btn-warning-fg'] = normalized.colors.text?.inverse || DEFAULT_DESIGN.colors.text.inverse;
+      vars['--btn-warning-border'] = normalized.colors.warning || DEFAULT_DESIGN.colors.warning;
+      vars['--btn-warning-hover-bg'] = normalized.colors.warning || DEFAULT_DESIGN.colors.warning;
     }
     if (normalized.components.card) {
       const card = normalized.components.card;
@@ -1161,8 +1201,8 @@ export function applyDesignChange(
  */
 export const DARK_MODE_DEFAULTS: Partial<DesignTokens> = {
   colors: {
-    primary: '#fd9840',
-    primarySoft: 'rgba(253, 152, 64, 0.1)',
+    primary: '#ff9837',
+    primarySoft: 'rgba(255, 152, 55, 0.1)',
     secondary: '#FB8C3A',
     accent: '#F97316',
     success: '#10B981',

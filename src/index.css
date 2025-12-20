@@ -522,117 +522,140 @@ button:focus-visible {
     box-shadow: var(--focus-ring);
   }
 
-  /* Botones semánticos */
+  /* ============================================================================
+   * BUTTONS - Sistema unificado basado en tokens CSS
+   * Todas las variantes consumen CSS vars de designConfig.ts
+   * ============================================================================ */
+
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-family: "Open Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: "Open Sans", system-ui, sans-serif;
     font-weight: 500;
-    transition: all 300ms ease-out;
+    white-space: nowrap;
     cursor: pointer;
-    border-radius: var(--button-radius, var(--radius-ctrl, 10px));
+    transition: all 200ms ease-out;
+
+    /* Token-driven properties */
     height: var(--control-height, 2.5rem);
     min-height: var(--control-height, 2.5rem);
-    box-shadow: none;
-    /* Sin sombra por defecto - más minimalista */
+    border-radius: var(--button-radius, var(--radius-ctrl, 10px));
+    padding: var(--button-padding-md, 0.5rem 1.25rem);
+    box-shadow: var(--btn-shadow, none);
   }
 
-  .btn:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    /* Sombra solo en hover */
+  .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   }
 
+  .btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-primary-soft, rgba(253, 152, 64, 0.3));
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+
+  /* ── Primary ── */
   .btn-primary {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-    color: var(--color-text-inverse);
-    border: 1px solid var(--color-primary);
-    box-shadow: 0 2px 8px rgba(253, 152, 64, 0.3);
-    /* Sombra con color primary */
+    background: var(--btn-primary-bg, var(--color-primary));
+    color: var(--btn-primary-fg, var(--color-text-inverse));
+    border: 1px solid var(--btn-primary-border, var(--color-primary));
   }
 
-  .btn-primary:hover {
-    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
-    border-color: var(--color-secondary);
-    box-shadow: 0 4px 12px rgba(253, 152, 64, 0.4);
-    /* Sombra más intensa en hover */
+  .btn-primary:hover:not(:disabled) {
+    background: var(--btn-primary-hover-bg, var(--color-secondary));
   }
 
+  /* ── Secondary ── */
   .btn-secondary {
-    background-color: var(--color-surface);
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border-default);
+    background: var(--btn-secondary-bg, var(--color-surface));
+    color: var(--btn-secondary-fg, var(--color-text-primary));
+    border: 1px solid var(--btn-secondary-border, var(--color-border-default));
   }
 
-  .btn-secondary:hover {
-    background-color: var(--color-surface-muted);
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--btn-secondary-hover-bg, var(--color-surface-muted));
   }
 
+  /* ── Outline ── */
   .btn-outline {
-    background-color: transparent;
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border-strong);
+    background: var(--btn-outline-bg, transparent);
+    color: var(--btn-outline-fg, var(--color-text-primary));
+    border: 1px solid var(--btn-outline-border, var(--color-border-strong));
   }
 
-  .btn-outline:hover {
-    background-color: var(--color-surface-muted);
+  .btn-outline:hover:not(:disabled) {
+    background: var(--btn-outline-hover-bg, var(--color-surface-muted));
   }
 
+  /* ── Ghost ── */
   .btn-ghost {
-    background-color: transparent;
-    color: var(--color-text-primary);
-    border: 1px solid transparent;
+    background: var(--btn-ghost-bg, transparent);
+    color: var(--btn-ghost-fg, var(--color-text-primary));
+    border: 1px solid var(--btn-ghost-border, transparent);
   }
 
-  .btn-ghost:hover {
-    background-color: var(--color-surface-muted);
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--btn-ghost-hover-bg, var(--color-surface-muted));
   }
 
+  /* ── Danger ── */
   .btn-danger {
-    background-color: var(--color-danger);
-    color: var(--color-text-inverse);
-    border: 1px solid var(--color-danger);
+    background: var(--btn-danger-bg, var(--color-danger));
+    color: var(--btn-danger-fg, var(--color-text-inverse));
+    border: 1px solid var(--btn-danger-border, var(--color-danger));
   }
 
-  .btn-danger:hover {
-    background-color: var(--color-danger);
-    opacity: 0.9;
+  .btn-danger:hover:not(:disabled) {
+    background: var(--btn-danger-hover-bg, var(--color-danger));
+    filter: brightness(0.9);
   }
 
+  /* ── Warning ── */
   .btn-warning {
-    background-color: var(--color-warning);
-    color: var(--color-text-inverse);
-    border: 1px solid var(--color-warning);
+    background: var(--btn-warning-bg, var(--color-warning));
+    color: var(--btn-warning-fg, var(--color-text-inverse));
+    border: 1px solid var(--btn-warning-border, var(--color-warning));
   }
 
-  .btn-warning:hover {
-    background-color: var(--color-warning);
-    opacity: 0.9;
+  .btn-warning:hover:not(:disabled) {
+    background: var(--btn-warning-hover-bg, var(--color-warning));
+    filter: brightness(0.9);
   }
 
+  /* ── Disabled state ── */
   .btn-disabled {
     opacity: 0.5;
     pointer-events: none;
     cursor: not-allowed;
   }
 
+  /* ── Sizes ── */
   .btn-sm {
-    padding: var(--button-padding-sm);
+    padding: var(--button-padding-sm, 0.375rem 0.75rem);
     font-size: 0.875rem;
   }
 
   .btn-md {
-    padding: var(--button-padding-md);
+    padding: var(--button-padding-md, 0.5rem 1.25rem);
     font-size: 1rem;
   }
 
   .btn-lg {
-    padding: var(--button-padding-lg);
+    padding: var(--button-padding-lg, 0.75rem 2rem);
     font-size: 1.125rem;
   }
 
   .btn-icon {
-    padding: 0.375rem;
+    padding: 0;
+    width: var(--control-height, 2.5rem);
+    aspect-ratio: 1;
     border-radius: var(--btn-radius, var(--button-radius));
   }
 
