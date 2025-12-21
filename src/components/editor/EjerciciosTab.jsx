@@ -168,7 +168,7 @@ export default function EjerciciosTab() {
       </div>
 
       {/* CONTENT: TABLE */}
-      <div className="bg-[var(--color-surface-default)] rounded-xl shadow-sm border border-[var(--color-border-default)] overflow-hidden">
+      <div className="ui-table-shell bg-[var(--color-surface-default)]">
         <table className="w-full text-left text-sm">
           <thead className="bg-[var(--color-surface-elevated)] font-medium border-b border-[var(--color-border-default)]">
             <tr>

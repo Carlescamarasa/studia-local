@@ -37,6 +37,7 @@ export const VISIBILITY_STATUS = {
 
     // ✅ VISIBLE - Radius (via Tailwind + CSS classes)
     'layout.radius.global': { visibility: 'visible', consumerHint: 'Tailwind rounded-lg/md/sm' },
+    'layout.radius.table': { visibility: 'visible', consumerHint: '.ui-table-shell border-radius' },
     'layout.shadowLength': { visibility: 'visible', consumerHint: 'Card shadows via --shadow-card' },
 
     // ✅ VISIBLE - Typography (after Phase 1 fix)
@@ -605,6 +606,24 @@ export const DESIGN_CONTROLS = [
         ],
         level: 'advanced',
         keywords: ['pill', 'badge', 'radius'],
+    },
+    {
+        id: 'layout.radius.table',
+        path: 'layout.radius.table',
+        label: 'Radio de Tablas',
+        description: 'Curvatura para tablas de datos.',
+        section: 'components',
+        subsection: 'Tablas',
+        type: 'select',
+        options: [
+            { value: 'none', label: 'Cuadrado' },
+            { value: 'sm', label: 'Pequeño' },
+            { value: 'md', label: 'Medio' },
+            { value: 'lg', label: 'Grande' },
+            { value: 'xl', label: 'Extra Grande' },
+        ],
+        level: 'advanced',
+        keywords: ['table', 'tabla', 'radius'],
     },
 
     // --- F. LAYOUT ---

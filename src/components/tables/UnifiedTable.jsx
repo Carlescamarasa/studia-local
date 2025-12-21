@@ -162,7 +162,7 @@ export default function UnifiedTable({
     <>
       {isDesktop ? (
         <>
-          <div className="w-full overflow-x-auto rounded-2xl border border-[var(--color-border-default)] overflow-hidden">
+          <div className="ui-table-shell w-full overflow-x-auto">
             <Table>
               <TableHeader sticky>
                 <TableRow>
@@ -414,7 +414,7 @@ export default function UnifiedTable({
                 <div
                   key={item[keyField]}
                   className={cn(
-                    "w-full text-left rounded-2xl border border-[var(--color-border-default)]",
+                    "ui-card w-full text-left",
                     "bg-[var(--color-surface-default)]",
                     "px-3 py-2 flex flex-col gap-1",
                     "transition-all hover:shadow-sm",

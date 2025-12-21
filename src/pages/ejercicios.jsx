@@ -258,7 +258,7 @@ export default function EjerciciosPage() {
 
       {/* TAB CONTENT: EJERCICIOS (Data Grid + Mochila) */}
       {activeTab === 'ejercicios' && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="ui-table-shell bg-white">
           <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
             <h2 className="text-sm font-bold text-slate-700">Listado Maestro</h2>
             <div className="flex gap-2">

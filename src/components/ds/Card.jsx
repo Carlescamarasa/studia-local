@@ -9,20 +9,20 @@ import { componentStyles } from "@/design/componentStyles";
  * 
  * @param {boolean} interactive - Si es true, añade efectos hover y active
  */
-export const Card = React.forwardRef(function Card({ 
-  className = "", 
-  children, 
+export const Card = React.forwardRef(function Card({
+  className = "",
+  children,
   interactive = false,
-  ...props 
+  ...props
 }, ref) {
-  const interactiveClasses = interactive 
+  const interactiveClasses = interactive
     ? `${componentStyles.motion.cardHover} ${componentStyles.motion.cardActive} cursor-pointer`
     : "";
 
   return (
-    <div 
-      ref={ref} 
-      className={cn("app-card", interactiveClasses, className)} 
+    <div
+      ref={ref}
+      className={cn("ui-card app-card", interactiveClasses, className)}
       {...props}
     >
       {children}
