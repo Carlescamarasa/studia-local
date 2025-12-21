@@ -1,13 +1,12 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { CalendarIcon, Check, X } from "lucide-react";
 import { format, startOfWeek, startOfMonth, subDays, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const formatDate = (date) => {
   if (!date) return '';
@@ -81,13 +80,14 @@ function DatePickerContent({
   onApply,
   canApply,
   statusText,
-  isMobile
+  isDrawerMode,
+  isSingleMonth
 }) {
   return (
     <div className="flex flex-col h-full">
-      {/* Presets - solo horizontal en mobile (desktop usa el sidebar) */}
-      {isMobile && presets.length > 0 && (
-        <div className="border-b border-[var(--color-border-default)] p-2 flex flex-wrap gap-1.5">
+      {/* Presets - solo horizontal en modo Drawer (Mobile/Tablet) */}
+      {isDrawerMode && presets.length > 0 && (
+        <div className="border-b border-[var(--color-border-default)] p-2 flex flex-wrap gap-1.5 shrink-0 bg-[var(--color-surface-card)]">
           {presets.map((preset) => (
             <button
               key={preset.key}
@@ -107,14 +107,14 @@ function DatePickerContent({
 
       {/* Área del calendario con scroll */}
       <div className={cn(
-        "flex-1 overflow-auto",
-        isMobile ? "px-2 pb-2" : ""
+        "flex-1 overflow-y-auto min-h-0", // Asegurar que el scroll funcione
+        isDrawerMode ? "px-2 pb-2 bg-[var(--color-surface-card)]" : ""
       )}>
         <div className={cn(
-          isMobile ? "" : "flex"
+          isDrawerMode ? "flex justify-center" : "flex"
         )}>
-          {/* Desktop: sidebar de presets */}
-          {!isMobile && presets.length > 0 && (
+          {/* Desktop/Popover: sidebar de presets */}
+          {!isDrawerMode && presets.length > 0 && (
             <div className="border-r border-[var(--color-border-default)] p-2 flex flex-col gap-1 min-w-[100px]">
               {presets.map((preset) => (
                 <button
@@ -136,7 +136,7 @@ function DatePickerContent({
           {/* Calendario */}
           <div className={cn(
             "flex justify-center",
-            isMobile ? "py-4" : ""
+            isDrawerMode ? "py-4 w-full" : ""
           )}>
             <Calendar
               initialFocus
@@ -144,17 +144,18 @@ function DatePickerContent({
               defaultMonth={dateRange?.from || new Date()}
               selected={dateRange}
               onSelect={onSelect}
-              numberOfMonths={isMobile ? 1 : 2}
+              numberOfMonths={isSingleMonth ? 1 : 2}
               locale={es}
               weekStartsOn={1}
+              className={isSingleMonth && isDrawerMode ? "w-full flex justify-center scale-100 origin-top mt-2" : "w-auto"}
             />
           </div>
         </div>
       </div>
 
-      {/* Footer fijo */}
-      <div className="flex justify-between items-center p-3 border-t border-[var(--color-border-default)] bg-[var(--color-surface-muted)] shrink-0">
-        <div className="text-xs text-[var(--color-text-secondary)]">
+      {/* Footer fijo - SIEMPRE VISIBLE */}
+      <div className="flex justify-between items-center p-3 border-t border-[var(--color-border-default)] bg-[var(--color-surface-muted)] shrink-0 mt-auto">
+        <div className="text-xs text-[var(--color-text-secondary)] font-medium">
           {dateRange.from && dateRange.to ? (
             `${formatDateShort(dateRange.from)} - ${formatDateShort(dateRange.to)}`
           ) : dateRange.from ? (
@@ -164,15 +165,31 @@ function DatePickerContent({
           )}
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onCancel}
-            className="h-9"
-          >
-            <X className="w-4 h-4 mr-1" />
-            Cancelar
-          </Button>
+          {/* En modo Drawer usamos DrawerClose para cancelar */}
+          {isDrawerMode ? (
+            <DrawerClose asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onCancel}
+                className="h-9"
+              >
+                <X className="w-4 h-4 mr-1" />
+                Cancelar
+              </Button>
+            </DrawerClose>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onCancel}
+              className="h-9"
+            >
+              <X className="w-4 h-4 mr-1" />
+              Cancelar
+            </Button>
+          )}
+
           <Button
             variant="default"
             size="sm"
@@ -190,7 +207,7 @@ function DatePickerContent({
 }
 
 /**
- * DateRangePicker - Popover en desktop, Sheet fullscreen en mobile
+ * DateRangePicker - Popover en desktop, Drawer en mobile/tablet
  */
 export default function DateRangePicker({
   startDate,
@@ -200,7 +217,25 @@ export default function DateRangePicker({
   className = ""
 }) {
   const [open, setOpen] = useState(false);
-  const isMobile = useIsMobile();
+
+  // Responsive State: <1024 para Drawer, >=1024 Popover
+  const [isDrawerMode, setIsDrawerMode] = useState(false);
+  // Responsive State: <450 para 1 mes
+  const [isSingleMonth, setIsSingleMonth] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setIsDrawerMode(width < 1024);
+      // Actualizamos a 640px (sm) para alinear con el estilo del Calendar (flex-col sm:flex-row).
+      // Si el ancho es < 640px, el calendario se ve en una columna (vertical), por lo que forzamos 1 solo mes.
+      setIsSingleMonth(width < 640);
+    };
+
+    handleResize(); // Initial check
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // MÁQUINA DE ESTADOS
   const [phase, setPhase] = useState("start");
@@ -359,40 +394,44 @@ export default function DateRangePicker({
         !startDate && !endDate && "text-muted-foreground",
         className
       )}
-      onClick={() => isMobile && setOpen(true)}
+      onClick={() => isDrawerMode && setOpen(true)}
     >
       <CalendarIcon className="mr-2 h-4 w-4" />
       {displayText()}
     </Button>
   );
 
-  // MOBILE: Sheet fullscreen
-  if (isMobile) {
+  // DRAWER (Mobile + Tablet)
+  if (isDrawerMode) {
     return (
       <>
         {TriggerButton}
-        <Sheet open={open} onOpenChange={handleOpenChange}>
-          <SheetContent
-            side="bottom"
-            className="h-[90vh] max-h-[90vh] p-0 flex flex-col rounded-t-xl"
-          >
+        <Drawer open={open} onOpenChange={handleOpenChange}>
+          <DrawerContent className={cn(
+            "flex flex-col rounded-t-xl bg-[var(--color-surface-card)]",
+            // Altura y display
+            "max-h-[95vh] h-auto",
+            // Para permitir 2 meses en tablet, necesitamos ancho. Drawer por defecto es full width.
+          )}>
             {/* Header fijo */}
-            <div className="p-4 border-b border-[var(--color-border-default)] bg-[var(--color-surface)] shrink-0">
+            <div className="p-4 border-b border-[var(--color-border-default)] bg-[var(--color-surface-elevated)] shrink-0">
               <div className="flex items-center justify-between">
-                <SheetTitle className="text-base font-semibold">
+                <DrawerTitle className="text-base font-semibold">
                   {getStatusText()}
-                </SheetTitle>
-                <button
-                  onClick={handleCancel}
-                  className="p-2 rounded-full hover:bg-[var(--color-surface-muted)] transition-colors"
-                  aria-label="Cerrar"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                </DrawerTitle>
+                <DrawerClose asChild>
+                  <button
+                    onClick={handleCancel}
+                    className="p-2 rounded-full hover:bg-[var(--color-surface-muted)] transition-colors"
+                    aria-label="Cerrar"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </DrawerClose>
               </div>
-              <SheetDescription className="sr-only">
+              <DrawerDescription className="sr-only">
                 Selector de rango de fechas
-              </SheetDescription>
+              </DrawerDescription>
             </div>
 
             {/* Contenido con scroll */}
@@ -406,10 +445,11 @@ export default function DateRangePicker({
               onApply={handleApply}
               canApply={canApply}
               statusText={getStatusText()}
-              isMobile={true}
+              isDrawerMode={true}
+              isSingleMonth={isSingleMonth}
             />
-          </SheetContent>
-        </Sheet>
+          </DrawerContent>
+        </Drawer>
       </>
     );
   }
@@ -442,10 +482,10 @@ export default function DateRangePicker({
           onApply={handleApply}
           canApply={canApply}
           statusText={getStatusText()}
-          isMobile={false}
+          isSingleMonth={false} // Desktop siempre 2 meses
+          isDrawerMode={false} // Desktop usa popover
         />
       </PopoverContent>
     </Popover>
   );
 }
-

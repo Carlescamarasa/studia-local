@@ -168,7 +168,8 @@ function LayoutContent() {
   useEffect(() => {
     const check = () => {
       const w = window.innerWidth;
-      if (w < 640) setViewport('mobile');
+      // Strict breakpoint: < 450px is mobile, 450-1023 is tablet
+      if (w < 450) setViewport('mobile');
       else if (w < 1024) setViewport('tablet');
       else setViewport('desktop');
     };
