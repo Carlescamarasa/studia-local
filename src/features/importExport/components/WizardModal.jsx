@@ -1,8 +1,5 @@
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
-import { ChevronLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { useMobileStrict } from '@/hooks/useMobileStrict';
 
 /**
  * WizardModal
@@ -29,6 +26,76 @@ export default function WizardModal({
     children,
     className
 }) {
+    const isMobile = useMobileStrict();
+
+    // Shared Content Component to avoid duplication
+    const ModalInnerContent = ({ isDrawer }) => (
+        <>
+            {/* Header */}
+            <div className={cn(
+                "border-b border-[var(--color-border-default)] flex items-center justify-between bg-[var(--color-surface-elevated)]",
+                isDrawer ? "px-4 py-3" : "px-6 py-4"
+            )}>
+                <div className="flex items-center gap-3">
+                    {onBack && currentStep > 1 && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 -ml-2"
+                            onClick={onBack}
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </Button>
+                    )}
+                    <div>
+                        {isDrawer ? (
+                            <DrawerTitle className="text-lg font-semibold">{title}</DrawerTitle>
+                        ) : (
+                            <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
+                        )}
+                        {stepLabel && (
+                            <p className="text-xs text-[var(--color-text-secondary)]">{stepLabel}</p>
+                        )}
+                    </div>
+                </div>
+                {/* Steps Indicator */}
+                {totalSteps > 1 && (
+                    <div className="flex items-center gap-1.5">
+                        {Array.from({ length: totalSteps }).map((_, i) => (
+                            <div
+                                key={i}
+                                className={cn(
+                                    "h-1.5 rounded-full transition-all duration-300",
+                                    i + 1 === currentStep ? "w-6 bg-[var(--color-primary)]" :
+                                        i + 1 < currentStep ? "w-1.5 bg-[var(--color-primary)] opacity-50" :
+                                            "w-1.5 bg-[var(--color-border-default)]"
+                                )}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Content */}
+            <div className={cn(
+                "overflow-y-auto",
+                isDrawer ? "max-h-[80vh] p-4 pb-8" : "max-h-[70vh] p-6"
+            )}>
+                {children}
+            </div>
+        </>
+    );
+
+    if (isMobile) {
+        return (
+            <Drawer open={isOpen} onOpenChange={onClose}>
+                <DrawerContent className={cn("bg-[var(--color-surface-card)] outline-none", className)}>
+                    <ModalInnerContent isDrawer={true} />
+                </DrawerContent>
+            </Drawer>
+        );
+    }
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent
@@ -42,48 +109,7 @@ export default function WizardModal({
                     boxShadow: 'var(--shadow-xl)'
                 }}
             >
-                {/* Header */}
-                <div className="border-b border-[var(--color-border-default)] flex items-center justify-between bg-[var(--color-surface-elevated)]" style={{ padding: 'var(--space-md) var(--space-lg)' }}>
-                    <div className="flex items-center" style={{ gap: 'var(--space-md)' }}>
-                        {onBack && currentStep > 1 && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 -ml-2"
-                                onClick={onBack}
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </Button>
-                        )}
-                        <div>
-                            <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
-                            {stepLabel && (
-                                <p className="text-xs text-[var(--color-text-secondary)]">{stepLabel}</p>
-                            )}
-                        </div>
-                    </div>
-                    {/* Steps Indicator */}
-                    {totalSteps > 1 && (
-                        <div className="flex items-center gap-1.5">
-                            {Array.from({ length: totalSteps }).map((_, i) => (
-                                <div
-                                    key={i}
-                                    className={cn(
-                                        "h-1.5 rounded-full transition-all duration-300",
-                                        i + 1 === currentStep ? "w-6 bg-[var(--color-primary)]" :
-                                            i + 1 < currentStep ? "w-1.5 bg-[var(--color-primary)] opacity-50" :
-                                                "w-1.5 bg-[var(--color-border-default)]"
-                                    )}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Content */}
-                <div className="overflow-y-auto max-h-[70vh]" style={{ padding: 'var(--space-lg)' }}>
-                    {children}
-                </div>
+                <ModalInnerContent isDrawer={false} />
             </DialogContent>
         </Dialog>
     );
