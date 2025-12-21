@@ -793,7 +793,7 @@ function LayoutContent() {
 
         {/* Contenido principal - Ancho completo cuando sidebar cerrado */}
         <main
-          className="min-h-screen transition-all duration-200 flex flex-col"
+          className="min-h-screen transition-all duration-200 flex flex-col overflow-x-hidden"
           style={{
             marginLeft: !isMobile && abierto ? 'var(--sidebar-width, 16rem)' : '0',
           }}

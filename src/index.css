@@ -800,6 +800,57 @@ button:focus-visible {
   }
 
   /* ============================================================================
+   * SIDEBAR - Token-driven semantic classes
+   * ============================================================================
+   * 
+   * Semantic classes for sidebar that consume CSS vars from designConfig.ts.
+   * All styling is 100% token-driven and editable from the Design Panel.
+   * 
+   * Tokens consumed:
+   * - --sidebar-surface: background color
+   * - --sidebar-text: text color
+   * - --sidebar-border: border color
+   * - --sidebar-item-radius: item border radius
+   * - --sidebar-item-padding: item padding
+   * - --sidebar-item-gap: gap between icon and text
+   * - --sidebar-item-active-bg: active item background
+   * - --sidebar-item-active-text: active item text color
+   * - --sidebar-item-hover-bg: hover item background
+   * - --sidebar-divider-color: divider/separator color
+   * - --sidebar-padding-x/y: container padding
+   */
+
+  .app-sidebar {
+    background: var(--sidebar-surface, var(--color-surface-elevated));
+    color: var(--sidebar-text, var(--color-text-primary));
+    border-right: 1px solid var(--sidebar-border, var(--color-border-default));
+    padding: var(--sidebar-padding-y, 0.5rem) var(--sidebar-padding-x, 0.5rem);
+  }
+
+  .app-sidebar-item {
+    border-radius: var(--sidebar-item-radius, var(--radius-ctrl, 0.5rem)) !important;
+    padding: var(--sidebar-item-padding, 0.5rem 0.75rem);
+    gap: var(--sidebar-item-gap, 0.5rem);
+    transition: background-color 200ms ease-out, color 200ms ease-out;
+  }
+
+  .app-sidebar-item:hover:not(.app-sidebar-item--active) {
+    background: var(--sidebar-item-hover-bg, var(--color-surface-muted));
+  }
+
+  .app-sidebar-item--active {
+    background: var(--sidebar-item-active-bg, var(--color-primary-soft)) !important;
+    color: var(--sidebar-item-active-text, var(--color-text-primary)) !important;
+    font-weight: 500;
+  }
+
+  .app-sidebar-divider {
+    background: var(--sidebar-divider-color, var(--color-border-muted));
+    height: 1px;
+    margin: 0.5rem 0;
+  }
+
+  /* ============================================================================
    * ANIMACIONES CSS - Keyframes para animaciones del Design System
    * ============================================================================
    */

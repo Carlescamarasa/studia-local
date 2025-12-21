@@ -243,11 +243,19 @@ export interface DesignTokens {
   // Chrome (shell de la app: sidebar, header, paneles laterales)
   chrome: {
     sidebar: {
-      background: string;
+      surface: string;
+      text: string;
       border: string;
       activeItemBg: string;
       activeItemText: string;
       mutedItemText?: string;
+      hoverItemBg?: string;
+      itemRadius: RadiusValue;
+      itemPadding: string;
+      itemGap: string;
+      dividerColor: string;
+      paddingX: string;
+      paddingY: string;
     };
     header: {
       background: string;
@@ -466,11 +474,19 @@ export const DEFAULT_DESIGN: DesignTokens = {
   // Chrome (shell de la app)
   chrome: {
     sidebar: {
-      background: 'var(--color-surface-elevated)',
+      surface: 'var(--color-surface-elevated)',
+      text: 'var(--color-text-primary)',
       border: 'var(--color-border-default)',
       activeItemBg: 'var(--color-primary-soft)',
       activeItemText: 'var(--color-text-primary)',
       mutedItemText: 'var(--color-text-secondary)',
+      hoverItemBg: 'var(--color-surface-muted)',
+      itemRadius: 'md',
+      itemPadding: '0.5rem 0.75rem',
+      itemGap: '0.5rem',
+      dividerColor: 'var(--color-border-muted)',
+      paddingX: '0.5rem',
+      paddingY: '0.5rem',
     },
     header: {
       background: 'var(--color-surface-elevated)',
@@ -830,12 +846,27 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
   // Chrome (shell de la app)
   if (normalized.chrome) {
     if (normalized.chrome.sidebar) {
-      vars['--sidebar-bg'] = normalized.chrome.sidebar.background || DEFAULT_DESIGN.chrome.sidebar.background;
-      vars['--sidebar-border'] = normalized.chrome.sidebar.border || DEFAULT_DESIGN.chrome.sidebar.border;
-      vars['--sidebar-item-active-bg'] = normalized.chrome.sidebar.activeItemBg || DEFAULT_DESIGN.chrome.sidebar.activeItemBg;
-      vars['--sidebar-item-active-text'] = normalized.chrome.sidebar.activeItemText || DEFAULT_DESIGN.chrome.sidebar.activeItemText;
-      if (normalized.chrome.sidebar.mutedItemText) {
-        vars['--sidebar-item-muted-text'] = normalized.chrome.sidebar.mutedItemText;
+      const sidebar = normalized.chrome.sidebar;
+      const sidebarDefault = DEFAULT_DESIGN.chrome.sidebar;
+
+      vars['--sidebar-surface'] = sidebar.surface || sidebarDefault.surface;
+      vars['--sidebar-text'] = sidebar.text || sidebarDefault.text;
+      vars['--sidebar-border'] = sidebar.border || sidebarDefault.border;
+      vars['--sidebar-item-active-bg'] = sidebar.activeItemBg || sidebarDefault.activeItemBg;
+      vars['--sidebar-item-active-text'] = sidebar.activeItemText || sidebarDefault.activeItemText;
+      vars['--sidebar-item-hover-bg'] = sidebar.hoverItemBg || sidebarDefault.hoverItemBg || 'var(--color-surface-muted)';
+      vars['--sidebar-item-radius'] = getRadiusValue(sidebar.itemRadius || sidebarDefault.itemRadius);
+      vars['--sidebar-item-padding'] = sidebar.itemPadding || sidebarDefault.itemPadding;
+      vars['--sidebar-item-gap'] = sidebar.itemGap || sidebarDefault.itemGap;
+      vars['--sidebar-divider-color'] = sidebar.dividerColor || sidebarDefault.dividerColor;
+      vars['--sidebar-padding-x'] = sidebar.paddingX || sidebarDefault.paddingX;
+      vars['--sidebar-padding-y'] = sidebar.paddingY || sidebarDefault.paddingY;
+
+      // Legacy compatibility (for existing sidebar components using old var names)
+      vars['--sidebar-bg'] = vars['--sidebar-surface'];
+
+      if (sidebar.mutedItemText) {
+        vars['--sidebar-item-muted-text'] = sidebar.mutedItemText;
       }
     }
     if (normalized.chrome.header) {

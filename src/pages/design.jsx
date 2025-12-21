@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useDesign } from "@/components/design/DesignProvider";
 import { useDesignDiff } from "@/components/design/useDesignDiff";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Alert, AlertDescription } from "@/components/ds";
@@ -361,42 +361,76 @@ function DiffAccordion({ isOpen, onToggle }) {
 
 
 
+/**
+ * Enhanced Diagnostic Overlay
+ * 
+ * Features:
+ * - Always on top (z-index: 2147483647)
+ * - Draggable with handle
+ * - Follow cursor mode (optional)
+ * - Element picker (click to inspect)
+ * - Real-time CSS variable monitoring
+ * - Session storage for position and settings
+ * - Copy report functionality
+ */
 function DiagnosticOverlay({ active }) {
   const [metrics, setMetrics] = useState({});
+  const [position, setPosition] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('studia_diagnostic_position');
+      return saved ? JSON.parse(saved) : { x: window.innerWidth - 340, y: 20 };
+    } catch {
+      return { x: window.innerWidth - 340, y: 20 };
+    }
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [followCursor, setFollowCursor] = useState(() => {
+    try {
+      return sessionStorage.getItem('studia_diagnostic_follow_cursor') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [pickerMode, setPickerMode] = useState(false);
+  const [selectedElement, setSelectedElement] = useState(null);
+  const overlayRef = useRef(null);
 
+  // Core tokens to monitor
+  const MONITORED_TOKENS = [
+    '--radius-card', '--radius-ctrl', '--radius-table', '--radius-modal',
+    '--shadow-card', '--color-primary', '--color-background',
+    '--page-max-width', '--page-padding-x', '--btn-height',
+    '--sidebar-surface', '--sidebar-item-radius', '--card-padding-x'
+  ];
+
+  // Update metrics from CSS variables
+  const updateMetrics = useCallback(() => {
+    const root = getComputedStyle(document.documentElement);
+    const newMetrics = {};
+
+    MONITORED_TOKENS.forEach(token => {
+      const value = root.getPropertyValue(token).trim();
+      newMetrics[token] = {
+        value: value || null,
+        valid: value && value !== 'none' && value !== '' && !value.includes('NaN'),
+        missing: !value,
+        status: !value ? 'missing' : (value === 'none' || value.includes('NaN') ? 'invalid' : 'ok')
+      };
+    });
+
+    setMetrics(newMetrics);
+  }, []);
+
+  // Real-time monitoring via MutationObserver
   useEffect(() => {
     if (!active) return;
 
-    const update = () => {
-      const root = getComputedStyle(document.documentElement);
-      const newMetrics = {};
+    updateMetrics();
 
-      // Core tokens to monitor
-      const tokens = [
-        '--radius-card', '--radius-ctrl', '--radius-table', '--radius-modal',
-        '--shadow-card', '--color-primary', '--color-background',
-        '--page-max-width', '--page-padding-x', '--btn-height'
-      ];
-
-      tokens.forEach(token => {
-        const value = root.getPropertyValue(token).trim();
-        newMetrics[token] = {
-          value: value || null,
-          valid: value && value !== 'none' && value !== '',
-          missing: !value
-        };
-      });
-
-      setMetrics(newMetrics);
-    };
-
-    // Initial update
-    update();
-
-    // Watch for style changes on <html> element
     const observer = new MutationObserver((mutations) => {
       if (mutations.some(m => m.attributeName === 'style')) {
-        update();
+        updateMetrics();
       }
     });
 
@@ -406,49 +440,235 @@ function DiagnosticOverlay({ active }) {
     });
 
     return () => observer.disconnect();
-  }, [active]);
+  }, [active, updateMetrics]);
 
+  // Follow cursor mode
+  useEffect(() => {
+    if (!active || !followCursor) return;
+
+    const handleMouseMove = (e) => {
+      const offset = 20;
+      const width = 320;
+      const height = 400;
+
+      let x = e.clientX + offset;
+      let y = e.clientY + offset;
+
+      // Keep within viewport
+      if (x + width > window.innerWidth) x = e.clientX - width - offset;
+      if (y + height > window.innerHeight) y = e.clientY - height - offset;
+
+      setPosition({ x, y });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [active, followCursor]);
+
+  // Dragging logic
+  const handleMouseDown = (e) => {
+    if (followCursor) return; // Disable drag in follow mode
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    });
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e) => {
+      const newX = e.clientX - dragStart.x;
+      const newY = e.clientY - dragStart.y;
+
+      // Keep within viewport
+      const maxX = window.innerWidth - 320;
+      const maxY = window.innerHeight - 100;
+
+      setPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY))
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      // Save position to sessionStorage
+      try {
+        sessionStorage.setItem('studia_diagnostic_position', JSON.stringify(position));
+      } catch (e) {
+        console.warn('Failed to save diagnostic position:', e);
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragStart, position]);
+
+  // Element picker
+  const handlePickElement = () => {
+    setPickerMode(!pickerMode);
+    setSelectedElement(null);
+  };
+
+  useEffect(() => {
+    if (!pickerMode) return;
+
+    const handleClick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const element = e.target;
+      const computed = getComputedStyle(element);
+
+      setSelectedElement({
+        tag: element.tagName.toLowerCase(),
+        classes: Array.from(element.classList),
+        styles: {
+          borderRadius: computed.borderRadius,
+          boxShadow: computed.boxShadow,
+          background: computed.background,
+          color: computed.color,
+          padding: computed.padding,
+        }
+      });
+
+      setPickerMode(false);
+    };
+
+    document.addEventListener('click', handleClick, true);
+    return () => document.removeEventListener('click', handleClick, true);
+  }, [pickerMode]);
+
+  // Toggle follow cursor
+  const handleToggleFollowCursor = () => {
+    const newValue = !followCursor;
+    setFollowCursor(newValue);
+    try {
+      sessionStorage.setItem('studia_diagnostic_follow_cursor', String(newValue));
+    } catch (e) {
+      console.warn('Failed to save follow cursor setting:', e);
+    }
+  };
+
+  // Copy report
   const handleCopy = () => {
-    const text = Object.entries(metrics)
-      .map(([k, v]) => `${k}: ${v.value || 'MISSING'}`)
-      .join('\n');
-    navigator.clipboard.writeText(text);
-    toast.success('✅ Variables copiadas al portapapeles');
+    const report = {
+      timestamp: new Date().toISOString(),
+      metrics: Object.entries(metrics).map(([token, data]) => ({
+        token,
+        value: data.value || 'MISSING',
+        status: data.status
+      })),
+      selectedElement
+    };
+
+    navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+    toast.success('✅ Diagnostic report copied');
   };
 
   if (!active) return null;
 
+  const statusCounts = Object.values(metrics).reduce((acc, m) => {
+    acc[m.status] = (acc[m.status] || 0) + 1;
+    return acc;
+  }, {});
+
   return (
-    <div className="fixed bottom-4 right-4 z-50 p-4 bg-black/95 text-white rounded-lg shadow-2xl border border-white/20 font-mono text-xs w-80 max-h-[80vh] overflow-auto pointer-events-auto">
-      <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/20">
+    <div
+      ref={overlayRef}
+      className="fixed p-4 bg-black/95 text-white rounded-lg shadow-2xl border border-white/20 font-mono text-xs w-80 max-h-[80vh] overflow-auto pointer-events-auto"
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        zIndex: 2147483647,
+        cursor: isDragging ? 'grabbing' : 'default'
+      }}
+    >
+      {/* Header - Draggable handle */}
+      <div
+        className="flex items-center justify-between mb-3 pb-2 border-b border-white/20 cursor-grab active:cursor-grabbing"
+        onMouseDown={handleMouseDown}
+      >
         <h4 className="font-bold flex items-center gap-2">
           <Scan className="w-3 h-3 text-green-400 animate-pulse" />
           DIAGNOSTIC MODE
         </h4>
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] text-gray-400">
+            {statusCounts.ok || 0} OK / {statusCounts.missing || 0} MISS / {statusCounts.invalid || 0} INV
+          </span>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="flex flex-wrap gap-1 mb-3">
+        <button
+          onClick={handleToggleFollowCursor}
+          className={`text-xs px-2 py-1 rounded transition-colors cursor-pointer ${followCursor ? 'bg-blue-600 hover:bg-blue-700' : 'bg-white/10 hover:bg-white/20'
+            }`}
+          title="Follow cursor"
+        >
+          {followCursor ? '📍 Following' : '📍 Follow'}
+        </button>
+        <button
+          onClick={handlePickElement}
+          className={`text-xs px-2 py-1 rounded transition-colors cursor-pointer ${pickerMode ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-white/10 hover:bg-white/20'
+            }`}
+          title="Pick element to inspect"
+        >
+          {pickerMode ? '🎯 Picking...' : '🎯 Pick'}
+        </button>
         <button
           onClick={handleCopy}
           className="text-xs px-2 py-1 bg-white/10 hover:bg-white/20 rounded transition-colors cursor-pointer"
-          title="Copiar todas las variables"
+          title="Copy diagnostic report"
         >
           <Copy className="w-3 h-3 inline mr-1" />
           Copy
         </button>
       </div>
 
-      <div className="space-y-1.5">
+      {/* Selected Element Info */}
+      {selectedElement && (
+        <div className="mb-3 p-2 bg-yellow-900/30 border border-yellow-600/50 rounded">
+          <div className="text-[10px] text-yellow-300 font-bold mb-1">SELECTED ELEMENT</div>
+          <div className="text-[10px] space-y-0.5">
+            <div><span className="text-gray-400">Tag:</span> {selectedElement.tag}</div>
+            <div><span className="text-gray-400">Classes:</span> {selectedElement.classes.join(', ') || 'none'}</div>
+            <div className="text-[9px] mt-1 space-y-0.5">
+              {Object.entries(selectedElement.styles).map(([prop, value]) => (
+                <div key={prop}>
+                  <span className="text-gray-500">{prop}:</span> {value}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Metrics */}
+      <div className="space-y-1.5 max-h-60 overflow-y-auto">
         {Object.entries(metrics).map(([key, data]) => (
           <div key={key} className="flex justify-between items-center gap-2">
             <span className="text-gray-400 truncate text-[10px]" title={key}>{key}:</span>
-            <span className={`text-right font-medium ${data.missing ? "text-red-400" :
-              !data.valid ? "text-yellow-400" :
-                "text-green-300"
+            <span className={`text-right font-medium text-[10px] ${data.status === 'missing' ? 'text-red-400' :
+              data.status === 'invalid' ? 'text-yellow-400' :
+                'text-green-300'
               }`}>
-              {data.missing ? 'MISSING' : data.value}
+              {data.status === 'missing' ? 'MISSING' : data.value}
             </span>
           </div>
         ))}
       </div>
 
+      {/* Footer */}
       <div className="mt-3 pt-2 border-t border-white/20 text-[10px] text-gray-500 text-center">
         Real-time via MutationObserver
       </div>

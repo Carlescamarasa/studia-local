@@ -160,7 +160,7 @@ export default function PageHeader({
   return (
     <div
       ref={headerRef}
-      className={`page-header-shell header-modern -mx-3 md:-mx-6 lg:-mx-[var(--page-padding-x)] ${className}`}
+      className={`page-header-shell header-modern ${className}`}
       data-testid="page-header"
     >
       {/* Main header row - uses standard page-header-inner/grid classes */}
