@@ -169,11 +169,11 @@ export default function PageHeader({
         <div className="page-header-grid">
           {/* Title area (icon + title) */}
           <div className="page-header-title">
-            {/* Botón de menú solo en mobile - tamaño grande para touch */}
+            {/* Botón de menú solo en mobile (< 451px) */}
             {showMenuButton && (
               <button
                 onClick={toggleSidebar}
-                className="md:hidden hover:bg-[var(--color-surface-muted)] active:bg-[var(--color-surface-muted)]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 p-2.5 rounded-[var(--btn-radius,0.25rem)] transition-all min-h-[48px] min-w-[48px] h-12 w-12 flex items-center justify-center shrink-0 touch-manipulation -ml-1"
+                className="min-[451px]:hidden hover:bg-[var(--color-surface-muted)] active:bg-[var(--color-surface-muted)]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 p-2.5 rounded-[var(--btn-radius,0.25rem)] transition-all min-h-[48px] min-w-[48px] h-12 w-12 flex items-center justify-center shrink-0 touch-manipulation -ml-1"
                 aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
                 aria-controls="sidebar"
                 aria-expanded={abierto}
@@ -184,7 +184,7 @@ export default function PageHeader({
             )}
             {/* Icon + Title: clickable en mobile para toggle sidebar */}
             <div
-              className={`flex items-center flex-1 min-w-0 ${window.innerWidth < 768 ? 'cursor-pointer' : 'pointer-events-none cursor-default'}`}
+              className={`flex items-center flex-1 ${window.innerWidth < 768 ? 'cursor-pointer' : 'pointer-events-none cursor-default'}`}
               style={{ gap: 'var(--header-title-gap, 0.5rem)' }}
               onClick={() => {
                 // Solo toggle en móvil (< 768px)
@@ -197,15 +197,15 @@ export default function PageHeader({
               aria-hidden="true"
             >
               {Icon && (
-                <Icon className={iconClass} />
+                <Icon className={`${iconClass} shrink-0`} />
               )}
-              <div className="min-w-0 md:flex md:items-baseline md:gap-3">
+              <div className="min-w-0 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                 {title && (
-                  <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl whitespace-nowrap`}>{title}</h1>
+                  <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl`}>{title}</h1>
                 )}
-                {/* Subtitle inline on desktop */}
+                {/* Subtitle inline on desktop, wraps if needed */}
                 {subtitle && (
-                  <p className={`${componentStyles.typography.pageSubtitle} text-xs sm:text-sm text-[var(--color-text-secondary)] hidden md:block truncate`}>
+                  <p className={`${componentStyles.typography.pageSubtitle} text-xs sm:text-sm text-[var(--color-text-secondary)] hidden md:block truncate max-w-full`}>
                     {subtitle}
                   </p>
                 )}
@@ -217,7 +217,12 @@ export default function PageHeader({
           <div className="page-header-actions">
             {actions}
             {/* Botón de hotkeys discreto details */}
-            {showHotkeys && <HotkeysModalButton />}
+            {/* Botón de hotkeys discreto details - Solo desktop */}
+            {showHotkeys && (
+              <div className="hidden lg:block">
+                <HotkeysModalButton />
+              </div>
+            )}
           </div>
         </div>
       </div>

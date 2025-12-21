@@ -435,13 +435,15 @@ button:focus-visible {
   align-items: center;
   gap: var(--header-title-gap, 0.5rem);
   flex: 1;
-  min-width: 0;
+  /* Removed min-width: 0 to allow title to force a wrap if actions squeeze it too much */
 }
 
 /* Actions area (buttons, always right side) */
 .page-header-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--header-title-gap, 0.5rem);
   flex-shrink: 0;
 }
