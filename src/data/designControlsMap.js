@@ -451,7 +451,7 @@ export const DESIGN_CONTROLS = [
             { value: 'normal', label: 'Normal' },
             { value: 'spacious', label: 'Espaciosa' },
         ],
-        level: 'advanced',
+        level: 'basic',
         keywords: ['densidad', 'espacio', 'compacto'],
     },
 
@@ -565,7 +565,7 @@ export const DESIGN_CONTROLS = [
             { value: 'lg', label: 'Grande' },
             { value: 'xl', label: 'Extra Grande' },
         ],
-        level: 'advanced',
+        level: 'basic',
         keywords: ['card', 'tarjeta', 'radius'],
     },
 
@@ -622,7 +622,7 @@ export const DESIGN_CONTROLS = [
             { value: 'lg', label: 'Grande' },
             { value: 'xl', label: 'Extra Grande' },
         ],
-        level: 'advanced',
+        level: 'basic',
         keywords: ['table', 'tabla', 'radius'],
     },
 

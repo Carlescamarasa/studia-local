@@ -542,7 +542,7 @@ export default function LevelConfigView() {
                         <p className="text-sm text-muted-foreground">Edita los requisitos de XP para todos los niveles de un vistazo. Los cambios se guardan al perder el foco (blur).</p>
                     </CardHeader>
                     <CardContent className="p-0">
-                        <div className="overflow-x-auto">
+                        <div className="ui-table-shell overflow-x-auto">
                             <table className="w-full border-collapse text-sm">
                                 <thead className="bg-muted sticky top-0 z-20">
                                     <tr>
@@ -715,81 +715,83 @@ export default function LevelConfigView() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Habilidad</TableHead>
-                                        <TableHead>Fuente</TableHead>
-                                        <TableHead>Descripción</TableHead>
-                                        <TableHead>Obligatorio</TableHead>
-                                        <TableHead>Acciones</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {currentCriteria.length === 0 && (
+                            <div className="ui-table-shell">
+                                <Table>
+                                    <TableHeader>
                                         <TableRow>
-                                            <TableCell colSpan={5} className="text-center text-muted-foreground">
-                                                No hay criterios definidos para este nivel.
-                                            </TableCell>
+                                            <TableHead>Habilidad</TableHead>
+                                            <TableHead>Fuente</TableHead>
+                                            <TableHead>Descripción</TableHead>
+                                            <TableHead>Obligatorio</TableHead>
+                                            <TableHead>Acciones</TableHead>
                                         </TableRow>
-                                    )}
-                                    {currentCriteria.map(c => (
-                                        <TableRow key={c.id}>
-                                            <TableCell>
-                                                <Select
-                                                    value={c.skill}
-                                                    onValueChange={val => updateCriteria(c.id, { skill: val })}
-                                                >
-                                                    <SelectTrigger className="w-[140px]">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {['Flexibilidad', 'Motricidad', 'Articulación', 'Sonido', 'Cognición'].map(s => (
-                                                            <SelectItem key={s} value={s}>{s}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Select
-                                                    value={c.source}
-                                                    onValueChange={val => updateCriteria(c.id, { source: val })}
-                                                >
-                                                    <SelectTrigger className="w-[120px]">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="PROF">Profesor</SelectItem>
-                                                        <SelectItem value="PRACTICA">Práctica</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Input
-                                                    value={c.description}
-                                                    onChange={e => updateCriteria(c.id, { description: e.target.value })}
-                                                />
-                                                {c.description && c.description.includes('#') && (
-                                                    <div className="mt-1">
-                                                        {renderDescriptionWithTags(c.description)}
-                                                    </div>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Switch
-                                                    checked={c.required}
-                                                    onCheckedChange={val => updateCriteria(c.id, { required: val })}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <Button variant="ghost" size="icon" onClick={() => deleteCriteria(c.id)}>
-                                                    <Trash2 className="w-4 h-4 text-destructive" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {currentCriteria.length === 0 && (
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                                                    No hay criterios definidos para este nivel.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                        {currentCriteria.map(c => (
+                                            <TableRow key={c.id}>
+                                                <TableCell>
+                                                    <Select
+                                                        value={c.skill}
+                                                        onValueChange={val => updateCriteria(c.id, { skill: val })}
+                                                    >
+                                                        <SelectTrigger className="w-[140px]">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {['Flexibilidad', 'Motricidad', 'Articulación', 'Sonido', 'Cognición'].map(s => (
+                                                                <SelectItem key={s} value={s}>{s}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Select
+                                                        value={c.source}
+                                                        onValueChange={val => updateCriteria(c.id, { source: val })}
+                                                    >
+                                                        <SelectTrigger className="w-[120px]">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="PROF">Profesor</SelectItem>
+                                                            <SelectItem value="PRACTICA">Práctica</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        value={c.description}
+                                                        onChange={e => updateCriteria(c.id, { description: e.target.value })}
+                                                    />
+                                                    {c.description && c.description.includes('#') && (
+                                                        <div className="mt-1">
+                                                            {renderDescriptionWithTags(c.description)}
+                                                        </div>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Switch
+                                                        checked={c.required}
+                                                        onCheckedChange={val => updateCriteria(c.id, { required: val })}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Button variant="ghost" size="icon" onClick={() => deleteCriteria(c.id)}>
+                                                        <Trash2 className="w-4 h-4 text-destructive" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

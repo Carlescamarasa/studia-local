@@ -160,7 +160,19 @@ function ControlRow({ control, value, onChange, isFavorite, onToggleFavorite, co
 
 export function DesignControls({ design, setDesignPartial, componentStyles }) {
     const [searchQuery, setSearchQuery] = useState('');
-    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [showAdvanced, setShowAdvanced] = useState(() => {
+        try {
+            return localStorage.getItem('studia_design_show_advanced') === 'true';
+        } catch {
+            return false;
+        }
+    });
+
+    const handleToggleAdvanced = (checked) => {
+        setShowAdvanced(checked);
+        localStorage.setItem('studia_design_show_advanced', String(checked));
+    };
+
     const [favorites, setFavorites] = useState([]);
     // Load favorites on mount
     useEffect(() => {
@@ -246,7 +258,7 @@ export function DesignControls({ design, setDesignPartial, componentStyles }) {
                         <span className={showAdvanced ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"}>
                             Mostrar avanzados
                         </span>
-                        <Switch checked={showAdvanced} onCheckedChange={setShowAdvanced} />
+                        <Switch checked={showAdvanced} onCheckedChange={handleToggleAdvanced} />
                     </Label>
                 </div>
             </div>
