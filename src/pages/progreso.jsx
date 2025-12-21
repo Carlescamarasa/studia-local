@@ -86,6 +86,7 @@ import {
     Clock, Trophy, ChevronDown, ChevronUp, Filter, User, TrendingUp,
     Layers, List, Users, Info, BookOpen, PieChart, Timer, CalendarRange, Repeat
 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import RequireRole from "@/components/auth/RequireRole";
 import { format, startOfWeek } from "date-fns";
@@ -109,6 +110,7 @@ export default function ProgresoPage() {
 function ProgresoPageContent() {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
+    const isMobile = useIsMobile();
 
     // Tab state from URL with fallback to 'resumen' (Bloque 1)
     const [tabActiva, setTabActiva] = useState(() => {
@@ -123,7 +125,7 @@ function ProgresoPageContent() {
     const isEstu = effectiveUser?.rolPersonalizado === 'ESTU';
 
     // Date range state
-    const [filtersExpanded, setFiltersExpanded] = useState(false);
+    // Date range state
     const [rangoPreset, setRangoPreset] = useState('4-semanas');
     const [periodoInicio, setPeriodoInicio] = useState(() => {
         const stored = searchParams.get('inicio');
@@ -226,11 +228,7 @@ function ProgresoPageContent() {
         [registros]
     );
 
-    const { data: bloques = [] } = useQuery({
-        queryKey: ['registrosBloques'],
-        queryFn: () => localDataClient.entities.RegistroBloque.list('-inicioISO'),
-        staleTime: 1 * 60 * 1000,
-    });
+
 
     const { data: feedbacksSemanal = [], refetch: refetchFeedbacks } = useQuery({
         queryKey: ['feedbacksSemanal'],
@@ -338,15 +336,19 @@ function ProgresoPageContent() {
     }, [periodoInicio, periodoFin, registrosFiltradosUnicos]);
 
     const bloquesFiltrados = useMemo(() => {
-        const registrosIds = new Set(registrosFiltradosUnicos.map(r => r.id));
-        return bloques
-            .filter(b => registrosIds.has(b.registroSesionId))
-            .map(b => ({
+        return registrosFiltradosUnicos.flatMap(r => {
+            const rBloques = r.registrosBloque || [];
+            return rBloques.map(b => ({
                 ...b,
                 duracionRealSeg: safeNumber(b.duracionRealSeg),
                 duracionObjetivoSeg: safeNumber(b.duracionObjetivoSeg),
+                // Asegurar que tenga el registroSesionId por si acaso (aunque venga anidado)
+                registroSesionId: r.id,
+                // Heredar inicioISO del registro si el bloque no lo tiene
+                inicioISO: b.inicioISO || r.inicioISO,
             }));
-    }, [bloques, registrosFiltradosUnicos]);
+        });
+    }, [registrosFiltradosUnicos]);
 
     // ============================================================================
     // Use estadisticas hook for KPIs
@@ -824,41 +826,11 @@ function ProgresoPageContent() {
                                     setRangoPreset('personalizado');
                                 }
                             }}
-                            isOpen={filtersExpanded}
-                            onToggle={() => setFiltersExpanded(!filtersExpanded)}
                             className="mr-2"
                         />
                     </>
                 }
             />
-
-            {/* Filters panel */}
-            {filtersExpanded && (
-                <div className="studia-section py-3">
-                    <Card className={componentStyles.containers.cardBase}>
-                        <CardContent className="p-3 sm:p-4 md:p-6">
-                            <div className="flex flex-wrap gap-2 justify-end">
-                                {presets.map((p) => (
-                                    <Button
-                                        key={p.key}
-                                        variant={rangoPreset === p.key ? "default" : "outline"}
-                                        size="sm"
-                                        onClick={() => aplicarPreset(p.key)}
-                                        className={cn(
-                                            "h-9 px-3 text-xs sm:text-sm whitespace-nowrap",
-                                            rangoPreset === p.key
-                                                ? "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90"
-                                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                                        )}
-                                    >
-                                        {p.label}
-                                    </Button>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
 
             <div className="studia-section">
                 {/* Main tabs */}

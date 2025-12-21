@@ -265,6 +265,33 @@ button:focus-visible {
   html {
     font-size: var(--font-size-base, 16px);
   }
+
+  /* ============================================================================
+   * DEFENSIVE OVERFLOW RULES
+   * Prevent horizontal scroll caused by:
+   * 1. Negative margin patterns (-mx-*) in charts
+   * 2. Popovers wider than viewport on mobile
+   * 3. Flex items not shrinking properly
+   * ============================================================================ */
+
+  /* Root level: prevent horizontal overflow */
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* Flex items: allow shrinking to prevent overflow */
+  .flex>*,
+  .inline-flex>* {
+    min-width: 0;
+  }
+
+  /* Charts: ensure they respect container bounds */
+  .recharts-wrapper,
+  .recharts-responsive-container {
+    max-width: 100% !important;
+  }
 }
 
 /* ============================================================================

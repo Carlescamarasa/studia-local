@@ -118,7 +118,11 @@ function LayoutContent() {
   const { setShowHotkeysModal } = useHotkeysModal();
 
   const [pointerStart, setPointerStart] = useState({ x: 0, y: 0, id: null });
-  const [isMobile, setIsMobile] = useState(false);
+  // 3-tier viewport: 'mobile' | 'tablet' | 'desktop'
+  const [viewport, setViewport] = useState('desktop');
+  const isMobile = viewport === 'mobile';
+  const isTablet = viewport === 'tablet';
+  const isDesktop = viewport === 'desktop';
   const toggleLockRef = useRef(0);
   const headerToggleButtonRef = useRef(null);
   const { design, setDesignPartial, activeMode, setActiveMode } = useDesign();
@@ -160,12 +164,13 @@ function LayoutContent() {
   const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
   const isLoading = false; // No hay loading en local
 
-  /* Detector mobile */
+  /* Detector viewport: mobile < 640, tablet 640-1024, desktop >= 1024 */
   useEffect(() => {
     const check = () => {
-      const wasMobile = isMobile;
-      const nowMobile = window.innerWidth < 1024;
-      setIsMobile(nowMobile);
+      const w = window.innerWidth;
+      if (w < 640) setViewport('mobile');
+      else if (w < 1024) setViewport('tablet');
+      else setViewport('desktop');
     };
     check();
     window.addEventListener("resize", check);
@@ -576,62 +581,82 @@ function LayoutContent() {
           aria-hidden="true"
         />
 
-        {/* Sidebar - Siempre fixed */}
+        {/* Sidebar - Comportamiento por breakpoint:
+            Mobile: Drawer overlay (cerrado por defecto)
+            Tablet: Rail fijo 64px (solo iconos + tooltips)
+            Desktop: Sidebar completo (abre/cierra con toggle)
+        */}
         <aside
           id="sidebar"
           aria-label="Menú de navegación"
-          aria-hidden={!abierto}
+          aria-hidden={isMobile && !abierto}
           data-open={abierto}
-          inert={!abierto ? "" : undefined}
+          data-viewport={viewport}
+          inert={isMobile && !abierto ? "" : undefined}
           tabIndex="-1"
           className={`
-            z-[90] flex flex-col sidebar-modern sidebar-width
-            transition-transform duration-200 will-change-transform transform-gpu
+            z-[90] flex flex-col sidebar-modern
+            transition-all duration-200 will-change-transform transform-gpu
             fixed inset-y-0 left-0
             border-r border-[var(--color-border-strong)]
             shadow-[1px_0_4px_rgba(0,0,0,0.2)]
-            ${abierto ? "translate-x-0" : "-translate-x-full lg:-translate-x-full"}
+            ${isMobile
+              ? (abierto ? "translate-x-0 w-[var(--sidebar-width,16rem)]" : "-translate-x-full w-[var(--sidebar-width,16rem)]")
+              : isTablet
+                ? "translate-x-0 w-16"
+                : (abierto ? "translate-x-0 w-[var(--sidebar-width,16rem)]" : "-translate-x-full w-[var(--sidebar-width,16rem)]")
+            }
           `}
           style={{
-            transform: abierto ? 'translateX(0)' : 'translateX(-100%)',
             backgroundColor: 'var(--sidebar-bg)',
-            pointerEvents: !abierto ? 'none' : 'auto',
+            pointerEvents: isMobile && !abierto ? 'none' : 'auto',
           }}
         >
-          {/* Header del sidebar */}
-          <div className="border-b border-[var(--color-border-default)]/30 p-6">
-            <div className="flex items-center gap-3">
-              <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden">
-                <img
-                  src={logoLTS}
-                  alt={appName}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <div>
-                <h2 className="font-bold text-[var(--color-text-primary)] text-lg font-headings">{appName}</h2>
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide font-medium">
-                    {ROLE_LABEL[userRole] || "Estudiante"}
-                  </p>
-                  {displayUser?.nivelTecnico && userRole === 'ESTU' && (
-                    <div className="mt-0.5">
-                      <LevelBadge level={displayUser.nivelTecnico} label={displayUser.nivel} />
-                    </div>
-                  )}
+          {/* Header del sidebar - compacto en tablet */}
+          {!isTablet && (
+            <div className="border-b border-[var(--color-border-default)]/30 p-6">
+              <div className="flex items-center gap-3">
+                <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden">
+                  <img
+                    src={logoLTS}
+                    alt={appName}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div>
+                  <h2 className="font-bold text-[var(--color-text-primary)] text-lg font-headings">{appName}</h2>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide font-medium">
+                      {ROLE_LABEL[userRole] || "Estudiante"}
+                    </p>
+                    {displayUser?.nivelTecnico && userRole === 'ESTU' && (
+                      <div className="mt-0.5">
+                        <LevelBadge level={displayUser.nivelTecnico} label={displayUser.nivel} />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
+          {isTablet && (
+            <div className="p-2 flex justify-center border-b border-[var(--color-border-default)]/30">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
+                <img src={logoLTS} alt={appName} className="w-full h-full object-contain" />
+              </div>
+            </div>
+          )}
 
           {/* Navegación */}
-          <div className="flex-1 overflow-y-auto p-3">
+          <div className={`flex-1 overflow-y-auto ${isTablet ? 'p-2' : 'p-3'}`}>
             {Object.entries(grouped).map(([group, groupItems]) => (
-              <div key={group} className="mb-6">
-                <p className={componentStyles.components.menuSectionTitle}>
-                  {group}
-                </p>
-                <div className="space-y-1">
+              <div key={group} className={isTablet ? 'mb-4' : 'mb-6'}>
+                {!isTablet && (
+                  <p className={componentStyles.components.menuSectionTitle}>
+                    {group}
+                  </p>
+                )}
+                <div className={isTablet ? 'space-y-2' : 'space-y-1'}>
                   {groupItems.map((item) => {
                     // Fix: compare pathnames only (strip query string) so /progreso?tab=xxx highlights "Progreso"
                     const itemPathname = item.url.split('?')[0];
@@ -644,6 +669,39 @@ function LayoutContent() {
                     const enRevision = reportCounts?.enRevision || 0;
                     const totalCount = isReportes ? (nuevos + enRevision) : 0;
 
+                    // Tablet: icon only with tooltip
+                    if (isTablet) {
+                      return (
+                        <TooltipProvider key={item.title}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Link
+                                to={createPageUrl(item.url.split("/").pop())}
+                                className={`flex items-center justify-center w-10 h-10 rounded-xl transition-colors ${isActive
+                                  ? 'bg-[var(--color-primary)] text-white'
+                                  : 'hover:bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]'
+                                  }`}
+                                onClick={onMenuItemClick}
+                              >
+                                <div className="relative">
+                                  <item.icon className="w-5 h-5" />
+                                  {isReportes && totalCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[14px] h-[14px] text-[8px] font-bold text-white bg-[var(--color-danger)] rounded-full">
+                                      {totalCount > 9 ? '9+' : totalCount}
+                                    </span>
+                                  )}
+                                </div>
+                              </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" sideOffset={8}>
+                              <p>{item.title}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    }
+
+                    // Mobile/Desktop: full menu item
                     return (
                       <Link
                         key={item.title}
@@ -689,30 +747,53 @@ function LayoutContent() {
           </div>
 
           {/* Pie del sidebar */}
-          <div className="border-t border-[var(--color-border-default)]/30 p-4 pt-3 space-y-3 text-[var(--color-text-secondary)]">
-            <button
-              onClick={goProfile}
-              className="flex items-center gap-3 px-2 w-full hover:bg-[var(--color-surface-muted)] rounded-xl py-2 transition-all cursor-pointer min-h-[44px]"
-              aria-label="Ver perfil de usuario"
-            >
-              <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center">
-                <span className="text-[var(--color-text-primary)] font-semibold text-sm">
-                  {(displayName(effectiveUser || { name: "U" }))
-                    .slice(0, 1)
-                    .toUpperCase()}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0 text-left">
-                <p className="font-medium text-[var(--color-text-primary)] text-sm truncate">
-                  {displayName(effectiveUser) || "Usuario"}
-                </p>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs text-[var(--color-text-secondary)] truncate">{effectiveUser?.email}</p>
+          <div className={`border-t border-[var(--color-border-default)]/30 ${isTablet ? 'p-2 space-y-2' : 'p-4 pt-3 space-y-3'} text-[var(--color-text-secondary)]`}>
+            {/* Perfil Usuario */}
+            {isTablet ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={goProfile}
+                      className="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-[var(--color-surface-muted)] transition-all cursor-pointer"
+                      aria-label="Ver perfil"
+                    >
+                      <div className="w-8 h-8 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center">
+                        <span className="text-[var(--color-text-primary)] font-semibold text-xs">
+                          {(displayName(effectiveUser || { name: "U" })).slice(0, 1).toUpperCase()}
+                        </span>
+                      </div>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>{displayName(effectiveUser)}</p>
+                    <p className="text-xs text-[var(--color-text-secondary)]">{effectiveUser?.email}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <button
+                onClick={goProfile}
+                className="flex items-center gap-3 px-2 w-full hover:bg-[var(--color-surface-muted)] rounded-xl py-2 transition-all cursor-pointer min-h-[44px]"
+                aria-label="Ver perfil de usuario"
+              >
+                <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center">
+                  <span className="text-[var(--color-text-primary)] font-semibold text-sm">
+                    {(displayName(effectiveUser || { name: "U" })).slice(0, 1).toUpperCase()}
+                  </span>
                 </div>
-              </div>
-            </button>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="font-medium text-[var(--color-text-primary)] text-sm truncate">
+                    {displayName(effectiveUser) || "Usuario"}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-[var(--color-text-secondary)] truncate">{effectiveUser?.email}</p>
+                  </div>
+                </div>
+              </button>
+            )}
 
-            <div className="flex items-center gap-1 w-full">
+            <div className={`flex items-center ${isTablet ? 'flex-col gap-2' : 'gap-1 w-full'}`}>
               {/* Ayuda */}
               <TooltipProvider>
                 <Tooltip>
@@ -721,19 +802,19 @@ function LayoutContent() {
                       variant="ghost"
                       size="sm"
                       onClick={() => navigate(createPageUrl('ayuda'))}
-                      className={`flex-1 justify-center gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
+                      className={`${isTablet ? 'w-10 h-10 justify-center' : 'flex-1 justify-center gap-2'} text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
                       aria-label="Centro de Ayuda"
                     >
                       <HelpCircle className="w-5 h-5" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent side={isTablet ? "right" : "top"}>
                     <p>Ayuda</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
 
-              {/* Toggle Tema - Usando activeMode (sin contaminar diffs) */}
+              {/* Toggle Tema */}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -741,7 +822,7 @@ function LayoutContent() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setActiveMode(activeMode === 'dark' ? 'light' : 'dark')}
-                      className={`flex-1 justify-center gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
+                      className={`${isTablet ? 'w-10 h-10 justify-center' : 'flex-1 justify-center gap-2'} text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
                       aria-label={activeMode === 'dark' ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
                     >
                       {activeMode === 'dark' ? (
@@ -751,51 +832,76 @@ function LayoutContent() {
                       )}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent side={isTablet ? "right" : "top"}>
                     <p>{activeMode === 'dark' ? "Modo claro" : "Modo oscuro"}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
 
               {/* Ocultar menú */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={safeToggle}
-                      className={`flex-1 justify-center gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
-                      aria-label="Ocultar menú"
-                    >
-                      <PanelLeft className="w-5 h-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Ocultar menú</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
+              {!isTablet && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={safeToggle}
+                        className="flex-1 justify-center gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl"
+                        aria-label="Ocultar menú"
+                      >
+                        <PanelLeft className="w-5 h-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Ocultar menú</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={logout}
-              className={`w-full justify-start gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
-              aria-label="Cerrar sesión"
-            >
-              <LogOut className="w-4 h-4" />
-              Cerrar sesión
-            </Button>
+              {/* Botón Logout */}
+              {isTablet ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={logout}
+                        className={`w-10 h-10 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
+                        aria-label="Cerrar sesión"
+                      >
+                        <LogOut className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>Cerrar sesión</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={logout}
+                  className={`w-full justify-start gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
+                  aria-label="Cerrar sesión"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Cerrar sesión
+                </Button>
+              )}
+            </div>
           </div>
         </aside>
 
-        {/* Contenido principal - Ancho completo cuando sidebar cerrado */}
+        {/* Contenido principal - Solo desktop empuja contenido */}
         <main
-          className="min-h-screen transition-all duration-200 flex flex-col overflow-x-hidden"
+          className="min-h-screen transition-all duration-200 flex flex-col overflow-x-hidden min-w-0"
           style={{
-            marginLeft: !isMobile && abierto ? 'var(--sidebar-width, 16rem)' : '0',
+            // Solo desktop con sidebar abierto empuja contenido
+            marginLeft: isDesktop && abierto ? 'var(--sidebar-width, 16rem)' : '0',
           }}
           aria-hidden={isMobile && abierto}
           inert={isMobile && abierto ? "" : undefined}
