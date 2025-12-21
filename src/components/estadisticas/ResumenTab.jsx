@@ -17,11 +17,11 @@ export default function ResumenTab({ kpis }) {
     <div className="space-y-6">
       {/* 
         Grid Layout:
-        - Desktop (lg): 6 columnas
-        - Tablet (sm): 3 columnas
-        - Mobile: 2 columnas
+        - Mobile: 1 columna
+        - Tablet (sm): 2 columnas
+        - Desktop (lg): 4 columnas
       */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 border-b border-[var(--color-border-default)] pb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 border-b border-[var(--color-border-default)] pb-6">
 
         {/* 1. Tiempo Total */}
         <KpiTile

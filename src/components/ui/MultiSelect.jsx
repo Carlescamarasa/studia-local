@@ -14,37 +14,21 @@ export default function MultiSelect({ label, items, value = [], onChange, icon: 
     onChange(newValue);
   };
 
-  // Obtener los labels de los items seleccionados
-  const selectedLabels = React.useMemo(() => {
-    if (value.length === 0) return [];
-    return value
-      .map(v => items.find(item => item.value === v)?.label)
-      .filter(Boolean);
-  }, [value, items]);
-
-  // Formatear el texto del botón
-  const buttonText = React.useMemo(() => {
-    if (value.length === 0) {
-      return label;
-    }
-
-    // En mobile, mostrar hasta 2 labels, luego "+X más" si hay más
-    if (selectedLabels.length <= 2) {
-      return `${label} (${selectedLabels.join(', ')})`;
-    } else {
-      const remaining = selectedLabels.length - 2;
-      return `${label} (${selectedLabels.slice(0, 2).join(', ')} +${remaining} más)`;
-    }
-  }, [label, selectedLabels, value.length]);
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="text-xs h-9 rounded-xl focus-brand justify-start text-left min-w-0 max-w-[200px] sm:max-w-[260px] md:max-w-[360px]">
-          <Icon className="w-4 h-4 mr-2 shrink-0" />
-          <span className="truncate min-w-0 flex-1">
-            {buttonText}
-          </span>
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-xs h-10 rounded-xl focus-brand justify-start text-left min-w-0 gap-2"
+        >
+          <Icon className="w-4 h-4 shrink-0" />
+          <span className="truncate">{label}</span>
+          {value.length > 0 && (
+            <span className="ml-auto flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-semibold rounded-full bg-[var(--color-primary)] text-white shrink-0">
+              {value.length}
+            </span>
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-96 p-0 z-[280]" align="start">

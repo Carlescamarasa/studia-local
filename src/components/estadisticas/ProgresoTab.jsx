@@ -123,7 +123,7 @@ export default function ProgresoTab({
       {/* 2. Contenido según vista */}
       {view === 'rendimiento' && (
         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pb-4">
+          <div className="grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pb-4">
             <KpiTile icon={CheckCircle} label="Ratio completado" value={`${kpis.ratioCompletado}%`} valueClassName="text-[var(--color-success)]" subtext={`${kpis.totalCompletados} compl. · ${kpis.totalOmitidos} omit.`} />
             <KpiTile icon={CheckCircle} label="Sesiones sin omitir" value={`${kpis.porcentajeCompletadas}%`} valueClassName="text-[var(--color-success)]" subtext={`${kpis.sesionesCompletadas}/${kpis.numSesiones || 0} sesiones`} />
             <KpiTile icon={Clock} label="Cumplimiento objetivo" value={`${tiempoRealVsObjetivo.porcentajeCumplimiento}%`} valueClassName={parseFloat(tiempoRealVsObjetivo.porcentajeCumplimiento) >= 90 ? "text-[var(--color-success)]" : "text-orange-500"} subtext={`Real: ${formatDuracionHM(tiempoRealVsObjetivo.totalReal)}`} />
