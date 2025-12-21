@@ -394,33 +394,31 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
             )}
 
             {embedded && (
-                <div className="flex flex-col gap-4 mb-6 p-4 bg-card rounded-lg border shadow-sm">
-                    <div className="flex flex-col sm:flex-row justify-between gap-4">
-                        {/* Filters Left Side */}
-                        <div className="flex-1 flex flex-col sm:flex-row gap-2">
-                            <FilterControls />
-                        </div>
+                <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
+                    {/* Filters Left Side */}
+                    <div className="flex-1 flex flex-col sm:flex-row gap-2">
+                        <FilterControls />
+                    </div>
 
-                        {/* Actions Right Side */}
-                        <div className="flex gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleMigrateLegacy}
-                                disabled={isMigrating}
-                            >
-                                <RefreshCw className={`w-4 h-4 mr-2 ${isMigrating ? 'animate-spin' : ''}`} />
-                                {isMigrating ? 'Migrando...' : 'Migrar Legacy'}
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => queryClient.invalidateQueries({ queryKey: ['media_assets'] })}
-                            >
-                                <RefreshCw className="w-4 h-4 mr-2" />
-                                Refrescar
-                            </Button>
-                        </div>
+                    {/* Actions Right Side */}
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleMigrateLegacy}
+                            disabled={isMigrating}
+                        >
+                            <RefreshCw className={`w-4 h-4 mr-2 ${isMigrating ? 'animate-spin' : ''}`} />
+                            {isMigrating ? 'Migrando...' : 'Migrar Legacy'}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => queryClient.invalidateQueries({ queryKey: ['media_assets'] })}
+                        >
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Refrescar
+                        </Button>
                     </div>
                 </div>
             )}

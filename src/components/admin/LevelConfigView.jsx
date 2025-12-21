@@ -330,31 +330,28 @@ export default function LevelConfigView() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-start">
-                <div>
-                    <h2 className="text-2xl font-bold">Ascenso de nivel</h2>
-                    <p className="text-muted-foreground">{requirementLabel}</p>
-                </div>
-            </div>
 
-            <Collapsible className="bg-[var(--color-info)]/10 border border-[var(--color-info)]/20 rounded-lg p-3">
-                <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-[var(--color-info)] hover:opacity-80 w-full">
-                    <Info className="w-4 h-4" />
-                    Cómo funciona el sistema de niveles
-                    <ChevronDown className="w-4 h-4 ml-auto transition-transform ui-expanded:rotate-180" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-2 text-sm text-[var(--color-info)]/80 space-y-1 pl-6">
-                    <ul className="list-disc space-y-1">
-                        <li>Se empieza en Nivel 1 con 0 XP.</li>
-                        <li>La configuración de Nivel {currentLevelNum} define cuándo puede pasar a Nivel {nextLevelNum}.</li>
-                        <li>Los criterios son orientativos; la decisión final es del profesor.</li>
-                    </ul>
-                </CollapsibleContent>
-            </Collapsible>
+
+
 
             <div className="flex items-center justify-between mb-6 bg-muted/20 p-4 rounded-lg border">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help transition-colors" />
+                                </TooltipTrigger>
+                                <TooltipContent align="start" className="max-w-[320px] p-4">
+                                    <h4 className="font-semibold mb-2 text-sm">Cómo funciona el sistema de niveles</h4>
+                                    <ul className="list-disc space-y-1 text-xs ml-3 text-muted-foreground">
+                                        <li>Se empieza en Nivel 1 con 0 XP.</li>
+                                        <li>La configuración de Nivel {currentLevelNum} define cuándo puede pasar a Nivel {nextLevelNum}.</li>
+                                        <li>Los criterios son orientativos; la decisión final es del profesor.</li>
+                                    </ul>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                         <Label className="text-muted-foreground">Configurando:</Label>
                         <Select value={activeLevel} onValueChange={setActiveLevel}>
                             <SelectTrigger className="w-[140px] font-medium bg-background">
@@ -404,6 +401,8 @@ export default function LevelConfigView() {
                     </Button>
                 )}
             </div>
+
+
 
             {viewMode === 'compare' ? (
                 <div className="space-y-6">
