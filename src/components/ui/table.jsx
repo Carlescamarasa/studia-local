@@ -6,7 +6,6 @@ const Table = React.forwardRef(({ className, ...props }, ref) => (
   <table
     ref={ref}
     className={cn("w-full caption-bottom text-sm border-collapse bg-card overflow-hidden", className)}
-    style={{ borderRadius: 'var(--card-radius, var(--radius-card, 0.25rem))' }}
     {...props}
   />
 ))

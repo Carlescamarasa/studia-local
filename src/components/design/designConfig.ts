@@ -101,18 +101,18 @@ export const DENSITY_MAP: Record<DensityValue, DensityPreset> = {
 // Presets de radius global (sharp/soft/round)
 export type RadiusPresetValue = 'sharp' | 'soft' | 'round';
 export interface RadiusPreset {
-  card: string; controls: string; pill: string; modal: string; headerInner: string;
+  card: string; controls: string; pill: string; modal: string; headerInner: string; table: string;
 }
 
 export const RADIUS_PRESET_MAP: Record<RadiusPresetValue, RadiusPreset> = {
   sharp: {
-    card: '8px', controls: '6px', pill: '9999px', modal: '10px', headerInner: '4px',
+    card: '8px', controls: '6px', pill: '9999px', modal: '10px', headerInner: '4px', table: '8px',
   },
   soft: {
-    card: '14px', controls: '10px', pill: '9999px', modal: '16px', headerInner: '8px',
+    card: '14px', controls: '10px', pill: '9999px', modal: '16px', headerInner: '8px', table: '14px',
   },
   round: {
-    card: '20px', controls: '14px', pill: '9999px', modal: '22px', headerInner: '14px',
+    card: '20px', controls: '14px', pill: '9999px', modal: '22px', headerInner: '14px', table: '20px',
   },
 };
 
@@ -193,6 +193,7 @@ export interface DesignTokens {
       controls: RadiusValue;
       pill: RadiusValue;
       modal: RadiusValue;
+      table: RadiusValue;
     };
     density: DensityValue;
     shadow: ShadowValue;
@@ -415,6 +416,7 @@ export const DEFAULT_DESIGN: DesignTokens = {
       controls: 'lg',          // Inputs, buttons (se maneja en controls.button.radius)
       pill: 'lg',              // Badges, pills
       modal: 'xl',             // Modales
+      table: 'lg',             // Tables
     },
     density: 'normal',         // compact | normal | spacious
     shadow: 'md',              // none | sm | md | lg | xl | card
@@ -709,6 +711,7 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
       vars['--radius-controls'] = radiusPreset.controls;
       vars['--radius-pill'] = radiusPreset.pill;
       vars['--radius-modal'] = radiusPreset.modal;
+      vars['--radius-table'] = radiusPreset.table;
       vars['--header-inner-radius'] = radiusPreset.headerInner;
       // Also set base radius for compatibility
       vars['--radius'] = radiusPreset.controls;
@@ -735,6 +738,10 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
       }
       // Header inner radius - usa card radius por defecto
       vars['--header-inner-radius'] = getRadiusValue((normalized.layout.radius as any).card || 'none');
+
+      // Table radius - usa card radius por defecto si no existe
+      const tableRadius = (normalized.layout.radius as any).table;
+      vars['--radius-table'] = tableRadius ? getRadiusValue(tableRadius as RadiusValue) : (vars['--radius-card'] || getRadiusValue('sm'));
 
       // Badge and pill radius - uses pill from preset or defaults to control radius
       const pillRadius = vars['--radius-pill'] || vars['--radius-ctrl'] || getRadiusValue('full');
@@ -994,6 +1001,47 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
       vars['--header-shell-border'] = normalized.chrome?.header?.border || 'var(--color-border-default)';
       vars['--header-shell-shadow'] = 'none';
     }
+  }
+
+  // ============================================================================
+  // RADIUS TOKEN GUARANTEES
+  // Ensure all radius tokens exist with valid px values (never 'none' or undefined)
+  // ============================================================================
+
+  // Card radius: guarantee both variables exist and are synced
+  if (!vars['--radius-card']) {
+    vars['--radius-card'] = vars['--card-radius'] || getRadiusValue(DEFAULT_DESIGN.layout.radius.card);
+  }
+  if (!vars['--card-radius']) {
+    vars['--card-radius'] = vars['--radius-card'];
+  }
+  // Sync: if one was set from component override, ensure both match
+  // Priority: --card-radius (from components.card.radius) wins if explicitly set
+  if (normalized.components?.card?.radius && normalized.components.card.radius !== 'auto') {
+    const syncValue = normalized.components.card.radius === 'none' ? '0px' : getRadiusValue(normalized.components.card.radius as RadiusValue);
+    vars['--radius-card'] = syncValue;
+    vars['--card-radius'] = syncValue;
+  }
+
+  // Button radius: guarantee both variables exist
+  if (!vars['--button-radius']) {
+    vars['--button-radius'] = vars['--btn-radius'] || vars['--radius-ctrl'] || getRadiusValue('lg');
+  }
+  if (!vars['--btn-radius']) {
+    vars['--btn-radius'] = vars['--button-radius'];
+  }
+
+  // Table radius: guarantee exists
+  if (!vars['--radius-table']) {
+    vars['--radius-table'] = vars['--radius-card'] || getRadiusValue('lg');
+  }
+
+  // Controls radius: guarantee exists
+  if (!vars['--radius-ctrl']) {
+    vars['--radius-ctrl'] = vars['--radius-controls'] || getRadiusValue(DEFAULT_DESIGN.layout.radius.controls);
+  }
+  if (!vars['--radius-controls']) {
+    vars['--radius-controls'] = vars['--radius-ctrl'];
   }
 
   // ============================================================================

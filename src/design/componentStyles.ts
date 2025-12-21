@@ -6,14 +6,14 @@
 // Helpers base para compactar variantes de card/panel
 // NOTA: .app-card ya incluye radius, padding y shadow desde tokens CSS (index.css)
 // Solo añadimos variantes de color/borde que no están en la clase base
-const CARD_BASE = "app-card bg-[var(--color-surface)]"; // El borde ya está en .app-card con opacidad
-const CARD_ELEVATED = "app-card bg-[var(--color-surface-elevated)]"; // El borde ya está en .app-card con opacidad
-const PANEL_BASE = "app-panel";
-const CARD_TONE_PRIMARY = "app-card border-2 border-[var(--color-primary)] bg-[var(--color-primary-soft)]";
-const CARD_TONE_ACCENT = "app-card border-2 border-[var(--color-accent)] bg-[var(--color-surface)]";
-const CARD_TONE_SECONDARY = "app-card border-2 border-[var(--color-secondary)] bg-[var(--color-surface)]";
-const PANEL_SESSION = "app-panel bg-[var(--color-surface-muted)] hover:shadow-md transition-all";
-const CARD_METRIC = "app-card border border-[var(--color-border-default)]/20 bg-[var(--color-surface)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300";
+const CARD_BASE = "ui-card app-card bg-[var(--color-surface)]"; // El borde ya está en .app-card con opacidad
+const CARD_ELEVATED = "ui-card app-card bg-[var(--color-surface-elevated)]"; // El borde ya está en .app-card con opacidad
+const PANEL_BASE = "ui-panel app-panel";
+const CARD_TONE_PRIMARY = "ui-card app-card border-2 border-[var(--color-primary)] bg-[var(--color-primary-soft)]";
+const CARD_TONE_ACCENT = "ui-card app-card border-2 border-[var(--color-accent)] bg-[var(--color-surface)]";
+const CARD_TONE_SECONDARY = "ui-card app-card border-2 border-[var(--color-secondary)] bg-[var(--color-surface)]";
+const PANEL_SESSION = "ui-panel app-panel bg-[var(--color-surface-muted)] hover:shadow-md transition-all";
+const CARD_METRIC = "ui-card app-card border border-[var(--color-border-default)]/20 bg-[var(--color-surface)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300";
 
 export const componentStyles = {
   layout: {
@@ -81,7 +81,7 @@ export const componentStyles = {
   items: {
     itemCard: CARD_BASE,
     itemCardHighlight: CARD_TONE_PRIMARY,
-    itemRow: "flex items-center gap-2 px-3 py-2 rounded-lg border-b border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)] transition-colors",
+    itemRow: "flex items-center gap-2 px-3 py-2 border-b border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)] transition-colors",
     itemRowTone: "pl-3 border-l-4",
     // Elementos compactos (ejercicios, rondas en secuencia)
     compactItem: "flex items-center gap-1.5 p-1.5 bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] rounded-[var(--radius-ctrl)] text-xs",
