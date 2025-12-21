@@ -2,8 +2,8 @@
  * TestSeedContent - Embedded test & seed content for Configuración page
  */
 
-import TestSeedPage from '@/pages/testseed';
+import MaintenancePanel from './maintenance/MaintenancePanel';
 
 export default function TestSeedContent() {
-    return <TestSeedPage embedded />;
+    return <MaintenancePanel embedded />;
 }

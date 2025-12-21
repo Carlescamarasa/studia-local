@@ -1910,19 +1910,30 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         if (sessions.length === 0) return [];
 
-        // Fetch associated blocks
+        // Fetch associated blocks in batches to avoid URL length limits
         const sessionIds = sessions.map(s => s.id);
-        const { data: blocksData, error: blocksError } = await supabase
-          .from('registros_bloque')
-          .select('*')
-          .in('registro_sesion_id', sessionIds);
+        const chunkSize = 50;
+        let allBlocks: any[] = [];
 
-        if (blocksError) {
-          // Return sessions without blocks if blocks fetch fails
-          return sessions;
+        // Process in chunks
+        for (let i = 0; i < sessionIds.length; i += chunkSize) {
+          const chunk = sessionIds.slice(i, i + chunkSize);
+          const { data: blocksData, error: blocksError } = await supabase
+            .from('registros_bloque')
+            .select('*')
+            .in('registro_sesion_id', chunk);
+
+          if (blocksError) {
+            console.warn('[remoteDataAPI] Error fetching blocks chunk:', blocksError);
+            continue;
+          }
+
+          if (blocksData) {
+            allBlocks = [...allBlocks, ...blocksData];
+          }
         }
 
-        const blocks = (blocksData || []).map((b: any) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
+        const blocks = allBlocks.map((b: any) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
 
         // Join blocks to sessions
         const result = sessions.map(session => {
@@ -1995,19 +2006,30 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         if (sessions.length === 0) return [];
 
-        // Fetch associated blocks
+        // Fetch associated blocks in batches to avoid URL length limits
         const sessionIds = sessions.map(s => s.id);
-        const { data: blocksData, error: blocksError } = await supabase
-          .from('registros_bloque')
-          .select('*')
-          .in('registro_sesion_id', sessionIds);
+        const chunkSize = 50;
+        let allBlocks: any[] = [];
 
-        if (blocksError) {
-          console.warn('[remoteDataAPI] Error fetching blocks for sessions:', blocksError);
-          return sessions;
+        // Process in chunks
+        for (let i = 0; i < sessionIds.length; i += chunkSize) {
+          const chunk = sessionIds.slice(i, i + chunkSize);
+          const { data: blocksData, error: blocksError } = await supabase
+            .from('registros_bloque')
+            .select('*')
+            .in('registro_sesion_id', chunk);
+
+          if (blocksError) {
+            console.warn('[remoteDataAPI] Error fetching blocks chunk:', blocksError);
+            continue;
+          }
+
+          if (blocksData) {
+            allBlocks = [...allBlocks, ...blocksData];
+          }
         }
 
-        const blocks = (blocksData || []).map((b: any) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
+        const blocks = allBlocks.map((b: any) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
 
         // Join blocks to sessions
         return sessions.map(session => ({

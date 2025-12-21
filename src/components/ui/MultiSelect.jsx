@@ -40,14 +40,14 @@ export default function MultiSelect({ label, items, value = [], onChange, icon: 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="text-xs h-9 rounded-xl focus-brand justify-start text-left min-w-0">
+        <Button variant="outline" size="sm" className="text-xs h-9 rounded-xl focus-brand justify-start text-left min-w-0 max-w-[200px] sm:max-w-[260px] md:max-w-[360px]">
           <Icon className="w-4 h-4 mr-2 shrink-0" />
           <span className="truncate min-w-0 flex-1">
             {buttonText}
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-0 z-[280]" align="start">
+      <PopoverContent className="w-96 p-0 z-[280]" align="start">
         <Command>
           <CommandInput
             placeholder={`Buscar ${label.toLowerCase()}...`}
@@ -85,7 +85,7 @@ export default function MultiSelect({ label, items, value = [], onChange, icon: 
                           }`}>
                           {isSelected && <Check className="w-3 h-3 text-white" />}
                         </div>
-                        <span className="truncate">{item.label}</span>
+                        <span className="text-sm leading-tight">{item.label}</span>
                       </div>
                     </CommandItem>
                   );

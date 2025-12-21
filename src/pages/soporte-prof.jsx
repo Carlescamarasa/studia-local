@@ -401,12 +401,12 @@ function SoporteProfPageContent() {
                           }`}
                         style={{ borderRadius: 'var(--card-radius, 0.75rem)' }}
                       >
-                        {/* Fila principal: título + estatus */}
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                          <h3 className="font-medium text-sm text-[var(--color-text-primary)] line-clamp-2 flex-1 min-w-0">
+                        {/* Título */}
+                        <div className="mb-2">
+                          <h3 className="font-medium text-sm text-[var(--color-text-primary)] line-clamp-2 mb-1.5">
                             {ticket.titulo}
                           </h3>
-                          <div className="shrink-0">
+                          <div>
                             {getEstadoBadge(ticket.estado)}
                           </div>
                         </div>
