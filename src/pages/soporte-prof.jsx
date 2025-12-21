@@ -302,145 +302,140 @@ function SoporteProfPageContent() {
       <div className="studia-section py-3">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Lista de tickets */}
-          <div className="lg:col-span-1">
-            <Card className={componentStyles.containers.cardBase}>
-              <CardHeader>
-                <CardTitle>Tickets</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Filtros */}
-                <div className="space-y-3">
-                  {/* Búsqueda */}
-                  <div className="relative">
-                    <Input
-                      placeholder="Buscar por título o alumno..."
-                      value={searchText}
-                      onChange={(e) => setSearchText(e.target.value)}
-                      className={componentStyles.controls.inputDefault}
-                    />
-                  </div>
-
-                  {/* Filtro de profesor (solo visible para PROF, no ADMIN) */}
-                  {!isAdmin && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant={profesorFilter === 'mis_tickets' ? 'primary' : 'outline'}
-                        size="sm"
-                        onClick={() => setProfesorFilter('mis_tickets')}
-                        className={`flex-1 text-xs h-8 sm:h-9 px-2 sm:px-3 ${profesorFilter === 'mis_tickets'
-                          ? componentStyles.buttons.primary
-                          : componentStyles.buttons.outline
-                          }`}
-                      >
-                        Mis tickets
-                      </Button>
-                      <Button
-                        variant={profesorFilter === 'todos' ? 'primary' : 'outline'}
-                        size="sm"
-                        onClick={() => setProfesorFilter('todos')}
-                        className={`flex-1 text-xs h-8 sm:h-9 px-2 sm:px-3 ${profesorFilter === 'todos'
-                          ? componentStyles.buttons.primary
-                          : componentStyles.buttons.outline
-                          }`}
-                      >
-                        Todos
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* Filtros de estado */}
-                  <div className="flex gap-1 w-full">
-                    <Button
-                      variant={estadoFilter === 'todos' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setEstadoFilter('todos')}
-                      title="Todos"
-                      className="flex-1"
-                    >
-                      <List className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant={estadoFilter === 'abierto' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setEstadoFilter('abierto')}
-                      title="Abiertos"
-                      className="flex-1"
-                    >
-                      <MailOpen className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant={estadoFilter === 'en_proceso' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setEstadoFilter('en_proceso')}
-                      title="En proceso"
-                      className="flex-1"
-                    >
-                      <Clock className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant={estadoFilter === 'cerrado' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setEstadoFilter('cerrado')}
-                      title="Cerrados"
-                      className="flex-1"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                    </Button>
-                  </div>
+          <div className="lg:col-span-1 flex flex-col gap-4">
+            <div className="space-y-4">
+              {/* Filtros */}
+              <div className="space-y-3">
+                {/* Búsqueda */}
+                <div className="relative">
+                  <Input
+                    placeholder="Buscar por título o alumno..."
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    className={componentStyles.controls.inputDefault}
+                  />
                 </div>
 
-                {/* Lista */}
-                {filteredTickets && filteredTickets.length > 0 ? (
-                  <div className="space-y-2">
-                    {filteredTickets.map((ticket) => (
-                      <div
-                        key={ticket.id}
-                        onClick={() => setSelectedTicketId(ticket.id)}
-                        className={`border border-[var(--color-border-default)] bg-[var(--color-surface-default)] px-4 py-3 md:px-5 md:py-4 shadow-sm cursor-pointer transition-colors ${selectedTicketId === ticket.id
-                          ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]'
-                          : 'hover:bg-[var(--color-surface-muted)]'
-                          }`}
-                        style={{ borderRadius: 'var(--card-radius, 0.75rem)' }}
-                      >
-                        {/* Título */}
-                        <div className="mb-2">
-                          <h3 className="font-medium text-sm text-[var(--color-text-primary)] line-clamp-2 mb-1.5">
-                            {ticket.titulo}
-                          </h3>
-                          <div>
-                            {getEstadoBadge(ticket.estado)}
-                          </div>
-                        </div>
-
-                        {/* Nombre del alumno */}
-                        <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)] mb-1.5">
-                          <User className="w-3 h-3 shrink-0" />
-                          <span className="truncate">Alumno: {alumnoNames[ticket.alumnoId] || ticket._alumnoNombre || 'Desconocido'}</span>
-                        </div>
-
-                        {/* Fecha y badge de nueva respuesta */}
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
-                            <Clock className="w-3 h-3 shrink-0" />
-                            <span>{formatDate(ticket.updated_at)}</span>
-                          </div>
-                          {ticket.ultimaRespuestaDe === 'alumno' && (
-                            <Badge variant="info" className="text-xs px-2 py-0.5 shrink-0">
-                              Nueva respuesta
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-[var(--color-text-secondary)]">
-                    <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>No hay tickets</p>
+                {/* Filtro de profesor (solo visible para PROF, no ADMIN) */}
+                {!isAdmin && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant={profesorFilter === 'mis_tickets' ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setProfesorFilter('mis_tickets')}
+                      className={`flex-1 text-xs h-8 sm:h-9 px-2 sm:px-3 ${profesorFilter === 'mis_tickets'
+                        ? componentStyles.buttons.primary
+                        : componentStyles.buttons.outline
+                        }`}
+                    >
+                      Mis tickets
+                    </Button>
+                    <Button
+                      variant={profesorFilter === 'todos' ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setProfesorFilter('todos')}
+                      className={`flex-1 text-xs h-8 sm:h-9 px-2 sm:px-3 ${profesorFilter === 'todos'
+                        ? componentStyles.buttons.primary
+                        : componentStyles.buttons.outline
+                        }`}
+                    >
+                      Todos
+                    </Button>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+
+                {/* Filtros de estado */}
+                <div className="flex gap-1 w-full">
+                  <Button
+                    variant={estadoFilter === 'todos' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setEstadoFilter('todos')}
+                    title="Todos"
+                    className="flex-1"
+                  >
+                    <List className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={estadoFilter === 'abierto' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setEstadoFilter('abierto')}
+                    title="Abiertos"
+                    className="flex-1"
+                  >
+                    <MailOpen className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={estadoFilter === 'en_proceso' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setEstadoFilter('en_proceso')}
+                    title="En proceso"
+                    className="flex-1"
+                  >
+                    <Clock className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={estadoFilter === 'cerrado' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setEstadoFilter('cerrado')}
+                    title="Cerrados"
+                    className="flex-1"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Lista */}
+              {filteredTickets && filteredTickets.length > 0 ? (
+                <div className="space-y-3">
+                  {filteredTickets.map((ticket) => (
+                    <div
+                      key={ticket.id}
+                      onClick={() => setSelectedTicketId(ticket.id)}
+                      className={`border border-[var(--color-border-default)] bg-[var(--color-surface-default)] px-4 py-3 md:px-5 md:py-4 shadow-sm cursor-pointer transition-colors ${selectedTicketId === ticket.id
+                        ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]'
+                        : 'hover:bg-[var(--color-surface-muted)]'
+                        }`}
+                      style={{ borderRadius: 'var(--card-radius, 0.75rem)' }}
+                    >
+                      {/* Título */}
+                      <div className="mb-2">
+                        <h3 className="font-medium text-sm text-[var(--color-text-primary)] line-clamp-2 mb-1.5">
+                          {ticket.titulo}
+                        </h3>
+                        <div>
+                          {getEstadoBadge(ticket.estado)}
+                        </div>
+                      </div>
+
+                      {/* Nombre del alumno */}
+                      <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)] mb-1.5">
+                        <User className="w-3 h-3 shrink-0" />
+                        <span className="truncate">Alumno: {alumnoNames[ticket.alumnoId] || ticket._alumnoNombre || 'Desconocido'}</span>
+                      </div>
+
+                      {/* Fecha y badge de nueva respuesta */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
+                          <Clock className="w-3 h-3 shrink-0" />
+                          <span>{formatDate(ticket.updated_at)}</span>
+                        </div>
+                        {ticket.ultimaRespuestaDe === 'alumno' && (
+                          <Badge variant="info" className="text-xs px-2 py-0.5 shrink-0">
+                            Nueva respuesta
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-[var(--color-text-secondary)] bg-[var(--color-surface-default)] rounded-xl border border-[var(--color-border-default)]">
+                  <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>No hay tickets</p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Vista de ticket seleccionado */}
