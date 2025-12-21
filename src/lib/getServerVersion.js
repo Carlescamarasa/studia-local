@@ -21,6 +21,13 @@ export async function getServerVersion(timeoutMs = 4000) {
             return null;
         }
 
+        // Check Content-Type header to ensure it's JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            console.warn('[getServerVersion] version.json returned non-JSON content-type:', contentType);
+            return null;
+        }
+
         const data = await response.json();
 
         // Validate required fields
