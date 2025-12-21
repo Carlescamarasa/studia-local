@@ -382,11 +382,25 @@ function StudiaPageContent() {
         setPpmAlcanzado(null);
     }, [indiceActual, sesionActiva, sesionFinalizada]);
 
-    // Pause timer when any modal is open (cancel, itinerary, or hotkeys)
+    // Listen for Report Modal events
+    useEffect(() => {
+        const handleReportModalOpened = () => setReportModalAbierto(true);
+        const handleReportModalClosed = () => setReportModalAbierto(false);
+
+        window.addEventListener('report-modal-opened', handleReportModalOpened);
+        window.addEventListener('report-modal-closed', handleReportModalClosed);
+
+        return () => {
+            window.removeEventListener('report-modal-opened', handleReportModalOpened);
+            window.removeEventListener('report-modal-closed', handleReportModalClosed);
+        };
+    }, []);
+
+    // Pause timer when any modal is open (cancel, itinerary, hotkeys, or report)
     const [pausadoPorModal, setPausadoPorModal] = useState(false);
 
     useEffect(() => {
-        const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || showHotkeysModal;
+        const hayModalAbierto = mostrarModalCancelar || mostrarItinerario || showHotkeysModal || reportModalAbierto;
 
         if (hayModalAbierto && cronometroActivo) {
             // Pause when any modal opens
@@ -403,7 +417,7 @@ function StudiaPageContent() {
             setCronometroActiva(true);
             setPausadoPorModal(false);
         }
-    }, [mostrarModalCancelar, mostrarItinerario, showHotkeysModal, pausadoPorModal, sesionFinalizada]);
+    }, [mostrarModalCancelar, mostrarItinerario, showHotkeysModal, reportModalAbierto, pausadoPorModal, sesionFinalizada]);
 
     // Helper functions
     const guardarRegistroBloque = async (indice, estado, duracionReal = 0) => {
@@ -635,20 +649,34 @@ function StudiaPageContent() {
         if (!sesionActiva || sesionFinalizada) return;
 
         const handleKeyDown = (e) => {
+            // 1. Priority: ESCAPE (Always handled first)
             if (e.key === 'Escape') {
                 e.preventDefault();
                 if (mostrarItinerario) {
                     setMostrarItinerario(false);
                 } else if (mostrarModalCancelar) {
                     setMostrarModalCancelar(false);
+                } else if (mostrarPiano) {
+                    setMostrarPiano(false);
                 } else {
                     setMostrarModalCancelar(true);
                 }
                 return;
             }
 
-            if (reportModalAbierto) return;
+            // 2. Strict Blocking: If any modal-like overlay is open, BLOCK EVERYTHING ELSE
+            //    (Exit Confirmation, Report Error, Hotkeys CheatSheet, Piano Panel)
+            if (reportModalAbierto || mostrarModalCancelar || showHotkeysModal || mostrarPiano) {
+                // Exception: Allow '?' to toggle (close) the Hotkeys modal even if it's open (Strict block would prevent it otherwise)
+                if (e.key === '?') {
+                    e.preventDefault();
+                    setShowHotkeysModal(prev => !prev);
+                    return;
+                }
+                return;
+            }
 
+            // 3. Global Toggles (Allowed if NO strict modal is open)
             if (e.key === 'i' || e.key === 'I') {
                 e.preventDefault();
                 setMostrarItinerario(prev => !prev);
@@ -661,7 +689,11 @@ function StudiaPageContent() {
                 return;
             }
 
-            if (mostrarModalCancelar || mostrarItinerario || showHotkeysModal) return;
+            // 4. Session Control Blocking: If Drawer (Itinerary) is open, BLOCK Session Controls
+            //    (Space, Arrows, Enter, etc.)
+            if (mostrarItinerario) return;
+
+            // 5. Normal Session Controls (Only when fully focused on the session)
             if (shouldIgnoreHotkey(e)) return;
 
             const listaEjecucion = aplanarSesion(sesionActiva);
@@ -702,7 +734,7 @@ function StudiaPageContent() {
 
         window.addEventListener('keydown', handleKeyDown, true);
         return () => window.removeEventListener('keydown', handleKeyDown, true);
-    }, [sesionActiva, sesionFinalizada, indiceActual, mostrarModalCancelar, mostrarItinerario, reportModalAbierto, showHotkeysModal]);
+    }, [sesionActiva, sesionFinalizada, indiceActual, mostrarModalCancelar, mostrarItinerario, reportModalAbierto, showHotkeysModal, mostrarPiano]);
 
     // Loading state
     if (loadingAsignaciones || !sesionActiva) {
@@ -816,7 +848,7 @@ function StudiaPageContent() {
                 ref={footerRef}
                 className={cn(
                     "fixed bottom-0 left-0 right-0 z-50 bg-[var(--color-surface-elevated)] border-t border-[var(--color-border-default)] shadow-[0_-4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 ease-in-out pb-[env(safe-area-inset-bottom)]",
-                    timerCollapsed ? "h-[80px]" : "min-h-[80px]"
+                    timerCollapsed ? "min-h-[80px] h-auto" : "min-h-[80px]"
                 )}
             >
                 {/* Report button */}
@@ -844,9 +876,9 @@ function StudiaPageContent() {
 
                 {/* Main controls row */}
                 <div className={cn("max-w-5xl mx-auto px-4 py-3", excedido ? "border-b-2 border-[var(--color-danger)]" : "")}>
-                    <div className="flex items-center justify-between gap-3">
-                        {/* Left: Time */}
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-x-2 gap-y-2">
+                        {/* Left: Time - shrink-0 to give space to center */}
+                        <div className="flex items-center gap-2 shrink-0 order-1 sm:order-none">
                             <Clock className={cn("w-4 h-4 shrink-0", excedido ? "text-[var(--color-danger)]" : enRangoWarning ? "text-[var(--color-warning)]" : "text-[var(--color-primary)]")} />
                             <div className="flex flex-col min-w-0">
                                 <div className={cn("text-base font-mono font-bold tabular-nums leading-tight", excedido ? "text-[var(--color-danger)]" : enRangoWarning ? "text-[var(--color-warning)]" : "text-[var(--color-text-primary)]")}>
@@ -886,15 +918,14 @@ function StudiaPageContent() {
                             </Button>
                         </div>
 
-                        {/* Center: Controls (always visible) */}
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <Button variant="outline" size="sm" onClick={handleAnterior} disabled={indiceActual === 0} className="h-9 flex-[0.5] min-w-0 rounded-lg" title="Anterior (P)">
-                                <ChevronLeft className="w-4 h-4 mr-1.5 shrink-0" />
+                        <div className="flex items-center gap-2 min-w-0 justify-center px-1 order-3 w-full sm:w-auto sm:order-none sm:flex-1">
+                            <Button variant="outline" size="sm" onClick={handleAnterior} disabled={indiceActual === 0} className="h-9 flex-1 min-w-0 px-2 rounded-lg shrink-0 sm:max-w-[120px]" title="Anterior (P)">
+                                <ChevronLeft className="w-4 h-4 shrink-0 sm:mr-1" />
                                 <span className="truncate">Atrás</span>
                             </Button>
 
                             {!isAD && (
-                                <Button variant="outline" size="sm" onClick={togglePlayPausa} className="h-9 w-9 p-0 rounded-lg shrink-0" title={cronometroActivo ? "Pausar" : "Reproducir"}>
+                                <Button variant="outline" size="sm" onClick={togglePlayPausa} className="h-9 flex-1 min-w-0 p-0 rounded-lg shrink-0 sm:max-w-[60px]" title={cronometroActivo ? "Pausar" : "Reproducir"}>
                                     {cronometroActivo ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                                 </Button>
                             )}
@@ -902,23 +933,23 @@ function StudiaPageContent() {
                             <Button
                                 variant="primary"
                                 onClick={completarYAvanzar}
-                                className="h-9 flex-[0.5] min-w-0 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm rounded-lg shadow-sm text-white"
+                                className="h-9 flex-1 min-w-0 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm rounded-lg shadow-sm text-white shrink-0 px-2 sm:max-w-[120px]"
                                 title="Completar (Enter)"
                             >
-                                <CheckCircle className="w-4 h-4 mr-1.5 shrink-0" />
+                                <CheckCircle className="w-4 h-4 shrink-0 sm:mr-1" />
                                 <span className="truncate">{isUltimo ? 'Finalizar' : 'OK'}</span>
                             </Button>
 
                             {!isUltimo && (
-                                <Button variant="outline" size="sm" onClick={omitirYAvanzar} className="h-9 flex-[0.5] min-w-0 rounded-lg" title="Omitir (N)">
-                                    <ChevronsRight className="w-4 h-4 mr-1.5 shrink-0" />
+                                <Button variant="outline" size="sm" onClick={omitirYAvanzar} className="h-9 flex-1 min-w-0 px-2 rounded-lg shrink-0 sm:max-w-[120px]" title="Omitir (N)">
+                                    <ChevronsRight className="w-4 h-4 shrink-0 sm:mr-1" />
                                     <span className="truncate">Saltar</span>
                                 </Button>
                             )}
                         </div>
 
                         {/* Right: Progress + collapse */}
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0 order-2 sm:order-none">
                             <div className={cn(
                                 "flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-xs transition-all",
                                 "bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 text-[var(--color-primary)]"

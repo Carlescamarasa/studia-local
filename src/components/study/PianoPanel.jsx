@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Piano, ChevronUp, ChevronDown, Play, Pause, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -281,10 +281,21 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
     // Map of active notes: noteName -> { osc, gain, intervalId? }
     const activeNotes = useRef(new Map());
     const panelRef = useRef(null);
+    const scrollRef = useRef(null);
     const sustainRef = useRef(false); // Ref for immediate audio logic
 
     // Sidebar state for positioning - safe access (returns defaults if no provider)
     const { abierto: sidebarAbierto } = useSidebarSafe();
+
+    // Scroll to center on open - Adjusted to start at C4 (approx 140px)
+    useLayoutEffect(() => {
+        if (isOpen && scrollRef.current) {
+            // Target C4 (Do central) to be on the left
+            // VISIBLE_NOTES starts at F#3. White keys before C4: G3, A3, B3 (3 keys)
+            // 3 * 44px (w-11) + 8px (padding) = 140px
+            scrollRef.current.scrollLeft = 140;
+        }
+    }, [isOpen]);
 
     // Track which keys are currently pressed for visual highlighting
     const [pressedKeys, setPressedKeys] = useState(new Set());
@@ -363,8 +374,9 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
     };
 
     const startNote = (note, e) => {
-        // Prevent default to stop scrolling/selecting on touch
-        if (e && e.cancelable) { e.preventDefault(); }
+        // ALLOW default behavior to enable native scrolling
+        // if (e && e.cancelable) { e.preventDefault(); }
+
         // Capture pointer if available to track release outside
         if (e && e.target && e.target.setPointerCapture) {
             try { e.target.setPointerCapture(e.pointerId); } catch (err) { }
@@ -499,7 +511,7 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
             }}>
             {/* Header - aligned with studia page layout */}
             <div className="py-2 bg-[var(--color-surface-muted)] border-b border-[var(--color-border-default)]">
-                <div className="max-w-5xl mx-auto px-2 sm:px-3 md:px-6 flex items-center justify-between">
+                <div className="max-w-5xl mx-auto px-2 sm:px-3 md:px-6 flex flex-wrap items-center justify-center sm:justify-between gap-y-2">
 
                     {/* LEFT: Piano Toggle */}
                     <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary)]">
@@ -524,7 +536,7 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
                     </div>
 
                     {/* CENTER: Controls < MANTENER > */}
-                    <div className="flex items-center">
+                    <div className="flex items-center order-3 sm:order-none w-full sm:w-auto justify-center mt-1 sm:mt-0">
                         <button
                             onClick={() => handleStep(-1)}
                             disabled={!lastNote}
@@ -596,171 +608,173 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
             </div>
 
             {/* Main Content Area - Keyboard centered, Info panel on right */}
-            <div className="flex justify-center bg-[var(--color-surface-muted)]" style={{ minHeight: '180px' }}>
+            <div className="bg-[var(--color-surface-muted)]" style={{ minHeight: '180px' }}>
+                <div className="max-w-5xl mx-auto flex justify-center w-full">
 
-                {/* Keys Container - centered */}
-                <div className="flex-shrink-0 overflow-x-auto touch-pan-x relative" style={{ maxWidth: 'calc(100% - 160px)' }}>
-                    <div className="flex relative select-none h-[180px]" style={{ minWidth: 'fit-content', paddingLeft: '8px', paddingRight: '8px' }}>
-                        {/* White Keys */}
-                        {VISIBLE_NOTES.map((note, idx) => {
-                            const isWhite = note.type === 'white';
-                            if (!isWhite) return null;
-                            const isFirstWhite = VISIBLE_NOTES.find(n => n.type === 'white') === note;
-                            // Labels are ALWAYS fixed (piano key names), no transposition
-                            return (
-                                <div key={note.name} className="relative h-full flex flex-col justify-start">
+                    {/* Keys Container - centered */}
+                    <div ref={scrollRef} className="w-full flex-shrink-0 overflow-x-auto touch-pan-x relative" style={{ maxWidth: 'calc(100% - 160px)' }}>
+                        <div className="flex relative select-none h-[180px]" style={{ minWidth: 'fit-content', paddingLeft: '8px', paddingRight: '8px' }}>
+                            {/* White Keys */}
+                            {VISIBLE_NOTES.map((note, idx) => {
+                                const isWhite = note.type === 'white';
+                                if (!isWhite) return null;
+                                const isFirstWhite = VISIBLE_NOTES.find(n => n.type === 'white') === note;
+                                // Labels are ALWAYS fixed (piano key names), no transposition
+                                return (
+                                    <div key={note.name} className="relative h-full flex flex-col justify-start">
+                                        <button
+                                            className={cn(
+                                                "w-11 h-[175px] relative focus:outline-none touch-pan-x rounded-b-[3px] transition-all duration-75 flex flex-col justify-end items-center pb-2",
+                                                pressedKeys.has(note.name)
+                                                    ? ""
+                                                    : "shadow-sm hover:shadow-md"
+                                            )}
+                                            style={{
+                                                backgroundColor: pressedKeys.has(note.name) ? 'var(--color-accent)' : '#fff',
+                                                borderRight: '1px solid #e0e0e0',
+                                                borderLeft: isFirstWhite ? '1px solid #e0e0e0' : 'none',
+                                                borderBottom: '1px solid #d0d0d0',
+                                                zIndex: 1,
+                                                boxSizing: 'border-box'
+                                            }}
+                                            onPointerDown={(e) => startNote(note, e)}
+                                            onPointerUp={(e) => stopNote(note, e)}
+                                            onPointerLeave={(e) => stopNote(note, e)}
+                                            onPointerCancel={(e) => stopNote(note, e)}
+                                        >
+                                            {/* Label inside key - ALWAYS fixed piano names */}
+                                            <span
+                                                className="text-[10px] font-medium pointer-events-none select-none"
+                                                style={{
+                                                    color: pressedKeys.has(note.name) ? 'rgba(255,255,255,0.8)' : '#999'
+                                                }}
+                                            >
+                                                {formatNoteLabel(note.label)}
+                                            </span>
+                                        </button>
+                                    </div>
+                                );
+                            })}
+
+                            {/* Black Keys */}
+                            {VISIBLE_NOTES.map((note, idx) => {
+                                if (note.type !== 'black') return null;
+                                const notesBefore = VISIBLE_NOTES.slice(0, idx);
+                                const whiteCount = notesBefore.filter(n => n.type === 'white').length;
+                                const whiteKeyWidth = 44; // w-11
+                                const blackKeyWidth = 26;
+                                const leftPos = (whiteCount * whiteKeyWidth) - (blackKeyWidth / 2);
+                                const finalLeft = leftPos + 8;
+
+                                return (
                                     <button
+                                        key={note.name}
                                         className={cn(
-                                            "w-11 h-[175px] relative focus:outline-none touch-none rounded-b-[3px] transition-all duration-75 flex flex-col justify-end items-center pb-2",
-                                            pressedKeys.has(note.name)
-                                                ? ""
-                                                : "shadow-sm hover:shadow-md"
+                                            "absolute rounded-b-[3px] z-10 focus:outline-none touch-pan-x transition-all duration-75",
+                                            pressedKeys.has(note.name) ? "" : "shadow-lg"
                                         )}
                                         style={{
-                                            backgroundColor: pressedKeys.has(note.name) ? 'var(--color-accent)' : '#fff',
-                                            borderRight: '1px solid #e0e0e0',
-                                            borderLeft: isFirstWhite ? '1px solid #e0e0e0' : 'none',
-                                            borderBottom: '1px solid #d0d0d0',
-                                            zIndex: 1,
-                                            boxSizing: 'border-box'
+                                            width: `${blackKeyWidth}px`,
+                                            height: '95px',
+                                            left: `${finalLeft}px`,
+                                            top: 0,
+                                            backgroundColor: pressedKeys.has(note.name) ? 'var(--color-accent)' : '#1a1a1a',
+                                            border: '1px solid #0a0a0a'
                                         }}
                                         onPointerDown={(e) => startNote(note, e)}
                                         onPointerUp={(e) => stopNote(note, e)}
                                         onPointerLeave={(e) => stopNote(note, e)}
                                         onPointerCancel={(e) => stopNote(note, e)}
-                                    >
-                                        {/* Label inside key - ALWAYS fixed piano names */}
-                                        <span
-                                            className="text-[10px] font-medium pointer-events-none select-none"
-                                            style={{
-                                                color: pressedKeys.has(note.name) ? 'rgba(255,255,255,0.8)' : '#999'
-                                            }}
-                                        >
-                                            {formatNoteLabel(note.label)}
-                                        </span>
-                                    </button>
-                                </div>
-                            );
-                        })}
-
-                        {/* Black Keys */}
-                        {VISIBLE_NOTES.map((note, idx) => {
-                            if (note.type !== 'black') return null;
-                            const notesBefore = VISIBLE_NOTES.slice(0, idx);
-                            const whiteCount = notesBefore.filter(n => n.type === 'white').length;
-                            const whiteKeyWidth = 44; // w-11
-                            const blackKeyWidth = 26;
-                            const leftPos = (whiteCount * whiteKeyWidth) - (blackKeyWidth / 2);
-                            const finalLeft = leftPos + 8;
-
-                            return (
-                                <button
-                                    key={note.name}
-                                    className={cn(
-                                        "absolute rounded-b-[3px] z-10 focus:outline-none touch-none transition-all duration-75",
-                                        pressedKeys.has(note.name) ? "" : "shadow-lg"
-                                    )}
-                                    style={{
-                                        width: `${blackKeyWidth}px`,
-                                        height: '95px',
-                                        left: `${finalLeft}px`,
-                                        top: 0,
-                                        backgroundColor: pressedKeys.has(note.name) ? 'var(--color-accent)' : '#1a1a1a',
-                                        border: '1px solid #0a0a0a'
-                                    }}
-                                    onPointerDown={(e) => startNote(note, e)}
-                                    onPointerUp={(e) => stopNote(note, e)}
-                                    onPointerLeave={(e) => stopNote(note, e)}
-                                    onPointerCancel={(e) => stopNote(note, e)}
-                                />
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* RIGHT: Info Panel - compact layout, overflow visible for treble clef */}
-                <div className="w-[160px] max-w-[160px] flex flex-col shrink-0 py-2 overflow-visible">
-
-                    {/* TOP: PISTONS - Compact grid */}
-                    <div className="grid grid-cols-3 gap-1.5 px-2">
-                        {[1, 2, 3].map(pistonNum => {
-                            // Use concertMidi (what's actually sounding) for fingering/display
-                            const displayMidi = lastNote?.concertMidi
-                                ? concertToTrumpetWritten(lastNote.concertMidi, trumpetMode)
-                                : null;
-                            const displayInfo = displayMidi ? midiToNoteInfo(displayMidi) : null;
-
-                            const fingering = displayInfo
-                                ? (TRUMPET_FINGERINGS[displayInfo.scientificName] || TRUMPET_FINGERINGS[displayInfo.name] || [])
-                                : [];
-
-                            const isPressed = fingering.includes(pistonNum);
-                            return (
-                                <div
-                                    key={pistonNum}
-                                    className={cn(
-                                        "aspect-square rounded-full flex items-center justify-center min-w-[24px] max-w-[32px] w-full mx-auto transition-colors border-2",
-                                        isPressed
-                                            ? "bg-[var(--color-accent)] border-[var(--color-accent)] shadow-sm"
-                                            : "bg-[var(--color-surface)] dark:bg-[var(--color-surface-elevated)] border-[var(--color-border-default)]"
-                                    )}
-                                >
-                                    <span
-                                        className={cn(
-                                            "text-xs font-bold leading-none",
-                                            isPressed ? "text-white" : "text-[var(--color-text-muted)]"
-                                        )}
-                                    >
-                                        {pistonNum}
-                                    </span>
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    {/* CENTER: Staff - flex-1 to take max space */}
-                    <div className="flex-1 flex items-center justify-center px-2 min-h-[80px] overflow-visible" style={{ zIndex: 10 }}>
-                        <div className="w-full h-full overflow-visible">
-                            {lastNote?.concertMidi ? (
-                                (() => {
-                                    // Use concertMidi for staff display
-                                    const displayMidi = concertToTrumpetWritten(lastNote.concertMidi, trumpetMode);
-                                    const displayInfo = midiToNoteInfo(displayMidi);
-                                    return <MusicStaff note={displayInfo} />;
-                                })()
-                            ) : <MusicStaff note={null} />}
+                                    />
+                                );
+                            })}
                         </div>
                     </div>
 
-                    {/* BOTTOM: Note Name - closer to staff */}
-                    <div className="px-2 flex justify-center -mt-10 relative" style={{ zIndex: 20 }}>
-                        {lastNote?.concertMidi ? (
-                            (() => {
-                                // Use concertMidi for note name display
-                                const displayMidi = concertToTrumpetWritten(lastNote.concertMidi, trumpetMode);
-                                const displayInfo = midiToNoteInfo(displayMidi);
+                    {/* RIGHT: Info Panel - compact layout, overflow visible for treble clef */}
+                    <div className="w-[160px] max-w-[160px] flex flex-col shrink-0 py-2 overflow-visible">
 
+                        {/* TOP: PISTONS - Compact grid */}
+                        <div className="grid grid-cols-3 gap-1.5 px-2">
+                            {[1, 2, 3].map(pistonNum => {
+                                // Use concertMidi (what's actually sounding) for fingering/display
+                                const displayMidi = lastNote?.concertMidi
+                                    ? concertToTrumpetWritten(lastNote.concertMidi, trumpetMode)
+                                    : null;
+                                const displayInfo = displayMidi ? midiToNoteInfo(displayMidi) : null;
+
+                                const fingering = displayInfo
+                                    ? (TRUMPET_FINGERINGS[displayInfo.scientificName] || TRUMPET_FINGERINGS[displayInfo.name] || [])
+                                    : [];
+
+                                const isPressed = fingering.includes(pistonNum);
                                 return (
-                                    <div className="flex items-baseline gap-1 justify-center">
-                                        <span className="text-lg font-bold leading-none text-[var(--color-text-primary)]">
-                                            {formatNoteLabel(displayInfo.label)}
-                                        </span>
-                                        {displayInfo.enharmonic && (
-                                            <>
-                                                <span className="text-lg font-medium leading-none text-[var(--color-text-muted)]">/</span>
-                                                <span className="text-lg font-bold leading-none text-[var(--color-text-secondary)]">
-                                                    {formatNoteLabel(displayInfo.enharmonic)}
-                                                </span>
-                                            </>
+                                    <div
+                                        key={pistonNum}
+                                        className={cn(
+                                            "aspect-square rounded-full flex items-center justify-center min-w-[24px] max-w-[32px] w-full mx-auto transition-colors border-2",
+                                            isPressed
+                                                ? "bg-[var(--color-accent)] border-[var(--color-accent)] shadow-sm"
+                                                : "bg-[var(--color-surface)] dark:bg-[var(--color-surface-elevated)] border-[var(--color-border-default)]"
                                         )}
+                                    >
+                                        <span
+                                            className={cn(
+                                                "text-xs font-bold leading-none",
+                                                isPressed ? "text-white" : "text-[var(--color-text-muted)]"
+                                            )}
+                                        >
+                                            {pistonNum}
+                                        </span>
                                     </div>
                                 );
-                            })()
-                        ) : (
-                            <span className="text-xs italic text-[var(--color-text-muted)]">Toca nota</span>
-                        )}
-                    </div>
+                            })}
+                        </div>
 
+                        {/* CENTER: Staff - flex-1 to take max space */}
+                        <div className="flex-1 flex items-center justify-center px-2 min-h-[80px] overflow-visible" style={{ zIndex: 10 }}>
+                            <div className="w-full h-full overflow-visible">
+                                {lastNote?.concertMidi ? (
+                                    (() => {
+                                        // Use concertMidi for staff display
+                                        const displayMidi = concertToTrumpetWritten(lastNote.concertMidi, trumpetMode);
+                                        const displayInfo = midiToNoteInfo(displayMidi);
+                                        return <MusicStaff note={displayInfo} />;
+                                    })()
+                                ) : <MusicStaff note={null} />}
+                            </div>
+                        </div>
+
+                        {/* BOTTOM: Note Name - closer to staff */}
+                        <div className="px-2 flex justify-center -mt-10 relative" style={{ zIndex: 20 }}>
+                            {lastNote?.concertMidi ? (
+                                (() => {
+                                    // Use concertMidi for note name display
+                                    const displayMidi = concertToTrumpetWritten(lastNote.concertMidi, trumpetMode);
+                                    const displayInfo = midiToNoteInfo(displayMidi);
+
+                                    return (
+                                        <div className="flex items-baseline gap-1 justify-center">
+                                            <span className="text-lg font-bold leading-none text-[var(--color-text-primary)]">
+                                                {formatNoteLabel(displayInfo.label)}
+                                            </span>
+                                            {displayInfo.enharmonic && (
+                                                <>
+                                                    <span className="text-lg font-medium leading-none text-[var(--color-text-muted)]">/</span>
+                                                    <span className="text-lg font-bold leading-none text-[var(--color-text-secondary)]">
+                                                        {formatNoteLabel(displayInfo.enharmonic)}
+                                                    </span>
+                                                </>
+                                            )}
+                                        </div>
+                                    );
+                                })()
+                            ) : (
+                                <span className="text-xs italic text-[var(--color-text-muted)]">Toca nota</span>
+                            )}
+                        </div>
+
+                    </div>
                 </div>
             </div>
         </div >
