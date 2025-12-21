@@ -11,6 +11,15 @@ const Table = React.forwardRef(({ className, ...props }, ref) => (
 ))
 Table.displayName = "Table"
 
+const TableContainer = React.forwardRef(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("ui-table-shell w-full overflow-hidden", className)}
+    {...props}
+  />
+))
+TableContainer.displayName = "TableContainer"
+
 const TableHeader = React.forwardRef(({ className, sticky = false, ...props }, ref) => {
   const stickyClass = sticky ? componentStyles.table.header : "";
   return (
@@ -110,6 +119,7 @@ export {
   TableBody,
   TableFooter,
   TableHead,
+  TableContainer,
   TableRow,
   TableCell,
   TableCaption,

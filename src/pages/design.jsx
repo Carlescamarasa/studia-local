@@ -360,6 +360,102 @@ function DiffAccordion({ isOpen, onToggle }) {
 
 
 
+
+function DiagnosticOverlay({ active }) {
+  const [metrics, setMetrics] = useState({});
+
+  useEffect(() => {
+    if (!active) return;
+
+    const update = () => {
+      const root = getComputedStyle(document.documentElement);
+      const newMetrics = {};
+
+      // Core tokens to monitor
+      const tokens = [
+        '--radius-card', '--radius-ctrl', '--radius-table', '--radius-modal',
+        '--shadow-card', '--color-primary', '--color-background',
+        '--page-max-width', '--page-padding-x', '--btn-height'
+      ];
+
+      tokens.forEach(token => {
+        const value = root.getPropertyValue(token).trim();
+        newMetrics[token] = {
+          value: value || null,
+          valid: value && value !== 'none' && value !== '',
+          missing: !value
+        };
+      });
+
+      setMetrics(newMetrics);
+    };
+
+    // Initial update
+    update();
+
+    // Watch for style changes on <html> element
+    const observer = new MutationObserver((mutations) => {
+      if (mutations.some(m => m.attributeName === 'style')) {
+        update();
+      }
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['style']
+    });
+
+    return () => observer.disconnect();
+  }, [active]);
+
+  const handleCopy = () => {
+    const text = Object.entries(metrics)
+      .map(([k, v]) => `${k}: ${v.value || 'MISSING'}`)
+      .join('\n');
+    navigator.clipboard.writeText(text);
+    toast.success('✅ Variables copiadas al portapapeles');
+  };
+
+  if (!active) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50 p-4 bg-black/95 text-white rounded-lg shadow-2xl border border-white/20 font-mono text-xs w-80 max-h-[80vh] overflow-auto pointer-events-auto">
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/20">
+        <h4 className="font-bold flex items-center gap-2">
+          <Scan className="w-3 h-3 text-green-400 animate-pulse" />
+          DIAGNOSTIC MODE
+        </h4>
+        <button
+          onClick={handleCopy}
+          className="text-xs px-2 py-1 bg-white/10 hover:bg-white/20 rounded transition-colors cursor-pointer"
+          title="Copiar todas las variables"
+        >
+          <Copy className="w-3 h-3 inline mr-1" />
+          Copy
+        </button>
+      </div>
+
+      <div className="space-y-1.5">
+        {Object.entries(metrics).map(([key, data]) => (
+          <div key={key} className="flex justify-between items-center gap-2">
+            <span className="text-gray-400 truncate text-[10px]" title={key}>{key}:</span>
+            <span className={`text-right font-medium ${data.missing ? "text-red-400" :
+              !data.valid ? "text-yellow-400" :
+                "text-green-300"
+              }`}>
+              {data.missing ? 'MISSING' : data.value}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-3 pt-2 border-t border-white/20 text-[10px] text-gray-500 text-center">
+        Real-time via MutationObserver
+      </div>
+    </div>
+  );
+}
+
 function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
   const { design, setDesign, setDesignPartial, resetDesign, exportDesign, importDesign, loadPreset, currentPresetId, setPresetId, basePresets, activeMode, setActiveMode } = useDesign();
   // Aliases para compatibilidad
@@ -380,6 +476,18 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
   const [importPresetsJson, setImportPresetsJson] = useState('');
   const [importError, setImportError] = useState('');
   const [activeAccordion, setActiveAccordion] = useState(null);
+  const [showDiagnostic, setShowDiagnostic] = useState(() => {
+    try {
+      return sessionStorage.getItem('studia_diagnostic_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleDiagnostic = (checked) => {
+    setShowDiagnostic(checked);
+    sessionStorage.setItem('studia_diagnostic_mode', String(checked));
+  };
 
   const LEGACY_HEX = useMemo(() => {
     const parts = [
@@ -1090,10 +1198,15 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
             <div className="space-y-6">
               {/* Preview de Componentes */}
               <Card className="app-card">
-                <CardHeader className="border-b border-[var(--color-border-default)]">
+                <CardHeader className="border-b border-[var(--color-border-default)] flex flex-row items-center justify-between">
                   <CardTitle>Preview de Componentes</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="diag-mode" className="text-xs cursor-pointer">Modo Diagnóstico</Label>
+                    <Switch id="diag-mode" checked={showDiagnostic} onCheckedChange={handleToggleDiagnostic} />
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-6 text-[var(--color-text-primary)]">
+                  <DiagnosticOverlay active={showDiagnostic} />
                   {/* PageHeader */}
                   <div>
                     <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">PageHeader:</p>
@@ -1200,6 +1313,82 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                       <Badge className={componentStyles.status.badgeSuccess}>Success</Badge>
                       <Badge className={componentStyles.status.badgeWarning}>Warning</Badge>
                       <Badge className={componentStyles.status.badgeDanger}>Danger</Badge>
+                    </div>
+                  </div>
+
+                  {/* Components Expansion: Table & Modal */}
+                  <div className={componentStyles.layout.grid2}>
+                    <div>
+                      <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Tabla (con .ui-table-shell):</p>
+                      <div className="ui-table-shell border border-[var(--color-border-default)]">
+                        <table className="w-full text-sm">
+                          <thead className="bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] font-medium text-xs uppercase tracking-wider">
+                            <tr>
+                              <th className="px-4 py-3 text-left">Usuario</th>
+                              <th className="px-4 py-3 text-left">Rol</th>
+                              <th className="px-4 py-3 text-right">Estado</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[var(--color-border-default)] bg-[var(--color-surface)]">
+                            <tr>
+                              <td className="px-4 py-3 font-medium">Alice Johnson</td>
+                              <td className="px-4 py-3 text-[var(--color-text-secondary)]">Admin</td>
+                              <td className="px-4 py-3 text-right"><Badge className={componentStyles.status.badgeSuccess}>Activo</Badge></td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium">Bob Smith</td>
+                              <td className="px-4 py-3 text-[var(--color-text-secondary)]">Editor</td>
+                              <td className="px-4 py-3 text-right"><Badge className={componentStyles.status.badgeWarning}>Pendiente</Badge></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Modal (Simulado):</p>
+                      <div className="relative p-6 bg-[var(--color-overlay-backdrop)]/20 rounded-lg flex items-center justify-center min-h-[200px]">
+                        <div
+                          className="bg-[var(--color-surface-elevated)] p-6 shadow-2xl max-w-sm w-full relative"
+                          style={{ borderRadius: 'var(--radius-modal)' }}
+                        >
+                          <h3 className="text-lg font-semibold mb-2">Confirmar Acción</h3>
+                          <p className="text-sm text-[var(--color-text-secondary)] mb-4">
+                            Este es un ejemplo de modal consumiendo <code className="bg-muted px-1 rounded">--radius-modal</code>.
+                          </p>
+                          <div className="flex justify-end gap-2">
+                            <Button className={componentStyles.buttons.ghost}>Cancelar</Button>
+                            <Button className={componentStyles.buttons.primary}>Confirmar</Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Alerts & Toasts */}
+                  <div>
+                    <p className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Alerts & Notifications:</p>
+                    <div className="space-y-2 max-w-2xl">
+                      <Alert className="app-panel border-[var(--color-info)]/20 bg-[var(--color-info)]/5">
+                        <AlertDescription className="text-[var(--color-info)] text-sm">
+                          ℹ️ Alert info usando <code className="bg-muted px-1 rounded">--radius-card</code>
+                        </AlertDescription>
+                      </Alert>
+                      <Alert className="app-panel border-[var(--color-success)]/20 bg-[var(--color-success)]/5">
+                        <AlertDescription className="text-[var(--color-success)] text-sm">
+                          ✅ Alert success - token-driven radius
+                        </AlertDescription>
+                      </Alert>
+                      <Alert className="app-panel border-[var(--color-warning)]/20 bg-[var(--color-warning)]/5">
+                        <AlertDescription className="text-[var(--color-warning)] text-sm">
+                          ⚠️ Alert warning - responde a cambios de panel
+                        </AlertDescription>
+                      </Alert>
+                      <Alert className="app-panel border-[var(--color-danger)]/20 bg-[var(--color-danger)]/5">
+                        <AlertDescription className="text-[var(--color-danger)] text-sm">
+                          ❌ Alert danger - verifica en modo diagnóstico
+                        </AlertDescription>
+                      </Alert>
                     </div>
                   </div>
 

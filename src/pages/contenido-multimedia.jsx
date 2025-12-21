@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, X, FileVideo, FileAudio, Image as ImageIcon, FileText, Trash2, ExternalLink, Database, RefreshCw } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import PageHeader from "@/components/ds/PageHeader";
@@ -333,30 +334,32 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                 )}
             </div>
             <div className="flex gap-2">
-                <select
-                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                >
-                    <option value="all">Todos los tipos</option>
-                    {Object.entries(MEDIA_FILE_TYPES).map(([key, value]) => (
-                        <option key={value} value={value}>
-                            {MEDIA_FILE_TYPE_LABELS[value]}
-                        </option>
-                    ))}
-                </select>
-                <select
-                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                    value={originFilter}
-                    onChange={(e) => setOriginFilter(e.target.value)}
-                >
-                    <option value="all">Todos los orígenes</option>
-                    {Object.entries(MEDIA_ORIGIN_TYPES).map(([key, value]) => (
-                        <option key={value} value={value}>
-                            {MEDIA_ORIGIN_TYPE_LABELS[value]}
-                        </option>
-                    ))}
-                </select>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="w-[200px] h-9">
+                        <SelectValue placeholder="Todos los tipos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos los tipos</SelectItem>
+                        {Object.entries(MEDIA_FILE_TYPES).map(([key, value]) => (
+                            <SelectItem key={value} value={value}>
+                                {MEDIA_FILE_TYPE_LABELS[value]}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Select value={originFilter} onValueChange={setOriginFilter}>
+                    <SelectTrigger className="w-[220px] h-9">
+                        <SelectValue placeholder="Todos los orígenes" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos los orígenes</SelectItem>
+                        {Object.entries(MEDIA_ORIGIN_TYPES).map(([key, value]) => (
+                            <SelectItem key={value} value={value}>
+                                {MEDIA_ORIGIN_TYPE_LABELS[value]}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
         </>
     );
