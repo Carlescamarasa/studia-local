@@ -18,18 +18,16 @@ export function SidebarProvider({ children }) {
     return true;
   });
 
-  // Actualizar estado cuando cambia el tamaño de ventana
+  // Actualizar estado cuando cambia el tamaño de ventana - SOLO para mobile
   useEffect(() => {
     const checkDesktop = () => window.innerWidth >= 1024;
     const nowDesktop = checkDesktop();
 
-    if (nowDesktop) {
-      // En desktop, forzar abierto
-      setAbierto(true);
-    } else {
-      // En mobile, cerrar
+    if (!nowDesktop) {
+      // En mobile, asegurar cerrado al redimensionar a mobile
       setAbierto(false);
     }
+    // En desktop respetamos el estado actual (no forzamos true)
   }, [location.pathname]);
 
   useEffect(() => {
