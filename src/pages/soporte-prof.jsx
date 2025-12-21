@@ -296,6 +296,7 @@ function SoporteProfPageContent() {
       <PageHeader
         title={isAdmin ? "Tickets de soporte" : "Tickets de alumnos"}
         subtitle={isAdmin ? "Gestiona todos los tickets del sistema" : "Responde a las dudas de tus alumnos"}
+        icon={MessageSquare}
       />
 
       <div className="studia-section py-3">
