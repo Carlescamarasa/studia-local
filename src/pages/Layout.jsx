@@ -130,6 +130,9 @@ function LayoutContent() {
 
   const appName = getAppName();
 
+  /* isCollapsed: True si es (Tablet o Desktop) y está cerrado (Rail Mode) */
+  const isCollapsed = !isMobile && !abierto;
+
   const safeToggle = () => {
     const now = Date.now();
     if (now - toggleLockRef.current < 300) {
@@ -598,14 +601,12 @@ function LayoutContent() {
           className={`
             z-[90] flex flex-col sidebar-modern
             transition-all duration-200 will-change-transform transform-gpu
-            fixed inset-y-0 left-0
+            fixed top-0 left-0 h-screen
             border-r border-[var(--color-border-strong)]
             shadow-[1px_0_4px_rgba(0,0,0,0.2)]
             ${isMobile
               ? (abierto ? "translate-x-0 w-[var(--sidebar-width,16rem)]" : "-translate-x-full w-[var(--sidebar-width,16rem)]")
-              : isTablet
-                ? "translate-x-0 w-16"
-                : (abierto ? "translate-x-0 w-[var(--sidebar-width,16rem)]" : "-translate-x-full w-[var(--sidebar-width,16rem)]")
+              : (abierto ? "translate-x-0 w-[var(--sidebar-width,16rem)]" : "translate-x-0 w-16")
             }
           `}
           style={{
@@ -613,8 +614,8 @@ function LayoutContent() {
             pointerEvents: isMobile && !abierto ? 'none' : 'auto',
           }}
         >
-          {/* Header del sidebar - compacto en tablet */}
-          {!isTablet && (
+          {/* Header del sidebar - compacto en collapsed */}
+          {!isCollapsed && (
             <div className="border-b border-[var(--color-border-default)]/30 p-6">
               <div className="flex items-center gap-3">
                 <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden">
@@ -640,8 +641,8 @@ function LayoutContent() {
               </div>
             </div>
           )}
-          {isTablet && (
-            <div className="p-2 flex justify-center border-b border-[var(--color-border-default)]/30">
+          {isCollapsed && (
+            <div className="p-2 flex flex-col items-center justify-center border-b border-[var(--color-border-default)]/30 gap-2">
               <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
                 <img src={logoLTS} alt={appName} className="w-full h-full object-contain" />
               </div>
@@ -649,15 +650,15 @@ function LayoutContent() {
           )}
 
           {/* Navegación */}
-          <div className={`flex-1 overflow-y-auto ${isTablet ? 'p-2' : 'p-3'}`}>
+          <div className={`flex-1 overflow-y-auto ${isCollapsed ? 'p-2' : 'p-3'}`}>
             {Object.entries(grouped).map(([group, groupItems]) => (
-              <div key={group} className={isTablet ? 'mb-4' : 'mb-6'}>
-                {!isTablet && (
+              <div key={group} className={isCollapsed ? 'mb-4' : 'mb-6'}>
+                {!isCollapsed && (
                   <p className={componentStyles.components.menuSectionTitle}>
                     {group}
                   </p>
                 )}
-                <div className={isTablet ? 'space-y-2' : 'space-y-1'}>
+                <div className={isCollapsed ? 'space-y-2' : 'space-y-1'}>
                   {groupItems.map((item) => {
                     // Fix: compare pathnames only (strip query string) so /progreso?tab=xxx highlights "Progreso"
                     const itemPathname = item.url.split('?')[0];
@@ -670,8 +671,8 @@ function LayoutContent() {
                     const enRevision = reportCounts?.enRevision || 0;
                     const totalCount = isReportes ? (nuevos + enRevision) : 0;
 
-                    // Tablet: icon only with tooltip
-                    if (isTablet) {
+                    // Collapsed: icon only with tooltip
+                    if (isCollapsed) {
                       return (
                         <TooltipProvider key={item.title}>
                           <Tooltip>
@@ -748,15 +749,15 @@ function LayoutContent() {
           </div>
 
           {/* Pie del sidebar */}
-          <div className={`border-t border-[var(--color-border-default)]/30 ${isTablet ? 'p-2 space-y-2' : 'p-4 pt-3 space-y-3'} text-[var(--color-text-secondary)]`}>
+          <div className={`border-t border-[var(--color-border-default)]/30 ${isCollapsed ? 'p-2 space-y-2' : 'p-4 pt-3 space-y-3'} text-[var(--color-text-secondary)]`}>
             {/* Perfil Usuario */}
-            {isTablet ? (
+            {isCollapsed ? (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
                       onClick={goProfile}
-                      className="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-[var(--color-surface-muted)] transition-all cursor-pointer"
+                      className="flex items-center justify-center w-10 h-10 mx-auto rounded-xl hover:bg-[var(--color-surface-muted)] transition-all cursor-pointer"
                       aria-label="Ver perfil"
                     >
                       <div className="w-8 h-8 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center">
@@ -794,75 +795,79 @@ function LayoutContent() {
               </button>
             )}
 
-            <div className={`flex items-center ${isTablet ? 'flex-col gap-2' : 'gap-1 w-full'}`}>
-              {/* Ayuda */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(createPageUrl('ayuda'))}
-                      className={`${isTablet ? 'w-10 h-10 justify-center' : 'flex-1 justify-center gap-2'} text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
-                      aria-label="Centro de Ayuda"
-                    >
-                      <HelpCircle className="w-5 h-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side={isTablet ? "right" : "top"}>
-                    <p>Ayuda</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+            <div className={`flex ${isCollapsed ? 'flex-col gap-2 items-center' : 'flex-col gap-2 w-full mt-2'}`}>
 
-              {/* Toggle Tema */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setActiveMode(activeMode === 'dark' ? 'light' : 'dark')}
-                      className={`${isTablet ? 'w-10 h-10 justify-center' : 'flex-1 justify-center gap-2'} text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
-                      aria-label={activeMode === 'dark' ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-                    >
-                      {activeMode === 'dark' ? (
-                        <Sun className="w-5 h-5" />
-                      ) : (
-                        <Moon className="w-5 h-5" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side={isTablet ? "right" : "top"}>
-                    <p>{activeMode === 'dark' ? "Modo claro" : "Modo oscuro"}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              {/* Ocultar menú */}
-              {!isTablet && (
+              {/* Fila de Herramientas: Ayuda, Tema, Toggle */}
+              <div className={`flex items-center ${isCollapsed ? 'flex-col gap-2' : 'flex-row justify-between w-full px-1'}`}>
+                {/* Ayuda */}
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={safeToggle}
-                        className="flex-1 justify-center gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl"
-                        aria-label="Ocultar menú"
+                        onClick={() => navigate(createPageUrl('ayuda'))}
+                        className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
+                        aria-label="Centro de Ayuda"
                       >
-                        <PanelLeft className="w-5 h-5" />
+                        <HelpCircle className="w-5 h-5" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Ocultar menú</p>
+                    <TooltipContent side={isCollapsed ? "right" : "top"}>
+                      <p>Ayuda</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              )}
 
-              {/* Botón Logout */}
-              {isTablet ? (
+                {/* Toggle Tema */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setActiveMode(activeMode === 'dark' ? 'light' : 'dark')}
+                        className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
+                        aria-label={activeMode === 'dark' ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+                      >
+                        {activeMode === 'dark' ? (
+                          <Sun className="w-5 h-5" />
+                        ) : (
+                          <Moon className="w-5 h-5" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side={isCollapsed ? "right" : "top"}>
+                      <p>{activeMode === 'dark' ? "Modo claro" : "Modo oscuro"}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                {/* Toggle Menu (Ahora en línea con los otros iconos) */}
+                {!isMobile && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={safeToggle}
+                          className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
+                          aria-label={isCollapsed ? "Mostrar menú" : "Ocultar menú"}
+                        >
+                          <PanelLeft className="w-5 h-5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side={isCollapsed ? "right" : "top"}>
+                        <p>{isCollapsed ? "Mostrar menú" : "Ocultar menú"}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+
+              {/* Botón Logout (Full Width debajo, o icono en collapsed) */}
+              {isCollapsed ? (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -870,7 +875,7 @@ function LayoutContent() {
                         variant="ghost"
                         size="sm"
                         onClick={logout}
-                        className={`w-10 h-10 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
+                        className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
                         aria-label="Cerrar sesión"
                       >
                         <LogOut className="w-4 h-4" />
@@ -886,7 +891,7 @@ function LayoutContent() {
                   variant="ghost"
                   size="sm"
                   onClick={logout}
-                  className={`w-full justify-start gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
+                  className={`w-full justify-start gap-2 mt-1 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
                   aria-label="Cerrar sesión"
                 >
                   <LogOut className="w-4 h-4" />
@@ -901,16 +906,22 @@ function LayoutContent() {
         <main
           className="min-h-screen transition-all duration-200 flex flex-col overflow-x-hidden min-w-0"
           style={{
-            // Solo desktop con sidebar abierto empuja contenido
-            marginLeft: isDesktop && abierto ? 'var(--sidebar-width, 16rem)' : '0',
+            // Desktop/Tablet: 16rem si abierto, 4rem (rail) si cerrado
+            marginLeft: !isMobile ? (abierto ? 'var(--sidebar-width, 16rem)' : '4rem') : '0',
           }}
           aria-hidden={isMobile && abierto}
           inert={isMobile && abierto ? "" : undefined}
           tabIndex={isMobile && abierto ? -1 : undefined}
         >
 
-          {/* Botón flotante para desktop - solo visible cuando está cerrado */}
-          {!isMobile && !abierto && (
+          {/* Botón flotante para desktop - REMOVED, now integrated in sidebar header/border if needed
+              But user asked for "toggle al borde izquierdo".
+              Actually, let's keep it visible ONLY on mobile if needed, or remove completely as sidebar is always visible on desktop now.
+              For mobile, we still need a trigger if the header doesn't have one.
+              Assuming existing header has one.
+           */}
+          {/* Legacy floating button removed for desktop as we have rail. Keeping logic just in case but commenting out or creating conditional */}
+          {false && !isMobile && !abierto && (
             <div
               className="fixed z-[95] transition-all duration-200"
               style={{

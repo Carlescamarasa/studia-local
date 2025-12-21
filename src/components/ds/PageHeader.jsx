@@ -173,7 +173,7 @@ export default function PageHeader({
             {showMenuButton && (
               <button
                 onClick={toggleSidebar}
-                className="lg:hidden hover:bg-[var(--color-surface-muted)] active:bg-[var(--color-surface-muted)]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 p-2.5 rounded-[var(--btn-radius,0.25rem)] transition-all min-h-[48px] min-w-[48px] h-12 w-12 flex items-center justify-center shrink-0 touch-manipulation -ml-1"
+                className="md:hidden hover:bg-[var(--color-surface-muted)] active:bg-[var(--color-surface-muted)]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 p-2.5 rounded-[var(--btn-radius,0.25rem)] transition-all min-h-[48px] min-w-[48px] h-12 w-12 flex items-center justify-center shrink-0 touch-manipulation -ml-1"
                 aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
                 aria-controls="sidebar"
                 aria-expanded={abierto}
@@ -182,13 +182,13 @@ export default function PageHeader({
                 {abierto ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
             )}
-            {/* Icon + Title: clickable en mobile/tablet para toggle sidebar */}
+            {/* Icon + Title: clickable en mobile para toggle sidebar */}
             <div
-              className="flex items-center flex-1 min-w-0 lg:pointer-events-none cursor-pointer lg:cursor-default"
+              className={`flex items-center flex-1 min-w-0 ${window.innerWidth < 768 ? 'cursor-pointer' : 'pointer-events-none cursor-default'}`}
               style={{ gap: 'var(--header-title-gap, 0.5rem)' }}
               onClick={() => {
-                // Solo toggle en móvil/tablet (< 1024px)
-                if (window.innerWidth < 1024) {
+                // Solo toggle en móvil (< 768px)
+                if (window.innerWidth < 768) {
                   toggleSidebar();
                 }
               }}
