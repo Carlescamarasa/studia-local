@@ -411,50 +411,46 @@ function ReportesPageContent() {
           </div>
         </div>
 
-        <Card className={componentStyles.containers.cardBase}>
-          <CardContent className="pt-6">
-            {isLoading ? (
-              <div className="text-center py-8 text-ui/60">Cargando reportes...</div>
-            ) : reportsFiltrados.length === 0 ? (
-              <div className="text-center py-8 text-ui/60">No hay reportes que mostrar</div>
-            ) : (
-              <UnifiedTable
-                data={reportsFiltrados}
-                columns={columns}
-                selectable={true}
-                keyField="id"
-                onRowClick={(report) => handleViewReport(report)}
-                bulkActions={[
-                  {
-                    label: 'Marcar como nuevo',
-                    icon: XCircle,
-                    onClick: handleBulkUpdateStatus('nuevo'),
-                  },
-                  {
-                    label: 'Marcar como en proceso',
-                    icon: Clock,
-                    onClick: handleBulkUpdateStatus('en_revision'),
-                  },
-                  {
-                    label: 'Marcar como resuelto',
-                    icon: CheckCircle,
-                    onClick: handleBulkUpdateStatus('resuelto'),
-                  },
-                  {
-                    label: 'Eliminar',
-                    icon: Trash2,
-                    onClick: (selectedIds) => {
-                      if (window.confirm(`¿Estás seguro de que quieres eliminar ${selectedIds.length} reporte(s)?`)) {
-                        bulkDeleteMutation.mutate(selectedIds);
-                      }
-                    },
-                    variant: 'danger',
-                  },
-                ]}
-              />
-            )}
-          </CardContent>
-        </Card>
+        {isLoading ? (
+          <div className="text-center py-8 text-ui/60">Cargando reportes...</div>
+        ) : reportsFiltrados.length === 0 ? (
+          <div className="text-center py-8 text-ui/60">No hay reportes que mostrar</div>
+        ) : (
+          <UnifiedTable
+            data={reportsFiltrados}
+            columns={columns}
+            selectable={true}
+            keyField="id"
+            onRowClick={(report) => handleViewReport(report)}
+            bulkActions={[
+              {
+                label: 'Marcar como nuevo',
+                icon: XCircle,
+                onClick: handleBulkUpdateStatus('nuevo'),
+              },
+              {
+                label: 'Marcar como en proceso',
+                icon: Clock,
+                onClick: handleBulkUpdateStatus('en_revision'),
+              },
+              {
+                label: 'Marcar como resuelto',
+                icon: CheckCircle,
+                onClick: handleBulkUpdateStatus('resuelto'),
+              },
+              {
+                label: 'Eliminar',
+                icon: Trash2,
+                onClick: (selectedIds) => {
+                  if (window.confirm(`¿Estás seguro de que quieres eliminar ${selectedIds.length} reporte(s)?`)) {
+                    bulkDeleteMutation.mutate(selectedIds);
+                  }
+                },
+                variant: 'danger',
+              },
+            ]}
+          />
+        )}
 
         <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
           <DialogContent size="lg" className="max-h-[90vh] overflow-y-auto">
