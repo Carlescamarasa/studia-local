@@ -276,86 +276,81 @@ function SoportePageContent() {
         icon={MessageSquare}
         title="Centro de dudas"
         subtitle="Comunícate con tu profesor y resuelve tus dudas"
+        actions={
+          <Button
+            onClick={() => setShowNewTicketModal(true)}
+            className={componentStyles.buttons.primary}
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nuevo
+          </Button>
+        }
       />
 
       <div className="studia-section py-3">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Lista de tickets */}
-          <div className="lg:col-span-1">
-            <Card className={componentStyles.containers.cardBase}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Tus tickets</CardTitle>
-                  <Button
-                    onClick={() => setShowNewTicketModal(true)}
-                    className={componentStyles.buttons.primary}
-                    size="sm"
+          {/* Lista de tickets */}
+          <div className="lg:col-span-1 flex flex-col gap-4">
+
+            {tickets && tickets.length > 0 ? (
+              <div className="space-y-3">
+                {tickets.map((ticket) => (
+                  <div
+                    key={ticket.id}
+                    onClick={() => setSelectedTicketId(ticket.id)}
+                    className={`border border-[var(--color-border-default)] bg-[var(--color-surface-default)] px-4 py-3 md:px-5 md:py-4 shadow-sm cursor-pointer transition-colors ${selectedTicketId === ticket.id
+                      ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]'
+                      : 'hover:bg-[var(--color-surface-muted)]'
+                      }`}
+                    style={{ borderRadius: 'var(--card-radius, 0.75rem)' }}
                   >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nuevo
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {tickets && tickets.length > 0 ? (
-                  <div className="space-y-2">
-                    {tickets.map((ticket) => (
-                      <div
-                        key={ticket.id}
-                        onClick={() => setSelectedTicketId(ticket.id)}
-                        className={`border border-[var(--color-border-default)] bg-[var(--color-surface-default)] px-4 py-3 md:px-5 md:py-4 shadow-sm cursor-pointer transition-colors ${selectedTicketId === ticket.id
-                          ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]'
-                          : 'hover:bg-[var(--color-surface-muted)]'
-                          }`}
-                        style={{ borderRadius: 'var(--card-radius, 0.75rem)' }}
-                      >
-                        {/* Fila principal: título + estatus */}
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                          <h3 className="font-medium text-sm text-[var(--color-text-primary)] line-clamp-2 flex-1 min-w-0">
-                            {ticket.titulo}
-                          </h3>
-                          <div className="shrink-0">
-                            {getEstadoBadge(ticket.estado)}
-                          </div>
-                        </div>
-
-                        {/* Profesor asignado */}
-                        {ticket._profesorNombre ? (
-                          <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)] mb-1.5">
-                            <User className="w-3 h-3 shrink-0" />
-                            <span className="truncate">Profesor: {ticket._profesorNombre}</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]/70 mb-1.5 italic">
-                            <User className="w-3 h-3 shrink-0" />
-                            <span>Profesor: Sin asignar</span>
-                          </div>
+                    {/* Título y Badges */}
+                    <div className="mb-2">
+                      <h3 className="font-medium text-sm text-[var(--color-text-primary)] line-clamp-2 mb-1.5">
+                        {ticket.titulo}
+                      </h3>
+                      <div className="flex flex-col gap-1 items-start">
+                        {ticket.ultimaRespuestaDe === 'profesor' && (
+                          <Badge variant="info" className="text-xs px-2 py-0.5 shrink-0">
+                            Nueva respuesta
+                          </Badge>
                         )}
-
-                        {/* Fecha y badge de nueva respuesta */}
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
-                            <Clock className="w-3 h-3 shrink-0" />
-                            <span>{formatDate(ticket.updated_at)}</span>
-                          </div>
-                          {ticket.ultimaRespuestaDe === 'profesor' && (
-                            <Badge variant="success" className="text-xs px-2 py-0.5 shrink-0">
-                              Nueva respuesta
-                            </Badge>
-                          )}
-                        </div>
+                        {getEstadoBadge(ticket.estado)}
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Profesor asignado */}
+                    {ticket._profesorNombre ? (
+                      <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)] mb-1.5">
+                        <User className="w-3 h-3 shrink-0" />
+                        <span className="truncate">Profesor: {ticket._profesorNombre}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]/70 mb-1.5 italic">
+                        <User className="w-3 h-3 shrink-0" />
+                        <span>Profesor: Sin asignar</span>
+                      </div>
+                    )}
+
+                    {/* Fecha */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
+                        <Clock className="w-3 h-3 shrink-0" />
+                        <span>{formatDate(ticket.updated_at)}</span>
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-[var(--color-text-secondary)]">
-                    <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>No tienes tickets aún</p>
-                    <p className="text-xs mt-1">Crea uno nuevo para empezar</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-[var(--color-text-secondary)] bg-[var(--color-surface-default)] rounded-xl border border-[var(--color-border-default)]">
+                <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>No tienes tickets aún</p>
+                <p className="text-xs mt-1">Crea uno nuevo para empezar</p>
+              </div>
+            )}
           </div>
 
           {/* Vista de ticket seleccionado */}
