@@ -62,11 +62,11 @@ function ConfiguracionPageContent() {
     // Tab configuration
     const tabItems = [
         { value: 'version', label: 'Versión', icon: GitBranch },
-        { value: 'design', label: 'UI', icon: Palette },
         { value: 'niveles', label: 'Niveles', icon: Signal },
+        { value: 'multimedia', label: 'Multimedia', icon: Image },
+        { value: 'design', label: 'UI', icon: Palette },
         { value: 'tests', label: 'Tests', icon: FlaskConical },
         { value: 'import', label: 'Datos', icon: ArrowLeftRight },
-        { value: 'multimedia', label: 'Multimedia', icon: Image },
     ];
 
     // Render tab content

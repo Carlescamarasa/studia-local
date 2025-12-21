@@ -28,9 +28,12 @@ import Tabs from "@/components/ds/Tabs";
 import { roleHome } from "../components/auth/roleMap";
 import { createPageUrl } from "@/utils";
 import { componentStyles } from "@/design/componentStyles";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 export default function TestSeedPage({ embedded = false }) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [isSeeding, setIsSeeding] = useState(false);
   const [seedLogs, setSeedLogs] = useState([]);
   const [testResults, setTestResults] = useState([]);
@@ -43,6 +46,16 @@ export default function TestSeedPage({ embedded = false }) {
   const [isAuditing, setIsAuditing] = useState(false);
   const [expandedFiles, setExpandedFiles] = useState(new Set());
   const [activeTab, setActiveTab] = useState('seeds');
+
+  // Deprecation redirect
+  useEffect(() => {
+    if (!embedded) {
+      const timer = setTimeout(() => {
+        navigate('/configuracion?tab=tests', { replace: true });
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [embedded, navigate]);
 
   const tipoColors = {
     CA: `${componentStyles.status.badgeDefault} border-[var(--color-primary)]/30`,
@@ -2496,11 +2509,24 @@ export default function TestSeedPage({ embedded = false }) {
   return (
     <div className={embedded ? "" : "min-h-screen bg-background"}>
       {!embedded && (
-        <PageHeader
-          icon={Settings}
-          title="Tests & Seeds"
-          subtitle="Herramienta interna de desarrollo para poblar datos y validaciones"
-        />
+        <>
+          <PageHeader
+            icon={Settings}
+            title="Tests & Seeds"
+            subtitle="Herramienta interna de desarrollo para poblar datos y validaciones"
+          />
+
+          {/* Deprecation Warning */}
+          <div className="studia-section">
+            <Alert className="rounded-xl border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10">
+              <AlertTriangle className="h-5 w-5 text-[var(--color-warning)]" />
+              <AlertDescription className="text-sm text-[var(--color-text-primary)]">
+                <strong>⚠️ Página Deprecada:</strong> Esta página ha sido reemplazada por el nuevo <strong>Maintenance Panel</strong>.
+                Serás redirigido automáticamente en 3 segundos a <code>/configuracion?tab=tests</code>.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </>
       )}
 
       <div className={`$"studia-section" space-y-6`}>
