@@ -199,13 +199,13 @@ export default function PageHeader({
               {Icon && (
                 <Icon className={iconClass} />
               )}
-              <div className="min-w-0">
+              <div className="min-w-0 md:flex md:items-baseline md:gap-3">
                 {title && (
-                  <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl`}>{title}</h1>
+                  <h1 className={`${componentStyles.typography.pageTitle} text-base sm:text-lg md:text-xl lg:text-2xl whitespace-nowrap`}>{title}</h1>
                 )}
                 {/* Subtitle inline on desktop */}
                 {subtitle && (
-                  <p className={`${componentStyles.typography.pageSubtitle} text-xs sm:text-sm text-[var(--color-text-secondary)] hidden md:block`}>
+                  <p className={`${componentStyles.typography.pageSubtitle} text-xs sm:text-sm text-[var(--color-text-secondary)] hidden md:block truncate`}>
                     {subtitle}
                   </p>
                 )}

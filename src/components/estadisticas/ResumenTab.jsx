@@ -3,7 +3,7 @@ import KpiTile from "./KpiTile";
 import StreakMetric from "./StreakMetric";
 import RatingStarsMetric from "./RatingStarsMetric";
 import { Timer, Clock, CalendarRange, Repeat } from "lucide-react";
-import { formatDuracionHM } from "./utils";
+import { formatDurationDDHHMM, formatDurationChart } from "./utils";
 
 /**
  * ResumenTab - Tab de resumen con 6 KPIs unificados visualmente.
@@ -27,12 +27,7 @@ export default function ResumenTab({ kpis }) {
         <KpiTile
           icon={Timer}
           label="Tiempo total"
-          value={`${Math.round((kpis.tiempoTotal || 0) / 60)} min`} // Asumiendo kpis.tiempoTotal es segundos? formatDuracionHM devuelve string "Xh Ym". Si queremos "X min", calculamos manual.
-          /* 
-             NOTA: Si formatDuracionHM devuelve "1h 30m", el usuario pidió "{totalMinutes} min".
-             Validaré la unidad de tiempoTotal. Usualmente es segundos en este codebase.
-             Si es segundos -> kpis.tiempoTotal / 60.
-          */
+          value={formatDurationDDHHMM(kpis.tiempoTotal, 'sec')}
           valueClassName="text-orange-500"
           subtext=""
         />
@@ -41,7 +36,7 @@ export default function ResumenTab({ kpis }) {
         <KpiTile
           icon={Clock}
           label="Prom/sesión"
-          value={`${Math.round((kpis.tiempoPromedioPorSesion || 0) / 60)} min`}
+          value={formatDurationChart(kpis.tiempoPromedioPorSesion)}
         />
 
         {/* 3. Valoración */}

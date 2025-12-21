@@ -18,7 +18,8 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
 import { useEffectiveUser, resolveUserIdActual, displayName } from "@/components/utils/helpers";
-import { formatLocalDate, parseLocalDate, startOfMonday, formatDuracionHM } from "@/components/estadisticas/utils";
+import { formatLocalDate, parseLocalDate, startOfMonday, formatDuracionHM, formatDurationDDHHMM } from "@/components/estadisticas/utils";
+import { chooseBucket } from "@/components/estadisticas/chartHelpers";
 import { useEstadisticas, safeNumber } from "@/components/estadisticas/hooks/useEstadisticas";
 import { useStudentBackpack } from "@/hooks/useStudentBackpack";
 import { useHabilidadesStats, useHabilidadesStatsMultiple } from "@/hooks/useHabilidadesStats";
@@ -60,6 +61,7 @@ import HabilidadesView from "@/components/estadisticas/HabilidadesView";
 import FeedbackUnificadoTab from "@/components/estadisticas/FeedbackUnificadoTab";
 import LevelBadge from "@/components/common/LevelBadge";
 import TabBoundary from "@/components/common/TabBoundary";
+import UnifiedTable from "@/components/tables/UnifiedTable";
 
 import TotalXPDisplay from "@/components/estadisticas/TotalXPDisplay";
 import HabilidadesRadarChart from "@/components/estadisticas/HabilidadesRadarChart";
@@ -312,6 +314,28 @@ function ProgresoPageContent() {
         });
         return Array.from(map.values());
     }, [registrosFiltrados]);
+
+    // Auto-update granularity when date range changes
+    // Moved here to rely on registrosFiltradosUnicos
+    useEffect(() => {
+        let start = periodoInicio;
+        let end = periodoFin;
+
+        // If "Todo" mode (null dates), infer from data to choose correct bucket
+        if ((!start || !end) && registrosFiltradosUnicos.length > 0) {
+            const timestamps = registrosFiltradosUnicos
+                .map(r => r.inicioISO ? new Date(r.inicioISO).getTime() : null)
+                .filter(t => t !== null && !isNaN(t));
+
+            if (timestamps.length > 0) {
+                if (!start) start = formatLocalDate(new Date(Math.min(...timestamps)));
+                if (!end) end = formatLocalDate(new Date(Math.max(...timestamps)));
+            }
+        }
+
+        const bucket = chooseBucket(start, end);
+        setGranularidad(bucket.mode);
+    }, [periodoInicio, periodoFin, registrosFiltradosUnicos]);
 
     const bloquesFiltrados = useMemo(() => {
         const registrosIds = new Set(registrosFiltradosUnicos.map(r => r.id));
@@ -999,7 +1023,7 @@ function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChang
                 <KpiTile
                     icon={Timer}
                     label="Tiempo total"
-                    value={`${Math.round((kpis.tiempoTotal || 0) / 60)} min`}
+                    value={formatDurationDDHHMM(kpis.tiempoTotal, 'sec')}
                     valueClassName="text-orange-500"
                 />
 
@@ -1122,6 +1146,57 @@ function MochilaTabContent({ studentId, isEstu, hasSelectedStudent }) {
         }
     };
 
+    // Columns for UnifiedTable
+    const columns = useMemo(() => [
+        {
+            key: 'backpackKey',
+            label: 'Ejercicio / Item',
+            sortable: true,
+            mobileIsPrimary: true,
+        },
+        {
+            key: 'status',
+            label: 'Estado',
+            sortable: true,
+            render: (item) => (
+                <Badge variant={getStatusBadgeVariant(item.status)}>
+                    {getStatusLabel(item.status)}
+                </Badge>
+            ),
+        },
+        {
+            key: 'masteryScore',
+            label: 'Nivel Maestría',
+            sortable: true,
+            sortValue: (item) => item.masteryScore,
+            render: (item) => (
+                <div className="flex items-center gap-2">
+                    <div className="w-full bg-[var(--color-surface-muted)] rounded-full h-2.5 max-w-[100px] overflow-hidden">
+                        <div
+                            className="bg-[var(--color-primary)] h-2.5 rounded-full"
+                            style={{ width: `${Math.min(100, item.masteryScore)}%` }}
+                        ></div>
+                    </div>
+                    <span className="text-xs text-[var(--color-text-secondary)]">{item.masteryScore} XP</span>
+                </div>
+            ),
+        },
+        {
+            key: 'lastPracticedAt',
+            label: 'Última Práctica',
+            sortable: true,
+            sortValue: (item) => item.lastPracticedAt ? new Date(item.lastPracticedAt).getTime() : 0,
+            render: (item) => (
+                <span className="text-[var(--color-text-secondary)]">
+                    {item.lastPracticedAt
+                        ? format(new Date(item.lastPracticedAt), "d MMM yyyy", { locale: es })
+                        : '-'
+                    }
+                </span>
+            ),
+        },
+    ], []);
+
     // Show message if PROF/ADMIN hasn't selected a student or selected multiple
     if (!isEstu && !hasSelectedStudent) {
         return (
@@ -1156,92 +1231,50 @@ function MochilaTabContent({ studentId, isEstu, hasSelectedStudent }) {
         <div className="space-y-6">
             {/* Stats Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card>
+                <Card className={componentStyles.containers.cardBase}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Items en Mochila</CardTitle>
-                        <Backpack className="h-4 w-4 text-muted-foreground" />
+                        <Backpack className="h-4 w-4 text-[var(--color-text-secondary)]" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats.total}</div>
+                        <div className="text-2xl font-bold text-[var(--color-text-primary)]">{stats.total}</div>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className={componentStyles.containers.cardBase}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Dominados</CardTitle>
-                        <Trophy className="h-4 w-4 text-green-600" />
+                        <Trophy className="h-4 w-4 text-[var(--color-success)]" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats.mastered}</div>
+                        <div className="text-2xl font-bold text-[var(--color-text-primary)]">{stats.mastered}</div>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className={componentStyles.containers.cardBase}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">En Progreso</CardTitle>
-                        <Clock className="h-4 w-4 text-blue-600" />
+                        <Clock className="h-4 w-4 text-[var(--color-info)]" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats.inProgress}</div>
+                        <div className="text-2xl font-bold text-[var(--color-text-primary)]">{stats.inProgress}</div>
                     </CardContent>
                 </Card>
             </div>
 
             {/* Content Table */}
-            <Card>
+            <Card className={componentStyles.containers.cardBase}>
                 <CardHeader>
-                    <CardTitle>Repertorio Activo</CardTitle>
+                    <CardTitle className="text-[var(--color-text-primary)]">Repertorio Activo</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {backpackItems.length === 0 ? (
-                        <EmptyState
-                            icon={<Backpack className="w-12 h-12 text-muted-foreground" />}
-                            title="Mochila vacía"
-                            description="A medida que practiques, los ejercicios se guardarán aquí automáticamente."
-                        />
-                    ) : (
-                        <div className="rounded-md border">
-                            <table className="w-full text-sm">
-                                <thead className="bg-gray-50 border-b">
-                                    <tr>
-                                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Ejercicio / Item</th>
-                                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Estado</th>
-                                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nivel Maestría</th>
-                                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Última Práctica</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {backpackItems.map((item) => (
-                                        <tr key={item.id} className="border-b transition-colors hover:bg-muted/50">
-                                            <td className="p-4 align-middle font-medium">
-                                                {item.backpackKey}
-                                            </td>
-                                            <td className="p-4 align-middle">
-                                                <Badge variant={getStatusBadgeVariant(item.status)}>
-                                                    {getStatusLabel(item.status)}
-                                                </Badge>
-                                            </td>
-                                            <td className="p-4 align-middle">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-full bg-secondary rounded-full h-2.5 max-w-[100px] overflow-hidden">
-                                                        <div
-                                                            className="bg-primary h-2.5 rounded-full"
-                                                            style={{ width: `${Math.min(100, item.masteryScore)}%` }}
-                                                        ></div>
-                                                    </div>
-                                                    <span className="text-xs text-muted-foreground">{item.masteryScore} XP</span>
-                                                </div>
-                                            </td>
-                                            <td className="p-4 align-middle text-muted-foreground">
-                                                {item.lastPracticedAt
-                                                    ? format(new Date(item.lastPracticedAt), "d MMM yyyy", { locale: es })
-                                                    : '-'
-                                                }
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
+                    <UnifiedTable
+                        columns={columns}
+                        data={backpackItems}
+                        keyField="id"
+                        emptyMessage="Mochila vacía. A medida que practiques, los ejercicios se guardarán aquí automáticamente."
+                        emptyIcon={Backpack}
+                        paginated={true}
+                        defaultPageSize={10}
+                    />
                 </CardContent>
             </Card>
         </div>

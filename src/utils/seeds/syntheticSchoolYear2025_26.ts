@@ -314,12 +314,33 @@ export async function deleteSyntheticSchoolYear2025_26(): Promise<{ deleted: Rec
 
     try {
         // Get all synthetic user IDs first
+        // 1. Try finding by full_name pattern (original method)
         const { data: profiles } = await supabase
             .from('profiles')
             .select('id, full_name')
             .ilike('full_name', `%[${TAG_PREFIX.slice(0, -2)}]%`);
 
-        const syntheticUserIds = profiles?.map(p => p.id) || [];
+        let syntheticUserIds = profiles?.map(p => p.id) || [];
+
+        // 2. Fallback: If no profiles found, try to find IDs from planes or assignments
+        // This handles cases where profiles were deleted but data remains orphaned.
+        if (syntheticUserIds.length === 0) {
+            console.warn('⚠️ No synthetic profiles found by name pattern. Trying fallback search via Planes...');
+
+            const { data: planes } = await supabase
+                .from('planes')
+                .select('profesor_id')
+                .ilike('nombre', `%[${TAG_PREFIX.slice(0, -2)}]%`);
+
+            if (planes && planes.length > 0) {
+                // Extract unique professor IDs (which are user IDs)
+                const planeUserIds = Array.from(new Set(planes.map(p => p.profesor_id)));
+                console.log(`🔍 Found ${planeUserIds.length} potential orphaned user IDs from Planes.`);
+                syntheticUserIds = planeUserIds;
+            }
+        }
+
+        console.log(`🎯 Identified ${syntheticUserIds.length} synthetic user IDs to clean up.`);
 
         // Delete in reverse FK order
 
@@ -407,6 +428,38 @@ export async function deleteSyntheticSchoolYear2025_26(): Promise<{ deleted: Rec
 
         console.log('✅ Deletion complete!');
         console.log('🗑️  Deleted:', deleted);
+
+        // Generate Emergency SQL for manual cleanup
+        const emergencySQL = `
+-- EMERGENCY CLEANUP SCRIPT (Run in Supabase Dashboard -> SQL Editor)
+-- Allows manual deletion if client-side deletion fails due to RLS or timeouts.
+
+BEGIN;
+
+-- 1. Delete associated data tables (reverse dependency order)
+DELETE FROM student_backpack WHERE student_id IN (SELECT id FROM profiles WHERE full_name ILIKE '%[${TAG_PREFIX.slice(0, -2)}]%');
+DELETE FROM student_xp_total WHERE student_id IN (SELECT id FROM profiles WHERE full_name ILIKE '%[${TAG_PREFIX.slice(0, -2)}]%');
+DELETE FROM evaluaciones_tecnicas WHERE alumno_id IN (SELECT id FROM profiles WHERE full_name ILIKE '%[${TAG_PREFIX.slice(0, -2)}]%');
+DELETE FROM media_assets WHERE origin_id IN (SELECT id FROM profiles WHERE full_name ILIKE '%[${TAG_PREFIX.slice(0, -2)}]%');
+DELETE FROM registros_bloque WHERE alumno_id IN (SELECT id FROM profiles WHERE full_name ILIKE '%[${TAG_PREFIX.slice(0, -2)}]%');
+DELETE FROM registros_sesion WHERE alumno_id IN (SELECT id FROM profiles WHERE full_name ILIKE '%[${TAG_PREFIX.slice(0, -2)}]%');
+DELETE FROM feedbacks_semanal WHERE alumno_id IN (SELECT id FROM profiles WHERE full_name ILIKE '%[${TAG_PREFIX.slice(0, -2)}]%');
+DELETE FROM asignaciones WHERE alumno_id IN (SELECT id FROM profiles WHERE full_name ILIKE '%[${TAG_PREFIX.slice(0, -2)}]%');
+
+-- 2. Delete main entities
+DELETE FROM planes WHERE nombre ILIKE '%[${TAG_PREFIX.slice(0, -2)}]%';
+DELETE FROM piezas WHERE profesor_id IN (SELECT id FROM profiles WHERE full_name ILIKE '%[${TAG_PREFIX.slice(0, -2)}]%');
+DELETE FROM bloques WHERE code LIKE '${TAG_PREFIX}%';
+
+-- 3. Delete profiles (Users must be deleted from Auth separately if not cascade)
+DELETE FROM profiles WHERE full_name ILIKE '%[${TAG_PREFIX.slice(0, -2)}]%';
+
+COMMIT;
+`;
+        console.log('');
+        console.log('📄 SQL for Manual Cleanup (Copy & Run if client delete fails):');
+        console.log(emergencySQL);
+        console.log('');
 
         return { deleted };
     } catch (error) {
@@ -635,7 +688,7 @@ async function createAsignaciones(
                 foco: rng.pick(FOCOS),
                 notas: generateNotes(rng, 'asignación'),
                 plan: weekPlan,            // Legacy field
-                plan_adaptado: weekPlan,   // New field (satisfies constraint check_plan_reference_or_snapshot)
+                plan_adaptado: { semanas: [weekPlan] },   // New field (satisfies constraint check_plan_reference_or_snapshot)
                 pieza_snapshot: pieza
             };
 
@@ -664,14 +717,33 @@ async function createSessions(
     const { data: { user } } = await supabase.auth.getUser();
     const currentUserId = user?.id;
 
-    for (const student of students) {
+    for (let i = 0; i < students.length; i++) {
+        const student = students[i];
         const sessionsPerWeek = student.nivel === 'principiante' ? 4 : student.nivel === 'intermedio' ? 5 : 6;
+
+        // Randomize study habits per student
+        // 0-1: Morning (08-12), 2-3: Afternooon (14-18), 4: Evening (17-21)
+        const scheduleType = i % 5;
+        let weekdayHours: { start: number; end: number };
+
+        switch (scheduleType) {
+            case 0:
+            case 1:
+                weekdayHours = { start: 8, end: 12 }; // Mañanas
+                break;
+            case 2:
+            case 3:
+                weekdayHours = { start: 14, end: 18 }; // Tardes
+                break;
+            default:
+                weekdayHours = { start: 17, end: 21 }; // Noches
+        }
 
         const constraints: ScheduleConstraints = {
             startDate: COURSE_START,
             endDate: COURSE_END,
-            weekdayHours: { start: 16, end: 21 },
-            saturdayHours: { start: 10, end: 14 },
+            weekdayHours,
+            saturdayHours: { start: 9, end: 13 },
             bufferMinutes: rng.int(10, 15),
             sessionsPerWeek
         };
@@ -684,6 +756,13 @@ async function createSessions(
             const asignacion = rng.pick(asignaciones.filter(a => a.alumno_id === student.id));
             const sessionBloques = rng.shuffle(bloques).slice(0, rng.int(5, 8));
 
+            // Fix: Construct proper start/end dates using generated hours/minutes
+            const sessionStart = new Date(slot.date);
+            sessionStart.setHours(slot.startHour, slot.startMinute, 0, 0);
+
+            const sessionEnd = new Date(sessionStart);
+            sessionEnd.setMinutes(sessionEnd.getMinutes() + slot.durationMinutes);
+
             const sesion = {
                 id: generateId('sesion', rng),
                 asignacion_id: asignacion.id,
@@ -691,8 +770,8 @@ async function createSessions(
                 profesor_asignado_id: currentUserId, // Use current ADMIN user for RLS
                 semana_idx: 0,
                 sesion_idx: 0,
-                inicio_iso: formatDateTime(slot.date),
-                fin_iso: formatDateTime(addDays(slot.date, 0)),
+                inicio_iso: formatDateTime(sessionStart),
+                fin_iso: formatDateTime(sessionEnd),
                 duracion_real_seg: slot.durationMinutes * 60,
                 duracion_objetivo_seg: slot.durationMinutes * 60,
                 bloques_totales: sessionBloques.length,
@@ -708,8 +787,20 @@ async function createSessions(
             sesiones.push(sesion);
 
             // Create bloque records
+            let bloquesOmitidosCount = 0;
+            let bloquesCompletadosCount = 0;
+
+            const registroBloquesTemp: any[] = [];
+
             sessionBloques.forEach((bloque, idx) => {
-                registrosBloques.push({
+                // 30% chance of being omitted (increased from 10% to be more visible)
+                const isOmitted = rng.next() < 0.3;
+                const estado = isOmitted ? 'omitido' : 'completado';
+
+                if (isOmitted) bloquesOmitidosCount++;
+                else bloquesCompletadosCount++;
+
+                registroBloquesTemp.push({
                     id: generateId('reg_bloque', rng),
                     registro_sesion_id: sesion.id,
                     asignacion_id: asignacion.id,
@@ -721,13 +812,19 @@ async function createSessions(
                     code: bloque.code,
                     nombre: bloque.nombre,
                     duracion_objetivo_seg: bloque.duracion_seg,
-                    duracion_real_seg: bloque.duracion_seg + rng.int(-30, 30),
-                    estado: 'completado',
-                    inicios_pausa: rng.int(0, 2),
+                    duracion_real_seg: isOmitted ? 0 : bloque.duracion_seg + rng.int(-30, 30),
+                    estado: estado,
+                    inicios_pausa: isOmitted ? 0 : rng.int(0, 2),
                     inicio_iso: formatDateTime(slot.date),
                     fin_iso: formatDateTime(slot.date)
                 });
             });
+
+            // Update session counters
+            sesion.bloques_completados = bloquesCompletadosCount;
+            sesion.bloques_omitidos = bloquesOmitidosCount;
+
+            registrosBloques.push(...registroBloquesTemp);
         }
     }
 

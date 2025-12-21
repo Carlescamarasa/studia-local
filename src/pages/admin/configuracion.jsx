@@ -122,12 +122,13 @@ function ConfiguracionPageContent() {
             />
 
             <div className="studia-section">
-                <div className="flex justify-center mb-6">
+                <div className="mb-6">
                     <Tabs
+                        variant="segmented"
                         value={tabActiva}
                         onChange={handleTabChange}
+                        className="w-full"
                         items={tabItems}
-                        showIconsOnlyMobile={true}
                     />
                 </div>
 

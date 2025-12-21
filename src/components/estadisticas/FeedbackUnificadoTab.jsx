@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
+import { Card, CardContent, Badge } from "@/components/ds";
+import TablePagination from "@/components/common/TablePagination";
 import { Button } from "@/components/ds/Button";
-import { MessageSquare, ClipboardCheck, Gauge, Music, Brain, Zap, Target, Edit, BookOpen, Star, LayoutList } from "lucide-react";
+import { MessageSquare, ClipboardCheck, Gauge, Music, Brain, Zap, Target, Edit, BookOpen, Star, LayoutList, ChevronLeft, ChevronRight } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
@@ -38,6 +39,11 @@ export default function FeedbackUnificadoTab({
 
     const [modalFeedbackOpen, setModalFeedbackOpen] = useState(false);
     const [feedbackSeleccionado, setFeedbackSeleccionado] = useState(null);
+
+    // Pagination state
+    // Pagination state
+    const [pagina, setPagina] = useState(1);
+    const [pageSize, setPageSize] = useState(20);
 
     // Handlers
     const handleViewSesion = (registro) => {
@@ -124,6 +130,17 @@ export default function FeedbackUnificadoTab({
         }
         return itemsCombinados;
     }, [itemsCombinados, tipoFiltro]);
+
+    // Reset pagination when filter changes
+    React.useEffect(() => {
+        setPagina(1);
+    }, [tipoFiltro]);
+
+    // Pagination Logic
+    const itemsPaginados = useMemo(() => {
+        const start = (pagina - 1) * pageSize;
+        return itemsFiltrados.slice(start, start + pageSize);
+    }, [itemsFiltrados, pagina, pageSize]);
 
     // Formatear fecha con hora
     const formatFechaHora = (date) => {
@@ -413,14 +430,28 @@ export default function FeedbackUnificadoTab({
                             </p>
                         </div>
                     ) : (
-                        <div className="space-y-2">
-                            {itemsFiltrados.map((item) => {
-                                if (item.tipo === 'feedback') return renderFeedback(item);
-                                if (item.tipo === 'evaluacion') return renderEvaluacion(item);
-                                if (item.tipo === 'sesion') return renderSesion(item);
-                                return null;
-                            })}
-                        </div>
+                        <>
+                            <div className="space-y-2 mb-4">
+                                {itemsPaginados.map((item) => {
+                                    if (item.tipo === 'feedback') return renderFeedback(item);
+                                    if (item.tipo === 'evaluacion') return renderEvaluacion(item);
+                                    if (item.tipo === 'sesion') return renderSesion(item);
+                                    return null;
+                                })}
+                            </div>
+
+                            <TablePagination
+                                data={itemsFiltrados}
+                                currentPage={pagina}
+                                pageSize={pageSize}
+                                onPageChange={setPagina}
+                                onPageSizeChange={(newSize) => {
+                                    setPageSize(newSize);
+                                    setPagina(1);
+                                }}
+                                pageSizeOptions={[10, 20, 50, 100]}
+                            />
+                        </>
                     )}
                 </CardContent>
             </Card>

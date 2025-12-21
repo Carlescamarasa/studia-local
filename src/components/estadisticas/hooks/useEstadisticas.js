@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { formatLocalDate, parseLocalDate, startOfMonday } from "../utils";
+import { buildDailySeries, aggregateData } from "../chartHelpers";
 
 /**
  * Normaliza un número, reemplazando valores inválidos por 0
@@ -223,63 +224,36 @@ export function useEstadisticas({
 
   // Datos para gráfico de línea
   const datosLinea = useMemo(() => {
-    const agrupado = {};
+    // Inferir fechas si no existen (Modo Todo)
+    let dStart = periodoInicio ? parseLocalDate(periodoInicio) : null;
+    let dEnd = periodoFin ? parseLocalDate(periodoFin) : null;
 
-    registrosFiltradosUnicos.forEach(r => {
-      if (!r.inicioISO) return;
+    if ((!dStart || !dEnd) && registrosFiltradosUnicos.length > 0) {
+      const timestamps = registrosFiltradosUnicos
+        .map(r => r.inicioISO ? new Date(r.inicioISO).getTime() : null)
+        .filter(t => t !== null && !isNaN(t));
 
-      const fecha = new Date(r.inicioISO);
-      const fechaLocal = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
-      let clave;
-
-      if (granularidad === 'dia') {
-        clave = formatLocalDate(fechaLocal);
-      } else if (granularidad === 'semana') {
-        const lunes = startOfMonday(fechaLocal);
-        clave = formatLocalDate(lunes);
-      } else {
-        clave = `${fechaLocal.getFullYear()}-${String(fechaLocal.getMonth() + 1).padStart(2, "0")}`;
+      if (timestamps.length > 0) {
+        if (!dStart) dStart = new Date(Math.min(...timestamps));
+        if (!dEnd) dEnd = new Date(Math.max(...timestamps));
       }
+    }
 
-      if (!agrupado[clave]) {
-        agrupado[clave] = {
-          fecha: clave,
-          tiempo: 0,
-          valoraciones: [],
-          count: 0,
-          completados: 0,
-          omitidos: 0,
-        };
-      }
+    // Convertir de vuelta a string para buildDailySeries si es necesario, 
+    // o asegurar que buildDailySeries maneje nulls (ya lo hace, pero quizás aggregateData no)
 
-      const duracion = validarDuracion(r.duracionRealSeg);
-      agrupado[clave].tiempo += duracion / 60;
-      agrupado[clave].completados += r.bloquesCompletados || 0;
-      agrupado[clave].omitidos += r.bloquesOmitidos || 0;
+    // 1. Construir serie diaria completa (normalized)
+    // buildDailySeries ya infiere, pero pasémosle lo que tenemos por coherencia
+    const startStr = dStart ? formatLocalDate(dStart) : periodoInicio;
+    const endStr = dEnd ? formatLocalDate(dEnd) : periodoFin;
 
-      if (r.calificacion !== undefined && r.calificacion !== null) {
-        agrupado[clave].valoraciones.push(r.calificacion);
-      }
-      agrupado[clave].count++;
-    });
+    const dailySeries = buildDailySeries(registrosFiltradosUnicos, startStr, endStr);
 
-    return Object.values(agrupado)
-      .map(item => {
-        let satisfaccion = null;
-        if (item.valoraciones.length > 0) {
-          satisfaccion = item.valoraciones.reduce((sum, v) => sum + v, 0) / item.valoraciones.length;
-        }
+    // 2. Agregar según granularidad seleccionada
+    const aggregated = aggregateData(dailySeries, granularidad);
 
-        return {
-          fecha: item.fecha,
-          tiempo: normalizeAggregate(item.tiempo),
-          satisfaccion: satisfaccion ? Number(satisfaccion.toFixed(1)) : null,
-          completados: normalizeAggregate(item.completados),
-          omitidos: normalizeAggregate(item.omitidos),
-        };
-      })
-      .sort((a, b) => a.fecha.localeCompare(b.fecha));
-  }, [registrosFiltradosUnicos, granularidad]);
+    return aggregated;
+  }, [registrosFiltradosUnicos, periodoInicio, periodoFin, granularidad]);
 
   // Tipos de bloques
   const tiposBloques = useMemo(() => {
