@@ -25,7 +25,8 @@ export default function PageHeader({
   filters,
   className = "",
   iconVariant = "plain", // Siempre usa estilo plain por defecto
-  showMenuButton = true
+  showMenuButton = true,
+  showHotkeys = true
 }) {
   const { abierto, toggleSidebar } = useSidebar();
   const [filtersExpanded, setFiltersExpanded] = useState(false); // Por defecto oculto
@@ -215,8 +216,8 @@ export default function PageHeader({
           {/* Actions area (buttons, always right side) */}
           <div className="page-header-actions">
             {actions}
-            {/* Botón de hotkeys discreto */}
-            <HotkeysModalButton />
+            {/* Botón de hotkeys discreto details */}
+            {showHotkeys && <HotkeysModalButton />}
           </div>
         </div>
       </div>

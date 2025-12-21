@@ -187,56 +187,65 @@ export default function AppVersionContent() {
 
     return (
         <>
-            {/* Header con versión en producción y acciones */}
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                        <div className="flex items-center gap-3">
-                            <Tag className="w-5 h-5 text-[var(--color-primary)]" />
-                            <div>
-                                <CardTitle className="text-lg">Versión en producción</CardTitle>
-                                <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-                                    Studia {productionVersionDisplay}
-                                </p>
-                                <div className="flex flex-col gap-0.5 mt-0.5">
-                                    {productionDetails && (
-                                        <p className="text-xs text-[var(--color-text-tertiary)]">
-                                            {productionDetails}
-                                        </p>
-                                    )}
-                                    {lastSync && (
-                                        <p className="text-xs text-green-600 font-medium">
-                                            Última sincronización: {lastSync.toLocaleTimeString()}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
+            {/* Header: Tile de Versión + Botones Fuera */}
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
+                {/* Tile estilo KPI (Wide Compact) */}
+                <div className="w-full max-w-[380px] bg-[var(--color-surface)] border border-[var(--color-border-default)] rounded-[var(--card-radius,0.75rem)] p-4 flex items-center gap-4 shadow-sm relative overflow-hidden group hover:border-[var(--color-border-hover)] transition-colors">
+                    {/* Decorative background accent */}
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--color-primary)]/5 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none group-hover:bg-[var(--color-primary)]/10 transition-colors" />
+
+                    <div className="p-3 bg-[var(--color-surface-muted)] rounded-xl shrink-0 border border-[var(--color-border-muted)] group-hover:border-[var(--color-primary)]/20 transition-colors">
+                        <Tag className="w-6 h-6 text-[var(--color-primary)]" strokeWidth={1.5} />
+                    </div>
+                    <div className="min-w-0 flex-1 z-10">
+                        <span className="text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">
+                            Versión en producción
+                        </span>
+                        <div className="flex items-baseline gap-2 mt-0.5">
+                            <span className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">
+                                {productionVersionDisplay}
+                            </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleSyncData}
-                                disabled={isLoading || isSyncing}
-                                className={componentStyles.buttons.outline}
-                            >
-                                <RefreshCw className={`w-4 h-4 mr-2 ${(isLoading || isSyncing) ? 'animate-spin' : ''}`} />
-                                {isSyncing ? 'Actualizando...' : 'Actualizar'}
-                            </Button>
-                            <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => setIsNewVersionModalOpen(true)}
-                                disabled={isCreating}
-                                className={componentStyles.buttons.primary}
-                            >
-                                <Plus className="w-4 h-4 mr-2" />
-                                Nueva versión
-                            </Button>
+                        <div className="flex flex-col gap-0.5 mt-1">
+                            {productionDetails && (
+                                <p className="text-xs text-[var(--color-text-tertiary)] truncate">
+                                    {productionDetails}
+                                </p>
+                            )}
+                            {lastSync && (
+                                <p className="text-xs text-green-600 font-medium flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block mb-0.5" />
+                                    Sincronizado: {lastSync.toLocaleTimeString()}
+                                </p>
+                            )}
                         </div>
                     </div>
-                </CardHeader>
-            </Card>
+                </div>
+
+                {/* Botones flotando fuera */}
+                <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSyncData}
+                        disabled={isLoading || isSyncing}
+                        className={componentStyles.buttons.outline}
+                    >
+                        <RefreshCw className={`w-4 h-4 mr-2 ${(isLoading || isSyncing) ? 'animate-spin' : ''}`} />
+                        {isSyncing ? 'Actualizando...' : 'Actualizar'}
+                    </Button>
+                    <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => setIsNewVersionModalOpen(true)}
+                        disabled={isCreating}
+                        className={componentStyles.buttons.primary}
+                    >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nueva versión
+                    </Button>
+                </div>
+            </div>
 
             {/* Tabla de historial */}
             <Card className="mt-6">

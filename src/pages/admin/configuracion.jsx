@@ -12,7 +12,7 @@
 
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Settings } from "lucide-react";
+import { Settings, GitBranch, Palette, Signal, FlaskConical, ArrowLeftRight, Image } from "lucide-react";
 import RequireRole from "@/components/auth/RequireRole";
 import PageHeader from "@/components/ds/PageHeader";
 import Tabs from "@/components/ds/Tabs";
@@ -61,12 +61,12 @@ function ConfiguracionPageContent() {
 
     // Tab configuration
     const tabItems = [
-        { value: 'version', label: 'Versión' },
-        { value: 'design', label: 'UI' },
-        { value: 'niveles', label: 'Niveles' },
-        { value: 'tests', label: 'Tests & Seeds' },
-        { value: 'import', label: 'Importar y Exportar' },
-        { value: 'multimedia', label: 'Multimedia' },
+        { value: 'version', label: 'Versión', icon: GitBranch },
+        { value: 'design', label: 'UI', icon: Palette },
+        { value: 'niveles', label: 'Niveles', icon: Signal },
+        { value: 'tests', label: 'Tests', icon: FlaskConical },
+        { value: 'import', label: 'Datos', icon: ArrowLeftRight },
+        { value: 'multimedia', label: 'Multimedia', icon: Image },
     ];
 
     // Render tab content
@@ -127,6 +127,7 @@ function ConfiguracionPageContent() {
                         value={tabActiva}
                         onChange={handleTabChange}
                         items={tabItems}
+                        showIconsOnlyMobile={true}
                     />
                 </div>
 
