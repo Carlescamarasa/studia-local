@@ -389,6 +389,42 @@ button:focus-visible {
   padding-block: var(--studia-header-padding-y, 1rem);
 }
 
+/* Studia mode: controls always on top when wrapped */
+.studia-player-header .page-header-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end; /* Actions align right by default */
+  gap: 0.5rem;
+}
+
+.studia-player-header .page-header-title {
+  order: 1; /* Title goes second (below) when wrapped */
+  flex: 1 1 100%; /* Force full width on narrow screens */
+  min-width: 0;
+}
+
+.studia-player-header .page-header-actions {
+  order: 0; /* Actions go first (above) when wrapped */
+  flex-shrink: 0;
+}
+
+/* On wider screens (sm+), restore inline layout */
+@media (min-width: 480px) {
+  .studia-player-header .page-header-grid {
+    justify-content: space-between;
+  }
+  
+  .studia-player-header .page-header-title {
+    order: 0; /* Restore natural order */
+    flex: 1 1 auto; /* Allow flexible width */
+  }
+  
+  .studia-player-header .page-header-actions {
+    order: 0; /* Restore natural order */
+  }
+}
+
 /* ============================================================================ 
  * STUDIA MODE - Unified Layout Classes
  * These provide consistent max-width and padding for all studia pages

@@ -3036,9 +3036,9 @@ export function createRemoteDataAPI(): AppDataAPI {
       const raw = data as any;
       return {
         registrosSesion: (raw.registrosSesion || []).map(snakeToCamel).map(normalizeISOFields),
-        feedbacksSemanal: (raw.feedbacksSemanal || []).map(snakeToCamel).map(normalizeAsignacionISO), // Feedback usa normalizeAsignacionISO para fechas? Si, o similar
+        feedbacksSemanal: (raw.feedbacksSemanal || []).map(snakeToCamel).map(normalizeAsignacionISO),
         asignaciones: (raw.asignaciones || []).map(snakeToCamel).map(normalizeAsignacionISO),
-        eventosCalendario: (raw.eventosCalendario || []).map(snakeToCamel) // Eventos suelen ser simples
+        eventosCalendario: (raw.eventosCalendario || []).map(snakeToCamel)
       };
     },
 

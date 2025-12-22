@@ -5,7 +5,8 @@ import { Card, CardContent } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
 import PageHeader from "@/components/ds/PageHeader";
 import { Calendar, Grid3x3, List, Plus, CalendarDays } from "lucide-react";
-import { useEffectiveUser, resolveUserIdActual, isoWeekNumberLocal, parseLocalDate } from "../components/utils/helpers";
+import { resolveUserIdActual, isoWeekNumberLocal, parseLocalDate } from "../components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import PeriodHeader from "../components/common/PeriodHeader";
 import RequireRole from "@/components/auth/RequireRole";
 import VistaSemana from "../components/calendario/VistaSemana";
@@ -41,11 +42,15 @@ function CalendarioPageContent() {
   const [filtroTipoGlobal, setFiltroTipoGlobal] = useState('all'); // Filtro global para todas las vistas
   const [feedbackEditando, setFeedbackEditando] = useState(null);
 
-  const effectiveUser = useEffectiveUser();
+  // User and role detection - use effectiveRole from new provider for impersonation
+  const { effectiveUserId, effectiveEmail, effectiveRole, isImpersonating } = useEffectiveUser();
+  // Objeto para compatibilidad con código existente
+  const effectiveUser = { id: effectiveUserId, email: effectiveEmail, rolPersonalizado: effectiveRole };
 
   // Cargar datos
   const { data: usuarios = [] } = useQuery({
-    queryKey: ['users'],
+    // Incluir isImpersonating en queryKey para refetch cuando cambia
+    queryKey: ['users', isImpersonating],
     queryFn: () => localDataClient.entities.User.list(),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -82,11 +87,9 @@ function CalendarioPageContent() {
     return resolveUserIdActual(effectiveUser, usuarios);
   }, [effectiveUser, usuarios]);
 
-  // Determinar rol
-  const userRole = useMemo(() => {
-    return effectiveUser?.rolPersonalizado || 'ESTU';
-  }, [effectiveUser]);
-  const isEstu = userRole === 'ESTU';
+  // Determinar rol usando effectiveRole
+  const userRole = effectiveRole || 'ESTU';
+  const isEstu = effectiveRole === 'ESTU';
 
   // Unified Calendar Fetch (RPC)
   const { data: calendarSummary } = useQuery({
