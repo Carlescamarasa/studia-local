@@ -1,6 +1,7 @@
 import "./App.css";
 import { LocalDataProvider } from "@/local-data/LocalDataProvider";
 import { DataProvider } from "@/providers/DataProvider";
+import { EffectiveUserProvider } from "@/providers/EffectiveUserProvider";
 import AppRouter from "./Router";   // 👈 Usa el router central
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -29,16 +30,18 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <DesignProvider>
         <AuthProvider>
-          <LocalDataProvider>
-            <DataProvider>
-              {/* Handler global para reportes de errores - siempre montado dentro de los providers */}
-              <GlobalErrorReportHandler />
-              <ErrorBoundary>
-                <AppRouter />
-                <Toaster />
-              </ErrorBoundary>
-            </DataProvider>
-          </LocalDataProvider>
+          <EffectiveUserProvider>
+            <LocalDataProvider>
+              <DataProvider>
+                {/* Handler global para reportes de errores - siempre montado dentro de los providers */}
+                <GlobalErrorReportHandler />
+                <ErrorBoundary>
+                  <AppRouter />
+                  <Toaster />
+                </ErrorBoundary>
+              </DataProvider>
+            </LocalDataProvider>
+          </EffectiveUserProvider>
         </AuthProvider>
       </DesignProvider>
     </QueryClientProvider>

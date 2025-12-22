@@ -1,5 +1,14 @@
+import { useState } from 'react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from '@/components/ui/drawer';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { FileType, FileJson, Download, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useMobileStrict } from '@/hooks/useMobileStrict';
+import { datasets, CATEGORIES } from '../registry';
 
 export default function UnifiedExportPanel({ isOpen, onClose }) {
     const [selectedIds, setSelectedIds] = useState([]);

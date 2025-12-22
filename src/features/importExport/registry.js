@@ -485,3 +485,22 @@ export const datasets = [
 ];
 
 export const getDataset = (id) => datasets.find(d => d.id === id);
+
+// Categories for the export panel UI
+export const CATEGORIES = [
+    {
+        id: 'contenido',
+        label: 'Contenido',
+        datasets: ['ejercicios', 'piezas', 'planes']
+    },
+    {
+        id: 'usuarios',
+        label: 'Usuarios y Asignaciones',
+        datasets: ['usuarios', 'asignaciones']
+    },
+    {
+        id: 'registros',
+        label: 'Historial y Reportes',
+        datasets: ['agenda', 'sesiones']
+    }
+];

@@ -65,11 +65,11 @@ import {
   calcularTiempoSesion,
   aplanarSesion,
   getNombreVisible,
-  useEffectiveUser,
   formatLocalDate,
   parseLocalDate,
   isoWeekNumberLocal
 } from "../components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import PeriodHeader from "../components/common/PeriodHeader";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "../components/study/sessionSequence";
 import TimelineProgreso from "../components/estudio/TimelineProgreso";
@@ -322,25 +322,24 @@ function HoyPageContent() {
 
   const sidebarCerradoRef = useRef(false);
 
-  const effectiveUser = useEffectiveUser();
+  // Usar el nuevo provider de impersonación para obtener el usuario efectivo
+  const { effectiveUserId, effectiveEmail, isImpersonating } = useEffectiveUser();
 
   const { data: usuarios = [] } = useQuery({
-    queryKey: ['users'],
+    // Incluir isImpersonating en queryKey para refetch cuando cambia
+    queryKey: ['users', isImpersonating],
     queryFn: () => localDataClient.entities.User.list(),
     staleTime: 5 * 60 * 1000, // 5 min
   });
 
-  // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
-  // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD
-  const alumnoActual = usuarios.find(u => {
-    if (effectiveUser?.email && u.email) {
-      return u.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim();
-    }
-    return u.id === effectiveUser?.id;
-  }) || effectiveUser;
+  // Buscar el usuario efectivo en la base de datos
+  // Primero por ID, luego por email como fallback
+  const alumnoActual = usuarios.find(u => u.id === effectiveUserId)
+    || usuarios.find(u => effectiveEmail && u.email && u.email.toLowerCase().trim() === effectiveEmail.toLowerCase().trim())
+    || { id: effectiveUserId, email: effectiveEmail };
 
-  // Usar el ID del usuario de la base de datos, no el de Supabase Auth
-  const userIdActual = alumnoActual?.id || effectiveUser?.id;
+  // Usar el ID del usuario efectivo (impersonado o real)
+  const userIdActual = alumnoActual?.id || effectiveUserId;
 
 
   const { data: asignacionesRaw = [] } = useQuery({

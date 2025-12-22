@@ -9,10 +9,12 @@
  * También distingue entre tickets leídos y no leídos:
  * - No leídos: tickets donde la última respuesta es del otro lado (requiere atención)
  * - Leídos: tickets pendientes pero ya vistos
+ * 
+ * NOTA: Usa effectiveUserId/effectiveRole para soportar impersonation
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/auth/AuthProvider';
+import { useEffectiveUser } from '@/providers/EffectiveUserProvider';
 import {
   getPendingSupportTicketsCountsForAdmin,
   getPendingSupportTicketsCountsForProf,
@@ -20,13 +22,13 @@ import {
 } from '@/data/supportTicketsClient';
 
 export function usePendingSupportTicketsCount() {
-  const { user, appRole } = useAuth();
+  const { effectiveUserId, effectiveRole } = useEffectiveUser();
 
   const { data: counts = { total: 0, unread: 0 }, isLoading, error } = useQuery({
-    queryKey: ['pending-support-tickets-counts', appRole, user?.id],
+    queryKey: ['pending-support-tickets-counts', effectiveRole, effectiveUserId],
     queryFn: async () => {
       // Si no hay usuario o rol, retornar 0
-      if (!user?.id || !appRole) {
+      if (!effectiveUserId || !effectiveRole) {
         return { total: 0, unread: 0 };
       }
 
@@ -34,16 +36,16 @@ export function usePendingSupportTicketsCount() {
         let result = { total: 0, unread: 0 };
 
         // ADMIN: contar todos los tickets pendientes
-        if (appRole === 'ADMIN') {
+        if (effectiveRole === 'ADMIN') {
           result = await getPendingSupportTicketsCountsForAdmin();
         }
         // PROF: contar tickets pendientes de sus alumnos
-        else if (appRole === 'PROF') {
-          result = await getPendingSupportTicketsCountsForProf(user.id);
+        else if (effectiveRole === 'PROF') {
+          result = await getPendingSupportTicketsCountsForProf(effectiveUserId);
         }
         // ESTU: contar tickets pendientes del estudiante
-        else if (appRole === 'ESTU') {
-          result = await getPendingSupportTicketsCountsForEstu(user.id);
+        else if (effectiveRole === 'ESTU') {
+          result = await getPendingSupportTicketsCountsForEstu(effectiveUserId);
         }
 
         return result;
@@ -53,7 +55,7 @@ export function usePendingSupportTicketsCount() {
         return { total: 0, unread: 0 };
       }
     },
-    enabled: !!user?.id && !!appRole,
+    enabled: !!effectiveUserId && !!effectiveRole,
     // OPTIMIZATION: Reduced polling frequency from 30s to 5min
     refetchInterval: 5 * 60 * 1000, // 5 min
     staleTime: 2 * 60 * 1000,       // 2 min cache

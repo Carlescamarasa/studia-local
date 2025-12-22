@@ -19,7 +19,8 @@ import {
 } from "lucide-react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { displayName, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
+import { displayName, resolveUserIdActual } from "../components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import MultiSelect from "../components/ui/MultiSelect";
 import MediaLinksBadges from "../components/common/MediaLinksBadges";
 import MediaLinksInput from "../components/common/MediaLinksInput";
@@ -113,11 +114,14 @@ function EstadisticasPageContent() {
   const [modalSesionOpen, setModalSesionOpen] = useState(false);
   const [registroSesionSeleccionado, setRegistroSesionSeleccionado] = useState(null);
 
-  const effectiveUser = useEffectiveUser();
+  // User and role detection - use effectiveRole from new provider for impersonation
+  const { effectiveUserId, effectiveEmail, effectiveRole, isImpersonating } = useEffectiveUser();
+  // Objeto para compatibilidad con código existente
+  const effectiveUser = { id: effectiveUserId, email: effectiveEmail, rolPersonalizado: effectiveRole };
 
-  const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
-  const isProf = effectiveUser?.rolPersonalizado === 'PROF';
-  const isEstu = effectiveUser?.rolPersonalizado === 'ESTU';
+  const isAdmin = effectiveRole === 'ADMIN';
+  const isProf = effectiveRole === 'PROF';
+  const isEstu = effectiveRole === 'ESTU';
 
   // Cargar usuarios primero para poder calcular userIdActual
   const { data: usuarios = [] } = useQuery({

@@ -14,7 +14,8 @@ import {
   Save, AlertCircle, Sun, Moon, Monitor, X, MessageCircle, Search, Lock
 } from "lucide-react";
 import { toast } from "sonner";
-import { displayName, displayNameById, useEffectiveUser } from "../utils/helpers";
+import { displayName, displayNameById } from "../utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import MediaLinksInput from "./MediaLinksInput";
 import { LoadingSpinner } from "@/components/ds";
 import { componentStyles } from "@/design/componentStyles";
@@ -104,7 +105,10 @@ export default function PerfilModal({
     return () => observer.disconnect();
   }, [design?.theme, open]);
 
-  const effectiveUser = useEffectiveUser();
+  // Usar el nuevo provider de impersonación
+  const { effectiveUserId, effectiveEmail, isImpersonating } = useEffectiveUser();
+  // Objeto sintético para compatibilidad con código existente
+  const effectiveUser = { id: effectiveUserId, email: effectiveEmail };
 
   const { data: allUsers } = useQuery({
     queryKey: ['allUsers'],
@@ -112,29 +116,43 @@ export default function PerfilModal({
     enabled: open,
   });
 
+  // Determinar qué userId usar para la query
+  // Si hay userId prop, usarlo. Si no, usar effectiveUserId del provider
+  const targetUserIdToLoad = userId || effectiveUserId;
+
   const { data: targetUser, isLoading, refetch: refetchTargetUser } = useQuery({
-    queryKey: ['targetUser', userId],
+    // Incluir isImpersonating para forzar refetch al cambiar modo
+    queryKey: ['targetUser', targetUserIdToLoad, isImpersonating],
     queryFn: async () => {
-      // Si hay userId, buscar ese usuario específico (tanto ADMIN como PROF pueden hacerlo)
-      if (userId) {
-        const users = await localDataClient.entities.User.list();
-        const foundUser = users.find(u => u.id === userId);
-        if (foundUser) {
-          return foundUser;
+      if (!targetUserIdToLoad) return null;
+
+      // Buscar el usuario por ID
+      const users = await localDataClient.entities.User.list();
+      const foundUser = users.find(u => u.id === targetUserIdToLoad);
+
+      if (foundUser) {
+        return foundUser;
+      }
+
+      // Si no se encontró por ID y tenemos email, buscar por email
+      if (effectiveEmail) {
+        const userByEmail = users.find(u =>
+          u.email && u.email.toLowerCase().trim() === effectiveEmail.toLowerCase().trim()
+        );
+        if (userByEmail) {
+          return userByEmail;
         }
       }
 
-      // Si no hay userId o no se encontró, usar el usuario actual
-      const users = await localDataClient.entities.User.list();
-      const userFromList = users.find(u => {
-        // Buscar por ID o email para asegurar que encontramos el usuario correcto
-        if (u.id === effectiveUser?.id) return true;
-        if (effectiveUser?.email && u.email && u.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim()) return true;
-        return false;
-      });
-      return userFromList || effectiveUser;
+      // Fallback: retornar objeto básico
+      return {
+        id: targetUserIdToLoad,
+        email: effectiveEmail,
+        nombreCompleto: effectiveEmail?.split('@')[0],
+        rolPersonalizado: 'ESTU',
+      };
     },
-    enabled: open,
+    enabled: open && !!targetUserIdToLoad,
   });
 
   // OPTIMIZACIÓN: El profesor asignado ya debería estar en allUsers gracias a la optimización en usuarios.list()

@@ -4,25 +4,29 @@ import { Card, CardContent } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Shield, ArrowLeft } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
-import { getEffectiveRole, useEffectiveUser } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 
 /**
  * Componente guard que valida acceso por rol.
  * Si el usuario no tiene uno de los roles permitidos, muestra mensaje de "Acceso denegado".
+ * 
+ * NOTA: Si realRole === 'ADMIN', siempre tiene acceso (admin override).
  */
 export default function RequireRole({ children, anyOf = [] }) {
-  const { appRole, loading } = useAuth();
-  const effectiveUser = useEffectiveUser();
+  const { loading } = useAuth();
+  const { effectiveRole, realRole } = useEffectiveUser();
 
   // Esperar a que termine de cargar
   if (loading) {
     return null;
   }
 
-  // Usar la función unificada para obtener el rol efectivo
-  const effectiveRole = getEffectiveRole({ appRole, currentUser: effectiveUser });
+  // ADMIN real puede navegar a cualquier página (admin override)
+  if (realRole === 'ADMIN') {
+    return <>{children}</>;
+  }
 
-  // Si tiene acceso, renderizar children
+  // Si tiene acceso por rol efectivo, renderizar children
   if (anyOf.includes(effectiveRole)) {
     return <>{children}</>;
   }

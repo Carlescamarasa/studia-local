@@ -52,7 +52,8 @@ import {
 import { getAppName } from "@/components/utils/appMeta";
 import { componentStyles } from "@/design/componentStyles";
 import { Outlet } from "react-router-dom";
-import { displayName, getEffectiveRole, useEffectiveUser } from "@/components/utils/helpers";
+import { displayName } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PerfilModal from "@/components/common/PerfilModal";
 import { useDesign } from "@/components/design/DesignProvider";
@@ -148,21 +149,23 @@ function LayoutContent() {
     safeToggle();
   };
 
-  /* Usuario actual - usar useEffectiveUser() unificado */
-  const effectiveUser = useEffectiveUser();
+  /* Usuario actual - usar useEffectiveUser() del provider */
+  const { effectiveRole, realRole, effectiveUserName, effectiveUserId, effectiveEmail, isImpersonating, stopImpersonation } = useEffectiveUser();
+  // Objeto para compatibilidad con displayName()
+  const effectiveUserDisplay = { full_name: effectiveUserName, email: effectiveEmail, id: effectiveUserId };
   const { profile, refetch: refetchProfile } = useCurrentProfile();
 
   // NOTE: Removed forced refetch - useCurrentProfile has 5min staleTime
   // which is sufficient. Forcing refetch on every mount causes unnecessary requests.
 
-  // Usar profile si está disponible (tiene datos más frescos de Supabase), sino effectiveUser
-  const displayUser = profile || effectiveUser;
+  // Usar profile si está disponible (tiene datos más frescos de Supabase)
+  const displayUser = profile || effectiveUserDisplay;
 
   // console.log('DEBUG: Layout displayUser:', displayUser);
   // console.log('DEBUG: Layout nivelTecnico:', displayUser?.nivelTecnico);
   // console.log('DEBUG: Layout nivel (label):', displayUser?.nivel);
 
-  const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
+  const isAdmin = realRole === 'ADMIN';
   const isLoading = false; // No hay loading en local
 
   /* Detector viewport: mobile < 640, tablet 640-1024, desktop >= 1024 */
@@ -217,7 +220,7 @@ function LayoutContent() {
 
   /* Hotkeys globales */
   useEffect(() => {
-    const userRole = effectiveUser?.rolPersonalizado || 'ESTU';
+    const hotkeysUserRole = effectiveRole || 'ESTU';
 
     const handleKey = (e) => {
       // Usar helper centralizado para detectar campos editables
@@ -302,7 +305,7 @@ function LayoutContent() {
 
       // Procesar hotkeys globales permitidos para este rol
       for (const hotkey of HOTKEYS_CONFIG) {
-        if (hotkey.scope !== 'global' || !hotkey.roles.includes(userRole)) {
+        if (hotkey.scope !== 'global' || !hotkey.roles.includes(hotkeysUserRole)) {
           continue;
         }
 
@@ -319,7 +322,7 @@ function LayoutContent() {
 
     window.addEventListener("keydown", handleKey, { capture: true, passive: false });
     return () => window.removeEventListener("keydown", handleKey, { capture: true });
-  }, [design, setDesignPartial, activeMode, setActiveMode, safeToggle, navigate, effectiveUser, signOut, setShowHotkeysModal]);
+  }, [design, setDesignPartial, activeMode, setActiveMode, safeToggle, navigate, effectiveRole, signOut, setShowHotkeysModal]);
 
   /* Gestos: swipe desde borde para abrir; swipe izq para cerrar */
   useEffect(() => {
@@ -422,9 +425,9 @@ function LayoutContent() {
     if (isMobile) closeSidebar();
   };
 
-  // Obtener el rol efectivo usando la función unificada
-  const { appRole } = useAuth();
-  const userRole = getEffectiveRole({ appRole, currentUser: effectiveUser }) || null;
+  // userRole usa effectiveRole del provider (ya destructurado arriba)
+  // Para badges de admin, usamos realRole para determinar acceso real
+  const userRole = effectiveRole || 'ESTU';
 
   // Obtener conteos de reportes para el badge (solo para ADMIN)
   // IMPORTANTE: Este hook debe estar antes del return condicional
@@ -565,8 +568,31 @@ function LayoutContent() {
   return (
     <RoleBootstrap>
       <SkipLink href="#main-content" />
+
+      {/* Banner de impersonación fijo */}
+      {isImpersonating && (
+        <div
+          className="fixed top-0 left-0 right-0 z-[9999] bg-amber-500 text-amber-950 px-4 py-2 flex items-center justify-center gap-4 shadow-lg"
+          role="alert"
+          aria-live="polite"
+        >
+          <span className="text-sm font-medium">
+            👁️ Viendo como: <strong>{effectiveUserName}</strong> ({effectiveRole})
+          </span>
+          <button
+            onClick={() => {
+              stopImpersonation();
+              window.location.reload();
+            }}
+            className="px-3 py-1 bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"
+          >
+            ✕ Salir
+          </button>
+        </div>
+      )}
+
       <div
-        className="min-h-screen w-full bg-background"
+        className={`min-h-screen w-full bg-background ${isImpersonating ? 'pt-10' : ''}`}
         data-sidebar-abierto={abierto}
         id="main-content"
       >
@@ -757,14 +783,14 @@ function LayoutContent() {
                     >
                       <div className="w-8 h-8 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center">
                         <span className="text-[var(--color-text-primary)] font-semibold text-xs">
-                          {(displayName(effectiveUser || { name: "U" })).slice(0, 1).toUpperCase()}
+                          {(displayName(effectiveUserDisplay || { name: "U" })).slice(0, 1).toUpperCase()}
                         </span>
                       </div>
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="right">
-                    <p>{displayName(effectiveUser)}</p>
-                    <p className="text-xs text-[var(--color-text-secondary)]">{effectiveUser?.email}</p>
+                    <p>{displayName(effectiveUserDisplay)}</p>
+                    <p className="text-xs text-[var(--color-text-secondary)]">{effectiveEmail}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -776,15 +802,15 @@ function LayoutContent() {
               >
                 <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center">
                   <span className="text-[var(--color-text-primary)] font-semibold text-sm">
-                    {(displayName(effectiveUser || { name: "U" })).slice(0, 1).toUpperCase()}
+                    {(displayName(effectiveUserDisplay || { name: "U" })).slice(0, 1).toUpperCase()}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0 text-left">
                   <p className="font-medium text-[var(--color-text-primary)] text-sm truncate">
-                    {displayName(effectiveUser) || "Usuario"}
+                    {displayName(effectiveUserDisplay) || "Usuario"}
                   </p>
                   <div className="flex items-center gap-2">
-                    <p className="text-xs text-[var(--color-text-secondary)] truncate">{effectiveUser?.email}</p>
+                    <p className="text-xs text-[var(--color-text-secondary)] truncate">{effectiveEmail}</p>
                   </div>
                 </div>
               </button>

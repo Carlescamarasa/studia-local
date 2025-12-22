@@ -1,5 +1,9 @@
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft } from 'lucide-react';
 import { useMobileStrict } from '@/hooks/useMobileStrict';
+import { cn } from '@/lib/utils';
 
 /**
  * WizardModal

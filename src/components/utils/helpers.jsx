@@ -285,6 +285,9 @@ export function getEffectiveRole(options = {}) {
 /**
  * Hook que obtiene el usuario efectivo que funciona en ambos modos (local y Supabase).
  * 
+ * ACTUALIZADO: Ahora soporta impersonación. Si hay impersonación activa desde
+ * EffectiveUserProvider, usa effectiveUserId y effectiveEmail.
+ * 
  * En modo Supabase: Busca el usuario en datos locales por email del usuario de Supabase.
  * Si no se encuentra, crea un usuario sintético basado en la información de Supabase.
  * En modo local: Usa getCurrentUser() directamente.
@@ -295,6 +298,50 @@ export function useEffectiveUser() {
   const { user: supabaseUser, appRole } = useAuth();
   const currentUser = getCurrentUser();
   const { usuarios, loading: dataLoading } = useLocalData();
+
+  // Importar el contexto de impersonación de forma lazy para evitar circularidad
+  // Usamos un try-catch porque este hook se llama desde muchos lugares
+  let impersonationContext = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const React = require('react');
+    const EffectiveUserContext = require('@/providers/EffectiveUserProvider');
+    if (EffectiveUserContext.useEffectiveUser) {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      impersonationContext = EffectiveUserContext.useEffectiveUser();
+    }
+  } catch (e) {
+    // Provider no disponible aún, continuar sin impersonación
+  }
+
+  // Si hay impersonación activa, buscar el usuario impersonado en la BD
+  if (impersonationContext?.isImpersonating && impersonationContext.effectiveUserId) {
+    // Buscar el usuario impersonado en la lista de usuarios
+    const usuarioImpersonado = usuarios?.find(u => u.id === impersonationContext.effectiveUserId);
+
+    if (usuarioImpersonado) {
+      return {
+        ...usuarioImpersonado,
+        rolPersonalizado: impersonationContext.effectiveRole,
+        // Asegurar que tiene los campos necesarios
+        id: usuarioImpersonado.id,
+        email: usuarioImpersonado.email || impersonationContext.effectiveEmail,
+        full_name: usuarioImpersonado.full_name || usuarioImpersonado.nombreCompleto || impersonationContext.effectiveUserName,
+        name: usuarioImpersonado.full_name || usuarioImpersonado.nombreCompleto || impersonationContext.effectiveUserName,
+      };
+    }
+
+    // Si no se encuentra en la lista, crear objeto sintético con los datos del provider
+    return {
+      id: impersonationContext.effectiveUserId,
+      email: impersonationContext.effectiveEmail,
+      rolPersonalizado: impersonationContext.effectiveRole,
+      nombreCompleto: impersonationContext.effectiveUserName,
+      full_name: impersonationContext.effectiveUserName,
+      name: impersonationContext.effectiveUserName,
+      estado: 'activo',
+    };
+  }
 
   // Si hay usuario de Supabase, SIEMPRE usar el ID de Supabase (UUID)
   // No buscar en datos locales por email porque puede devolver un usuario con ID legacy
