@@ -13,13 +13,14 @@ export function useEvaluaciones(alumnoId?: string) {
 
     // Query: Obtener evaluaciones del alumno
     const evaluacionesQuery = useQuery({
-        queryKey: ['evaluaciones', alumnoId],
+        queryKey: ['evaluacionesTecnicas', alumnoId],
         queryFn: async () => {
             if (!alumnoId) return [];
             return localDataClient.entities.EvaluacionTecnica.filter({ alumnoId });
         },
         enabled: !!alumnoId,
         staleTime: 1000 * 60 * 5, // 5 minutos de caché
+        refetchOnWindowFocus: false,
     });
 
     // Mutation: Crear evaluación

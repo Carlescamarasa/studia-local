@@ -661,5 +661,88 @@ export const localDataClient = {
     StudentXPTotal: createEntityAPI('StudentXPTotal', 'studentXpTotal', async () => localDataRef.studentXpTotal || []),
     StudentBackpack: createEntityAPI('StudentBackpack', 'studentBackpack', async () => localDataRef.studentBackpack || []),
   },
+
+  // Métodos RPC (con fallback local)
+  getCalendarSummary: async (startDate, endDate, userId) => {
+    const api = getDataAPI();
+    if (api && api.getCalendarSummary) {
+      return await api.getCalendarSummary(startDate, endDate, userId);
+    }
+
+    // Fallback Local: Simular RPC agregando datos locales
+    // Nota: Esto es ineficiente pero mantiene compatibilidad en modo local
+    const startISO = startDate.toISOString();
+    const endISO = endDate.toISOString();
+
+    // 1. Sesiones
+    const sesiones = await localDataClient.entities.RegistroSesion.list();
+    const sesionesFiltradas = sesiones.filter(s => {
+      return s.inicioISO >= startISO && s.inicioISO <= endISO &&
+        (!userId || s.alumnoId === userId);
+    });
+
+    // 2. Feedbacks
+    const feedbacks = await localDataClient.entities.FeedbackSemanal.list();
+    const feedbacksFiltrados = feedbacks.filter(f => {
+      const date = f.created_at || f.createdAt; // normalize?
+      return date >= startISO && date <= endISO &&
+        (!userId || f.alumnoId === userId);
+    });
+
+    // 3. Asignaciones
+    const asignaciones = await localDataClient.entities.Asignacion.list();
+    const asignacionesFiltradas = asignaciones.filter(a => {
+      return a.fechaAsignacion >= startISO && a.fechaAsignacion <= endISO &&
+        (!userId || a.alumnoId === userId);
+    });
+
+    // 4. Eventos
+    const eventos = await localDataClient.entities.EventoCalendario.list();
+    const eventosFiltrados = eventos.filter(e => {
+      return e.fechaInicio >= startISO && e.fechaInicio <= endISO;
+    });
+
+    return {
+      registrosSesion: sesionesFiltradas,
+      feedbacksSemanal: feedbacksFiltrados,
+      asignaciones: asignacionesFiltradas,
+      eventosCalendario: eventosFiltrados
+    };
+  },
+
+  getProgressSummary: async (studentId) => {
+    const api = getDataAPI();
+    if (api && api.getProgressSummary) {
+      return await api.getProgressSummary(studentId);
+    }
+
+    // Fallback Local
+    const xpTotals = await localDataClient.entities.StudentXPTotal.list();
+    const xpFiltrados = studentId
+      ? xpTotals.filter(x => x.studentId === studentId || x.student_id === studentId)
+      : xpTotals;
+
+    const evaluaciones = await localDataClient.entities.EvaluacionTecnica.list();
+    const evalFiltradas = studentId
+      ? evaluaciones.filter(e => e.alumnoId === studentId)
+      : evaluaciones;
+
+    const feedbacks = await localDataClient.entities.FeedbackSemanal.list();
+    const feedbacksFiltrados = studentId
+      ? feedbacks.filter(f => f.alumnoId === studentId)
+      : feedbacks;
+
+    const sesiones = await localDataClient.entities.RegistroSesion.list();
+    const sesionesFiltrados = studentId
+      ? sesiones.filter(s => s.alumnoId === studentId)
+      : sesiones;
+
+    return {
+      xpTotals: xpFiltrados,
+      evaluacionesTecnicas: evalFiltradas,
+      feedbacksSemanal: feedbacksFiltrados,
+      registrosSesion: sesionesFiltrados
+    };
+  }
 };
 

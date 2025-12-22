@@ -5,13 +5,23 @@ import { useAggregateLevelGoals } from '@/hooks/useXP';
 
 export type DataSource = 'evaluaciones' | 'experiencia' | 'ambas';
 
-export function useHabilidadesStats(alumnoId: string) {
-    // Fetch total XP from student_xp_total table - use global list cache
-    const { data: allXPData } = useQuery({
+interface HabilidadesStatsOptions {
+    providedXPData?: any[];
+    providedEvaluations?: any[];
+    providedFeedbacks?: any[];
+}
+
+export function useHabilidadesStats(alumnoId: string, options?: HabilidadesStatsOptions) {
+    // Fetch total XP if not provided
+    const { data: fetchedXPData } = useQuery({
         queryKey: ['student-xp-total-all'],
         queryFn: () => localDataClient.entities.StudentXPTotal.list(),
         staleTime: 1000 * 60 * 5,
+        enabled: !options?.providedXPData,
+        refetchOnWindowFocus: false
     });
+
+    const allXPData = options?.providedXPData || fetchedXPData;
 
     // Fetch Goals for Normalization
     const aggregatedGoals = useAggregateLevelGoals(alumnoId ? [alumnoId] : []);
@@ -57,19 +67,27 @@ export function useHabilidadesStats(alumnoId: string) {
 
     const loadingTotalXP = !allXPData;
 
-    // Fetch ALL evaluations with shared cache  
-    const { data: allEvaluations } = useQuery({
-        queryKey: ['evaluaciones-tecnicas-all'],
+    // Fetch ALL evaluations if not provided
+    const { data: fetchedEvaluations } = useQuery({
+        queryKey: ['evaluacionesTecnicas'], // Standardized key
         queryFn: () => localDataClient.entities.EvaluacionTecnica.list(),
         staleTime: 1000 * 60 * 5,
+        enabled: !options?.providedEvaluations,
+        refetchOnWindowFocus: false
     });
 
-    // Fetch ALL feedbacks with shared cache
-    const { data: allFeedbacks } = useQuery({
+    const allEvaluations = options?.providedEvaluations || fetchedEvaluations;
+
+    // Fetch ALL feedbacks if not provided
+    const { data: fetchedFeedbacks } = useQuery({
         queryKey: ['feedbacksSemanal'],
         queryFn: () => localDataClient.entities.FeedbackSemanal.list(),
         staleTime: 1000 * 60 * 5,
+        enabled: !options?.providedFeedbacks,
+        refetchOnWindowFocus: false
     });
+
+    const allFeedbacks = options?.providedFeedbacks || fetchedFeedbacks;
 
     // Compute qualitative XP from cached evaluations AND feedbacks with useMemo
     const qualitativeXP = useMemo(() => {
@@ -212,24 +230,22 @@ export function useHabilidadesStats(alumnoId: string) {
     };
 }
 
-export function useHabilidadesStatsMultiple(studentIds: string[]) {
-    // 1. Fetch all XP data
-    const { data: allXPData } = useQuery({
+export function useHabilidadesStatsMultiple(studentIds: string[], options?: HabilidadesStatsOptions) {
+    // 1. Fetch all XP data if not provided
+    const { data: fetchedXPData } = useQuery({
         queryKey: ['student-xp-total-all'],
         queryFn: () => localDataClient.entities.StudentXPTotal.list(),
         staleTime: 1000 * 60 * 5,
+        enabled: !options?.providedXPData,
+        refetchOnWindowFocus: false
     });
+
+    const allXPData = options?.providedXPData || fetchedXPData;
 
     // Fetch Goals for Normalization (Aggregated)
     const aggregatedGoals = useAggregateLevelGoals(studentIds);
 
-    // 2. Aggregate XP (Sum for Radar) - Note: Previous implementation averaged it, but for consistent Sum/Sum with cards, we should probably Sum it here too?
-    // Actually, Radar usually shows "relative performance". 
-    // If we Sum XP (250+250 = 500) and divide by Sum Goal (500+500 = 1000), we get 50% (5/10).
-    // If we Averaged XP (250) and divided by Average Goal (500), we get 50% (5/10).
-    // The result is the same for the ratio.
-    // However, for the "Original" value in tooltip, we want the SUM (e.g. 500 XP), to match the text card.
-
+    // 2. Aggregate XP (Sum for Radar)
     const aggregatedXP = useMemo(() => {
         if (!allXPData || studentIds.length === 0) return null;
 
@@ -257,18 +273,26 @@ export function useHabilidadesStatsMultiple(studentIds: string[]) {
     }, [allXPData, studentIds]);
 
 
-    // 3. Fetch all Evaluations & Feedbacks
-    const { data: allEvaluations } = useQuery({
-        queryKey: ['evaluaciones-tecnicas-all'],
+    // 3. Fetch all Evaluations & Feedbacks if not provided
+    const { data: fetchedEvaluations } = useQuery({
+        queryKey: ['evaluacionesTecnicas'], // Standardized key
         queryFn: () => localDataClient.entities.EvaluacionTecnica.list(),
         staleTime: 1000 * 60 * 5,
+        enabled: !options?.providedEvaluations,
+        refetchOnWindowFocus: false
     });
 
-    const { data: allFeedbacks } = useQuery({
+    const allEvaluations = options?.providedEvaluations || fetchedEvaluations;
+
+    const { data: fetchedFeedbacks } = useQuery({
         queryKey: ['feedbacksSemanal'],
         queryFn: () => localDataClient.entities.FeedbackSemanal.list(),
         staleTime: 1000 * 60 * 5,
+        enabled: !options?.providedFeedbacks,
+        refetchOnWindowFocus: false
     });
+
+    const allFeedbacks = options?.providedFeedbacks || fetchedFeedbacks;
 
     // 4. Aggregate Qualitative (Average including Missing as 0)
     const aggregatedQualitative = useMemo(() => {

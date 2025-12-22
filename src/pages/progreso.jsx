@@ -15,7 +15,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
 import { useEffectiveUser, resolveUserIdActual, displayName } from "@/components/utils/helpers";
 import { formatLocalDate, parseLocalDate, startOfMonday, formatDuracionHM, formatDurationDDHHMM } from "@/components/estadisticas/utils";
@@ -29,7 +29,8 @@ import {
     useLifetimePracticeXP,
     useTotalXPMultiple,
     useLifetimePracticeXPMultiple,
-    useAggregateLevelGoals
+    useAggregateLevelGoals,
+    useAllStudentXPTotals // [NEW] Centralized fetch
 } from "@/hooks/useXP";
 
 // UI Components
@@ -108,6 +109,7 @@ export default function ProgresoPage() {
 }
 
 function ProgresoPageContent() {
+    const queryClient = useQueryClient();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const isMobile = useIsMobile();
@@ -151,6 +153,7 @@ function ProgresoPageContent() {
         queryKey: ['users'],
         queryFn: () => localDataClient.entities.User.list(),
         staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
     });
 
     // Resolve current user ID
@@ -164,6 +167,7 @@ function ProgresoPageContent() {
         queryFn: () => localDataClient.entities.Asignacion.list(),
         enabled: (isProf || isAdmin) && !!userIdActual,
         staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
     });
 
     const estudiantesDelProfesor = useMemo(() => {
@@ -217,30 +221,26 @@ function ProgresoPageContent() {
     // Data Loading - Registros y Bloques
     // ============================================================================
 
-    const { data: registros = [] } = useQuery({
-        queryKey: ['registrosSesion'],
-        queryFn: () => localDataClient.entities.RegistroSesion.list('-inicioISO'),
-        staleTime: 1 * 60 * 1000,
+    const { data: progressSummary, refetch: refetchSummary } = useQuery({
+        queryKey: ['progressSummary', effectiveStudentId || 'ALL'],
+        queryFn: () => localDataClient.getProgressSummary(effectiveStudentId || null),
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false
     });
+
+    const {
+        xpTotals = [],
+        evaluacionesTecnicas = [],
+        feedbacksSemanal = [],
+        registrosSesion: registros = []
+    } = progressSummary || {};
+
+    const refetchFeedbacks = refetchSummary;
 
     const registrosSesionValidos = useMemo(
         () => registros.filter(r => r.calificacion != null),
         [registros]
     );
-
-
-
-    const { data: feedbacksSemanal = [], refetch: refetchFeedbacks } = useQuery({
-        queryKey: ['feedbacksSemanal'],
-        queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_at'),
-        staleTime: 2 * 60 * 1000,
-    });
-
-    const { data: evaluacionesTecnicas = [] } = useQuery({
-        queryKey: ['evaluacionesTecnicas'],
-        queryFn: () => localDataClient.entities.EvaluacionTecnica.list(),
-        staleTime: 2 * 60 * 1000,
-    });
 
     // ============================================================================
     // Filter registros
@@ -792,6 +792,7 @@ function ProgresoPageContent() {
 
     const handleFeedbackSaved = () => {
         refetchFeedbacks();
+        queryClient.invalidateQueries({ queryKey: ['calendarSummary'] });
         setFeedbackModalOpen(false);
     };
 
@@ -855,6 +856,11 @@ function ProgresoPageContent() {
                             userIdActual={effectiveStudentId || userIdActual}
                             alumnosSeleccionados={alumnosSeleccionados}
                             allStudentIds={estudiantesDisponibles.map(s => s.id)}
+                            // [NEW] Data Props
+                            xpData={xpTotals}
+                            evaluations={evaluacionesTecnicas}
+                            feedbacks={feedbacksSemanal}
+                            users={usuarios}
                         />
                     </TabBoundary>
                 )}
@@ -867,6 +873,11 @@ function ProgresoPageContent() {
                             userIdActual={userIdActual}
                             fechaInicio={periodoInicio}
                             fechaFin={periodoFin}
+                            // [NEW] Data Props
+                            xpData={xpTotals}
+                            evaluations={evaluacionesTecnicas}
+                            feedbacks={feedbacksSemanal}
+                            users={usuarios}
                         />
                     </TabBoundary>
                 )}
@@ -986,7 +997,12 @@ function ProgresoPageContent() {
 // Tab Resumen Content - Extended with XP & Toggle
 // ============================================================================
 
-function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChange, userIdActual, alumnosSeleccionados = [], allStudentIds = [] }) {
+function TabResumenContent({
+    kpis, datosLinea, granularidad, onGranularidadChange, userIdActual,
+    alumnosSeleccionados = [], allStudentIds = [],
+    // [NEW] Data props
+    xpData, evaluations, feedbacks, users
+}) {
     return (
         <div className="space-y-4">
             {/* KPIs Bar - 6-tile uniform layout */}
@@ -1044,6 +1060,11 @@ function TabResumenContent({ kpis, datosLinea, granularidad, onGranularidadChang
                 hideViewModeToggle={true}
                 forceViewMode="forma"
                 customTitle="Habilidades"
+                // [NEW] Pass data props
+                xpData={xpData}
+                evaluations={evaluations}
+                feedbacks={feedbacks}
+                users={users}
             />
         </div>
     );

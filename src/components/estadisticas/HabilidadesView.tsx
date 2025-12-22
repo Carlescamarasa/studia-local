@@ -37,6 +37,12 @@ interface HabilidadesViewProps {
     forceViewMode?: 'forma' | 'rango';
     /** Optional custom title override */
     customTitle?: string;
+
+    // Data props for deduplication
+    xpData?: any[];
+    evaluations?: any[];
+    feedbacks?: any[];
+    users?: any[]; // Full user objects
 }
 
 export default function HabilidadesView({
@@ -47,7 +53,11 @@ export default function HabilidadesView({
     fechaFin,
     hideViewModeToggle = false,
     forceViewMode,
-    customTitle
+    customTitle,
+    xpData,
+    evaluations,
+    feedbacks,
+    users = []
 }: HabilidadesViewProps) {
     // =========================================================================
     // TOGGLE STATE
@@ -76,12 +86,12 @@ export default function HabilidadesView({
     // =========================================================================
 
     // Single student hooks
-    const { data: totalXPSingle, isLoading: isLoadingTotalSingle } = useTotalXP(singleId);
-    const { data: practiceXPSingle, isLoading: isLoadingPracticeSingle } = useLifetimePracticeXP(singleId);
+    const { data: totalXPSingle, isLoading: isLoadingTotalSingle } = useTotalXP(singleId, xpData);
+    const { data: practiceXPSingle, isLoading: isLoadingPracticeSingle } = useLifetimePracticeXP(singleId, xpData);
 
     // Multi-student hooks
-    const { data: totalXPMultiple, isLoading: isLoadingTotalMultiple } = useTotalXPMultiple(isMultiple ? effectiveIds : []);
-    const { data: practiceXPMultiple, isLoading: isLoadingPracticeMultiple } = useLifetimePracticeXPMultiple(isMultiple ? effectiveIds : []);
+    const { data: totalXPMultiple, isLoading: isLoadingTotalMultiple } = useTotalXPMultiple(isMultiple ? effectiveIds : [], xpData);
+    const { data: practiceXPMultiple, isLoading: isLoadingPracticeMultiple } = useLifetimePracticeXPMultiple(isMultiple ? effectiveIds : [], xpData);
 
     // Aggregated Goals (maxXP denominator)
     const aggregatedGoals = useAggregateLevelGoals(effectiveIds);
@@ -94,22 +104,33 @@ export default function HabilidadesView({
     });
 
     // Profiles for multiple students (for level grouping)
-    const { data: multipleStudentProfiles = [] } = useQuery({
+    // DEDUPLICATION: Use provided users prop if available
+    const multipleStudentProfiles = useMemo(() => {
+        if (users && users.length > 0) {
+            return users.filter(u => effectiveIds.includes(u.id));
+        }
+        return [];
+    }, [users, effectiveIds]);
+
+    // Fallback if users prop is not provided (legacy support, though we aim to remove this)
+    const { data: fetchedMultipleProfiles = [] } = useQuery({
         queryKey: ['student-profiles-multiple', effectiveIds],
         queryFn: async () => {
             const allUsers = await localDataClient.entities.User.list();
             return allUsers.filter((u: any) => effectiveIds.includes(u.id));
         },
-        enabled: isMultiple && effectiveIds.length > 0
+        enabled: isMultiple && effectiveIds.length > 0 && (!users || users.length === 0)
     });
+
+    const activeMultipleProfiles = (users && users.length > 0) ? multipleStudentProfiles : fetchedMultipleProfiles;
 
     // Group students by level for multi-student display
     const levelGroups = useMemo(() => {
-        if (!isMultiple || multipleStudentProfiles.length === 0) return [];
+        if (!isMultiple || activeMultipleProfiles.length === 0) return [];
 
         const groups: Record<number, { level: number; label: string; students: { id: string; name: string }[] }> = {};
 
-        multipleStudentProfiles.forEach((profile: any) => {
+        activeMultipleProfiles.forEach((profile: any) => {
             const level = profile.nivelTecnico || 1;
             if (!groups[level]) {
                 const label = level >= 10 ? "Profesional" : level >= 7 ? "Avanzado" : level >= 4 ? "Intermedio" : "Principiante";
@@ -121,7 +142,7 @@ export default function HabilidadesView({
 
         // Sort by level ascending
         return Object.values(groups).sort((a, b) => a.level - b.level);
-    }, [isMultiple, multipleStudentProfiles]);
+    }, [isMultiple, activeMultipleProfiles]);
 
     const currentLevel = studentProfile?.nivelTecnico || 1;
     // Note: We show criteria for currentLevel (what student achieved/needs at this level)
@@ -210,8 +231,15 @@ export default function HabilidadesView({
     // =========================================================================
     // QUALITATIVE DATA HOOKS (for Sonido/Cognición)
     // =========================================================================
-    const { radarStats: singleStats, isLoading: loadingQualSingle } = useHabilidadesStats(isMultiple ? '' : singleId);
-    const { radarStats: multipleStats, isLoading: loadingQualMultiple } = useHabilidadesStatsMultiple(isMultiple ? effectiveIds : []);
+    // Pass provided data for deduplication
+    const hookOptions = {
+        providedXPData: xpData,
+        providedEvaluations: evaluations,
+        providedFeedbacks: feedbacks
+    };
+
+    const { radarStats: singleStats, isLoading: loadingQualSingle } = useHabilidadesStats(isMultiple ? '' : singleId, hookOptions);
+    const { radarStats: multipleStats, isLoading: loadingQualMultiple } = useHabilidadesStatsMultiple(isMultiple ? effectiveIds : [], hookOptions);
 
     const radarStatsRaw = isMultiple ? multipleStats : singleStats;
     const isLoadingQual = isMultiple ? loadingQualMultiple : loadingQualSingle;

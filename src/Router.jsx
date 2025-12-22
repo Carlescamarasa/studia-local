@@ -45,6 +45,7 @@ const StudiaConceptPage = lazy(() => import("@/pages/StudiaConceptPage.jsx"));
 // Removed ContenidoMultimediaPage
 const MochilaPage = lazy(() => import("@/pages/MochilaPage.jsx"));
 const Progreso = lazy(() => import("@/pages/progreso.jsx"));
+const Cuaderno = lazy(() => import("@/pages/cuaderno.jsx"));
 const Preparacion = lazy(() => import("@/pages/preparacion.jsx"));
 const Configuracion = lazy(() => import("@/pages/admin/configuracion.jsx"));
 const Studia = lazy(() => import("@/pages/studia.jsx"));
@@ -126,6 +127,7 @@ export default function AppRouter() {
           <Route path="soporte-prof" element={<SoporteProf />} />
           <Route path="ayuda" element={<Ayuda />} />
           <Route path="mochila" element={<MochilaPage />} />
+          <Route path="cuaderno" element={<Cuaderno />} />
           <Route path="preparacion" element={<Preparacion />} />
 
           {/* Canonical Routes */}

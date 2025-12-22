@@ -19,7 +19,7 @@ import { componentStyles } from "@/design/componentStyles";
 import { generateId } from "@/data/localStorageClient";
 
 const pad2 = (n) => String(n).padStart(2, "0");
-const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 const formatLocalTime = (d) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 
 // Helper para convertir fecha + hora a ISO timestamp
@@ -70,7 +70,7 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
         date: evento.fechaFin || '',
         time: '19:00',
       };
-      
+
       setFormData({
         titulo: evento.titulo || '',
         descripcion: evento.descripcion || '',
@@ -86,7 +86,7 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
       const ahora = new Date();
       const horaInicio = formatLocalTime(ahora);
       const horaFin = formatLocalTime(new Date(ahora.getTime() + 60 * 60 * 1000)); // +1h
-      
+
       setFormData({
         titulo: '',
         descripcion: '',
@@ -113,7 +113,9 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
       return await localDataClient.entities.EventoCalendario.create(eventoData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['eventosCalendario'] });
+      queryClient.invalidateQueries({ queryKey: ['calendarSummary'] });
+      // Eventualmente esto podría afectar progreso si añadimos participación en eventos
+      // queryClient.invalidateQueries({ queryKey: ['progressSummary'] });
       toast.success('✅ Evento creado exitosamente');
       onOpenChange(false);
     },
@@ -144,7 +146,7 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
       return await localDataClient.entities.EventoCalendario.update(id, eventoData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['eventosCalendario'] });
+      queryClient.invalidateQueries({ queryKey: ['calendarSummary'] });
       toast.success('✅ Evento actualizado exitosamente');
       onOpenChange(false);
     },
@@ -172,7 +174,7 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
     // Construir start_at y end_at según all_day
     let start_at = null;
     let end_at = null;
-    
+
     if (formData.all_day) {
       // Todo el día: start_at a las 00:00, end_at al final del día o null
       start_at = buildISO(formData.fechaInicio, '00:00');
@@ -195,7 +197,7 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
         // Si no hay fecha fin, usar misma fecha con hora fin
         end_at = buildISO(formData.fechaInicio, formData.horaFin);
       }
-      
+
       // Validar que end_at sea posterior a start_at
       if (end_at && start_at && new Date(end_at) <= new Date(start_at)) {
         toast.error('La hora de fin debe ser posterior a la hora de inicio');
