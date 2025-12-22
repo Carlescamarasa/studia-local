@@ -16,19 +16,18 @@ export const ROUTES = {
     HOY: "/hoy",
     STUDIA: "/studia",
 
-    // Other known paths (can be expanded)
-    AGENDA: "/agenda",
+    // Other known paths
     BIBLIOTECA: "/biblioteca",
     USUARIOS: "/usuarios",
-    PREPARACION: "/preparacion",
     CALENDARIO: "/calendario",
     SOPORTE: "/soporte",
     SOPORTE_PROF: "/soporte-prof",
-    ESTUDIANTES: "/estudiantes",
-    ASIGNACIONES: "/asignaciones",
     ASIGNACION_DETALLE: "/asignacion-detalle",
     ADAPTAR_ASIGNACION: "/adaptar-asignacion",
     CUADERNO: "/cuaderno",
+
+    // Legacy paths (redirected to CUADERNO in Router.jsx):
+    // AGENDA, PREPARACION, ESTUDIANTES, ASIGNACIONES
 };
 
 /**

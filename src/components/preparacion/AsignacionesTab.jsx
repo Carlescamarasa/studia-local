@@ -101,12 +101,14 @@ export default function AsignacionesTab({
     const { data: asignacionesRaw = [] } = useQuery({
         queryKey: ['asignaciones'],
         queryFn: () => localDataClient.entities.Asignacion.list('-created_at'),
+        staleTime: 5 * 60 * 1000,
     });
 
     // Query para obtener TODOS los usuarios (necesarios para otras partes del componente)
     const { data: usuarios = [] } = useQuery({
         queryKey: ['users'],
         queryFn: () => localDataClient.entities.User.list(),
+        staleTime: 5 * 60 * 1000,
     });
 
     // Resolver ID de usuario actual de la BD (UUID en Supabase, string en local)

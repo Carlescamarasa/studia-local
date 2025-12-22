@@ -105,7 +105,7 @@ export default function PerfilPage() {
         setTimeout(() => {
           const mainPages = {
             ADMIN: '/usuarios',
-            PROF: '/agenda',
+            PROF: '/cuaderno',
             ESTU: '/hoy'
           };
           navigate(createPageUrl(mainPages[editedData.rolPersonalizado]?.split('/').pop() || 'hoy'));

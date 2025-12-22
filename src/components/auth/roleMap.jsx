@@ -3,7 +3,7 @@
  */
 export const roleHome = {
   ADMIN: "/usuarios",
-  PROF: "/agenda", 
+  PROF: "/cuaderno",
   ESTU: "/hoy"
 };
 

@@ -812,7 +812,7 @@ function UsuariosPageContent() {
                       label: 'Ver estudiantes asignados',
                       icon: <Eye className="w-4 h-4" />,
                       onClick: () => {
-                        navigate(`/preparacion`);
+                        navigate(`/cuaderno`);
                       },
                     },
                     {

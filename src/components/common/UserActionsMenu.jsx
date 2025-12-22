@@ -201,7 +201,7 @@ export default function UserActionsMenu({ user, usuarios = [], onRefresh, compac
                 label: 'Crear nueva asignación',
                 icon: <Target className="w-4 h-4" />,
                 onClick: () => {
-                    navigate(`${ROUTES.PREPARACION}?tab=asignaciones&action=new&alumnoId=${user.id}`);
+                    navigate(`${ROUTES.CUADERNO}?tab=asignaciones&action=new&alumnoId=${user.id}`);
                 },
             });
 
@@ -210,7 +210,7 @@ export default function UserActionsMenu({ user, usuarios = [], onRefresh, compac
                 label: 'Preparar estudiante',
                 icon: <Eye className="w-4 h-4" />,
                 onClick: () => {
-                    navigate(`${ROUTES.PREPARACION}?tab=estudiantes`);
+                    navigate(`${ROUTES.CUADERNO}?tab=estudiantes`);
                 },
             });
 
