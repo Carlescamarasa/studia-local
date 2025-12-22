@@ -28,7 +28,7 @@ BEGIN
         'asignaciones', (
             SELECT COALESCE(json_agg(a), '[]'::json)
             FROM asignaciones a
-            WHERE a.fecha_asignacion >= p_start_date AND a.fecha_asignacion <= p_end_date 
+            WHERE a.semana_inicio_iso >= p_start_date AND a.semana_inicio_iso <= p_end_date 
             AND (p_user_id IS NULL OR a.alumno_id::text = p_user_id)
         ),
         'eventosCalendario', (

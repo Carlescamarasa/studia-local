@@ -73,21 +73,21 @@ import HardcodeInspector from "@/components/design/HardcodeInspector";
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
   ADMIN: [
+    { title: "Cuaderno", url: ROUTES.CUADERNO, icon: Notebook, group: "Docencia" },
     { title: "Progreso", url: toProgreso('resumen'), icon: Activity, group: "Docencia" },
-    { title: "Tickets alumnos", url: ROUTES.SOPORTE_PROF, icon: MessageSquare, group: "Docencia" },
     { title: "Calendario", url: ROUTES.CALENDARIO, icon: Calendar, group: "Docencia" },
     { title: "Usuarios", url: ROUTES.USUARIOS, icon: Users, group: "Gestión" },
-    { title: "Cuaderno", url: ROUTES.CUADERNO, icon: Notebook, group: "Gestión" },
     { title: "Biblioteca", url: ROUTES.BIBLIOTECA, icon: Edit3, group: "Gestión" },
+    { title: "Tickets alumnos", url: ROUTES.SOPORTE_PROF, icon: MessageSquare, group: "Gestión" },
     { title: "Reportes", url: ROUTES.REPORTES, icon: Bug, group: "Sistema" },
     { title: "Configuración", url: toConfiguracion('version'), icon: Settings, group: "Sistema" },
   ],
   PROF: [
+    { title: "Cuaderno", url: ROUTES.CUADERNO, icon: Notebook, group: "Docencia" },
     { title: "Progreso", url: toProgreso('resumen'), icon: Activity, group: "Docencia" },
-    { title: "Tickets alumnos", url: ROUTES.SOPORTE_PROF, icon: MessageSquare, group: "Docencia" },
     { title: "Calendario", url: ROUTES.CALENDARIO, icon: Calendar, group: "Docencia" },
-    { title: "Cuaderno", url: ROUTES.CUADERNO, icon: Notebook, group: "Gestión" },
     { title: "Biblioteca", url: ROUTES.BIBLIOTECA, icon: Edit3, group: "Gestión" },
+    { title: "Tickets alumnos", url: ROUTES.SOPORTE_PROF, icon: MessageSquare, group: "Gestión" },
   ],
   ESTU: [
     { title: "Studia ahora", url: ROUTES.HOY, icon: PlayCircle, group: "Estudio" },
