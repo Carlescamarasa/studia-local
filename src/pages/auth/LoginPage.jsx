@@ -136,14 +136,7 @@ export default function LoginPage() {
         />
       </div>
 
-      {/* Theme Toggle */}
-      <button
-        onClick={() => setActiveMode(activeMode === 'dark' ? 'light' : 'dark')}
-        className="absolute top-4 right-4 p-2 rounded-full bg-[var(--color-surface)]/50 backdrop-blur-sm hover:bg-[var(--color-surface-muted)] transition-colors z-20 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-        aria-label="Toggle theme"
-      >
-        {activeMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-      </button>
+
 
       {/* Contenedor principal */}
       <div className={componentStyles.auth.loginCardContainer}>
@@ -237,6 +230,14 @@ export default function LoginPage() {
             {/* Footer decorativo */}
             <div className={componentStyles.auth.loginFooter}>
               <div className={componentStyles.auth.loginFooterLinks}>
+                <button
+                  onClick={() => setActiveMode(activeMode === 'dark' ? 'light' : 'dark')}
+                  className="inline-flex items-center gap-1 hover:text-[var(--color-text-primary)] transition-colors"
+                  aria-label="Toggle theme"
+                >
+                  {activeMode === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+                </button>
+                <span className="opacity-40">•</span>
                 <span>{appName} © {new Date().getFullYear()}</span>
                 <span className="opacity-40">-</span>
                 <a
