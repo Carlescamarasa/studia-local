@@ -309,7 +309,8 @@ export function useEstadisticas({
         tiempoTotal: normalizeAggregate(e.tiempoTotal),
         sesionesCount: e.sesiones.size,
       }))
-      .sort((a, b) => b.tiempoTotal - a.tiempoTotal);
+      .sort((a, b) => b.tiempoTotal - a.tiempoTotal)
+      .map((e, index) => ({ ...e, ranking: index + 1 })); // Añadir ranking para mobile
   }, [bloquesFiltrados]);
 
   // Progreso por pieza

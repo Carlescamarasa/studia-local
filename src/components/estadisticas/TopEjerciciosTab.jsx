@@ -49,10 +49,10 @@ export default function TopEjerciciosTab({
       key: 'ranking',
       label: '#',
       sortable: false,
-      render: (item, index) => {
+      render: (item) => {
         return (
           <Badge className="rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] font-bold w-8 h-8 flex items-center justify-center shrink-0">
-            {index + 1}
+            {item.ranking}
           </Badge>
         );
       },
