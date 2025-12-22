@@ -3016,6 +3016,52 @@ export function createRemoteDataAPI(): AppDataAPI {
         return { success: true };
       }
     },
+
+    // Implementación de RPCs
+    getCalendarSummary: async (startDate: Date, endDate: Date, userId?: string) => {
+      const { data, error } = await withAuthErrorHandling(
+        supabase.rpc('get_calendar_summary', {
+          p_start_date: startDate.toISOString(),
+          p_end_date: endDate.toISOString(),
+          p_user_id: userId || null
+        })
+      );
+
+      if (error) {
+        console.error('[remoteDataAPI] Error en getCalendarSummary:', error);
+        throw error;
+      }
+
+      // Transformar snake_case a camelCase y normalizar campos
+      const raw = data as any;
+      return {
+        registrosSesion: (raw.registrosSesion || []).map(snakeToCamel).map(normalizeISOFields),
+        feedbacksSemanal: (raw.feedbacksSemanal || []).map(snakeToCamel).map(normalizeAsignacionISO), // Feedback usa normalizeAsignacionISO para fechas? Si, o similar
+        asignaciones: (raw.asignaciones || []).map(snakeToCamel).map(normalizeAsignacionISO),
+        eventosCalendario: (raw.eventosCalendario || []).map(snakeToCamel) // Eventos suelen ser simples
+      };
+    },
+
+    getProgressSummary: async (studentId?: string) => {
+      const { data, error } = await withAuthErrorHandling(
+        supabase.rpc('get_progress_summary', {
+          p_student_id: studentId || null
+        })
+      );
+
+      if (error) {
+        console.error('[remoteDataAPI] Error en getProgressSummary:', error);
+        throw error;
+      }
+
+      const raw = data as any;
+      return {
+        xpTotals: (raw.xpTotals || []).map(snakeToCamel),
+        evaluacionesTecnicas: (raw.evaluacionesTecnicas || []).map(snakeToCamel),
+        feedbacksSemanal: (raw.feedbacksSemanal || []).map(snakeToCamel).map(normalizeAsignacionISO),
+        registrosSesion: (raw.registrosSesion || []).map(snakeToCamel).map(normalizeISOFields)
+      };
+    }
   };
 }
 

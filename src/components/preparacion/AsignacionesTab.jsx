@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ds";
 import { Input } from "@/components/ui/input";
 import {
-    Target, Eye, Edit, Copy, Trash2, FileDown, Search, X, Plus, RotateCcw, XCircle, User, Users, ChevronLeft, ChevronRight, Calendar
+    Target, Eye, Edit, Copy, Trash2, FileDown, Search, X, Plus, RotateCcw,
+    ChevronUp, ChevronDown, Check, Clock, Circle, FileText, Send, CheckCircle, AlertCircle, LayoutList, User, Users, XCircle
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -21,6 +22,7 @@ import MultiSelect from "@/components/ui/MultiSelect";
 import PageHeader from "@/components/ds/PageHeader";
 import PeriodHeader from "@/components/common/PeriodHeader";
 import { componentStyles } from "@/design/componentStyles";
+import { cn } from "@/lib/utils";
 import {
     Dialog,
     DialogContent,
@@ -31,14 +33,23 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
-export default function AsignacionesTab() {
+export default function AsignacionesTab({
+    externalSearchTerm = null,
+    externalSemanaISO = null,
+    hideTitle = false,
+    hideSearchAndWeek = false
+}) {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const [searchTerm, setSearchTerm] = useState('');
+    const [internalSearchTerm, setInternalSearchTerm] = useState('');
     const [estadoFilter, setEstadoFilter] = useState('all');
     const [profesoresFilter, setProfesoresFilter] = useState([]);
+    const [ordenFilter, setOrdenFilter] = useState('recent'); // 'recent', 'oldest', 'student_asc', 'student_desc'
     const [showForm, setShowForm] = useState(false);
+
+    // Use external props if provided, otherwise internal state
+    const searchTerm = externalSearchTerm !== null ? externalSearchTerm : internalSearchTerm;
 
     // Check for deep link action
     const action = searchParams.get('action');
@@ -51,25 +62,29 @@ export default function AsignacionesTab() {
     }, [action]);
 
     // Estado para filtro por semana (ISO formato YYYY-MM-DD)
-    const [semanaSeleccionadaISO, setSemanaSeleccionadaISO] = useState(() => {
+    const [internalSemanaISO, setInternalSemanaISO] = useState(() => {
         const hoy = new Date();
         return formatLocalDate(startOfMonday(hoy));
     });
+
+    const semanaSeleccionadaISO = externalSemanaISO || internalSemanaISO;
 
     // Helper para convertir ISO a Date (compatibilidad con código existente)
     const semanaSeleccionada = parseLocalDate(semanaSeleccionadaISO);
 
     const cambiarSemana = (direccion) => {
-        const base = parseLocalDate(semanaSeleccionadaISO);
+        if (externalSemanaISO) return; // Controlled externally
+        const base = parseLocalDate(internalSemanaISO);
         base.setDate(base.getDate() + (direccion * 7));
         const lunes = startOfMonday(base);
         const nextISO = formatLocalDate(lunes);
-        if (nextISO !== semanaSeleccionadaISO) setSemanaSeleccionadaISO(nextISO);
+        if (nextISO !== internalSemanaISO) setInternalSemanaISO(nextISO);
     };
 
     const irSemanaActual = () => {
+        if (externalSemanaISO) return; // Controlled externally
         const lunes = startOfMonday(new Date());
-        setSemanaSeleccionadaISO(formatLocalDate(lunes));
+        setInternalSemanaISO(formatLocalDate(lunes));
     };
 
 
@@ -389,8 +404,28 @@ export default function AsignacionesTab() {
             });
         }
 
+        // Sorting logic
+        resultado.sort((a, b) => {
+            if (ordenFilter === 'recent') {
+                // Sort by start date DESC
+                return b.semanaInicioISO.localeCompare(a.semanaInicioISO);
+            } else if (ordenFilter === 'oldest') {
+                // Sort by start date ASC
+                return a.semanaInicioISO.localeCompare(b.semanaInicioISO);
+            } else if (ordenFilter === 'student_asc') {
+                const nameA = getNombreVisible(usuarios.find(u => u.id === a.alumnoId) || {});
+                const nameB = getNombreVisible(usuarios.find(u => u.id === b.alumnoId) || {});
+                return nameA.localeCompare(nameB);
+            } else if (ordenFilter === 'student_desc') {
+                const nameA = getNombreVisible(usuarios.find(u => u.id === a.alumnoId) || {});
+                const nameB = getNombreVisible(usuarios.find(u => u.id === b.alumnoId) || {});
+                return nameB.localeCompare(nameA);
+            }
+            return 0;
+        });
+
         return resultado;
-    }, [asignacionesFiltradas, estadoFilter, profesoresFilter, searchTerm, usuarios, semanaSeleccionadaISO]);
+    }, [asignacionesFiltradas, estadoFilter, profesoresFilter, searchTerm, usuarios, semanaSeleccionadaISO, ordenFilter]);
 
     const estadoLabels = {
         borrador: 'Borrador',
@@ -524,78 +559,117 @@ export default function AsignacionesTab() {
         },
     ];
 
+    const statusIcons = {
+        all: { icon: LayoutList, label: 'Todos' },
+        borrador: { icon: FileText, label: 'Borrador' },
+        publicada: { icon: Send, label: 'Publicada' },
+        en_curso: { icon: Clock, label: 'En Curso' },
+        cerrada: { icon: CheckCircle, label: 'Cerrada' },
+    };
+
     return (
         <div className="min-h-screen bg-transparent">
+            {/* Conditional rendering for header section */}
             <div className="pb-4 max-w-7xl mx-auto">
                 <div className="space-y-4">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        {/* Filtros superiores */}
-                        <div className="flex-1 relative">
-                            <Input
-                                placeholder="Buscar estudiante o pieza..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className={`w-full pr-9 ${componentStyles.controls.inputDefault}`}
-                            />
-                            {searchTerm && (
-                                <button
-                                    onClick={() => setSearchTerm('')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                                    aria-label="Limpiar búsqueda"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
+                    {/* Search and Week Selector (Optional) */}
+                    {!hideSearchAndWeek && (
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            {!externalSearchTerm && (
+                                <div className="flex-1 relative">
+                                    <Input
+                                        placeholder="Buscar estudiante o pieza..."
+                                        value={internalSearchTerm}
+                                        onChange={(e) => setInternalSearchTerm(e.target.value)}
+                                        className={`w-full pr-9 ${componentStyles.controls.inputDefault}`}
+                                    />
+                                    {internalSearchTerm && (
+                                        <button
+                                            onClick={() => setInternalSearchTerm('')}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                                            aria-label="Limpiar búsqueda"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+
+                            {!externalSemanaISO && (
+                                <div className="w-full md:w-auto">
+                                    {(() => {
+                                        const lunesSemana = parseLocalDate(semanaSeleccionadaISO);
+                                        const domingoSemana = new Date(lunesSemana);
+                                        domingoSemana.setDate(lunesSemana.getDate() + 6);
+                                        const numeroSemana = isoWeekNumberLocal(lunesSemana);
+                                        const labelSemana = `Semana ${numeroSemana}`;
+                                        const rangeTextSemana = `${lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} – ${domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+
+                                        return (
+                                            <PeriodHeader
+                                                label={labelSemana}
+                                                rangeText={rangeTextSemana}
+                                                onPrev={() => cambiarSemana(-1)}
+                                                onNext={() => cambiarSemana(1)}
+                                                onToday={irSemanaActual}
+                                            />
+                                        );
+                                    })()}
+                                </div>
                             )}
                         </div>
+                    )}
 
-                        {/* Period picker header integrated locally here if needed, but the original bad it in PageHeader actions. 
-                 The request says "Reutiliza el UI/tabla existente". 
-                 In original page, PeriodHeader was in the PageHeader actions. 
-                 Here we are inside a Tab. We might want to put PeriodHeader above the filters or next to them.
-             */}
-
-                        <div className="w-full md:w-auto">
-                            {(() => {
-                                const lunesSemana = parseLocalDate(semanaSeleccionadaISO);
-                                const domingoSemana = new Date(lunesSemana);
-                                domingoSemana.setDate(lunesSemana.getDate() + 6);
-                                const numeroSemana = isoWeekNumberLocal(lunesSemana);
-                                const labelSemana = `Semana ${numeroSemana}`;
-                                const rangeTextSemana = `${lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} – ${domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
-
-                                return (
-                                    <PeriodHeader
-                                        label={labelSemana}
-                                        rangeText={rangeTextSemana}
-                                        onPrev={() => cambiarSemana(-1)}
-                                        onNext={() => cambiarSemana(1)}
-                                        onToday={irSemanaActual}
-                                    />
-                                );
-                            })()}
+                    {/* Filter Controls Row: Always Visible but adaptable */}
+                    <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                        {/* Sorting Selector */}
+                        <div className="w-full md:w-auto min-w-[200px]">
+                            <Select value={ordenFilter} onValueChange={setOrdenFilter}>
+                                <SelectTrigger className={`${componentStyles.controls.selectDefault}`}>
+                                    <SelectValue placeholder="Ordenar por" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="recent">Más recientes</SelectItem>
+                                    <SelectItem value="oldest">Más antiguas</SelectItem>
+                                    <SelectItem value="student_asc">Estudiante (A-Z)</SelectItem>
+                                    <SelectItem value="student_desc">Estudiante (Z-A)</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                    </div>
 
-                    <div className="flex gap-2 flex-wrap">
-                        <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-                            <SelectTrigger className={`flex-1 min-w-[140px] ${componentStyles.controls.selectDefault}`}>
-                                <SelectValue placeholder="Estado" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos</SelectItem>
-                                <SelectItem value="borrador">Borradores</SelectItem>
-                                <SelectItem value="publicada">Publicadas</SelectItem>
-                                <SelectItem value="en_curso">En Curso</SelectItem>
-                                <SelectItem value="cerrada">Cerradas</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                            {/* Status Filters as Icon Buttons */}
+                            <div className="flex bg-muted/20 p-1 rounded-lg border border-border">
+                                {Object.entries(statusIcons).map(([key, { icon: Icon, label }]) => (
+                                    <Button
+                                        key={key}
+                                        variant={estadoFilter === key ? "default" : "ghost"}
+                                        size="sm"
+                                        onClick={() => setEstadoFilter(key)}
+                                        className={cn(
+                                            "h-8 px-3 transition-all",
+                                            estadoFilter === key
+                                                ? "shadow-sm"
+                                                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                                        )}
+                                        title={label}
+                                    >
+                                        <Icon className="w-4 h-4 md:mr-2" />
+                                        <span className="hidden md:inline text-xs">{label}</span>
+                                    </Button>
+                                ))}
+                            </div>
 
-                        <MultiSelect
-                            label={profesoresFilter.length === 0 ? "Profesor (TODOS)" : "Profesor"}
-                            items={profesoresDisponibles}
-                            value={profesoresFilter}
-                            onChange={setProfesoresFilter}
-                        />
+                            {/* Professor Filter */}
+                            <div className="min-w-[150px]">
+                                <MultiSelect
+                                    label={profesoresFilter.length === 0 ? "Profesor (TODOS)" : "Profesor"}
+                                    items={profesoresDisponibles}
+                                    value={profesoresFilter}
+                                    onChange={setProfesoresFilter}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

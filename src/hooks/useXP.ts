@@ -20,6 +20,7 @@ export function useRecentXP(studentId: string, windowDays: number = 30) {
         },
         enabled: !!studentId,
         staleTime: 1000 * 60 * 5, // 5 minutes cache
+        refetchOnWindowFocus: false,
     });
 }
 
@@ -32,6 +33,7 @@ export function useAllStudentXPTotals() {
         queryKey: ['student-xp-total-all'],
         queryFn: () => localDataClient.entities.StudentXPTotal.list() as Promise<StudentXPTotal[]>,
         staleTime: 1000 * 60 * 5, // 5 minutes cache
+        refetchOnWindowFocus: false,
     });
 }
 
@@ -40,10 +42,15 @@ export function useAllStudentXPTotals() {
  * Uses shared cache from useAllStudentXPTotals
  * 
  * @param studentId - Student ID
+ * @param providedData - Optional pre-fetched data
  * @returns Lifetime practice XP data
  */
-export function useLifetimePracticeXP(studentId: string) {
-    const { data: allTotals, isLoading } = useAllStudentXPTotals();
+export function useLifetimePracticeXP(studentId: string, providedData?: StudentXPTotal[]) {
+    const { data: fetchedData, isLoading: isLoadingFetch } = useAllStudentXPTotals();
+
+    // Use provided data if available, otherwise use fetched data (or empty array if loading)
+    const allTotals = providedData || fetchedData;
+    const isLoading = providedData ? false : isLoadingFetch;
 
     const practiceXP = useMemo<RecentXPResult>(() => {
         if (!allTotals || !studentId) {
@@ -78,10 +85,14 @@ export function useLifetimePracticeXP(studentId: string) {
  * Uses shared cache from useAllStudentXPTotals
  * 
  * @param studentId - Student ID
+ * @param providedData - Optional pre-fetched data
  * @returns Total XP data (unlimited)
  */
-export function useTotalXP(studentId: string) {
-    const { data: allTotals, isLoading } = useAllStudentXPTotals();
+export function useTotalXP(studentId: string, providedData?: StudentXPTotal[]) {
+    const { data: fetchedData, isLoading: isLoadingFetch } = useAllStudentXPTotals();
+
+    const allTotals = providedData || fetchedData;
+    const isLoading = providedData ? false : isLoadingFetch;
 
     const studentTotals = useMemo<StudentXPTotal[]>(() => {
         if (!allTotals || !studentId) return [];
@@ -117,10 +128,14 @@ export function totalXPToObject(totals: StudentXPTotal[] | undefined): Record<st
  * Uses shared cache from useAllStudentXPTotals
  * 
  * @param studentIds - Array of Student IDs
+ * @param providedData - Optional pre-fetched data
  * @returns Aggregated total XP data (sum across students)
  */
-export function useTotalXPMultiple(studentIds: string[]) {
-    const { data: allTotals, isLoading } = useAllStudentXPTotals();
+export function useTotalXPMultiple(studentIds: string[], providedData?: StudentXPTotal[]) {
+    const { data: fetchedData, isLoading: isLoadingFetch } = useAllStudentXPTotals();
+
+    const allTotals = providedData || fetchedData;
+    const isLoading = providedData ? false : isLoadingFetch;
 
     const aggregatedTotals = useMemo<StudentXPTotal[]>(() => {
         if (!allTotals || studentIds.length === 0) return [];
@@ -166,10 +181,14 @@ export function useTotalXPMultiple(studentIds: string[]) {
  * Uses shared cache from useAllStudentXPTotals
  * 
  * @param studentIds - Array of Student IDs
+ * @param providedData - Optional pre-fetched data
  * @returns Aggregated lifetime practice XP data
  */
-export function useLifetimePracticeXPMultiple(studentIds: string[]) {
-    const { data: allTotals, isLoading } = useAllStudentXPTotals();
+export function useLifetimePracticeXPMultiple(studentIds: string[], providedData?: StudentXPTotal[]) {
+    const { data: fetchedData, isLoading: isLoadingFetch } = useAllStudentXPTotals();
+
+    const allTotals = providedData || fetchedData;
+    const isLoading = providedData ? false : isLoadingFetch;
 
     const practiceXP = useMemo<RecentXPResult>(() => {
         if (!allTotals || studentIds.length === 0) {

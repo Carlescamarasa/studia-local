@@ -10,6 +10,7 @@ import {
   Calendar,
   Target,
   Activity,
+  Notebook,
   Settings,
   PlayCircle,
   Menu as MenuIcon,
@@ -66,7 +67,6 @@ import { HotkeysModalProvider, useHotkeysModal } from "@/hooks/useHotkeysModal.j
 import { useAppVersion } from "@/hooks/useAppVersion";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import LevelBadge from "@/components/common/LevelBadge";
-import AdminUpdateNotice from "@/components/common/AdminUpdateNotice";
 import HardcodeInspector from "@/components/design/HardcodeInspector";
 
 /* ------------------------------ Navegación ------------------------------ */
@@ -77,6 +77,7 @@ const navigationByRole = {
     { title: "Tickets alumnos", url: ROUTES.SOPORTE_PROF, icon: MessageSquare, group: "Docencia" },
     { title: "Calendario", url: ROUTES.CALENDARIO, icon: Calendar, group: "Docencia" },
     { title: "Usuarios", url: ROUTES.USUARIOS, icon: Users, group: "Gestión" },
+    { title: "Cuaderno", url: ROUTES.CUADERNO, icon: Notebook, group: "Gestión" },
     { title: "Preparación", url: ROUTES.PREPARACION, icon: Target, group: "Gestión" },
     { title: "Biblioteca", url: ROUTES.BIBLIOTECA, icon: Edit3, group: "Gestión" },
     { title: "Reportes", url: ROUTES.REPORTES, icon: Bug, group: "Sistema" },
@@ -87,6 +88,7 @@ const navigationByRole = {
     { title: "Progreso", url: toProgreso('resumen'), icon: Activity, group: "Docencia" },
     { title: "Tickets alumnos", url: ROUTES.SOPORTE_PROF, icon: MessageSquare, group: "Docencia" },
     { title: "Calendario", url: ROUTES.CALENDARIO, icon: Calendar, group: "Docencia" },
+    { title: "Cuaderno", url: ROUTES.CUADERNO, icon: Notebook, group: "Gestión" },
     { title: "Preparación", url: ROUTES.PREPARACION, icon: Target, group: "Gestión" },
     { title: "Biblioteca", url: ROUTES.BIBLIOTECA, icon: Edit3, group: "Gestión" },
   ],
@@ -495,6 +497,7 @@ function LayoutContent() {
     [ROUTES.REPORTES]: ['PROF', 'ADMIN'],
     [ROUTES.ESTUDIANTES]: ['PROF', 'ADMIN'],
     [ROUTES.ASIGNACIONES]: ['PROF', 'ADMIN'],
+    [ROUTES.CUADERNO]: ['PROF', 'ADMIN'],
     [ROUTES.PREPARACION]: ['PROF', 'ADMIN'],
     [ROUTES.BIBLIOTECA]: ['PROF', 'ADMIN'],
     [ROUTES.AGENDA]: ['PROF', 'ADMIN'],
@@ -1001,7 +1004,6 @@ function LayoutContent() {
         open={perfilModalOpen}
         onOpenChange={setPerfilModalOpen}
       />
-      <AdminUpdateNotice />
     </RoleBootstrap>
   );
 }

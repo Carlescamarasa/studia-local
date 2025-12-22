@@ -41,7 +41,7 @@ export default function PeriodHeader({
         size="icon"
         onClick={onToday}
         className={cn(
-          "h-8 w-8 sm:h-9 sm:w-9",
+          "h-8 w-8 sm:h-9 sm:w-9 hidden lg:flex",
           componentStyles.buttons.outline
         )}
         title="Ir a hoy"

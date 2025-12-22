@@ -151,5 +151,19 @@ export interface AppDataAPI {
   studentXpTotal: StudentXPTotalAPI;
   studentBackpack: StudentBackpackAPI;
   mediaAssets: MediaAssetAPI;
+
+  // RPC Methods
+  getCalendarSummary?: (startDate: Date, endDate: Date, userId?: string) => Promise<{
+    registrosSesion: RegistroSesion[];
+    feedbacksSemanal: FeedbackSemanal[];
+    asignaciones: Asignacion[];
+    eventosCalendario: EventoCalendario[];
+  }>;
+  getProgressSummary?: (studentId?: string) => Promise<{
+    xpTotals: StudentXPTotal[];
+    evaluacionesTecnicas: EvaluacionTecnica[];
+    feedbacksSemanal: FeedbackSemanal[];
+    registrosSesion: RegistroSesion[];
+  }>;
 }
 

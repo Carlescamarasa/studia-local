@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { startOfMonday, formatLocalDate } from "../components/calendario/utils";
+import { startOfMonth, endOfMonth } from "date-fns";
 
 function CalendarioPageContent() {
   const isMobile = useIsMobile();
@@ -47,44 +48,70 @@ function CalendarioPageContent() {
     queryKey: ['users'],
     queryFn: () => localDataClient.entities.User.list(),
     staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
-  const { data: registrosSesion = [] } = useQuery({
-    queryKey: ['registrosSesion'],
-    queryFn: () => localDataClient.entities.RegistroSesion.list('-inicioISO'),
-    staleTime: 5 * 60 * 1000,
-  });
+  // Calcular rango de fechas para el fetch
+  // Calcular rango de fechas para el fetch (Siempre estandarizado a Mes completo para maximizar cache)
+  const dateRange = useMemo(() => {
+    let rangeStart, rangeEnd;
 
-  const { data: feedbacksSemanal = [] } = useQuery({
-    queryKey: ['feedbacksSemanal'],
-    queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_at'),
-    staleTime: 5 * 60 * 1000,
-  });
+    if (vista === 'mes') {
+      rangeStart = new Date(fechaActual);
+      rangeEnd = new Date(fechaActual);
+    } else {
+      // Para semana y lista, determinar si cruza meses
+      rangeStart = startOfMonday(fechaActual);
+      rangeEnd = new Date(rangeStart);
+      rangeEnd.setDate(rangeEnd.getDate() + 6);
+    }
 
-  const { data: asignaciones = [] } = useQuery({
-    queryKey: ['asignaciones'],
-    queryFn: () => localDataClient.entities.Asignacion.list(),
-    staleTime: 5 * 60 * 1000,
-  });
+    // Expandir a mes completo (startOfMonth del inicio, endOfMonth del fin)
+    // Esto asegura que si estamos en semana del 1-7 Enero, pedimos Enero completo (mismo key que Vista Mes)
+    // Si estamos en 30 Ene - 5 Feb, pedimos Ene y Feb (key más amplia, pero necesaria)
+    const start = startOfMonth(rangeStart);
+    const end = endOfMonth(rangeEnd);
+    end.setHours(23, 59, 59, 999);
 
-  const { data: eventos = [] } = useQuery({
-    queryKey: ['eventosCalendario'],
-    queryFn: () => localDataClient.entities.EventoCalendario.list('-fechaInicio'),
-    staleTime: 5 * 60 * 1000,
-  });
+    return { start, end };
+  }, [vista, fechaActual]);
+
+
 
   const userIdActual = useMemo(() => {
     return resolveUserIdActual(effectiveUser, usuarios);
   }, [effectiveUser, usuarios]);
 
-  // Determinar rol y permisos
+  // Determinar rol
   const userRole = useMemo(() => {
     return effectiveUser?.rolPersonalizado || 'ESTU';
   }, [effectiveUser]);
+  const isEstu = userRole === 'ESTU';
 
+  // Unified Calendar Fetch (RPC)
+  const { data: calendarSummary } = useQuery({
+    queryKey: ['calendarSummary', dateRange.start.toISOString(), dateRange.end.toISOString(), isEstu ? userIdActual : 'ALL'],
+    queryFn: () => localDataClient.getCalendarSummary(
+      dateRange.start,
+      dateRange.end,
+      isEstu ? userIdActual : null
+    ),
+    placeholderData: (prev) => prev, // Keep previous data while fetching new month
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
+  });
+
+  const {
+    registrosSesion = [],
+    feedbacksSemanal = [],
+    asignaciones = [],
+    eventosCalendario: eventos = []
+  } = calendarSummary || {};
+
+  // Determinar rol y permisos
   const isAdmin = userRole === 'ADMIN';
   const isProf = userRole === 'PROF';
-  const isEstu = userRole === 'ESTU';
+  // isEstu defined above
 
   // Filtrar eventos según permisos
   const eventosFiltrados = useMemo(() => {
@@ -154,7 +181,8 @@ function CalendarioPageContent() {
       return await localDataClient.entities.RegistroSesion.delete(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['registrosSesion'] });
+      queryClient.invalidateQueries({ queryKey: ['calendarSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['progressSummary'] });
       toast.success('✅ Sesión eliminada');
       handleCerrarModal(false);
     },
@@ -168,7 +196,8 @@ function CalendarioPageContent() {
       return await localDataClient.entities.FeedbackSemanal.delete(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] });
+      queryClient.invalidateQueries({ queryKey: ['calendarSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['progressSummary'] });
       toast.success('✅ Feedback eliminado');
       handleCerrarModal(false);
     },
@@ -182,7 +211,8 @@ function CalendarioPageContent() {
       return await localDataClient.entities.Asignacion.delete(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
+      queryClient.invalidateQueries({ queryKey: ['calendarSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['progressSummary'] });
       toast.success('✅ Asignación eliminada');
       handleCerrarModal(false);
     },

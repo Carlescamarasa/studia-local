@@ -28,6 +28,7 @@ export const ROUTES = {
     ASIGNACIONES: "/asignaciones",
     ASIGNACION_DETALLE: "/asignacion-detalle",
     ADAPTAR_ASIGNACION: "/adaptar-asignacion",
+    CUADERNO: "/cuaderno",
 };
 
 /**

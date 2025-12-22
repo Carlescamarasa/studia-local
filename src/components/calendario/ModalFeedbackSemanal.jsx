@@ -4,7 +4,15 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
 } from "@/components/ui/dialog";
+import {
+    Drawer,
+    DrawerContent,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerDescription,
+} from "@/components/ui/drawer";
 import { Button } from "@/components/ds/Button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,6 +53,24 @@ export default function ModalFeedbackSemanal({
     const { toast } = useToast();
     const effectiveUser = useEffectiveUser();
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Responsive: use Drawer on mobile/tablet (<1024px)
+    const [isMobile, setIsMobile] = useState(false);
+    const [isTablet, setIsTablet] = useState(false); // 450-1023px
+    useEffect(() => {
+        const mqMobile = window.matchMedia('(max-width: 1023px)');
+        const mqTablet = window.matchMedia('(min-width: 450px) and (max-width: 1023px)');
+        const handleMobileChange = (e) => setIsMobile(e.matches);
+        const handleTabletChange = (e) => setIsTablet(e.matches);
+        setIsMobile(mqMobile.matches);
+        setIsTablet(mqTablet.matches);
+        mqMobile.addEventListener('change', handleMobileChange);
+        mqTablet.addEventListener('change', handleTabletChange);
+        return () => {
+            mqMobile.removeEventListener('change', handleMobileChange);
+            mqTablet.removeEventListener('change', handleTabletChange);
+        };
+    }, []);
 
     // TABS state
     const [activeTab, setActiveTab] = useState('evaluacion'); // evaluacion | comentarios | multimedia
@@ -283,7 +309,6 @@ export default function ModalFeedbackSemanal({
         try {
             const reason = force ? 'Promoción forzada por profesor' : 'Promoción por evaluación';
             await promoteLevel(studentId, nextLevel, reason, effectiveUser?.id || 'system');
-            toast({ title: "¡Alumno promovido!", description: `Nivel ${nextLevel} alcanzado.` });
 
             // Reset XP inputs for the new level context
             setDeltaMotricidad("");
@@ -305,7 +330,6 @@ export default function ModalFeedbackSemanal({
 
         try {
             await promoteLevel(studentId, prevLevel, 'Descenso de nivel por profesor', effectiveUser?.id || 'system');
-            toast({ title: "Nivel actualizado", description: `El alumno ha bajado al Nivel ${prevLevel}.` });
 
             // Reset XP inputs for the new level context
             setDeltaMotricidad("");
@@ -430,10 +454,7 @@ export default function ModalFeedbackSemanal({
                 console.log('[ModalFeedbackSemanal] No XP changes to apply');
             }
 
-            toast({
-                title: "Feedback guardado",
-                description: "Los datos se han actualizado correctamente.",
-            });
+
 
             if (onSaved) onSaved();
             onOpenChange(false);
@@ -449,109 +470,133 @@ export default function ModalFeedbackSemanal({
         }
     };
 
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden flex flex-col bg-background">
-                {/* HEADER */}
-                {/* HEADER */}
-                <DialogHeader className="px-6 py-4 border-b border-border bg-muted/40 shrink-0 flex flex-row items-center justify-between space-y-0">
-                    <div>
-                        <DialogTitle className="flex items-center gap-2 text-lg">
-                            <MessageSquare className="w-5 h-5 text-[var(--color-primary)]" />
-                            Feedback Profesor
-                        </DialogTitle>
-                        <div className="text-sm text-[var(--color-text-secondary)] mt-1">
-                            {weekLabel || "Semana seleccionada"}
-                        </div>
-                    </div>
-                </DialogHeader>
+    // Shared content for both Dialog and Drawer
+    const modalHeader = (
+        <div className="px-6 py-4 border-b border-border bg-muted/40 shrink-0 flex flex-row items-center justify-between space-y-0">
+            <div>
+                <div className="flex items-center gap-2 text-lg font-semibold">
+                    <MessageSquare className="w-5 h-5 text-[var(--color-primary)]" />
+                    Feedback Profesor
+                </div>
+                <div className="text-sm text-[var(--color-text-secondary)] mt-1">
+                    {weekLabel || "Semana seleccionada"}
+                </div>
+            </div>
+        </div>
+    );
 
-                {/* CONTENT - 2 COLUMNS */}
-                <div className="flex-1 overflow-auto">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 h-full min-h-[500px]">
+    const modalFooter = (
+        <div className="p-4 border-t border-border bg-background flex justify-end gap-3 shrink-0">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+                Cancelar
+            </Button>
+            <Button variant="primary" onClick={handleSave} disabled={isSubmitting || uploadingVideo} className="min-w-[150px]">
+                <Save className="w-4 h-4 mr-2" />
+                {isSubmitting ? (uploadingVideo ? "Subiendo vídeo..." : "Guardando...") : "Guardar Feedback"}
+            </Button>
+        </div>
+    );
 
-                        {/* LEFT COLUMN: Contexto / Nivel (4 cols) */}
-                        <div className="lg:col-span-4 border-r border-[var(--color-border-default)] bg-[var(--color-surface-muted)]/30 p-4 space-y-6">
-                            {/* Level Card */}
-                            <div className="bg-[var(--color-surface-default)] rounded-xl p-5 border border-[var(--color-border-default)] shadow-sm text-center">
-                                <span className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider font-medium">Nivel Actual</span>
-                                <div className="text-5xl font-bold text-[var(--color-primary)] my-2">{currentLevel}</div>
-                                <div className="inline-flex items-center gap-1.5">
-                                    <Badge variant="outline" className="text-xs">
-                                        Siguiente: {currentLevel + 1}
-                                    </Badge>
-                                    <TooltipProvider delayDuration={100}>
-                                        <Tooltip>
-                                            <TooltipTrigger>
-                                                <HelpCircle className="w-3.5 h-3.5 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] cursor-help" />
-                                            </TooltipTrigger>
-                                            <TooltipContent
-                                                side="right"
-                                                sideOffset={8}
-                                                className="max-w-xs"
-                                                style={{ zIndex: 9999 }}
-                                            >
-                                                {projectedPromotionStatus?.allowed ? (
-                                                    <p className="text-green-500 font-medium">✓ Cumples todos los requisitos</p>
-                                                ) : (
-                                                    <div className="space-y-3">
-                                                        <p className="font-semibold">Requisitos para Nivel {currentLevel + 1}</p>
+    const modalBody = (
+        <div className="flex-1 overflow-auto">
+            <div className={cn("grid h-full", isMobile ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-12 min-h-[500px]")}>
 
-                                                        {/* Experiencia (XP) Section */}
-                                                        {(() => {
-                                                            const xpItems = projectedPromotionStatus?.missing?.filter(m => m.includes('XP:')) || [];
-                                                            if (xpItems.length === 0) return null;
-                                                            return (
-                                                                <div>
-                                                                    <p className="font-medium text-xs uppercase text-[var(--color-text-secondary)]">Experiencia</p>
-                                                                    <ul className="text-xs list-disc pl-4 mt-1">
-                                                                        {xpItems.map((m, i) => {
-                                                                            const cleaned = m.replace(' XP:', ':');
-                                                                            return <li key={i}>{cleaned}</li>;
-                                                                        })}
-                                                                    </ul>
-                                                                </div>
-                                                            );
-                                                        })()}
+                {/* LEFT COLUMN: Contexto / Nivel (4 cols) */}
+                <div className={cn(
+                    "border-[var(--color-border-default)] bg-[var(--color-surface-muted)]/30 p-4",
+                    isMobile ? "border-b" : "lg:col-span-4 border-r space-y-6"
+                )}>
+                    {/* Tablet: horizontal layout (Level | Requirements+Buttons), Mobile/Desktop: vertical */}
+                    <div className={cn(
+                        isTablet ? "flex gap-4 items-stretch" : "space-y-6"
+                    )}>
+                        {/* Level Card */}
+                        <div className={cn(
+                            "bg-[var(--color-surface-default)] rounded-xl p-5 border border-[var(--color-border-default)] shadow-sm text-center flex flex-col justify-center",
+                            isTablet && "w-1/3 shrink-0"
+                        )}>
+                            <span className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider font-medium">Nivel Actual</span>
+                            <div className={cn("font-bold text-[var(--color-primary)] my-2", isTablet ? "text-4xl" : "text-5xl")}>{currentLevel}</div>
+                            <div className="inline-flex items-center justify-center gap-1.5">
+                                <Badge variant="outline" className="text-xs">
+                                    Siguiente: {currentLevel + 1}
+                                </Badge>
+                                <TooltipProvider delayDuration={100}>
+                                    <Tooltip>
+                                        <TooltipTrigger>
+                                            <HelpCircle className="w-3.5 h-3.5 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent
+                                            side="right"
+                                            sideOffset={8}
+                                            className="max-w-xs"
+                                            style={{ zIndex: 9999 }}
+                                        >
+                                            {projectedPromotionStatus?.allowed ? (
+                                                <p className="text-green-500 font-medium">✓ Cumples todos los requisitos</p>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    <p className="font-semibold">Requisitos para Nivel {currentLevel + 1}</p>
 
-                                                        {/* Criterios Section */}
-                                                        {(() => {
-                                                            const criteriaItems = projectedPromotionStatus?.missing?.filter(m => m.startsWith('Criterio:')) || [];
-                                                            if (criteriaItems.length === 0) return null;
-                                                            return (
-                                                                <div>
-                                                                    <p className="font-medium text-xs uppercase text-[var(--color-text-secondary)]">Criterios</p>
-                                                                    <ul className="text-xs list-disc pl-4 mt-1">
-                                                                        {criteriaItems.map((m, i) => {
-                                                                            const desc = m.replace('Criterio: ', '');
-                                                                            const criterion = nextLevelCriteria.find(c => c.criterion.description === desc);
-                                                                            const skill = criterion?.criterion?.skill || '';
-                                                                            const skillLabel = skill.charAt(0).toUpperCase() + skill.slice(1);
-                                                                            return <li key={i}>{skillLabel}: {desc}</li>;
-                                                                        })}
-                                                                    </ul>
-                                                                </div>
-                                                            );
-                                                        })()}
-                                                    </div>
-                                                )}
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                </div>
+                                                    {/* Experiencia (XP) Section */}
+                                                    {(() => {
+                                                        const xpItems = projectedPromotionStatus?.missing?.filter(m => m.includes('XP:')) || [];
+                                                        if (xpItems.length === 0) return null;
+                                                        return (
+                                                            <div>
+                                                                <p className="font-medium text-xs uppercase text-[var(--color-text-secondary)]">Experiencia</p>
+                                                                <ul className="text-xs list-disc pl-4 mt-1">
+                                                                    {xpItems.map((m, i) => {
+                                                                        const cleaned = m.replace(' XP:', ':');
+                                                                        return <li key={i}>{cleaned}</li>;
+                                                                    })}
+                                                                </ul>
+                                                            </div>
+                                                        );
+                                                    })()}
+
+                                                    {/* Criterios Section */}
+                                                    {(() => {
+                                                        const criteriaItems = projectedPromotionStatus?.missing?.filter(m => m.startsWith('Criterio:')) || [];
+                                                        if (criteriaItems.length === 0) return null;
+                                                        return (
+                                                            <div>
+                                                                <p className="font-medium text-xs uppercase text-[var(--color-text-secondary)]">Criterios</p>
+                                                                <ul className="text-xs list-disc pl-4 mt-1">
+                                                                    {criteriaItems.map((m, i) => {
+                                                                        const desc = m.replace('Criterio: ', '');
+                                                                        const criterion = nextLevelCriteria.find(c => c.criterion.description === desc);
+                                                                        const skill = criterion?.criterion?.skill || '';
+                                                                        const skillLabel = skill.charAt(0).toUpperCase() + skill.slice(1);
+                                                                        return <li key={i}>{skillLabel}: {desc}</li>;
+                                                                    })}
+                                                                </ul>
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            )}
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
                             </div>
+                        </div>
 
+                        {/* Right side: Criteria + Buttons (grouped together on tablet) */}
+                        <div className={cn(
+                            isTablet ? "flex-1 flex flex-col justify-between" : "space-y-6"
+                        )}>
                             {/* Criteria List */}
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                     <h4 className="text-sm font-semibold text-[var(--color-text-primary)]">Requisitos de Nivel</h4>
                                     <span className="text-xs text-[var(--color-text-secondary)]">
                                         {nextLevelCriteria.filter(c => c.status === 'PASSED').length}/{nextLevelCriteria.length}
                                     </span>
                                 </div>
-                                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                                <div className={cn("space-y-1 overflow-y-auto pr-1", isTablet ? "max-h-[100px]" : isMobile ? "max-h-[150px]" : "max-h-[300px]")}>
                                     {nextLevelCriteria.map((item) => (
-                                        <div key={item.criterion.id} className="flex items-start space-x-3 p-2 rounded hover:bg-[var(--color-surface-muted)] transition-colors">
+                                        <div key={item.criterion.id} className="flex items-start space-x-2 p-1.5 rounded hover:bg-[var(--color-surface-muted)] transition-colors">
                                             <Checkbox
                                                 id={`crit-${item.criterion.id}`}
                                                 checked={item.status === 'PASSED'}
@@ -570,39 +615,23 @@ export default function ModalFeedbackSemanal({
                                         </div>
                                     ))}
                                     {nextLevelCriteria.length === 0 && (
-                                        <p className="text-xs text-[var(--color-text-secondary)] italic text-center">Sin criterios definidos.</p>
+                                        <p className="text-xs text-[var(--color-text-secondary)] italic text-center py-2">Sin criterios definidos.</p>
                                     )}
                                 </div>
                             </div>
 
                             {/* Promotion / Demote Actions */}
-                            <div className="mt-4 space-y-2">
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button
-                                                type="button"
-                                                onClick={() => handlePromote(!projectedPromotionStatus?.allowed)}
-                                                className="w-full"
-                                                size="sm"
-                                                variant={projectedPromotionStatus?.allowed ? 'default' : 'destructive'}
-                                            >
-                                                <Trophy className="w-4 h-4 mr-2" />
-                                                {projectedPromotionStatus?.allowed ? `Ascender a Nivel ${currentLevel + 1}` : `Forzar Nivel ${currentLevel + 1}`}
-                                            </Button>
-                                        </TooltipTrigger>
-                                        {!projectedPromotionStatus?.allowed && projectedPromotionStatus?.missing?.length > 0 && (
-                                            <TooltipContent side="bottom" className="max-w-xs">
-                                                <p className="font-medium mb-1">Requisitos faltantes (Click para forzar):</p>
-                                                <ul className="text-xs list-disc pl-4">
-                                                    {projectedPromotionStatus.missing.map((m, i) => (
-                                                        <li key={i}>{m}</li>
-                                                    ))}
-                                                </ul>
-                                            </TooltipContent>
-                                        )}
-                                    </Tooltip>
-                                </TooltipProvider>
+                            <div className={cn("space-y-2", isTablet ? "pt-2" : "mt-4")}>
+                                <Button
+                                    type="button"
+                                    onClick={() => handlePromote(!projectedPromotionStatus?.allowed)}
+                                    className="w-full"
+                                    size="sm"
+                                    variant={projectedPromotionStatus?.allowed ? 'default' : 'destructive'}
+                                >
+                                    <Trophy className="w-4 h-4 mr-2" />
+                                    {projectedPromotionStatus?.allowed ? `Ascender a Nivel ${currentLevel + 1}` : `Forzar Nivel ${currentLevel + 1}`}
+                                </Button>
 
                                 {currentLevel > 1 && (
                                     <Button
@@ -617,198 +646,213 @@ export default function ModalFeedbackSemanal({
                                 )}
                             </div>
                         </div>
-
-                        {/* RIGHT COLUMN: Tabs Content (8 cols) */}
-                        <div className="lg:col-span-8 flex flex-col h-full bg-background">
-                            {/* Tab Toggles (Pills) */}
-                            <div className="flex border-b border-border px-6 py-3">
-                                <nav className="flex space-x-2 bg-muted p-1 rounded-lg">
-                                    {[
-                                        { id: 'evaluacion', label: 'Evaluación', icon: Activity },
-                                        { id: 'comentarios', label: 'Comentarios', icon: MessageSquare },
-                                        { id: 'multimedia', label: 'Multimedia', icon: Paperclip },
-                                    ].map(tab => (
-                                        <button
-                                            key={tab.id}
-                                            onClick={() => setActiveTab(tab.id)}
-                                            className={cn(
-                                                "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
-                                                activeTab === tab.id
-                                                    ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
-                                                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                                            )}
-                                        >
-                                            <tab.icon className="w-4 h-4 mr-2" />
-                                            {tab.label}
-                                        </button>
-                                    ))}
-                                </nav>
-                            </div>
-
-                            {/* Tab Panels */}
-                            <div className="p-6 flex-1 overflow-y-auto">
-
-                                {/* 1. EVALUACIÓN */}
-                                {activeTab === 'evaluacion' && (
-                                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                        {/* Qualitative Section */}
-                                        <div className="space-y-4">
-                                            <h3 className="text-sm font-semibold flex items-center gap-2 text-[var(--color-primary)] uppercase tracking-wide">
-                                                <Brain className="w-4 h-4" />
-                                                Habilidades Cualitativas (0-10)
-                                            </h3>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[var(--color-surface-muted)]/30 p-4 rounded-xl border border-[var(--color-border-default)]">
-                                                {/* Sonido */}
-                                                <div className="space-y-3">
-                                                    <div className="flex items-center justify-between">
-                                                        <Label className="flex items-center gap-2">
-                                                            <Music className="w-4 h-4 text-blue-500" />
-                                                            Sonido
-                                                        </Label>
-                                                        <span className="font-mono text-sm font-bold text-[var(--color-primary)]">{sonido}/10</span>
-                                                    </div>
-                                                    <Slider
-                                                        value={[sonido]}
-                                                        onValueChange={(vals) => setSonido(vals[0])}
-                                                        max={10}
-                                                        step={0.5}
-                                                        className="py-1"
-                                                    />
-                                                </div>
-                                                {/* Cognición */}
-                                                <div className="space-y-3">
-                                                    <div className="flex items-center justify-between">
-                                                        <Label className="flex items-center gap-2">
-                                                            <Brain className="w-4 h-4 text-purple-500" />
-                                                            Cognición
-                                                        </Label>
-                                                        <span className="font-mono text-sm font-bold text-[var(--color-primary)]">{cognicion}/10</span>
-                                                    </div>
-                                                    <Slider
-                                                        value={[cognicion]}
-                                                        onValueChange={(vals) => setCognicion(vals[0])}
-                                                        max={10}
-                                                        step={0.5}
-                                                        className="py-1"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <Separator />
-
-                                        {/* Quantitative Section (Deltas) */}
-                                        <div className="space-y-4">
-                                            <h3 className="text-sm font-semibold flex items-center gap-2 text-[var(--color-primary)] uppercase tracking-wide">
-                                                <Activity className="w-4 h-4" />
-                                                Habilidades XP (Transacciones)
-                                            </h3>
-                                            <div className="grid gap-4">
-                                                {[
-                                                    { id: 'motricidad', label: 'Motricidad', value: deltaMotricidad, setter: setDeltaMotricidad, targetXP: currentLevelConfig?.minXpMotr },
-                                                    { id: 'articulacion', label: 'Articulación', value: deltaArticulacion, setter: setDeltaArticulacion, targetXP: currentLevelConfig?.minXpArt },
-                                                    { id: 'flexibilidad', label: 'Flexibilidad', value: deltaFlexibilidad, setter: setDeltaFlexibilidad, targetXP: currentLevelConfig?.minXpFlex },
-                                                ].map((skill) => (
-                                                    <div key={skill.id} className="flex items-center justify-between p-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-default)] shadow-sm">
-                                                        <div>
-                                                            <Label className="text-base">{skill.label}</Label>
-                                                            <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-                                                                {/* XP Preview Calculation OR Static Inline */}
-                                                                {(() => {
-                                                                    // Map skill ID to short key used in promotionCheck.xp
-                                                                    const shortKey = skill.id === 'motricidad' ? 'motr' : skill.id === 'articulacion' ? 'art' : 'flex';
-                                                                    const currentTotal = promotionCheck?.xp?.[shortKey] || 0;
-                                                                    const originalVal = originalXpDeltas[skill.id] || 0;
-                                                                    const inputVal = Number(skill.value) || 0;
-
-                                                                    const hasInput = skill.value !== "" && skill.value !== "0";
-
-                                                                    if (hasInput) {
-                                                                        const baseXP = currentTotal - originalVal;
-                                                                        const projectedXP = baseXP + inputVal;
-                                                                        return (
-                                                                            <div className="flex items-center gap-1.5 font-mono text-[11px] md:text-xs">
-                                                                                <span className="text-[var(--color-text-secondary)]">{baseXP}</span>
-                                                                                <span className="text-[var(--color-primary)] font-bold">+ {inputVal}</span>
-                                                                                <span className="text-[var(--color-text-secondary)]">→</span>
-                                                                                <span className="text-[var(--color-text-primary)] font-bold">{projectedXP}</span>
-                                                                                <span className="text-[var(--color-text-muted)] ml-1">/ {skill.targetXP} XP</span>
-                                                                            </div>
-                                                                        );
-                                                                    }
-
-                                                                    return <CurrentXPInline studentId={studentId} skill={skill.id} simple target={skill.targetXP} />;
-                                                                })()}
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-xs text-[var(--color-text-secondary)] font-mono">+/- XP</span>
-                                                            <Input
-                                                                type="number"
-                                                                placeholder="0"
-                                                                value={skill.value}
-                                                                onChange={(e) => skill.setter(e.target.value)}
-                                                                className="w-20 text-right font-mono"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* 2. COMENTARIOS */}
-                                {activeTab === 'comentarios' && (
-                                    <div className="space-y-4 h-full flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                        <Label htmlFor="notaProfesor" className="text-base font-semibold">Observaciones Generales</Label>
-                                        <Textarea
-                                            id="notaProfesor"
-                                            placeholder="Escribe aquí tus comentarios, feedback cualitativo y observaciones sobre la semana..."
-                                            value={notaProfesor}
-                                            onChange={(e) => setNotaProfesor(e.target.value)}
-                                            className="flex-1 resize-none p-4 text-base leading-relaxed bg-[var(--color-surface-muted)]/20"
-                                        />
-                                    </div>
-                                )}
-
-                                {/* 3. MULTIMEDIA */}
-                                {activeTab === 'multimedia' && (
-                                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 overflow-hidden">
-                                        <div>
-                                            <Label className="text-base font-semibold mb-2 block">Material Adjunto</Label>
-                                            <p className="text-sm text-[var(--color-text-secondary)] mb-4">
-                                                Añade enlaces a vídeos, partituras o grabaciones para el alumno.
-                                            </p>
-                                            <MediaLinksInput
-                                                value={mediaLinks}
-                                                onChange={setMediaLinks}
-                                                showFileUpload={true}
-                                                videoFile={videoFile}
-                                                onVideoFileChange={setVideoFile}
-                                                uploadingVideo={uploadingVideo}
-                                                disabled={isSubmitting || uploadingVideo}
-                                                onPreview={onMediaClick ? (idx) => onMediaClick(mediaLinks, idx) : undefined}
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-
-                            </div>
-                        </div>
                     </div>
                 </div>
 
-                {/* FOOTER ACTIONS */}
-                <div className="p-4 border-t border-border bg-background flex justify-end gap-3 shrink-0">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-                        Cancelar
-                    </Button>
-                    <Button variant="primary" onClick={handleSave} disabled={isSubmitting || uploadingVideo} className="min-w-[150px]">
-                        <Save className="w-4 h-4 mr-2" />
-                        {isSubmitting ? (uploadingVideo ? "Subiendo vídeo..." : "Guardando...") : "Guardar Feedback"}
-                    </Button>
+                {/* RIGHT COLUMN: Tabs Content (8 cols) */}
+                <div className={cn("flex flex-col h-full bg-background", isMobile ? "" : "lg:col-span-8")}>
+                    {/* Tab Toggles (Pills) */}
+                    <div className="flex border-b border-border px-6 py-3">
+                        <nav className="flex space-x-2 bg-muted p-1 rounded-lg">
+                            {[
+                                { id: 'evaluacion', label: 'Evaluación', icon: Activity },
+                                { id: 'comentarios', label: 'Comentarios', icon: MessageSquare },
+                                { id: 'multimedia', label: 'Multimedia', icon: Paperclip },
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={cn(
+                                        "flex items-center px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                                        activeTab === tab.id
+                                            ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
+                                            : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                                    )}
+                                >
+                                    <tab.icon className="w-4 h-4 mr-2" />
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </nav>
+                    </div>
+
+                    {/* Tab Panels */}
+                    <div className="p-6 flex-1 overflow-y-auto">
+
+                        {/* 1. EVALUACIÓN */}
+                        {activeTab === 'evaluacion' && (
+                            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                {/* Qualitative Section */}
+                                <div className="space-y-4">
+                                    <h3 className="text-sm font-semibold flex items-center gap-2 text-[var(--color-primary)] uppercase tracking-wide">
+                                        <Brain className="w-4 h-4" />
+                                        Habilidades Cualitativas (0-10)
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[var(--color-surface-muted)]/30 p-4 rounded-xl border border-[var(--color-border-default)]">
+                                        {/* Sonido */}
+                                        <div className="space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <Label className="flex items-center gap-2">
+                                                    <Music className="w-4 h-4 text-blue-500" />
+                                                    Sonido
+                                                </Label>
+                                                <span className="font-mono text-sm font-bold text-[var(--color-primary)]">{sonido}/10</span>
+                                            </div>
+                                            <Slider
+                                                value={[sonido]}
+                                                onValueChange={(vals) => setSonido(vals[0])}
+                                                max={10}
+                                                step={0.5}
+                                                className="py-1"
+                                            />
+                                        </div>
+                                        {/* Cognición */}
+                                        <div className="space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <Label className="flex items-center gap-2">
+                                                    <Brain className="w-4 h-4 text-purple-500" />
+                                                    Cognición
+                                                </Label>
+                                                <span className="font-mono text-sm font-bold text-[var(--color-primary)]">{cognicion}/10</span>
+                                            </div>
+                                            <Slider
+                                                value={[cognicion]}
+                                                onValueChange={(vals) => setCognicion(vals[0])}
+                                                max={10}
+                                                step={0.5}
+                                                className="py-1"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Separator />
+
+                                {/* Quantitative Section (Deltas) */}
+                                <div className="space-y-4">
+                                    <h3 className="text-sm font-semibold flex items-center gap-2 text-[var(--color-primary)] uppercase tracking-wide">
+                                        <Activity className="w-4 h-4" />
+                                        Habilidades XP (Transacciones)
+                                    </h3>
+                                    <div className="grid gap-4">
+                                        {[
+                                            { id: 'motricidad', label: 'Motricidad', value: deltaMotricidad, setter: setDeltaMotricidad, targetXP: currentLevelConfig?.minXpMotr },
+                                            { id: 'articulacion', label: 'Articulación', value: deltaArticulacion, setter: setDeltaArticulacion, targetXP: currentLevelConfig?.minXpArt },
+                                            { id: 'flexibilidad', label: 'Flexibilidad', value: deltaFlexibilidad, setter: setDeltaFlexibilidad, targetXP: currentLevelConfig?.minXpFlex },
+                                        ].map((skill) => (
+                                            <div key={skill.id} className="flex items-center justify-between p-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-default)] shadow-sm">
+                                                <div>
+                                                    <Label className="text-base">{skill.label}</Label>
+                                                    <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">
+                                                        {/* XP Preview Calculation OR Static Inline */}
+                                                        {(() => {
+                                                            // Map skill ID to short key used in promotionCheck.xp
+                                                            const shortKey = skill.id === 'motricidad' ? 'motr' : skill.id === 'articulacion' ? 'art' : 'flex';
+                                                            const currentTotal = promotionCheck?.xp?.[shortKey] || 0;
+                                                            const originalVal = originalXpDeltas[skill.id] || 0;
+                                                            const inputVal = Number(skill.value) || 0;
+
+                                                            const hasInput = skill.value !== "" && skill.value !== "0";
+
+                                                            if (hasInput) {
+                                                                const baseXP = currentTotal - originalVal;
+                                                                const projectedXP = baseXP + inputVal;
+                                                                return (
+                                                                    <div className="flex items-center gap-1.5 font-mono text-[11px] md:text-xs">
+                                                                        <span className="text-[var(--color-text-secondary)]">{baseXP}</span>
+                                                                        <span className="text-[var(--color-primary)] font-bold">+ {inputVal}</span>
+                                                                        <span className="text-[var(--color-text-secondary)]">→</span>
+                                                                        <span className="text-[var(--color-text-primary)] font-bold">{projectedXP}</span>
+                                                                        <span className="text-[var(--color-text-muted)] ml-1">/ {skill.targetXP} XP</span>
+                                                                    </div>
+                                                                );
+                                                            }
+
+                                                            return <CurrentXPInline studentId={studentId} skill={skill.id} simple target={skill.targetXP} />;
+                                                        })()}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-[var(--color-text-secondary)] font-mono">+/- XP</span>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="0"
+                                                        value={skill.value}
+                                                        onChange={(e) => skill.setter(e.target.value)}
+                                                        className="w-20 text-right font-mono"
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 2. COMENTARIOS */}
+                        {activeTab === 'comentarios' && (
+                            <div className="space-y-4 h-full flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <Label htmlFor="notaProfesor" className="text-base font-semibold">Observaciones Generales</Label>
+                                <Textarea
+                                    id="notaProfesor"
+                                    placeholder="Escribe aquí tus comentarios, feedback cualitativo y observaciones sobre la semana..."
+                                    value={notaProfesor}
+                                    onChange={(e) => setNotaProfesor(e.target.value)}
+                                    className="flex-1 resize-none p-4 text-base leading-relaxed bg-[var(--color-surface-muted)]/20"
+                                />
+                            </div>
+                        )}
+
+                        {/* 3. MULTIMEDIA */}
+                        {activeTab === 'multimedia' && (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 overflow-hidden">
+                                <div>
+                                    <Label className="text-base font-semibold mb-2 block">Material Adjunto</Label>
+                                    <p className="text-sm text-[var(--color-text-secondary)] mb-4">
+                                        Añade enlaces a vídeos, partituras o grabaciones para el alumno.
+                                    </p>
+                                    <MediaLinksInput
+                                        value={mediaLinks}
+                                        onChange={setMediaLinks}
+                                        showFileUpload={true}
+                                        videoFile={videoFile}
+                                        onVideoFileChange={setVideoFile}
+                                        uploadingVideo={uploadingVideo}
+                                        disabled={isSubmitting || uploadingVideo}
+                                        onPreview={onMediaClick ? (idx) => onMediaClick(mediaLinks, idx) : undefined}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                    </div>
                 </div>
+            </div>
+        </div>
+    );
+
+    // Render: Dialog on desktop, Drawer on mobile/tablet
+    if (isMobile) {
+        return (
+            <Drawer open={open} onOpenChange={onOpenChange}>
+                <DrawerContent className="max-h-[90vh] flex flex-col">
+                    <DrawerTitle className="sr-only">Feedback del Profesor</DrawerTitle>
+                    <DrawerDescription className="sr-only">Formulario para evaluar al alumno</DrawerDescription>
+                    {modalHeader}
+                    {modalBody}
+                    {modalFooter}
+                </DrawerContent>
+            </Drawer>
+        );
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden flex flex-col bg-background" aria-describedby={undefined}>
+                <DialogTitle className="sr-only">Feedback del Profesor</DialogTitle>
+                {modalHeader}
+                {modalBody}
+                {modalFooter}
             </DialogContent>
         </Dialog>
     );
