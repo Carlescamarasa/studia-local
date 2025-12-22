@@ -145,23 +145,35 @@ export default function ProgresoTab({
                   <p className={componentStyles.components.emptyStateText}>No hay datos en el periodo seleccionado</p>
                 </div>
               ) : (
-                <div className="w-full overflow-x-auto -mx-2 px-2">
+                <div className="w-full min-w-0">
                   <ResponsiveContainer width="100%" height={isMobile ? 250 : 350} minHeight={250}>
-                    <ComposedChart data={datosLinea} margin={{ top: 10, right: 40, left: 5, bottom: 5 }}>
+                    <ComposedChart data={datosLinea} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
                       <XAxis {...xAxisProps} />
                       <YAxis
                         yAxisId="left"
                         orientation="left"
-                        tick={{ fontSize: 11, fill: "var(--color-text-secondary)" }}
+                        tick={{ fontSize: 10, fill: "var(--color-text-secondary)" }}
                         tickLine={false}
                         axisLine={false}
                         tickFormatter={(val) => val >= 3600 ? `${Math.round(val / 3600)}h` : `${Math.round(val / 60)}m`}
-                        width={40}
+                        width={35}
                         tickCount={5}
                         minTickGap={15}
                       />
-                      <YAxis yAxisId="right" orientation="right" domain={[1, 4]} ticks={[1, 2, 3, 4]} tick={{ fontSize: 11, fill: "var(--color-text-secondary)" }} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}★`} width={35} />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        domain={[1, 4]}
+                        ticks={[1, 2, 3, 4]}
+                        tick={{ fontSize: 9, fill: "var(--color-text-secondary)" }}
+                        tickLine={false}
+                        tickSize={0}
+                        axisLine={false}
+                        tickFormatter={(val) => `${val}★`}
+                        width={18}
+                        tickMargin={4}
+                      />
                       <RechartsTooltip
                         contentStyle={{ backgroundColor: 'var(--color-surface-elevated)', border: '1px solid var(--color-border-default)', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                         itemStyle={{ fontSize: '12px', padding: 0 }}
@@ -208,7 +220,7 @@ export default function ProgresoTab({
                   <p className={componentStyles.components.emptyStateText}>No hay datos en el periodo seleccionado</p>
                 </div>
               ) : (
-                <div className="w-full overflow-x-auto -mx-2 px-2">
+                <div className="w-full">
                   <ResponsiveContainer width="100%" height={isMobile ? 200 : 300} minHeight={200}>
                     <LineChart data={datosLinea} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
@@ -239,6 +251,21 @@ export default function ProgresoTab({
 
       {view === 'ejercicios' && (
         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
+          {/* DEBUG: Log para trazar flujo de datos de Ejercicios */}
+          {console.debug('[Progreso DEBUG 2/2] Props de Ejercicios antes de renderizar:', {
+            tiposBloque: {
+              total: tiposBloque.length,
+              camposEsperados: ['tipo', 'tiempoReal', 'count', 'tiempoMedio'],
+              camposReales: tiposBloque[0] ? Object.keys(tiposBloque[0]) : 'N/A',
+              sample: tiposBloque[0] || 'N/A',
+            },
+            topEjercicios: {
+              total: topEjercicios.length,
+              camposEsperados: ['code', 'nombre', 'tipo', 'tiempoTotal', 'sesionesCount', 'ultimaPractica'],
+              camposReales: topEjercicios[0] ? Object.keys(topEjercicios[0]) : 'N/A',
+              sample: topEjercicios[0] || 'N/A',
+            },
+          })}
           {/* 1. Tipos de Bloque */}
           <TiposBloquesTab tiposBloques={tiposBloque} />
 

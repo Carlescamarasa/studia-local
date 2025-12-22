@@ -80,7 +80,7 @@ export default function ProgresoPorPieza({ progresoPorPieza }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="w-full overflow-x-auto -mx-2 px-2">
+          <div className="w-full">
             <ResponsiveContainer width="100%" height={isMobile ? 250 : 350}>
               <BarChart data={datosGrafico} margin={{ top: 5, right: isMobile ? 5 : 20, left: isMobile ? -10 : 0, bottom: isMobile ? 60 : 40 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
