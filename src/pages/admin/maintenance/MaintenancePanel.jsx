@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Settings, ScrollText, Music, Calendar, Layers, Target, MessageSquare, Activity, PlayCircle, Users } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Settings, ScrollText, Music, Calendar, Layers, Target, MessageSquare, Activity, PlayCircle, Users, Shield } from 'lucide-react';
 import { localDataClient } from '@/api/localDataClient';
-import { supabase } from '@/lib/supabaseClient';
-import { Shield } from 'lucide-react';
 import { Card, CardContent } from '@/components/ds';
 import { useEffectiveUser } from '@/components/utils/helpers';
 import PageHeader from '@/components/ds/PageHeader';
@@ -13,19 +11,12 @@ import TestsPanel from './TestsPanel';
 import LogsDrawer from './LogsDrawer';
 import { Button } from '@/components/ds/Button';
 
-// Import seed functions from original testseed.jsx
-// These will be extracted later for better organization
-import TestSeedPage from '@/pages/testseed';
-
 /**
  * MaintenancePanel - Main orchestrator for Seeds and Tests
  */
 export default function MaintenancePanel({ embedded = false }) {
-    const queryClient = useQueryClient();
     const [mode, setMode] = useState('seeds'); // 'seeds' | 'tests'
-    const [isSeeding, setIsSeeding] = useState(false);
     const [seedLogs, setSeedLogs] = useState([]);
-    const [isRefreshing, setIsRefreshing] = useState(false);
     const [logsDrawerOpen, setLogsDrawerOpen] = useState(false);
 
     const effectiveUser = useEffectiveUser();
