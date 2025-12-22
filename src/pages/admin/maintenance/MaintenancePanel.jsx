@@ -54,28 +54,7 @@ export default function MaintenancePanel({ embedded = false }) {
 
     const clearLogs = () => setSeedLogs([]);
 
-    // Placeholder functions - these will call the actual implementations from testseed.jsx
-    // For now, we'll show a message that the full implementation is pending
-    const handleCreateUsers = async () => {
-        addLog('Creating test users...', 'info');
-        // TODO: Extract crearUsuariosPrueba from testseed.jsx
-        addLog('⚠️ Full implementation pending - will be extracted from testseed.jsx', 'warning');
-    };
 
-    const handleGenerateSeeds = async (numSemanas, fechaInicio = null, fechaFin = null) => {
-        addLog(`Generating seeds: ${numSemanas || 'date range'}...`, 'info');
-        // TODO: Extract generarSemillasRealistas from testseed.jsx
-        addLog('⚠️ Full implementation pending - will be extracted from testseed.jsx', 'warning');
-    };
-
-    const handleDeleteSeeds = async () => {
-        if (!window.confirm('¿Estás seguro de que quieres borrar todas las semillas?')) {
-            return;
-        }
-        addLog('Deleting seeds...', 'info');
-        // TODO: Extract borrarSemillas from testseed.jsx
-        addLog('⚠️ Full implementation pending - will be extracted from testseed.jsx', 'warning');
-    };
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
@@ -222,15 +201,7 @@ export default function MaintenancePanel({ embedded = false }) {
 
                 {/* Content based on mode */}
                 {mode === 'seeds' ? (
-                    <SeedsPanel
-                        isSeeding={isSeeding}
-                        isRefreshing={isRefreshing}
-                        onCreateUsers={handleCreateUsers}
-                        onGenerateSeeds={handleGenerateSeeds}
-                        onDeleteSeeds={handleDeleteSeeds}
-                        onRefresh={handleRefresh}
-                        addLog={addLog}
-                    />
+                    <SeedsPanel addLog={addLog} />
                 ) : (
                     <TestsPanel
                         onRunTest={handleRunTest}
