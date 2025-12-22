@@ -1,15 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { listErrorReports } from '@/api/errorReportsAPI';
-import { useAuth } from '@/auth/AuthProvider';
-import { getEffectiveRole } from '@/components/utils/helpers';
+import { useEffectiveUser } from '@/providers/EffectiveUserProvider';
 
 /**
  * Hook para obtener los conteos de reportes de errores
  * Solo funciona para usuarios ADMIN
+ * 
+ * NOTA: Usa realRole (no effectiveRole) porque los badges de admin
+ * deben seguir funcionando durante impersonation
  */
 export function useErrorReportsCount() {
-  const { user, appRole } = useAuth();
-  const userRole = getEffectiveRole({ appRole, currentUser: null }) || null;
+  const { realRole, realUserId } = useEffectiveUser();
+  const userRole = realRole; // Admin badges usan rol real
 
   const { data: reportCounts, isLoading } = useQuery({
     queryKey: ['error-reports-counts'],
@@ -50,7 +52,7 @@ export function useErrorReportsCount() {
         return { nuevos: 0, enRevision: 0 };
       }
     },
-    enabled: Boolean(userRole) && userRole === 'ADMIN' && Boolean(user),
+    enabled: Boolean(userRole) && userRole === 'ADMIN' && Boolean(realUserId),
     refetchInterval: 5 * 60 * 1000, // 5 min (was 30s)
     staleTime: 2 * 60 * 1000,       // 2 min cache
     retry: false,

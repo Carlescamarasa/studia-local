@@ -11,7 +11,8 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import RequireRole from "@/components/auth/RequireRole";
 import UnifiedTable from "@/components/tables/UnifiedTable";
-import { getNombreVisible, useEffectiveUser } from "../components/utils/helpers";
+import { getNombreVisible } from "../components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
@@ -21,7 +22,7 @@ import FormField from "@/components/ds/FormField";
 import { InviteUserModal } from "@/pages/auth/components/InviteUserModal";
 import { useUserActions } from "@/pages/auth/hooks/useUserActions";
 import { inviteUserByEmail, sendPasswordResetAdmin } from "@/api/userAdmin";
-import { Mail, KeyRound, UserPlus as UserPlusIcon, User, Target, Send, Eye, BarChart3, Pause, Play, MoreVertical, Users as UsersIcon, Trash2, Pencil } from "lucide-react";
+import { Mail, KeyRound, UserPlus as UserPlusIcon, User, Target, Send, Eye, BarChart3, Pause, Play, MoreVertical, Users as UsersIcon, Trash2, Pencil, UserCheck } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import {
   Dialog,
@@ -70,7 +71,7 @@ function UsuariosPageContent() {
   const [userToDelete, setUserToDelete] = useState(null);
   const [bulkUsersToDelete, setBulkUsersToDelete] = useState([]);
 
-  const effectiveUser = useEffectiveUser();
+  const { effectiveRole, effectiveUserId, realRole, realUserId, startImpersonation } = useEffectiveUser();
   const { sendMagicLink, sendResetPassword, resendInvitation, isLoading: isActionLoading } = useUserActions();
 
   const { data: usuarios = [], isLoading } = useQuery({
@@ -449,7 +450,7 @@ function UsuariosPageContent() {
     },
   ];
 
-  const isAdminOrProf = effectiveUser?.rolPersonalizado === 'ADMIN' || effectiveUser?.rolPersonalizado === 'PROF';
+  const isAdminOrProf = effectiveRole === 'ADMIN' || effectiveRole === 'PROF';
 
   return (
     <div className="min-h-screen bg-background">
@@ -654,14 +655,14 @@ function UsuariosPageContent() {
                   },
                 },
                 // Acción para eliminar usuarios (solo ADMIN, no permitir eliminar a sí mismo)
-                ...(effectiveUser?.rolPersonalizado === 'ADMIN' ? [{
+                ...(realRole === 'ADMIN' ? [{
                   id: 'delete_bulk',
                   label: 'Eliminar usuarios',
                   icon: Trash2,
                   onClick: (ids) => {
                     const usuariosSeleccionados = usuariosFiltrados.filter(u => ids.includes(u.id));
                     // Filtrar para no permitir eliminar al usuario actual
-                    const usuariosAEliminar = usuariosSeleccionados.filter(u => u.id !== effectiveUser?.id);
+                    const usuariosAEliminar = usuariosSeleccionados.filter(u => u.id !== realUserId);
 
                     if (usuariosAEliminar.length === 0) {
                       toast.error('No puedes eliminar tu propia cuenta');
@@ -841,7 +842,7 @@ function UsuariosPageContent() {
                 });
 
                 // Acción para eliminar usuario (solo ADMIN, no permitir eliminar a sí mismo)
-                if (effectiveUser?.rolPersonalizado === 'ADMIN' && u.id !== effectiveUser?.id) {
+                if (realRole === 'ADMIN' && u.id !== realUserId) {
                   actions.push({
                     id: 'delete_user',
                     label: 'Eliminar usuario',
@@ -849,6 +850,21 @@ function UsuariosPageContent() {
                     onClick: () => {
                       setUserToDelete(u);
                       setIsDeleteUserDialogOpen(true);
+                    },
+                  });
+                }
+
+                // Acción "Ver como..." (solo ADMIN, no sí mismo)
+                if (realRole === 'ADMIN' && u.id !== realUserId) {
+                  actions.push({
+                    id: 'impersonate',
+                    label: 'Ver como...',
+                    icon: <UserCheck className="w-4 h-4" />,
+                    onClick: () => {
+                      const userName = getNombreVisible(u);
+                      const userRole = u.rolPersonalizado || 'ESTU';
+                      startImpersonation(u.id, userRole, userName, u.email);
+                      toast.success(`Ahora ves la app como ${userName} (${userRole})`);
                     },
                   });
                 }

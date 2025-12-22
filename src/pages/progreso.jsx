@@ -17,7 +17,8 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
-import { useEffectiveUser, resolveUserIdActual, displayName } from "@/components/utils/helpers";
+import { resolveUserIdActual, displayName } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { formatLocalDate, parseLocalDate, startOfMonday, formatDuracionHM, formatDurationDDHHMM } from "@/components/estadisticas/utils";
 import { chooseBucket } from "@/components/estadisticas/chartHelpers";
 import { useEstadisticas, safeNumber } from "@/components/estadisticas/hooks/useEstadisticas";
@@ -120,11 +121,13 @@ function ProgresoPageContent() {
         return VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'resumen';
     });
 
-    // User and role detection
-    const effectiveUser = useEffectiveUser();
-    const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
-    const isProf = effectiveUser?.rolPersonalizado === 'PROF';
-    const isEstu = effectiveUser?.rolPersonalizado === 'ESTU';
+    // User and role detection - use effectiveRole from new provider for impersonation
+    const { effectiveUserId, effectiveEmail, effectiveRole, isImpersonating } = useEffectiveUser();
+    // Objeto para compatibilidad con código existente
+    const effectiveUser = { id: effectiveUserId, email: effectiveEmail, rolPersonalizado: effectiveRole };
+    const isAdmin = effectiveRole === 'ADMIN';
+    const isProf = effectiveRole === 'PROF';
+    const isEstu = effectiveRole === 'ESTU';
 
     // Date range state
     // Date range state
