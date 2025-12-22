@@ -1,7 +1,8 @@
 import React, { Suspense, lazy } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useSearchParams, useLocation } from "react-router-dom";
 import RequireAuth from "@/components/auth/RequireAuth";
 import PublicRoute from "@/components/auth/PublicRoute";
+import { useAuth } from "@/auth/AuthProvider";
 
 // Lazy load de páginas para code-splitting
 const IndexPage = lazy(() => import("@/pages/index.jsx"));
@@ -15,7 +16,6 @@ const Semanas = lazy(() => import("@/pages/semanas.jsx"));
 const AsignacionDetalle = lazy(() => import("@/pages/asignacion-detalle.jsx"));
 const AdaptarAsignacion = lazy(() => import("@/pages/adaptar-asignacion.jsx"));
 const Hoy = lazy(() => import("@/pages/hoy.jsx"));
-const Agenda = lazy(() => import("@/pages/agenda.jsx"));
 const Perfil = lazy(() => import("@/pages/perfil.jsx"));
 const ImportExport = lazy(() => import("@/pages/import-export.jsx")); // Still used in redirect? No, redirect goes to config?tab=import. The page itself is likely used inside Config tabs or not. Layout says Config uses ImportExportContent.  Actually ImportExport page might be different from Content. Let's check config imports. 
 // Config page imports: import ImportExportContent from "./ImportExportContent". 
@@ -46,7 +46,7 @@ const StudiaConceptPage = lazy(() => import("@/pages/StudiaConceptPage.jsx"));
 const MochilaPage = lazy(() => import("@/pages/MochilaPage.jsx"));
 const Progreso = lazy(() => import("@/pages/progreso.jsx"));
 const Cuaderno = lazy(() => import("@/pages/cuaderno.jsx"));
-const Preparacion = lazy(() => import("@/pages/preparacion.jsx"));
+// Legacy: Preparacion removed, now redirects to Cuaderno
 const Configuracion = lazy(() => import("@/pages/admin/configuracion.jsx"));
 const Studia = lazy(() => import("@/pages/studia.jsx"));
 const NotFound = lazy(() => import("@/pages/NotFound.jsx"));
@@ -60,6 +60,46 @@ const PageLoader = () => (
     </div>
   </div>
 );
+
+/**
+ * Redirect legacy routes (/agenda, /preparacion, /estudiantes, /asignaciones) to /cuaderno
+ * Preserves query params: semana, alumnoId, tab
+ */
+function RedirectToCuaderno() {
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+
+  const role = user?.rolPersonalizado;
+  const isProfOrAdmin = role === 'PROF' || role === 'ADMIN';
+
+  if (!isProfOrAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  // Build cuaderno URL preserving relevant params
+  const newParams = new URLSearchParams();
+
+  // Preserve semana param
+  if (searchParams.has('semana')) {
+    newParams.set('semana', searchParams.get('semana'));
+  }
+
+  // Preserve alumnoId/studentId
+  const alumnoId = searchParams.get('alumnoId') || searchParams.get('studentId');
+  if (alumnoId) {
+    newParams.set('alumnoId', alumnoId);
+  }
+
+  // Map tab from preparacion if exists
+  if (searchParams.has('tab')) {
+    newParams.set('tab', searchParams.get('tab'));
+  }
+
+  const queryString = newParams.toString();
+  const targetUrl = `/cuaderno${queryString ? `?${queryString}` : ''}`;
+
+  return <Navigate to={targetUrl} replace />;
+}
 
 export default function AppRouter() {
   return (
@@ -108,14 +148,13 @@ export default function AppRouter() {
           <Route path="sesiones" element={<Sesiones />} />
           <Route path="semana" element={<Semana />} />
           <Route path="semanas" element={<Semanas />} />
-          <Route path="asignaciones" element={<Navigate to="/preparacion?tab=asignaciones" replace />} />
           <Route path="asignacion-detalle" element={<AsignacionDetalle />} />
           <Route path="adaptar-asignacion" element={<AdaptarAsignacion />} />
           <Route path="hoy" element={<Hoy />} />
-          <Route path="agenda" element={<Agenda />} />
+          <Route path="agenda" element={<RedirectToCuaderno />} />
           <Route path="perfil" element={<Perfil />} />
 
-          <Route path="estudiantes" element={<Navigate to="/preparacion" replace />} />
+          <Route path="estudiantes" element={<RedirectToCuaderno />} />
           <Route path="calendario" element={<Calendario />} />
           <Route path="biblioteca" element={<Biblioteca />} />
           <Route path="test-loading" element={<TestLoading />} />
@@ -128,7 +167,8 @@ export default function AppRouter() {
           <Route path="ayuda" element={<Ayuda />} />
           <Route path="mochila" element={<MochilaPage />} />
           <Route path="cuaderno" element={<Cuaderno />} />
-          <Route path="preparacion" element={<Preparacion />} />
+          <Route path="preparacion" element={<RedirectToCuaderno />} />
+          <Route path="asignaciones" element={<RedirectToCuaderno />} />
 
           {/* Canonical Routes */}
           <Route path="progreso" element={<Progreso />} />

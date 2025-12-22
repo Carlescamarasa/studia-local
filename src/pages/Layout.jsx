@@ -72,24 +72,20 @@ import HardcodeInspector from "@/components/design/HardcodeInspector";
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
   ADMIN: [
-    { title: "Agenda", url: ROUTES.AGENDA, icon: Calendar, group: "Docencia" },
     { title: "Progreso", url: toProgreso('resumen'), icon: Activity, group: "Docencia" },
     { title: "Tickets alumnos", url: ROUTES.SOPORTE_PROF, icon: MessageSquare, group: "Docencia" },
     { title: "Calendario", url: ROUTES.CALENDARIO, icon: Calendar, group: "Docencia" },
     { title: "Usuarios", url: ROUTES.USUARIOS, icon: Users, group: "Gestión" },
     { title: "Cuaderno", url: ROUTES.CUADERNO, icon: Notebook, group: "Gestión" },
-    { title: "Preparación", url: ROUTES.PREPARACION, icon: Target, group: "Gestión" },
     { title: "Biblioteca", url: ROUTES.BIBLIOTECA, icon: Edit3, group: "Gestión" },
     { title: "Reportes", url: ROUTES.REPORTES, icon: Bug, group: "Sistema" },
     { title: "Configuración", url: toConfiguracion('version'), icon: Settings, group: "Sistema" },
   ],
   PROF: [
-    { title: "Agenda", url: ROUTES.AGENDA, icon: Calendar, group: "Docencia" },
     { title: "Progreso", url: toProgreso('resumen'), icon: Activity, group: "Docencia" },
     { title: "Tickets alumnos", url: ROUTES.SOPORTE_PROF, icon: MessageSquare, group: "Docencia" },
     { title: "Calendario", url: ROUTES.CALENDARIO, icon: Calendar, group: "Docencia" },
     { title: "Cuaderno", url: ROUTES.CUADERNO, icon: Notebook, group: "Gestión" },
-    { title: "Preparación", url: ROUTES.PREPARACION, icon: Target, group: "Gestión" },
     { title: "Biblioteca", url: ROUTES.BIBLIOTECA, icon: Edit3, group: "Gestión" },
   ],
   ESTU: [
@@ -102,7 +98,7 @@ const navigationByRole = {
 
 const mainPageByRole = {
   ADMIN: "/usuarios",
-  PROF: "/agenda",
+  PROF: "/cuaderno",
   ESTU: "/hoy",
 };
 
@@ -495,12 +491,8 @@ function LayoutContent() {
   const pagePermissions = {
     [ROUTES.USUARIOS]: ['ADMIN'],
     [ROUTES.REPORTES]: ['PROF', 'ADMIN'],
-    [ROUTES.ESTUDIANTES]: ['PROF', 'ADMIN'],
-    [ROUTES.ASIGNACIONES]: ['PROF', 'ADMIN'],
     [ROUTES.CUADERNO]: ['PROF', 'ADMIN'],
-    [ROUTES.PREPARACION]: ['PROF', 'ADMIN'],
     [ROUTES.BIBLIOTECA]: ['PROF', 'ADMIN'],
-    [ROUTES.AGENDA]: ['PROF', 'ADMIN'],
     [ROUTES.CALENDARIO]: ['ESTU', 'PROF', 'ADMIN'],
     [ROUTES.HOY]: ['ESTU'],
     '/semana': ['ESTU'], // Not in ROUTES yet but fine
