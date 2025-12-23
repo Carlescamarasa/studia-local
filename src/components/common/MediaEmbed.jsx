@@ -1,16 +1,18 @@
 import React from 'react';
 import { resolveMedia, MediaKind } from '../utils/media';
-import { 
-  Youtube, 
-  Music, 
-  FileAudio, 
-  FileVideo, 
-  Image as ImageIcon, 
-  FileText, 
+import {
+  Youtube,
+  Music,
+  FileAudio,
+  FileVideo,
+  Image as ImageIcon,
+  FileText,
   Link as LinkIcon,
   ExternalLink
 } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
+import SimpleLightbox from './SimpleLightbox';
+import { useState } from 'react';
 
 /**
  * Componente que renderiza un medio embebido según su tipo
@@ -18,7 +20,8 @@ import AudioPlayer from './AudioPlayer';
  */
 export default function MediaEmbed({ url, className = '', open = false }) {
   const media = resolveMedia(url);
-  
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
   const baseIframeProps = {
     loading: 'lazy',
     sandbox: 'allow-scripts allow-same-origin allow-popups allow-presentation',
@@ -122,14 +125,25 @@ export default function MediaEmbed({ url, className = '', open = false }) {
 
     case MediaKind.IMAGE:
       return (
-        <div className={`w-full bg-[var(--color-surface-muted)] rounded-lg overflow-hidden ${className}`}>
-          <img
+        <>
+          <div
+            className={`w-full bg-[var(--color-surface-muted)] rounded-lg overflow-hidden cursor-zoom-in hover:brightness-95 transition-all ${className}`}
+            onClick={() => setLightboxOpen(true)}
+          >
+            <img
+              src={media.embedUrl}
+              alt={media.title}
+              className="w-full h-auto object-contain max-h-[600px]"
+              loading="lazy"
+            />
+          </div>
+          <SimpleLightbox
+            open={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
             src={media.embedUrl}
             alt={media.title}
-            className="w-full h-auto object-contain max-h-[600px]"
-            loading="lazy"
           />
-        </div>
+        </>
       );
 
     case MediaKind.PDF:
@@ -175,9 +189,9 @@ export default function MediaEmbed({ url, className = '', open = false }) {
  */
 export function MediaIcon({ url, className = '' }) {
   const media = resolveMedia(url);
-  
+
   const iconClass = `${className}`;
-  
+
   switch (media.kind) {
     case MediaKind.YOUTUBE:
       return <Youtube className={iconClass} />;
@@ -205,7 +219,7 @@ export function MediaIcon({ url, className = '' }) {
  */
 export function getMediaLabel(url) {
   const media = resolveMedia(url);
-  
+
   const labels = {
     [MediaKind.YOUTUBE]: 'YouTube',
     [MediaKind.VIMEO]: 'Vimeo',
@@ -217,6 +231,6 @@ export function getMediaLabel(url) {
     [MediaKind.PDF]: 'PDF',
     [MediaKind.UNKNOWN]: 'Enlace',
   };
-  
+
   return labels[media.kind] || 'Enlace';
 }
