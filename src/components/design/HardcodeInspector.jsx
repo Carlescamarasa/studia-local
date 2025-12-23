@@ -244,7 +244,7 @@ function clearHighlights() {
 // MAIN COMPONENT
 // ============================================================================
 
-export function HardcodeInspector() {
+export function HardcodeInspector({ showToggleButton = true }) {
     const [isEnabled, setIsEnabled] = useState(() => {
         try {
             return sessionStorage.getItem(STORAGE_KEY) === 'true';
@@ -294,6 +294,13 @@ export function HardcodeInspector() {
             setPanelPosition({ x: null, y: null }); // Reset position when disabled
         }
     }, [isEnabled]);
+
+    // Listen for external toggle events (e.g. from sidebar)
+    useEffect(() => {
+        const handleToggle = () => setIsEnabled(prev => !prev);
+        window.addEventListener('toggle-hardcode-inspector', handleToggle);
+        return () => window.removeEventListener('toggle-hardcode-inspector', handleToggle);
+    }, []);
 
     // Drag handlers
     const handleMouseDown = useCallback((e) => {
@@ -521,7 +528,7 @@ export function HardcodeInspector() {
     const tailwindCount = useMemo(() => results.filter(r => r.type === 'tailwind').length, [results]);
 
     // Toggle button - matches ReportErrorButton styling, positioned above it
-    const toggleButton = (
+    const toggleButton = !showToggleButton ? null : (
         <button
             onClick={() => setIsEnabled(!isEnabled)}
             className={`

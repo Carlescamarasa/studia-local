@@ -66,6 +66,8 @@ import {
     Film,
     Sun,
     Moon,
+    Bug,
+    Keyboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -1051,11 +1053,20 @@ function StudiaPageContent() {
                             </h1>
                         </div>
                         <div className="page-header-actions">
+                            <Button
+                                variant="default"
+                                size="sm"
+                                className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white border-0 shadow-sm"
+                                onClick={() => window.dispatchEvent(new CustomEvent('open-error-report', { detail: {} }))}
+                                title="Reportar error"
+                            >
+                                <Bug className="w-5 h-5 sm:w-4 sm:h-4" />
+                            </Button>
                             <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl" onClick={() => setMostrarItinerario(true)}>
                                 <List className="w-5 h-5 sm:w-4 sm:h-4" />
                             </Button>
-                            <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl" onClick={() => setShowHotkeysModal(true)}>
-                                <HelpCircle className="w-5 h-5 sm:w-4 sm:h-4" />
+                            <Button variant="ghost" size="sm" className="hidden lg:inline-flex h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl" onClick={() => setShowHotkeysModal(true)}>
+                                <Keyboard className="w-5 h-5 sm:w-4 sm:h-4" />
                             </Button>
                             <Button
                                 variant="ghost"
