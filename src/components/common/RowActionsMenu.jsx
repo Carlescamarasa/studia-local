@@ -32,17 +32,32 @@ export default function RowActionsMenu({ actions = [] }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        {actions.map((action, index) => (
-          <DropdownMenuItem
-            key={action.id || index}
-            onClick={action.onClick}
-            disabled={action.disabled}
-            className="cursor-pointer focus-brand"
-          >
-            {action.icon && <span className="mr-2">{action.icon}</span>}
-            {action.label}
-          </DropdownMenuItem>
-        ))}
+        {actions.map((action, index) => {
+          // Handle icon as either a component reference (including forwardRef) or a rendered element
+          const IconComponent = action.icon;
+          let iconElement = null;
+          if (IconComponent) {
+            if (React.isValidElement(IconComponent)) {
+              // Already a rendered element, use as-is
+              iconElement = IconComponent;
+            } else {
+              // Component reference (function or forwardRef object), render it
+              iconElement = <IconComponent className="h-4 w-4" />;
+            }
+          }
+
+          return (
+            <DropdownMenuItem
+              key={action.id || index}
+              onClick={action.onClick}
+              disabled={action.disabled}
+              className="cursor-pointer focus-brand"
+            >
+              {iconElement && <span className="mr-2">{iconElement}</span>}
+              {action.label}
+            </DropdownMenuItem>
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );
