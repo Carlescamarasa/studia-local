@@ -6,12 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import UnifiedTable from '@/components/tables/UnifiedTable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Loader2, Plus, Trash2, Save, ArrowRight, Copy, Check, AlertCircle, X, ArrowLeftRight, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose } from '@/components/ui/drawer';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -26,7 +28,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Info, ChevronDown } from "lucide-react"
+import { Info, ChevronDown, Pencil } from "lucide-react"
 
 export default function LevelConfigView() {
     const [loading, setLoading] = useState(true);
@@ -37,6 +39,23 @@ export default function LevelConfigView() {
     const [importModalOpen, setImportModalOpen] = useState(false);
     const [importCandidates, setImportCandidates] = useState([]);
     const [selectedImportIds, setSelectedImportIds] = useState([]);
+
+    // Modal edit states for criteria
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editingCriteria, setEditingCriteria] = useState(null);
+    const [editDraft, setEditDraft] = useState({ skill: '', source: '', description: '', required: false });
+
+    // Responsive state: <1024 uses Drawer, >=1024 uses Dialog
+    const [isDrawerMode, setIsDrawerMode] = useState(false);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsDrawerMode(window.innerWidth < 1024);
+        };
+        handleResize(); // Initial check
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         loadData();
@@ -147,6 +166,30 @@ export default function LevelConfigView() {
         }
     };
 
+    // Modal edit handlers
+    const openCriteriaModal = (criterio) => {
+        setEditingCriteria(criterio);
+        setEditDraft({
+            skill: criterio.skill || '',
+            source: criterio.source || '',
+            description: criterio.description || '',
+            required: criterio.required || false
+        });
+        setEditModalOpen(true);
+    };
+
+    const saveCriteriaDraft = async () => {
+        if (editingCriteria) {
+            await updateCriteria(editingCriteria.id, editDraft);
+            setEditModalOpen(false);
+            setEditingCriteria(null);
+        }
+    };
+
+    const cancelCriteriaEdit = () => {
+        setEditModalOpen(false);
+        setEditingCriteria(null);
+    };
 
 
     const normalizeText = (text) => {
@@ -334,13 +377,15 @@ export default function LevelConfigView() {
 
 
 
-            <div className="flex items-center justify-between mb-6 bg-muted/20 p-4 rounded-lg border">
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
+            {/* Header toolbar - responsive layout */}
+            <div className="flex flex-wrap items-center gap-3 mb-6 bg-muted/20 p-3 sm:p-4 rounded-lg border">
+                {/* Level selector group - stacks on mobile */}
+                <div className="flex flex-col xs:flex-row items-start xs:items-center gap-2 min-w-0 w-full xs:w-auto">
+                    <div className="flex items-center gap-2 min-w-0">
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help transition-colors" />
+                                    <Info className="w-4 h-4 flex-shrink-0 text-muted-foreground hover:text-foreground cursor-help transition-colors" />
                                 </TooltipTrigger>
                                 <TooltipContent align="start" className="max-w-[320px] p-4">
                                     <h4 className="font-semibold mb-2 text-sm">Cómo funciona el sistema de niveles</h4>
@@ -352,9 +397,9 @@ export default function LevelConfigView() {
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
-                        <Label className="text-muted-foreground">Configurando:</Label>
+                        <Label className="text-muted-foreground whitespace-nowrap text-sm">Configurando:</Label>
                         <Select value={activeLevel} onValueChange={setActiveLevel}>
-                            <SelectTrigger className="w-[140px] font-medium bg-background">
+                            <SelectTrigger className="w-auto min-w-[100px] max-w-[140px] font-medium bg-background text-sm">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -365,41 +410,49 @@ export default function LevelConfigView() {
                         </Select>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                        <Badge variant="outline" className="bg-background">
+                    {/* Objective badge - wraps on narrow screens */}
+                    <div className="flex items-center gap-2 min-w-0">
+                        <ArrowRight className="w-4 h-4 flex-shrink-0 text-muted-foreground hidden xs:block" />
+                        <Badge variant="outline" className="bg-background text-xs whitespace-nowrap overflow-hidden text-ellipsis">
                             {objectiveLabel}
                         </Badge>
                     </div>
 
                     {currentLevelNum === 1 && (
-                        <span className="text-xs text-muted-foreground italic ml-2">
+                        <span className="text-xs text-muted-foreground italic hidden sm:inline">
                             (En Nivel 1 se empieza con 0 XP)
                         </span>
                     )}
-
-                    <div className="h-6 w-px bg-border mx-2" />
-
-                    <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v)}>
-                        <ToggleGroupItem value="edit" aria-label="Editar">
-                            Editar
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="compare" aria-label="Comparar">
-                            <ArrowLeftRight className="w-4 h-4 mr-2" />
-                            Comparar
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="matrix" aria-label="Vista General">
-                            Vista General
-                        </ToggleGroupItem>
-                    </ToggleGroup>
                 </div>
 
-                {viewMode === 'edit' && parseInt(activeLevel) > 1 && (
-                    <Button variant="outline" size="sm" onClick={prepareImport}>
-                        <Download className="w-4 h-4 mr-2" />
-                        Importar del Nivel {parseInt(activeLevel) - 1}
-                    </Button>
-                )}
+                {/* Divider - hidden on mobile */}
+                <div className="hidden sm:block h-6 w-px bg-border" />
+
+                {/* Action buttons group - wraps to new row on mobile */}
+                <div className="flex flex-wrap items-center gap-2 w-full xs:w-auto">
+                    <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v)} className="flex-wrap">
+                        <ToggleGroupItem value="edit" aria-label="Editar" className="text-xs sm:text-sm px-2 sm:px-3">
+                            Editar
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="compare" aria-label="Comparar" className="text-xs sm:text-sm px-2 sm:px-3">
+                            <ArrowLeftRight className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                            <span className="hidden xs:inline">Comparar</span>
+                            <span className="xs:hidden">Comp.</span>
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="matrix" aria-label="Vista General" className="text-xs sm:text-sm px-2 sm:px-3">
+                            <span className="hidden xs:inline">Vista General</span>
+                            <span className="xs:hidden">Vista</span>
+                        </ToggleGroupItem>
+                    </ToggleGroup>
+
+                    {viewMode === 'edit' && parseInt(activeLevel) > 1 && (
+                        <Button variant="outline" size="sm" onClick={prepareImport} className="text-xs sm:text-sm whitespace-nowrap ml-auto xs:ml-0">
+                            <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                            <span className="hidden sm:inline">Importar del Nivel {parseInt(activeLevel) - 1}</span>
+                            <span className="sm:hidden">Importar</span>
+                        </Button>
+                    )}
+                </div>
             </div>
 
 
@@ -667,10 +720,12 @@ export default function LevelConfigView() {
                     {/* XP Requirements */}
                     <Card>
                         <CardHeader>
-                            <CardTitle className="flex justify-between items-center">
-                                {isLastLevel ? `Requisitos de XP para completar Nivel ${currentLevelNum}` : `Requisitos de XP para ascender a Nivel ${nextLevelNum}`}
-                                <Button size="sm" onClick={() => saveLevelConfig(currentLevelConfig)}>
-                                    <Save className="w-4 h-4 mr-2" /> Guardar Configuración
+                            <CardTitle className="flex flex-wrap justify-between items-center gap-2">
+                                <span className="text-base">{isLastLevel ? `Requisitos de XP para completar Nivel ${currentLevelNum}` : `Requisitos de XP para ascender a Nivel ${nextLevelNum}`}</span>
+                                <Button size="sm" onClick={() => saveLevelConfig(currentLevelConfig)} className="text-xs sm:text-sm whitespace-nowrap">
+                                    <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                    <span className="hidden xs:inline">Guardar Configuración</span>
+                                    <span className="xs:hidden">Guardar</span>
                                 </Button>
                             </CardTitle>
                         </CardHeader>
@@ -707,91 +762,89 @@ export default function LevelConfigView() {
                     {/* Key Criteria */}
                     <Card>
                         <CardHeader>
-                            <CardTitle className="flex justify-between items-center">
-                                {isLastLevel ? `Requisitos para completar Nivel ${currentLevelNum}` : `Requisitos de ascenso (Criterios para Nivel ${nextLevelNum})`}
-                                <Button size="sm" variant="outline" onClick={() => addCriteria(parseInt(activeLevel))}>
-                                    <Plus className="w-4 h-4 mr-2" /> Añadir Criterio
+                            <CardTitle className="flex flex-wrap justify-between items-center gap-2">
+                                <span className="text-base">{isLastLevel ? `Requisitos para completar Nivel ${currentLevelNum}` : `Requisitos de ascenso (Criterios para Nivel ${nextLevelNum})`}</span>
+                                <Button size="sm" variant="outline" onClick={() => addCriteria(parseInt(activeLevel))} className="text-xs sm:text-sm whitespace-nowrap">
+                                    <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                    <span className="hidden xs:inline">Añadir Criterio</span>
+                                    <span className="xs:hidden">Añadir</span>
                                 </Button>
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="ui-table-shell">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Habilidad</TableHead>
-                                            <TableHead>Fuente</TableHead>
-                                            <TableHead>Descripción</TableHead>
-                                            <TableHead>Obligatorio</TableHead>
-                                            <TableHead>Acciones</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {currentCriteria.length === 0 && (
-                                            <TableRow>
-                                                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                                                    No hay criterios definidos para este nivel.
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                        {currentCriteria.map(c => (
-                                            <TableRow key={c.id}>
-                                                <TableCell>
-                                                    <Select
-                                                        value={c.skill}
-                                                        onValueChange={val => updateCriteria(c.id, { skill: val })}
-                                                    >
-                                                        <SelectTrigger className="w-[140px]">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {['Flexibilidad', 'Motricidad', 'Articulación', 'Sonido', 'Cognición'].map(s => (
-                                                                <SelectItem key={s} value={s}>{s}</SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Select
-                                                        value={c.source}
-                                                        onValueChange={val => updateCriteria(c.id, { source: val })}
-                                                    >
-                                                        <SelectTrigger className="w-[120px]">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="PROF">Profesor</SelectItem>
-                                                            <SelectItem value="PRACTICA">Práctica</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Input
-                                                        value={c.description}
-                                                        onChange={e => updateCriteria(c.id, { description: e.target.value })}
-                                                    />
-                                                    {c.description && c.description.includes('#') && (
-                                                        <div className="mt-1">
-                                                            {renderDescriptionWithTags(c.description)}
-                                                        </div>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Switch
-                                                        checked={c.required}
-                                                        onCheckedChange={val => updateCriteria(c.id, { required: val })}
-                                                    />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Button variant="ghost" size="icon" onClick={() => deleteCriteria(c.id)}>
-                                                        <Trash2 className="w-4 h-4 text-destructive" />
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
+                            <UnifiedTable
+                                data={currentCriteria}
+                                keyField="id"
+                                emptyMessage="No hay criterios definidos para este nivel."
+                                paginated={false}
+                                onRowClick={(item) => openCriteriaModal(item)}
+                                columns={[
+                                    {
+                                        key: 'skill',
+                                        label: 'Habilidad',
+                                        mobileIsPrimary: true,
+                                        render: (item) => (
+                                            <span className="font-medium">{item.skill}</span>
+                                        )
+                                    },
+                                    {
+                                        key: 'source',
+                                        label: 'Fuente',
+                                        mobileLabel: 'Fuente',
+                                        render: (item) => (
+                                            <span className="text-sm">
+                                                {item.source === 'PROF' ? 'Profesor' : 'Práctica'}
+                                            </span>
+                                        )
+                                    },
+                                    {
+                                        key: 'required',
+                                        label: 'Obligatorio',
+                                        mobileLabel: 'Oblig.',
+                                        render: (item) => (
+                                            <span className={`text-sm ${item.required ? 'text-[var(--color-primary)] font-medium' : 'text-muted-foreground'}`}>
+                                                {item.required ? 'Sí' : 'No'}
+                                            </span>
+                                        )
+                                    },
+                                    {
+                                        key: 'actions',
+                                        label: 'Acciones',
+                                        mobileLabel: '',
+                                        render: (item) => (
+                                            <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} className="flex items-center justify-end gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => openCriteriaModal(item)}
+                                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => deleteCriteria(item.id)}
+                                                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        )
+                                    },
+                                    {
+                                        key: 'description',
+                                        label: 'Descripción',
+                                        mobileLabel: 'Desc.',
+                                        mobileFullRow: true,
+                                        render: (item) => (
+                                            <span className="text-sm text-muted-foreground truncate">
+                                                {item.description || '—'}
+                                            </span>
+                                        )
+                                    }
+                                ]}
+                            />
                         </CardContent>
                     </Card>
                 </div>
@@ -854,6 +907,164 @@ export default function LevelConfigView() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Edit Criteria Modal - Drawer on mobile, Dialog on desktop */}
+            {isDrawerMode ? (
+                <Drawer open={editModalOpen} onOpenChange={setEditModalOpen}>
+                    <DrawerContent className="flex flex-col rounded-t-xl bg-[var(--color-surface-card)] max-h-[85vh]">
+                        <DrawerHeader className="border-b border-[var(--color-border-default)] pb-4">
+                            <div className="flex items-center justify-between">
+                                <DrawerTitle className="text-base font-semibold">Editar Criterio</DrawerTitle>
+                                <DrawerClose asChild>
+                                    <button
+                                        onClick={cancelCriteriaEdit}
+                                        className="p-2 rounded-full hover:bg-[var(--color-surface-muted)] transition-colors"
+                                        aria-label="Cerrar"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </DrawerClose>
+                            </div>
+                            <DrawerDescription className="text-sm text-muted-foreground mt-1">
+                                Modifica los campos del criterio de ascenso.
+                            </DrawerDescription>
+                        </DrawerHeader>
+                        <div className="space-y-4 p-4 flex-1 overflow-y-auto">
+                            {/* Habilidad */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Habilidad</label>
+                                <Select
+                                    value={editDraft.skill}
+                                    onValueChange={(val) => setEditDraft(prev => ({ ...prev, skill: val }))}
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {['Flexibilidad', 'Motricidad', 'Articulación', 'Sonido', 'Cognición'].map(s => (
+                                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Fuente */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Fuente</label>
+                                <Select
+                                    value={editDraft.source}
+                                    onValueChange={(val) => setEditDraft(prev => ({ ...prev, source: val }))}
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="PROF">Profesor</SelectItem>
+                                        <SelectItem value="PRACTICA">Práctica</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Descripción */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Descripción</label>
+                                <Input
+                                    value={editDraft.description}
+                                    onChange={(e) => setEditDraft(prev => ({ ...prev, description: e.target.value }))}
+                                    placeholder="Descripción del criterio..."
+                                    className="w-full"
+                                />
+                            </div>
+
+                            {/* Obligatorio */}
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-medium">Obligatorio</label>
+                                <Switch
+                                    checked={editDraft.required}
+                                    onCheckedChange={(val) => setEditDraft(prev => ({ ...prev, required: val }))}
+                                />
+                            </div>
+                        </div>
+                        <DrawerFooter className="border-t border-[var(--color-border-default)] pt-4">
+                            <div className="flex gap-2 w-full">
+                                <Button variant="outline" onClick={cancelCriteriaEdit} className="flex-1">Cancelar</Button>
+                                <Button onClick={saveCriteriaDraft} className="flex-1">Guardar</Button>
+                            </div>
+                        </DrawerFooter>
+                    </DrawerContent>
+                </Drawer>
+            ) : (
+                <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+                    <DialogContent className="max-w-md" onClick={(e) => e.stopPropagation()}>
+                        <DialogHeader>
+                            <DialogTitle>Editar Criterio</DialogTitle>
+                            <DialogDescription>
+                                Modifica los campos del criterio de ascenso.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            {/* Habilidad */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Habilidad</label>
+                                <Select
+                                    value={editDraft.skill}
+                                    onValueChange={(val) => setEditDraft(prev => ({ ...prev, skill: val }))}
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {['Flexibilidad', 'Motricidad', 'Articulación', 'Sonido', 'Cognición'].map(s => (
+                                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Fuente */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Fuente</label>
+                                <Select
+                                    value={editDraft.source}
+                                    onValueChange={(val) => setEditDraft(prev => ({ ...prev, source: val }))}
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="PROF">Profesor</SelectItem>
+                                        <SelectItem value="PRACTICA">Práctica</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Descripción */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Descripción</label>
+                                <Input
+                                    value={editDraft.description}
+                                    onChange={(e) => setEditDraft(prev => ({ ...prev, description: e.target.value }))}
+                                    placeholder="Descripción del criterio..."
+                                    className="w-full"
+                                />
+                            </div>
+
+                            {/* Obligatorio */}
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-medium">Obligatorio</label>
+                                <Switch
+                                    checked={editDraft.required}
+                                    onCheckedChange={(val) => setEditDraft(prev => ({ ...prev, required: val }))}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={cancelCriteriaEdit}>Cancelar</Button>
+                            <Button onClick={saveCriteriaDraft}>Guardar</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            )}
         </div>
     );
 }

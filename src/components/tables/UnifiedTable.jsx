@@ -118,6 +118,7 @@ export default function UnifiedTable({
 
   // Verificar si solo hay una acción para todos los items (si es así, ocultar columna de acciones)
   // Pero solo ocultar si TODOS los items tienen exactamente 1 acción
+  // AND onRowClick is NOT defined (if onRowClick is defined, user wants explicit actions)
   let hasOnlyOneAction = false;
   let shouldHideActionsColumn = false;
 
@@ -128,9 +129,10 @@ export default function UnifiedTable({
       return actions.length;
     });
 
-    // Solo ocultar si TODOS los items tienen exactamente 1 acción
+    // Solo ocultar si TODOS los items tienen exactamente 1 acción AND no hay onRowClick
     hasOnlyOneAction = allActionsCounts.every(count => count === 1) && allActionsCounts[0] === 1;
-    shouldHideActionsColumn = hasOnlyOneAction;
+    // If onRowClick is defined, always show actions column (user wants explicit action buttons)
+    shouldHideActionsColumn = hasOnlyOneAction && !onRowClick;
   }
 
   // Preparar columnas para mobile: filtrar ocultas y determinar columna primaria
@@ -340,7 +342,7 @@ export default function UnifiedTable({
         </>
       ) : (
         <>
-          <div className="space-y-2">
+          <div className="space-y-2 w-full">
             {displayData.map((item) => {
               const actions = getRowActions ? getRowActions(item) : (rowActions ? rowActions(item) : []);
               const isSelected = selectedItems.has(item[keyField]);
@@ -381,7 +383,7 @@ export default function UnifiedTable({
                   ? col.render(item)
                   : rawValue;
 
-                return { label, value: displayValue, rawValue, key: col.key };
+                return { label, value: displayValue, rawValue, key: col.key, fullRow: col.mobileFullRow };
               }).filter(detail => {
                 // Si el render devuelve null o undefined, filtrar (no mostrar)
                 if (detail.value === null || detail.value === undefined) {
@@ -414,48 +416,53 @@ export default function UnifiedTable({
                 <div
                   key={item[keyField]}
                   className={cn(
-                    "ui-card w-full text-left",
-                    "bg-[var(--color-surface-default)]",
-                    "px-3 py-2 flex flex-col gap-1",
+                    "ui-card w-full text-left box-border",
+                    "bg-[var(--color-surface-default)] border border-[var(--color-border-default)]",
+                    "px-3 py-2 flex flex-col gap-2",
                     "transition-all hover:shadow-sm",
                     isSelected && "border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]",
                     isClickable && "cursor-pointer"
                   )}
                   onClick={isClickable ? handleCardClick : undefined}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 flex-1 flex items-center gap-2">
+                  {/* Primary field with label */}
+                  {primaryContent && (
+                    <div className="flex items-center gap-2 w-full">
                       {selectable && (
-                        <div onClick={(e) => e.stopPropagation()}>
+                        <div onClick={(e) => e.stopPropagation()} className="shrink-0">
                           <Checkbox
                             checked={isSelected}
                             onCheckedChange={() => toggleSelection(item[keyField])}
-                            className="h-4 w-4 shrink-0"
+                            className="h-4 w-4"
                             aria-label={`Seleccionar ${item[keyField]}`}
                           />
                         </div>
                       )}
-                      <div className="min-w-0 flex-1">
-                        {primaryContent && (
-                          <div className="font-medium text-sm truncate">
-                            {primaryContent}
-                          </div>
+                      <div className="flex-1 min-w-0 flex items-center gap-2">
+                        {primaryColumn?.label && (
+                          <span className="text-[11px] text-[var(--color-text-secondary)] font-medium shrink-0">
+                            {primaryColumn.mobileLabel || primaryColumn.label}:
+                          </span>
                         )}
+                        <div className="flex-1 min-w-0">{primaryContent}</div>
                       </div>
                     </div>
-                    {hasActions && !shouldHideActionsColumn && actions.length > 0 && (
-                      <div onClick={(e) => e.stopPropagation()} className="shrink-0">
-                        <RowActionsMenu actions={actions} />
-                      </div>
-                    )}
-                  </div>
+                  )}
                   {detailContent.length > 0 && (
-                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[var(--color-text-secondary)]">
+                    <div className="grid grid-cols-1 xs:grid-cols-3 gap-2 w-full text-[11px] text-[var(--color-text-secondary)]">
                       {detailContent.map((detail) => (
-                        <span key={detail.key}>
-                          <span className="font-medium">{detail.label}:</span>{' '}
-                          <span className="text-[var(--color-text-primary)]">{detail.value}</span>
-                        </span>
+                        <div
+                          key={detail.key}
+                          className={cn(
+                            "flex items-center gap-2 w-full min-w-0",
+                            detail.fullRow && "xs:col-span-3"
+                          )}
+                        >
+                          {detail.label && (
+                            <span className="font-medium shrink-0">{detail.label}:</span>
+                          )}
+                          <div className="text-[var(--color-text-primary)] flex-1 min-w-0">{detail.value}</div>
+                        </div>
                       ))}
                     </div>
                   )}
