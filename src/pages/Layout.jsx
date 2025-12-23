@@ -25,6 +25,7 @@ import {
   Layers,
   Palette,
   Bug,
+  Search,
   MessageSquare,
   HelpCircle,
   Tag,
@@ -69,6 +70,11 @@ import { useAppVersion } from "@/hooks/useAppVersion";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import LevelBadge from "@/components/common/LevelBadge";
 import HardcodeInspector from "@/components/design/HardcodeInspector";
+import SystemTopBar from "@/components/common/SystemTopBar";
+
+/* ------------------------------ Feature Flags ------------------------------ */
+// Set to true to show floating tool buttons (legacy behavior)
+const SHOW_FLOATING_TOOLS = false;
 
 /* ------------------------------ Navegación ------------------------------ */
 const navigationByRole = {
@@ -570,32 +576,18 @@ function LayoutContent() {
       <SkipLink href="#main-content" />
 
       {/* Banner de impersonación fijo */}
-      {isImpersonating && (
-        <div
-          className="fixed top-0 left-0 right-0 z-[9999] bg-amber-500 text-amber-950 px-4 py-2 flex items-center justify-center gap-4 shadow-lg"
-          role="alert"
-          aria-live="polite"
-        >
-          <span className="text-sm font-medium">
-            👁️ Viendo como: <strong>{effectiveUserName}</strong> ({effectiveRole})
-          </span>
-          <button
-            onClick={() => {
-              stopImpersonation();
-              window.location.reload();
-            }}
-            className="px-3 py-1 bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"
-          >
-            ✕ Salir
-          </button>
-        </div>
-      )}
-
       <div
-        className={`min-h-screen w-full bg-background ${isImpersonating ? 'pt-10' : ''}`}
+        className="min-h-screen w-full bg-background relative"
         data-sidebar-abierto={abierto}
         id="main-content"
       >
+        <SystemTopBar
+          isImpersonating={isImpersonating}
+          effectiveUser={effectiveUserDisplay}
+          effectiveRole={effectiveRole}
+          stopImpersonation={stopImpersonation}
+          isMobile={isMobile}
+        />
         {/* Overlay mobile */}
         <div
           className={`fixed inset-0 bg-black/30 z-[80] lg:hidden transition-opacity duration-200 ${abierto ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -820,6 +812,52 @@ function LayoutContent() {
 
               {/* Fila de Herramientas: Ayuda, Tema, Toggle */}
               <div className={`flex items-center ${isCollapsed ? 'flex-col gap-2' : 'flex-row justify-between w-full px-1'}`}>
+                {/* Reportar Error - Visible para TODOS los roles */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          window.dispatchEvent(new CustomEvent('open-error-report', { detail: {} }));
+                        }}
+                        className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
+                        aria-label="Reportar error"
+                      >
+                        <Bug className="w-5 h-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side={isCollapsed ? "right" : "top"}>
+                      <p>Reportar error</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                {/* Hardcode Finder - Solo ADMIN (respeta impersonación: effectiveRole) */}
+                {effectiveRole === 'ADMIN' && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            window.dispatchEvent(new CustomEvent('toggle-hardcode-inspector'));
+                          }}
+                          className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
+                          aria-label="Hardcode Finder"
+                        >
+                          <Search className="w-5 h-5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side={isCollapsed ? "right" : "top"}>
+                        <p>Hardcode Finder</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+
                 {/* Ayuda */}
                 <TooltipProvider>
                   <Tooltip>
@@ -978,11 +1016,12 @@ function LayoutContent() {
             <Outlet />
           </div>
 
-          {/* Botón flotante de reporte de errores - Ocultar en modo estudio (/hoy) */}
-          {!location.pathname.startsWith('/hoy') && <ReportErrorButton />}
+          {/* Botones flotantes de herramientas - Ocultos por defecto, detrás de flag para revertir */}
+          {SHOW_FLOATING_TOOLS && !location.pathname.startsWith('/hoy') && <ReportErrorButton />}
+          {SHOW_FLOATING_TOOLS && userRole === 'ADMIN' && <HardcodeInspector />}
 
-          {/* HardcodeInspector - Solo para ADMIN */}
-          {userRole === 'ADMIN' && <HardcodeInspector />}
+          {/* HardcodeInspector siempre montado para ADMIN (para recibir eventos del sidebar) */}
+          {!SHOW_FLOATING_TOOLS && userRole === 'ADMIN' && <HardcodeInspector showToggleButton={false} />}
 
           {/* Footer global - uses page-container vars for consistent margins */}
           <footer className="border-t border-[var(--color-border-default)] bg-card text-xs text-[var(--color-text-secondary)] mt-auto">

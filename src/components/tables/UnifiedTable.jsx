@@ -417,7 +417,7 @@ export default function UnifiedTable({
                 <div
                   key={item[keyField]}
                   className={cn(
-                    "ui-card w-full text-left box-border",
+                    "ui-card w-full text-left box-border relative",
                     "bg-[var(--color-surface-default)] border border-[var(--color-border-default)]",
                     "px-3 py-2 flex flex-col gap-2",
                     "transition-all hover:shadow-sm",
@@ -426,6 +426,12 @@ export default function UnifiedTable({
                   )}
                   onClick={isClickable ? handleCardClick : undefined}
                 >
+                  {/* Actions menu in top right */}
+                  {actions.length > 0 && (
+                    <div className="absolute top-2 right-2" onClick={(e) => e.stopPropagation()}>
+                      <RowActionsMenu actions={actions} />
+                    </div>
+                  )}
                   {/* All fields in one flex-wrap row */}
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 w-full text-[11px] text-[var(--color-text-secondary)]">
                     {/* Checkbox if selectable */}
