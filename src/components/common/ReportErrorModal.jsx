@@ -152,8 +152,13 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
         backgroundColor: null,
         skipFonts: true, // Avoid "font is undefined" error in embed-webfonts
         filter: (node) => {
-          // Excluir nodos que no sean elementos (e.g. comentarios, texto)
+          // Excluir nodos que no sean elementos
           if (!node.tagName) return true;
+
+          // Excluir sidebar solo en mobile pequeño (<= 450px) para ver el contenido detrás
+          if (window.innerWidth <= 450 && node.id === 'sidebar') {
+            return false;
+          }
 
           // Excluir overlays y modales
           try {
