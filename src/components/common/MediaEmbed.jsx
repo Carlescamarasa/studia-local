@@ -148,15 +148,29 @@ export default function MediaEmbed({ url, className = '', open = false }) {
 
     case MediaKind.PDF:
       return (
-        <div className={`relative w-full bg-[var(--color-surface-muted)] rounded-lg overflow-hidden pb-[100%] ${className}`}>
-          <iframe
-            {...baseIframeProps}
+        <>
+          <div
+            className={`relative w-full bg-[var(--color-surface-muted)] rounded-lg overflow-hidden pb-[100%] cursor-zoom-in hover:brightness-95 transition-all ${className}`}
+            onClick={() => setLightboxOpen(true)}
+          >
+            <iframe
+              {...baseIframeProps}
+              src={media.embedUrl}
+              title={media.title}
+              className="absolute inset-0 w-full h-full border-0 pointer-events-none"
+              aria-label="Visor de PDF"
+            />
+            {/* Overlay transparente para capturar el click */}
+            <div className="absolute inset-0 z-10" />
+          </div>
+          <SimpleLightbox
+            open={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
             src={media.embedUrl}
-            title={media.title}
-            className="absolute inset-0 w-full h-full border-0"
-            aria-label="Visor de PDF"
+            alt={media.title}
+            type="pdf"
           />
-        </div>
+        </>
       );
 
     case MediaKind.UNKNOWN:
