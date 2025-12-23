@@ -145,10 +145,10 @@ export default function UnifiedTable({
   }, [mobileColumns]);
 
   const detailColumns = useMemo(() => {
-    // Hasta 3 columnas que no sean la primaria y no estén ocultas
+    // Hasta 5 columnas que no sean la primaria y no estén ocultas
     return mobileColumns
       .filter(col => col.key !== primaryColumn?.key && !col.mobileHidden)
-      .slice(0, 3);
+      .slice(0, 5);
   }, [mobileColumns, primaryColumn]);
 
   if (data.length === 0) {
@@ -369,7 +369,8 @@ export default function UnifiedTable({
               // IMPORTANTE: Separar rawValue (valor del registro) de displayValue (ReactNode renderizado)
               // La decisión de "está vacío" se basa en rawValue, no en el ReactNode
               const detailContent = detailColumns.map((col) => {
-                const label = col.mobileLabel || col.label;
+                // Use mobileLabel if explicitly defined (including empty string), otherwise fall back to label
+                const label = col.mobileLabel !== undefined ? col.mobileLabel : col.label;
 
                 // Obtener rawValue: puede venir de col.rawValue (función o valor), o de item[col.key]
                 const rawValue = typeof col.rawValue === 'function'
@@ -425,47 +426,46 @@ export default function UnifiedTable({
                   )}
                   onClick={isClickable ? handleCardClick : undefined}
                 >
-                  {/* Primary field with label */}
-                  {primaryContent && (
-                    <div className="flex items-center gap-2 w-full">
-                      {selectable && (
-                        <div onClick={(e) => e.stopPropagation()} className="shrink-0">
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => toggleSelection(item[keyField])}
-                            className="h-4 w-4"
-                            aria-label={`Seleccionar ${item[keyField]}`}
-                          />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0 flex items-center gap-2">
+                  {/* All fields in one flex-wrap row */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 w-full text-[11px] text-[var(--color-text-secondary)]">
+                    {/* Checkbox if selectable */}
+                    {selectable && (
+                      <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleSelection(item[keyField])}
+                          className="h-4 w-4"
+                          aria-label={`Seleccionar ${item[keyField]}`}
+                        />
+                      </div>
+                    )}
+                    {/* Primary field */}
+                    {primaryContent && (
+                      <div className="flex items-center gap-1.5 min-w-0">
                         {primaryColumn?.label && (
-                          <span className="text-[11px] text-[var(--color-text-secondary)] font-medium shrink-0">
+                          <span className="font-medium shrink-0">
                             {primaryColumn.mobileLabel || primaryColumn.label}:
                           </span>
                         )}
-                        <div className="flex-1 min-w-0">{primaryContent}</div>
+                        <div className="text-[var(--color-text-primary)] font-medium min-w-0">{primaryContent}</div>
                       </div>
-                    </div>
-                  )}
-                  {detailContent.length > 0 && (
-                    <div className="grid grid-cols-1 xs:grid-cols-3 gap-2 w-full text-[11px] text-[var(--color-text-secondary)]">
-                      {detailContent.map((detail) => (
-                        <div
-                          key={detail.key}
-                          className={cn(
-                            "flex items-center gap-2 w-full min-w-0",
-                            detail.fullRow && "xs:col-span-3"
-                          )}
-                        >
-                          {detail.label && (
-                            <span className="font-medium shrink-0">{detail.label}:</span>
-                          )}
-                          <div className="text-[var(--color-text-primary)] flex-1 min-w-0">{detail.value}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                    )}
+                    {/* Detail fields */}
+                    {detailContent.map((detail) => (
+                      <div
+                        key={detail.key}
+                        className={cn(
+                          "flex items-center gap-1.5 min-w-0",
+                          detail.fullRow && "w-full basis-full"
+                        )}
+                      >
+                        {detail.label && (
+                          <span className="font-medium shrink-0">{detail.label}:</span>
+                        )}
+                        <div className="text-[var(--color-text-primary)] min-w-0">{detail.value}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               );
             })}
