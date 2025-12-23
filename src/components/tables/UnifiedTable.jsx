@@ -418,8 +418,8 @@ export default function UnifiedTable({
                   key={item[keyField]}
                   className={cn(
                     "ui-card app-card w-full text-left box-border relative",
-                    "bg-[var(--color-surface-default)] border border-[var(--color-border-default)]",
-                    "transition-all hover:shadow-sm",
+                    "bg-[var(--color-surface-default)] dark:bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)]",
+                    "rounded-xl shadow-sm transition-all hover:shadow-md",
                     isSelected && "border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]",
                     isClickable && "cursor-pointer"
                   )}
@@ -427,12 +427,12 @@ export default function UnifiedTable({
                 >
                   {/* Actions menu in top right */}
                   {actions.length > 0 && (
-                    <div className="absolute top-2 right-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
                       <RowActionsMenu actions={actions} />
                     </div>
                   )}
                   {/* All fields in one flex-wrap row */}
-                  <div className="px-3 py-2 flex flex-wrap items-center gap-x-4 gap-y-1 w-full text-[11px] text-[var(--color-text-secondary)]">
+                  <div className="px-4 py-3 md:px-5 md:py-4 flex flex-wrap items-center gap-x-4 gap-y-3 w-full text-xs text-[var(--color-text-secondary)]">
                     {/* Checkbox if selectable */}
                     {selectable && (
                       <div onClick={(e) => e.stopPropagation()} className="shrink-0">
