@@ -6,7 +6,7 @@
 import { supabase } from './supabaseClient';
 
 // Bucket name for media assets
-const BUCKET_NAME = 'media-assets';
+export const MEDIA_BUCKET_NAME = 'media-assets';
 
 // Accepted file types and their mappings
 export const ACCEPTED_FILE_TYPES = {
@@ -118,7 +118,7 @@ export async function uploadFile(
     try {
         // Upload to Supabase Storage
         const { data, error } = await supabase.storage
-            .from(BUCKET_NAME)
+            .from(MEDIA_BUCKET_NAME)
             .upload(storagePath, file, {
                 cacheControl: '3600',
                 upsert: false
@@ -134,7 +134,7 @@ export async function uploadFile(
 
         // Get public URL
         const { data: urlData } = supabase.storage
-            .from(BUCKET_NAME)
+            .from(MEDIA_BUCKET_NAME)
             .getPublicUrl(storagePath);
 
         // Report 100% progress
@@ -165,7 +165,7 @@ export async function uploadFile(
 export async function deleteFile(storagePath: string): Promise<{ success: boolean; error?: string }> {
     try {
         const { error } = await supabase.storage
-            .from(BUCKET_NAME)
+            .from(MEDIA_BUCKET_NAME)
             .remove([storagePath]);
 
         if (error) {
