@@ -590,7 +590,7 @@ function LayoutContent() {
         />
         {/* Overlay mobile */}
         <div
-          className={`fixed inset-0 bg-black/30 z-[80] lg:hidden transition-opacity duration-200 ${abierto ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          className={`fixed inset-0 bg-black/30 z-[190] lg:hidden transition-opacity duration-200 ${abierto ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
             }`}
           onClick={(e) => {
             closeSidebar();
@@ -612,7 +612,7 @@ function LayoutContent() {
           inert={isMobile && !abierto ? "" : undefined}
           tabIndex="-1"
           className={`
-            z-[90] flex flex-col sidebar-modern
+            z-[200] flex flex-col sidebar-modern
             transition-all duration-200 will-change-transform transform-gpu
             fixed top-0 left-0 h-screen
             border-r border-[var(--color-border-strong)]
