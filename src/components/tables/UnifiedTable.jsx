@@ -417,9 +417,8 @@ export default function UnifiedTable({
                 <div
                   key={item[keyField]}
                   className={cn(
-                    "ui-card w-full text-left box-border relative",
+                    "ui-card app-card w-full text-left box-border relative",
                     "bg-[var(--color-surface-default)] border border-[var(--color-border-default)]",
-                    "px-3 py-2 flex flex-col gap-2",
                     "transition-all hover:shadow-sm",
                     isSelected && "border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary-soft)]",
                     isClickable && "cursor-pointer"
@@ -433,7 +432,7 @@ export default function UnifiedTable({
                     </div>
                   )}
                   {/* All fields in one flex-wrap row */}
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 w-full text-[11px] text-[var(--color-text-secondary)]">
+                  <div className="px-3 py-2 flex flex-wrap items-center gap-x-4 gap-y-1 w-full text-[11px] text-[var(--color-text-secondary)]">
                     {/* Checkbox if selectable */}
                     {selectable && (
                       <div onClick={(e) => e.stopPropagation()} className="shrink-0">
