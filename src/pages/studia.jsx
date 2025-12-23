@@ -77,7 +77,7 @@ import Metronomo from "@/components/study/Metronomo";
 import PianoPanel from "@/components/study/PianoPanel";
 import SessionContentView from "@/components/study/SessionContentView";
 import MediaEmbed from "@/components/common/MediaEmbed";
-import ReportErrorButtonInTimer from "@/components/common/ReportErrorButtonInTimer";
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDockToFooterOffset } from "@/hooks/useDockToFooterOffset";
 
@@ -853,10 +853,7 @@ function StudiaPageContent() {
                     timerCollapsed ? "min-h-[80px] h-auto" : "min-h-[80px]"
                 )}
             >
-                {/* Report button */}
-                <div className="absolute right-4 bottom-full mb-4 z-[50]">
-                    <ReportErrorButtonInTimer />
-                </div>
+
 
                 {/* Progress bar - centered on the border */}
                 {!isAD && ejercicioActual?.duracionSeg > 0 && (
@@ -935,7 +932,7 @@ function StudiaPageContent() {
                             <Button
                                 variant="primary"
                                 onClick={completarYAvanzar}
-                                className="h-9 flex-1 min-w-0 bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 font-semibold text-sm rounded-lg shadow-sm text-white shrink-0 px-2 sm:max-w-[120px]"
+                                className="h-9 flex-1 min-w-0 bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 font-semibold text-sm rounded-lg shadow-sm text-white shrink-0 px-2 sm:max-w-[120px]"
                                 title="Completar (Enter)"
                             >
                                 <CheckCircle className="w-4 h-4 shrink-0 sm:mr-1" />
