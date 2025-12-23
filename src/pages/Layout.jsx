@@ -822,7 +822,7 @@ function LayoutContent() {
                         onClick={() => {
                           window.dispatchEvent(new CustomEvent('open-error-report', { detail: {} }));
                         }}
-                        className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
+                        className={`w-10 h-10 p-0 justify-center text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 rounded-xl ${componentStyles.buttons.ghost}`}
                         aria-label="Reportar error"
                       >
                         <Bug className="w-5 h-5" />

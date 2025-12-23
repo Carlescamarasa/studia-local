@@ -1051,9 +1051,9 @@ function StudiaPageContent() {
                         </div>
                         <div className="page-header-actions">
                             <Button
-                                variant="default"
+                                variant="ghost"
                                 size="sm"
-                                className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white border-0 shadow-sm"
+                                className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 border-0 shadow-sm"
                                 onClick={() => window.dispatchEvent(new CustomEvent('open-error-report', { detail: {} }))}
                                 title="Reportar error"
                             >
