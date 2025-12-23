@@ -792,7 +792,7 @@ export default function LevelConfigView() {
                                         label: 'Fuente',
                                         mobileLabel: 'Fuente',
                                         render: (item) => (
-                                            <span className="text-sm">
+                                            <span>
                                                 {item.source === 'PROF' ? 'Profesor' : 'Práctica'}
                                             </span>
                                         )
@@ -802,8 +802,19 @@ export default function LevelConfigView() {
                                         label: 'Obligatorio',
                                         mobileLabel: 'Oblig.',
                                         render: (item) => (
-                                            <span className={`text-sm ${item.required ? 'text-[var(--color-primary)] font-medium' : 'text-muted-foreground'}`}>
+                                            <span className={item.required ? 'text-[var(--color-primary)] font-medium' : 'text-muted-foreground'}>
                                                 {item.required ? 'Sí' : 'No'}
+                                            </span>
+                                        )
+                                    },
+                                    {
+                                        key: 'description',
+                                        label: 'Descripción',
+                                        mobileLabel: 'Desc.',
+                                        mobileFullRow: true,
+                                        render: (item) => (
+                                            <span className="text-muted-foreground">
+                                                {item.description || '—'}
                                             </span>
                                         )
                                     },
@@ -811,6 +822,7 @@ export default function LevelConfigView() {
                                         key: 'actions',
                                         label: 'Acciones',
                                         mobileLabel: '',
+                                        rawValue: () => true, // Prevent filtering in mobile
                                         render: (item) => (
                                             <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} className="flex items-center justify-end gap-1">
                                                 <Button
@@ -830,17 +842,6 @@ export default function LevelConfigView() {
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>
                                             </div>
-                                        )
-                                    },
-                                    {
-                                        key: 'description',
-                                        label: 'Descripción',
-                                        mobileLabel: 'Desc.',
-                                        mobileFullRow: true,
-                                        render: (item) => (
-                                            <span className="text-sm text-muted-foreground truncate">
-                                                {item.description || '—'}
-                                            </span>
                                         )
                                     }
                                 ]}
