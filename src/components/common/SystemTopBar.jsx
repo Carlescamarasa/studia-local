@@ -33,7 +33,7 @@ export default function SystemTopBar({
     // Sticky to push content down naturally
     return (
         <div
-            className="sticky top-0 left-0 right-0 z-[60] bg-amber-500 text-amber-950 px-3 py-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 shadow-md min-h-[40px]"
+            className="sticky top-0 left-0 right-0 z-[101] bg-amber-500 text-amber-950 px-3 py-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 shadow-md min-h-[40px]"
             role="banner"
         >
             {/* Impersonation Info */}
@@ -59,14 +59,15 @@ export default function SystemTopBar({
 
             {/* Tools Section - Hide in Studia Mode (we use header icon there) */}
             {!isStudiaMode && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 relative z-10">
                     {/* Separator if both sections present */}
                     {isImpersonating && <div className="h-4 w-px bg-amber-700/20 hidden sm:block" />}
 
                     {/* Reportar Error Button (Badge Style) */}
                     <button
+                        type="button"
                         onClick={handleReportError}
-                        className="flex items-center gap-1.5 px-3 py-1 bg-amber-100/50 hover:bg-amber-100 text-amber-900 text-xs font-medium rounded-full transition-colors border border-amber-700/10"
+                        className="flex items-center gap-1.5 px-3 py-1 bg-amber-100/50 hover:bg-amber-100 text-amber-900 text-xs font-medium rounded-xl transition-colors border border-amber-700/10 cursor-pointer active:scale-95"
                     >
                         <Bug className="w-3.5 h-3.5" />
                         <span>Reportar error</span>
@@ -75,8 +76,9 @@ export default function SystemTopBar({
                     {/* Hardcode Finder (ADMIN only) */}
                     {effectiveRole === 'ADMIN' && (
                         <button
+                            type="button"
                             onClick={handleToggleHardcodeList}
-                            className="flex items-center gap-1.5 px-3 py-1 bg-amber-100/50 hover:bg-amber-100 text-amber-900 text-xs font-medium rounded-full transition-colors border border-amber-700/10"
+                            className="flex items-center gap-1.5 px-3 py-1 bg-amber-100/50 hover:bg-amber-100 text-amber-900 text-xs font-medium rounded-xl transition-colors border border-amber-700/10 cursor-pointer active:scale-95"
                         >
                             <Search className="w-3.5 h-3.5" />
                             <span className="hidden sm:inline">Hardcode Finder</span>

@@ -353,9 +353,9 @@ export const componentStyles = {
   // Sistema de modales mejorados
   modal: {
     // Overlay
-    overlay: "fixed inset-0 z-[100] bg-[var(--color-overlay-backdrop)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+    overlay: "fixed inset-0 z-[250] bg-[var(--color-overlay-backdrop)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
     // Contenedor
-    container: "fixed left-[50%] top-[50%] z-[105] grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border border-[var(--color-border-strong)] bg-[var(--color-surface-card)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.16)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-[var(--radius-modal)]",
+    container: "fixed left-[50%] top-[50%] z-[251] grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border border-[var(--color-border-strong)] bg-[var(--color-surface-card)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.16)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-[var(--radius-modal)]",
     // Tamaños
     sizeSm: "max-w-sm",
     sizeMd: "max-w-lg",
@@ -397,7 +397,7 @@ export const componentStyles = {
     // Espaciado para gestos
     swipeArea: "touch-pan-y",
     // Bottom sheet para móvil
-    bottomSheet: "fixed inset-x-0 bottom-0 z-[120] bg-[var(--color-surface)] border-t border-[var(--color-border-strong)] rounded-t-[var(--radius-modal)] shadow-[0_-8px_24px_rgba(0,0,0,0.16)] data-[state=open]:animate-slide-in-from-bottom data-[state=closed]:animate-slide-out-to-bottom",
+    bottomSheet: "fixed inset-x-0 bottom-0 z-[252] bg-[var(--color-surface)] border-t border-[var(--color-border-strong)] rounded-t-[var(--radius-modal)] shadow-[0_-8px_24px_rgba(0,0,0,0.16)] data-[state=open]:animate-slide-in-from-bottom data-[state=closed]:animate-slide-out-to-bottom",
   },
 
   // Drag and Drop visual
