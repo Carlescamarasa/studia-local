@@ -259,30 +259,99 @@ export function extractUrlsFromText(text) {
   return normalizeMediaLinks(lines, false);
 }
 
-// Tests rápidos en desarrollo
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  window.testMediaResolve = () => {
-    const tests = [
-      'https://youtu.be/dQw4w9WgXcQ',
-      'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      'https://www.youtube.com/shorts/abc123',
-      'https://vimeo.com/123456789',
-      'https://soundcloud.com/artist/track-name',
-      'https://drive.google.com/file/d/1ABC123/view?usp=sharing',
-      'https://example.com/audio.mp3',
-      'https://example.com/video.mp4',
-      'https://example.com/image.jpg',
-      'https://example.com/document.pdf',
-      'https://example.com/unknown-link',
-    ];
+// --- YouTube oEmbed Caching Utilities ---
 
-    if (process.env.NODE_ENV === 'development') {
-      console.group('🔍 Media Resolution Tests');
-      tests.forEach(url => {
-        const result = resolveMedia(url);
-        console.log(`${url}\n→`, result);
-      });
-      console.groupEnd();
+const YOUTUBE_TITLE_CACHE_KEY = 'yt_title_cache_v1';
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+// In-memory cache for current session speed
+const memoryCache = new Map();
+
+/**
+ * Clean up expired items from localStorage
+ */
+function pruneCache() {
+  try {
+    const raw = localStorage.getItem(YOUTUBE_TITLE_CACHE_KEY);
+    if (!raw) return;
+
+    const cache = JSON.parse(raw);
+    const now = Date.now();
+    let changed = false;
+
+    Object.keys(cache).forEach(key => {
+      if (now - cache[key].timestamp > CACHE_TTL_MS) {
+        delete cache[key];
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      localStorage.setItem(YOUTUBE_TITLE_CACHE_KEY, JSON.stringify(cache));
     }
-  };
+  } catch (e) {
+    // Ignore storage errors
+  }
+}
+
+// Run prune once on load
+if (typeof window !== 'undefined') {
+  setTimeout(pruneCache, 5000);
+}
+
+/**
+ * Fetches YouTube video title using oEmbed (no API key required)
+ * Includes Caching: Memory -> LocalStorage -> Network
+ * @param {string} url - The YouTube URL
+ * @returns {Promise<string|null>} - The title or null if failed
+ */
+export async function getYouTubeTitle(url) {
+  if (!url) return null;
+
+  // 1. Check Memory Cache
+  if (memoryCache.has(url)) return memoryCache.get(url);
+
+  // 2. Check LocalStorage
+  try {
+    const raw = localStorage.getItem(YOUTUBE_TITLE_CACHE_KEY);
+    if (raw) {
+      const cache = JSON.parse(raw);
+      if (cache[url] && (Date.now() - cache[url].timestamp < CACHE_TTL_MS)) {
+        memoryCache.set(url, cache[url].title);
+        return cache[url].title;
+      }
+    }
+  } catch (e) { /* ignore */ }
+
+  // 3. Network Request
+  try {
+    // Use noembed wrapper or direct youtube oembed if CORS allows (YouTube usually has CORS strictness)
+    // Actually YouTube oembed does NOT support CORS directly for client-side JS without a proxy usually.
+    // BUT we can use 'noembed.com' as a public proxy which is standard for this.
+    // Or try fetch with 'no-cors' but then we can't read the text.
+    // Let's use `noembed.com` which is reliable for this specific use case.
+
+    const target = `https://noembed.com/embed?url=${encodeURIComponent(url)}`;
+    const res = await fetch(target).then(r => r.json());
+
+    if (res && res.title) {
+      const title = res.title;
+
+      // Update Caches
+      memoryCache.set(url, title);
+
+      try {
+        const raw = localStorage.getItem(YOUTUBE_TITLE_CACHE_KEY) || '{}';
+        const cache = JSON.parse(raw);
+        cache[url] = { title, timestamp: Date.now() };
+        localStorage.setItem(YOUTUBE_TITLE_CACHE_KEY, JSON.stringify(cache));
+      } catch (e) { }
+
+      return title;
+    }
+  } catch (error) {
+    // Fail silently
+  }
+
+  return null;
 }

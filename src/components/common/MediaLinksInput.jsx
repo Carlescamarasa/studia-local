@@ -584,6 +584,7 @@ export default function MediaLinksInput({
             const newAsset = await remoteDataAPI.mediaAssets.create({
               url: result.url,
               name: file.name,
+              originalName: file.name,
               fileType: fileType,
               state: 'uploaded',
               storagePath: result.path,

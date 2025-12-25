@@ -1123,13 +1123,39 @@ function MochilaTabContent({ studentId, isEstu, hasSelectedStudent }) {
     // Mochila only supports single student
     const { data: backpackItems = [], isLoading, error } = useStudentBackpack(studentId);
 
-    const stats = useMemo(() => {
-        return {
-            total: backpackItems.length,
-            mastered: backpackItems.filter(i => i.status === 'dominado').length,
-            inProgress: backpackItems.filter(i => i.status === 'en_progreso').length,
+    // Filter state
+    const [statusFilter, setStatusFilter] = useState('en_progreso');
+
+    // Calculate counts from FULL dataset
+    const counts = useMemo(() => {
+        const c = {
+            todos: backpackItems.length,
+            nuevo: 0,
+            en_progreso: 0,
+            dominado: 0,
+            oxidado: 0,
+            archivado: 0,
+            // Metric for "Items en Mochila" card (active items)
+            activeTotal: 0
         };
+
+        backpackItems.forEach(item => {
+            if (c[item.status] !== undefined) {
+                c[item.status]++;
+            }
+            if (item.status !== 'archivado') {
+                c.activeTotal++;
+            }
+        });
+
+        return c;
     }, [backpackItems]);
+
+    // Filter items for table
+    const filteredItems = useMemo(() => {
+        if (statusFilter === 'todos') return backpackItems;
+        return backpackItems.filter(item => item.status === statusFilter);
+    }, [backpackItems, statusFilter]);
 
     const getStatusBadgeVariant = (status) => {
         switch (status) {
@@ -1233,37 +1259,74 @@ function MochilaTabContent({ studentId, isEstu, hasSelectedStudent }) {
         );
     }
 
+    // Define filters configuration
+    const filters = [
+        { key: 'en_progreso', label: 'En Progreso', icon: Clock },
+        { key: 'dominado', label: 'Dominado', icon: Trophy },
+        { key: 'nuevo', label: 'Nuevo', icon: Star },
+        { key: 'oxidado', label: 'Oxidado', icon: Activity }, // Activity as generic icon, or Reuse Timer? Activity is fine.
+        { key: 'archivado', label: 'Archivado', icon: Backpack }, // Backpack or Archive. Backpack is already imported.
+        { key: 'todos', label: 'Todos', icon: List },
+    ];
+
     return (
         <div className="space-y-6">
-            {/* Stats Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className={componentStyles.containers.cardBase}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Items en Mochila</CardTitle>
-                        <Backpack className="h-4 w-4 text-[var(--color-text-secondary)]" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-[var(--color-text-primary)]">{stats.total}</div>
-                    </CardContent>
-                </Card>
-                <Card className={componentStyles.containers.cardBase}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Dominados</CardTitle>
-                        <Trophy className="h-4 w-4 text-[var(--color-success)]" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-[var(--color-text-primary)]">{stats.mastered}</div>
-                    </CardContent>
-                </Card>
-                <Card className={componentStyles.containers.cardBase}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">En Progreso</CardTitle>
-                        <Clock className="h-4 w-4 text-[var(--color-info)]" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-[var(--color-text-primary)]">{stats.inProgress}</div>
-                    </CardContent>
-                </Card>
+            {/* Filter Pills */}
+            <div className="relative flex justify-center items-center pt-2 gap-3">
+                <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button className="text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors cursor-pointer p-1 rounded-full hover:bg-[var(--color-surface-muted)]">
+                                <Info className="w-5 h-5" />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent
+                            side="bottom"
+                            align="start"
+                            className="max-w-[280px] p-4 text-sm bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] shadow-xl z-50 text-[var(--color-text-primary)]"
+                        >
+                            <div className="flex flex-col gap-2">
+                                <p>La Mochila muestra el estado actual (foto fija).</p>
+                                <p>Los estados se actualizan al practicar:<br /><span className="font-semibold text-[var(--color-primary)]">Nuevo → En progreso → Dominado</span></p>
+                                <p className="text-[var(--color-text-muted)] text-xs">Oxidado/Archivado solo aparecen si se marcan/gestionan manualmente (por ahora).</p>
+                            </div>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+
+                <div className="flex flex-wrap justify-center bg-[var(--color-surface-muted)] p-1 rounded-lg gap-1">
+                    {filters.map(f => {
+                        const count = counts[f.key];
+                        // Only show chip if count > 0 or it's 'todos' or it's currently selected?
+                        // User said "si no hay items oxidado/archivado, los chips muestran 0". So show all.
+                        const isActive = statusFilter === f.key;
+                        const Icon = f.icon;
+
+                        return (
+                            <button
+                                key={f.key}
+                                onClick={() => setStatusFilter(f.key)}
+                                className={cn(
+                                    "flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                                    isActive
+                                        ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
+                                        : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                                )}
+                            >
+                                <Icon className="w-3.5 h-3.5 mr-2" />
+                                {f.label}
+                                <span className={cn(
+                                    "ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full border",
+                                    isActive
+                                        ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/20"
+                                        : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)] border-[var(--color-border-default)]"
+                                )}>
+                                    {count}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* Content Table */}
@@ -1274,9 +1337,13 @@ function MochilaTabContent({ studentId, isEstu, hasSelectedStudent }) {
                 <CardContent>
                     <UnifiedTable
                         columns={columns}
-                        data={backpackItems}
+                        data={filteredItems}
                         keyField="id"
-                        emptyMessage="Mochila vacía. A medida que practiques, los ejercicios se guardarán aquí automáticamente."
+                        emptyMessage={
+                            statusFilter === 'todos'
+                                ? "Mochila vacía. A medida que practiques, los ejercicios se guardarán aquí automáticamente."
+                                : `No hay ejercicios con estado "${getStatusLabel(statusFilter)}".`
+                        }
                         emptyIcon={Backpack}
                         paginated={true}
                         defaultPageSize={10}
