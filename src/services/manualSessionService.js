@@ -4,7 +4,8 @@ import { supabase } from "@/lib/supabaseClient";
 
 /**
  * Creates a manual "draft" session for the given student and exercises.
- * It generates a temporary 'Asignacion' record to reuse the existing StudiaPage logic.
+ * If an existing draft Asignacion exists for the same student/week, adds a new session to it.
+ * Otherwise, creates a new 'Asignacion' record.
  * 
  * @param {Object} params
  * @param {string} params.studentId - The ID of the student
@@ -19,12 +20,22 @@ export async function createManualSessionDraft({ studentId, exerciseCodes, sourc
     // Deduplicate codes
     const uniqueCodes = [...new Set(exerciseCodes)];
 
-    // Fetch block details for the codes (optional, but good for names if possible, 
-    // though StudiaPage re-fetches. We just need valid structure).
-    // For manual draft, we can minimalistically create the structure.
-    // StudiaPage will look up the full Block details by code.
+    // Current week ISO
+    const semanaInicioISO = calcularLunesSemanaISO(new Date());
 
-    // Construct the blocks for the session
+    // Get the current authenticated user's ID for RLS compliance
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const currentAuthId = authUser?.id || null;
+
+    // Check if there's an existing draft Asignacion for this student in this week
+    const existingDrafts = await localDataClient.entities.Asignacion.filter({
+        alumnoId: studentId,
+        isDraft: true,
+        modo: 'manual',
+        semanaInicioISO: semanaInicioISO
+    });
+
+    // Construct the blocks for the new session
     const bloques = uniqueCodes.map((code, index) => ({
         tipo: 'PR', // Practice
         code: code,
@@ -34,54 +45,79 @@ export async function createManualSessionDraft({ studentId, exerciseCodes, sourc
         backpack_key: code, // Assuming 1:1 map for mochila
     }));
 
-    // Current week ISO
-    const semanaInicioISO = calcularLunesSemanaISO(new Date());
+    // Create the new session object
+    const nuevaSesion = {
+        nombre: `Práctica Manual - ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+        foco: 'GEN',
+        bloques: bloques
+    };
 
-    // Create a temporary Plan structure
-    const planDraft = {
-        nombre: `Sesión Manual (${source})`,
-        semanas: [
-            {
+    if (existingDrafts.length > 0) {
+        // Reuse existing draft: add new session to it
+        const existingDraft = existingDrafts[0];
+        const updatedPlan = { ...existingDraft.plan };
+
+        // Add new session to the first (and only) week
+        if (updatedPlan.semanas && updatedPlan.semanas[0] && updatedPlan.semanas[0].sesiones) {
+            updatedPlan.semanas[0].sesiones.push(nuevaSesion);
+        } else {
+            // Fallback: create the structure if missing
+            updatedPlan.semanas = [{
                 nombre: "Semana Única",
-                sesiones: [
-                    {
-                        nombre: `Práctica Manual - ${new Date().toLocaleDateString()}`,
-                        foco: 'GEN',
-                        bloques: bloques
-                    }
-                ]
-            }
-        ]
-    };
-
-    // Get the current authenticated user's ID for RLS compliance
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    const currentAuthId = authUser?.id || null;
-
-    // Create the Asignacion
-    const asignacionData = {
-        alumnoId: studentId,
-        profesorId: currentAuthId, // Use auth.uid() for RLS policy compliance
-        plan: planDraft,
-        semanaInicioISO: semanaInicioISO,
-        estado: 'publicada', // Use valid enum status
-        modo: 'manual', // Student-initiated
-        isDraft: true, // Temporary session
-        piezaSnapshot: {
-            nombre: 'Sin pieza asignada',
-            descripcion: '',
-            nivel: 'N/A',
-            tiempoObjetivoSeg: 0,
-            elementos: [],
+                sesiones: [nuevaSesion]
+            }];
         }
-    };
 
-    const nuevaAsignacion = await localDataClient.entities.Asignacion.create(asignacionData);
+        // Update the existing Asignacion
+        await localDataClient.entities.Asignacion.update(existingDraft.id, {
+            plan: updatedPlan,
+            planAdaptado: updatedPlan // Also update planAdaptado for consistency
+        });
 
-    return {
-        sessionId: nuevaAsignacion.id, // For legacy comp, though usually distinct
-        asignacionId: nuevaAsignacion.id,
-        semanaIdx: 0,
-        sesionIdx: 0
-    };
+        const newSesionIdx = updatedPlan.semanas[0].sesiones.length - 1;
+
+        return {
+            sessionId: existingDraft.id,
+            asignacionId: existingDraft.id,
+            semanaIdx: 0,
+            sesionIdx: newSesionIdx
+        };
+    } else {
+        // Create new draft Asignacion
+        const planDraft = {
+            nombre: `Sesión Manual (${source})`,
+            semanas: [
+                {
+                    nombre: "Semana Única",
+                    sesiones: [nuevaSesion]
+                }
+            ]
+        };
+
+        const asignacionData = {
+            alumnoId: studentId,
+            profesorId: currentAuthId, // Use auth.uid() for RLS policy compliance
+            plan: planDraft,
+            semanaInicioISO: semanaInicioISO,
+            estado: 'publicada', // Use valid enum status
+            modo: 'manual', // Student-initiated
+            isDraft: true, // Temporary session
+            piezaSnapshot: {
+                nombre: 'Sin pieza asignada',
+                descripcion: '',
+                nivel: 'N/A',
+                tiempoObjetivoSeg: 0,
+                elementos: [],
+            }
+        };
+
+        const nuevaAsignacion = await localDataClient.entities.Asignacion.create(asignacionData);
+
+        return {
+            sessionId: nuevaAsignacion.id,
+            asignacionId: nuevaAsignacion.id,
+            semanaIdx: 0,
+            sesionIdx: 0
+        };
+    }
 }
