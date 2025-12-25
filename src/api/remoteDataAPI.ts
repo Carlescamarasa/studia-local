@@ -1712,6 +1712,8 @@ export function createRemoteDataAPI(): AppDataAPI {
           throw new Error('piezaSnapshot es requerido');
         }
 
+        console.log('[remoteDataAPI.asignaciones.create] snakeData being sent:', JSON.stringify(snakeData, null, 2));
+
         const { data: result, error } = await supabase
           .from('asignaciones')
           .insert(snakeData)
@@ -1766,6 +1768,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           'piezaId', 'pieza_id', 'piezaSnapshot', 'pieza_snapshot',
           'profesorId', 'profesor_id', 'alumnoId', 'alumno_id',
           'planId', 'plan_id', 'planAdaptado', 'plan_adaptado',
+          'isDraft', 'is_draft', 'modo'
         ]);
 
         const camposActualizados = Object.keys(updatesWithoutJson);
