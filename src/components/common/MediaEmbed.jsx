@@ -8,7 +8,8 @@ import {
   Image as ImageIcon,
   FileText,
   Link as LinkIcon,
-  ExternalLink
+  ExternalLink,
+  Maximize2
 } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
 import SimpleLightbox from './SimpleLightbox';
@@ -177,9 +178,10 @@ export default function MediaEmbed({ url, className = '', open = false }) {
             {/* Expand button to open lightbox - centered at top */}
             <button
               onClick={() => setLightboxOpen(true)}
-              className="absolute top-3 left-1/2 -translate-x-1/2 z-10 px-4 py-2 bg-black/70 hover:bg-black/90 text-white text-sm font-medium rounded-lg transition-colors"
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-10 px-4 py-2 bg-black/70 hover:bg-black/90 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
               aria-label="Ver a pantalla completa"
             >
+              <Maximize2 className="w-4 h-4" />
               Pantalla completa
             </button>
           </div>
