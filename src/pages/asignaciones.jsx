@@ -627,7 +627,7 @@ function AsignacionesPageContent() {
         </div>
       </div>
 
-      <div className={`$"studia-section" space-y-6`}>
+      <div className="studia-section space-y-6">
         {showForm && (
           <FormularioRapido
             onClose={() => setShowForm(false)}
