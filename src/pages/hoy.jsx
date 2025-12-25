@@ -56,7 +56,7 @@ import {
   ImageIcon,
   Backpack
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { cn } from "@/lib/utils";
 import { toStudia } from "@/lib/routes";
@@ -164,6 +164,12 @@ function HoyPageContent() {
   const [sesionSeleccionada, setSesionSeleccionada] = useState(0);
   const [sesionesConResumenExpandido, setSesionesConResumenExpandido] = useState(new Set());
   const [sesionActiva, setSesionActiva] = useState(null);
+
+  // Try Mode - detect from URL params (mode=try&codes=...)
+  const [searchParams] = useSearchParams();
+  const isTryMode = searchParams.get('mode') === 'try';
+  const tryCodes = searchParams.get('codes')?.split(',').filter(Boolean) || [];
+
   const [indiceActual, setIndiceActual] = useState(0);
   const [tiempoActual, setTiempoActual] = useState(0);
   const [cronometroActivo, setCronometroActiva] = useState(false);
@@ -375,6 +381,48 @@ function HoyPageContent() {
     staleTime: 30 * 1000, // 30s - needs recent data for study session
   });
 
+  // TRY MODE: Auto-start session from URL codes (must be after bloquesActuales declaration)
+  useEffect(() => {
+    if (!isTryMode || tryCodes.length === 0) return;
+    if (sesionActiva) return; // Already started
+    if (bloquesActuales.length === 0) return; // Wait for bloques to load
+
+    // Create in-memory session from codes, merging full bloque data
+    const bloques = tryCodes.map((code, idx) => {
+      // Find full bloque data from DB
+      const dbBloque = bloquesActuales.find(b => b.code === code);
+
+      if (dbBloque) {
+        return {
+          ...dbBloque,
+          modo: 'estudio',
+        };
+      }
+
+      // Fallback for exercises not found in DB
+      return {
+        tipo: 'PR',
+        code: code,
+        nombre: `Ejercicio ${idx + 1}`,
+        duracionSeg: 300,
+        modo: 'estudio',
+      };
+    });
+
+    const trySesion = {
+      nombre: 'Modo Prueba',
+      foco: 'GEN',
+      bloques: bloques,
+    };
+
+    console.log('[TryMode] Creating in-memory session with full data:', trySesion);
+    setSesionActiva(trySesion);
+    setIndiceActual(0);
+    setTiempoActual(0);
+    setCronometroActiva(true);
+    setTimestampInicio(Date.now());
+  }, [isTryMode, tryCodes, sesionActiva, bloquesActuales]);
+
   // Filtrar y validar asignaciones
   const asignaciones = asignacionesRaw.filter(a => {
     // Validar que tiene alumnoId válido
@@ -420,9 +468,40 @@ function HoyPageContent() {
   });
 
   // Determinar asignación activa: si hay selección, usarla; sino, la primera
-  const asignacionActiva = asignacionSeleccionadaId
-    ? asignacionesActivas.find(a => a.id === asignacionSeleccionadaId)
-    : asignacionesActivas[0] || null;
+  // In try mode, create a mock asignacion to prevent null access errors
+  const tryModeAsignacion = isTryMode ? {
+    id: 'try-mode-session',
+    semanaInicioISO: new Date().toISOString().split('T')[0],
+    plan: {
+      nombre: 'Modo Prueba',
+      semanas: [{
+        nombre: 'Semana Prueba',
+        sesiones: [{
+          nombre: 'Sesión Prueba',
+          foco: 'GEN',
+          bloques: tryCodes.map((code, idx) => ({
+            tipo: 'PR',
+            code: code,
+            nombre: `Ejercicio ${idx + 1}`,
+            duracionSeg: 300,
+          }))
+        }]
+      }]
+    },
+    piezaSnapshot: {
+      nombre: 'Sin pieza asignada',
+      descripcion: '',
+      nivel: 'N/A',
+      tiempoObjetivoSeg: 0,
+      elementos: [],
+    }
+  } : null;
+
+  const asignacionActiva = isTryMode
+    ? tryModeAsignacion
+    : (asignacionSeleccionadaId
+      ? asignacionesActivas.find(a => a.id === asignacionSeleccionadaId)
+      : asignacionesActivas[0] || null);
 
   // Si no hay selección y hay asignaciones, seleccionar la primera automáticamente
   useEffect(() => {
@@ -1005,6 +1084,10 @@ function HoyPageContent() {
   const salirSinGuardar = () => {
     setMostrarModalCancelar(false);
     cerrarSesion();
+    // In try mode, navigate back to previous page
+    if (isTryMode) {
+      navigate(-1);
+    }
   };
 
   const navegarA = (idx) => {
@@ -1047,6 +1130,14 @@ function HoyPageContent() {
   };
 
   const finalizarSesion = async (calidad, notas, mediaLinks) => {
+    // TRY MODE: Skip all persistence and navigate back
+    if (isTryMode) {
+      console.log('[TryMode] Skipping persistence - navigating back');
+      cerrarSesion();
+      navigate(-1);
+      return;
+    }
+
     if (!asignacionActiva || !sesionActiva) return;
 
     const listaEjecucion = aplanarSesion(sesionActiva);
@@ -1135,8 +1226,15 @@ function HoyPageContent() {
     }
   };
 
-  // Resumen final
+  // Resumen final - Skip in try mode
   if (sesionActiva && sesionFinalizada) {
+    // In try mode, navigate back immediately without showing ResumenFinal
+    if (isTryMode) {
+      cerrarSesion();
+      navigate(-1);
+      return null;
+    }
+
     const listaEjecucion = aplanarSesion(sesionActiva);
     const tiempoPrevisto = listaEjecucion
       .filter(e => e.tipo !== 'AD')
@@ -1744,33 +1842,18 @@ function HoyPageContent() {
                           );
                         }
 
-                        // PDF - Card
+                        // PDF - Just inline preview using MediaEmbed (matches normal mode)
                         if (type === MediaKind.PDF) {
                           return (
-                            <div key={idx} className="bg-white border border-[var(--color-border-default)] rounded-xl p-4 flex items-center gap-4 hover:border-[var(--color-primary)]/50 transition-colors shadow-sm group">
-                              <div className="bg-red-50 p-3 rounded-lg group-hover:bg-red-100 transition-colors">
-                                <FileText className="w-6 h-6 text-red-500" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-[var(--color-text-primary)] truncate">{fileName}</p>
-                                <p className="text-xs text-[var(--color-text-secondary)]">Documento PDF</p>
-                              </div>
-                              <Button
-                                variant="outline"
-                                onClick={() => setMediaModal(mediaInfo.originalUrl)}
-                                className="shrink-0 rounded-lg hover:bg-[var(--color-surface-elevated)]"
-                              >
-                                Abrir Partitura en Pantalla Completa
-                              </Button>
-                            </div>
+                            <MediaEmbed key={idx} url={mediaInfo.originalUrl} className="h-[400px] md:h-[500px]" />
                           );
                         }
 
                         // VIDEO - Card (o modal si es link externo)
                         if (type === MediaKind.VIDEO || type === MediaKind.YOUTUBE || type === MediaKind.VIMEO) {
                           return (
-                            <div key={idx} className="bg-white border border-[var(--color-border-default)] rounded-xl p-4 flex items-center gap-4 hover:border-[var(--color-primary)]/50 transition-colors shadow-sm group">
-                              <div className="bg-blue-50 p-3 rounded-lg group-hover:bg-blue-100 transition-colors">
+                            <div key={idx} className="bg-[var(--color-surface-default)] border border-[var(--color-border-default)] rounded-xl p-4 flex items-center gap-4 hover:border-[var(--color-primary)]/50 transition-colors shadow-sm group">
+                              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
                                 <Video className="w-6 h-6 text-blue-500" />
                               </div>
                               <div className="flex-1 min-w-0">
@@ -1790,7 +1873,7 @@ function HoyPageContent() {
 
                         // fallback - Link genérico
                         return (
-                          <div key={idx} className="bg-white border border-[var(--color-border-default)] rounded-xl p-3 flex items-center gap-3">
+                          <div key={idx} className="bg-[var(--color-surface-default)] border border-[var(--color-border-default)] rounded-xl p-3 flex items-center gap-3">
                             <ExternalLink className="w-5 h-5 text-[var(--color-text-secondary)]" />
                             <a href={mediaInfo.originalUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--color-primary)] hover:underline truncate flex-1">
                               {fileName}
@@ -2277,6 +2360,7 @@ function HoyPageContent() {
               onGuardarYSalir={guardarYSalir}
               onSalirSinGuardar={salirSinGuardar}
               onContinuar={() => setMostrarModalCancelar(false)}
+              hideGuardar={isTryMode}
             />
           )
         }
