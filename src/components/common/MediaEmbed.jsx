@@ -147,21 +147,41 @@ export default function MediaEmbed({ url, className = '', open = false }) {
       );
 
     case MediaKind.PDF:
+      // Add parameters to hide native PDF viewer toolbar
+      const pdfUrlWithParams = `${media.embedUrl}#toolbar=0&navpanes=0&scrollbar=1`;
       return (
         <>
           <div
-            className={`relative w-full bg-[var(--color-surface-muted)] rounded-lg overflow-hidden pb-[100%] cursor-zoom-in hover:brightness-95 transition-all ${className}`}
-            onClick={() => setLightboxOpen(true)}
+            className={`relative w-full bg-white rounded-lg overflow-hidden ${className}`}
+            style={{ minHeight: '400px' }}
           >
-            <iframe
-              {...baseIframeProps}
-              src={media.embedUrl}
-              title={media.title}
-              className="absolute inset-0 w-full h-full border-0 pointer-events-none"
+            <object
+              data={pdfUrlWithParams}
+              type="application/pdf"
+              className="w-full h-full absolute inset-0"
               aria-label="Visor de PDF"
-            />
-            {/* Overlay transparente para capturar el click */}
-            <div className="absolute inset-0 z-10" />
+            >
+              {/* Fallback for browsers without native PDF support */}
+              <div className="flex flex-col items-center justify-center h-full space-y-4 p-8 bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]">
+                <p className="text-center">No se puede visualizar el PDF directamente.</p>
+                <a
+                  href={media.originalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-md hover:opacity-90 transition-opacity"
+                >
+                  Abrir en nueva pestaña
+                </a>
+              </div>
+            </object>
+            {/* Expand button to open lightbox - centered at top */}
+            <button
+              onClick={() => setLightboxOpen(true)}
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-10 px-4 py-2 bg-black/70 hover:bg-black/90 text-white text-sm font-medium rounded-lg transition-colors"
+              aria-label="Ver a pantalla completa"
+            >
+              Pantalla completa
+            </button>
           </div>
           <SimpleLightbox
             open={lightboxOpen}
