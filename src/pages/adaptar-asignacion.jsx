@@ -842,18 +842,16 @@ function AdaptarAsignacionPageContent() {
         }
       />
 
-      {isCerrada && (
-        <div className={`$"studia-section" mt-4`}>
+      <div className="studia-section space-y-4">
+        {isCerrada && (
           <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-warning)] bg-[var(--color-warning)]/10 rounded-[var(--radius-card)]`}>
             <AlertCircle className="h-4 w-4 text-[var(--color-warning)]" />
             <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-warning)]`}>
               <strong>Advertencia:</strong> Esta asignación está cerrada. Los cambios se guardarán pero considera duplicar como borrador para preservar el histórico.
             </AlertDescription>
           </Alert>
-        </div>
-      )}
+        )}
 
-      <div className="studia-section">
         <Card className={componentStyles.containers.cardBase}>
           <CardHeader>
             <div className="flex items-center justify-between">

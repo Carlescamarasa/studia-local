@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS asignaciones (
   profesor_id TEXT NOT NULL,
   pieza_id TEXT NOT NULL,
   semana_inicio_iso DATE NOT NULL,
-  estado TEXT NOT NULL DEFAULT 'borrador' CHECK (estado IN ('borrador', 'publicada', 'archivada')),
+  estado TEXT NOT NULL DEFAULT 'borrador' CHECK (estado IN ('borrador', 'publicada', 'archivada', 'cerrada', 'en_curso')),
   foco TEXT NOT NULL DEFAULT 'GEN' CHECK (foco IN ('GEN', 'LIG', 'RIT', 'ART', 'S&A')),
   notas TEXT,
   plan_id TEXT,
@@ -180,7 +180,7 @@ COMMENT ON COLUMN asignaciones.alumno_id IS 'ID del estudiante asignado';
 COMMENT ON COLUMN asignaciones.profesor_id IS 'ID del profesor que creó la asignación';
 COMMENT ON COLUMN asignaciones.pieza_id IS 'ID de la pieza asignada';
 COMMENT ON COLUMN asignaciones.semana_inicio_iso IS 'Fecha de inicio de la semana en formato ISO (YYYY-MM-DD)';
-COMMENT ON COLUMN asignaciones.estado IS 'Estado de la asignación: borrador, publicada, archivada';
+COMMENT ON COLUMN asignaciones.estado IS 'Estado de la asignación: borrador, publicada, archivada, cerrada, en_curso';
 COMMENT ON COLUMN asignaciones.foco IS 'Foco de la asignación: GEN, LIG, RIT, ART, S&A';
 COMMENT ON COLUMN asignaciones.notas IS 'Notas adicionales de la asignación';
 COMMENT ON COLUMN asignaciones.plan_id IS 'ID del plan plantilla (referencia). Si es NULL, se usa plan_adaptado';

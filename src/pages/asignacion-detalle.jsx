@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from "@/components/ds";
 import {
   ArrowLeft, Target, User, Music, BookOpen, Calendar,
   Settings, ChevronDown, ChevronRight, Clock,
-  Edit, XCircle, Shield, Save, X, SlidersHorizontal, // Existing icons
+  Edit, XCircle, Shield, Save, X, SlidersHorizontal, Trash2, // Existing icons
   Eye, CheckCircle2, Layers, PlayCircle, MessageSquare // New icons from outline
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -53,9 +53,10 @@ export default function AsignacionDetallePage() {
       if (api) {
         const { data, error } = await api.bloques.list();
         if (error) throw error;
-        return data;
+        return data || [];
       }
-      return localDataClient.entities.Bloque.list();
+      const result = await localDataClient.entities.Bloque.list();
+      return result || [];
     },
     staleTime: 1000 * 60 * 5
   });
@@ -89,6 +90,19 @@ export default function AsignacionDetallePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignacion', asignacionId] });
       toast.success('✅ Asignación cerrada');
+    },
+  });
+
+  const eliminarMutation = useMutation({
+    mutationFn: () => localDataClient.entities.Asignacion.delete(asignacionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
+      toast.success('✅ Asignación eliminada');
+      navigate(-1);
+    },
+    onError: (error) => {
+      console.error('[asignacion-detalle.jsx] Error al eliminar asignación:', error);
+      toast.error('❌ Error al eliminar asignación');
     },
   });
 
@@ -448,7 +462,23 @@ export default function AsignacionDetallePage() {
                     Cerrar
                   </Button>
                 )}
-                {/* 5. Publicada (Badge) */}
+                {/* 5. Eliminar */}
+                {isAdminOrProf && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (window.confirm('¿Eliminar permanentemente esta asignación? Esta acción no se puede deshacer.')) {
+                        eliminarMutation.mutate();
+                      }
+                    }}
+                    disabled={eliminarMutation.isPending}
+                    className={`${componentStyles.buttons.outline} text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 hover:border-[var(--color-danger)]`}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Eliminar
+                  </Button>
+                )}
+                {/* 6. Estado (Badge) */}
                 <Badge className={`rounded-full ${estadoColors[asignacion.estado]}`}>
                   {estadoLabels[asignacion.estado]}
                 </Badge>
@@ -681,19 +711,24 @@ export default function AsignacionDetallePage() {
         </Card>
       </div>
 
-      {/* Modal de edición */}
+      {/* Modal de edición - Drawer en móvil, Modal centrado en desktop */}
       {showEditDrawer && editData && (
         <>
           <div
-            className="fixed inset-0 bg-black/40 z-[100]"
+            className="fixed inset-0 bg-black/40 z-[210]"
             onClick={() => setShowEditDrawer(false)}
           />
-          <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
+          {/* Container: drawer bottom en móvil, modal centrado en desktop */}
+          <div className="fixed inset-0 z-[220] flex items-end lg:items-center lg:justify-center pointer-events-none overflow-hidden lg:p-4">
             <div
-              className="bg-[var(--color-surface-elevated)] w-full max-w-2xl max-h-[95vh] shadow-card rounded-2xl flex flex-col pointer-events-auto my-4 border border-[var(--color-border-default)]"
+              className="bg-[var(--color-surface-elevated)] w-full lg:max-w-2xl max-h-[90vh] lg:max-h-[95vh] shadow-card rounded-t-2xl lg:rounded-2xl flex flex-col pointer-events-auto border border-[var(--color-border-default)] lg:my-4"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] rounded-t-2xl px-6 py-4">
+              {/* Handle de arrastre para móvil */}
+              <div className="lg:hidden flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 bg-[var(--color-border-strong)] rounded-full" />
+              </div>
+              <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] lg:rounded-t-2xl px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Edit className="w-6 h-6 text-[var(--color-text-primary)]" />
@@ -847,7 +882,7 @@ export default function AsignacionDetallePage() {
                 )}
               </div>
 
-              <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] rounded-b-2xl">
+              <div className="border-t border-[var(--color-border-default)] px-6 py-4 bg-[var(--color-surface-muted)] lg:rounded-b-2xl">
                 <div className="flex gap-3 mb-2">
                   <Button variant="outline" onClick={() => setShowEditDrawer(false)} className={`flex-1 ${componentStyles.buttons.outline}`}>
                     Cancelar
