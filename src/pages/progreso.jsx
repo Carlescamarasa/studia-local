@@ -21,6 +21,7 @@ import { resolveUserIdActual, displayName } from "@/components/utils/helpers";
 import { toast } from "sonner";
 import { createManualSessionDraft } from '@/services/manualSessionService';
 import { updateBackpackFromSession } from '@/services/backpackService';
+import { getDerivedBackpackStatus } from '@/services/backpackDerivedStatus';
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { formatLocalDate, parseLocalDate, startOfMonday, formatDuracionHM, formatDurationDDHHMM } from "@/components/estadisticas/utils";
 import { chooseBucket } from "@/components/estadisticas/chartHelpers";
@@ -1141,7 +1142,7 @@ function MochilaTabContent({ studentId, isEstu, hasSelectedStudent }) {
     }, [statusFilter]);
 
 
-    // Calculate counts from FULL dataset
+    // Calculate counts from FULL dataset using DERIVED status
     const counts = useMemo(() => {
         const c = {
             todos: backpackItems.length,
@@ -1155,10 +1156,11 @@ function MochilaTabContent({ studentId, isEstu, hasSelectedStudent }) {
         };
 
         backpackItems.forEach(item => {
-            if (c[item.status] !== undefined) {
-                c[item.status]++;
+            const derivedStatus = getDerivedBackpackStatus(item);
+            if (c[derivedStatus] !== undefined) {
+                c[derivedStatus]++;
             }
-            if (item.status !== 'archivado') {
+            if (derivedStatus !== 'archivado') {
                 c.activeTotal++;
             }
         });
@@ -1166,10 +1168,10 @@ function MochilaTabContent({ studentId, isEstu, hasSelectedStudent }) {
         return c;
     }, [backpackItems]);
 
-    // Filter items for table
+    // Filter items for table using DERIVED status
     const filteredItems = useMemo(() => {
         if (statusFilter === 'todos') return backpackItems;
-        return backpackItems.filter(item => item.status === statusFilter);
+        return backpackItems.filter(item => getDerivedBackpackStatus(item) === statusFilter);
     }, [backpackItems, statusFilter]);
 
     const getStatusBadgeVariant = (status) => {
@@ -1205,11 +1207,15 @@ function MochilaTabContent({ studentId, isEstu, hasSelectedStudent }) {
             key: 'status',
             label: 'Estado',
             sortable: true,
-            render: (item) => (
-                <Badge variant={getStatusBadgeVariant(item.status)}>
-                    {getStatusLabel(item.status)}
-                </Badge>
-            ),
+            sortValue: (item) => getDerivedBackpackStatus(item),
+            render: (item) => {
+                const derivedStatus = getDerivedBackpackStatus(item);
+                return (
+                    <Badge variant={getStatusBadgeVariant(derivedStatus)}>
+                        {getStatusLabel(derivedStatus)}
+                    </Badge>
+                );
+            },
         },
         {
             key: 'masteryScore',
