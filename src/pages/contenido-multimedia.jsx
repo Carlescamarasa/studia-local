@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { remoteDataAPI } from "@/api/remoteDataAPI";
@@ -21,6 +21,96 @@ import {
     MEDIA_ORIGIN_BADGE_VARIANTS
 } from "@/lib/constants";
 
+/**
+ * Deriva un nombre legible para mostrar en la interfaz.
+ * Prioridad:
+ * 1. Name explícito (si no parece hash/slug raro)
+ * 2. Storage Path (nombre de archivo)
+ * 3. URL (nombre de archivo o ID youtube)
+ */
+function deriveAssetDisplayName(asset) {
+    if (!asset) return "(Desconocido)";
+
+    let candidate = asset.name;
+
+
+    // Detectar si es un link de YouTube (por tipo o URL)
+    // Note: API returns camelCase (fileType, storagePath, etc)
+    const isYoutube = asset.fileType === 'youtube' || (asset.url && (asset.url.includes('youtube') || asset.url.includes('youtu.be')));
+
+    // Detectar si el nombre actual es solo un fragmento de URL (ej: "watch?v=...")
+    const nameIsUrlFragment = candidate && (candidate.startsWith('watch?') || candidate.includes('='));
+
+    // Detectar si parece un hash/slug ilegible (ej: secuencia muy larga de hex chars)
+    // El usuario especificó "[a-f0-9]{20,}" como criterio principal de hash.
+    const looksLikeHash = candidate && /[a-f0-9]{20,}/i.test(candidate);
+
+    // 1. Si es YouTube o el nombre es malo (hash o fragmento url), buscar alternativas
+    if (!candidate || looksLikeHash || (isYoutube && nameIsUrlFragment)) {
+
+        // Priority A: Origin Label (Si el nombre era un hash ilegible, es mejor el contexto)
+        // Solo si NO es YouTube (para YouTube preferimos el ID o título si lo tuviéramos, pero origin_label puede ser "Video X")
+        // Pero si es un hash, origin_label es definitivamente mejor.
+        if (looksLikeHash && asset.originLabel) {
+            let ext = "";
+            // Intentar preservar extensión
+            if (asset.storagePath) {
+                const parts = asset.storagePath.split('.');
+                if (parts.length > 1) ext = '.' + parts.pop();
+            } else if (candidate && candidate.includes('.')) {
+                const parts = candidate.split('.');
+                if (parts.length > 1) ext = '.' + parts.pop();
+            }
+            // Validar extensión
+            if (ext.length > 5 || !/^\.[a-z0-9]+$/i.test(ext)) ext = "";
+
+            return asset.originLabel + ext;
+        }
+
+        // Priority B: YouTube URL parsing
+        if (isYoutube && asset.url) {
+            try {
+                const urlObj = new URL(asset.url);
+                if (urlObj.hostname.includes('youtube') || urlObj.hostname.includes('youtu.be')) {
+                    const v = urlObj.searchParams.get('v');
+                    if (v) return `YouTube: ${v}`;
+                    return `YouTube: ${urlObj.pathname.replace(/^\//, '')}`;
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        // Priority C: Storage Path
+        if (asset.storagePath) {
+            candidate = asset.storagePath.split('/').pop();
+        }
+        // Priority D: Generic URL fallback
+        else if (asset.url) {
+            try {
+                const urlObj = new URL(asset.url);
+                candidate = urlObj.pathname.split('/').pop();
+            } catch (e) {
+                candidate = asset.url;
+            }
+        }
+    }
+
+    if (!candidate) return "(Sin nombre)";
+
+    // 2. Cleaning Steps
+    try { candidate = decodeURIComponent(candidate); } catch (e) { }
+
+    // Remove Supabase Timestamp prefix (10-14 digits + underscores)
+    // Supports pattern: 1765679404599_lq6ece_filename.pdf -> filename.pdf
+    candidate = candidate.replace(/^\d{10,14}_([a-zA-Z0-9]{4,10}_)?/, '');
+
+    // 3. Truncate
+    if (candidate.length > 60) {
+        candidate = candidate.substring(0, 55) + "...";
+    }
+
+    return candidate;
+}
+
 const FILE_TYPE_ICONS = {
     [MEDIA_FILE_TYPES.VIDEO]: <FileVideo className="w-4 h-4 text-blue-500" />,
     [MEDIA_FILE_TYPES.AUDIO]: <FileAudio className="w-4 h-4 text-purple-500" />,
@@ -35,6 +125,56 @@ const STATE_BADGES = {
     archived: "default",
     deleted: "danger",
 };
+
+
+import { getYouTubeTitle } from "@/components/utils/media";
+
+// Componente para renderizar el nombre de forma asíncrona (YouTube titles)
+function AssetDisplayName({ asset, deriveDisplayName }) {
+    const defaultName = deriveDisplayName(asset);
+    const [title, setTitle] = useState(defaultName);
+    const [loading, setLoading] = useState(false);
+
+    // Si es YouTube, intentamos cargar el título real
+    const isYoutube = (asset.fileType === 'youtube' || asset.file_type === 'youtube') && asset.url;
+
+    useEffect(() => {
+        let mounted = true;
+        if (isYoutube) {
+            setLoading(true);
+            getYouTubeTitle(asset.url).then(realTitle => {
+                if (mounted && realTitle) {
+                    setTitle(`${realTitle}`);
+                }
+                if (mounted) setLoading(false);
+            });
+        }
+        return () => { mounted = false; };
+    }, [asset.url, isYoutube]);
+
+    // Show loading state subtly
+    if (loading && isYoutube && title.startsWith("YouTube:")) {
+        return (
+            <div className="flex flex-col max-w-[300px]">
+                <span className="font-medium truncate text-xs text-muted-foreground italic">
+                    cargando título...
+                </span>
+                <a href={asset.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline truncate flex items-center gap-1">
+                    {asset.url} <ExternalLink className="w-3 h-3" />
+                </a>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-col max-w-[300px]">
+            <span className="font-medium truncate" title={title}>{title}</span>
+            <a href={asset.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline truncate flex items-center gap-1">
+                {asset.url} <ExternalLink className="w-3 h-3" />
+            </a>
+        </div>
+    );
+}
 
 export default function ContenidoMultimediaPage({ embedded = false }) {
     const queryClient = useQueryClient();
@@ -77,22 +217,43 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
         let scannedCount = 0;
 
         try {
-            // Helper to migrate a list of links
+            // Helper to derive a better name for the link
+            const deriveNameFromLink = (url) => {
+                if (!url) return null;
+                try {
+                    // YouTube
+                    if (url.includes('youtube') || url.includes('youtu.be')) {
+                        const urlObj = new URL(url);
+                        if (urlObj.searchParams.has('v')) return `YouTube: ${urlObj.searchParams.get('v')}`;
+                        return `YouTube: ${urlObj.pathname.replace(/^\//, '')}`;
+                    }
+                    // Doc/Drive/Other
+                    const urlObj = new URL(url);
+                    const lastSegment = urlObj.pathname.split('/').pop();
+                    if (lastSegment) return decodeURIComponent(lastSegment);
+                } catch (e) { /* ignore */ }
+                return url.split('/').pop(); // Fallback
+            };
+
             const migrateLinks = async (links, originType, originId, originLabel, defaultName) => {
                 if (!links || !Array.isArray(links)) return;
 
                 for (const link of links) {
                     if (!link) continue;
                     try {
+                        let derivedName = deriveNameFromLink(link) || defaultName;
+                        if (derivedName.length > 60) derivedName = derivedName.substring(0, 55) + "...";
+
                         await remoteDataAPI.mediaAssets.create({
                             url: link,
-                            name: link.split('/').pop() || defaultName,
-                            file_type: getFileTypeFromUrl(link),
-                            origin_type: originType,
-                            origin_id: originId,
-                            origin_label: originLabel,
+                            name: derivedName,
+                            fileType: getFileTypeFromUrl(link),
+                            /* originalName: null */
+                            originType: originType,
+                            originId: originId,
+                            originLabel: originLabel,
                             state: 'external',
-                            storage_path: null
+                            storagePath: null
                         });
                         addedCount++;
                     } catch (err) {
@@ -221,11 +382,15 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
 
     if (searchTerm) {
         const term = searchTerm.toLowerCase();
-        filteredAssets = filteredAssets.filter(a =>
-            (a.name || '').toLowerCase().includes(term) ||
-            (a.origin_label || '').toLowerCase().includes(term) ||
-            (a.url || '').toLowerCase().includes(term)
-        );
+        filteredAssets = filteredAssets.filter(a => {
+            const derivedName = deriveAssetDisplayName(a).toLowerCase();
+            return (
+                (a.name || '').toLowerCase().includes(term) ||
+                derivedName.includes(term) ||
+                (a.originLabel || '').toLowerCase().includes(term) ||
+                (a.url || '').toLowerCase().includes(term)
+            );
+        });
     }
 
     if (typeFilter !== 'all') {
@@ -254,14 +419,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
         {
             key: 'name',
             label: 'Nombre / URL',
-            render: (a) => (
-                <div className="flex flex-col max-w-[300px]">
-                    <span className="font-medium truncate" title={a.name}>{a.name || 'Sin nombre'}</span>
-                    <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline truncate flex items-center gap-1">
-                        {a.url} <ExternalLink className="w-3 h-3" />
-                    </a>
-                </div>
-            ),
+            render: (a) => <AssetDisplayName asset={a} deriveDisplayName={deriveAssetDisplayName} />,
         },
         {
             key: 'origin',
@@ -272,13 +430,22 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                 const variant = MEDIA_ORIGIN_BADGE_VARIANTS[a.originType] || "default";
                 const label = MEDIA_ORIGIN_TYPE_LABELS[a.originType] || a.originType;
 
+                let displayLabel = a.originLabel || a.originId;
+
+                // Truncate exercise labels to code only
+                if (a.originType === 'ejercicio' && a.originLabel) {
+                    if (displayLabel.includes(' - ')) displayLabel = displayLabel.split(' - ')[0];
+                    else if (displayLabel.includes(':')) displayLabel = displayLabel.split(':')[0];
+                    else if (displayLabel.includes(' ')) displayLabel = displayLabel.split(' ')[0];
+                }
+
                 return (
                     <div className="flex flex-col">
                         <Badge variant={variant} className="w-fit mb-1 text-[10px] uppercase">
                             {label}
                         </Badge>
                         <span className="text-xs truncate max-w-[200px]" title={a.originLabel}>
-                            {a.originLabel || a.originId}
+                            {displayLabel}
                         </span>
                     </div>
                 );
