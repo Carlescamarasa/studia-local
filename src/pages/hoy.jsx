@@ -53,7 +53,8 @@ import {
   FileText,
   Video,
   ExternalLink,
-  ImageIcon
+  ImageIcon,
+  Backpack
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -2628,7 +2629,22 @@ function HoyPageContent() {
               </div>
             )}
 
-            <div className="flex items-center justify-center pt-4 border-t">
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const params = new URLSearchParams();
+                  params.set('tab', 'mochila');
+                  if (effectiveUserId) {
+                    params.set('students', effectiveUserId);
+                  }
+                  navigate(`/progreso?${params.toString()}`);
+                }}
+                className="rounded-xl focus-brand"
+              >
+                <Backpack className="w-4 h-4 mr-2" />
+                Ver Mochila
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => {
