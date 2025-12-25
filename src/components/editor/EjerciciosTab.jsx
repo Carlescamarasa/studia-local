@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,6 +29,7 @@ const TYPE_MAP = {
 
 export default function EjerciciosTab() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -225,6 +227,17 @@ export default function EjerciciosTab() {
                   <td className="px-4 py-3 text-right text-[var(--color-text-secondary)] font-mono">{ex.dur}'</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* Try/Preview Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/hoy?mode=try&codes=${ex.code}`);
+                        }}
+                        title="Probar ejercicio"
+                        className="p-1.5 hover:bg-green-100 dark:hover:bg-green-900/20 rounded-full text-green-600 transition-colors"
+                      >
+                        <Play className="w-4 h-4" />
+                      </button>
                       {/* Edit Icon Button */}
                       <button onClick={(e) => { e.stopPropagation(); handleOpenEditor(ex); }} className="p-1.5 hover:bg-[var(--color-surface-elevated)] rounded-full text-[var(--color-text-primary)] transition-colors">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

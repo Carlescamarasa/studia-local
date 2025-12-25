@@ -1,5 +1,6 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 // Eliminado: importación de base44Client, ya no es necesaria
 // Reemplazado por lógica local con almacenamiento en localStorage
 import { getCurrentUser } from "@/api/localDataClient";
@@ -11,6 +12,8 @@ import RequireRole from "@/components/auth/RequireRole";
 import PageHeader from "@/components/ds/PageHeader";
 import Tabs from "@/components/ds/Tabs";
 import { componentStyles } from "@/design/componentStyles";
+
+const VALID_TABS = ['piezas', 'planes', 'ejercicios'];
 
 export default function BibliotecaPage() {
   return (
@@ -24,7 +27,24 @@ function BibliotecaPageContent() {
   const currentUser = getCurrentUser();
   const isLoading = false;
 
-  const [activeTab, setActiveTab] = useState("piezas");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
+  const initialTab = VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'piezas';
+
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Sync tab state with URL changes
+  useEffect(() => {
+    if (tabFromUrl && VALID_TABS.includes(tabFromUrl) && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
+
+  // Update URL when tab changes
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    setSearchParams({ tab: newTab });
+  };
 
   // OPTIMIZATION: Lazy render tab content to avoid mounting all tabs simultaneously
   // This prevents 3 parallel data fetches on page load
@@ -72,7 +92,7 @@ function BibliotecaPageContent() {
         <Tabs
           variant="segmented"
           value={activeTab}
-          onChange={setActiveTab}
+          onChange={handleTabChange}
           items={tabs}
         />
         {/* Lazy-rendered content: only active tab mounts */}
