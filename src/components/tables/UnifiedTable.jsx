@@ -46,11 +46,17 @@ export default function UnifiedTable({
   emptyMessage = "No hay datos disponibles",
   emptyIcon: EmptyIcon = FileText,
   paginated = true,
-  defaultPageSize = 10
+  defaultPageSize = 10,
+  // Props for controlled selection
+  selectedKeys,
+  onSelectionChange
 }) {
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
-  const [selectedItems, setSelectedItems] = useState(new Set());
+  const [internalSelectedItems, setInternalSelectedItems] = useState(new Set());
+
+  // Use external selection if provided, otherwise internal
+  const selectedItems = selectedKeys || internalSelectedItems;
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(defaultPageSize);
 
@@ -100,14 +106,30 @@ export default function UnifiedTable({
     } else {
       newSelected.add(itemKey);
     }
-    setSelectedItems(newSelected);
+
+    if (onSelectionChange) {
+      onSelectionChange(newSelected);
+    }
+
+    if (!selectedKeys) {
+      setInternalSelectedItems(newSelected);
+    }
   };
 
   const toggleSelectAll = () => {
-    if (selectedItems.size === data.length) {
-      setSelectedItems(new Set());
+    let newSelected;
+    if (selectedItems.size === data.length && data.length > 0) {
+      newSelected = new Set();
     } else {
-      setSelectedItems(new Set(data.map(item => item[keyField])));
+      newSelected = new Set(data.map(item => item[keyField]));
+    }
+
+    if (onSelectionChange) {
+      onSelectionChange(newSelected);
+    }
+
+    if (!selectedKeys) {
+      setInternalSelectedItems(newSelected);
     }
   };
 

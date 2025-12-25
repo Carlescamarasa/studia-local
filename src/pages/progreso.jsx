@@ -18,6 +18,9 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
 import { resolveUserIdActual, displayName } from "@/components/utils/helpers";
+import { toast } from "sonner";
+import { createManualSessionDraft } from '@/services/manualSessionService';
+import { updateBackpackFromSession } from '@/services/backpackService';
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { formatLocalDate, parseLocalDate, startOfMonday, formatDuracionHM, formatDurationDDHHMM } from "@/components/estadisticas/utils";
 import { chooseBucket } from "@/components/estadisticas/chartHelpers";
@@ -86,11 +89,13 @@ import KpiTile from "@/components/estadisticas/KpiTile";
 import {
     Activity, BarChart3, Star, MessageSquare, Backpack, Target,
     Clock, Trophy, ChevronDown, ChevronUp, Filter, User, TrendingUp,
-    Layers, List, Users, Info, BookOpen, PieChart, Timer, CalendarRange, Repeat
+    Layers, List, Users, Info, BookOpen, PieChart, Timer, CalendarRange, Repeat,
+    PlayCircle, CheckCircle2
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import RequireRole from "@/components/auth/RequireRole";
+import { toStudia } from "@/lib/routes";
 import { format, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -1126,6 +1131,16 @@ function MochilaTabContent({ studentId, isEstu, hasSelectedStudent }) {
     // Filter state
     const [statusFilter, setStatusFilter] = useState('en_progreso');
 
+    // Selection state
+    const [selectedKeys, setSelectedKeys] = useState(new Set());
+    const navigate = useNavigate();
+
+    // Reset selection when filter changes (optional, but safer)
+    useEffect(() => {
+        setSelectedKeys(new Set());
+    }, [statusFilter]);
+
+
     // Calculate counts from FULL dataset
     const counts = useMemo(() => {
         const c = {
@@ -1269,6 +1284,39 @@ function MochilaTabContent({ studentId, isEstu, hasSelectedStudent }) {
         { key: 'todos', label: 'Todos', icon: List },
     ];
 
+    // Hooks moved to top
+
+    const handlePracticeSelection = async () => {
+        if (selectedKeys.size === 0) return;
+
+        try {
+            // Map selected IDs back to exercise codes (backpackKey)
+            // We need to find the items in the current filtered list (or full list)
+            // backpackItems has the data.
+            const selectedExercises = backpackItems
+                .filter(item => selectedKeys.has(item.id))
+                .map(item => item.backpackKey);
+
+            if (selectedExercises.length === 0) {
+                toast.error("No se han encontrado ejercicios válidos en la selección");
+                return;
+            }
+
+            const { sessionId, asignacionId, semanaIdx, sesionIdx } = await createManualSessionDraft({
+                studentId: studentId,
+                exerciseCodes: selectedExercises,
+                source: 'mochila'
+            });
+
+            // Navigate using existing helper
+            navigate(toStudia({ asignacionId, semanaIdx, sesionIdx }));
+
+        } catch (err) {
+            console.error(err);
+            toast.error("No se ha podido iniciar la práctica");
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* Filter Pills */}
@@ -1294,38 +1342,52 @@ function MochilaTabContent({ studentId, isEstu, hasSelectedStudent }) {
                     </Tooltip>
                 </TooltipProvider>
 
-                <div className="flex flex-wrap justify-center bg-[var(--color-surface-muted)] p-1 rounded-lg gap-1">
-                    {filters.map(f => {
-                        const count = counts[f.key];
-                        // Only show chip if count > 0 or it's 'todos' or it's currently selected?
-                        // User said "si no hay items oxidado/archivado, los chips muestran 0". So show all.
-                        const isActive = statusFilter === f.key;
-                        const Icon = f.icon;
+                <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap justify-center bg-[var(--color-surface-muted)] p-1 rounded-lg gap-1">
+                        {filters.map(f => {
+                            const count = counts[f.key];
+                            const isActive = statusFilter === f.key;
+                            const Icon = f.icon;
 
-                        return (
-                            <button
-                                key={f.key}
-                                onClick={() => setStatusFilter(f.key)}
-                                className={cn(
-                                    "flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-all",
-                                    isActive
-                                        ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
-                                        : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                                )}
+                            return (
+                                <button
+                                    key={f.key}
+                                    onClick={() => setStatusFilter(f.key)}
+                                    className={cn(
+                                        "flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                                        isActive
+                                            ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
+                                            : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                                    )}
+                                >
+                                    <Icon className="w-3.5 h-3.5 mr-2" />
+                                    {f.label}
+                                    <span className={cn(
+                                        "ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full border",
+                                        isActive
+                                            ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/20"
+                                            : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)] border-[var(--color-border-default)]"
+                                    )}>
+                                        {count}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {selectedKeys.size > 0 && (
+                        <div className="animate-in fade-in slide-in-from-left-2 duration-200">
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={handlePracticeSelection}
+                                className="ml-2 shadow-sm"
                             >
-                                <Icon className="w-3.5 h-3.5 mr-2" />
-                                {f.label}
-                                <span className={cn(
-                                    "ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full border",
-                                    isActive
-                                        ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/20"
-                                        : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)] border-[var(--color-border-default)]"
-                                )}>
-                                    {count}
-                                </span>
-                            </button>
-                        );
-                    })}
+                                <PlayCircle className="w-4 h-4 mr-2" />
+                                Practicar ({selectedKeys.size})
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -1339,6 +1401,18 @@ function MochilaTabContent({ studentId, isEstu, hasSelectedStudent }) {
                         columns={columns}
                         data={filteredItems}
                         keyField="id"
+                        selectable={true}
+                        selectedKeys={selectedKeys}
+                        onSelectionChange={setSelectedKeys}
+                        onRowClick={(item) => {
+                            const newSelected = new Set(selectedKeys);
+                            if (newSelected.has(item.id)) {
+                                newSelected.delete(item.id);
+                            } else {
+                                newSelected.add(item.id);
+                            }
+                            setSelectedKeys(newSelected);
+                        }}
                         emptyMessage={
                             statusFilter === 'todos'
                                 ? "Mochila vacía. A medida que practiques, los ejercicios se guardarán aquí automáticamente."
