@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ds';
 import { componentStyles } from '@/design/componentStyles';
 import { useDesign } from '@/components/design/DesignProvider';
 import { toast } from 'sonner';
-import { UserPlus, CheckCircle, Mail } from 'lucide-react';
+import { UserPlus, CheckCircle, Mail, Music, Sun, Moon } from 'lucide-react';
 import logoLTS from '@/assets/Logo_LTS.svg';
 import { getAppName } from '@/components/utils/appMeta';
 import { log } from '@/utils/log';
@@ -28,7 +28,7 @@ export default function InvitationPage() {
   const navigate = useNavigate();
   const { user, loading: authLoading, appRole } = useAuth();
   const appName = getAppName();
-  const { design } = useDesign();
+  const { design, activeMode, setActiveMode } = useDesign();
   const primaryColor = design?.colors?.primary || '#fd9840';
 
   useEffect(() => {
@@ -189,167 +189,273 @@ export default function InvitationPage() {
     }
   };
 
+  const PageLayout = ({ children }) => (
+    <div
+      className={componentStyles.auth.loginPageContainer}
+      style={{
+        background: `linear-gradient(135deg, var(--color-background) 0%, var(--color-surface) 50%, var(--color-surface-elevated) 100%)`,
+      }}
+    >
+      {/* Elementos decorativos de fondo */}
+      <div className={componentStyles.auth.loginPageBackground}>
+        {/* Círculos decorativos con gradiente primario */}
+        <div
+          className={componentStyles.auth.loginDecorativeCircle}
+          style={{
+            background: `radial-gradient(circle, ${primaryColor} 0%, transparent 70%)`,
+          }}
+        />
+        <div
+          className={componentStyles.auth.loginDecorativeCircleBottom}
+          style={{
+            background: `radial-gradient(circle, ${primaryColor} 0%, transparent 70%)`,
+          }}
+        />
+        {/* Patrón de puntos sutiles */}
+        <div
+          className={componentStyles.auth.loginPatternOverlay}
+          style={{
+            backgroundImage: `radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)`,
+            backgroundSize: '32px 32px',
+          }}
+        />
+      </div>
+
+      {/* Contenedor principal */}
+      <div className={componentStyles.auth.loginCardContainer}>
+        <Card
+          className={`${componentStyles.containers.cardElevated} ${componentStyles.auth.loginCard}`}
+          style={{
+            borderColor: 'var(--color-border-strong)',
+            background: 'var(--color-surface-elevated)',
+          }}
+        >
+          {children}
+        </Card>
+      </div>
+    </div>
+  );
+
   if (isSuccess) {
     return (
-      <div className={componentStyles.auth.loginPageContainer}>
-        <div className={componentStyles.auth.loginCardContainer}>
-          <Card className={`${componentStyles.containers.cardElevated} ${componentStyles.auth.loginCard}`}>
-            <CardHeader className={componentStyles.auth.loginHeader}>
-              <div className="flex flex-col items-center space-y-4">
-                <CheckCircle className="w-16 h-16" style={{ color: primaryColor }} />
-                <CardTitle className="text-center">Registro completado</CardTitle>
-                <p className="text-center text-ui/60">
-                  Tu registro ha sido completado correctamente. Redirigiendo...
-                </p>
-              </div>
-            </CardHeader>
-          </Card>
-        </div>
-      </div>
+      <PageLayout>
+        <CardHeader className={componentStyles.auth.loginHeader}>
+          <div className="flex flex-col items-center space-y-4">
+            <CheckCircle className="w-16 h-16" style={{ color: primaryColor }} />
+            <CardTitle className="text-center" style={{ color: 'var(--color-text-primary)' }}>Registro completado</CardTitle>
+            <p className="text-center" style={{ color: 'var(--color-text-secondary)' }}>
+              Tu registro ha sido completado correctamente. Redirigiendo...
+            </p>
+          </div>
+        </CardHeader>
+      </PageLayout>
     );
   }
 
   return (
-    <div className={componentStyles.auth.loginPageContainer}>
-      <div className={componentStyles.auth.loginCardContainer}>
-        <Card className={`${componentStyles.containers.cardElevated} ${componentStyles.auth.loginCard}`}>
-          <CardHeader className={componentStyles.auth.loginHeader}>
-            <div className={componentStyles.auth.loginLogoContainer}>
-              <div
-                className={componentStyles.auth.loginLogoWrapper}
-                style={{
-                  background: `linear-gradient(135deg, ${primaryColor} 0%, var(--color-secondary) 100%)`,
-                }}
-              >
-                <img src={logoLTS} alt={appName} className="w-full h-full object-cover" />
-              </div>
+    <PageLayout>
+      <CardHeader className={componentStyles.auth.loginHeader}>
+        {/* 1. Logo con efecto visual mejorado */}
+        <div className={componentStyles.auth.loginLogoContainer}>
+          <div
+            className={componentStyles.auth.loginLogoWrapper}
+            style={{
+              background: 'transparent',
+            }}
+          >
+            <img src={logoLTS} alt={appName} className="w-full h-full object-contain" />
+          </div>
+        </div>
+
+        {/* 2. Título App */}
+        <div className={componentStyles.auth.loginTitleContainer}>
+          <CardTitle
+            className={`${componentStyles.typography.pageTitle} text-center`}
+            style={{ color: 'var(--color-text-primary)' }}
+          >
+            {appName}
+          </CardTitle>
+        </div>
+
+        {/* 3. Separador decorativo */}
+        <div className={componentStyles.auth.loginDivider}>
+          <div
+            className={componentStyles.auth.loginDividerLine}
+            style={{ background: primaryColor }}
+          />
+          <Music
+            className={componentStyles.auth.loginDividerIcon}
+            style={{ color: primaryColor, opacity: 0.8 }}
+          />
+          <div
+            className={componentStyles.auth.loginDividerLine}
+            style={{ background: primaryColor }}
+          />
+        </div>
+
+        {/* 4. Título de la página */}
+        <div className="mt-4 text-center space-y-2">
+          <h2 className="text-xl font-semibold" style={{ color: 'var(--color-text-primary)' }}>Completa tu registro</h2>
+          <p
+            className="text-base text-center"
+            style={{ color: 'var(--color-text-secondary)' }}
+          >
+            Completa tu información para finalizar tu registro
+          </p>
+        </div>
+      </CardHeader>
+
+      <CardContent className="px-8 pb-8">
+        <form onSubmit={handleSubmit} className={componentStyles.auth.loginForm}>
+          {/* Email (solo lectura) */}
+          <div className={componentStyles.form.field}>
+            <Label htmlFor="email" className={componentStyles.form.fieldLabel}>
+              Email
+            </Label>
+            <div className="relative">
+              <Input
+                id="email"
+                type="email"
+                value={userEmail}
+                disabled
+                className={`${componentStyles.controls.inputDefault} w-full bg-ui/5`}
+              />
+              <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-ui/40" />
             </div>
-            <CardTitle className="text-center">Completa tu registro</CardTitle>
-            <p className="text-center text-ui/60">
-              Completa tu información para finalizar tu registro
-            </p>
-          </CardHeader>
+            <p className="text-xs mt-1" style={{ color: 'var(--color-text-tertiary)' }}>Este es el email con el que fuiste invitado</p>
+          </div>
 
-          <CardContent className="px-8 pb-8">
-            <form onSubmit={handleSubmit} className={componentStyles.auth.loginForm}>
-              {/* Email (solo lectura) */}
-              <div className={componentStyles.form.field}>
-                <Label htmlFor="email" className={componentStyles.form.fieldLabel}>
-                  Email
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="email"
-                    type="email"
-                    value={userEmail}
-                    disabled
-                    className={`${componentStyles.controls.inputDefault} w-full bg-ui/5`}
-                  />
-                  <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-ui/40" />
-                </div>
-                <p className="text-xs text-ui/50 mt-1">Este es el email con el que fuiste invitado</p>
-              </div>
+          {/* Nombre completo */}
+          <div className={componentStyles.form.field}>
+            <Label htmlFor="fullName" className={componentStyles.form.fieldLabel}>
+              Nombre completo <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="fullName"
+              type="text"
+              placeholder="Nombre Apellido"
+              value={fullName}
+              onChange={(e) => {
+                setFullName(e.target.value);
+                if (errors.full_name) {
+                  validateField('full_name', e.target.value);
+                }
+              }}
+              onBlur={() => validateField('full_name', fullName)}
+              required
+              disabled={isLoading}
+              autoComplete="name"
+              className={`${componentStyles.controls.inputDefault} w-full ${errors.full_name ? 'border-red-500' : ''}`}
+            />
+            {errors.full_name && (
+              <p className="text-xs text-red-500 mt-1">{errors.full_name}</p>
+            )}
+          </div>
 
-              {/* Nombre completo */}
-              <div className={componentStyles.form.field}>
-                <Label htmlFor="fullName" className={componentStyles.form.fieldLabel}>
-                  Nombre completo <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Nombre Apellido"
-                  value={fullName}
-                  onChange={(e) => {
-                    setFullName(e.target.value);
-                    if (errors.full_name) {
-                      validateField('full_name', e.target.value);
-                    }
-                  }}
-                  onBlur={() => validateField('full_name', fullName)}
-                  required
-                  disabled={isLoading}
-                  autoComplete="name"
-                  className={`${componentStyles.controls.inputDefault} w-full ${errors.full_name ? 'border-red-500' : ''}`}
-                />
-                {errors.full_name && (
-                  <p className="text-xs text-red-500 mt-1">{errors.full_name}</p>
-                )}
-              </div>
+          {/* Contraseña */}
+          <div className={componentStyles.form.field}>
+            <Label htmlFor="password" className={componentStyles.form.fieldLabel}>
+              Contraseña <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (errors.password) {
+                  validateField('password', e.target.value);
+                }
+                // Validar confirmación también si ya tiene valor
+                if (confirmPassword) {
+                  validateField('confirmPassword', confirmPassword);
+                }
+              }}
+              onBlur={() => validateField('password', password)}
+              required
+              disabled={isLoading}
+              autoComplete="new-password"
+              className={`${componentStyles.controls.inputDefault} w-full ${errors.password ? 'border-red-500' : ''}`}
+            />
+            <p className="text-xs mt-1" style={{ color: 'var(--color-text-tertiary)' }}>Mínimo 8 caracteres, incluyendo mayúscula, minúscula y número</p>
+            {errors.password && (
+              <p className="text-xs text-red-500 mt-1">{errors.password}</p>
+            )}
+          </div>
 
-              {/* Contraseña */}
-              <div className={componentStyles.form.field}>
-                <Label htmlFor="password" className={componentStyles.form.fieldLabel}>
-                  Contraseña <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (errors.password) {
-                      validateField('password', e.target.value);
-                    }
-                    // Validar confirmación también si ya tiene valor
-                    if (confirmPassword) {
-                      validateField('confirmPassword', confirmPassword);
-                    }
-                  }}
-                  onBlur={() => validateField('password', password)}
-                  required
-                  disabled={isLoading}
-                  autoComplete="new-password"
-                  className={`${componentStyles.controls.inputDefault} w-full ${errors.password ? 'border-red-500' : ''}`}
-                />
-                <p className="text-xs text-ui/50 mt-1">Mínimo 8 caracteres, incluyendo mayúscula, minúscula y número</p>
-                {errors.password && (
-                  <p className="text-xs text-red-500 mt-1">{errors.password}</p>
-                )}
-              </div>
+          {/* Confirmar contraseña */}
+          <div className={componentStyles.form.field}>
+            <Label htmlFor="confirmPassword" className={componentStyles.form.fieldLabel}>
+              Confirmar contraseña <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                if (errors.confirmPassword) {
+                  validateField('confirmPassword', e.target.value);
+                }
+              }}
+              onBlur={() => validateField('confirmPassword', confirmPassword)}
+              required
+              disabled={isLoading}
+              autoComplete="new-password"
+              className={`${componentStyles.controls.inputDefault} w-full ${errors.confirmPassword ? 'border-red-500' : ''}`}
+            />
+            {errors.confirmPassword && (
+              <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>
+            )}
+          </div>
 
-              {/* Confirmar contraseña */}
-              <div className={componentStyles.form.field}>
-                <Label htmlFor="confirmPassword" className={componentStyles.form.fieldLabel}>
-                  Confirmar contraseña <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => {
-                    setConfirmPassword(e.target.value);
-                    if (errors.confirmPassword) {
-                      validateField('confirmPassword', e.target.value);
-                    }
-                  }}
-                  onBlur={() => validateField('confirmPassword', confirmPassword)}
-                  required
-                  disabled={isLoading}
-                  autoComplete="new-password"
-                  className={`${componentStyles.controls.inputDefault} w-full ${errors.confirmPassword ? 'border-red-500' : ''}`}
-                />
-                {errors.confirmPassword && (
-                  <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>
-                )}
-              </div>
+          <Button
+            type="submit"
+            className={`${componentStyles.buttons.primary} w-full mt-6`}
+            loading={isLoading}
+            loadingText="Completando registro..."
+          >
+            <UserPlus className="w-5 h-5 mr-2" />
+            Completar registro
+          </Button>
+        </form>
 
-              <Button
-                type="submit"
-                className={`${componentStyles.buttons.primary} w-full mt-6`}
-                loading={isLoading}
-                loadingText="Completando registro..."
-              >
-                <UserPlus className="w-5 h-5 mr-2" />
-                Completar registro
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+        {/* Footer decorativo */}
+        <div className={componentStyles.auth.loginFooter}>
+          <div className={componentStyles.auth.loginFooterLinks}>
+            <button
+              onClick={() => setActiveMode(activeMode === 'dark' ? 'light' : 'dark')}
+              className="inline-flex items-center gap-1 hover:text-[var(--color-text-primary)] transition-colors"
+              aria-label="Toggle theme"
+            >
+              {activeMode === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+            </button>
+            <span className="opacity-40">•</span>
+            <span>{appName} © {new Date().getFullYear()}</span>
+            <span className="opacity-40">-</span>
+            <a
+              href="https://latrompetasonara.com"
+              target="_blank"
+              rel="noreferrer"
+              className={componentStyles.auth.loginFooterLink}
+            >
+              La Trompeta Sonará
+            </a>
+            <span className="opacity-40">•</span>
+            <a
+              href="https://www.instagram.com/latrompetasonara"
+              target="_blank"
+              rel="noreferrer"
+              className={componentStyles.auth.loginFooterLink}
+            >
+              Instagram
+            </a>
+          </div>
+        </div>
+      </CardContent>
+    </PageLayout>
   );
 }
 
