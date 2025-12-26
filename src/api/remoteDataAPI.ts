@@ -6,8 +6,56 @@
  */
 
 import type { AppDataAPI } from './appDataAPI';
-import { supabase } from '@/lib/supabaseClient';
-import { isAuthError } from '@/lib/authHelpers';
+import { supabase, withAuthErrorHandling, wrapSupabaseCall } from './remote/client';
+import {
+  toSnakeCase,
+  normalizeISOFields,
+  normalizeAsignacionISO,
+  snakeToCamel,
+  camelToSnake,
+
+  normalizeSupabaseUser
+} from './remote/utils';
+import { generateId } from './remote/id';
+export * from './remote/bloques';
+export * from './remote/piezas';
+export * from './remote/planes';
+export * from './remote/sesiones';
+export * from './remote/asignaciones';
+
+
+
+// Importar funciones de asignaciones para uso interno en createRemoteDataAPI
+import {
+  fetchAsignaciones,
+  fetchAsignacion,
+  fetchAsignacionesByFilter,
+  createAsignacion,
+  updateAsignacion,
+  deleteAsignacion
+} from './remote/asignaciones';
+
+// Importar funciones de piezas para uso interno en createRemoteDataAPI
+import {
+  fetchPiezasList,
+  fetchPieza,
+  fetchPiezasByFilter,
+  createPieza,
+  updatePieza,
+  deletePieza
+} from './remote/piezas';
+
+// Importar funciones de sesiones para uso interno en createRemoteDataAPI
+import {
+  fetchRegistrosSesionList,
+  fetchRegistroSesion,
+  fetchRegistrosSesionByFilter,
+  createRegistroSesion,
+  updateRegistroSesion,
+  deleteRegistroSesion
+} from './remote/sesiones';
+
+
 import type {
   StudiaUser,
   Pieza,
@@ -21,431 +69,12 @@ import type {
   EvaluacionTecnica,
 } from '@/types/domain';
 
-/**
- * Helper para convertir camelCase a snake_case
- * Maneja correctamente siglas como ISO, ID, etc.
- * Ejemplos:
- * - semanaInicioISO -> semana_inicio_iso
- * - userId -> user_id
- * - XMLHttpRequest -> xml_http_request
- */
-function toSnakeCase(str: string): string {
-  // Procesar de derecha a izquierda para manejar siglas correctamente
-  // Primero, separar siglas finales (secuencias de mayúsculas al final)
-  // Ej: "semanaInicioISO" -> "semanaInicio_ISO"
-  let result = str.replace(/([a-z])([A-Z]+)$/g, '$1_$2');
 
-  // Luego, insertar _ antes de mayúsculas que siguen a minúsculas o números
-  // Esto maneja casos como "semanaInicio" -> "semana_Inicio"
-  result = result.replace(/([a-z0-9])([A-Z])/g, '$1_$2');
 
-  // Insertar _ antes de mayúsculas que siguen a otras mayúsculas seguidas de minúsculas
-  // (ej: "HTTP" seguido de "Request" en "HTTPRequest")
-  result = result.replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2');
 
-  // Convertir todo a minúsculas
-  return result.toLowerCase();
-}
 
-/**
- * Helper para convertir snake_case a camelCase
- */
-function toCamelCase(str: string): string {
-  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-}
 
-/**
- * Normaliza campos ISO en objetos RegistroSesion y RegistroBloque
- * Convierte inicioIso → inicioISO y finIso → finISO
- */
-function normalizeISOFields<T>(obj: any): T {
-  if (obj === null || obj === undefined) {
-    return obj;
-  }
 
-  if (Array.isArray(obj)) {
-    return obj.map(item => normalizeISOFields(item)) as T;
-  }
-
-  if (typeof obj !== 'object') {
-    return obj;
-  }
-
-  const result: any = { ...obj };
-
-  // Normalizar campos ISO específicos
-  if ('inicioIso' in result && !('inicioISO' in result)) {
-    result.inicioISO = result.inicioIso;
-    delete result.inicioIso;
-  }
-  if ('finIso' in result && !('finISO' in result)) {
-    result.finISO = result.finIso;
-    delete result.finIso;
-  }
-
-  // Aplicar recursivamente a propiedades anidadas
-  for (const key in result) {
-    if (Object.prototype.hasOwnProperty.call(result, key) && typeof result[key] === 'object') {
-      result[key] = normalizeISOFields(result[key]);
-    }
-  }
-
-  return result as T;
-}
-
-/**
- * Normaliza campos ISO en objetos Asignacion y FeedbackSemanal
- * Convierte semanaInicioIso → semanaInicioISO
- */
-function normalizeAsignacionISO<T>(obj: any): T {
-  if (obj === null || obj === undefined) {
-    return obj;
-  }
-
-  if (Array.isArray(obj)) {
-    return obj.map(item => normalizeAsignacionISO(item)) as T;
-  }
-
-  if (typeof obj !== 'object') {
-    return obj;
-  }
-
-  const result: any = { ...obj };
-
-  // Normalizar semanaInicioIso → semanaInicioISO
-  if ('semanaInicioIso' in result && !('semanaInicioISO' in result)) {
-    result.semanaInicioISO = result.semanaInicioIso;
-    delete result.semanaInicioIso;
-  }
-
-  // Aplicar recursivamente a propiedades anidadas
-  for (const key in result) {
-    if (Object.prototype.hasOwnProperty.call(result, key) && typeof result[key] === 'object') {
-      result[key] = normalizeAsignacionISO(result[key]);
-    }
-  }
-
-  return result as T;
-}
-
-/**
- * Convierte un objeto de snake_case a camelCase recursivamente
- */
-function snakeToCamel<T>(obj: any): T {
-  if (obj === null || obj === undefined) {
-    return obj;
-  }
-
-  if (Array.isArray(obj)) {
-    return obj.map(item => snakeToCamel(item)) as T;
-  }
-
-  if (typeof obj !== 'object') {
-    return obj;
-  }
-
-  const result: any = {};
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      const camelKey = toCamelCase(key);
-      result[camelKey] = snakeToCamel(obj[key]);
-    }
-  }
-  return result as T;
-}
-
-/**
- * Convierte un objeto de camelCase a snake_case recursivamente
- */
-function camelToSnake(obj: any): any {
-  if (obj === null || obj === undefined) {
-    return obj;
-  }
-
-  if (Array.isArray(obj)) {
-    return obj.map(item => camelToSnake(item));
-  }
-
-  if (typeof obj !== 'object') {
-    return obj;
-  }
-
-  const result: any = {};
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      const snakeKey = toSnakeCase(key);
-      result[snakeKey] = camelToSnake(obj[key]);
-    }
-  }
-  return result;
-}
-
-/**
- * Helper para generar un ID único (compatible con formato local)
- */
-function generateId(prefix: string = 'item'): string {
-  return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-/**
- * Resuelve el plan para una asignación usando la arquitectura híbrida:
- * - Si plan_adaptado existe → usar plan_adaptado (snapshot adaptado)
- * - Si no, y plan_id existe → buscar en planesList o cargar desde BD (referencia)
- * - Si no, y plan existe (legacy) → usar plan (compatibilidad)
- */
-async function resolvePlanForAsignacion(
-  asignacion: any,
-  planesList?: Plan[]
-): Promise<Plan | null> {
-  // Prioridad 1: plan_adaptado (snapshot adaptado)
-  if (asignacion.planAdaptado) {
-    return asignacion.planAdaptado;
-  }
-
-  // Prioridad 2: plan_id (referencia a plantilla)
-  if (asignacion.planId) {
-    // Si tenemos la lista de planes, buscar ahí primero
-    if (planesList) {
-      const plan = planesList.find(p => p.id === asignacion.planId);
-      if (plan) return plan;
-    }
-
-    // Si no está en la lista, cargar desde BD
-    try {
-      const { data, error } = await supabase
-        .from('planes')
-        .select('*')
-        .eq('id', asignacion.planId)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') return null;
-        throw error;
-      }
-
-      return snakeToCamel<Plan>(data);
-    } catch (error) {
-      console.warn('[resolvePlanForAsignacion] Error al cargar plan por ID:', error);
-      return null;
-    }
-  }
-
-  // Prioridad 3: plan (legacy, compatibilidad)
-  if (asignacion.plan) {
-    return asignacion.plan;
-  }
-
-  return null;
-}
-
-/**
- * Helper para serializar campos JSON específicos antes de enviar a Supabase
- */
-function serializeJsonFields(data: any, jsonFields: string[]): any {
-  const result = { ...data };
-  for (const field of jsonFields) {
-    if (result[field] && (typeof result[field] === 'object' || Array.isArray(result[field]))) {
-      // Serializar objetos y arrays a string JSON
-      result[field] = JSON.stringify(result[field]);
-    }
-  }
-  return result;
-}
-
-/**
- * Helper para deserializar campos JSON específicos después de leer de Supabase
- */
-function deserializeJsonFields(data: any, jsonFields: string[]): any {
-  const result = { ...data };
-  for (const field of jsonFields) {
-    if (result[field] && typeof result[field] === 'string') {
-      try {
-        result[field] = JSON.parse(result[field]);
-      } catch (e) {
-        // Mantener como string si falla el parse
-      }
-    }
-  }
-  return result;
-}
-
-/**
- * Normaliza un usuario de Supabase para que tenga los campos esperados por el código
- * Mapea: role → rolPersonalizado, fullName → nombreCompleto, y normaliza nombreCompleto
- */
-function normalizeSupabaseUser(user: any, email?: string): any {
-  if (!user) return user;
-
-  // Después de snakeToCamel, los campos están en camelCase:
-  // - role → role (no cambia porque no tiene guiones bajos)
-  // - full_name → fullName
-  // - profesor_asignado_id → profesorAsignadoId
-  // - is_active → isActive
-
-  // Mapear role → rolPersonalizado
-  // El campo 'role' viene directamente de Supabase y no se modifica por snakeToCamel
-  // Verificar tanto 'role' (directo de Supabase) como 'rolPersonalizado' (ya mapeado)
-  const roleValue = user.role || user.rolPersonalizado;
-  const rolPersonalizado = (roleValue && ['ADMIN', 'PROF', 'ESTU'].includes(roleValue.toUpperCase()))
-    ? roleValue.toUpperCase()
-    : 'ESTU';
-
-  // Obtener full_name (puede estar como fullName o full_name después de snakeToCamel)
-  const fullName = user.fullName || user.full_name || '';
-
-  // Generar nombreCompleto desde full_name si está disponible
-  let nombreCompleto = '';
-  if (fullName && fullName.trim()) {
-    nombreCompleto = fullName.trim();
-  } else if (user.email) {
-    // Intentar derivar del email
-    const emailStr = String(user.email);
-    if (emailStr.includes('@')) {
-      const parteLocal = emailStr.split('@')[0];
-      const isLikelyId = /^[a-f0-9]{24}$/i.test(parteLocal) || /^u_[a-z0-9_]+$/i.test(parteLocal);
-      if (parteLocal && !isLikelyId) {
-        nombreCompleto = parteLocal
-          .replace(/[._+-]/g, ' ')
-          .replace(/\b\w/g, l => l.toUpperCase())
-          .trim() || emailStr;
-      } else {
-        nombreCompleto = emailStr;
-      }
-    } else {
-      nombreCompleto = emailStr;
-    }
-  } else if (email) {
-    // Usar el email proporcionado como parámetro
-    const emailStr = String(email);
-    if (emailStr.includes('@')) {
-      const parteLocal = emailStr.split('@')[0];
-      const isLikelyId = /^[a-f0-9]{24}$/i.test(parteLocal) || /^u_[a-z0-9_]+$/i.test(parteLocal);
-      if (parteLocal && !isLikelyId) {
-        nombreCompleto = parteLocal
-          .replace(/[._+-]/g, ' ')
-          .replace(/\b\w/g, l => l.toUpperCase())
-          .trim() || emailStr;
-      } else {
-        nombreCompleto = emailStr;
-      }
-    } else {
-      nombreCompleto = emailStr;
-    }
-  } else {
-    // Último recurso
-    nombreCompleto = `Usuario ${user.id || 'Nuevo'}`;
-  }
-
-  // Obtener profesor_asignado_id - puede estar como profesorAsignadoId (después de snakeToCamel) 
-  // o como profesor_asignado_id (directo de Supabase)
-  let profesorAsignadoId = user.profesorAsignadoId || user.profesor_asignado_id || null;
-
-  // Validar que profesorAsignadoId sea un UUID válido (en Supabase debe ser UUID)
-  // Si no es UUID válido, establecer como null para evitar errores
-  if (profesorAsignadoId) {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(String(profesorAsignadoId).trim())) {
-      // Si no es un UUID válido (por ejemplo, es un ID de MongoDB), ignorarlo
-      // Esto puede pasar si hay datos locales mezclados con datos de Supabase
-      profesorAsignadoId = null;
-    }
-  }
-
-  // Asegurar que full_name siempre tenga un valor si nombreCompleto está disponible
-  // full_name es la fuente de verdad, pero si no existe en la BD, usar nombreCompleto generado
-  let finalFullName = (fullName && fullName.trim()) || (nombreCompleto && nombreCompleto.trim()) || '';
-
-  // Si aún está vacío y hay email, usar email como último recurso para full_name
-  if (!finalFullName && email) {
-    const emailStr = String(email);
-    if (emailStr.includes('@')) {
-      const parteLocal = emailStr.split('@')[0];
-      const isLikelyId = /^[a-f0-9]{24}$/i.test(parteLocal) || /^u_[a-z0-9_]+$/i.test(parteLocal);
-      if (parteLocal && !isLikelyId) {
-        finalFullName = parteLocal
-          .replace(/[._+-]/g, ' ')
-          .replace(/\b\w/g, l => l.toUpperCase())
-          .trim() || emailStr;
-      } else {
-        finalFullName = emailStr;
-      }
-    } else {
-      finalFullName = emailStr;
-    }
-  }
-
-  // Si nombreCompleto está vacío pero finalFullName tiene valor, sincronizar
-  if (!nombreCompleto && finalFullName) {
-    nombreCompleto = finalFullName;
-  }
-
-  // Retornar usuario normalizado con todos los campos necesarios
-  return {
-    ...user,
-    // Campos mapeados
-    rolPersonalizado: rolPersonalizado,
-    nombreCompleto: nombreCompleto,
-    full_name: finalFullName, // full_name es la fuente de verdad - usar valor de BD o fallback
-    // Email: usar el proporcionado o el que ya está en el usuario
-    email: email || user.email || '',
-    // Profesor asignado - asegurar que esté en camelCase y sea UUID válido
-    profesorAsignadoId: profesorAsignadoId,
-    // Estado (mapear isActive a estado si es necesario)
-    estado: user.isActive !== false ? 'activo' : 'inactivo',
-    isActive: user.isActive !== false,
-    // Mapear nivel_tecnico a nivelTecnico si existe
-    nivelTecnico: user.nivelTecnico || user.nivel_tecnico || 1,
-    // Mapear nivel (experiencia) si existe
-    nivel: user.nivel || null,
-  };
-}
-
-/**
- * Wrapper para interceptar errores de autenticación en llamadas a Supabase
- * Detecta errores 401/403 y dispara un evento personalizado para que AuthProvider pueda reaccionar
- */
-async function withAuthErrorHandling<T>(
-  promise: any
-): Promise<{ data: T | null; error: any; count?: number | null }> {
-  try {
-    const result = await promise;
-
-    // Si hay error y es de autenticación, disparar evento
-    if (result.error && isAuthError(result.error)) {
-      // Disparar evento personalizado para que AuthProvider lo escuche
-      window.dispatchEvent(new CustomEvent('auth-error', {
-        detail: { error: result.error }
-      }));
-    }
-
-    return result;
-  } catch (error: any) {
-    // Si es un error de autenticación, disparar evento
-    if (isAuthError(error)) {
-      window.dispatchEvent(new CustomEvent('auth-error', {
-        detail: { error }
-      }));
-    }
-    throw error;
-  }
-}
-
-/**
- * Wrapper para operaciones que pueden lanzar errores directamente
- */
-async function wrapSupabaseCall<T>(operation: () => Promise<T>): Promise<T> {
-  try {
-    return await operation();
-  } catch (error: any) {
-    if (isAuthError(error)) {
-      // Disparar evento personalizado para que AuthProvider lo escuche
-      window.dispatchEvent(new CustomEvent('auth-error', {
-        detail: { error }
-      }));
-    }
-    throw error;
-  }
-}
 
 /**
  * Obtiene emails de usuarios desde auth.users usando Edge Function get-user-emails
@@ -1101,84 +730,12 @@ export function createRemoteDataAPI(): AppDataAPI {
       },
     },
     piezas: {
-      list: async (sort?: string) => {
-        let query = supabase.from('piezas').select('*');
-
-        if (sort) {
-          const direction = sort.startsWith('-') ? 'desc' : 'asc';
-          const field = sort.startsWith('-') ? sort.slice(1) : sort;
-          const snakeField = toSnakeCase(field);
-          query = query.order(snakeField, { ascending: direction === 'asc' });
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        return (data || []).map((p: any) => snakeToCamel<Pieza>(p));
-      },
-      get: async (id: string) => {
-        const { data, error } = await supabase
-          .from('piezas')
-          .select('*')
-          .eq('id', id)
-          .single();
-
-        if (error) {
-          if (error.code === 'PGRST116') return null;
-          throw error;
-        }
-        return snakeToCamel<Pieza>(data);
-      },
-      filter: async (filters: Record<string, any>, limit?: number | null) => {
-        let query = supabase.from('piezas').select('*');
-
-        for (const [key, value] of Object.entries(filters)) {
-          const snakeKey = toSnakeCase(key);
-          query = query.eq(snakeKey, value);
-        }
-
-        if (limit) {
-          query = query.limit(limit);
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        return (data || []).map((p: any) => snakeToCamel<Pieza>(p));
-      },
-      create: async (data) => {
-        const snakeData = camelToSnake({
-          ...data,
-          id: data.id || generateId('pieza'),
-        });
-        const { data: result, error } = await supabase
-          .from('piezas')
-          .insert(snakeData)
-          .select()
-          .single();
-
-        if (error) throw error;
-        return snakeToCamel<Pieza>(result);
-      },
-      update: async (id: string, updates: any) => {
-        const snakeUpdates = camelToSnake(updates);
-        const { data, error } = await supabase
-          .from('piezas')
-          .update(snakeUpdates)
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (error) throw error;
-        return snakeToCamel<Pieza>(data);
-      },
-      delete: async (id: string) => {
-        const { error } = await supabase
-          .from('piezas')
-          .delete()
-          .eq('id', id);
-
-        if (error) throw error;
-        return { success: true };
-      },
+      list: fetchPiezasList,
+      get: fetchPieza,
+      filter: fetchPiezasByFilter,
+      create: createPieza,
+      update: updatePieza,
+      delete: deletePieza,
     },
     bloques: {
       list: async (sort?: string) => {
@@ -1210,8 +767,8 @@ export function createRemoteDataAPI(): AppDataAPI {
             // Handle both array structure and { variations: [...] } structure
             if (Array.isArray(camel.content)) {
               camel.variations = camel.content;
-            } else if (camel.content.variations && Array.isArray(camel.content.variations)) {
-              camel.variations = camel.content.variations;
+            } else if ((camel.content as any).variations && Array.isArray((camel.content as any).variations)) {
+              camel.variations = (camel.content as any).variations;
             } else {
               camel.variations = [];
             }
@@ -1252,8 +809,8 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (camel.content && !camel.variations) {
           if (Array.isArray(camel.content)) {
             camel.variations = camel.content;
-          } else if (camel.content.variations && Array.isArray(camel.content.variations)) {
-            camel.variations = camel.content.variations;
+          } else if ((camel.content as any).variations && Array.isArray((camel.content as any).variations)) {
+            camel.variations = (camel.content as any).variations;
           } else {
             camel.variations = [];
           }
@@ -1286,8 +843,8 @@ export function createRemoteDataAPI(): AppDataAPI {
             // Handle new structure { variations: [...] } or legacy array structure
             if (Array.isArray(camel.content)) {
               camel.variations = camel.content;
-            } else if (camel.content.variations && Array.isArray(camel.content.variations)) {
-              camel.variations = camel.content.variations;
+            } else if ((camel.content as any).variations && Array.isArray((camel.content as any).variations)) {
+              camel.variations = (camel.content as any).variations;
             } else {
               camel.variations = [];
             }
@@ -1526,555 +1083,20 @@ export function createRemoteDataAPI(): AppDataAPI {
       },
     },
     asignaciones: {
-      list: async (sort?: string) => {
-        let query = supabase.from('asignaciones').select('*');
-
-        if (sort) {
-          const direction = sort.startsWith('-') ? 'desc' : 'asc';
-          const field = sort.startsWith('-') ? sort.slice(1) : sort;
-          const snakeField = toSnakeCase(field);
-          query = query.order(snakeField, { ascending: direction === 'asc' });
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-
-        // Cargar todos los planes necesarios de una vez para eficiencia
-        const asignacionesParsed = (data || []).map((a: any) => {
-          const parsed = snakeToCamel<Asignacion>(a);
-          return normalizeAsignacionISO(parsed);
-        });
-
-        // Obtener todos los planIds únicos que necesitamos cargar
-        const planIdsNecesarios = new Set<string>();
-        asignacionesParsed.forEach((a: any) => {
-          if (a.planId && !a.planAdaptado && !a.plan) {
-            planIdsNecesarios.add(a.planId);
-          }
-        });
-
-        // Cargar todos los planes necesarios
-        let planesList: Plan[] = [];
-        if (planIdsNecesarios.size > 0) {
-          const { data: planesData, error: planesError } = await supabase
-            .from('planes')
-            .select('*')
-            .in('id', Array.from(planIdsNecesarios));
-
-          if (!planesError && planesData) {
-            planesList = planesData.map((p: any) => snakeToCamel<Plan>(p));
-          }
-        }
-
-        // Resolver planes para cada asignación
-        const asignacionesResueltas = await Promise.all(
-          asignacionesParsed.map(async (a: any) => {
-            const plan = await resolvePlanForAsignacion(a, planesList);
-            return {
-              ...deserializeJsonFields(a, ['planAdaptado', 'piezaSnapshot']),
-              plan: plan || a.plan || null, // Asegurar que siempre hay un plan
-            };
-          })
-        );
-
-        return asignacionesResueltas;
-      },
-      get: async (id: string) => {
-        const { data, error } = await supabase
-          .from('asignaciones')
-          .select('*')
-          .eq('id', id)
-          .single();
-
-        if (error) {
-          if (error.code === 'PGRST116') return null;
-          throw error;
-        }
-
-        // Deserializar campos JSON después de leer
-        const parsed = snakeToCamel<Asignacion>(data);
-        const normalized = normalizeAsignacionISO(parsed);
-        const deserialized = deserializeJsonFields(normalized, ['planAdaptado', 'piezaSnapshot']);
-
-        // Resolver el plan
-        const plan = await resolvePlanForAsignacion(deserialized);
-
-        return {
-          ...deserialized,
-          plan: plan || deserialized.plan || null,
-        };
-      },
-      filter: async (filters: Record<string, any>, limit?: number | null) => {
-        let query = supabase.from('asignaciones').select('*');
-
-        for (const [key, value] of Object.entries(filters)) {
-          const snakeKey = toSnakeCase(key);
-          query = query.eq(snakeKey, value);
-        }
-
-        if (limit) {
-          query = query.limit(limit);
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-
-        // Cargar todos los planes necesarios de una vez para eficiencia
-        const asignacionesParsed = (data || []).map((a: any) => {
-          const parsed = snakeToCamel<Asignacion>(a);
-          return normalizeAsignacionISO(parsed);
-        });
-
-        // Obtener todos los planIds únicos que necesitamos cargar
-        const planIdsNecesarios = new Set<string>();
-        asignacionesParsed.forEach((a: any) => {
-          if (a.planId && !a.planAdaptado && !a.plan) {
-            planIdsNecesarios.add(a.planId);
-          }
-        });
-
-        // Cargar todos los planes necesarios
-        let planesList: Plan[] = [];
-        if (planIdsNecesarios.size > 0) {
-          const { data: planesData, error: planesError } = await supabase
-            .from('planes')
-            .select('*')
-            .in('id', Array.from(planIdsNecesarios));
-
-          if (!planesError && planesData) {
-            planesList = planesData.map((p: any) => snakeToCamel<Plan>(p));
-          }
-        }
-
-        // Resolver planes para cada asignación
-        const asignacionesResueltas = await Promise.all(
-          asignacionesParsed.map(async (a: any) => {
-            const plan = await resolvePlanForAsignacion(a, planesList);
-            return {
-              ...deserializeJsonFields(a, ['planAdaptado', 'piezaSnapshot']),
-              plan: plan || a.plan || null,
-            };
-          })
-        );
-
-        return asignacionesResueltas;
-      },
-      create: async (data) => {
-        // Arquitectura híbrida: soportar planId (referencia) o plan/planAdaptado (snapshot)
-        const planIdValue = (data as any).planId;
-        const planValue = data.plan || (data as any).planAdaptado; // plan es legacy, planAdaptado es nuevo
-        const piezaSnapshotValue = (data as any).piezaSnapshot;
-
-        const dataWithoutJson = { ...data } as any;
-        delete dataWithoutJson.plan;
-        delete dataWithoutJson.planAdaptado;
-        delete dataWithoutJson.planId;
-        delete dataWithoutJson.piezaSnapshot;
-
-        const snakeData = camelToSnake({
-          ...dataWithoutJson,
-          id: data.id || generateId('asignacion'),
-        });
-
-        // Lógica híbrida:
-        // - Si planId existe: usar referencia (plan_id = planId, plan_adaptado = NULL, plan = NULL si no hay snapshot)
-        // - Si plan/planAdaptado existe: usar snapshot (plan_adaptado = plan, plan = plan para legacy)
-        // - Si ambos existen: usar planId como referencia pero también mantener plan como snapshot para compatibilidad
-        if (planIdValue && planValue) {
-          // Ambos existen: usar planId como referencia pero mantener plan como snapshot para compatibilidad legacy
-          snakeData.plan_id = planIdValue;
-          snakeData.plan_adaptado = planValue;
-          // Mantener compatibilidad con campo legacy: también asignar a plan si existe
-          snakeData.plan = planValue;
-        } else if (planIdValue) {
-          // Solo planId: usar referencia
-          snakeData.plan_id = planIdValue;
-          snakeData.plan_adaptado = null;
-          // Si la BD requiere plan NOT NULL, necesitamos un valor por defecto
-          // Por ahora, dejamos null y el constraint CHECK debería permitirlo
-          snakeData.plan = null;
-        } else if (planValue) {
-          // Solo snapshot: usar snapshot
-          snakeData.plan_adaptado = planValue;
-          // Mantener compatibilidad con campo legacy: también asignar a plan
-          // Esto asegura que el constraint se cumpla si plan es NOT NULL
-          snakeData.plan = planValue;
-          snakeData.plan_id = null;
-        } else {
-          // Si no hay ninguno, el constraint de la BD fallará (correcto)
-          throw new Error('Debe proporcionarse planId o plan/planAdaptado');
-        }
-
-        if (piezaSnapshotValue) {
-          snakeData.pieza_snapshot = piezaSnapshotValue;
-        } else {
-          // pieza_snapshot es NOT NULL según el esquema
-          throw new Error('piezaSnapshot es requerido');
-        }
-
-        console.log('[remoteDataAPI.asignaciones.create] snakeData being sent:', JSON.stringify(snakeData, null, 2));
-
-        const { data: result, error } = await supabase
-          .from('asignaciones')
-          .insert(snakeData)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('[remoteDataAPI] Error al crear asignación:', {
-            error: error?.message || error,
-            code: error?.code,
-            details: error?.details,
-          });
-          throw error;
-        }
-
-        // Deserializar y resolver el plan
-        const parsed = snakeToCamel<Asignacion>(result);
-        const normalized = normalizeAsignacionISO(parsed);
-        const deserialized = deserializeJsonFields(normalized, ['planAdaptado', 'piezaSnapshot']);
-
-        // Resolver el plan para retornarlo
-        const plan = await resolvePlanForAsignacion(deserialized);
-
-        return {
-          ...deserialized,
-          plan: plan || deserialized.plan || null,
-        };
-      },
-      update: async (id: string, updates: any) => {
-        // Arquitectura híbrida: permitir actualizar planAdaptado o planId
-        // Manejar campo legacy 'plan' para compatibilidad
-        if (updates.plan !== undefined && updates.planAdaptado === undefined) {
-          // Si se envía 'plan' (legacy), convertirlo a planAdaptado
-          updates.planAdaptado = updates.plan;
-          delete updates.plan;
-        }
-
-        // Extraer campos especiales antes de camelToSnake
-        const planIdValue = updates.planId;
-        const planAdaptadoValue = updates.planAdaptado;
-        const piezaSnapshotValue = updates.piezaSnapshot;
-
-        const updatesWithoutJson = { ...updates };
-        delete updatesWithoutJson.planId;
-        delete updatesWithoutJson.planAdaptado;
-        delete updatesWithoutJson.plan; // Legacy
-        delete updatesWithoutJson.piezaSnapshot;
-
-        // Campos permitidos en update
-        const camposPermitidos = new Set([
-          'notas', 'foco', 'estado', 'semanaInicioISO', 'semana_inicio_iso',
-          'piezaId', 'pieza_id', 'piezaSnapshot', 'pieza_snapshot',
-          'profesorId', 'profesor_id', 'alumnoId', 'alumno_id',
-          'planId', 'plan_id', 'planAdaptado', 'plan_adaptado',
-          'isDraft', 'is_draft', 'modo'
-        ]);
-
-        const camposActualizados = Object.keys(updatesWithoutJson);
-        const camposNoPermitidos = camposActualizados.filter(campo => {
-          const campoCamel = camelToSnake({ [campo]: '' });
-          const campoSnake = Object.keys(campoCamel)[0];
-          return !camposPermitidos.has(campo) && !camposPermitidos.has(campoSnake);
-        });
-
-        if (camposNoPermitidos.length > 0) {
-          const errorMsg = `Campos no permitidos en actualización de asignación: ${camposNoPermitidos.join(', ')}. Solo se pueden actualizar: notas, foco, estado, semanaInicioISO, piezaId, planId, planAdaptado (y piezaSnapshot si piezaId cambia).`;
-          console.warn('[remoteDataAPI]', errorMsg);
-          // @ts-ignore
-          if (import.meta.env.DEV) {
-            console.warn('[remoteDataAPI] Campos eliminados del update:', camposNoPermitidos);
-          }
-          camposNoPermitidos.forEach(campo => delete updatesWithoutJson[campo]);
-        }
-
-        const snakeUpdates = camelToSnake(updatesWithoutJson);
-
-        // Manejar planId y planAdaptado
-        // Si se actualiza planAdaptado: establecer plan_id = NULL (ya no usa referencia)
-        // Si se actualiza planId: establecer plan_adaptado = NULL (vuelve a usar referencia)
-        // IMPORTANTE: No establecer ambos a null al mismo tiempo (violaría el constraint)
-        if (planAdaptadoValue !== undefined) {
-          snakeUpdates.plan_adaptado = planAdaptadoValue;
-          // Solo establecer plan_id a null si realmente estamos actualizando plan_adaptado
-          // No tocar plan_id si no se está actualizando explícitamente
-          if (planIdValue === undefined) {
-            snakeUpdates.plan_id = null; // Ya no usa referencia
-          }
-        }
-
-        if (planIdValue !== undefined) {
-          snakeUpdates.plan_id = planIdValue;
-          // Solo establecer plan_adaptado a null si realmente estamos actualizando planId
-          // No tocar plan_adaptado si no se está actualizando explícitamente
-          if (planAdaptadoValue === undefined) {
-            snakeUpdates.plan_adaptado = null; // Vuelve a usar referencia
-          }
-        }
-
-        if (piezaSnapshotValue !== undefined) {
-          snakeUpdates.pieza_snapshot = piezaSnapshotValue;
-        }
-
-        // Validar que no esté vacío
-        if (Object.keys(snakeUpdates).length === 0) {
-          throw new Error('No se pueden actualizar asignaciones con un objeto vacío. Debe incluir al menos un campo válido.');
-        }
-
-        // @ts-ignore
-        if (import.meta.env.DEV) {
-          console.log('[remoteDataAPI] Actualizando asignación:', {
-            id,
-            camposActualizados: Object.keys(snakeUpdates),
-            incluyePlanId: planIdValue !== undefined,
-            incluyePlanAdaptado: planAdaptadoValue !== undefined,
-            incluyePiezaSnapshot: piezaSnapshotValue !== undefined,
-          });
-        }
-
-        const { data, error } = await supabase
-          .from('asignaciones')
-          .update(snakeUpdates)
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (error) {
-          const errorContext = {
-            error: error?.message || error,
-            code: error?.code,
-            details: error?.details,
-            id,
-          };
-
-          console.error('[remoteDataAPI] Error al actualizar asignación:', errorContext);
-
-          // Mejorar mensajes de error específicos
-          if (error.code === 'PGRST204' || error.code === '406') {
-            const errorMsg = 'Error 406 (Not Acceptable): El servidor rechazó la actualización. Verifica que los campos enviados sean válidos y modificables.';
-            throw new Error(errorMsg);
-          }
-          if (error.code === 'PGRST116') {
-            // Error: no se encontró la fila o no se pudo devolver
-            const errorMsg = 'Error: No se pudo actualizar la asignación. Verifica que el ID sea válido y que tengas permisos para actualizarla.';
-            throw new Error(errorMsg);
-          }
-          if (error.code === 'PGRST301' || error.code === '23503') {
-            const errorMsg = 'Error de integridad referencial: Verifica que las referencias (alumnoId, profesorId, piezaId, planId) existan en la base de datos.';
-            throw new Error(errorMsg);
-          }
-          throw error;
-        }
-
-        // Deserializar y resolver el plan
-        const parsed = snakeToCamel<Asignacion>(data);
-        const normalized = normalizeAsignacionISO(parsed);
-        const deserialized = deserializeJsonFields(normalized, ['planAdaptado', 'piezaSnapshot']);
-
-        // Resolver el plan
-        const plan = await resolvePlanForAsignacion(deserialized);
-
-        return {
-          ...deserialized,
-          plan: plan || deserialized.plan || null,
-        };
-      },
-      delete: async (id: string) => {
-        const { error } = await supabase
-          .from('asignaciones')
-          .delete()
-          .eq('id', id);
-
-        if (error) throw error;
-        return { success: true };
-      },
+      list: fetchAsignaciones,
+      get: fetchAsignacion,
+      filter: fetchAsignacionesByFilter,
+      create: createAsignacion,
+      update: updateAsignacion,
+      delete: deleteAsignacion,
     },
     registrosSesion: {
-      list: async (sort?: string) => {
-        // Fetch sessions first
-        let query = supabase.from('registros_sesion').select('*');
-
-        if (sort) {
-          const direction = sort.startsWith('-') ? 'desc' : 'asc';
-          const field = sort.startsWith('-') ? sort.slice(1) : sort;
-          const snakeField = toSnakeCase(field);
-          query = query.order(snakeField, { ascending: direction === 'asc' });
-        }
-
-        const { data: sessionsData, error: sessionsError } = await query;
-        if (sessionsError) {
-          throw sessionsError;
-        }
-
-        const sessions = (sessionsData || []).map((r: any) => {
-          const camel = snakeToCamel<RegistroSesion>(r);
-          return normalizeISOFields<RegistroSesion>(camel);
-        });
-
-        if (sessions.length === 0) return [];
-
-        // Fetch associated blocks in batches to avoid URL length limits
-        const sessionIds = sessions.map(s => s.id);
-        const chunkSize = 50;
-        let allBlocks: any[] = [];
-
-        // Process in chunks
-        for (let i = 0; i < sessionIds.length; i += chunkSize) {
-          const chunk = sessionIds.slice(i, i + chunkSize);
-          const { data: blocksData, error: blocksError } = await supabase
-            .from('registros_bloque')
-            .select('*')
-            .in('registro_sesion_id', chunk);
-
-          if (blocksError) {
-            console.warn('[remoteDataAPI] Error fetching blocks chunk:', blocksError);
-            continue;
-          }
-
-          if (blocksData) {
-            allBlocks = [...allBlocks, ...blocksData];
-          }
-        }
-
-        const blocks = allBlocks.map((b: any) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
-
-        // Join blocks to sessions
-        const result = sessions.map(session => {
-          const sessionBlocks = [];
-          for (const b of blocks) {
-            if (b.registroSesionId === session.id) {
-              sessionBlocks.push(b);
-            }
-          }
-          return {
-            ...session,
-            registrosBloque: sessionBlocks
-          };
-        });
-
-        return result;
-      },
-      get: async (id: string) => {
-        const { data: sessionData, error: sessionError } = await supabase
-          .from('registros_sesion')
-          .select('*')
-          .eq('id', id)
-          .single();
-
-        if (sessionError) {
-          if (sessionError.code === 'PGRST116') return null;
-          throw sessionError;
-        }
-
-        const camel = snakeToCamel<RegistroSesion>(sessionData);
-        const session = normalizeISOFields<RegistroSesion>(camel);
-
-        // Fetch associated blocks
-        const { data: blocksData, error: blocksError } = await supabase
-          .from('registros_bloque')
-          .select('*')
-          .eq('registro_sesion_id', id);
-
-        if (blocksError) {
-          console.warn('[remoteDataAPI] Error fetching blocks for session:', blocksError);
-          return session;
-        }
-
-        const blocks = (blocksData || []).map((b: any) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
-
-        return {
-          ...session,
-          registrosBloque: blocks
-        };
-      },
-      filter: async (filters: Record<string, any>, limit?: number | null) => {
-        let query = supabase.from('registros_sesion').select('*');
-
-        for (const [key, value] of Object.entries(filters)) {
-          const snakeKey = toSnakeCase(key);
-          query = query.eq(snakeKey, value);
-        }
-
-        if (limit) {
-          query = query.limit(limit);
-        }
-
-        const { data: sessionsData, error: sessionsError } = await query;
-        if (sessionsError) throw sessionsError;
-
-        const sessions = (sessionsData || []).map((r: any) => {
-          const camel = snakeToCamel<RegistroSesion>(r);
-          return normalizeISOFields<RegistroSesion>(camel);
-        });
-
-        if (sessions.length === 0) return [];
-
-        // Fetch associated blocks in batches to avoid URL length limits
-        const sessionIds = sessions.map(s => s.id);
-        const chunkSize = 50;
-        let allBlocks: any[] = [];
-
-        // Process in chunks
-        for (let i = 0; i < sessionIds.length; i += chunkSize) {
-          const chunk = sessionIds.slice(i, i + chunkSize);
-          const { data: blocksData, error: blocksError } = await supabase
-            .from('registros_bloque')
-            .select('*')
-            .in('registro_sesion_id', chunk);
-
-          if (blocksError) {
-            console.warn('[remoteDataAPI] Error fetching blocks chunk:', blocksError);
-            continue;
-          }
-
-          if (blocksData) {
-            allBlocks = [...allBlocks, ...blocksData];
-          }
-        }
-
-        const blocks = allBlocks.map((b: any) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
-
-        // Join blocks to sessions
-        return sessions.map(session => ({
-          ...session,
-          registrosBloque: blocks.filter(b => b.registroSesionId === session.id)
-        }));
-      },
-      create: async (data) => {
-        const snakeData = camelToSnake({
-          ...data,
-          id: (data as any).id || generateId('registroSesion'),
-        });
-        const { data: result, error } = await supabase
-          .from('registros_sesion')
-          .insert(snakeData)
-          .select()
-          .single();
-
-        if (error) throw error;
-        return normalizeISOFields(snakeToCamel<RegistroSesion>(result));
-      },
-      update: async (id: string, updates: any) => {
-        const snakeUpdates = camelToSnake(updates);
-        const { data, error } = await supabase
-          .from('registros_sesion')
-          .update(snakeUpdates)
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (error) throw error;
-        return normalizeISOFields(snakeToCamel<RegistroSesion>(data));
-      },
-      delete: async (id: string) => {
-        const { error } = await supabase
-          .from('registros_sesion')
-          .delete()
-          .eq('id', id);
-
-        if (error) throw error;
-        return { success: true };
-      },
+      list: fetchRegistrosSesionList,
+      get: fetchRegistroSesion,
+      filter: fetchRegistrosSesionByFilter,
+      create: createRegistroSesion,
+      update: updateRegistroSesion,
+      delete: deleteRegistroSesion,
     },
     registrosBloque: {
       list: async (sort?: string) => {
@@ -2089,7 +1111,7 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(r)));
+        return ((data as any[]) || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(r)));
       },
       get: async (id: string) => {
         const { data, error } = await supabase
@@ -2118,7 +1140,7 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(r)));
+        return ((data as any[]) || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(r)));
       },
       create: async (data) => {
         const snakeData = camelToSnake({
@@ -2169,7 +1191,7 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((f: any) => {
+        return ((data as any[]) || []).map((f: any) => {
           const parsed = snakeToCamel<FeedbackSemanal>(f);
           return normalizeAsignacionISO<FeedbackSemanal>(parsed);
         });
@@ -2202,7 +1224,7 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((f: any) => {
+        return ((data as any[]) || []).map((f: any) => {
           const parsed = snakeToCamel<FeedbackSemanal>(f);
           return normalizeAsignacionISO<FeedbackSemanal>(parsed);
         });
@@ -2311,7 +1333,7 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((e: any) => {
+        return ((data as any[]) || []).map((e: any) => {
           const parsed = snakeToCamel<EventoCalendario>(e);
           // snakeToCamel convierte start_at -> startAt, pero el tipo usa start_at
           // Mapear de vuelta a start_at, end_at, all_day
@@ -2377,7 +1399,7 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((e: any) => {
+        return ((data as any[]) || []).map((e: any) => {
           const parsed = snakeToCamel<EventoCalendario>(e);
           // Asegurar que start_at, end_at, all_day estén presentes
           if ((parsed as any).startAt && !parsed.start_at) {
@@ -2461,7 +1483,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         }
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((e: any) => snakeToCamel<EvaluacionTecnica>(e));
+        return ((data as any[]) || []).map((e: any) => snakeToCamel<EvaluacionTecnica>(e));
       },
       get: async (id: string) => {
         const { data, error } = await supabase
@@ -2484,7 +1506,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (limit) query = query.limit(limit);
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((e: any) => snakeToCamel<EvaluacionTecnica>(e));
+        return ((data as any[]) || []).map((e: any) => snakeToCamel<EvaluacionTecnica>(e));
       },
       create: async (data) => {
         const snakeData = camelToSnake(data);
@@ -2531,7 +1553,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         }
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((e: any) => snakeToCamel(e));
+        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
       },
       get: async (id: string) => {
         // ID is integer level
@@ -2555,7 +1577,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (limit) query = query.limit(limit);
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((e: any) => snakeToCamel(e));
+        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
       },
       create: async (data: any) => {
         const snakeData = camelToSnake(data);
@@ -2598,7 +1620,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         }
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((e: any) => snakeToCamel(e));
+        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
       },
       get: async (id: string) => {
         const { data, error } = await supabase
@@ -2621,7 +1643,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (limit) query = query.limit(limit);
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((e: any) => snakeToCamel(e));
+        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
       },
       create: async (data: any) => {
         const snakeData = camelToSnake(data);
@@ -2667,7 +1689,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         }
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((e: any) => snakeToCamel(e));
+        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
       },
       get: async (id: string) => {
         const { data, error } = await supabase
@@ -2690,7 +1712,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (limit) query = query.limit(limit);
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((e: any) => snakeToCamel(e));
+        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
       },
       create: async (data: any) => {
         const snakeData = camelToSnake(data);
@@ -2736,7 +1758,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         }
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((e: any) => snakeToCamel(e));
+        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
       },
       get: async (id: string) => {
         const { data, error } = await supabase
@@ -2759,7 +1781,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (limit) query = query.limit(limit);
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((e: any) => snakeToCamel(e));
+        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
       },
       create: async (data: any) => {
         const snakeData = camelToSnake(data);
@@ -2805,7 +1827,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         }
         const { data, error } = await withAuthErrorHandling(query);
         if (error) throw error;
-        return (data || []).map((e: any) => snakeToCamel(e));
+        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
       },
       get: async (id: string) => {
         const { data, error } = await withAuthErrorHandling(
@@ -2830,7 +1852,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (limit) query = query.limit(limit);
         const { data, error } = await withAuthErrorHandling(query);
         if (error) throw error;
-        return (data || []).map((e: any) => snakeToCamel(e));
+        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
       },
       create: async (item: any) => {
         const snakeItem = camelToSnake(item);
@@ -2881,7 +1903,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         }
         const { data, error } = await withAuthErrorHandling(query);
         if (error) throw error;
-        return (data || []).map((e: any) => snakeToCamel(e));
+        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
       },
       get: async (id: string) => {
         const { data, error } = await withAuthErrorHandling(
@@ -2906,7 +1928,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (limit) query = query.limit(limit);
         const { data, error } = await withAuthErrorHandling(query);
         if (error) throw error;
-        return (data || []).map((e: any) => snakeToCamel(e));
+        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
       },
       create: async (item: any) => {
         const snakeItem = camelToSnake(item);
@@ -2957,7 +1979,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         }
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((e: any) => snakeToCamel(e));
+        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
       },
       get: async (id: string) => {
         const { data, error } = await supabase
@@ -2980,7 +2002,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (limit) query = query.limit(limit);
         const { data, error } = await query;
         if (error) throw error;
-        return (data || []).map((e: any) => snakeToCamel(e));
+        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
       },
       create: async (input: any) => {
         const snakeInput = camelToSnake(input);
@@ -3123,89 +2145,6 @@ export async function setProfileActive(profileId: string, isActive: boolean): Pr
   }
 }
 
-/**
- * Elimina un bloque por ID
- */
-export async function deleteBloque(id: string): Promise<void> {
-  const { error } = await withAuthErrorHandling(
-    supabase
-      .from('bloques')
-      .delete()
-      .eq('id', id)
-  );
-
-  if (error) {
-    throw error;
-  }
-}
-
-/**
- * Obtiene una vista previa de los planes (limitado a 20)
- */
-export async function fetchPlanesPreview(): Promise<any[]> {
-  const { data, error } = await withAuthErrorHandling(
-    supabase.from('planes').select('*').limit(20)
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  return data || [];
-}
-
-/**
- * Obtiene una vista previa de los registros de sesión (limitado a 20)
- */
-export async function fetchRegistrosSesionPreview(): Promise<any[]> {
-  const { data, error } = await withAuthErrorHandling(
-    supabase
-      .from('registros_sesion')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(20)
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  return data || [];
-}
-
-/**
- * Obtiene todos los bloques (para migración de multimedia)
- */
-export async function fetchBloquesPreview(): Promise<any[]> {
-  const { data, error } = await withAuthErrorHandling(
-    supabase
-      .from('bloques')
-      .select('*')
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  return data || [];
-}
-
-/**
- * Obtiene todas las piezas (para migración de multimedia)
- */
-export async function fetchPiezasPreview(): Promise<any[]> {
-  const { data, error } = await withAuthErrorHandling(
-    supabase
-      .from('piezas')
-      .select('*')
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  return data || [];
-}
 
 /**
  * Obtiene todos los feedbacks semanales (para migración de multimedia)
@@ -3214,23 +2153,6 @@ export async function fetchFeedbacksSemanales(): Promise<any[]> {
   const { data, error } = await withAuthErrorHandling(
     supabase
       .from('feedbacks_semanal')
-      .select('*')
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  return data || [];
-}
-
-/**
- * Obtiene todos los registros de sesión (para migración de multimedia)
- */
-export async function fetchRegistrosSesionMultimedia(): Promise<any[]> {
-  const { data, error } = await withAuthErrorHandling(
-    supabase
-      .from('registros_sesion')
       .select('*')
   );
 
@@ -3261,87 +2183,16 @@ export async function fetchSupportMensajes(): Promise<any[]> {
 /**
  * Obtiene una vista previa de los planes para la página de ejercicios
  */
-export async function fetchPlanesPreviewEjercicios(): Promise<any[]> {
-  const { data, error } = await withAuthErrorHandling(
-    supabase.from('planes').select('*').limit(20)
-  );
 
-  if (error) {
-    throw error;
-  }
-
-  return data || [];
-}
 
 /**
  * Obtiene las sesiones recientes (para página de ejercicios)
  */
-export async function fetchRecentRegistrosSesion(): Promise<any[]> {
-  const { data, error } = await withAuthErrorHandling(
-    supabase
-      .from('registros_sesion')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(20)
-  );
 
-  if (error) {
-    throw error;
-  }
 
-  return data || [];
-}
 
-/**
- * Actualiza un bloque existente
- */
-export async function updateBloque(id: string, payload: any): Promise<void> {
-  const { error } = await withAuthErrorHandling(
-    supabase
-      .from('bloques')
-      .update(payload)
-      .eq('id', id)
-  );
 
-  if (error) {
-    throw error;
-  }
-}
 
-/**
- * Crea un nuevo bloque
- */
-export async function createBloque(payload: any): Promise<any[]> {
-  const { data, error } = await withAuthErrorHandling(
-    supabase
-      .from('bloques')
-      .insert([payload])
-      .select()
-  );
 
-  if (error) {
-    throw error;
-  }
 
-  return data || [];
-}
-
-/**
- * Obtiene el listado de bloques (limitado a 100, para página de ejercicios)
- */
-export async function fetchBloquesListado(): Promise<any[]> {
-  const { data, error } = await withAuthErrorHandling(
-    supabase
-      .from('bloques')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100)
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  return data || [];
-}
 
