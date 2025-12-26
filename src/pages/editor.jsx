@@ -10,7 +10,7 @@ import PlanesTab from "@/components/editor/PlanesTab";
 import BloquesTab from "@/components/editor/BloquesTab";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
-import { useEffectiveUser } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 
 export default function EditorPage() {
   const [activeTab, setActiveTab] = useState("planes");

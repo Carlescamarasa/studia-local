@@ -3,6 +3,7 @@
  */
 
 import { supabase } from '@/lib/supabaseClient';
+import { getCachedAuthUser } from '@/auth/authUserCache';
 import { localDataClient } from '@/api/localDataClient';
 
 export interface ErrorReport {
@@ -43,7 +44,7 @@ export interface UpdateReportData {
  */
 export async function createErrorReport(data: CreateReportData): Promise<ErrorReport> {
   // Obtener el usuario autenticado para created_by
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCachedAuthUser();
   const createdBy = user?.id || null;
 
   const { data: report, error } = await supabase
@@ -58,13 +59,13 @@ export async function createErrorReport(data: CreateReportData): Promise<ErrorRe
       context: data.context,
       status: 'nuevo'
     })
-      .select(`
+    .select(`
         *,
         created_by_profile:created_by (
           full_name
         )
       `)
-      .single();
+    .single();
 
   if (error) {
     console.error('[errorReportsAPI] Error creando reporte:', {
@@ -122,13 +123,13 @@ export async function listErrorReports(filters?: {
   // OPTIMIZACIÓN: Obtener todos los perfiles de autores en una sola query
   const createdByIds = [...new Set((data || []).map(r => r.created_by).filter(Boolean))];
   let profilesMap = new Map<string, { full_name: string }>();
-  
+
   if (createdByIds.length > 0) {
     const { data: profilesData, error: profilesError } = await supabase
       .from('profiles')
       .select('id, full_name')
       .in('id', createdByIds);
-    
+
     if (!profilesError && profilesData) {
       profilesData.forEach(profile => {
         if (profile.id) {
@@ -154,13 +155,13 @@ export async function listErrorReports(filters?: {
  * Obtener un reporte por ID
  */
 export async function getErrorReport(id: string): Promise<ErrorReport | null> {
-    const { data, error } = await supabase
-      .from('error_reports')
-      .select('*')
-      .eq('id', id)
-      .single();
+  const { data, error } = await supabase
+    .from('error_reports')
+    .select('*')
+    .eq('id', id)
+    .single();
 
-    if (error) {
+  if (error) {
     if (error.code === 'PGRST116') return null; // No encontrado
     console.error('[errorReportsAPI] Error obteniendo reporte:', {
       error: error?.message || error,
@@ -210,13 +211,13 @@ export async function updateErrorReport(
   updates: UpdateReportData
 ): Promise<ErrorReport> {
   const updateData: any = {};
-  
+
   if (updates.status !== undefined) {
     updateData.status = updates.status;
   }
   if (updates.adminNotes !== undefined) {
     updateData.admin_notes = updates.adminNotes;
-    }
+  }
   if (updates.resolvedBy !== undefined) {
     updateData.resolved_by = updates.resolvedBy;
     if (updates.resolvedBy && updates.status === 'resuelto') {
@@ -224,22 +225,22 @@ export async function updateErrorReport(
     } else if (!updates.resolvedBy) {
       updateData.resolved_at = null;
     }
-    }
+  }
 
-    const { data, error } = await supabase
-      .from('error_reports')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
+  const { data, error } = await supabase
+    .from('error_reports')
+    .update(updateData)
+    .eq('id', id)
+    .select()
+    .single();
 
-    if (error) {
+  if (error) {
     console.error('[errorReportsAPI] Error actualizando reporte:', {
       error: error?.message || error,
       code: error?.code,
     });
-      throw error;
-    }
+    throw error;
+  }
 
   return mapToErrorReport(data);
 }
@@ -252,7 +253,7 @@ export async function updateMultipleErrorReports(
   updates: UpdateReportData
 ): Promise<ErrorReport[]> {
   const updateData: any = {};
-  
+
   if (updates.status !== undefined) {
     updateData.status = updates.status;
   }
@@ -325,24 +326,24 @@ export async function deleteMultipleErrorReports(ids: string[]): Promise<void> {
  * Mapear datos de Supabase (snake_case) a ErrorReport (camelCase)
  */
 function mapToErrorReport(data: any): ErrorReport {
-    // Extraer full_name del JOIN con profiles
-    const createdByName = data.created_by_profile?.full_name || null;
-    
-    return {
-      id: data.id,
-      userId: data.user_id,
-      createdBy: data.created_by,
-      createdByName: createdByName,
-      category: data.category,
-      description: data.description,
-      screenshotUrl: data.screenshot_url,
-      audioUrl: data.audio_url,
-      context: data.context,
-      status: data.status,
-      adminNotes: data.admin_notes,
-      resolvedBy: data.resolved_by,
-      resolvedAt: data.resolved_at,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
-    };
+  // Extraer full_name del JOIN con profiles
+  const createdByName = data.created_by_profile?.full_name || null;
+
+  return {
+    id: data.id,
+    userId: data.user_id,
+    createdBy: data.created_by,
+    createdByName: createdByName,
+    category: data.category,
+    description: data.description,
+    screenshotUrl: data.screenshot_url,
+    audioUrl: data.audio_url,
+    context: data.context,
+    status: data.status,
+    adminNotes: data.admin_notes,
+    resolvedBy: data.resolved_by,
+    resolvedAt: data.resolved_at,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
 }

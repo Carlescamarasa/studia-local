@@ -1,6 +1,7 @@
 import { localDataClient } from "@/api/localDataClient";
 import { calcularLunesSemanaISO } from "@/components/utils/helpers";
 import { supabase } from "@/lib/supabaseClient";
+import { getCachedAuthUser } from "@/auth/authUserCache";
 
 /**
  * Creates a manual "draft" session for the given student and exercises.
@@ -17,14 +18,16 @@ export async function createManualSessionDraft({ studentId, exerciseCodes, sourc
     if (!studentId) throw new Error("Student ID is required");
     if (!exerciseCodes || exerciseCodes.length === 0) throw new Error("At least one exercise code is required");
 
-    // Deduplicate codes
+
+
+    // ... Deduplicate codes ...
     const uniqueCodes = [...new Set(exerciseCodes)];
 
     // Current week ISO
     const semanaInicioISO = calcularLunesSemanaISO(new Date());
 
     // Get the current authenticated user's ID for RLS compliance
-    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const authUser = await getCachedAuthUser();
     const currentAuthId = authUser?.id || null;
 
     // Check if there's an existing draft Asignacion for this student in this week

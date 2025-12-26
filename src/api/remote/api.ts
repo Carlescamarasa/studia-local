@@ -6,6 +6,7 @@
  */
 
 import type { AppDataAPI } from '../appDataAPI';
+
 import { supabase, withAuthErrorHandling, wrapSupabaseCall } from './client';
 import {
   toSnakeCase,
@@ -22,6 +23,7 @@ export * from './piezas';
 export * from './planes';
 export * from './sesiones';
 export * from './asignaciones';
+import { getCachedAuthUser, clearAuthUserCache } from '@/auth/authUserCache';
 
 
 
@@ -184,49 +186,7 @@ function cacheUsers(users: any[]) {
   usersCacheTimestamp = Date.now();
 }
 
-// Caché en memoria para el usuario autenticado
-// Evita múltiples llamadas a supabase.auth.getUser() por request
-let cachedAuthUser: { id: string; email: string | null } | null = null;
-let cachedAuthUserTimestamp: number = 0;
-const AUTH_USER_CACHE_TTL = 30 * 1000; // 30 segundos
 
-/**
- * Obtiene el usuario autenticado de la caché o lo carga una sola vez
- * Esto evita las múltiples llamadas redundantes a supabase.auth.getUser()
- */
-async function getCachedAuthUser(): Promise<{ id: string; email: string | null } | null> {
-  const now = Date.now();
-
-  // Si hay caché válida, usarla
-  if (cachedAuthUser && (now - cachedAuthUserTimestamp) < AUTH_USER_CACHE_TTL) {
-    return cachedAuthUser;
-  }
-
-  // Si no hay caché o expiró, cargar
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      cachedAuthUser = { id: user.id, email: user.email || null };
-      cachedAuthUserTimestamp = now;
-      return cachedAuthUser;
-    }
-  } catch (e) {
-    // Ignorar errores de autenticación
-  }
-
-  // Limpiar caché si no hay usuario
-  cachedAuthUser = null;
-  cachedAuthUserTimestamp = 0;
-  return null;
-}
-
-/**
- * Limpia la caché del usuario autenticado (llamar en logout)
- */
-export function clearAuthUserCache(): void {
-  cachedAuthUser = null;
-  cachedAuthUserTimestamp = 0;
-}
 
 /**
  * Implementación remota de AppDataAPI
@@ -483,7 +443,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         // Intentar obtener email del usuario autenticado si coincide
         let email: string | undefined = undefined;
         try {
-          const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
+          const user = await getCachedAuthUser();
           if (user && user.id === id) {
             email = user.email || undefined;
           }
@@ -526,7 +486,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         let currentUserEmail: string | null = null;
         let currentUserId: string | null = null;
         try {
-          const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
+          const user = await getCachedAuthUser();
           currentUserEmail = user?.email || null;
           currentUserId = user?.id || null;
         } catch (e) {
@@ -656,7 +616,7 @@ export function createRemoteDataAPI(): AppDataAPI {
             // Actualizar raw_user_meta_data en auth.users para mantener sincronización
             // Esto requiere usar el Admin API o una función edge function
             // Por ahora, intentamos actualizar usando updateUser si está disponible
-            const { data: { user: currentUser } } = await wrapSupabaseCall(() => supabase.auth.getUser());
+            const currentUser = await getCachedAuthUser();
             if (currentUser && currentUser.id === id) {
               // Solo podemos actualizar el usuario actual
               // Para otros usuarios, necesitaríamos Admin API o una función edge
@@ -695,7 +655,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         let email: string | undefined = updates.email;
         if (!email) {
           try {
-            const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
+            const user = await getCachedAuthUser();
             if (user && user.id === id) {
               email = user.email || undefined;
             }
@@ -867,7 +827,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         let profesorId = (data as any).profesorId;
         if (!profesorId) {
           try {
-            const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
+            const user = await getCachedAuthUser();
             profesorId = user?.id;
           } catch (e) {
             console.warn('[remoteDataAPI.bloques.create] Could not get current user for profesor_id');
@@ -2009,7 +1969,7 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         // Ensure user is set
         if (!snakeInput.created_by) {
-          const { data: { user } } = await wrapSupabaseCall(() => supabase.auth.getUser());
+          const user = await getCachedAuthUser();
           if (user?.id) snakeInput.created_by = user.id;
         }
 

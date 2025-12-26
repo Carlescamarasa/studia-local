@@ -12,16 +12,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ds";
 import { Alert, AlertDescription } from "@/components/ds";
 import {
-  ArrowLeft, Target, User, Music, BookOpen, Calendar,
-  Settings, ChevronDown, ChevronRight, Clock,
-  Edit, XCircle, Shield, Save, X, SlidersHorizontal, Trash2, // Existing icons
+  ArrowLeft, Target, User, Music, BookOpen, Calendar, Settings, ChevronDown, ChevronRight, Clock, Edit, XCircle, Shield, Save, X, SlidersHorizontal, Trash2, // Existing icons
   Eye, CheckCircle2, Layers, PlayCircle, MessageSquare // New icons from outline
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 // Preserving all helper functions and components used in the original file
-import { getNombreVisible, formatLocalDate, parseLocalDate, startOfMonday, useEffectiveUser, resolveUserIdActual } from "../components/utils/helpers";
+import { getNombreVisible, formatLocalDate, parseLocalDate, startOfMonday, resolveUserIdActual } from "../components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { calcularTiempoSesion } from "../components/study/sessionSequence";
 import SessionContentView from "../components/study/SessionContentView";
 import PageHeader from "@/components/ds/PageHeader";

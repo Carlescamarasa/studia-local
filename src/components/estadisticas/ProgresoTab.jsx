@@ -252,20 +252,7 @@ export default function ProgresoTab({
       {view === 'ejercicios' && (
         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
           {/* DEBUG: Log para trazar flujo de datos de Ejercicios */}
-          {console.debug('[Progreso DEBUG 2/2] Props de Ejercicios antes de renderizar:', {
-            tiposBloque: {
-              total: tiposBloque.length,
-              camposEsperados: ['tipo', 'tiempoReal', 'count', 'tiempoMedio'],
-              camposReales: tiposBloque[0] ? Object.keys(tiposBloque[0]) : 'N/A',
-              sample: tiposBloque[0] || 'N/A',
-            },
-            topEjercicios: {
-              total: topEjercicios.length,
-              camposEsperados: ['code', 'nombre', 'tipo', 'tiempoTotal', 'sesionesCount', 'ultimaPractica'],
-              camposReales: topEjercicios[0] ? Object.keys(topEjercicios[0]) : 'N/A',
-              sample: topEjercicios[0] || 'N/A',
-            },
-          })}
+
           {/* 1. Tipos de Bloque */}
           <TiposBloquesTab tiposBloques={tiposBloque} />
 

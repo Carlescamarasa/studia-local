@@ -17,7 +17,7 @@ import { componentStyles } from "@/design/componentStyles";
 import MediaLinksInput from "@/components/common/MediaLinksInput";
 import { normalizeMediaLinks } from "@/components/utils/media";
 import { useDataEntities } from "@/providers/DataProvider";
-import { useEffectiveUser } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 
 export default function PieceEditor({ pieza, onClose }) {
   const queryClient = useQueryClient();

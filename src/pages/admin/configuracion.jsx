@@ -14,6 +14,7 @@ import React, { useState, useEffect, lazy, Suspense } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Settings, GitBranch, Palette, Signal, FlaskConical, ArrowLeftRight, Image } from "lucide-react";
 import RequireRole from "@/components/auth/RequireRole";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import PageHeader from "@/components/ds/PageHeader";
 import Tabs from "@/components/ds/Tabs";
 import { componentStyles } from "@/design/componentStyles";
@@ -40,6 +41,9 @@ const TabLoader = () => (
 function ConfiguracionPageContent() {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
+    const { effectiveUser, realUser } = useEffectiveUser();
+
+
 
     // Tab state from URL with fallback to 'version'
     const [tabActiva, setTabActiva] = useState(() => {

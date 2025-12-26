@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ds";
 import { Input } from "@/components/ui/input";
 import {
-    Target, Eye, Edit, Copy, Trash2, FileDown, Search, X, Plus, RotateCcw,
-    ChevronUp, ChevronDown, Check, Clock, Circle, FileText, Send, CheckCircle, AlertCircle, LayoutList, User, Users, XCircle
+    Target, Eye, Edit, Copy, Trash2, FileDown, Search, X, Plus, RotateCcw, ChevronUp, ChevronDown, Check, Clock, Circle, FileText, Send, CheckCircle, AlertCircle, LayoutList, User, Users, XCircle
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -16,7 +15,8 @@ import { toast } from "sonner";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import FormularioRapido from "@/components/asignaciones/FormularioRapido";
 import StudentSearchBar from "@/components/asignaciones/StudentSearchBar";
-import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, useEffectiveUser, resolveUserIdActual, startOfMonday, calcularLunesSemanaISO, calcularOffsetSemanas, isoWeekNumberLocal } from "@/components/utils/helpers";
+import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, resolveUserIdActual, startOfMonday, calcularLunesSemanaISO, calcularOffsetSemanas, isoWeekNumberLocal } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MultiSelect from "@/components/ui/MultiSelect";
 import PageHeader from "@/components/ds/PageHeader";

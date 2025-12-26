@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import { Badge } from "@/components/ds";
 import { componentStyles } from "@/design/componentStyles";
-import { useEffectiveUser } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 
 export default function PiezasTab() {
   const queryClient = useQueryClient();

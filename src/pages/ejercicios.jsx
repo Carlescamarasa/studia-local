@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getCachedAuthUser } from "@/auth/authUserCache";
 import { supabase } from '@/lib/supabaseClient';
 import { fetchPlanesPreviewEjercicios, fetchRecentRegistrosSesion, updateBloque, createBloque, deleteBloque, fetchBloquesListado } from "@/api/remoteDataAPI";
 import { toast } from 'sonner';
@@ -144,7 +145,7 @@ export default function EjerciciosPage() {
     const tempId = editingId || `temp_${Date.now()}`;
 
     try {
-      const user = (await supabase.auth.getUser()).data.user;
+      const user = await getCachedAuthUser();
       const payload = {
         nombre: formData.nombre,
         tipo: formData.tipo,

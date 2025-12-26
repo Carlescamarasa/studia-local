@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { componentStyles } from "@/design/componentStyles";
 import { Keyboard, HelpCircle } from "lucide-react";
-import { useEffectiveUser } from "../utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { getHotkeysForRole, formatShortcut } from "@/utils/hotkeys";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";

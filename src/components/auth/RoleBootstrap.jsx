@@ -1,5 +1,5 @@
 import React from "react";
-import { useEffectiveUser } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 
 export default function RoleBootstrap({ children }) {
   const effectiveUser = useEffectiveUser();

@@ -15,7 +15,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { formatLocalDate, parseLocalDate, startOfMonday, displayName, useEffectiveUser } from "@/components/utils/helpers";
+import { formatLocalDate, parseLocalDate, startOfMonday, displayName } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { useAuth } from "@/auth/AuthProvider";
 
 export default function CrearAsignacionWizard({ onClose }) {

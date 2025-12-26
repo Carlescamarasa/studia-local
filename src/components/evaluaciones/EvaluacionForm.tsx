@@ -13,7 +13,7 @@ import { computeKeyCriteriaStatus, canPromote, promoteLevel, CriteriaStatusResul
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { useEffectiveUser } from '@/components/utils/helpers';
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import CurrentXPInline from './CurrentXPInline';
 import { Separator } from '@/components/ui/separator';
 import Badge from '@/components/ds/Badge';

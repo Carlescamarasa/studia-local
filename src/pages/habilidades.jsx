@@ -1,7 +1,8 @@
 import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
-import { useEffectiveUser, resolveUserIdActual } from "@/components/utils/helpers";
+import { resolveUserIdActual } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import HabilidadesView from "@/components/estadisticas/HabilidadesView";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";

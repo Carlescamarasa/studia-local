@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Settings, ScrollText, Music, Calendar, Layers, Target, MessageSquare, Activity, PlayCircle, Users, Shield } from 'lucide-react';
 import { localDataClient } from '@/api/localDataClient';
 import { Card, CardContent } from '@/components/ds';
-import { useEffectiveUser } from '@/components/utils/helpers';
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import PageHeader from '@/components/ds/PageHeader';
 import ModeToggle from './components/ModeToggle';
 import SeedsPanel from './SeedsPanel';
@@ -74,7 +74,15 @@ export default function MaintenancePanel({ embedded = false }) {
     };
 
     // Access control
-    if (effectiveUser?.rolPersonalizado !== 'ADMIN') {
+    if (effectiveUser.loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[50vh]">
+                <p className="text-muted-foreground">Cargando permisos...</p>
+            </div>
+        );
+    }
+
+    if (effectiveUser.effectiveRole !== 'ADMIN') {
         return (
             <div className="flex items-center justify-center min-h-[80vh]">
                 <Card className="max-w-md app-card">
@@ -83,6 +91,11 @@ export default function MaintenancePanel({ embedded = false }) {
                         <div>
                             <h2 className="font-semibold text-lg text-[var(--color-text-primary)] mb-2">Acceso Denegado</h2>
                             <p className="text-[var(--color-text-secondary)]">Esta vista requiere permisos de Administrador.</p>
+                            {import.meta.env.DEV && (
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    Rol detectado: {effectiveUser.effectiveRole || 'Ninguno'}
+                                </p>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

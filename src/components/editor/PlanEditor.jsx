@@ -20,7 +20,7 @@ import ExerciseEditor from "./ExerciseEditor";
 import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "@/components/study/sessionSequence";
-import { useEffectiveUser } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 
 // Componente Sortable para Sesión
 function SortableSesion({
