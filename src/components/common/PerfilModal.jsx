@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
+import { remoteDataAPI } from "@/api/remote/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useUsers } from "@/hooks/entities/useUsers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ds";
 import { Badge } from "@/components/ds";
@@ -110,11 +112,8 @@ export default function PerfilModal({
   // Objeto sintético para compatibilidad con código existente
   const effectiveUser = { id: effectiveUserId, email: effectiveEmail };
 
-  const { data: allUsers } = useQuery({
-    queryKey: ['allUsers'],
-    queryFn: () => localDataClient.entities.User.list(),
-    enabled: open,
-  });
+  // Usar hook centralizado para usuarios
+  const { data: allUsers } = useUsers();
 
   // Determinar qué userId usar para la query
   // Si hay userId prop, usarlo. Si no, usar effectiveUserId del provider
@@ -126,8 +125,8 @@ export default function PerfilModal({
     queryFn: async () => {
       if (!targetUserIdToLoad) return null;
 
-      // Buscar el usuario por ID
-      const users = await localDataClient.entities.User.list();
+      // Buscar el usuario por ID usando API centralizada
+      const users = await remoteDataAPI.usuarios.list();
       const foundUser = users.find(u => u.id === targetUserIdToLoad);
 
       if (foundUser) {

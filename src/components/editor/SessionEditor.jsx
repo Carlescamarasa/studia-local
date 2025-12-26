@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
+import { remoteDataAPI } from "@/api/remote/api";
 import { supabase } from "@/lib/supabaseClient";
-import { remoteDataAPI } from "@/api/remoteDataAPI";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -316,7 +316,8 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     queryKey: ['user', alumnoId],
     queryFn: async () => {
       if (!alumnoId) return null;
-      const users = await localDataClient.entities.User.list();
+      // Usar remoteDataAPI para consistencia con el resto del codebase
+      const users = await remoteDataAPI.usuarios.list();
       return users.find(u => u.id === alumnoId) || null;
     },
     enabled: !!alumnoId,

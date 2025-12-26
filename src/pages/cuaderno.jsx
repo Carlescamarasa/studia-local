@@ -16,6 +16,8 @@ import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import PeriodHeader from "@/components/common/PeriodHeader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
+import { useUsers } from "@/hooks/entities/useUsers";
+import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import UserActionsMenu from "@/components/common/UserActionsMenu";
@@ -221,18 +223,9 @@ function CuadernoEstudiantesTab({ semanaActualISO, searchTerm }) {
     const [previewUrls, setPreviewUrls] = useState([]);
     const [previewIndex, setPreviewIndex] = useState(0);
 
-    // Data Load
-    const { data: usuarios = [] } = useQuery({
-        queryKey: ['users'],
-        queryFn: () => localDataClient.entities.User.list(),
-        staleTime: 5 * 60 * 1000,
-    });
-
-    const { data: asignacionesRaw = [] } = useQuery({
-        queryKey: ['asignaciones'],
-        queryFn: () => localDataClient.entities.Asignacion.list(),
-        staleTime: 5 * 60 * 1000,
-    });
+    // Usar hooks centralizados
+    const { data: usuarios = [] } = useUsers();
+    const { data: asignacionesRaw = [] } = useAsignaciones();
 
     const { data: feedbacksSemanalRaw = [] } = useQuery({
         queryKey: ['feedbacksSemanal'],

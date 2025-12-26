@@ -2,6 +2,8 @@
 import React, { useState, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
+import { useUsers } from "@/hooks/entities/useUsers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ds";
@@ -82,16 +84,11 @@ function AsignacionesPageContent() {
 
   const effectiveUser = useEffectiveUser();
 
-  const { data: asignacionesRaw = [] } = useQuery({
-    queryKey: ['asignaciones'],
-    queryFn: () => localDataClient.entities.Asignacion.list('-created_at'),
-  });
+  // Usar hook centralizado para asignaciones
+  const { data: asignacionesRaw = [] } = useAsignaciones();
 
-  // Query para obtener TODOS los usuarios (necesarios para otras partes del componente)
-  const { data: usuarios = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => localDataClient.entities.User.list(),
-  });
+  // Usar hook centralizado para usuarios
+  const { data: usuarios = [] } = useUsers();
 
   // Resolver ID de usuario actual de la BD (UUID en Supabase, string en local)
   // Usar useMemo para recalcular cuando usuarios cambie

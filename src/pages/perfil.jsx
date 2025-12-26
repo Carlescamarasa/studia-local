@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
+import { remoteDataAPI } from "@/api/remote/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useUsers } from "@/hooks/entities/useUsers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ds";
 import { Badge } from "@/components/ds";
@@ -39,17 +41,18 @@ export default function PerfilPage() {
 
   const effectiveUser = useEffectiveUser();
 
-  const { data: allUsers } = useQuery({
-    queryKey: ['allUsers'],
-    queryFn: () => localDataClient.entities.User.list(),
-    enabled: true,
-  });
+  // Usar hook centralizado para todos los usuarios
+  const { data: allUsers } = useUsers();
 
   const { data: targetUser, isLoading } = useQuery({
     queryKey: ['targetUser', userIdParam],
     queryFn: async () => {
       if (userIdParam && effectiveUser?.rolPersonalizado === 'ADMIN') {
-        const users = await localDataClient.entities.User.list();
+        // Use allUsers from hook if available, otherwise fetch via API
+        if (allUsers) {
+          return allUsers.find(u => u.id === userIdParam);
+        }
+        const users = await remoteDataAPI.usuarios.list();
         return users.find(u => u.id === userIdParam);
       }
       return effectiveUser;

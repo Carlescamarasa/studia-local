@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { getCachedAuthUser } from "@/auth/authUserCache";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useUsers } from "@/hooks/entities/useUsers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,11 +46,8 @@ export default function FormularioRapido({ onClose, initialStudentId = null }) {
 
   const effectiveUser = useEffectiveUser();
 
-  // Obtener usuarios solo para la lista de profesores (no para estudiantes)
-  const { data: usuarios = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => localDataClient.entities.User.list(),
-  });
+  // Usar hook centralizado para usuarios
+  const { data: usuarios = [] } = useUsers();
 
   // Obtener profesores para el filtro
   const profesores = React.useMemo(() => {

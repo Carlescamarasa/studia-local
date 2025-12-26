@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUsers } from "@/hooks/entities/useUsers";
 import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
 import { Button } from "@/components/ui/button";
@@ -75,14 +76,8 @@ function UsuariosPageContent() {
   const { effectiveRole, effectiveUserId, realRole, realUserId, startImpersonation } = useEffectiveUser();
   const { sendMagicLink, sendResetPassword, resendInvitation, isLoading: isActionLoading } = useUserActions();
 
-  const { data: usuarios = [], isLoading } = useQuery({
-    queryKey: ['users'],
-    queryFn: async () => {
-      const users = await localDataClient.entities.User.list();
-      return users;
-    },
-    staleTime: 5 * 60 * 1000, // 5 min - data refreshes on mutations
-  });
+  // Usar hook centralizado para usuarios
+  const { data: usuarios = [], isLoading } = useUsers();
 
   // NOTE: Removed forced invalidation on mount - mutations handle cache invalidation
 

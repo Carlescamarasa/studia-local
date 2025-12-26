@@ -11,9 +11,9 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { localDataClient } from "@/api/localDataClient";
-import { createRemoteDataAPI } from "@/api/remoteDataAPI";
+import { useUsers } from "@/hooks/entities/useUsers";
+import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
+import { useBloques } from "@/hooks/entities/useBloques";
 import { updateBackpackFromSession } from '@/services/backpackService';
 
 import RequireRole from "@/components/auth/RequireRole";
@@ -183,12 +183,8 @@ function StudiaPageContent() {
 
     const effectiveUser = useEffectiveUser();
 
-    // Load users
-    const { data: usuarios = [] } = useQuery({
-        queryKey: ['users'],
-        queryFn: () => localDataClient.entities.User.list(),
-        staleTime: 5 * 60 * 1000,
-    });
+    // Load users (centralized hook)
+    const { data: usuarios = [] } = useUsers();
 
     // Find actual user
     const alumnoActual = usuarios.find(u => {
@@ -200,28 +196,11 @@ function StudiaPageContent() {
 
     const userIdActual = alumnoActual?.id || effectiveUser?.id;
 
-    // Load assignments
-    const { data: asignacionesRaw = [], isLoading: loadingAsignaciones } = useQuery({
-        queryKey: ['asignaciones'],
-        queryFn: () => localDataClient.entities.Asignacion.list(),
-        staleTime: 2 * 60 * 1000,
-    });
+    // Load assignments (centralized hook)
+    const { data: asignacionesRaw = [], isLoading: loadingAsignaciones } = useAsignaciones();
 
-    // Load blocks with variations
-    const { data: bloquesActuales = [] } = useQuery({
-        queryKey: ['bloques-with-variations'],
-        queryFn: async () => {
-            try {
-                const bloques = await remoteDataAPI.bloques.list();
-                return bloques || [];
-            } catch (error) {
-                console.error('Error fetching bloques:', error);
-                const localRes = await localDataClient.entities.Bloque.list();
-                return localRes || [];
-            }
-        },
-        staleTime: 30 * 1000,
-    });
+    // Load blocks with variations (centralized hook)
+    const { data: bloquesActuales = [] } = useBloques();
 
     // Filter valid assignments
     const asignaciones = useMemo(() => {

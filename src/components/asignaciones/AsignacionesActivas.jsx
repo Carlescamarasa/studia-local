@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCurrentUser } from "@/api/localDataClient";
+import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
+import { useUsers } from "@/hooks/entities/useUsers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,18 +23,12 @@ export default function AsignacionesActivas() {
 
   const currentUser = getCurrentUser();
 
-  const { data: asignaciones = [], isLoading } = useQuery({
-    queryKey: ['asignaciones-activas'],
-    queryFn: async () => {
-      const all = await localDataClient.entities.Asignacion.list('-created_at');
-      return all.filter(a => a.estado === 'publicada' || a.estado === 'en_curso');
-    },
-  });
+  // Usar hooks centralizados
+  const { data: allAsignaciones = [] } = useAsignaciones();
+  const asignaciones = allAsignaciones.filter(a => a.estado === 'publicada' || a.estado === 'en_curso');
+  const isLoading = false; // Hook handles loading internally
 
-  const { data: usuarios = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => localDataClient.entities.User.list(),
-  });
+  const { data: usuarios = [] } = useUsers();
 
   const cerrarMutation = useMutation({
     mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'cerrada' }),

@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { localDataClient } from "@/api/localDataClient";
+import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
+import { useUsers } from "@/hooks/entities/useUsers";
 import { resolveUserIdActual } from "@/components/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import HabilidadesView from "@/components/estadisticas/HabilidadesView";
@@ -13,25 +13,16 @@ export default function HabilidadesPage() {
     const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
     const isProf = effectiveUser?.rolPersonalizado === 'PROF';
 
-    // Load users
-    const { data: usuarios = [] } = useQuery({
-        queryKey: ['users'],
-        queryFn: () => localDataClient.entities.User.list(),
-        staleTime: 5 * 60 * 1000, // 5 minutos - evita refetch en navegación cálida
-    });
+    // Usar hook centralizado para usuarios
+    const { data: usuarios = [] } = useUsers();
 
     // Resolve current user ID
     const userIdActual = useMemo(() => {
         return resolveUserIdActual(effectiveUser, usuarios);
     }, [effectiveUser, usuarios]);
 
-    // Load assignments for professor to filter students
-    const { data: asignacionesProf = [] } = useQuery({
-        queryKey: ['asignacionesProf', userIdActual],
-        queryFn: () => localDataClient.entities.Asignacion.list(),
-        enabled: isProf && !!userIdActual,
-        staleTime: 5 * 60 * 1000,
-    });
+    // Usar hook centralizado para asignaciones (filtramos después)
+    const { data: asignacionesProf = [] } = useAsignaciones();
 
     const estudiantesDelProfesor = useMemo(() => {
         if (!isProf || !effectiveUser) return [];

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { computePracticeXP, capXPForDisplay } from '@/services/xpService';
 import { localDataClient } from '@/api/localDataClient';
+import { useUsers } from '@/hooks/entities/useUsers';
 import type { RecentXPResult, StudentXPTotal } from '@/services/xpService';
 
 /**
@@ -224,12 +225,8 @@ export function useLifetimePracticeXPMultiple(studentIds: string[], providedData
  * Returns { motricidad, articulacion, flexibilidad } where each is the SUM of goals for selected students
  */
 export function useAggregateLevelGoals(studentIds: string[]) {
-    // 1. Fetch all users to get their current levels
-    const { data: users = [] } = useQuery({
-        queryKey: ['users'],
-        queryFn: () => localDataClient.entities.User.list(),
-        staleTime: 1000 * 60 * 5,
-    });
+    // 1. Usar hook centralizado para usuarios
+    const { data: users = [] } = useUsers();
 
     // 2. Fetch all level configs
     const { data: levelConfigs = [] } = useQuery({

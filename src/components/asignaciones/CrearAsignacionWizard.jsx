@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { createPageUrl } from "@/utils";
 import { formatLocalDate, parseLocalDate, startOfMonday, displayName } from "@/components/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { useAuth } from "@/auth/AuthProvider";
+import { useUsers } from "@/hooks/entities/useUsers";
 
 export default function CrearAsignacionWizard({ onClose }) {
   const queryClient = useQueryClient();
@@ -40,13 +41,12 @@ export default function CrearAsignacionWizard({ onClose }) {
   const effectiveUser = useEffectiveUser();
   const { user: authUser, authError: authErrorContext } = useAuth();
 
-  const { data: estudiantes = [] } = useQuery({
-    queryKey: ['estudiantes'],
-    queryFn: async () => {
-      const users = await localDataClient.entities.User.list();
-      return users.filter(u => u.rolPersonalizado === 'ESTU');
-    },
-  });
+  // Usar hook centralizado para usuarios y filtrar estudiantes
+  const { data: allUsers = [] } = useUsers();
+  const estudiantes = useMemo(() =>
+    allUsers.filter(u => u.rolPersonalizado === 'ESTU'),
+    [allUsers]
+  );
 
   const { data: piezas = [] } = useQuery({
     queryKey: ['piezas'],

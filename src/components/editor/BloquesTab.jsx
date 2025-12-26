@@ -1,22 +1,20 @@
 import React, { useState } from "react";
-import { localDataClient } from "@/api/localDataClient";
-import { useQuery } from "@tanstack/react-query";
+import { useBloques } from "@/hooks/entities/useBloques";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Layers } from "lucide-react";
 import ExerciseEditor from "./ExerciseEditor";
+import { componentStyles } from "@/design/componentStyles";
 
 export default function BloquesTab() {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingBloque, setEditingBloque] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
 
-  const { data: bloques = [], isLoading } = useQuery({
-    queryKey: ['bloques'],
-    queryFn: () => localDataClient.entities.Bloque.list('-created_at'),
-  });
+  // Usar hook centralizado para bloques
+  const { data: bloques = [], isLoading } = useBloques();
 
   const filteredBloques = bloques.filter(b =>
     b.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||

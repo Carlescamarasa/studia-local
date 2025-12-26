@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useUsers } from "@/hooks/entities/useUsers";
+import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
+import { useRegistrosSesion } from "@/hooks/entities/useRegistrosSesion";
 import { Button } from "@/components/ds/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ds";
 import { Badge } from "@/components/ds";
@@ -49,11 +52,7 @@ function SemanaPageContent() {
 
   const effectiveUser = useEffectiveUser();
 
-  const { data: asignaciones = [] } = useQuery({
-    queryKey: ['asignaciones'],
-    queryFn: () => localDataClient.entities.Asignacion.list(),
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: asignaciones = [] } = useAsignaciones();
 
   const { data: feedbacksSemanal = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],
@@ -61,17 +60,9 @@ function SemanaPageContent() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: usuarios = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => localDataClient.entities.User.list(),
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: usuarios = [] } = useUsers();
 
-  const { data: registrosSesion = [] } = useQuery({
-    queryKey: ['registrosSesion'],
-    queryFn: () => localDataClient.entities.RegistroSesion.list('-inicioISO'),
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: registrosSesion = [] } = useRegistrosSesion();
 
   // Evaluaciones técnicas
   const { data: evaluacionesTecnicas = [] } = useQuery({

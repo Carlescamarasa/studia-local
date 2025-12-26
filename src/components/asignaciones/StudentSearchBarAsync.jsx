@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { componentStyles } from "@/design/componentStyles";
 import { supabase } from "@/lib/supabaseClient";
-import { localDataClient } from "@/api/localDataClient";
+import { remoteDataAPI } from "@/api/remote/api";
 import { displayName } from "@/components/utils/helpers";
 
 /**
@@ -50,7 +50,7 @@ export default function StudentSearchBarAsync({
   useEffect(() => {
     const searchStudents = async () => {
       const trimmedQuery = debouncedQuery.trim();
-      
+
       // No buscar si la query tiene menos de 1 carácter
       if (trimmedQuery.length < 1) {
         setResults([]);
@@ -58,10 +58,10 @@ export default function StudentSearchBarAsync({
       }
 
       setIsLoading(true);
-      
+
       try {
         const dataSource = import.meta.env.VITE_DATA_SOURCE || 'local';
-        
+
         if (dataSource === 'remote') {
           // Modo remoto: buscar en Supabase
           let supabaseQuery = supabase
@@ -91,23 +91,23 @@ export default function StudentSearchBarAsync({
             nombre: estudiante.full_name || 'Sin nombre',
             email: null,
           }));
-          
+
           setResults(normalized);
-          
+
           if (process.env.NODE_ENV === 'development') {
-            console.log('[StudentSearchBarAsync] Búsqueda remota:', { 
-              termino: trimmedQuery, 
-              profesorFilter, 
-              resultados: normalized.length 
+            console.log('[StudentSearchBarAsync] Búsqueda remota:', {
+              termino: trimmedQuery,
+              profesorFilter,
+              resultados: normalized.length
             });
           }
         } else {
-          // Modo local: buscar en localDataClient
+          // Modo local: buscar en remoteDataAPI (API centralizada)
           const queryLower = trimmedQuery.toLowerCase();
-          
-          // Obtener todos los usuarios
-          const usuarios = await localDataClient.entities.User.list();
-          
+
+          // Usar remoteDataAPI para consistencia con el resto del codebase
+          const usuarios = await remoteDataAPI.usuarios.list();
+
           // Filtrar estudiantes
           let estudiantes = usuarios.filter(u => {
             const rol = u.rolPersonalizado || u.role;
@@ -136,14 +136,14 @@ export default function StudentSearchBarAsync({
 
           // Ordenar por nombre
           normalized.sort((a, b) => a.label.localeCompare(b.label));
-          
+
           setResults(normalized);
-          
+
           if (process.env.NODE_ENV === 'development') {
-            console.log('[StudentSearchBarAsync] Búsqueda local:', { 
-              termino: trimmedQuery, 
-              profesorFilter, 
-              resultados: normalized.length 
+            console.log('[StudentSearchBarAsync] Búsqueda local:', {
+              termino: trimmedQuery,
+              profesorFilter,
+              resultados: normalized.length
             });
           }
         }
@@ -161,7 +161,7 @@ export default function StudentSearchBarAsync({
   // Combinar resultados con estudiantes ya seleccionados para mostrar en los chips
   const allStudentsMap = React.useMemo(() => {
     const map = new Map();
-    
+
     // Añadir estudiantes seleccionados
     selectedStudents.forEach(est => {
       map.set(est.id, {
@@ -169,12 +169,12 @@ export default function StudentSearchBarAsync({
         label: `${est.nombre}${est.email ? ` (${est.email})` : ''}`.trim(),
       });
     });
-    
+
     // Añadir resultados de búsqueda
     results.forEach(est => {
       map.set(est.value, est);
     });
-    
+
     return map;
   }, [selectedStudents, results]);
 
