@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
+import { getCachedAuthUser } from '@/auth/authUserCache';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -144,7 +145,7 @@ export default function InvitationPage() {
       }
 
       // 2. Actualizar el perfil en la tabla profiles
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const currentUser = await getCachedAuthUser();
       if (currentUser) {
         const { error: profileError } = await supabase
           .from('profiles')

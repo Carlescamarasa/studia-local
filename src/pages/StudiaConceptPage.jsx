@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { getCachedAuthUser } from "@/auth/authUserCache";
 import {
     Flame,
     Backpack,
@@ -118,7 +119,7 @@ export default function StudiaConceptPage() {
         };
 
         try {
-            const user = (await supabase.auth.getUser()).data.user;
+            const user = await getCachedAuthUser();
             const payload = {
                 nombre: formData.nombre,
                 tipo: formData.tipo,

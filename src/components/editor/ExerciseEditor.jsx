@@ -36,7 +36,7 @@ import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
 import MediaLinksInput from "@/components/common/MediaLinksInput";
 import { normalizeMediaLinks } from "@/components/utils/media";
-import { useEffectiveUser } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import MultiSelect from "@/components/ui/MultiSelect";
 import { NoteQuarter, NoteQuarterDotted, NoteHalf, NoteHalfDotted, NoteEighth } from "@/components/icons/NoteIcons";
 

@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import { useAuth } from "@/auth/AuthProvider";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
@@ -10,18 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
-  Settings, Trash2, Users, Music, Target, PlayCircle,
-  Loader2, Shield,
-  RefreshCw, AlertTriangle, CheckCircle2, XCircle, AlertCircle,
-  Search, FileSearch, Clock, FileDown, Sprout,
-  ClipboardList,
-  ChevronDown, ChevronRight, Link2, ScrollText, Zap, Database,
-  Calendar, Layers, MessageSquare, Activity,
-  FlaskConical, Download, Upload, Play, FileText, Link as LinkIcon
+  Settings, Trash2, Users, Music, Target, PlayCircle, Loader2, Shield, RefreshCw, AlertTriangle, CheckCircle2, XCircle, AlertCircle, Search, FileSearch, Clock, FileDown, Sprout, ClipboardList, ChevronDown, ChevronRight, Link2, ScrollText, Zap, Database, Calendar, Layers, MessageSquare, Activity, FlaskConical, Download, Upload, Play, FileText, Link as LinkIcon
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ds";
 import { toast } from "sonner";
-import { formatLocalDate, parseLocalDate, displayName, calcularOffsetSemanas, useEffectiveUser, getNombreVisible, startOfMonday } from "../components/utils/helpers";
+import { formatLocalDate, parseLocalDate, displayName, calcularOffsetSemanas, getNombreVisible, startOfMonday } from "../components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { parseAuditSpec, runAudit, runDesignAudit, QUICK_PROFILES } from "../components/utils/auditor";
 import PageHeader from "@/components/ds/PageHeader";
 import Tabs from "@/components/ds/Tabs";
@@ -32,6 +27,9 @@ import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 
 export default function TestSeedPage({ embedded = false }) {
+  const { user, profile } = useAuth();
+
+
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [isSeeding, setIsSeeding] = useState(false);

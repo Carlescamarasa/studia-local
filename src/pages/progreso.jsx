@@ -244,15 +244,7 @@ function ProgresoPageContent() {
         registrosSesion: registros = []
     } = progressSummary || {};
 
-    // DEBUG: Log para trazar flujo de datos de Ejercicios
-    console.debug('[Progreso DEBUG 1/2] progressSummary recibido:', {
-        totalRegistros: registros.length,
-        primerRegistro: registros[0] ? Object.keys(registros[0]) : 'N/A',
-        primerRegistroBloquesAnidados: registros[0]?.registrosBloque?.[0]
-            ? Object.keys(registros[0].registrosBloque[0])
-            : 'N/A',
-        sampleBloque: registros[0]?.registrosBloque?.[0] || 'N/A',
-    });
+
 
     const refetchFeedbacks = refetchSummary;
 

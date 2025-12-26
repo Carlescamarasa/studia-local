@@ -8,6 +8,7 @@
  */
 
 import { supabase } from '@/lib/supabaseClient';
+import { getCachedAuthUser } from "@/auth/authUserCache";
 import {
     SeededRandom,
     generateId,
@@ -656,7 +657,7 @@ async function createAsignaciones(
     const totalWeeks = 40;
 
     // Get current user (ADMIN) to use as profesor_id for RLS
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCachedAuthUser();
     const currentUserId = user?.id;
 
     if (!currentUserId) {
@@ -714,7 +715,7 @@ async function createSessions(
     const allSlots: TimeSlot[] = [];
 
     // Get current user (ADMIN) for RLS
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCachedAuthUser();
     const currentUserId = user?.id;
 
     for (let i = 0; i < students.length; i++) {
@@ -847,7 +848,7 @@ async function createFeedbacks(
     const totalMonths = 10;
 
     // Get current user (ADMIN) for RLS
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCachedAuthUser();
     const currentUserId = user?.id;
 
     for (const student of students) {
@@ -888,7 +889,7 @@ async function createEvaluaciones(
     const evaluaciones = [];
 
     // Get current user (ADMIN) for RLS
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCachedAuthUser();
     const currentUserId = user?.id;
 
     for (const student of students) {

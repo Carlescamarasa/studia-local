@@ -31,7 +31,8 @@ import { localDataClient } from "@/api/localDataClient";
 import { setProfileActive } from "@/api/remoteDataAPI";
 import { sendPasswordResetAdmin } from "@/api/userAdmin";
 import { useUserActions } from "@/pages/auth/hooks/useUserActions";
-import { useEffectiveUser, getNombreVisible } from "@/components/utils/helpers";
+import { getNombreVisible } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { ROUTES, toProgreso } from "@/lib/routes";
 import PerfilModal from "@/components/common/PerfilModal";
 import {

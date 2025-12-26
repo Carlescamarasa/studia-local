@@ -13,12 +13,11 @@ import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
  * NOTA: Si realRole === 'ADMIN', siempre tiene acceso (admin override).
  */
 export default function RequireRole({ children, anyOf = [] }) {
-  const { loading } = useAuth();
-  const { effectiveRole, realRole } = useEffectiveUser();
+  const { effectiveRole, realRole, loading: effectiveLoading } = useEffectiveUser();
 
   // Esperar a que termine de cargar
-  if (loading) {
-    return null;
+  if (effectiveLoading) {
+    return null; // O un spinner si lo prefieres
   }
 
   // ADMIN real puede navegar a cualquier página (admin override)

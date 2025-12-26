@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 
 import { datasets, getDataset } from '../registry';
 import { runImportPipeline } from '../utils/importPipeline';
-import { useEffectiveUser } from '@/components/utils/helpers';
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import WizardModal from './WizardModal';
 import ImportReviewPanel from './ImportReviewPanel'; // Step 3 logic lives here
 

@@ -21,7 +21,7 @@ const STORAGE_KEY = 'studia_impersonation';
  * Debe usarse dentro de AuthProvider para tener acceso a useAuth().
  */
 export function EffectiveUserProvider({ children }) {
-    const { user, appRole, profile } = useAuth();
+    const { user, appRole, profile, loading } = useAuth();
 
     // Estado de suplantación (inicializado desde localStorage si existe)
     const [impersonatedUser, setImpersonatedUser] = useState(() => {
@@ -29,9 +29,6 @@ export function EffectiveUserProvider({ children }) {
             const stored = localStorage.getItem(STORAGE_KEY);
             if (stored) {
                 const parsed = JSON.parse(stored);
-                if (import.meta.env.DEV) {
-                    console.log('[EffectiveUserProvider] Restored impersonation from localStorage:', parsed);
-                }
                 return parsed;
             }
         } catch (e) {
@@ -39,7 +36,8 @@ export function EffectiveUserProvider({ children }) {
         }
         return null;
     });
-    // { userId: string, role: string, userName: string, email?: string }
+
+
 
     // Sincronizar con localStorage cuando cambia
     useEffect(() => {
@@ -58,26 +56,47 @@ export function EffectiveUserProvider({ children }) {
         }
         const data = { userId, role, userName: userName || null, email: email || null };
         setImpersonatedUser(data);
-
-        if (import.meta.env.DEV) {
-            console.log('[EffectiveUserProvider] Impersonation started:', data);
-        }
     }, []);
 
     // Detener suplantación
     const stopImpersonation = useCallback(() => {
         setImpersonatedUser(null);
-
-        if (import.meta.env.DEV) {
-            console.log('[EffectiveUserProvider] Impersonation stopped');
-        }
     }, []);
 
-    // Valores del contexto
+    // SEGURIDAD: Si el usuario real hace logout, limpiar la impersonación inmediatamente
+    // SEGURIDAD: Si el usuario real hace logout, limpiar la impersonación inmediatamente
+    useEffect(() => {
+        if (!user && impersonatedUser) {
+            stopImpersonation();
+        }
+    }, [user, impersonatedUser, stopImpersonation]);
+
+    // Calcular valores del contexto
     const value = useMemo(() => {
+        // Bloquear cálculo si está cargando o no hay perfil (para evitar estados inconsistentes)
+        // Esto asegura que nadie accede a useEffectiveUser antes de tener toda la info
+        if (loading || (user && !profile)) {
+            return {
+                loading: true,
+                isImpersonating: false,
+                effectiveUserId: null,
+                effectiveRole: null, // Bloquear acceso hasta que cargue
+                effectiveUserName: null,
+                effectiveEmail: null,
+                realUserId: null,
+                realRole: null,
+                realUserName: null,
+                realEmail: null,
+                startImpersonation,
+                stopImpersonation,
+            };
+        }
+
         const isImpersonating = impersonatedUser !== null;
 
         return {
+            loading: false,
+
             // Estado de suplantación
             isImpersonating,
 
@@ -97,7 +116,7 @@ export function EffectiveUserProvider({ children }) {
             startImpersonation,
             stopImpersonation,
         };
-    }, [user?.id, user?.email, appRole, profile?.full_name, impersonatedUser, startImpersonation, stopImpersonation]);
+    }, [loading, user, appRole, profile, impersonatedUser, startImpersonation, stopImpersonation]);
 
     return (
         <EffectiveUserContext.Provider value={value}>

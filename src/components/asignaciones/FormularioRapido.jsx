@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { getCachedAuthUser } from "@/auth/authUserCache";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,8 @@ import StudentSearchBarAsync from "@/components/asignaciones/StudentSearchBarAsy
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { displayName, formatLocalDate, parseLocalDate, startOfMonday, useEffectiveUser } from "@/components/utils/helpers";
+import { displayName, formatLocalDate, parseLocalDate, startOfMonday } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
 import { supabase } from "@/lib/supabaseClient";
@@ -86,9 +88,13 @@ export default function FormularioRapido({ onClose, initialStudentId = null }) {
   });
 
   const crearAsignacionesMutation = useMutation({
+
+
+    // ...
+
     mutationFn: async (data) => {
       // Intentar obtener usuario de Supabase, pero no bloquear si falla si tenemos effectiveUser
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      const authUser = await getCachedAuthUser();
 
       const profesorId = authUser?.id || effectiveUser?.id;
 

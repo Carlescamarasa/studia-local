@@ -9,9 +9,10 @@ import {
 } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import {
-    calcularLunesSemanaISO, isoWeekNumberLocal, useEffectiveUser,
+    calcularLunesSemanaISO, isoWeekNumberLocal,
     resolveUserIdActual, displayName, calcularOffsetSemanas
 } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import PeriodHeader from "@/components/common/PeriodHeader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
@@ -59,6 +60,10 @@ export default function CuadernoPage() {
 function CuadernoContent() {
     const [searchParams, setSearchParams] = useSearchParams();
     const tabFromUrl = searchParams.get('tab');
+    const { effectiveUser, realUser } = useEffectiveUser();
+
+
+
     const [activeTab, setActiveTab] = useState(tabFromUrl === 'asignaciones' ? 'asignaciones' : 'estudiantes');
     const [searchTerm, setSearchTerm] = useState('');
 

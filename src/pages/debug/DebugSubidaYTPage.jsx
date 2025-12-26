@@ -67,15 +67,15 @@ function DebugSubidaYTPageContent() {
       // Crear FormData
       const formData = new FormData();
       formData.append('file', file);
-      
+
       if (metadataObj) {
         formData.append('meta', JSON.stringify(metadataObj));
       }
 
       // Llamar a la Edge Function
       const functionUrl = `${supabaseUrl}/functions/v1/upload-youtube`;
-      console.log('[DebugSubidaYT] Llamando a Edge Function:', functionUrl);
-      
+      // console.log('[DebugSubidaYT] Llamando a Edge Function:', functionUrl);
+
       const res = await fetch(functionUrl, {
         method: 'POST',
         headers: {
@@ -86,12 +86,12 @@ function DebugSubidaYTPageContent() {
         body: formData,
       });
 
-      console.log('[DebugSubidaYT] Respuesta recibida:', {
-        status: res.status,
-        statusText: res.statusText,
-        ok: res.ok,
-        headers: Object.fromEntries(res.headers.entries()),
-      });
+      // console.log('[DebugSubidaYT] Respuesta recibida:', {
+      //   status: res.status,
+      //   statusText: res.statusText,
+      //   ok: res.ok,
+      //   headers: Object.fromEntries(res.headers.entries()),
+      // });
 
       // Intentar parsear JSON
       let json = {};
@@ -112,7 +112,7 @@ function DebugSubidaYTPageContent() {
         // Si no es JSON, leer como texto
         const text = await res.text().catch(() => '');
         console.warn('[DebugSubidaYT] Respuesta no es JSON:', { contentType, text });
-        json = { 
+        json = {
           ok: false,
           message: 'Error desconocido',
           error: text || 'Respuesta no es JSON válido'
@@ -124,7 +124,7 @@ function DebugSubidaYTPageContent() {
       if (res.ok && json && json.ok === true) {
         setStatus('success');
         setResult(json);
-        console.log('[DebugSubidaYT] Upload OK', json);
+        // console.log('[DebugSubidaYT] Upload OK', json);
         toast.success('✅ Vídeo subido correctamente');
       } else {
         // Error: !response.ok O data.ok === false
@@ -147,15 +147,15 @@ function DebugSubidaYTPageContent() {
         message: err.message,
         stack: err.stack,
       } : err;
-      
+
       console.error('[DebugSubidaYT] Excepción al llamar a Edge Function:', errorDetails);
-      
+
       // Distinguir entre error de red y otros errores
-      const isNetworkError = err instanceof TypeError && 
-        (errorMessage.includes('NetworkError') || 
-         errorMessage.includes('Failed to fetch') ||
-         errorMessage.includes('fetch'));
-      
+      const isNetworkError = err instanceof TypeError &&
+        (errorMessage.includes('NetworkError') ||
+          errorMessage.includes('Failed to fetch') ||
+          errorMessage.includes('fetch'));
+
       if (isNetworkError) {
         setError(`Error de red: No se pudo conectar con el servidor. Verifica tu conexión.`);
         toast.error('Error de conexión: No se pudo conectar con el servidor');

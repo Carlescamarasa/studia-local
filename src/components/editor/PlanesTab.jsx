@@ -12,7 +12,7 @@ import PlanEditor from "./PlanEditor";
 import { toast } from "sonner";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import { componentStyles } from "@/design/componentStyles";
-import { useEffectiveUser } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 
 export default function PlanesTab() {
   const queryClient = useQueryClient();

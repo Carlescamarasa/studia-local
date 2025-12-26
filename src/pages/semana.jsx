@@ -6,14 +6,12 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ds";
 import { Badge } from "@/components/ds";
 import { Alert, AlertDescription } from "@/components/ds";
 import {
-  Music, Calendar, Target, PlayCircle, MessageSquare,
-  Layers,
-  ChevronLeft, ChevronRight, ChevronDown, Home, Clock, CheckCircle2,
-  Star, Trash2, BookOpen, ClipboardCheck, Gauge, Brain, Zap
+  Music, Calendar, Target, PlayCircle, MessageSquare, Layers, ChevronLeft, ChevronRight, ChevronDown, Home, Clock, CheckCircle2, Star, Trash2, BookOpen, ClipboardCheck, Gauge, Brain, Zap
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { calcularLunesSemanaISO, calcularOffsetSemanas, calcularTiempoSesion, useEffectiveUser, isoWeekNumberLocal } from "../components/utils/helpers";
+import { calcularLunesSemanaISO, calcularOffsetSemanas, calcularTiempoSesion, isoWeekNumberLocal } from "../components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { displayName } from "@/components/utils/helpers";
 import PeriodHeader from "../components/common/PeriodHeader";
 import RequireRole from "@/components/auth/RequireRole";

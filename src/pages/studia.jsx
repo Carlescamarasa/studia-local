@@ -24,10 +24,10 @@ import { toast } from "sonner";
 import {
     calcularOffsetSemanas,
     aplanarSesion,
-    useEffectiveUser,
     formatLocalDate,
     parseLocalDate,
 } from "@/components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { ensureRondaIds, getSecuencia } from "@/components/study/sessionSequence";
 import ResumenFinal from "@/components/estudio/ResumenFinal";
 import ModalCancelar from "@/components/estudio/ModalCancelar";

@@ -10,13 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ds";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  User, ArrowLeft, Mail, Shield, Target, Music,
-  Save, Edit, AlertCircle, CheckCircle, Sun, Moon, Monitor, KeyRound, Lock
+  User, ArrowLeft, Mail, Shield, Target, Music, Save, Edit, AlertCircle, CheckCircle, Sun, Moon, Monitor, KeyRound, Lock
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { displayName, useEffectiveUser } from "../components/utils/helpers";
+import { displayName } from "../components/utils/helpers";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { useSearchParams } from "react-router-dom";
 import MediaLinksInput from "@/components/common/MediaLinksInput";
 import PageHeader from "@/components/ds/PageHeader";

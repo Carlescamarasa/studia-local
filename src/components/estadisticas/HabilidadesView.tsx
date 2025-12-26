@@ -22,7 +22,7 @@ import { useQuery } from '@tanstack/react-query';
 import { localDataClient } from '@/api/localDataClient';
 import { cn } from '@/lib/utils';
 import { computeKeyCriteriaStatus, CriteriaStatusResult } from '@/utils/levelLogic';
-import { useEffectiveUser } from '@/components/utils/helpers';
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { Checkbox } from '@/components/ui/checkbox';
 
 interface HabilidadesViewProps {

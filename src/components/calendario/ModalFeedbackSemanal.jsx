@@ -29,7 +29,7 @@ import { normalizeMediaLinks } from "@/components/utils/media";
 import { cn } from "@/lib/utils";
 import { localDataClient } from '@/api/localDataClient';
 import { computeKeyCriteriaStatus, canPromote, promoteLevel } from '@/utils/levelLogic';
-import { useEffectiveUser } from '@/components/utils/helpers';
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { Checkbox } from '@/components/ui/checkbox';
 import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
 import CurrentXPInline from '@/components/evaluaciones/CurrentXPInline';
