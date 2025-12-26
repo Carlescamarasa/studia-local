@@ -13,6 +13,7 @@ import RequireRole from "@/components/auth/RequireRole";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import { getNombreVisible } from "../components/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
+import { setProfileActive } from "@/api/remoteDataAPI";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
@@ -156,15 +157,7 @@ function UsuariosPageContent() {
   // Mutation para pausar/reanudar usuario usando RPC
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ userId, isActive }) => {
-      const { error } = await supabase.rpc('admin_set_profile_active', {
-        p_profile_id: userId,
-        p_is_active: isActive,
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Error al cambiar estado del usuario');
-      }
-
+      await setProfileActive(userId, isActive);
       return { success: true };
     },
     onSuccess: (_, { isActive }) => {
@@ -225,22 +218,19 @@ function UsuariosPageContent() {
   // Mutation para pausar/reanudar usuarios (masivo) usando RPC
   const toggleActiveBulkMutation = useMutation({
     mutationFn: async ({ userIds, isActive }) => {
-      // Ejecutar todas las llamadas RPC en paralelo
-      const results = await Promise.all(
-        userIds.map(userId =>
-          supabase.rpc('admin_set_profile_active', {
-            p_profile_id: userId,
-            p_is_active: isActive,
-          })
-        )
+      // Ejecutar todas las llamadas en paralelo, capturando resultados individuales
+      const results = await Promise.allSettled(
+        userIds.map(userId => setProfileActive(userId, isActive))
       );
 
       // Verificar si hubo algún error
-      const errors = results.filter(r => r.error);
+      const errors = results.filter(r => r.status === 'rejected');
       if (errors.length > 0) {
+        // @ts-ignore - TS no sabe que reason existe en rejected
+        const firstError = errors[0].reason;
         throw new Error(
           errors.length === userIds.length
-            ? errors[0].error.message || 'Error al cambiar estado de los usuarios'
+            ? firstError?.message || 'Error al cambiar estado de los usuarios'
             : `${errors.length} de ${userIds.length} actualizaciones fallaron`
         );
       }

@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient'; // Real Data Switch
+import { deleteBloque, fetchPlanesPreview, fetchRegistrosSesionPreview } from "@/api/remoteDataAPI";
 
 // Helper for Categories
 const TYPE_MAP = {
@@ -174,8 +175,7 @@ export default function StudiaConceptPage() {
         setLocalExercises(prev => prev.filter(e => e.id !== id));
 
         try {
-            const { error } = await supabase.from('bloques').delete().eq('id', id);
-            if (error) throw error;
+            await deleteBloque(id);
             toast.success("Ejercicio eliminado");
         } catch (e) {
             toast.error("Error al eliminar");
@@ -259,11 +259,11 @@ export default function StudiaConceptPage() {
                 }
 
                 // 2. Fetch Planes
-                const { data: planes } = await supabase.from('planes').select('*').limit(20);
+                const planes = await fetchPlanesPreview();
                 if (planes) setRealPlanes(planes);
 
                 // 3. Fetch Sessions
-                const { data: sessions } = await supabase.from('registros_sesion').select('*').order('created_at', { ascending: false }).limit(20);
+                const sessions = await fetchRegistrosSesionPreview();
                 if (sessions) setRealSessions(sessions);
 
             } catch (error) {
