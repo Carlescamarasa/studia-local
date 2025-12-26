@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { fetchPlanesPreviewEjercicios, fetchRecentRegistrosSesion, updateBloque, createBloque, deleteBloque, fetchBloquesListado } from "@/api/remoteDataAPI";
 import { toast } from 'sonner';
 import {
   Flame, Backpack, Check, Clock, Play, Zap, Repeat,
@@ -63,13 +64,7 @@ export default function EjerciciosPage() {
       setLoading(true);
       try {
         // 1. Fetch Bloques
-        const { data: bloques, error: errBloques } = await supabase
-          .from('bloques')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(100);
-
-        if (errBloques) throw errBloques;
+        const bloques = await fetchBloquesListado();
 
         if (bloques) {
           const mappedBloques = bloques.map((b, idx) => {
@@ -110,11 +105,11 @@ export default function EjerciciosPage() {
         }
 
         // 2. Fetch Planes
-        const { data: planes } = await supabase.from('planes').select('*').limit(20);
+        const planes = await fetchPlanesPreviewEjercicios();
         if (planes) setRealPlanes(planes);
 
         // 3. Fetch Sessions
-        const { data: sessions } = await supabase.from('registros_sesion').select('*').order('created_at', { ascending: false }).limit(20);
+        const sessions = await fetchRecentRegistrosSesion();
         if (sessions) setRealSessions(sessions);
 
       } catch (error) {
@@ -174,15 +169,13 @@ export default function EjerciciosPage() {
         // Update
         setLocalExercises(prev => prev.map(e => e.id === editingId ? { ...e, ...newItem } : e));
         setIsModalOpen(false);
-        const { error } = await supabase.from('bloques').update(payload).eq('id', editingId);
-        if (error) throw error;
+        await updateBloque(editingId, payload);
         toast.success("Ejercicio actualizado");
       } else {
         // Insert
         setLocalExercises(prev => [newItem, ...prev]);
         setIsModalOpen(false);
-        const { data, error } = await supabase.from('bloques').insert([payload]).select();
-        if (error) throw error;
+        const data = await createBloque(payload);
         if (data && data[0]) {
           setLocalExercises(prev => prev.map(e => e.id === tempId ? { ...e, id: data[0].id } : e));
         }
@@ -199,8 +192,7 @@ export default function EjerciciosPage() {
     if (!confirm("¿Seguro que quieres borrar este ejercicio?")) return;
     setLocalExercises(prev => prev.filter(e => e.id !== id));
     try {
-      const { error } = await supabase.from('bloques').delete().eq('id', id);
-      if (error) throw error;
+      await deleteBloque(id);
       toast.success("Ejercicio eliminado");
     } catch (e) {
       toast.error("Error al eliminar");

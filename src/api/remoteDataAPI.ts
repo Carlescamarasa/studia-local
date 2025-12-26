@@ -3106,3 +3106,242 @@ export function createRemoteDataAPI(): AppDataAPI {
 
 // Export a singleton instance for direct imports
 export const remoteDataAPI = createRemoteDataAPI();
+
+/**
+ * Activa o desactiva un perfil de usuario (Admin RPC)
+ */
+export async function setProfileActive(profileId: string, isActive: boolean): Promise<void> {
+  const { error } = await withAuthErrorHandling(
+    supabase.rpc('admin_set_profile_active', {
+      p_profile_id: profileId,
+      p_is_active: isActive,
+    })
+  );
+
+  if (error) {
+    throw error;
+  }
+}
+
+/**
+ * Elimina un bloque por ID
+ */
+export async function deleteBloque(id: string): Promise<void> {
+  const { error } = await withAuthErrorHandling(
+    supabase
+      .from('bloques')
+      .delete()
+      .eq('id', id)
+  );
+
+  if (error) {
+    throw error;
+  }
+}
+
+/**
+ * Obtiene una vista previa de los planes (limitado a 20)
+ */
+export async function fetchPlanesPreview(): Promise<any[]> {
+  const { data, error } = await withAuthErrorHandling(
+    supabase.from('planes').select('*').limit(20)
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+/**
+ * Obtiene una vista previa de los registros de sesión (limitado a 20)
+ */
+export async function fetchRegistrosSesionPreview(): Promise<any[]> {
+  const { data, error } = await withAuthErrorHandling(
+    supabase
+      .from('registros_sesion')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(20)
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+/**
+ * Obtiene todos los bloques (para migración de multimedia)
+ */
+export async function fetchBloquesPreview(): Promise<any[]> {
+  const { data, error } = await withAuthErrorHandling(
+    supabase
+      .from('bloques')
+      .select('*')
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+/**
+ * Obtiene todas las piezas (para migración de multimedia)
+ */
+export async function fetchPiezasPreview(): Promise<any[]> {
+  const { data, error } = await withAuthErrorHandling(
+    supabase
+      .from('piezas')
+      .select('*')
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+/**
+ * Obtiene todos los feedbacks semanales (para migración de multimedia)
+ */
+export async function fetchFeedbacksSemanales(): Promise<any[]> {
+  const { data, error } = await withAuthErrorHandling(
+    supabase
+      .from('feedbacks_semanal')
+      .select('*')
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+/**
+ * Obtiene todos los registros de sesión (para migración de multimedia)
+ */
+export async function fetchRegistrosSesionMultimedia(): Promise<any[]> {
+  const { data, error } = await withAuthErrorHandling(
+    supabase
+      .from('registros_sesion')
+      .select('*')
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+/**
+ * Obtiene todos los mensajes de soporte (para migración de multimedia)
+ */
+export async function fetchSupportMensajes(): Promise<any[]> {
+  const { data, error } = await withAuthErrorHandling(
+    supabase
+      .from('support_mensajes')
+      .select('*')
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+/**
+ * Obtiene una vista previa de los planes para la página de ejercicios
+ */
+export async function fetchPlanesPreviewEjercicios(): Promise<any[]> {
+  const { data, error } = await withAuthErrorHandling(
+    supabase.from('planes').select('*').limit(20)
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+/**
+ * Obtiene las sesiones recientes (para página de ejercicios)
+ */
+export async function fetchRecentRegistrosSesion(): Promise<any[]> {
+  const { data, error } = await withAuthErrorHandling(
+    supabase
+      .from('registros_sesion')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(20)
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+/**
+ * Actualiza un bloque existente
+ */
+export async function updateBloque(id: string, payload: any): Promise<void> {
+  const { error } = await withAuthErrorHandling(
+    supabase
+      .from('bloques')
+      .update(payload)
+      .eq('id', id)
+  );
+
+  if (error) {
+    throw error;
+  }
+}
+
+/**
+ * Crea un nuevo bloque
+ */
+export async function createBloque(payload: any): Promise<any[]> {
+  const { data, error } = await withAuthErrorHandling(
+    supabase
+      .from('bloques')
+      .insert([payload])
+      .select()
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+/**
+ * Obtiene el listado de bloques (limitado a 100, para página de ejercicios)
+ */
+export async function fetchBloquesListado(): Promise<any[]> {
+  const { data, error } = await withAuthErrorHandling(
+    supabase
+      .from('bloques')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(100)
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+

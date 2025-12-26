@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
-import { remoteDataAPI } from "@/api/remoteDataAPI";
+import { remoteDataAPI, fetchBloquesPreview, fetchPiezasPreview, fetchFeedbacksSemanales, fetchRegistrosSesionMultimedia, fetchSupportMensajes } from "@/api/remoteDataAPI";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -264,7 +264,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
 
             // 1. BLOQUES (EJERCICIOS)
             toast.info('Escaneando Ejercicios...', { duration: Infinity, id: 'scan-exercises' });
-            const { data: exercises } = await supabase.from('bloques').select('*');
+            const exercises = await fetchBloquesPreview();
             if (exercises) {
                 scannedCount += exercises.length;
                 for (const ej of exercises) {
@@ -294,7 +294,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
 
             // 2. PIEZAS
             toast.info('Escaneando Piezas...', { duration: Infinity, id: 'scan-piezas' });
-            const { data: piezas } = await supabase.from('piezas').select('*');
+            const piezas = await fetchPiezasPreview();
             if (piezas) {
                 scannedCount += piezas.length;
                 for (const p of piezas) {
@@ -312,7 +312,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
 
             // 3. FEEDBACK SEMANAL
             toast.info('Escaneando Feedback Semanal...', { duration: Infinity, id: 'scan-feedback' });
-            const { data: feedbacks } = await supabase.from('feedbacks_semanal').select('*');
+            const feedbacks = await fetchFeedbacksSemanales();
             if (feedbacks) {
                 scannedCount += feedbacks.length;
                 for (const fb of feedbacks) {
@@ -326,7 +326,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
 
             // 4. REGISTROS SESION
             toast.info('Escaneando Sesiones...', { duration: Infinity, id: 'scan-sesiones' });
-            const { data: sesiones } = await supabase.from('registros_sesion').select('*');
+            const sesiones = await fetchRegistrosSesionMultimedia();
             if (sesiones) {
                 scannedCount += sesiones.length;
                 for (const ses of sesiones) {
@@ -340,7 +340,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
 
             // 5. MENSAJES SOPORTE
             toast.info('Escaneando Mensajes de Soporte...', { duration: Infinity, id: 'scan-soporte' });
-            const { data: mensajes } = await supabase.from('support_mensajes').select('*');
+            const mensajes = await fetchSupportMensajes();
             if (mensajes) {
                 scannedCount += mensajes.length;
                 for (const msg of mensajes) {

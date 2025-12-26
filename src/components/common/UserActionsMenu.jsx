@@ -16,7 +16,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import { MoreVertical, Pencil, KeyRound, Mail, User, Target, Eye, BarChart3, Pause, Play, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, KeyRound, Mail, User, Target, Eye, BarChart3, Pause, Play, Trash2, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -28,6 +28,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
 import { localDataClient } from "@/api/localDataClient";
+import { setProfileActive } from "@/api/remoteDataAPI";
 import { sendPasswordResetAdmin } from "@/api/userAdmin";
 import { useUserActions } from "@/pages/auth/hooks/useUserActions";
 import { useEffectiveUser, getNombreVisible } from "@/components/utils/helpers";
@@ -75,11 +76,7 @@ export default function UserActionsMenu({ user, usuarios = [], onRefresh, compac
     // Mutations
     const toggleActiveMutation = useMutation({
         mutationFn: async ({ userId, isActive }) => {
-            const { error } = await supabase.rpc('admin_set_profile_active', {
-                p_profile_id: userId,
-                p_is_active: isActive,
-            });
-            if (error) throw new Error(error.message);
+            await setProfileActive(userId, isActive);
             return { success: true };
         },
         onSuccess: (_, { isActive }) => {
@@ -206,11 +203,21 @@ export default function UserActionsMenu({ user, usuarios = [], onRefresh, compac
             });
 
             actions.push({
+                id: 'view_asignaciones',
+                label: 'Ver asignaciones',
+                icon: <BookOpen className="w-4 h-4" />,
+                onClick: () => {
+                    navigate(`${ROUTES.CUADERNO}?tab=asignaciones&alumnoId=${user.id}`);
+                },
+            });
+
+            actions.push({
                 id: 'preparar',
                 label: 'Preparar estudiante',
                 icon: <Eye className="w-4 h-4" />,
                 onClick: () => {
-                    navigate(`${ROUTES.CUADERNO}?tab=estudiantes`);
+                    // Include parameter to pre-select the student
+                    navigate(`${ROUTES.CUADERNO}?tab=estudiantes&alumnoId=${user.id}`);
                 },
             });
 
