@@ -17,6 +17,8 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
+import { useUsers } from "@/hooks/entities/useUsers";
+import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
 import { resolveUserIdActual, displayName } from "@/components/utils/helpers";
 import { toast } from "sonner";
 import { createManualSessionDraft } from '@/services/manualSessionService';
@@ -157,27 +159,16 @@ function ProgresoPageContent() {
 
     const [granularidad, setGranularidad] = useState('dia');
 
-    // Load users
-    const { data: usuarios = [] } = useQuery({
-        queryKey: ['users'],
-        queryFn: () => localDataClient.entities.User.list(),
-        staleTime: 5 * 60 * 1000,
-        refetchOnWindowFocus: false,
-    });
+    // Usar hook centralizado para usuarios
+    const { data: usuarios = [] } = useUsers();
 
     // Resolve current user ID
     const userIdActual = useMemo(() => {
         return resolveUserIdActual(effectiveUser, usuarios);
     }, [effectiveUser, usuarios]);
 
-    // Load assignments for professor to filter students
-    const { data: asignacionesProf = [] } = useQuery({
-        queryKey: ['asignacionesProf', userIdActual],
-        queryFn: () => localDataClient.entities.Asignacion.list(),
-        enabled: (isProf || isAdmin) && !!userIdActual,
-        staleTime: 5 * 60 * 1000,
-        refetchOnWindowFocus: false,
-    });
+    // Usar hook centralizado para asignaciones
+    const { data: asignacionesProf = [] } = useAsignaciones();
 
     const estudiantesDelProfesor = useMemo(() => {
         if (!isProf || !effectiveUser) return [];

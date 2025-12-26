@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUsers } from "@/hooks/entities/useUsers";
+import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,23 +32,9 @@ function EstudiantesPageContent() {
   const effectiveUser = useEffectiveUser();
   const { sendMagicLink, sendResetPassword, resendInvitation } = useUserActions();
 
-  const { data: usuarios = [], isLoading } = useQuery({
-    queryKey: ['users'],
-    queryFn: async () => {
-      const users = await localDataClient.entities.User.list();
-      return users;
-    },
-    staleTime: 5 * 60 * 1000, // 5 min - data refreshes on mutations
-  });
-
-  const { data: asignaciones = [] } = useQuery({
-    queryKey: ['asignaciones'],
-    queryFn: async () => {
-      const asignaciones = await localDataClient.entities.Asignacion.list();
-      return asignaciones;
-    },
-    staleTime: 2 * 60 * 1000, // 2 min
-  });
+  // Usar hooks centralizados
+  const { data: usuarios = [], isLoading } = useUsers();
+  const { data: asignaciones = [] } = useAsignaciones();
 
   // NOTE: Removed forced invalidation on mount - mutations handle cache invalidation
 

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { supabase } from '@/lib/supabaseClient';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useBloques } from '@/hooks/entities/useBloques';
+import { remoteDataAPI } from '@/api/remote/api';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -42,21 +43,8 @@ export default function EjerciciosTab() {
   const [showEditor, setShowEditor] = useState(false);
   const [ejercicioActual, setEjercicioActual] = useState(null);
 
-  // --- Data Loading with React Query (OPTIMIZATION) ---
-  const { data: bloques = [], isLoading: loading, refetch } = useQuery({
-    queryKey: ['bloques'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('bloques')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (error) throw error;
-      return data || [];
-    },
-    staleTime: 5 * 60 * 1000, // 5 min cache - avoid refetch on tab switch
-  });
+  // --- Data Loading with centralized hook ---
+  const { data: bloques = [], isLoading: loading, refetch } = useBloques();
 
   // Transform bloques to localExercises format (memoized)
   const localExercises = useMemo(() => {
@@ -130,8 +118,7 @@ export default function EjerciciosTab() {
   const handleDeleteExercise = async (id) => {
     if (!confirm("¿Seguro que quieres borrar este ejercicio?")) return;
     try {
-      const { error } = await supabase.from('bloques').delete().eq('id', id);
-      if (error) throw error;
+      await remoteDataAPI.bloques.delete(id);
       toast.success("Ejercicio eliminado");
       queryClient.invalidateQueries({ queryKey: ['bloques'] });
     } catch (e) {

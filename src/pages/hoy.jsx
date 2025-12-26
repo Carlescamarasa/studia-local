@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { updateBackpackFromSession } from '@/services/backpackService';
 import { localDataClient } from "@/api/localDataClient";
 import { createRemoteDataAPI } from "@/api/remoteDataAPI";
+import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
+import { useUsers } from "@/hooks/entities/useUsers";
 
 // Create remote API instance for fetching bloques with variations
 const remoteDataAPI = createRemoteDataAPI();
@@ -332,12 +334,8 @@ function HoyPageContent() {
   // Usar el nuevo provider de impersonación para obtener el usuario efectivo
   const { effectiveUserId, effectiveEmail, isImpersonating } = useEffectiveUser();
 
-  const { data: usuarios = [] } = useQuery({
-    // Incluir isImpersonating en queryKey para refetch cuando cambia
-    queryKey: ['users', isImpersonating],
-    queryFn: () => localDataClient.entities.User.list(),
-    staleTime: 5 * 60 * 1000, // 5 min
-  });
+  // Usar hook centralizado para usuarios
+  const { data: usuarios = [] } = useUsers();
 
   // Buscar el usuario efectivo en la base de datos
   // Primero por ID, luego por email como fallback
@@ -349,11 +347,8 @@ function HoyPageContent() {
   const userIdActual = alumnoActual?.id || effectiveUserId;
 
 
-  const { data: asignacionesRaw = [] } = useQuery({
-    queryKey: ['asignaciones'],
-    queryFn: () => localDataClient.entities.Asignacion.list(),
-    staleTime: 2 * 60 * 1000, // 2 min
-  });
+  // Usar hook centralizado para asignaciones
+  const { data: asignacionesRaw = [] } = useAsignaciones();
 
   // Cargar bloques actuales desde Supabase (remoteDataAPI tiene content → variations mapping)
   const { data: bloquesActuales = [] } = useQuery({

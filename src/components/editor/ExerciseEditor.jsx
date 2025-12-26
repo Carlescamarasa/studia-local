@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useBloques } from "@/hooks/entities/useBloques";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -172,11 +173,8 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
   // Lista de métodos para el selector
   const metodoOptions = metodos;
 
-  // Obtener ejercicios para verificar uso de métodos
-  const { data: allEjercicios = [] } = useQuery({
-    queryKey: ['bloques'],
-    queryFn: () => localDataClient.entities.Bloque.list(),
-  });
+  // Obtener ejercicios usando hook centralizado
+  const { data: allEjercicios = [] } = useBloques();
 
   // Verificar si un método está en uso (tiene ejercicios con código > 0000)
   const isMetodoInUse = (metodoCode) => {

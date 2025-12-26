@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { localDataClient } from "@/api/localDataClient";
+import { remoteDataAPI } from "@/api/remote/api";
 import { supabase } from "@/lib/supabaseClient";
 
 /**
@@ -36,13 +37,14 @@ export function useCurrentProfile() {
           // No podemos usar .filter({ email }) porque la columna email no existe en la tabla profiles
           try {
             if (process.env.NODE_ENV === 'development') {
-              console.warn('[useCurrentProfile] Perfil no encontrado por ID, usando fallback costoso (User.list) para buscar por email:', {
+              console.warn('[useCurrentProfile] Perfil no encontrado por ID, usando fallback costoso (usuarios.list) para buscar por email:', {
                 id: effectiveUserId,
                 email: normalizedEmail,
                 isImpersonating
               });
             }
-            const allUsers = await localDataClient.entities.User.list();
+            // Usar remoteDataAPI para consistencia con el resto del codebase
+            const allUsers = await remoteDataAPI.usuarios.list();
             localProfile = allUsers.find(u => u.email && u.email.toLowerCase().trim() === normalizedEmail);
           } catch (fallbackError) {
             console.error('[useCurrentProfile] Error en fallback de búsqueda por email:', fallbackError);

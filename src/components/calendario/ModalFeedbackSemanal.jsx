@@ -28,6 +28,7 @@ import MediaLinksInput from "@/components/common/MediaLinksInput";
 import { normalizeMediaLinks } from "@/components/utils/media";
 import { cn } from "@/lib/utils";
 import { localDataClient } from '@/api/localDataClient';
+import { remoteDataAPI } from '@/api/remote/api';
 import { computeKeyCriteriaStatus, canPromote, promoteLevel } from '@/utils/levelLogic';
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { Checkbox } from '@/components/ui/checkbox';
@@ -245,8 +246,8 @@ export default function ModalFeedbackSemanal({
         if (!studentId) return;
         setLoadingLevelData(true);
         try {
-            // Force fresh fetch by using list + filter (avoids potential cache issues)
-            const allUsers = await localDataClient.entities.User.list();
+            // Usar remoteDataAPI para consistencia con el resto del codebase
+            const allUsers = await remoteDataAPI.usuarios.list();
             const user = allUsers.find(u => u.id === studentId);
             const level = user?.nivelTecnico || 1;
             console.log('[loadLevelData] Fetched user level:', level, 'for student:', studentId);

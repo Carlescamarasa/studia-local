@@ -1,4 +1,5 @@
 import { localDataClient } from "@/api/localDataClient";
+import { remoteDataAPI } from "@/api/remote/api";
 import { calcularLunesSemanaISO } from "@/components/utils/helpers";
 import { supabase } from "@/lib/supabaseClient";
 import { getCachedAuthUser } from "@/auth/authUserCache";
@@ -31,7 +32,8 @@ export async function createManualSessionDraft({ studentId, exerciseCodes, sourc
     const currentAuthId = authUser?.id || null;
 
     // Check if there's an existing draft Asignacion for this student in this week
-    const existingDrafts = await localDataClient.entities.Asignacion.filter({
+    // Using centralized remoteDataAPI.asignaciones.filter() instead of localDataClient
+    const existingDrafts = await remoteDataAPI.asignaciones.filter({
         alumnoId: studentId,
         isDraft: true,
         modo: 'manual',

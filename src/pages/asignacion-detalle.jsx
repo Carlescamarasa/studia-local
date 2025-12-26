@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useBloques } from "@/hooks/entities/useBloques";
+import { useUsers } from "@/hooks/entities/useUsers";
 // Updated Card, Badge, Alert paths from @/components/ui to @/components/ds
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ui/button";
@@ -27,10 +29,6 @@ import PageHeader from "@/components/ds/PageHeader";
 import { LoadingSpinner } from "@/components/ds";
 import { componentStyles } from "@/design/componentStyles";
 
-import { createRemoteDataAPI } from "@/api/remoteDataAPI";
-
-// ... imports ...
-
 export default function AsignacionDetallePage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -44,21 +42,8 @@ export default function AsignacionDetallePage() {
 
   const effectiveUser = useEffectiveUser();
 
-  // Query para obtener bloques con variaciones actualizados (para duraciones y contenido)
-  const { data: dbBloques = [] } = useQuery({
-    queryKey: ['bloques-with-variations'],
-    queryFn: async () => {
-      const api = createRemoteDataAPI();
-      if (api) {
-        const { data, error } = await api.bloques.list();
-        if (error) throw error;
-        return data || [];
-      }
-      const result = await localDataClient.entities.Bloque.list();
-      return result || [];
-    },
-    staleTime: 1000 * 60 * 5
-  });
+  // Query para obtener bloques con hook centralizado
+  const { data: dbBloques = [], isLoading: isLoadingBloques, isError: isErrorBloques } = useBloques();
 
   const { data: asignacion, isLoading } = useQuery({
     queryKey: ['asignacion', asignacionId],
@@ -69,10 +54,8 @@ export default function AsignacionDetallePage() {
     enabled: !!asignacionId,
   });
 
-  const { data: usuarios = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => localDataClient.entities.User.list(),
-  });
+  // Query para obtener usuarios con hook centralizado
+  const { data: usuarios = [] } = useUsers();
 
   // Resolver ID de usuario actual de la BD
   const userIdActual = useMemo(() => {

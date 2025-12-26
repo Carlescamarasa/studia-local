@@ -9,8 +9,8 @@ import {
     Legend,
     ResponsiveContainer
 } from 'recharts';
-import { useQuery } from '@tanstack/react-query';
-import { localDataClient } from '@/api/localDataClient';
+import { useBloques } from '@/hooks/entities/useBloques';
+import { useRegistrosSesion } from '@/hooks/entities/useRegistrosSesion';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -22,20 +22,19 @@ interface EvolucionPPMChartProps {
 }
 
 export default function EvolucionPPMChart({ alumnoId }: EvolucionPPMChartProps) {
-    // 1. Obtener registros de bloques
-    const { data: registros = [], isLoading: loadingRegistros } = useQuery({
-        queryKey: ['registrosBloque', alumnoId],
-        queryFn: () => localDataClient.entities.RegistroBloque.list('-inicioISO'),
-    });
+    // 1. Obtener sesiones con bloques embebidos
+    const { data: sesiones = [], isLoading: loadingSesiones } = useRegistrosSesion();
 
-    // 2. Obtener bloques para saber los skillTags
-    const { data: bloques = [], isLoading: loadingBloques } = useQuery<Bloque[]>({
-        queryKey: ['bloques'],
-        queryFn: async () => {
-            const result = await localDataClient.entities.Bloque.list();
-            return result as Bloque[];
-        },
-    });
+    // Extraer bloques embebidos de las sesiones (evita query separada)
+    const registros = useMemo(
+        () => (sesiones || []).flatMap((s: any) => s.registrosBloque || [])
+            .sort((a: RegistroBloque, b: RegistroBloque) => (b.inicioISO || '').localeCompare(a.inicioISO || '')),
+        [sesiones]
+    );
+
+    // 2. Obtener bloques con hook centralizado
+    const { data: bloquesData = [], isLoading: loadingBloques, isError: errorBloques } = useBloques();
+    const bloques = bloquesData as Bloque[];
 
     const chartData = useMemo(() => {
         if (!registros.length || !bloques.length) return [];
@@ -80,7 +79,7 @@ export default function EvolucionPPMChart({ alumnoId }: EvolucionPPMChartProps) 
             }));
     }, [registros, bloques, alumnoId]);
 
-    if (loadingRegistros || loadingBloques) {
+    if (loadingSesiones || loadingBloques) {
         return (
             <div className="flex justify-center items-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

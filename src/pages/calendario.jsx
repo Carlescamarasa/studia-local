@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useUsers } from "@/hooks/entities/useUsers";
 import { Card, CardContent } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
 import PageHeader from "@/components/ds/PageHeader";
@@ -47,14 +48,8 @@ function CalendarioPageContent() {
   // Objeto para compatibilidad con código existente
   const effectiveUser = { id: effectiveUserId, email: effectiveEmail, rolPersonalizado: effectiveRole };
 
-  // Cargar datos
-  const { data: usuarios = [] } = useQuery({
-    // Incluir isImpersonating en queryKey para refetch cuando cambia
-    queryKey: ['users', isImpersonating],
-    queryFn: () => localDataClient.entities.User.list(),
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
+  // Cargar usuarios con hook centralizado
+  const { data: usuarios = [] } = useUsers();
 
   // Calcular rango de fechas para el fetch
   // Calcular rango de fechas para el fetch (Siempre estandarizado a Mes completo para maximizar cache)

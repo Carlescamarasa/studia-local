@@ -3,6 +3,9 @@ import TablePagination from "@/components/common/TablePagination";
 import { cn } from "@/lib/utils";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useUsers } from "@/hooks/entities/useUsers";
+import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
+import { useRegistrosSesion } from "@/hooks/entities/useRegistrosSesion";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
@@ -123,12 +126,8 @@ function EstadisticasPageContent() {
   const isProf = effectiveRole === 'PROF';
   const isEstu = effectiveRole === 'ESTU';
 
-  // Cargar usuarios primero para poder calcular userIdActual
-  const { data: usuarios = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => localDataClient.entities.User.list(),
-    staleTime: 5 * 60 * 1000, // 5 min
-  });
+  // Usar hooks centralizados para usuarios y asignaciones
+  const { data: usuarios = [] } = useUsers();
 
   // Resolver ID de usuario actual de la BD (UUID en Supabase, string en local)
   // Usar useMemo para recalcular cuando usuarios cambie
@@ -136,12 +135,8 @@ function EstadisticasPageContent() {
     return resolveUserIdActual(effectiveUser, usuarios);
   }, [effectiveUser, usuarios]);
 
-  const { data: asignacionesProf = [] } = useQuery({
-    queryKey: ['asignacionesProf', userIdActual],
-    queryFn: () => localDataClient.entities.Asignacion.list(),
-    enabled: isProf && !!userIdActual,
-    staleTime: 2 * 60 * 1000, // 2 min
-  });
+  // Usar hook centralizado para asignaciones del profesor
+  const { data: asignacionesProf = [] } = useAsignaciones();
 
   const estudiantesDelProfesor = useMemo(() => {
     if (!isProf || !effectiveUser) return [];
@@ -155,11 +150,13 @@ function EstadisticasPageContent() {
     return alumnosIds;
   }, [asignacionesProf, effectiveUser, isProf, userIdActual]);
 
-  const { data: registros = [] } = useQuery({
-    queryKey: ['registrosSesion'],
-    queryFn: () => localDataClient.entities.RegistroSesion.list('-inicioISO'),
-    staleTime: 1 * 60 * 1000, // 1 min - operational data
-  });
+  // Usar hook centralizado para registros de sesión
+  const { data: registrosRaw = [] } = useRegistrosSesion();
+  // Ordenar por inicioISO descendente (el hook no soporta ordenación por ahora)
+  const registros = useMemo(
+    () => [...registrosRaw].sort((a, b) => (b.inicioISO || '').localeCompare(a.inicioISO || '')),
+    [registrosRaw]
+  );
 
   // Filtrar sesiones válidas: solo aquellas con calificación (sesiones realmente finalizadas)
   const registrosSesionValidos = useMemo(
@@ -167,17 +164,15 @@ function EstadisticasPageContent() {
     [registros]
   );
 
-  const { data: bloques = [] } = useQuery({
-    queryKey: ['registrosBloques'],
-    queryFn: () => localDataClient.entities.RegistroBloque.list('-inicioISO'),
-    staleTime: 1 * 60 * 1000, // 1 min - operational data
-  });
+  // Extraer bloques embebidos de las sesiones (evita query separada)
+  const bloques = useMemo(
+    () => registros.flatMap(s => s.registrosBloque || [])
+      .sort((a, b) => (b.inicioISO || '').localeCompare(a.inicioISO || '')),
+    [registros]
+  );
 
-  const { data: asignaciones = [] } = useQuery({
-    queryKey: ['asignaciones'],
-    queryFn: () => localDataClient.entities.Asignacion.list(),
-    staleTime: 2 * 60 * 1000, // 2 min
-  });
+  // Usar hook centralizado para la lista general de asignaciones
+  const { data: asignaciones = [] } = useAsignaciones();
 
   const { data: feedbacksSemanal = [] } = useQuery({
     queryKey: ['feedbacksSemanal'],

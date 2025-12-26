@@ -2040,47 +2040,25 @@ export function createRemoteDataAPI(): AppDataAPI {
       }
 
       const raw = data as any;
-      const registrosSesion = (raw.registrosSesion || []).map(snakeToCamel).map(normalizeISOFields);
 
-      // Obtener IDs de sesiones para buscar los bloques asociados
-      const sessionIds = registrosSesion.map((s: any) => s.id);
-
-      let allBlocks: any[] = [];
-      if (sessionIds.length > 0) {
-        // Procesar en chunks de 50 para evitar límites de Supabase
-        const chunkSize = 50;
-        for (let i = 0; i < sessionIds.length; i += chunkSize) {
-          const chunk = sessionIds.slice(i, i + chunkSize);
-          const { data: blocksData, error: blocksError } = await supabase
-            .from('registros_bloque')
-            .select('*')
-            .in('registro_sesion_id', chunk);
-
-          if (blocksError) {
-            console.warn('[remoteDataAPI] Error fetching blocks chunk:', blocksError);
-            continue;
-          }
-
-          if (blocksData) {
-            allBlocks = [...allBlocks, ...blocksData];
-          }
-        }
-      }
-
-      // Transformar bloques a camelCase y normalizar
-      const blocks = allBlocks.map((b: any) => normalizeISOFields(snakeToCamel(b)));
-
-      // Anidar bloques en cada sesión
-      const registrosSesionConBloques = registrosSesion.map((session: any) => ({
-        ...session,
-        registrosBloque: blocks.filter((b: any) => b.registroSesionId === session.id)
-      }));
+      // La RPC ahora devuelve registros_bloque embebidos en cada sesión
+      const registrosSesion = (raw.registrosSesion || []).map((session: any) => {
+        const normalizedSession = normalizeISOFields(snakeToCamel(session)) as Record<string, any>;
+        // Procesar bloques embebidos si existen
+        const registrosBloque = (session.registros_bloque || []).map((block: any) =>
+          normalizeISOFields(snakeToCamel(block))
+        );
+        return {
+          ...normalizedSession,
+          registrosBloque
+        };
+      });
 
       return {
         xpTotals: (raw.xpTotals || []).map(snakeToCamel),
         evaluacionesTecnicas: (raw.evaluacionesTecnicas || []).map(snakeToCamel),
         feedbacksSemanal: (raw.feedbacksSemanal || []).map(snakeToCamel).map(normalizeAsignacionISO),
-        registrosSesion: registrosSesionConBloques
+        registrosSesion
       };
     }
   };

@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
+import { useUsers } from "@/hooks/entities/useUsers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,18 +15,11 @@ export default function AsignacionesArchivadas() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: asignaciones = [], isLoading } = useQuery({
-    queryKey: ['asignaciones-archivadas'],
-    queryFn: async () => {
-      const all = await localDataClient.entities.Asignacion.list('-created_at');
-      return all.filter(a => a.estado === 'cerrada');
-    },
-  });
+  // Usar hooks centralizados
+  const { data: allAsignaciones = [], isLoading } = useAsignaciones();
+  const asignaciones = allAsignaciones.filter(a => a.estado === 'cerrada');
 
-  const { data: usuarios = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => localDataClient.entities.User.list(),
-  });
+  const { data: usuarios = [] } = useUsers();
 
   const reabrirMutation = useMutation({
     mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'borrador' }),
