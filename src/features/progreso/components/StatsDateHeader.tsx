@@ -10,13 +10,20 @@ export interface StatsDateHeaderProps {
     endDate: string | Date | null;
     onDateChange?: (range: { from: string | null; to: string | null }) => void;
     className?: string;
+    presets?: { key: string; label: string }[];
+    // Legacy support props (optional, can be ignored or passed down if needed)
+    isOpen?: boolean;
+    onToggle?: () => void;
+    rangoPreset?: string; // Kept optional to avoid breaking if passed, but ignored
+    onPresetChange?: (preset: string) => void; // Kept optional, ignored
 }
 
 export default function StatsDateHeader({
     startDate,
     endDate,
     onDateChange,
-    className
+    className,
+    presets = []
 }: StatsDateHeaderProps) {
     const handleDateChange = (startStr: string | null, endStr: string | null) => {
         if (onDateChange) {
@@ -25,12 +32,14 @@ export default function StatsDateHeader({
     };
 
     return (
-        <div className={cn("flex items-center gap-2", className)}>
+        <div className={cn("flex flex-wrap items-center gap-2", className)}>
+            {/* Date Range Picker with internal presets */}
             <DateRangePicker
-                startDate={startDate as any} // DateRangePicker internal expects string|Date
+                startDate={startDate as any}
                 endDate={endDate as any}
                 onDateChange={handleDateChange}
                 className="w-auto"
+                presets={presets}
             />
         </div>
     );

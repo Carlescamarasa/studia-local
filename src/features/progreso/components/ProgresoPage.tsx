@@ -881,13 +881,16 @@ function ProgresoPageContent() {
                 </div>
 
                 {/* Date Range & Presets */}
-                <StatsDateHeaderAny
-                    periodoInicio={periodoInicio}
-                    periodoFin={periodoFin}
-                    rangoPreset={rangoPreset}
-                    onPresetChange={aplicarPreset}
-                    onInicioChange={setPeriodoInicio}
-                    onFinChange={setPeriodoFin}
+                {/* Date Range & Presets */}
+                <StatsDateHeader
+                    startDate={periodoInicio}
+                    endDate={periodoFin}
+                    onDateChange={({ from, to }) => {
+                        setPeriodoInicio(from || '');
+                        setPeriodoFin(to || '');
+                        if (from || to) setRangoPreset('personalizado');
+                    }}
+                    presets={presets}
                 />
             </div>
 

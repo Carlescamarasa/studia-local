@@ -44,10 +44,7 @@ const SelectTrigger = React.forwardRef(({ className, children, ...props }, ref) 
   )
 })
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
-SelectTrigger.propTypes = {
-  className: React.PropTypes?.string,
-  children: React.PropTypes?.node,
-}
+
 
 const SelectScrollUpButton = React.forwardRef(({ className, ...props }, ref) => (
   <SelectPrimitive.ScrollUpButton
