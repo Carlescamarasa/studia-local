@@ -218,7 +218,7 @@ export default function EjerciciosTab() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/hoy?mode=try&codes=${ex.code}`);
+                          navigate(`/studia?mode=try&codes=${ex.code}`);
                         }}
                         title="Probar ejercicio"
                         className="p-1.5 hover:bg-green-100 dark:hover:bg-green-900/20 rounded-full text-green-600 transition-colors"

@@ -75,9 +75,9 @@ import {
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import PeriodHeader from "../components/common/PeriodHeader";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "../components/study/sessionSequence";
-import TimelineProgreso from "../components/estudio/TimelineProgreso";
-import ModalCancelar from "../components/estudio/ModalCancelar";
-import ResumenFinal from "../components/estudio/ResumenFinal";
+import TimelineProgreso from "../features/estudio/components/TimelineProgreso";
+import ModalCancelar from "../features/estudio/components/ModalCancelar";
+import ResumenFinal from "../features/estudio/components/ResumenFinal";
 import Metronomo from "../components/study/Metronomo";
 import PianoPanel from "../components/study/PianoPanel"; // Refactored component
 import SessionContentView from "../components/study/SessionContentView";
@@ -166,11 +166,6 @@ function HoyPageContent() {
   const [sesionSeleccionada, setSesionSeleccionada] = useState(0);
   const [sesionesConResumenExpandido, setSesionesConResumenExpandido] = useState(new Set());
   const [sesionActiva, setSesionActiva] = useState(null);
-
-  // Try Mode - detect from URL params (mode=try&codes=...)
-  const [searchParams] = useSearchParams();
-  const isTryMode = searchParams.get('mode') === 'try';
-  const tryCodes = searchParams.get('codes')?.split(',').filter(Boolean) || [];
 
   const [indiceActual, setIndiceActual] = useState(0);
   const [tiempoActual, setTiempoActual] = useState(0);
@@ -370,47 +365,6 @@ function HoyPageContent() {
     staleTime: 30 * 1000, // 30s - needs recent data for study session
   });
 
-  // TRY MODE: Auto-start session from URL codes (must be after bloquesActuales declaration)
-  useEffect(() => {
-    if (!isTryMode || tryCodes.length === 0) return;
-    if (sesionActiva) return; // Already started
-    if (bloquesActuales.length === 0) return; // Wait for bloques to load
-
-    // Create in-memory session from codes, merging full bloque data
-    const bloques = tryCodes.map((code, idx) => {
-      // Find full bloque data from DB
-      const dbBloque = bloquesActuales.find(b => b.code === code);
-
-      if (dbBloque) {
-        return {
-          ...dbBloque,
-          modo: 'estudio',
-        };
-      }
-
-      // Fallback for exercises not found in DB
-      return {
-        tipo: 'PR',
-        code: code,
-        nombre: `Ejercicio ${idx + 1}`,
-        duracionSeg: 300,
-        modo: 'estudio',
-      };
-    });
-
-    const trySesion = {
-      nombre: 'Modo Prueba',
-      foco: 'GEN',
-      bloques: bloques,
-    };
-
-    console.log('[TryMode] Creating in-memory session with full data:', trySesion);
-    setSesionActiva(trySesion);
-    setIndiceActual(0);
-    setTiempoActual(0);
-    setCronometroActiva(true);
-    setTimestampInicio(Date.now());
-  }, [isTryMode, tryCodes, sesionActiva, bloquesActuales]);
 
   // Filtrar y validar asignaciones
   const asignaciones = asignacionesRaw.filter(a => {
@@ -462,40 +416,9 @@ function HoyPageContent() {
   });
 
   // Determinar asignación activa: si hay selección, usarla; sino, la primera
-  // In try mode, create a mock asignacion to prevent null access errors
-  const tryModeAsignacion = isTryMode ? {
-    id: 'try-mode-session',
-    semanaInicioISO: new Date().toISOString().split('T')[0],
-    plan: {
-      nombre: 'Modo Prueba',
-      semanas: [{
-        nombre: 'Semana Prueba',
-        sesiones: [{
-          nombre: 'Sesión Prueba',
-          foco: 'GEN',
-          bloques: tryCodes.map((code, idx) => ({
-            tipo: 'PR',
-            code: code,
-            nombre: `Ejercicio ${idx + 1}`,
-            duracionSeg: 300,
-          }))
-        }]
-      }]
-    },
-    piezaSnapshot: {
-      nombre: 'Sin pieza asignada',
-      descripcion: '',
-      nivel: 'N/A',
-      tiempoObjetivoSeg: 0,
-      elementos: [],
-    }
-  } : null;
-
-  const asignacionActiva = isTryMode
-    ? tryModeAsignacion
-    : (asignacionSeleccionadaId
-      ? asignacionesActivas.find(a => a.id === asignacionSeleccionadaId)
-      : asignacionesActivas[0] || null);
+  const asignacionActiva = asignacionSeleccionadaId
+    ? asignacionesActivas.find(a => a.id === asignacionSeleccionadaId)
+    : asignacionesActivas[0] || null;
 
   // Si no hay selección y hay asignaciones, seleccionar la primera automáticamente
   useEffect(() => {
