@@ -1,7 +1,5 @@
 import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { localDataClient } from '../api/localDataClient';
-import { useAggregateLevelGoals } from './useXP';
+import { useAllStudentXPTotals, useAggregateLevelGoals } from './useXP';
 import { useFeedbacksSemanal } from './entities/useFeedbacksSemanal';
 import { useEvaluacionesTecnicas } from './entities/useEvaluacionesTecnicas';
 
@@ -93,14 +91,8 @@ export function useHabilidadesStats(alumnoId: string, options?: HabilidadesStats
 }
 
 export function useHabilidadesStatsMultiple(studentIds: string[], options?: HabilidadesStatsOptions) {
-    // 1. Fetch all XP data if not provided
-    const { data: fetchedXPData } = useQuery({
-        queryKey: ['student-xp-total-all'],
-        queryFn: () => localDataClient.entities.StudentXPTotal.list(),
-        staleTime: 1000 * 60 * 5,
-        enabled: !options?.providedXPData,
-        refetchOnWindowFocus: false
-    });
+    // 1. Fetch all XP data using centralized hook (shared cache)
+    const { data: fetchedXPData, isLoading: isLoadingXP } = useAllStudentXPTotals();
 
     const allXPData = options?.providedXPData || fetchedXPData;
 
@@ -291,6 +283,6 @@ export function useHabilidadesStatsMultiple(studentIds: string[], options?: Habi
 
     return {
         radarStats,
-        isLoading: !allXPData || !allEvaluations
+        isLoading: isLoadingXP || !allXPData || !allEvaluations
     };
 }
