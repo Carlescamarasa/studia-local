@@ -38,9 +38,9 @@ export default function UnifiedTable({
   columns,
   data,
   onRowClick,
-  rowActions,
-  getRowActions,
-  bulkActions,
+  rowActions = null,
+  getRowActions = null,
+  bulkActions = null,
   keyField = "id",
   selectable = false,
   emptyMessage = "No hay datos disponibles",
@@ -48,8 +48,8 @@ export default function UnifiedTable({
   paginated = true,
   defaultPageSize = 10,
   // Props for controlled selection
-  selectedKeys,
-  onSelectionChange
+  selectedKeys = null,
+  onSelectionChange = null
 }) {
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');

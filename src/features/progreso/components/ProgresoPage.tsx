@@ -146,6 +146,9 @@ const TabsListAny: any = TabsList;
 const TabsTriggerAny: any = TabsTrigger;
 const TabsContentAny: any = TabsContent;
 const SelectAny: any = Select;
+const SelectTriggerAny: any = SelectTrigger;
+const SelectContentAny: any = SelectContent;
+const SelectItemAny: any = SelectItem;
 
 // Valid tabs for normalization
 const VALID_TABS = ['resumen', 'habilidades', 'estadisticas', 'mochila', 'feedback', 'comparar'];
@@ -893,7 +896,7 @@ function ProgresoPageContent() {
                 {/* Mobile Tab Select */}
                 <div className="md:hidden w-full mb-4">
                     <SelectAny value={tabActiva} onValueChange={setTabActiva} >
-                        <SelectTrigger className="w-full">
+                        <SelectTriggerAny className="w-full">
                             <div className="flex items-center gap-2">
                                 {(() => {
                                     const activeItem = tabItems.find(t => t.value === tabActiva);
@@ -906,20 +909,20 @@ function ProgresoPageContent() {
                                     );
                                 })()}
                             </div>
-                        </SelectTrigger>
-                        <SelectContent className="w-[var(--radix-select-content-width)]">
+                        </SelectTriggerAny>
+                        <SelectContentAny className="w-[var(--radix-select-content-width)]">
                             {tabItems.map((item) => {
                                 const Icon = item.icon;
                                 return (
-                                    <SelectItem key={item.value} value={item.value}>
+                                    <SelectItemAny key={item.value} value={item.value}>
                                         <div className="flex items-center gap-2">
                                             <Icon className="w-4 h-4 text-[var(--color-text-secondary)]" />
                                             <span>{item.label}</span>
                                         </div>
-                                    </SelectItem>
+                                    </SelectItemAny>
                                 );
                             })}
-                        </SelectContent>
+                        </SelectContentAny>
                     </SelectAny>
                 </div>
 
@@ -960,7 +963,7 @@ function ProgresoPageContent() {
                             periodoInicio={periodoInicio}
                             periodoFin={periodoFin}
                             registrosFiltrados={registrosFiltradosUnicos}
-                            user={isEstu ? usuariosMap[userIdActual] : null}
+                            user={(isEstu && userIdActual) ? usuariosMap[userIdActual] : null}
                             aggregateLevelGoals={aggregateLevelGoals}
                         />
                     </div>

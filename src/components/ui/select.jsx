@@ -8,6 +8,13 @@ const Select = SelectPrimitive.Root
 const SelectGroup = SelectPrimitive.Group
 const SelectValue = SelectPrimitive.Value
 
+/**
+ * @typedef {Object} SelectTriggerProps
+ * @property {React.ReactNode} [children]
+ * @property {string} [className]
+ */
+
+/** @type {React.ForwardRefExoticComponent<SelectTriggerProps & React.RefAttributes<HTMLButtonElement>>} */
 const SelectTrigger = React.forwardRef(({ className, children, ...props }, ref) => {
   let tokens;
   try {
@@ -37,6 +44,10 @@ const SelectTrigger = React.forwardRef(({ className, children, ...props }, ref) 
   )
 })
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
+SelectTrigger.propTypes = {
+  className: React.PropTypes?.string,
+  children: React.PropTypes?.node,
+}
 
 const SelectScrollUpButton = React.forwardRef(({ className, ...props }, ref) => (
   <SelectPrimitive.ScrollUpButton
