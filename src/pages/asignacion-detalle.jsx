@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useBloques } from "@/hooks/entities/useBloques";
+import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
 import { useUsers } from "@/hooks/entities/useUsers";
 // Updated Card, Badge, Alert paths from @/components/ui to @/components/ds
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
@@ -45,14 +46,14 @@ export default function AsignacionDetallePage() {
   // Query para obtener bloques con hook centralizado
   const { data: dbBloques = [], isLoading: isLoadingBloques, isError: isErrorBloques } = useBloques();
 
-  const { data: asignacion, isLoading } = useQuery({
-    queryKey: ['asignacion', asignacionId],
-    queryFn: async () => {
-      const result = await localDataClient.entities.Asignacion.list();
-      return result.find(a => a.id === asignacionId);
-    },
-    enabled: !!asignacionId,
-  });
+  const { data: allAsignaciones = [], isLoading: isLoadingAsignaciones } = useAsignaciones();
+
+  const asignacion = useMemo(() =>
+    allAsignaciones.find(a => a.id === asignacionId),
+    [allAsignaciones, asignacionId]
+  );
+
+  const isLoading = isLoadingAsignaciones;
 
   // Query para obtener usuarios con hook centralizado
   const { data: usuarios = [] } = useUsers();
@@ -70,7 +71,7 @@ export default function AsignacionDetallePage() {
   const cerrarMutation = useMutation({
     mutationFn: () => localDataClient.entities.Asignacion.update(asignacionId, { estado: 'cerrada' }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['asignacion', asignacionId] });
+      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
       toast.success('✅ Asignación cerrada');
     },
   });
@@ -91,7 +92,7 @@ export default function AsignacionDetallePage() {
   const publicarMutation = useMutation({
     mutationFn: () => localDataClient.entities.Asignacion.update(asignacionId, { estado: 'publicada' }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['asignacion', asignacionId] });
+      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
       toast.success('✅ Asignación publicada');
     },
   });
@@ -114,7 +115,7 @@ export default function AsignacionDetallePage() {
       return localDataClient.entities.Asignacion.update(asignacionId, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['asignacion', asignacionId] });
+      queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
       toast.success('✅ Cambios guardados');
       setShowEditDrawer(false);
     },

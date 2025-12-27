@@ -65,11 +65,13 @@ export function EffectiveUserProvider({ children }) {
 
     // SEGURIDAD: Si el usuario real hace logout, limpiar la impersonación inmediatamente
     // SEGURIDAD: Si el usuario real hace logout, limpiar la impersonación inmediatamente
+    // SEGURIDAD: Si el usuario real hace logout, limpiar la impersonación inmediatamente
+    // Solo ejecutar si ya terminó de cargar la sesión (evitar falso positivo al recargar)
     useEffect(() => {
-        if (!user && impersonatedUser) {
+        if (!loading && !user && impersonatedUser) {
             stopImpersonation();
         }
-    }, [user, impersonatedUser, stopImpersonation]);
+    }, [user, impersonatedUser, stopImpersonation, loading]);
 
     // Calcular valores del contexto
     const value = useMemo(() => {

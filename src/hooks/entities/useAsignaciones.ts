@@ -47,8 +47,10 @@ export function useAsignaciones(filters?: AsignacionFilters) {
             if (filters && Object.keys(filters).length > 0) {
                 return remoteDataAPI.asignaciones.filter(filters);
             }
-            // Sin filtros, usar list normal
+            // Sin filtros, usar list normal (ahora optimizado con RPC)
             return remoteDataAPI.asignaciones.list();
         },
+        staleTime: 5 * 60 * 1000, // 5 minutos
+        gcTime: 10 * 60 * 1000,   // 10 minutos
     });
 }

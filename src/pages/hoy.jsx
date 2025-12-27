@@ -3,7 +3,7 @@ import { updateBackpackFromSession } from '@/services/backpackService';
 import { localDataClient } from "@/api/localDataClient";
 import { createRemoteDataAPI } from "@/api/remoteDataAPI";
 import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
-import { useUsers } from "@/hooks/entities/useUsers";
+import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 
 // Create remote API instance for fetching bloques with variations
 const remoteDataAPI = createRemoteDataAPI();
@@ -334,14 +334,8 @@ function HoyPageContent() {
   // Usar el nuevo provider de impersonación para obtener el usuario efectivo
   const { effectiveUserId, effectiveEmail, isImpersonating } = useEffectiveUser();
 
-  // Usar hook centralizado para usuarios
-  const { data: usuarios = [] } = useUsers();
-
-  // Buscar el usuario efectivo en la base de datos
-  // Primero por ID, luego por email como fallback
-  const alumnoActual = usuarios.find(u => u.id === effectiveUserId)
-    || usuarios.find(u => effectiveEmail && u.email && u.email.toLowerCase().trim() === effectiveEmail.toLowerCase().trim())
-    || { id: effectiveUserId, email: effectiveEmail };
+  // Usar hook optimizado para perfil actual (usa caché de useUsers)
+  const { profile: alumnoActual } = useCurrentProfile();
 
   // Usar el ID del usuario efectivo (impersonado o real)
   const userIdActual = alumnoActual?.id || effectiveUserId;
@@ -424,16 +418,21 @@ function HoyPageContent() {
     if (!a.alumnoId) {
       return false;
     }
-    const alumno = usuarios.find(u => u.id === a.alumnoId);
-    if (!alumno) {
-      // Si es el usuario actual pero no está en la lista de usuarios, permitir la asignación
-      // Esto puede pasar si los usuarios aún no se han cargado completamente
-      if (a.alumnoId === userIdActual) {
-        // Continuar con la validación del plan y semanas
-      } else {
-        return false;
-      }
+    // Validar que tiene alumnoId válido
+    if (!a.alumnoId) {
+      return false;
     }
+
+    // Validar existencia de perfil (usando datos embebidos del RPC si están disponibles)
+    // Si no tenemos alumnos cargados (porque quitamos useUsers), confiamos en el RPC o en que es el usuario actual.
+    // Simplificación: Si es el usuario actual, siempre permitir.
+    // Si la asignación tiene alumnoId, asumimos que es válida para ese alumno.
+    // El RPC trae 'alumnoNombre'. Si es null, el perfil quizás no existe, pero la asignación sí.
+    // Mantenemos lógica defensiva mínima:
+
+    // Si no coincide con el usuario actual, se filtrará más adelante en asignacionesActivas.
+    // Esta validación previa era para asegurar consistencia de datos.
+    if (!userIdActual) return false;
 
     // Validar que tiene plan y semanas
     if (!a.plan || !Array.isArray(a.plan.semanas) || a.plan.semanas.length === 0) {

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
-import { useUsers } from "@/hooks/entities/useUsers";
+import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ export default function AsignacionesArchivadas() {
   const { data: allAsignaciones = [], isLoading } = useAsignaciones();
   const asignaciones = allAsignaciones.filter(a => a.estado === 'cerrada');
 
-  const { data: usuarios = [] } = useUsers();
+
 
   const reabrirMutation = useMutation({
     mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'borrador' }),
@@ -39,10 +39,8 @@ export default function AsignacionesArchivadas() {
   });
 
   const filteredAsignaciones = asignaciones.filter(a => {
-    const alumno = usuarios.find(u => u.id === a.alumnoId);
-    const alumnoNombreBase = alumno ? displayName(alumno) : '';
-    const alumnoNombreSnap = a.alumno?.nombreCompleto || a.alumno?.full_name || '';
-    const alumnoNombre = (alumnoNombreBase || alumnoNombreSnap).toLowerCase();
+    // Usar datos embebidos del RPC
+    const alumnoNombre = (a.alumnoNombre || a.alumno?.full_name || '').toLowerCase();
     const term = searchTerm.toLowerCase();
     return (
       alumnoNombre.includes(term) ||
@@ -81,7 +79,6 @@ export default function AsignacionesArchivadas() {
           ) : (
             <div className="space-y-3">
               {filteredAsignaciones.map((asignacion) => {
-                const alumno = usuarios.find(u => u.id === asignacion.alumnoId);
                 return (
                   <Card key={asignacion.id} className="hover:shadow-md transition-shadow bg-muted">
                     <CardContent className="pt-4">
@@ -89,9 +86,7 @@ export default function AsignacionesArchivadas() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <h4 className="font-semibold truncate">
-                              {alumno
-                                ? displayName(alumno)
-                                : displayNameById(asignacion.alumnoId)}
+                              {asignacion.alumnoNombre || displayNameById(asignacion.alumnoId)}
                             </h4>
                             <Badge variant="secondary">Cerrada</Badge>
                           </div>
@@ -107,6 +102,7 @@ export default function AsignacionesArchivadas() {
                             </p>
                           </div>
                         </div>
+
                         <div className="flex gap-2">
                           <Button
                             size="sm"
@@ -139,10 +135,10 @@ export default function AsignacionesArchivadas() {
                   </Card>
                 );
               })}
-            </div>
+            </div >
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </CardContent >
+      </Card >
+    </div >
   );
 }

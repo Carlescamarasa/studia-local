@@ -1,18 +1,16 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { X, Search, Check, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { componentStyles } from "@/design/componentStyles";
-import { supabase } from "@/lib/supabaseClient";
-import { remoteDataAPI } from "@/api/remote/api";
+import { useUsers } from "@/hooks/entities/useUsers";
 import { displayName } from "@/components/utils/helpers";
 
 /**
  * StudentSearchBarAsync
- * - Búsqueda asíncrona en Supabase con debounce
- * - No carga estudiantes al montar
- * - Busca solo cuando el usuario escribe (mínimo 1 carácter)
+ * - Búsqueda en memoria usando useUsers (cached) con debounce simulado para UX
+ * - No carga estudiantes individualmente, usa el cache global
  * - Selección múltiple con chips removibles
  * 
  * Props:
@@ -32,11 +30,12 @@ export default function StudentSearchBarAsync({
   selectedStudents = [],
 }) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  // Debounce de 300ms
+  // Usar el hook useUsers para obtener todos los usuarios (cached)
+  const { data: allUsers = [], isLoading: isLoadingUsers } = useUsers();
+
+  // Debounce de 300ms para la búsqueda visual
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(query);
@@ -45,124 +44,55 @@ export default function StudentSearchBarAsync({
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Buscar estudiantes cuando cambia la query (mínimo 1 carácter)
-  // Funciona tanto en modo local (localDataClient) como remoto (Supabase)
-  useEffect(() => {
-    const searchStudents = async () => {
-      const trimmedQuery = debouncedQuery.trim();
+  // Filtrar resultados usando useMemo
+  const results = useMemo(() => {
+    const trimmedQuery = debouncedQuery.trim();
 
-      // No buscar si la query tiene menos de 1 carácter
-      if (trimmedQuery.length < 1) {
-        setResults([]);
-        return;
-      }
+    // Si no hay query, devolver vacío (o comportamiento deseado)
+    if (trimmedQuery.length < 1) {
+      return [];
+    }
 
-      setIsLoading(true);
+    const queryLower = trimmedQuery.toLowerCase();
 
-      try {
-        const dataSource = import.meta.env.VITE_DATA_SOURCE || 'local';
+    // Filtrar usuarios que son ESTU y coinciden con la query
+    let filtered = allUsers.filter(u => {
+      // Verificar rol (manejar ambos nombres de propiedad por compatibilidad)
+      const rol = u.rolPersonalizado || u.role;
+      if (rol !== 'ESTU') return false;
 
-        if (dataSource === 'remote') {
-          // Modo remoto: buscar en Supabase
-          let supabaseQuery = supabase
-            .from('profiles')
-            .select('id, full_name, role, profesor_asignado_id')
-            .eq('role', 'ESTU')
-            .ilike('full_name', `%${trimmedQuery}%`)
-            .order('full_name', { ascending: true });
-
-          // Si hay filtro de profesor, añadir condición
-          if (profesorFilter && profesorFilter !== 'all') {
-            supabaseQuery = supabaseQuery.eq('profesor_asignado_id', profesorFilter);
-          }
-
-          const { data, error } = await supabaseQuery;
-
-          if (error) {
-            console.error('[StudentSearchBarAsync] Error buscando estudiantes en Supabase:', error);
-            setResults([]);
-            return;
-          }
-
-          // Normalizar resultados
-          const normalized = (data || []).map(estudiante => ({
-            value: estudiante.id,
-            label: estudiante.full_name || 'Sin nombre',
-            nombre: estudiante.full_name || 'Sin nombre',
-            email: null,
-          }));
-
-          setResults(normalized);
-
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[StudentSearchBarAsync] Búsqueda remota:', {
-              termino: trimmedQuery,
-              profesorFilter,
-              resultados: normalized.length
-            });
-          }
-        } else {
-          // Modo local: buscar en remoteDataAPI (API centralizada)
-          const queryLower = trimmedQuery.toLowerCase();
-
-          // Usar remoteDataAPI para consistencia con el resto del codebase
-          const usuarios = await remoteDataAPI.usuarios.list();
-
-          // Filtrar estudiantes
-          let estudiantes = usuarios.filter(u => {
-            const rol = u.rolPersonalizado || u.role;
-            return rol === 'ESTU';
-          });
-
-          // Filtrar por texto de búsqueda (en nombre completo, nombre, email)
-          estudiantes = estudiantes.filter(e => {
-            const nombre = displayName(e).toLowerCase();
-            const email = (e.email || '').toLowerCase();
-            return nombre.includes(queryLower) || email.includes(queryLower);
-          });
-
-          // Si hay filtro de profesor, filtrar estudiantes por ese profesor
-          if (profesorFilter && profesorFilter !== 'all') {
-            estudiantes = estudiantes.filter(e => e.profesor_asignado_id === profesorFilter);
-          }
-
-          // Normalizar resultados
-          const normalized = estudiantes.map(estudiante => ({
-            value: estudiante.id,
-            label: `${displayName(estudiante)}${estudiante.email ? ` (${estudiante.email})` : ''}`.trim(),
-            nombre: displayName(estudiante),
-            email: estudiante.email || null,
-          }));
-
-          // Ordenar por nombre
-          normalized.sort((a, b) => a.label.localeCompare(b.label));
-
-          setResults(normalized);
-
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[StudentSearchBarAsync] Búsqueda local:', {
-              termino: trimmedQuery,
-              profesorFilter,
-              resultados: normalized.length
-            });
-          }
+      // Filtro de profesor si aplica
+      if (profesorFilter && profesorFilter !== 'all') {
+        // useUsers devuelve camelCase (profesorAsignadoId)
+        if (u.profesorAsignadoId !== profesorFilter && u.profesor_asignado_id !== profesorFilter) {
+          return false;
         }
-      } catch (error) {
-        console.error('[StudentSearchBarAsync] Error inesperado:', error);
-        setResults([]);
-      } finally {
-        setIsLoading(false);
       }
-    };
 
-    searchStudents();
-  }, [debouncedQuery, profesorFilter]);
+      // Filtro de texto
+      const nombre = displayName(u).toLowerCase();
+      const email = (u.email || '').toLowerCase();
+
+      return nombre.includes(queryLower) || email.includes(queryLower);
+    });
+
+    // Ordenar y normalizar
+    return filtered
+      .map(estudiante => ({
+        value: estudiante.id,
+        label: `${displayName(estudiante)}${estudiante.email ? ` (${estudiante.email})` : ''}`.trim(),
+        nombre: displayName(estudiante),
+        email: estudiante.email || null,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+
+  }, [debouncedQuery, allUsers, profesorFilter]);
 
   // Combinar resultados con estudiantes ya seleccionados para mostrar en los chips
-  const allStudentsMap = React.useMemo(() => {
+  const allStudentsMap = useMemo(() => {
     const map = new Map();
 
-    // Añadir estudiantes seleccionados
+    // Añadir estudiantes seleccionados (props)
     selectedStudents.forEach(est => {
       map.set(est.id, {
         value: est.id,
@@ -170,13 +100,26 @@ export default function StudentSearchBarAsync({
       });
     });
 
-    // Añadir resultados de búsqueda
+    // Añadir estudiantes del hook si están seleccionados pero no en props (fallback)
+    value.forEach(id => {
+      if (!map.has(id)) {
+        const u = allUsers.find(user => user.id === id);
+        if (u) {
+          map.set(id, {
+            value: u.id,
+            label: `${displayName(u)}${u.email ? ` (${u.email})` : ''}`.trim(),
+          });
+        }
+      }
+    });
+
+    // Añadir resultados de búsqueda actuales
     results.forEach(est => {
       map.set(est.value, est);
     });
 
     return map;
-  }, [selectedStudents, results]);
+  }, [selectedStudents, results, value, allUsers]);
 
   const toggle = (id) => {
     const isSelected = value.includes(id);
@@ -205,15 +148,17 @@ export default function StudentSearchBarAsync({
           <>
             {value.map((id) => {
               const student = allStudentsMap.get(id);
-              if (!student) return null;
+              // Si no encontramos datos, mostrar ID (fallback extremo)
+              const label = student ? student.label : "Cargando...";
+
               return (
                 <Badge key={id} variant="secondary" className="rounded-full px-2 py-1 text-xs flex items-center gap-1">
-                  <span className="truncate max-w-[180px]">{student.label}</span>
+                  <span className="truncate max-w-[180px]">{label}</span>
                   <button
                     type="button"
                     onClick={() => remove(id)}
                     className="ml-1 hover:opacity-80"
-                    aria-label={`Quitar ${student.label}`}
+                    aria-label={`Quitar ${label}`}
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -252,10 +197,10 @@ export default function StudentSearchBarAsync({
       {/* Contenedor de resultados con scroll */}
       <div className="border border-[var(--color-border-default)] rounded-[var(--radius-card)] overflow-hidden">
         <div className="max-h-[200px] overflow-y-auto">
-          {isLoading ? (
+          {isLoadingUsers && results.length === 0 ? (
             <div className="p-3 text-sm text-[var(--color-text-secondary)] flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Buscando…</span>
+              <span>Cargando estudiantes...</span>
             </div>
           ) : query.trim().length < 1 ? (
             <div className="p-3 text-sm text-[var(--color-text-secondary)]">
@@ -295,4 +240,3 @@ export default function StudentSearchBarAsync({
     </div>
   );
 }
-

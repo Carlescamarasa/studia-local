@@ -11,57 +11,144 @@ import { resolvePlanForAsignacion } from './planes';
 import type { Asignacion, Plan } from '@/types/domain';
 
 export async function fetchAsignaciones(sort?: string): Promise<Asignacion[]> {
-    let query = supabase.from('asignaciones').select('*');
+    try {
+        // Intentar usar RPC consolidada
+        const { data, error } = await supabase.rpc('get_asignaciones_summary'); // No args
 
-    if (sort) {
-        const direction = sort.startsWith('-') ? 'desc' : 'asc';
-        const field = sort.startsWith('-') ? sort.slice(1) : sort;
-        const snakeField = toSnakeCase(field);
-        query = query.order(snakeField, { ascending: direction === 'asc' });
-    }
-
-    const { data, error } = await query;
-    if (error) throw error;
-
-    // Cargar todos los planes necesarios de una vez para eficiencia
-    const asignacionesParsed = (data || []).map((a: any) => {
-        const parsed = snakeToCamel<Asignacion>(a);
-        return normalizeAsignacionISO(parsed);
-    });
-
-    // Obtener todos los planIds únicos que necesitamos cargar
-    const planIdsNecesarios = new Set<string>();
-    asignacionesParsed.forEach((a: any) => {
-        if (a.planId && !a.planAdaptado && !a.plan) {
-            planIdsNecesarios.add(a.planId);
+        if (error) {
+            // Si la RPC no existe (error 42883), lanzar para usar fallback
+            if (error.code === '42883' || error.message?.includes('does not exist')) {
+                console.warn('[fetchAsignaciones] RPC get_asignaciones_summary no disponible, usando fallback');
+                throw error;
+            }
+            throw error;
         }
-    });
 
-    // Cargar todos los planes necesarios
-    let planesList: Plan[] = [];
-    if (planIdsNecesarios.size > 0) {
-        const { data: planesData, error: planesError } = await supabase
-            .from('planes')
-            .select('*')
-            .in('id', Array.from(planIdsNecesarios));
+        // RPC devuelve objeto con propiedad 'asignaciones'
+        const rawAsignaciones = data?.asignaciones || [];
 
-        if (!planesError && planesData) {
-            planesList = planesData.map((p: any) => snakeToCamel<Plan>(p));
+        // Normalizar fechas y deserializar JSONs
+        const asignacionesParsed = rawAsignaciones.map((a: any) => {
+            // El RPC ya devuelve camelCase, así que no necesitamos snakeToCamel para las props del RPC
+            // PERO: normalizeAsignacionISO espera un objeto Asignacion.
+            // Los campos extra (alumnoNombre, etc) se preservan.
+
+            // Asegurar que tenemos los campos mínimos requeridos
+            const baseObj = {
+                ...a,
+                // Asegurar que plan_id vs planId se maneje (el RPC devuelve planId)
+            };
+
+            const normalized = normalizeAsignacionISO(baseObj);
+            // Deserializar campos JSON (el RPC devuelve JSON objects ya, pero deserializeJsonFields asegura tipos correctos)
+            // Nota: el RPC devuelve jsonb nativo, que postgrest convierte a objeto JS.
+            // deserializeJsonFields a veces parsea strings. Si ya es objeto, lo deja igual.
+            return deserializeJsonFields(normalized, ['planAdaptado', 'piezaSnapshot']);
+        });
+
+        // Ordenar en memoria si se pide sort (RPC devuelve por fecha desc por defecto)
+        if (sort) {
+            const direction = sort.startsWith('-') ? 'desc' : 'asc';
+            const field = sort.startsWith('-') ? sort.slice(1) : sort;
+
+            asignacionesParsed.sort((a: any, b: any) => {
+                if (a[field] < b[field]) return direction === 'asc' ? -1 : 1;
+                if (a[field] > b[field]) return direction === 'asc' ? 1 : -1;
+                return 0;
+            });
         }
+
+        // Obtener todos los planIds únicos que necesitamos cargar (para planes NO embebidos)
+        // El RPC devuelve 'plan' y 'planAdaptado'. Si faltan y hay planId, cargamos.
+        const planIdsNecesarios = new Set<string>();
+        asignacionesParsed.forEach((a: any) => {
+            if (a.planId && !a.planAdaptado && !a.plan) {
+                planIdsNecesarios.add(a.planId);
+            }
+        });
+
+        // Cargar todos los planes necesarios
+        let planesList: Plan[] = [];
+        if (planIdsNecesarios.size > 0) {
+            const { data: planesData, error: planesError } = await supabase
+                .from('planes')
+                .select('*')
+                .in('id', Array.from(planIdsNecesarios));
+
+            if (!planesError && planesData) {
+                planesList = planesData.map((p: any) => snakeToCamel<Plan>(p));
+            }
+        }
+
+        // Resolver planes para cada asignación
+        const asignacionesResueltas = await Promise.all(
+            asignacionesParsed.map(async (a: any) => {
+                const plan = await resolvePlanForAsignacion(a, planesList);
+                return {
+                    ...a, // Preservar campos extra (alumnoNombre, etc)
+                    plan: plan || a.plan || null,
+                } as Asignacion;
+            })
+        );
+
+        return asignacionesResueltas;
+
+    } catch (rpcError) {
+        // FALLBACK: lógica original
+        console.warn('[fetchAsignaciones] Usando fallback a query normal:', rpcError);
+
+        let query = supabase.from('asignaciones').select('*');
+
+        if (sort) {
+            const direction = sort.startsWith('-') ? 'desc' : 'asc';
+            const field = sort.startsWith('-') ? sort.slice(1) : sort;
+            const snakeField = toSnakeCase(field);
+            query = query.order(snakeField, { ascending: direction === 'asc' });
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        // Cargar todos los planes necesarios de una vez para eficiencia
+        const asignacionesParsed = (data || []).map((a: any) => {
+            const parsed = snakeToCamel<Asignacion>(a);
+            return normalizeAsignacionISO(parsed);
+        });
+
+        // Obtener todos los planIds únicos que necesitamos cargar
+        const planIdsNecesarios = new Set<string>();
+        asignacionesParsed.forEach((a: any) => {
+            if (a.planId && !a.planAdaptado && !a.plan) {
+                planIdsNecesarios.add(a.planId);
+            }
+        });
+
+        // Cargar todos los planes necesarios
+        let planesList: Plan[] = [];
+        if (planIdsNecesarios.size > 0) {
+            const { data: planesData, error: planesError } = await supabase
+                .from('planes')
+                .select('*')
+                .in('id', Array.from(planIdsNecesarios));
+
+            if (!planesError && planesData) {
+                planesList = planesData.map((p: any) => snakeToCamel<Plan>(p));
+            }
+        }
+
+        // Resolver planes para cada asignación
+        const asignacionesResueltas = await Promise.all(
+            asignacionesParsed.map(async (a: any) => {
+                const plan = await resolvePlanForAsignacion(a, planesList);
+                return {
+                    ...deserializeJsonFields(a, ['planAdaptado', 'piezaSnapshot']),
+                    plan: plan || a.plan || null, // Asegurar que siempre hay un plan
+                } as Asignacion;
+            })
+        );
+
+        return asignacionesResueltas;
     }
-
-    // Resolver planes para cada asignación
-    const asignacionesResueltas = await Promise.all(
-        asignacionesParsed.map(async (a: any) => {
-            const plan = await resolvePlanForAsignacion(a, planesList);
-            return {
-                ...deserializeJsonFields(a, ['planAdaptado', 'piezaSnapshot']),
-                plan: plan || a.plan || null, // Asegurar que siempre hay un plan
-            } as Asignacion;
-        })
-    );
-
-    return asignacionesResueltas;
 }
 
 export async function fetchAsignacion(id: string): Promise<Asignacion | null> {
