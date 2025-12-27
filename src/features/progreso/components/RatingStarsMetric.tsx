@@ -5,16 +5,23 @@ import { cn } from "@/lib/utils";
 
 /**
  * RatingStarsMetric - KPIs de Valoración refactorizado
- * Usa KpiTile y estrellas visuales.
  */
+export interface RatingStarsMetricProps {
+    value?: number | string | null;
+    max?: number;
+    label?: string;
+    precision?: number;
+    className?: string;
+}
+
 export default function RatingStarsMetric({
     value,
     max = 4,
     label = "Valoración",
     precision = 1,
     className
-}) {
-    const hasValue = value !== null && value !== undefined;
+}: RatingStarsMetricProps) {
+    const hasValue = value !== null && value !== undefined && value !== "";
     const numericValue = hasValue ? Math.min(Math.max(Number(value), 0), max) : 0;
 
     // Constantes de estrellas

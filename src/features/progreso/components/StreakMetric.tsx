@@ -1,18 +1,23 @@
 import React from "react";
 import { Flame } from "lucide-react";
 import KpiTile from "./KpiTile";
-import { cn } from "@/lib/utils";
 
 /**
- * StreakMetric - KPIs de Racha (Opción A refactorizada)
- * Usa KpiTile internamente para consistencia.
+ * StreakMetric - KPIs de Racha
  */
+export interface StreakMetricProps {
+    streakDays: number | null | undefined;
+    maxStreak?: number | null;
+    label?: string;
+    className?: string;
+}
+
 export default function StreakMetric({
     streakDays,
     maxStreak,
     label = "Racha",
     className
-}) {
+}: StreakMetricProps) {
     const hasValue = streakDays !== null && streakDays !== undefined;
     const currentStreak = hasValue ? streakDays : 0;
     const currentMax = maxStreak || 0;

@@ -1,21 +1,33 @@
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, Badge } from "@/components/ds";
 import TablePagination from "@/components/common/TablePagination";
-import { Button } from "@/components/ds/Button";
-import { MessageSquare, ClipboardCheck, Gauge, Music, Brain, Zap, Target, Edit, BookOpen, Star, LayoutList, ChevronLeft, ChevronRight } from "lucide-react";
+import { MessageSquare, ClipboardCheck, BookOpen, Star, LayoutList, Edit } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
-import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
 import { MediaIcon } from "@/shared/components/media/MediaEmbed";
 import { displayName } from "@/components/utils/helpers";
 import { cn } from "@/lib/utils";
 import ModalSesion from "@/components/calendario/ModalSesion";
 import ModalDetalleFeedback from "./ModalDetalleFeedback";
+import { Button } from "@/components/ds/Button";
 
 /**
  * FeedbackUnificadoTab - Muestra comentarios del profesor, evaluaciones técnicas y sesiones
  * en una única lista ordenada por created_at (timestamp) con filtros tipo pills
  */
+export interface FeedbackUnificadoTabProps {
+    feedbacks: any[];
+    evaluaciones: any[];
+    registros: any[];
+    usuarios: any | any[];
+    isEstu: boolean;
+    onEditFeedback?: (feedback: any) => void;
+    puedeEditar?: (feedback: any) => boolean;
+    onMediaClick?: (mediaLinks: any[], index: number) => void;
+    isMediaModalOpen?: boolean;
+    actionButton?: React.ReactNode;
+}
+
 export default function FeedbackUnificadoTab({
     feedbacks = [],
     evaluaciones = [],
@@ -27,7 +39,7 @@ export default function FeedbackUnificadoTab({
     onMediaClick,
     isMediaModalOpen,
     actionButton
-}) {
+}: FeedbackUnificadoTabProps) {
     const isMobile = useIsMobile();
 
     // Pills filter state: 'todos' | 'sesiones' | 'feedback_profesor'
@@ -35,23 +47,22 @@ export default function FeedbackUnificadoTab({
 
     // Modal state for viewing details
     const [modalSesionOpen, setModalSesionOpen] = useState(false);
-    const [registroSesionSeleccionado, setRegistroSesionSeleccionado] = useState(null);
+    const [registroSesionSeleccionado, setRegistroSesionSeleccionado] = useState<any | null>(null);
 
     const [modalFeedbackOpen, setModalFeedbackOpen] = useState(false);
-    const [feedbackSeleccionado, setFeedbackSeleccionado] = useState(null);
+    const [feedbackSeleccionado, setFeedbackSeleccionado] = useState<any | null>(null);
 
-    // Pagination state
     // Pagination state
     const [pagina, setPagina] = useState(1);
     const [pageSize, setPageSize] = useState(20);
 
     // Handlers
-    const handleViewSesion = (registro) => {
+    const handleViewSesion = (registro: any) => {
         setRegistroSesionSeleccionado(registro);
         setModalSesionOpen(true);
     };
 
-    const handleViewFeedback = (feedback) => {
+    const handleViewFeedback = (feedback: any) => {
         setFeedbackSeleccionado(feedback);
         setModalFeedbackOpen(true);
     };
@@ -59,7 +70,7 @@ export default function FeedbackUnificadoTab({
     // Convertir usuarios a mapa si es array
     const usuariosMap = useMemo(() => {
         if (Array.isArray(usuarios)) {
-            const map = {};
+            const map: Record<string, any> = {};
             usuarios.forEach(u => { map[u.id] = u; });
             return map;
         }
@@ -67,7 +78,7 @@ export default function FeedbackUnificadoTab({
     }, [usuarios]);
 
     // Obtener nombre del usuario
-    const getNombre = (userId) => {
+    const getNombre = (userId: string) => {
         const usuario = usuariosMap[userId];
         if (!usuario) return 'Profesor';
         return displayName(usuario);
@@ -75,7 +86,7 @@ export default function FeedbackUnificadoTab({
 
     // Combinar feedbacks, evaluaciones (legacy) y sesiones en una sola lista
     const itemsCombinados = useMemo(() => {
-        const items = [];
+        const items: any[] = [];
 
         // 1. Feedbacks (New & Old Unified)
         feedbacks.forEach(feedback => {
@@ -115,7 +126,7 @@ export default function FeedbackUnificadoTab({
         });
 
         // Ordenar por timestamp descendente
-        return items.sort((a, b) => b.timestamp - a.timestamp);
+        return items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
     }, [feedbacks, evaluaciones, registros]);
 
     // Filter items based on selected pill
@@ -143,7 +154,7 @@ export default function FeedbackUnificadoTab({
     }, [itemsFiltrados, pagina, pageSize]);
 
     // Formatear fecha con hora
-    const formatFechaHora = (date) => {
+    const formatFechaHora = (date: Date) => {
         if (!date || isNaN(date.getTime())) return 'Sin fecha';
         return date.toLocaleDateString('es-ES', {
             day: 'numeric',
@@ -154,7 +165,7 @@ export default function FeedbackUnificadoTab({
     };
 
     // Get calificacion badge style
-    const getCalificacionBadge = (cal) => {
+    const getCalificacionBadge = (cal: number | undefined | null) => {
         if (!cal || cal <= 0) return null;
         const calInt = Math.round(cal);
         if (calInt === 1) return componentStyles.status.badgeDanger;
@@ -164,28 +175,8 @@ export default function FeedbackUnificadoTab({
         return componentStyles.status.badgeDefault;
     };
 
-    // Helper para rendering habilidades in-line (legacy eval renderer reuse)
-    const renderHabilidades = (habilidades) => {
-        if (!habilidades) return null;
-        const skills = [];
-
-        if (habilidades.sonido !== undefined && habilidades.sonido !== null) {
-            skills.push(
-                <div key="sonido" className="flex items-center gap-1.5 text-xs">
-                    <Music className="w-3.5 h-3.5 text-blue-500" />
-                    <span className="font-medium">Sonido:</span>
-                    <span className="text-[var(--color-text-primary)]">{habilidades.sonido}/10</span>
-                </div>
-            );
-        }
-        // ... (keep legacy render logic if needed, or simplified)
-        // Simplified for brevity in legacy rendering, main focus is unified feedback
-        return null; // Legacy details are inside modal mostly? Visual cue is duplicate.
-        // Actually keep it visible in list if desired. I'll stick to cleaner list.
-    };
-
     // Renderizar un item de feedback
-    const renderFeedback = (item) => {
+    const renderFeedback = (item: any) => {
         const feedback = item.data;
         const prof = usuariosMap[feedback.profesorId];
         const puedeEditarEste = puedeEditar ? puedeEditar(feedback) : false;
@@ -269,12 +260,8 @@ export default function FeedbackUnificadoTab({
     };
 
     // Renderizar un item de evaluación (legacy)
-    const renderEvaluacion = (item) => {
+    const renderEvaluacion = (item: any) => {
         const evaluacion = item.data;
-        // Legacy evals are read-only mostly, no special modal for them?
-        // Actually, we can open a modal for them too if we adapt data?
-        // For now, render as static card or use same modal if compatible.
-        // Let's keep it simple: static card for legacy.
 
         return (
             <div key={item.id} className="flex items-start gap-3 py-3 px-4 border-l-4 border-l-[var(--color-border-default)] bg-[var(--color-surface-muted)] hover:bg-[var(--color-surface-elevated)] transition-colors rounded-r-lg opacity-80">
@@ -296,7 +283,7 @@ export default function FeedbackUnificadoTab({
     };
 
     // Renderizar un item de sesión
-    const renderSesion = (item) => {
+    const renderSesion = (item: any) => {
         const registro = item.data;
         const badgeClass = getCalificacionBadge(registro.calificacion);
 
@@ -357,9 +344,7 @@ export default function FeedbackUnificadoTab({
                         {counts.todos > 0 && (
                             <span className={cn(
                                 "ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full border",
-                                tipoFiltro === 'todos'
-                                    ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/20"
-                                    : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)] border-[var(--color-border-default)]"
+                                "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/20"
                             )}>
                                 {counts.todos}
                             </span>
@@ -441,7 +426,7 @@ export default function FeedbackUnificadoTab({
                             </div>
 
                             <TablePagination
-                                data={itemsFiltrados}
+                                data={itemsFiltrados as any[]}
                                 currentPage={pagina}
                                 pageSize={pageSize}
                                 onPageChange={setPagina}

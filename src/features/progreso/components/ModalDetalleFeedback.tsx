@@ -9,7 +9,6 @@ import {
 import { Badge } from "@/components/ds";
 import { getNombreVisible } from "@/components/utils/helpers";
 import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
-import { componentStyles } from "@/design/componentStyles";
 import { MessageSquare, Calendar, User, Music, Brain, TrendingUp, Zap, Gauge, Target } from "lucide-react";
 import { startOfWeek, endOfWeek, format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -17,7 +16,16 @@ import { es } from "date-fns/locale";
 /**
  * ModalDetalleFeedback - Modal de solo lectura para ver detalles de un feedback semanal unificado.
  */
-export default function ModalDetalleFeedback({ open, onOpenChange, feedback, usuarios, onMediaClick, isMediaModalOpen }) {
+export interface ModalDetalleFeedbackProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    feedback: any;
+    usuarios: any[];
+    onMediaClick?: (mediaLinks: any[], index: number) => void;
+    isMediaModalOpen?: boolean;
+}
+
+export default function ModalDetalleFeedback({ open, onOpenChange, feedback, usuarios, onMediaClick, isMediaModalOpen }: ModalDetalleFeedbackProps) {
     // Use ref to always have the latest isMediaModalOpen value (avoids stale closure in event handlers)
     const isMediaModalOpenRef = useRef(isMediaModalOpen);
     useEffect(() => {
@@ -62,7 +70,7 @@ export default function ModalDetalleFeedback({ open, onOpenChange, feedback, usu
                     }
 
                     // PRIORITY 3: Fallback z-index check
-                    if (target) {
+                    if (target instanceof Element) {
                         const style = window.getComputedStyle(target);
                         if (parseInt(style.zIndex, 10) >= 200) {
                             e.preventDefault();
@@ -134,7 +142,7 @@ export default function ModalDetalleFeedback({ open, onOpenChange, feedback, usu
                                 <div className="mt-2 space-y-1">
                                     <p className="text-xs text-[var(--color-text-secondary)] mb-1">Ajustes XP Habilidades:</p>
                                     <div className="flex flex-wrap gap-2">
-                                        {Object.entries(xpDeltas).map(([skill, delta]) => {
+                                        {Object.entries(xpDeltas).map(([skill, delta]: [string, any]) => {
                                             let icon = TrendingUp;
                                             let colorClass = "text-[var(--color-text-primary)]";
                                             if (skill === 'motricidad') { icon = Gauge; colorClass = "text-green-600"; }
