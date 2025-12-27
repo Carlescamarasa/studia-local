@@ -11,7 +11,7 @@ export default function SystemTopBar({
     isMobile
 }) {
     const location = useLocation();
-    const isStudiaMode = location.pathname.startsWith('/hoy');
+    const isStudiaMode = location.pathname.startsWith('/studia');
 
     // Logic: Show bar if Impersonating OR (Mobile AND NOT Studia Mode)
     // In Studia Mode, we use the header icon instead of this bar.

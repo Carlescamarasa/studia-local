@@ -1,24 +1,16 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+
 import { Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { componentStyles } from '@/design/componentStyles';
 
 export default function ReportErrorButton() {
-  const location = useLocation();
-  
-  // Detectar si estamos en modo estudio (/hoy)
-  const isStudyMode = location.pathname.includes('/hoy');
-  
-  // Ocultar completamente en modo estudio
-  if (isStudyMode) {
-    return null;
-  }
-  
+
+
   const handleClick = () => {
     console.log('[ReportErrorButton] Disparando evento open-error-report');
-    window.dispatchEvent(new CustomEvent('open-error-report', { 
-      detail: {} 
+    window.dispatchEvent(new CustomEvent('open-error-report', {
+      detail: {}
     }));
   };
 
