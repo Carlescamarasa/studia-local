@@ -15,7 +15,7 @@ interface HabilidadesStatsOptions {
 
 import { useStudentSkillsRadar } from './useStudentSkillsRadar';
 
-import { useStudentSkillsRadar } from './useStudentSkillsRadar';
+
 
 /**
  * Hook to get normalized skills radar stats.
@@ -31,7 +31,7 @@ export function useHabilidadesStats(alumnoId: string, options?: HabilidadesStats
     // Combine into 5-axis radar data using RPC response
     const radarStats = useMemo(() => {
         if (!rpcData) return null;
-        
+
         return {
             combinedData: [
                 {
