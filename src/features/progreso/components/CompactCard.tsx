@@ -4,19 +4,20 @@ import { componentStyles } from "@/design/componentStyles";
 
 /**
  * CompactCard - Compact wrapper for content sections
- * 
- * @param {Object} props
- * @param {string|React.ReactNode} [props.title] - Card title
- * @param {React.ReactNode} [props.titleRight] - Optional element aligned to the right of title
- * @param {React.ReactNode} props.children - Card content
- * @param {string} [props.className] - Additional classes
  */
+export interface CompactCardProps {
+    title?: string | React.ReactNode;
+    titleRight?: React.ReactNode;
+    children: React.ReactNode;
+    className?: string;
+}
+
 export default function CompactCard({
     title,
     titleRight,
     children,
     className,
-}) {
+}: CompactCardProps) {
     return (
         <div className={cn(
             componentStyles.containers.cardBase,

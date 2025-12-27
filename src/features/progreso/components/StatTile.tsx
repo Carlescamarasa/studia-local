@@ -3,21 +3,22 @@ import { cn } from "@/lib/utils";
 
 /**
  * StatTile - Ultra-compact KPI component for stats bar
- * 
- * @param {Object} props
- * @param {string|number} props.value - Main value to display
- * @param {string} props.label - Label text
- * @param {string} props.sublabel - Optional secondary label
- * @param {string} props.valueClassName - Optional class for value styling
- * @param {string} props.className - Additional classes
  */
+export interface StatTileProps {
+    value: string | number | null | undefined;
+    label: string;
+    sublabel?: string;
+    valueClassName?: string;
+    className?: string;
+}
+
 export default function StatTile({
     value,
     label,
     sublabel,
     valueClassName,
     className,
-}) {
+}: StatTileProps) {
     // Validate value
     const safeValue = React.useMemo(() => {
         if (value === null || value === undefined) return '—';

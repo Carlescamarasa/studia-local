@@ -1,23 +1,20 @@
 import React from "react";
 import { cn } from "@/lib/utils";
+import { LucideIcon } from "lucide-react";
 
 /**
  * KpiTile - Componente base para tiles de KPI con diseño unificado.
- * Estructura:
- * 1. Header: Icono + Label
- * 2. Body: Valor grande
- * 3. Extra: Elemento visual (barras, estrellas)
- * 4. Footer: Subtexto
- * 
- * @param {Object} props
- * @param {React.ElementType} props.icon - Componente de icono Lucide
- * @param {string} props.label - Etiqueta del KPI
- * @param {React.ReactNode} props.value - Valor principal
- * @param {string} props.valueClassName - Clases para el valor (color)
- * @param {React.ReactNode} props.extra - Elemento visual opcional (estrellas, barra)
- * @param {React.ReactNode} props.subtext - Texto secundario inferior
- * @param {string} props.className - Clases contenedor
  */
+export interface KpiTileProps {
+    icon?: LucideIcon;
+    label: string;
+    value: React.ReactNode;
+    valueClassName?: string;
+    extra?: React.ReactNode;
+    subtext?: React.ReactNode;
+    className?: string;
+}
+
 export default function KpiTile({
     icon: Icon,
     label,
@@ -26,7 +23,7 @@ export default function KpiTile({
     extra,
     subtext,
     className,
-}) {
+}: KpiTileProps) {
     return (
         <div
             className={cn(

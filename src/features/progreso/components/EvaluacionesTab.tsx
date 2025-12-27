@@ -2,35 +2,34 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { ClipboardCheck, Gauge, Music, Brain, Zap, Target } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
-import { useIsMobile } from "@/hooks/use-mobile";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import { parseLocalDate } from "../utils/progresoUtils";
 
 /**
  * EvaluacionesTab - Muestra evaluaciones técnicas del profesor
- * 
- * @param {Object} props
- * @param {Array} props.evaluaciones - Array de evaluaciones técnicas
- * @param {Object} props.usuarios - Mapa de usuarios para obtener nombres
- * @param {string} props.emptyMessage - Mensaje cuando no hay evaluaciones
- * @param {boolean} props.compact - Modo compacto para Mi Semana
  */
+export interface EvaluacionesTabProps {
+    evaluaciones: any[];
+    usuarios: Record<string, any>;
+    emptyMessage?: string;
+    compact?: boolean;
+}
+
 export default function EvaluacionesTab({
     evaluaciones = [],
     usuarios = {},
     emptyMessage = "No hay evaluaciones técnicas en el periodo seleccionado",
     compact = false
-}) {
-    const isMobile = useIsMobile();
+}: EvaluacionesTabProps) {
 
     // Formatear nombre del evaluador
-    const getEvaluadorNombre = (profesorId) => {
+    const getEvaluadorNombre = (profesorId: string) => {
         const usuario = usuarios[profesorId];
         return usuario?.nombre || usuario?.displayName || 'Profesor';
     };
 
     // Formatear fecha
-    const formatFecha = (fechaISO) => {
+    const formatFecha = (fechaISO: string) => {
         if (!fechaISO) return 'Sin fecha';
         const date = parseLocalDate(fechaISO);
         return date.toLocaleDateString('es-ES', {
@@ -43,10 +42,10 @@ export default function EvaluacionesTab({
     };
 
     // Renderizar habilidades evaluadas
-    const renderHabilidades = (habilidades) => {
+    const renderHabilidades = (habilidades: any) => {
         if (!habilidades) return <span className="text-[var(--color-text-secondary)]">—</span>;
 
-        const skills = [];
+        const skills: React.ReactNode[] = [];
 
         // Sonido (0-10)
         if (habilidades.sonido !== undefined && habilidades.sonido !== null) {
@@ -127,7 +126,7 @@ export default function EvaluacionesTab({
             key: 'fecha',
             label: 'Fecha',
             sortable: true,
-            render: (ev) => (
+            render: (ev: any) => (
                 <span className="text-sm text-[var(--color-text-primary)] whitespace-nowrap">
                     {formatFecha(ev.fecha || ev.created_at)}
                 </span>
@@ -138,7 +137,7 @@ export default function EvaluacionesTab({
                 key: 'evaluador',
                 label: 'Evaluador',
                 sortable: true,
-                render: (ev) => (
+                render: (ev: any) => (
                     <span className="text-sm text-[var(--color-text-primary)]">
                         {getEvaluadorNombre(ev.profesorId)}
                     </span>
@@ -149,14 +148,14 @@ export default function EvaluacionesTab({
             key: 'habilidades',
             label: 'Habilidades Evaluadas',
             sortable: false,
-            render: (ev) => renderHabilidades(ev.habilidades),
+            render: (ev: any) => renderHabilidades(ev.habilidades),
         },
         ...(compact ? [] : [
             {
                 key: 'notas',
                 label: 'Notas',
                 sortable: false,
-                render: (ev) => (
+                render: (ev: any) => (
                     <span className="text-sm text-[var(--color-text-secondary)] line-clamp-2">
                         {ev.notas || '—'}
                     </span>

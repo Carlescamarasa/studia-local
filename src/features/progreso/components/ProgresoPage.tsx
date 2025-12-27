@@ -43,11 +43,10 @@ import {
 // UI Components
 import { Card, CardContent, CardHeader, CardTitle, Badge, EmptyState, PageHeader } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
-import Tabs from "@/components/ds/Tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { componentStyles } from "@/design/componentStyles";
 import { cn } from "@/lib/utils";
 import MultiSelect from "@/components/ui/MultiSelect";
-import StatsDateHeader from "./StatsDateHeader";
 import {
     Select,
     SelectContent,
@@ -63,68 +62,90 @@ import {
 } from "@/components/ui/tooltip";
 
 // Tab Components (reutilizados)
-import ResumenTab from "./ResumenTab";
-import ProgresoTab from "./ProgresoTab";
 import HabilidadesView from "./HabilidadesView";
-import FeedbackUnificadoTab from "./FeedbackUnificadoTab";
 import LevelBadge from "@/components/common/LevelBadge";
 import TabBoundary from "@/components/common/TabBoundary";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 
-import TotalXPDisplay from "./TotalXPDisplay";
-import HabilidadesRadarChart from "./HabilidadesRadarChart";
-import HeatmapFranjas from "./HeatmapFranjas";
-import StatTile from "./StatTile";
-import CompactCard from "./CompactCard";
-
-// New imports for Estadísticas subtabs
-import TiposBloquesTab from "./TiposBloquesTab";
-import TopEjerciciosTab from "./TopEjerciciosTab";
-import AutoevaluacionesTab from "./AutoevaluacionesTab";
-import ComparativaEstudiantes from "./ComparativaEstudiantes";
-import ModalFeedbackSemanal from "@/components/calendario/ModalFeedbackSemanal";
-import StreakMetric from "./StreakMetric";
-import RatingStarsMetric from "./RatingStarsMetric";
-
-// Icons
 import {
-    Activity, BarChart3, Star, MessageSquare, Backpack, Target,
-    Clock, Trophy, ChevronDown, ChevronUp, Filter, User, TrendingUp,
-    Layers, List, Users, Info, BookOpen, PieChart, Timer, CalendarRange, Repeat,
-    PlayCircle, CheckCircle2
-} from "lucide-react";
+    AutoevaluacionesTab,
+    ComparativaEstudiantes,
+    FeedbackUnificadoTab,
+    HeatmapFranjas,
+    KpiTile,
+    ProgresoTab,
+    RatingStarsMetric,
+    ResumenTab,
+    StatTile,
+    StatsDateHeader,
+    StreakMetric,
+    TiposBloquesTab,
+    TopEjerciciosTab,
+} from "./index";
 
-import { useIsMobile } from "@/hooks/use-mobile";
-import { startOfWeek, endOfWeek, format, isSameDay } from 'date-fns';
+import ModalFeedbackSemanal from "@/components/calendario/ModalFeedbackSemanal";
+import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
+
 import { StudiaUser, RegistroSesion, RegistroBloque, FeedbackSemanal, StudentBackpackItem } from "@/shared/types/domain";
 import RequireRole from "@/components/auth/RequireRole";
 import { toStudia } from "@/lib/routes";
 import { es } from "date-fns/locale";
+import { startOfWeek, format } from "date-fns";
+import {
+    Activity,
+    BarChart3,
+    Star,
+    MessageSquare,
+    Backpack,
+    Users,
+    TrendingUp,
+    CalendarRange,
+    PieChart,
+    Trophy,
+    Timer,
+    Repeat,
+    PlayCircle,
+    Clock,
+    List,
+    Info,
+    CheckCircle2,
+    Circle
+} from "lucide-react";
 
 import { useFeedbacksSemanal } from "@/hooks/entities/useFeedbacksSemanal";
-
-import KpiTile from "./KpiTile";
-import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
+import { useIsMobile } from "@/hooks/use-mobile.jsx";
 
 // Cast internal JSX components to any to avoid TS errors
-const CardAny = Card as any;
-const CardContentAny = CardContent as any;
-const CardHeaderAny = CardHeader as any;
-const CardTitleAny = CardTitle as any;
-const StatTileAny = StatTile as any;
-const RatingStarsMetricAny = RatingStarsMetric as any;
-const StreakMetricAny = StreakMetric as any;
-const KpiTileAny = KpiTile as any;
-const UnifiedTableAny = UnifiedTable as any;
-const MultiSelectAny = MultiSelect as any;
-const StatsDateHeaderAny = StatsDateHeader as any;
-const HabilidadesViewAny = HabilidadesView as any;
-const ProgresoTabAny = ProgresoTab as any;
-const PageHeaderAny = PageHeader as any;
-const ResumenTabAny = ResumenTab as any;
-const FeedbackUnificadoTabAny = FeedbackUnificadoTab as any;
-const ModalFeedbackSemanalAny = ModalFeedbackSemanal as any;
-const MediaPreviewModalAny = MediaPreviewModal as any;
+const CardAny: any = Card;
+const CardContentAny: any = CardContent;
+const CardHeaderAny: any = CardHeader;
+const CardTitleAny: any = CardTitle;
+const StatTileAny: any = StatTile;
+const RatingStarsMetricAny: any = RatingStarsMetric;
+const StreakMetricAny: any = StreakMetric;
+const KpiTileAny: any = KpiTile;
+const UnifiedTableAny: any = UnifiedTable;
+const MultiSelectAny: any = MultiSelect;
+const StatsDateHeaderAny: any = StatsDateHeader;
+const HabilidadesViewAny: any = HabilidadesView;
+const ProgresoTabAny: any = ProgresoTab;
+const PageHeaderAny: any = PageHeader;
+const ResumenTabAny: any = ResumenTab;
+const FeedbackUnificadoTabAny: any = FeedbackUnificadoTab;
+const ModalFeedbackSemanalAny: any = ModalFeedbackSemanal;
+const MediaPreviewModalAny: any = MediaPreviewModal;
+const HeatmapFranjasAny: any = HeatmapFranjas;
+const TiposBloquesTabAny: any = TiposBloquesTab;
+const AutoevaluacionesTabAny: any = AutoevaluacionesTab;
+const TopEjerciciosTabAny: any = TopEjerciciosTab;
+const ComparativaEstudiantesAny: any = ComparativaEstudiantes;
+
+
+const TabsAny: any = Tabs;
+const TabsListAny: any = TabsList;
+const TabsTriggerAny: any = TabsTrigger;
+const TabsContentAny: any = TabsContent;
+const SelectAny: any = Select;
 
 // Valid tabs for normalization
 const VALID_TABS = ['resumen', 'habilidades', 'estadisticas', 'mochila', 'feedback', 'comparar'];
@@ -165,7 +186,6 @@ function ProgresoPageContent() {
     const isProf = effectiveRole === 'PROF';
     const isEstu = effectiveRole === 'ESTU';
 
-    // Date range state
     // Date range state
     const [rangoPreset, setRangoPreset] = useState('4-semanas');
     const [periodoInicio, setPeriodoInicio] = useState(() => {
@@ -673,7 +693,7 @@ function ProgresoPageContent() {
                 sum + safeNumber((r as any).bloquesOmitidos), 0
             );
             const ratioCompletado = (totalCompletados + totalOmitidos) > 0
-                ? ((totalCompletados / (totalCompletados + totalOmitidos)) * 100).toFixed(1)
+                ? Number(((totalCompletados / (totalCompletados + totalOmitidos)) * 100).toFixed(1))
                 : 0;
 
             const racha = (calcularRacha as any)(registrosEstudiante, null);
@@ -783,18 +803,7 @@ function ProgresoPageContent() {
     const [feedbackWeekInfo, setFeedbackWeekInfo] = useState({ startISO: '', label: '' });
 
     // Media Preview State
-    const [mediaPreviewOpen, setMediaPreviewOpen] = useState(false);
-    const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
-    const [previewMediaLinks, setPreviewMediaLinks] = useState<string[]>([]);
 
-    const handleMediaClick = (mediaLinks: string[] | any, index = 0) => {
-        if (!mediaLinks || mediaLinks.length === 0) {
-            return;
-        }
-        setPreviewMediaLinks(mediaLinks);
-        setSelectedMediaIndex(index);
-        setMediaPreviewOpen(true);
-    };
 
     const handleCreateFeedback = () => {
         // Default to current week
@@ -812,630 +821,287 @@ function ProgresoPageContent() {
 
     const handleEditFeedback = (feedback: any) => {
         let mondayISO = feedback.semanaInicioISO;
-        let label = "Semana seleccionada";
-
-        if (mondayISO) {
-            const monday = new Date(mondayISO);
-            const endWeek = new Date(monday);
-            endWeek.setDate(endWeek.getDate() + 6);
-            label = `Semana del ${format(monday, 'd MMM', { locale: es })} al ${format(endWeek, 'd MMM', { locale: es })}`;
-        }
+        const monday = parseLocalDate(mondayISO);
+        const endWeek = new Date(monday);
+        endWeek.setDate(endWeek.getDate() + 6);
+        const label = `Semana del ${format(monday, 'd MMM', { locale: es })} al ${format(endWeek, 'd MMM', { locale: es })}`;
 
         setSelectedFeedback(feedback);
         setFeedbackWeekInfo({ startISO: mondayISO, label });
         setFeedbackModalOpen(true);
     };
 
-    const handleFeedbackSaved = () => {
-        refetchFeedbacks();
-        queryClient.invalidateQueries({ queryKey: ['calendarSummary'] });
-        setFeedbackModalOpen(false);
+    // ============================================================================
+    // Media & Modal Handling
+    // ============================================================================
+
+    const [mediaModalOpen, setMediaModalOpen] = useState(false);
+    const [mediaModalIndex, setMediaModalIndex] = useState(0);
+    const [mediaModalLinks, setMediaModalLinks] = useState<any[]>([]);
+
+    const handleMediaClick = (mediaLinks: any[], initialIndex = 0) => {
+        setMediaModalLinks(mediaLinks);
+        setMediaModalIndex(initialIndex);
+        setMediaModalOpen(true);
     };
 
+    // ============================================================================
+    // Render
+    // ============================================================================
+
     return (
-        <div className={componentStyles.layout.appBackground}>
-            <PageHeaderAny
-                icon={Target}
-                title="Progreso"
-                subtitle={isEstu ? 'Tu evolución y logros' : 'Seguimiento del progreso de estudiantes'}
-                actions={
-                    <>
-                        {/* Bloque 2: Unified student selector - always visible for PROF/ADMIN */}
-                        {(isProf || isAdmin) && (
+        <div className="space-y-6 pb-20 md:pb-0">
+            {/* Header: Selectors & Filters */}
+            <div className="flex flex-col gap-4">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">
+                            Progreso
+                        </h1>
+                        <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+                            Seguimiento detallado de tu evolución musical
+                        </p>
+                    </div>
+
+                    {/* Global Student Selector (Bloque 2) - Only visible to PROF/ADMIN */}
+                    {(isProf || isAdmin) && (
+                        <div className="w-full md:w-auto">
                             <MultiSelectAny
-                                label={selectedStudentIds.length === 0 ? "Todos los alumnos" : "Alumnos"}
-                                icon={User}
-                                items={estudiantesDisponibles.map(s => ({
-                                    value: s.id,
-                                    label: displayName(s)
-                                }))}
+                                items={estudiantesDisponibles.map(e => ({ value: e.id, label: displayName(e) }))}
                                 value={selectedStudentIds}
                                 onChange={setSelectedStudentIds}
+                                label="Alumnos"
+                                className="w-full md:w-[280px]"
                             />
-                        )}
-                        <StatsDateHeaderAny
-                            startDate={periodoInicio}
-                            endDate={periodoFin}
-                            onDateChange={(range: any) => {
-                                setPeriodoInicio(range?.from);
-                                setPeriodoFin(range?.to);
-                                if (range?.from || range?.to) {
-                                    setRangoPreset('personalizado');
-                                }
-                            }}
-                            className="mr-2"
-                        />
-                    </>
-                }
-            />
-
-            <div className="studia-section">
-                {/* Main tabs */}
-                <div className="mb-6">
-                    <Tabs
-                        variant="segmented"
-                        value={tabActiva}
-                        onChange={setTabActiva}
-                        className="w-full"
-                        items={tabItems}
-                    />
-                </div>
-
-                {/* Tab content */}
-                {tabActiva === 'resumen' && (
-                    <TabResumenContent
-                        kpis={kpis}
-                        datosLinea={datosLinea}
-                        granularidad={granularidad}
-                        onGranularidadChange={setGranularidad}
-                        userIdActual={(effectiveStudentId || userIdActual) as string}
-                        alumnosSeleccionados={alumnosSeleccionados}
-                        allStudentIds={((estudiantes || []) as any[]).map((u: any) => u.id).filter((id): id is string => !!id)}
-                        xpData={xpTotals}
-                        evaluations={evaluacionesTecnicas}
-                        feedbacks={feedbacksSemanal}
-                        users={usuarios}
-                    />
-                )}
-                {tabActiva === 'habilidades' && (
-                    <CardAny>
-                        <CardContentAny className="pt-6">
-                            <HabilidadesViewAny
-                                alumnosSeleccionados={alumnosSeleccionados}
-                                allStudentIds={((estudiantes || []) as any[]).map((u: any) => u.id).filter((id): id is string => !!id)}
-                                userIdActual={userIdActual}
-                                fechaInicio={periodoInicio}
-                                fechaFin={periodoFin}
-                                xpData={xpTotals}
-                                evaluations={evaluacionesTecnicas}
-                                feedbacks={feedbacksSemanal}
-                                users={usuarios}
-                            />
-                        </CardContentAny>
-                    </CardAny>
-                )}
-                {tabActiva === 'estadisticas' && (
-                    <TabEstadisticasContent
-                        kpis={kpis}
-                        datosLinea={datosLinea}
-                        granularidad={granularidad}
-                        onGranularidadChange={setGranularidad}
-                        tiempoRealVsObjetivo={tiempoRealVsObjetivo}
-                        registrosFiltrados={registrosFiltradosUnicos}
-                        periodoInicio={periodoInicio}
-                        periodoFin={periodoFin}
-                        tiposBloques={tiposBloques}
-                        topEjercicios={topEjercicios}
-                        bloquesFiltrados={bloquesFiltrados}
-                        usuarios={usuarios}
-                        userIdActual={(userIdActual || '') as string}
-                        effectiveUser={effectiveUser}
-                        isEstu={isEstu}
-                        isProf={isProf}
-                        isAdmin={isAdmin}
-                        estudiantesComparacion={estudiantesComparacion}
-                    />
-                )}
-                {tabActiva === 'mochila' && (
-                    <MochilaTabContent
-                        studentId={(effectiveStudentId || userIdActual) as string}
-                        isEstu={isEstu}
-                        hasSelectedStudent={!!effectiveStudentId}
-                    />
-                )}
-                {tabActiva === 'feedback' && (
-                    <FeedbackUnificadoTabAny
-                        isProf={isProf}
-                        isAdmin={isAdmin}
-                        isEstu={isEstu}
-                        selectedStudentIds={alumnosSeleccionados}
-                        userIdActual={userIdActual}
-                        feedbacks={isEstu ? feedbackProfesor : feedbacksParaProfAdmin}
-                        effectiveUser={effectiveUser}
-                        onEditFeedback={handleEditFeedback}
-                        onCreateFeedback={handleCreateFeedback}
-                        onMediaClick={handleMediaClick}
-                    />
-                )}
-                {tabActiva === 'comparar' && (isProf || isAdmin) && (
-                    <ComparativaEstudiantes
-                        estudiantes={estudiantesComparacion}
-                        usuarios={usuarios}
-                    />
-                )}
-            </div>
-
-            {/* Modal Feedback Semanal */}
-            <ModalFeedbackSemanalAny
-                open={feedbackModalOpen}
-                onOpenChange={setFeedbackModalOpen}
-                feedback={selectedFeedback}
-                studentId={(selectedFeedback as any)?.alumnoId || effectiveStudentId || (alumnosSeleccionados.length === 1 ? alumnosSeleccionados[0] : null)}
-                weekStartISO={feedbackWeekInfo.startISO}
-                weekLabel={feedbackWeekInfo.label}
-                onSaved={handleFeedbackSaved}
-                onMediaClick={handleMediaClick}
-            />
-
-            {/* Media Preview Modal */}
-            <MediaPreviewModalAny
-                open={mediaPreviewOpen}
-                onClose={() => setMediaPreviewOpen(false)}
-                urls={previewMediaLinks}
-                initialIndex={selectedMediaIndex}
-            />
-        </div>
-    );
-}
-
-// ============================================================================
-// Tab Resumen Content - Extended with XP & Toggle
-// ============================================================================
-
-interface TabResumenContentProps {
-    kpis: any;
-    datosLinea: any;
-    granularidad: string;
-    onGranularidadChange: (g: string) => void;
-    userIdActual: string;
-    alumnosSeleccionados?: string[];
-    allStudentIds?: string[];
-    xpData?: any;
-    evaluations?: any;
-    feedbacks?: any;
-    users?: any;
-}
-
-function TabResumenContent({
-    kpis, datosLinea, granularidad, onGranularidadChange, userIdActual,
-    alumnosSeleccionados = [], allStudentIds = [],
-    // [NEW] Data props
-    xpData, evaluations, feedbacks, users
-}: TabResumenContentProps) {
-    return (
-        <div className="space-y-4">
-            {/* KPIs Bar - 6-tile uniform layout */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 pb-4">
-                {/* 1. Tiempo Total */}
-                <KpiTileAny
-                    icon={Timer}
-                    label="Tiempo total"
-                    value={formatDurationDDHHMM(kpis.tiempoTotal, 'sec')}
-                    valueClassName="text-orange-500"
-                />
-
-                {/* 2. Promedio/Sesión */}
-                <KpiTileAny
-                    icon={Clock}
-                    label="Prom/sesión"
-                    value={`${Math.round((kpis.tiempoPromedioPorSesion || 0) / 60)} min`}
-                />
-
-                {/* 3. Valoración */}
-                <RatingStarsMetricAny
-                    value={kpis.calidadPromedio}
-                    max={4}
-                />
-
-                {/* 4. Racha */}
-                <StreakMetricAny
-                    streakDays={kpis.racha.actual}
-                    maxStreak={kpis.racha.maxima}
-                />
-
-                {/* 5. Semanas Activas */}
-                <KpiTileAny
-                    icon={CalendarRange}
-                    label="Semanas activas"
-                    value={kpis.semanasDistintas}
-                    subtext="en el periodo"
-                />
-
-                {/* 6. Frecuencia Semanal */}
-                <KpiTileAny
-                    icon={Repeat}
-                    label="Frecuencia semanal"
-                    value={kpis.mediaSemanalSesiones.toFixed(1)}
-                    valueClassName="text-[var(--color-success)]"
-                    subtext="ses/sem · media"
-                />
-            </div>
-
-            {/* Habilidades Card - Reusing HabilidadesView with accumulated XP (forma mode) */}
-            <HabilidadesViewAny
-                alumnosSeleccionados={alumnosSeleccionados}
-                allStudentIds={allStudentIds}
-                userIdActual={userIdActual}
-                hideViewModeToggle={true}
-                forceViewMode="forma"
-                customTitle="Habilidades"
-                // [NEW] Pass data props
-                xpData={xpData}
-                evaluations={evaluations}
-                feedbacks={feedbacks}
-                users={users}
-            />
-        </div>
-    );
-}
-
-// ============================================================================
-// Tab Estadísticas Content - EMBEDDED (Bloque 3) - 2 Pills: Rendimiento / Ejercicios
-// ============================================================================
-
-interface TabEstadisticasContentProps {
-    kpis: any;
-    datosLinea: any;
-    granularidad: string;
-    onGranularidadChange: (g: string) => void;
-    tiempoRealVsObjetivo: any;
-    registrosFiltrados: any[];
-    periodoInicio: string | null;
-    periodoFin: string | null;
-    tiposBloques: any[];
-    topEjercicios: any[];
-    bloquesFiltrados: any[];
-    usuarios: any[];
-    userIdActual: string;
-    effectiveUser: any;
-    isEstu: boolean;
-    isProf: boolean;
-    isAdmin: boolean;
-    estudiantesComparacion: any[];
-}
-
-function TabEstadisticasContent({
-    kpis, datosLinea, granularidad, onGranularidadChange, tiempoRealVsObjetivo,
-    registrosFiltrados, periodoInicio, periodoFin,
-    // Props for sections
-    tiposBloques, topEjercicios, bloquesFiltrados, usuarios, userIdActual,
-    effectiveUser, isEstu, isProf, isAdmin, estudiantesComparacion
-}: TabEstadisticasContentProps) {
-    return (
-        <ProgresoTabAny
-            datosLinea={datosLinea}
-            granularidad={granularidad}
-            onGranularidadChange={onGranularidadChange}
-            tiempoRealVsObjetivo={tiempoRealVsObjetivo}
-            kpis={kpis}
-            tiposBloque={tiposBloques}
-            topEjercicios={topEjercicios}
-            registrosFiltrados={registrosFiltrados}
-            periodoInicio={periodoInicio}
-            periodoFin={periodoFin}
-        />
-    );
-}
-
-// ============================================================================
-// Mochila Tab Content
-// ============================================================================
-
-function MochilaTabContent({ studentId, isEstu, hasSelectedStudent }: { studentId: string, isEstu: boolean, hasSelectedStudent: boolean }) {
-    // Mochila only supports single student
-    const { data: backpackItems = [], isLoading, error } = useStudentBackpack(studentId);
-
-    // Filter state
-    const [statusFilter, setStatusFilter] = useState('en_progreso');
-
-    // Selection state
-    const [selectedKeys, setSelectedKeys] = useState(new Set());
-    const navigate = useNavigate();
-
-    // Reset selection when filter changes (optional, but safer)
-    useEffect(() => {
-        setSelectedKeys(new Set());
-    }, [statusFilter]);
-
-
-    // Calculate counts from FULL dataset using DERIVED status
-    const counts = useMemo(() => {
-        const c: Record<string, number> = {
-            todos: backpackItems.length,
-            nuevo: 0,
-            en_progreso: 0,
-            dominado: 0,
-            oxidado: 0,
-            archivado: 0,
-            // Metric for "Items en Mochila" card (active items)
-            activeTotal: 0
-        };
-
-        backpackItems.forEach((item: any) => {
-            const derivedStatus = getDerivedBackpackStatus(item);
-            if (c[derivedStatus] !== undefined) {
-                c[derivedStatus]++;
-            }
-            if (derivedStatus !== 'archivado') {
-                c.activeTotal++;
-            }
-        });
-
-        return c;
-    }, [backpackItems]);
-
-    // Filter items for table using DERIVED status
-    const filteredItems = useMemo(() => {
-        if (statusFilter === 'todos') return backpackItems;
-        return backpackItems.filter(item => getDerivedBackpackStatus(item) === statusFilter);
-    }, [backpackItems, statusFilter]);
-
-    const getStatusBadgeVariant = (status: string) => {
-        switch (status) {
-            case 'dominado': return 'success';
-            case 'en_progreso': return 'info';
-            case 'oxidado': return 'warning';
-            case 'archivado': return 'outline';
-            default: return 'default';
-        }
-    };
-
-    const getStatusLabel = (status: string) => {
-        switch (status) {
-            case 'dominado': return 'Dominado';
-            case 'en_progreso': return 'En Progreso';
-            case 'oxidado': return 'Oxidado';
-            case 'archivado': return 'Archivado';
-            case 'nuevo': return 'Nuevo';
-            default: return status;
-        }
-    };
-
-    // Columns for UnifiedTable
-    const columns = useMemo(() => [
-        {
-            key: 'backpackKey',
-            label: 'Ejercicio / Item',
-            sortable: true,
-            mobileIsPrimary: true,
-        },
-        {
-            key: 'status',
-            label: 'Estado',
-            sortable: true,
-            sortValue: (item: any) => getDerivedBackpackStatus(item),
-            render: (item: any) => {
-                const derivedStatus = getDerivedBackpackStatus(item);
-                return (
-                    <Badge variant={getStatusBadgeVariant(derivedStatus)}>
-                        {getStatusLabel(derivedStatus)}
-                    </Badge>
-                );
-            },
-        },
-        {
-            key: 'masteryScore',
-            label: 'Nivel Maestría',
-            sortable: true,
-            sortValue: (item: any) => item.masteryScore,
-            render: (item: any) => (
-                <div className="flex items-center gap-2">
-                    <div className="w-full bg-[var(--color-surface-muted)] rounded-full h-2.5 max-w-[100px] overflow-hidden">
-                        <div
-                            className="bg-[var(--color-primary)] h-2.5 rounded-full"
-                            style={{ width: `${Math.min(100, item.masteryScore)}%` }}
-                        ></div>
-                    </div>
-                    <span className="text-xs text-[var(--color-text-secondary)]">{item.masteryScore} XP</span>
-                </div>
-            ),
-        },
-        {
-            key: 'lastPracticedAt',
-            label: 'Última Práctica',
-            sortable: true,
-            sortValue: (item: any) => item.lastPracticedAt ? new Date(item.lastPracticedAt).getTime() : 0,
-            render: (item: any) => (
-                <span className="text-[var(--color-text-secondary)]">
-                    {item.lastPracticedAt
-                        ? format(new Date(item.lastPracticedAt), "d MMM yyyy", { locale: es })
-                        : '-'
-                    }
-                </span>
-            ),
-        },
-    ], []);
-
-    // Show message if PROF/ADMIN hasn't selected a student or selected multiple
-    if (!isEstu && !hasSelectedStudent) {
-        return (
-            <CardAny className={componentStyles.components.cardBase}>
-                <CardContentAny className="p-8 text-center">
-                    <Backpack className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-[var(--color-text-secondary)]">
-                        Selecciona un alumno para ver su mochila
-                    </p>
-                </CardContentAny>
-            </CardAny>
-        );
-    }
-
-    if (isLoading) {
-        return (
-            <div className="p-8 flex justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="p-8 text-center text-red-600">
-                Error cargando la mochila: {error.message}
-            </div>
-        );
-    }
-
-    // Define filters configuration
-    const filters = [
-        { key: 'en_progreso', label: 'En Progreso', icon: Clock },
-        { key: 'dominado', label: 'Dominado', icon: Trophy },
-        { key: 'nuevo', label: 'Nuevo', icon: Star },
-        { key: 'oxidado', label: 'Oxidado', icon: Activity }, // Activity as generic icon, or Reuse Timer? Activity is fine.
-        { key: 'archivado', label: 'Archivado', icon: Backpack }, // Backpack or Archive. Backpack is already imported.
-        { key: 'todos', label: 'Todos', icon: List },
-    ];
-
-    // Hooks moved to top
-
-    const handlePracticeSelection = async () => {
-        if (selectedKeys.size === 0) return;
-
-        try {
-            // Map selected IDs back to exercise codes (backpackKey)
-            // We need to find the items in the current filtered list (or full list)
-            // backpackItems has the data.
-            const selectedExercises = backpackItems
-                .filter((item: any) => selectedKeys.has(item.id))
-                .map((item: any) => item.backpack_key || item.backpackKey);
-
-            if (selectedExercises.length === 0) {
-                toast.error("No se han encontrado ejercicios válidos en la selección");
-                return;
-            }
-
-            const { sessionId, asignacionId, semanaIdx, sesionIdx } = await createManualSessionDraft({
-                studentId: studentId,
-                exerciseCodes: selectedExercises,
-                source: 'mochila'
-            });
-
-            // Navigate using existing helper
-            navigate(toStudia({ asignacionId, semanaIdx, sesionIdx }));
-
-        } catch (err) {
-            console.error(err);
-            toast.error("No se ha podido iniciar la práctica");
-        }
-    };
-
-    return (
-        <div className="space-y-6">
-            {/* Filter Pills */}
-            <div className="relative flex justify-center items-center pt-2 gap-3">
-                <TooltipProvider delayDuration={0}>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <button className="text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors cursor-pointer p-1 rounded-full hover:bg-[var(--color-surface-muted)]">
-                                <Info className="w-5 h-5" />
-                            </button>
-                        </TooltipTrigger>
-                        <TooltipContent
-                            side="bottom"
-                            align="start"
-                            className="max-w-[280px] p-4 text-sm bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)] shadow-xl z-50 text-[var(--color-text-primary)]"
-                        >
-                            <div className="flex flex-col gap-2">
-                                <p>La Mochila muestra el estado actual (foto fija).</p>
-                                <p>Los estados se actualizan al practicar:<br /><span className="font-semibold text-[var(--color-primary)]">Nuevo → En progreso → Dominado</span></p>
-                                <p className="text-[var(--color-text-muted)] text-xs">Oxidado/Archivado solo aparecen si se marcan/gestionan manualmente (por ahora).</p>
-                            </div>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-
-                <div className="flex items-center gap-2">
-                    <div className="flex flex-wrap justify-center bg-[var(--color-surface-muted)] p-1 rounded-lg gap-1">
-                        {filters.map(f => {
-                            const count = counts[f.key];
-                            const isActive = statusFilter === f.key;
-                            const Icon = f.icon;
-
-                            return (
-                                <button
-                                    key={f.key}
-                                    onClick={() => setStatusFilter(f.key)}
-                                    className={cn(
-                                        "flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-all",
-                                        isActive
-                                            ? "bg-[var(--color-surface-default)] text-[var(--color-primary)] shadow-sm"
-                                            : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                                    )}
-                                >
-                                    <Icon className="w-3.5 h-3.5 mr-2" />
-                                    {f.label}
-                                    <span className={cn(
-                                        "ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full border",
-                                        isActive
-                                            ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/20"
-                                            : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)] border-[var(--color-border-default)]"
-                                    )}>
-                                        {count}
-                                    </span>
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {selectedKeys.size > 0 && (
-                        <div className="animate-in fade-in slide-in-from-left-2 duration-200">
-                            <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={handlePracticeSelection}
-                                className="ml-2 shadow-sm"
-                            >
-                                <PlayCircle className="w-4 h-4 mr-2" />
-                                Practicar ({selectedKeys.size})
-                            </Button>
                         </div>
                     )}
                 </div>
+
+                {/* Date Range & Presets */}
+                <StatsDateHeaderAny
+                    periodoInicio={periodoInicio}
+                    periodoFin={periodoFin}
+                    rangoPreset={rangoPreset}
+                    onPresetChange={aplicarPreset}
+                    onInicioChange={setPeriodoInicio}
+                    onFinChange={setPeriodoFin}
+                />
             </div>
 
-            {/* Content Table */}
-            <CardAny className={componentStyles.containers.cardBase}>
-                <CardHeaderAny>
-                    <CardTitleAny className="text-[var(--color-text-primary)]">Repertorio Activo</CardTitleAny>
-                </CardHeaderAny>
-                <CardContentAny>
-                    <UnifiedTableAny
-                        columns={columns}
-                        data={filteredItems}
-                        keyField="id"
-                        selectable={true}
-                        selectedKeys={selectedKeys}
-                        onSelectionChange={setSelectedKeys}
-                        onRowClick={(item: any) => {
-                            const newSelected = new Set(selectedKeys);
-                            if (newSelected.has(item.id)) {
-                                newSelected.delete(item.id);
-                            } else {
-                                newSelected.add(item.id);
+            {/* Navigation Tabs (Bloque 1) - Manual State Management */}
+            <div className="w-full">
+                {/* Mobile Tab Select */}
+                <div className="md:hidden w-full mb-4">
+                    <SelectAny value={tabActiva} onValueChange={setTabActiva} >
+                        <SelectTrigger className="w-full">
+                            <div className="flex items-center gap-2">
+                                {(() => {
+                                    const activeItem = tabItems.find(t => t.value === tabActiva);
+                                    const Icon = activeItem?.icon || BarChart3;
+                                    return (
+                                        <>
+                                            <Icon className="w-4 h-4 text-[var(--color-primary)]" />
+                                            <span>{activeItem?.label}</span>
+                                        </>
+                                    );
+                                })()}
+                            </div>
+                        </SelectTrigger>
+                        <SelectContent className="w-[var(--radix-select-content-width)]">
+                            {tabItems.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <SelectItem key={item.value} value={item.value}>
+                                        <div className="flex items-center gap-2">
+                                            <Icon className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                                            <span>{item.label}</span>
+                                        </div>
+                                    </SelectItem>
+                                );
+                            })}
+                        </SelectContent>
+                    </SelectAny>
+                </div>
+
+                {/* Desktop Tabs List */}
+                <div className="hidden md:flex border-b border-[var(--color-border-default)] mb-6 ">
+                    {tabItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = tabActiva === item.value;
+                        return (
+                            <button
+                                key={item.value}
+                                onClick={() => setTabActiva(item.value)}
+                                className={cn(
+                                    "flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all hover:text-[var(--color-primary)] hover:bg-[var(--color-surface-elevated)]/50 rounded-t-sm",
+                                    isActive
+                                        ? "border-[var(--color-primary)] text-[var(--color-primary)]"
+                                        : "border-transparent text-[var(--color-text-secondary)]"
+                                )}
+                            >
+                                <Icon className={cn("w-4 h-4", isActive ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]")} />
+                                {item.label}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* ============================================================================
+                   Tab Content Panes
+                   ============================================================================ */}
+
+                {/* 1. RESUMEN TAB */}
+                {tabActiva === 'resumen' && (
+                    <div className="space-y-6 animate-in slide-in-from-left-2 duration-300">
+                        <ResumenTabAny
+                            kpis={kpis}
+                            datosLinea={datosLinea}
+                            heatmapData={estadisticas.heatmapData}
+                            periodoInicio={periodoInicio}
+                            periodoFin={periodoFin}
+                            registrosFiltrados={registrosFiltradosUnicos}
+                            user={isEstu ? usuariosMap[userIdActual] : null}
+                            aggregateLevelGoals={aggregateLevelGoals}
+                        />
+                    </div>
+                )}
+
+                {/* 2. HABILIDADES TAB */}
+                {tabActiva === 'habilidades' && (
+                    <div className="space-y-6 animate-in slide-in-from-left-2 duration-300">
+                        <HabilidadesViewAny
+                            alumnosSeleccionados={effectiveIds}
+                            userIdActual={userIdActual}
+                            xpData={registrosFiltradosUnicos}
+                            evaluations={evaluacionesFiltradas}
+                            users={usuarios}
+                            fechaInicio={periodoInicio}
+                            fechaFin={periodoFin}
+                        />
+                    </div>
+                )}
+
+                {/* 3. ESTADISTICAS TAB */}
+                {tabActiva === 'estadisticas' && (
+                    <div className="space-y-6 animate-in slide-in-from-left-2 duration-300">
+                        {/* Subtabs for Estadisticas */}
+                        <TabsAny defaultValue="progreso" className="w-full">
+                            <TabsListAny className="justify-start bg-[var(--color-surface-muted)] p-1 rounded-lg w-full sm:w-auto mb-6 overflow-x-auto h-auto">
+                                {[
+                                    { id: 'progreso', label: 'Evolución', icon: TrendingUp },
+                                    { id: 'tipos', label: 'Distribución', icon: PieChart },
+                                    { id: 'ejercicios', label: 'Top Ejercicios', icon: Trophy },
+                                ].map((tab) => {
+                                    const Icon = tab.icon;
+                                    return (
+                                        <TabsTriggerAny
+                                            key={tab.id}
+                                            value={tab.id}
+                                            className="px-3 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                                        >
+                                            <Icon className="w-3.5 h-3.5" />
+                                            {tab.label}
+                                        </TabsTriggerAny>
+                                    );
+                                })}
+                            </TabsListAny>
+
+                            <TabsContentAny value="progreso" className="space-y-6">
+                                <ProgresoTabAny
+                                    datosLinea={datosLinea}
+                                    registrosFiltrados={registrosFiltradosUnicos}
+                                    periodoInicio={periodoInicio}
+                                    periodoFin={periodoFin}
+                                    granularidad={granularidad}
+                                    kpis={kpis}
+                                />
+                            </TabsContentAny>
+
+                            <TabsContentAny value="tipos" className="space-y-6">
+                                <TiposBloquesTabAny
+                                    tiposBloques={tiposBloques}
+                                    tiempoRealVsObjetivo={tiempoRealVsObjetivo}
+                                />
+                            </TabsContentAny>
+                            <TabsContentAny value="ejercicios" className="space-y-6">
+                                <TopEjerciciosTabAny
+                                    topEjercicios={topEjercicios}
+                                />
+                            </TabsContentAny>
+
+                        </TabsAny>
+                    </div>
+                )}
+
+                {/* 4. MOCHILA TAB (Placeholder/Redirect) */}
+                {tabActiva === 'mochila' && (
+                    <div className="space-y-6 animate-in slide-in-from-left-2 duration-300">
+                        {/* We could embed the backpack component here or redirect */}
+                        <CardAny className={componentStyles.components.cardBase}>
+                            <EmptyState
+                                icon={<Backpack className="w-12 h-12 text-muted-foreground" />}
+                                title="Mochila del Estudiante"
+                                description="Gestiona tu repertorio y ejercicios activos"
+                                action={
+                                    <Button
+                                        variant="default"
+                                        onClick={() => navigate(toStudia({}))}
+                                    >
+                                        Ir a Mochila
+                                    </Button>
+                                }
+                            />
+                        </CardAny>
+                    </div>
+                )}
+
+                {/* 5. FEEDBACK TAB */}
+                {tabActiva === 'feedback' && (
+                    <div className="space-y-6 animate-in slide-in-from-left-2 duration-300">
+                        <FeedbackUnificadoTabAny
+                            feedbacks={isEstu ? feedbacksSemanal : feedbacksParaProfAdmin}
+                            evaluaciones={evaluacionesFiltradas} // Legacy support
+                            registros={registrosFiltradosUnicos.filter(r => r.calificacion && r.nota)} // Solo sesiones con nota
+                            usuarios={usuarios}
+                            isEstu={isEstu}
+                            onMediaClick={handleMediaClick}
+                            isMediaModalOpen={mediaModalOpen}
+                            actionButton={
+                                (isProf || isAdmin) ? (
+                                    <ModalFeedbackSemanalAny
+                                        usuarios={usuarios}
+                                        userIdActual={userIdActual} // Pass current user id (PROF)
+                                        userRole={effectiveRole} // Pass effective role
+                                        onFeedbackSaved={() => refetchFeedbacks()}
+                                        defaultStudentId={alumnosSeleccionados[0] || ''} // Preselect if one student filtered
+                                    />
+                                ) : null
                             }
-                            setSelectedKeys(newSelected);
-                        }}
-                        emptyMessage={
-                            statusFilter === 'todos'
-                                ? "Mochila vacía. A medida que practiques, los ejercicios se guardarán aquí automáticamente."
-                                : `No hay ejercicios con estado "${getStatusLabel(statusFilter)}".`
-                        }
-                        emptyIcon={Backpack}
-                        paginated={true}
-                        defaultPageSize={10}
-                    />
-                </CardContentAny>
-            </CardAny>
+                        />
+                    </div>
+                )}
+
+                {/* 6. COMPARAR TAB (Admin/Prof only) */}
+                {tabActiva === 'comparar' && (isProf || isAdmin) && (
+                    <div className="space-y-6 animate-in slide-in-from-left-2 duration-300">
+                        <ComparativaEstudiantes
+                            estudiantes={estudiantesComparacion}
+                            usuarios={usuarios}
+                        />
+                    </div>
+                )}
+
+            </div>
+
+            {/* Global Media Modal */}
+            <MediaPreviewModalAny
+                isOpen={mediaModalOpen}
+                onClose={() => setMediaModalOpen(false)}
+                mediaLinks={mediaModalLinks}
+                initialIndex={mediaModalIndex}
+            />
+
         </div>
     );
 }
+

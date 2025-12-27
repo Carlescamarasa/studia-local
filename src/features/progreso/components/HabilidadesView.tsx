@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import HabilidadesRadarChart from './HabilidadesRadarChart';
 import { useHabilidadesStats, useHabilidadesStatsMultiple } from '../hooks/useHabilidadesStats';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -14,10 +13,14 @@ import {
 } from '../hooks/useXP';
 import { Activity, Target, Star, Layers, Info, TrendingUp, BookOpen, PieChart, CheckCircle2, Circle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import TotalXPDisplay from './TotalXPDisplay';
 import LevelBadge from '@/components/common/LevelBadge';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
-import CompactCard from './CompactCard';
+
+import {
+    CompactCard,
+    HabilidadesRadarChart,
+    TotalXPDisplay
+} from './index';
 import { useQuery } from '@tanstack/react-query';
 import { localDataClient } from '@/api/localDataClient';
 import { useUsers } from '@/hooks/entities/useUsers';
