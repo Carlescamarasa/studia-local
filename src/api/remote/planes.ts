@@ -1,6 +1,6 @@
 import { supabase, withAuthErrorHandling } from './client';
 import { snakeToCamel } from './utils';
-import type { Plan } from '@/types/domain';
+import type { Plan } from '@/shared/types/domain';
 
 /**
  * Resuelve el plan para una asignación usando la arquitectura híbrida:

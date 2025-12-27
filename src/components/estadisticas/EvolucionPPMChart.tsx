@@ -10,11 +10,11 @@ import {
     ResponsiveContainer
 } from 'recharts';
 import { useBloques } from '@/hooks/entities/useBloques';
-import { useRegistrosSesion } from '@/hooks/entities/useRegistrosSesion';
+import { useRegistrosSesion } from '@/features/estudio/hooks/useRegistrosSesion';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { RegistroBloque, Bloque } from '@/types/domain';
+import { RegistroBloque, Bloque } from '@/shared/types/domain';
 import { getPPMNormalizado } from '@/utils/ppm';
 
 interface EvolucionPPMChartProps {

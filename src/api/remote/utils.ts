@@ -2,7 +2,7 @@
  * Utility functions for remote data handling
  */
 
-import type { StudiaUser } from '@/types/domain';
+import type { StudiaUser } from '@/shared/types/domain';
 
 /**
  * Helper para convertir camelCase a snake_case

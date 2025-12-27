@@ -3,7 +3,7 @@ import { useAllStudentXPTotals, useAggregateLevelGoals } from '@/hooks/useXP';
 import { useEvaluacionesTecnicas } from '@/hooks/entities/useEvaluacionesTecnicas';
 import { useFeedbacksSemanal } from '@/hooks/entities/useFeedbacksSemanal';
 import { QUERY_KEYS } from '@/lib/queryKeys';
-import type { StudentXPTotal } from '@/services/xpService';
+import type { StudentXPTotal } from '@/shared/services/xpService';
 
 /**
  * Interface for the processed skills data

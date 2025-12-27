@@ -14,7 +14,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useUsers } from "@/hooks/entities/useUsers";
 import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
 import { useBloques } from "@/hooks/entities/useBloques";
-import { updateBackpackFromSession } from '@/services/backpackService';
+import { updateBackpackFromSession } from '@/shared/services/backpackService';
 
 import RequireRole from "@/components/auth/RequireRole";
 import { ROUTES } from "@/lib/routes";
@@ -29,8 +29,8 @@ import {
 } from "@/components/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { ensureRondaIds, getSecuencia } from "@/components/study/sessionSequence";
-import ResumenFinal from "@/components/estudio/ResumenFinal";
-import ModalCancelar from "@/components/estudio/ModalCancelar";
+import ResumenFinal from "@/features/estudio/components/ResumenFinal";
+import ModalCancelar from "@/features/estudio/components/ModalCancelar";
 import { shouldIgnoreHotkey } from "@/utils/hotkeys";
 import { useHotkeysModal, HotkeysModalProvider } from "@/hooks/useHotkeysModal.jsx";
 import { getValidVariations, pickRandomVariation } from "@/hooks/useExerciseVariations";

@@ -437,7 +437,7 @@ export default function ModalFeedbackSemanal({
             // Apply XP Deltas to system (Side Effect) - Only if there is a difference
             const hasXPToApply = xpDeltaToApply.motricidad !== 0 || xpDeltaToApply.articulacion !== 0 || xpDeltaToApply.flexibilidad !== 0;
             if (hasXPToApply) {
-                const { addXP } = await import('@/services/xpService');
+                const { addXP } = await import('@/shared/services/xpService');
                 if (xpDeltaToApply.motricidad !== 0) await addXP(studentId, 'motricidad', xpDeltaToApply.motricidad, 'PROF');
                 if (xpDeltaToApply.articulacion !== 0) await addXP(studentId, 'articulacion', xpDeltaToApply.articulacion, 'PROF');
                 if (xpDeltaToApply.flexibilidad !== 0) await addXP(studentId, 'flexibilidad', xpDeltaToApply.flexibilidad, 'PROF');

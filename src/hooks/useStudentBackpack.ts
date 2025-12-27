@@ -1,6 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getStudentBackpack } from '@/services/backpackService';
+import { getStudentBackpack } from '@/shared/services/backpackService';
 import { useEffectiveUser } from '@/providers/EffectiveUserProvider';
 
 export const QUERY_KEY_BACKPACK = 'studentBackpack';

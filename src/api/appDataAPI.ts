@@ -54,7 +54,7 @@ import type {
   MediaAsset,
   CreateMediaAssetInput,
   UpdateMediaAssetInput,
-} from '@/types/domain';
+} from '@/shared/types/domain';
 
 /**
  * Interfaz genérica para operaciones CRUD de una entidad

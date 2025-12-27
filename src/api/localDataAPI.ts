@@ -25,7 +25,7 @@ import type {
   StudentXPTotal,
   StudentBackpackItem,
   MediaAsset,
-} from '../types/domain';
+} from '@/shared/types/domain';
 
 /**
  * Helper para mapear usuarios del formato local al formato de dominio

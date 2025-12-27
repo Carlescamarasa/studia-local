@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { useUsers } from "@/hooks/entities/useUsers";
+import { useUsers, type UserEntity } from "@/hooks/entities/useUsers";
+import type { QueryObserverResult } from "@tanstack/react-query";
 
 /**
  * Hook centralizado para obtener el perfil del usuario actual.
@@ -14,7 +15,15 @@ import { useUsers } from "@/hooks/entities/useUsers";
  * 
  * NOTA: Usa effectiveUserId del EffectiveUserProvider para soportar impersonation.
  */
-export function useCurrentProfile() {
+
+export interface CurrentProfileResult {
+  profile: UserEntity | null;
+  isLoading: boolean;
+  error: Error | null;
+  refetch: () => Promise<QueryObserverResult<UserEntity[], Error>>;
+}
+
+export function useCurrentProfile(): CurrentProfileResult {
   const { effectiveUserId, effectiveEmail, isImpersonating } = useEffectiveUser();
   const { data: allUsers, isLoading: usersLoading, error: usersError, refetch } = useUsers();
 
@@ -45,15 +54,15 @@ export function useCurrentProfile() {
     // Esto puede pasar si el usuario no tiene perfil en BD aún
     return {
       id: effectiveUserId,
-      email: effectiveEmail,
-      nombreCompleto: effectiveEmail?.split('@')[0],
-      fullName: effectiveEmail?.split('@')[0],
-      rolPersonalizado: 'ESTU',
-      role: 'ESTU',
+      email: effectiveEmail || '',
+      nombreCompleto: effectiveEmail?.split('@')[0] || '',
+      fullName: effectiveEmail?.split('@')[0] || '',
+      rolPersonalizado: 'ESTU' as const,
+      role: 'ESTU' as const,
       profesorAsignadoId: null,
       isActive: true,
       nivelTecnico: 1,
-    };
+    } as UserEntity;
   }, [effectiveUserId, effectiveEmail, allUsers]);
 
   // El loading es true solo si aún no tenemos datos de usuarios
@@ -62,7 +71,7 @@ export function useCurrentProfile() {
   return {
     profile,
     isLoading,
-    error: usersError,
+    error: usersError as Error | null,
     refetch,
   };
 }
