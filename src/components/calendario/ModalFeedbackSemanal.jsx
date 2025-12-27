@@ -28,7 +28,7 @@ import MediaLinksInput from "@/components/common/MediaLinksInput";
 import { normalizeMediaLinks } from "@/components/utils/media";
 import { cn } from "@/lib/utils";
 import { localDataClient } from '@/api/localDataClient';
-import { remoteDataAPI } from '@/api/remote/api';
+import { useUsers } from '@/hooks/entities/useUsers';
 import { computeKeyCriteriaStatus, canPromote, promoteLevel } from '@/utils/levelLogic';
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { Checkbox } from '@/components/ui/checkbox';
@@ -242,15 +242,17 @@ export default function ModalFeedbackSemanal({
         setActiveTab('evaluacion');
     };
 
+    // OPTIMIZACIÓN: Usar allUsers de useUsers() para datos cacheados
+    const { data: allUsersData = [] } = useUsers();
+
     const loadLevelData = async () => {
         if (!studentId) return;
         setLoadingLevelData(true);
         try {
-            // Usar remoteDataAPI para consistencia con el resto del codebase
-            const allUsers = await remoteDataAPI.usuarios.list();
-            const user = allUsers.find(u => u.id === studentId);
+            // Usar datos cacheados de useUsers()
+            const user = allUsersData.find(u => u.id === studentId);
             const level = user?.nivelTecnico || 1;
-            console.log('[loadLevelData] Fetched user level:', level, 'for student:', studentId);
+            console.log('[loadLevelData] Using cached user level:', level, 'for student:', studentId);
             setCurrentLevel(level);
 
             // Fetch CURRENT level config for XP targets (requirements to EXIT current level)

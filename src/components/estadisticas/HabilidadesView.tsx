@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import CompactCard from './CompactCard';
 import { useQuery } from '@tanstack/react-query';
 import { localDataClient } from '@/api/localDataClient';
-import { remoteDataAPI } from '@/api/remote/api';
+import { useUsers } from '@/hooks/entities/useUsers';
 import { cn } from '@/lib/utils';
 import { computeKeyCriteriaStatus, CriteriaStatusResult } from '@/utils/levelLogic';
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
@@ -113,16 +113,14 @@ export default function HabilidadesView({
         return [];
     }, [users, effectiveIds]);
 
-    // Fallback if users prop is not provided (legacy support, though we aim to remove this)
-    const { data: fetchedMultipleProfiles = [] } = useQuery({
-        queryKey: ['student-profiles-multiple', effectiveIds],
-        queryFn: async () => {
-            // Usar remoteDataAPI para consistencia con el resto del codebase
-            const allUsers = await remoteDataAPI.usuarios.list();
-            return allUsers.filter((u: any) => effectiveIds.includes(u.id));
-        },
-        enabled: isMultiple && effectiveIds.length > 0 && (!users || users.length === 0)
-    });
+    // Fallback if users prop is not provided - usar useUsers() para datos cacheados
+    const { data: usersFromHook = [] } = useUsers();
+
+    const fetchedMultipleProfiles = useMemo(() => {
+        if (users && users.length > 0) return [];
+        if (!isMultiple || effectiveIds.length === 0) return [];
+        return usersFromHook.filter((u: any) => effectiveIds.includes(u.id));
+    }, [isMultiple, effectiveIds, usersFromHook, users]);
 
     const activeMultipleProfiles = (users && users.length > 0) ? multipleStudentProfiles : fetchedMultipleProfiles;
 

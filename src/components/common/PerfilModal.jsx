@@ -125,25 +125,26 @@ export default function PerfilModal({
     queryFn: async () => {
       if (!targetUserIdToLoad) return null;
 
-      // Buscar el usuario por ID usando API centralizada
-      const users = await remoteDataAPI.usuarios.list();
-      const foundUser = users.find(u => u.id === targetUserIdToLoad);
+      // OPTIMIZACIÓN: Usar allUsers de useUsers() en lugar de llamar a .list() de nuevo
+      // Los datos ya están cacheados por React Query con staleTime de 5 min
+      if (allUsers && allUsers.length > 0) {
+        const foundUser = allUsers.find(u => u.id === targetUserIdToLoad);
+        if (foundUser) {
+          return foundUser;
+        }
 
-      if (foundUser) {
-        return foundUser;
-      }
-
-      // Si no se encontró por ID y tenemos email, buscar por email
-      if (effectiveEmail) {
-        const userByEmail = users.find(u =>
-          u.email && u.email.toLowerCase().trim() === effectiveEmail.toLowerCase().trim()
-        );
-        if (userByEmail) {
-          return userByEmail;
+        // Si no se encontró por ID y tenemos email, buscar por email
+        if (effectiveEmail) {
+          const userByEmail = allUsers.find(u =>
+            u.email && u.email.toLowerCase().trim() === effectiveEmail.toLowerCase().trim()
+          );
+          if (userByEmail) {
+            return userByEmail;
+          }
         }
       }
 
-      // Fallback: retornar objeto básico
+      // Fallback: retornar objeto básico si no se encontró en allUsers
       return {
         id: targetUserIdToLoad,
         email: effectiveEmail,
@@ -151,7 +152,7 @@ export default function PerfilModal({
         rolPersonalizado: 'ESTU',
       };
     },
-    enabled: open && !!targetUserIdToLoad,
+    enabled: open && !!targetUserIdToLoad && !!allUsers,
   });
 
   // OPTIMIZACIÓN: El profesor asignado ya debería estar en allUsers gracias a la optimización en usuarios.list()
