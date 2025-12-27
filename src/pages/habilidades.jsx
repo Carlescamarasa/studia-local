@@ -3,7 +3,7 @@ import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
 import { useUsers } from "@/hooks/entities/useUsers";
 import { resolveUserIdActual } from "@/components/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import HabilidadesView from "@/components/estadisticas/HabilidadesView";
+import HabilidadesView from "@/features/progreso/components/HabilidadesView";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 import { Star } from "lucide-react";

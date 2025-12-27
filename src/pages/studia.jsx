@@ -79,7 +79,7 @@ import { componentStyles } from "@/design/componentStyles";
 import Metronomo from "@/components/study/Metronomo";
 import PianoPanel from "@/components/study/PianoPanel";
 import SessionContentView from "@/components/study/SessionContentView";
-import MediaEmbed from "@/components/common/MediaEmbed";
+import MediaEmbed from "@/shared/components/media/MediaEmbed";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDockToFooterOffset } from "@/hooks/useDockToFooterOffset";

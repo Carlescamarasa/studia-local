@@ -14,8 +14,8 @@ import { DndProvider, SortableContext, verticalListSortingStrategy, arrayMove } 
 import { SortableItem } from "@/components/dnd/SortableItem";
 import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
-import MediaLinksInput from "@/components/common/MediaLinksInput";
-import { normalizeMediaLinks } from "@/components/utils/media";
+import MediaLinksInput from "@/shared/components/media/MediaLinksInput";
+import { normalizeMediaLinks } from "@/shared/utils/media";
 import { useDataEntities } from "@/providers/DataProvider";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 

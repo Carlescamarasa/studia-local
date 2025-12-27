@@ -127,7 +127,7 @@ const STATE_BADGES = {
 };
 
 
-import { getYouTubeTitle } from "@/components/utils/media";
+import { getYouTubeTitle } from "@/shared/utils/media";
 
 // Componente para renderizar el nombre de forma asíncrona (YouTube titles)
 function AssetDisplayName({ asset, deriveDisplayName }) {

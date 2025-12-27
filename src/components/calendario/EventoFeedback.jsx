@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { MessageSquare } from "lucide-react";
 import { getNombreVisible } from "@/components/utils/helpers";
 import { formatearFechaEvento, parseLocalDate } from "./utils";
-import MediaLinksBadges from "@/components/common/MediaLinksBadges";
-import MediaPreviewModal from "@/components/common/MediaPreviewModal";
+import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
+import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
 
 export default function EventoFeedback({ feedback, usuarios, onClick, variant = 'default' }) {
   const [showMediaModal, setShowMediaModal] = useState(false);
@@ -44,15 +44,15 @@ export default function EventoFeedback({ feedback, usuarios, onClick, variant = 
   }) : '';
 
   // Obtener hora del feedback si existe
-  const horaFeedback = feedback.created_at ? new Date(feedback.created_at).toLocaleTimeString('es-ES', { 
-    hour: '2-digit', 
-    minute: '2-digit' 
+  const horaFeedback = feedback.created_at ? new Date(feedback.created_at).toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit'
   }) : null;
 
   // Variante compacta para vista Semana
   if (variant === 'week') {
     const nombreProfesor = profesor ? getNombreVisible(profesor) : null;
-    const linea2 = nombreProfesor 
+    const linea2 = nombreProfesor
       ? (horaFeedback ? `${nombreProfesor} · ${horaFeedback}` : nombreProfesor)
       : (horaFeedback ? horaFeedback : null);
 

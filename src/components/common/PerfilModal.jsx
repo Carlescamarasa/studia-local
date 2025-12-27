@@ -18,7 +18,7 @@ import {
 import { toast } from "sonner";
 import { displayName, displayNameById } from "../utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import MediaLinksInput from "./MediaLinksInput";
+import MediaLinksInput from "@/shared/components/media/MediaLinksInput";
 import { LoadingSpinner } from "@/components/ds";
 import { componentStyles } from "@/design/componentStyles";
 import { useDesign } from "@/components/design/DesignProvider";

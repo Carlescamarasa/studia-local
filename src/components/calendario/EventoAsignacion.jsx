@@ -3,7 +3,7 @@ import { Calendar, User } from "lucide-react";
 import { Badge } from "@/components/ds";
 import { getNombreVisible } from "@/components/utils/helpers";
 import { formatearFechaEvento, obtenerColorEvento, obtenerLabelEstadoAsignacion, calcularPatronSemanasAsignacion } from "./utils";
-import MediaLinksBadges from "@/components/common/MediaLinksBadges";
+import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
 
 export default function EventoAsignacion({ asignacion, usuarios, onClick, variant = 'default', registrosSesion = [], fechaEvento = null }) {
   const alumno = usuarios.find(u => u.id === asignacion.alumnoId);

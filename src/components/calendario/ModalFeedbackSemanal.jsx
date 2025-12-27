@@ -24,8 +24,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { MessageSquare, Music, Brain, Save, X, Activity, Paperclip, CheckSquare, Trophy, HelpCircle } from "lucide-react";
 // FeedbacksSemanalAPI removed - using localDataClient for Supabase sync
 import { useToast } from "@/components/ui/use-toast";
-import MediaLinksInput from "@/components/common/MediaLinksInput";
-import { normalizeMediaLinks } from "@/components/utils/media";
+import MediaLinksInput from "@/shared/components/media/MediaLinksInput";
+import { normalizeMediaLinks } from "@/shared/utils/media";
 import { cn } from "@/lib/utils";
 import { localDataClient } from '@/api/localDataClient';
 import { useFeedbacksSemanal } from "@/hooks/entities/useFeedbacksSemanal";

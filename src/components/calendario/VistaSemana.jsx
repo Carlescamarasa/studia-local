@@ -10,7 +10,7 @@ import { agruparEventosPorDia, startOfMonday, endOfSunday, formatLocalDate } fro
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ds";
-import MediaPreviewModal from "@/components/common/MediaPreviewModal";
+import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
 
 export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipo = 'all', registrosSesion = [] }) {
   const isMobile = useIsMobile();
@@ -122,8 +122,8 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
 
   // Renderizar evento compacto para desktop/tablet (variante week)
   const renderEventoCompacto = (evento, tipo, fechaDia = null) => {
-    const props = { 
-      usuarios, 
+    const props = {
+      usuarios,
       onClick: () => onEventoClick(evento, tipo),
       variant: 'week'
     };
@@ -173,20 +173,19 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
               const esHoy = hoyISO === fechaISO;
               const estaSeleccionado = diaSeleccionado === fechaISO;
               const eventosDia = eventosPorDia[fechaISO] || { sesiones: [], feedbacks: [], asignaciones: [], eventos: [] };
-              const totalEventos = eventosDia.sesiones.length + eventosDia.feedbacks.length + 
-                                  eventosDia.asignaciones.length + eventosDia.eventos.length;
+              const totalEventos = eventosDia.sesiones.length + eventosDia.feedbacks.length +
+                eventosDia.asignaciones.length + eventosDia.eventos.length;
 
               return (
                 <button
                   key={fechaISO}
                   onClick={() => setDiaSeleccionado(fechaISO)}
-                  className={`flex flex-col items-center justify-center min-w-[60px] px-3 py-2 rounded-lg border transition-colors shrink-0 ${
-                    estaSeleccionado
+                  className={`flex flex-col items-center justify-center min-w-[60px] px-3 py-2 rounded-lg border transition-colors shrink-0 ${estaSeleccionado
                       ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
                       : esHoy
                         ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)]'
                         : 'bg-[var(--color-surface-muted)] border-[var(--color-border-default)] text-[var(--color-text-primary)]'
-                  }`}
+                    }`}
                 >
                   <span className="text-xs font-medium">
                     {dia.toLocaleDateString('es-ES', { weekday: 'narrow' })}
@@ -195,9 +194,8 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
                     {dia.getDate()}
                   </span>
                   {totalEventos > 0 && (
-                    <span className={`text-[10px] mt-1 ${
-                      estaSeleccionado ? 'text-white/80' : 'text-[var(--color-text-secondary)]'
-                    }`}>
+                    <span className={`text-[10px] mt-1 ${estaSeleccionado ? 'text-white/80' : 'text-[var(--color-text-secondary)]'
+                      }`}>
                       {totalEventos}
                     </span>
                   )}
@@ -246,17 +244,17 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
                 variant="week"
               />
             ))}
-            {eventosDiaSeleccionado.sesiones.length === 0 && 
-             eventosDiaSeleccionado.feedbacks.length === 0 && 
-             eventosDiaSeleccionado.asignaciones.length === 0 && 
-             eventosDiaSeleccionado.eventos.length === 0 && (
-              <div className="text-center py-8 text-[var(--color-text-secondary)]">
-                <p>No hay eventos para este día</p>
-              </div>
-            )}
+            {eventosDiaSeleccionado.sesiones.length === 0 &&
+              eventosDiaSeleccionado.feedbacks.length === 0 &&
+              eventosDiaSeleccionado.asignaciones.length === 0 &&
+              eventosDiaSeleccionado.eventos.length === 0 && (
+                <div className="text-center py-8 text-[var(--color-text-secondary)]">
+                  <p>No hay eventos para este día</p>
+                </div>
+              )}
           </div>
         </CardContent>
-        
+
         {/* Modal de preview de medios para eventos importantes */}
         {showMediaModal && selectedMediaLinks.length > 0 && (
           <MediaPreviewModal
@@ -288,9 +286,9 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
               {lunesSemana.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
             </h3>
             {isDesktop && (
-            <p className="text-sm text-ui/60">
-              {lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — {domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-            </p>
+              <p className="text-sm text-ui/60">
+                {lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — {domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+              </p>
             )}
           </div>
           <div className="flex gap-2">
@@ -309,21 +307,20 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
             const fechaISO = formatLocalDate(dia);
             const eventosDia = eventosPorDia[fechaISO] || { sesiones: [], feedbacks: [], asignaciones: [], eventos: [] };
             const esHoy = hoyISO === fechaISO;
-            const totalEventos = eventosDia.sesiones.length + eventosDia.feedbacks.length + 
-                                eventosDia.asignaciones.length + eventosDia.eventos.length;
+            const totalEventos = eventosDia.sesiones.length + eventosDia.feedbacks.length +
+              eventosDia.asignaciones.length + eventosDia.eventos.length;
 
             return (
               <div
                 key={idx}
-                className={`border rounded-lg p-2 min-h-[200px] ${
-                  esHoy ? 'bg-[var(--color-primary)]/5 border-[var(--color-primary)]' : 'bg-background border-[var(--color-border-default)]'
-                }`}
+                className={`border rounded-lg p-2 min-h-[200px] ${esHoy ? 'bg-[var(--color-primary)]/5 border-[var(--color-primary)]' : 'bg-background border-[var(--color-border-default)]'
+                  }`}
               >
                 {/* Cabecera del día */}
                 <div className={`text-sm font-medium mb-2 ${esHoy ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-primary)]'}`}>
                   {dia.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })}
                 </div>
-                
+
                 {/* Contenedor de eventos con scroll */}
                 <div className="space-y-1 max-h-[520px] overflow-y-auto pr-1">
                   {eventosDia.eventos.map(evento => renderEventoCompacto(evento, 'evento', fechaISO))}
@@ -341,7 +338,7 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
           })}
         </div>
       </CardContent>
-      
+
       {/* Modal de preview de medios para eventos importantes */}
       {showMediaModal && selectedMediaLinks.length > 0 && (
         <MediaPreviewModal

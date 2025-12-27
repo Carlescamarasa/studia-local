@@ -9,19 +9,19 @@ import {
 import { Button } from "@/components/ds/Button";
 import { getNombreVisible } from "@/components/utils/helpers";
 import { formatearFechaEvento } from "./utils";
-import MediaLinksBadges from "../common/MediaLinksBadges";
+import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
 import { componentStyles } from "@/design/componentStyles";
 import { MessageSquare, User, Calendar, ArrowRight, Edit, Trash2 } from "lucide-react";
 
-export default function ModalFeedback({ 
-  open, 
-  onOpenChange, 
-  feedback, 
-  usuarios, 
-  userIdActual, 
+export default function ModalFeedback({
+  open,
+  onOpenChange,
+  feedback,
+  usuarios,
+  userIdActual,
   userRole,
   onEdit,
-  onDelete 
+  onDelete
 }) {
   if (!feedback) return null;
 
@@ -109,7 +109,7 @@ export default function ModalFeedback({
           {feedback.mediaLinks && feedback.mediaLinks.length > 0 && (
             <div className="pb-2 border-b border-[var(--color-border-default)]">
               <p className="text-xs text-[var(--color-text-secondary)] mb-2">Materiales Adjuntos:</p>
-              <MediaLinksBadges 
+              <MediaLinksBadges
                 mediaLinks={feedback.mediaLinks}
                 compact={true}
                 maxDisplay={5}

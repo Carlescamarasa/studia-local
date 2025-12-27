@@ -10,7 +10,7 @@ import { Badge } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
 import { getNombreVisible } from "@/components/utils/helpers";
 import { formatearHora, formatearFechaEvento } from "./utils";
-import MediaLinksBadges from "../common/MediaLinksBadges";
+import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
 import { componentStyles } from "@/design/componentStyles";
 import { Clock, User, Calendar, CheckCircle, XCircle, PlayCircle, Star, BookOpen, Trash2 } from "lucide-react";
 
@@ -37,7 +37,7 @@ export default function ModalSesion({ open, onOpenChange, registroSesion, usuari
   const isAdmin = userRole === 'ADMIN';
   const isProf = userRole === 'PROF';
   const isEstu = userRole === 'ESTU';
-  
+
   // Permisos: ADMIN puede eliminar todo, PROF/ESTU solo sus propias sesiones
   const canDelete = isAdmin || (isProf && registroSesion.alumnoId === userIdActual) || (isEstu && registroSesion.alumnoId === userIdActual);
 

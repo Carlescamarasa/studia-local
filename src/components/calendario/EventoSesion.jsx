@@ -4,8 +4,8 @@ import { getNombreVisible } from "@/components/utils/helpers";
 import { formatearFechaEvento } from "./utils";
 import { Badge } from "@/components/ds";
 import { componentStyles } from "@/design/componentStyles";
-import MediaLinksBadges from "@/components/common/MediaLinksBadges";
-import MediaPreviewModal from "@/components/common/MediaPreviewModal";
+import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
+import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
 
 export default function EventoSesion({ sesion, usuarios, onClick, variant = 'default' }) {
   // console.log('EventoSesion rendering:', sesion.id);

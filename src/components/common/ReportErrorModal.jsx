@@ -14,7 +14,7 @@ import { componentStyles } from '@/design/componentStyles';
 import { supabase } from '@/lib/supabaseClient';
 import { createErrorReport } from '@/api/errorReportsAPI';
 import ScreenshotEditor from './ScreenshotEditor';
-import MediaLinksInput from './MediaLinksInput';
+import MediaLinksInput from "@/shared/components/media/MediaLinksInput";
 import { uploadVideoToYouTube } from '@/utils/uploadVideoToYouTube';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import {
