@@ -98,12 +98,18 @@ export default function HabilidadesView({
     // Aggregated Goals (maxXP denominator)
     const aggregatedGoals = useAggregateLevelGoals(effectiveIds);
 
-    // Level config for single student
-    const { data: studentProfile } = useQuery({
-        queryKey: ['student-profile', singleId],
-        queryFn: () => localDataClient.entities.User.get(singleId),
-        enabled: !!singleId && !isMultiple
-    });
+    // OPTIMIZED: Use useUsers() for all user data (both single and multiple students)
+    const { data: usersFromHook = [], isLoading: isLoadingUsers } = useUsers();
+
+    // Single student profile - lookup from cache instead of individual query
+    const studentProfile = useMemo(() => {
+        if (isMultiple || !singleId) return null;
+        // First check provided users prop, then fallback to hook data
+        if (users && users.length > 0) {
+            return users.find(u => u.id === singleId) || null;
+        }
+        return usersFromHook.find((u: any) => u.id === singleId) || null;
+    }, [isMultiple, singleId, users, usersFromHook]);
 
     // Profiles for multiple students (for level grouping)
     // DEDUPLICATION: Use provided users prop if available
@@ -113,9 +119,6 @@ export default function HabilidadesView({
         }
         return [];
     }, [users, effectiveIds]);
-
-    // Fallback if users prop is not provided - usar useUsers() para datos cacheados
-    const { data: usersFromHook = [] } = useUsers();
 
     const fetchedMultipleProfiles = useMemo(() => {
         if (users && users.length > 0) return [];
@@ -199,7 +202,7 @@ export default function HabilidadesView({
                     criterionId: criterionId,
                     status: newStatus,
                     assessedAt: new Date().toISOString(),
-                    assessedBy: effectiveUser?.id
+                    assessedBy: effectiveUser?.effectiveUserId
                 });
             }
         } catch (error) {
@@ -210,7 +213,7 @@ export default function HabilidadesView({
         }
     };
 
-    const canEdit = effectiveUser?.rolPersonalizado === 'PROF' || effectiveUser?.rolPersonalizado === 'ADMIN';
+    const canEdit = effectiveUser?.effectiveRole === 'PROF' || effectiveUser?.effectiveRole === 'ADMIN';
 
     // Use appropriate data
     const totalXP = isMultiple ? totalXPMultiple : totalXPSingle;

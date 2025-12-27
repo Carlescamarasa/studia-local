@@ -31,6 +31,8 @@ import {
 import { Slider } from '../ui/slider';
 import { computeEvaluationXP, addXP } from '../../services/xpService';
 import { QUERY_KEYS } from '../../lib/queryKeys';
+import { useUsers } from '../../hooks/entities/useUsers';
+import { useMemo } from 'react';
 
 
 interface EvaluacionFormProps {
@@ -40,6 +42,15 @@ interface EvaluacionFormProps {
 
 export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProps) {
     const effectiveUser = useEffectiveUser();
+
+    // OPTIMIZED: Use useUsers() for student data
+    const { data: allUsers = [], isLoading: isLoadingUsers } = useUsers();
+
+    // Get student profile from cache
+    const studentProfile = useMemo(() =>
+        allUsers.find((u: any) => u.id === alumnoId),
+        [allUsers, alumnoId]
+    );
 
     const [fecha, setFecha] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [notas, setNotas] = useState('');
@@ -57,11 +68,6 @@ export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProp
     const [currentLevel, setCurrentLevel] = useState<number>(0);
     const [nextLevelCriteria, setNextLevelCriteria] = useState<CriteriaStatusResult[]>([]);
     const [promotionCheck, setPromotionCheck] = useState<PromotionCheckResult | null>(null);
-    const [loadingLevelData, setLoadingLevelData] = useState(false);
-
-    useEffect(() => {
-        loadLevelData();
-    }, [alumnoId]);
 
     const { createEvaluacion, evaluaciones: evaluacionesList, isCreating } = useEvaluaciones(alumnoId);
 
@@ -72,20 +78,15 @@ export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProp
         }
 
         // Find the most recent evaluation
-        // Sort by date descending, then by creation time/ID if available to break ties
         const sorted = [...evaluacionesList].sort((a, b) => {
             const dateA = new Date(a.fecha).getTime();
             const dateB = new Date(b.fecha).getTime();
             if (dateA !== dateB) return dateB - dateA;
 
-            // If dates are equal, try to use created_at if available, or id
-            // Handle both snake_case (DB) and camelCase (API)
             const createdA = a.createdAt ? new Date(a.createdAt).getTime() : (a.created_at ? new Date(a.created_at).getTime() : 0);
             const createdB = b.createdAt ? new Date(b.createdAt).getTime() : (b.created_at ? new Date(b.created_at).getTime() : 0);
 
             if (createdA !== createdB) return createdB - createdA;
-
-            // Fallback to ID comparison if timestamps are missing or equal
             return (b.id || '').localeCompare(a.id || '');
         });
 
@@ -101,22 +102,24 @@ export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProp
         }
     }, [evaluacionesList]);
 
-    const loadLevelData = async () => {
-        setLoadingLevelData(true);
-        try {
-            const user = await localDataClient.entities.User.get(alumnoId);
-            const level = user?.nivelTecnico || 0;
+    // OPTIMIZED: Reactively update level when student profile changes
+    useEffect(() => {
+        if (studentProfile) {
+            const level = studentProfile.nivelTecnico || 0;
             setCurrentLevel(level);
+            loadCriteriaAndPromotion(level);
+        }
+    }, [studentProfile, alumnoId]);
 
+    const loadCriteriaAndPromotion = async (level: number) => {
+        try {
             const criteria = await computeKeyCriteriaStatus(alumnoId, level + 1);
             setNextLevelCriteria(criteria);
 
             const check = await canPromote(alumnoId, level);
             setPromotionCheck(check);
         } catch (error) {
-            console.error('Error loading level data:', error);
-        } finally {
-            setLoadingLevelData(false);
+            console.error('Error loading level criteria:', error);
         }
     };
 
@@ -149,7 +152,8 @@ export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProp
         } catch (error) {
             console.error('Error updating criteria:', error);
             toast.error('Error al actualizar criterio');
-            loadLevelData();
+            // Reload criteria after error
+            loadCriteriaAndPromotion(currentLevel);
         }
     };
 
@@ -159,7 +163,8 @@ export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProp
         try {
             await promoteLevel(alumnoId, currentLevel + 1, 'Promoción por evaluación', effectiveUser?.effectiveUserId || 'system');
             toast.success(`¡Alumno promovido a Nivel ${currentLevel + 1}!`);
-            loadLevelData();
+            // Level will be updated reactively when studentProfile changes
+            loadCriteriaAndPromotion(currentLevel + 1);
         } catch (error) {
             console.error('Error promoting:', error);
             toast.error('Error al promover');

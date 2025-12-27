@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useEffect, useMemo } from 'react';
 import { localDataClient } from '@/api/localDataClient';
 import {
   Dialog,
@@ -18,6 +17,7 @@ import { useCreateUser } from '../hooks/useCreateUser';
 import { validateEmail, isEmpty, normalizeEmail } from '../utils/validation';
 import { componentStyles } from '@/design/componentStyles';
 import { toast } from 'sonner';
+import { useUsers } from '@/hooks/entities/useUsers';
 
 export function CreateUserModal({ open, onOpenChange, onSuccess }) {
   const [email, setEmail] = useState('');
@@ -29,14 +29,12 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }) {
 
   const { createUser, isLoading } = useCreateUser();
 
-  // Obtener lista de profesores
-  const { data: profesores = [] } = useQuery({
-    queryKey: ['profesores'],
-    queryFn: async () => {
-      const users = await localDataClient.entities.User.list();
-      return users.filter(u => u.rolPersonalizado === 'PROF');
-    },
-  });
+  // OPTIMIZED: Use useUsers() and derive professors list
+  const { data: allUsers = [] } = useUsers();
+  const profesores = useMemo(() =>
+    allUsers.filter(u => u.rolPersonalizado === 'PROF'),
+    [allUsers]
+  );
 
   // Resetear formulario cuando se cierra
   useEffect(() => {
@@ -114,7 +112,7 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }) {
       });
 
       toast.success(result.message || 'Usuario creado e invitación enviada correctamente');
-      
+
       if (onSuccess) {
         onSuccess(result.user);
       }
