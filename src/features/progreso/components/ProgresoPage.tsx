@@ -63,6 +63,7 @@ import {
 
 // Tab Components (reutilizados)
 import HabilidadesView from "./HabilidadesView";
+import MochilaViewContent from "./MochilaViewContent";
 import LevelBadge from "@/components/common/LevelBadge";
 import TabBoundary from "@/components/common/TabBoundary";
 import UnifiedTable from "@/components/tables/UnifiedTable";
@@ -440,26 +441,25 @@ function ProgresoPageContent() {
 
             if (!createdAt) return false;
 
+            // Use the most recent date (updated if different, otherwise created)
+            const fechaRelevante = updatedAt && updatedAt !== createdAt ? updatedAt : createdAt;
+            if (!fechaRelevante) return false;
+
+            // Apply same filtering logic as sessions
+            const feedbackDate = new Date(fechaRelevante);
+            const feedbackDateOnly = new Date(feedbackDate.getFullYear(), feedbackDate.getMonth(), feedbackDate.getDate());
+
             if (periodoInicio) {
                 const inicioDate = parseLocalDate(periodoInicio);
-                const createdDate = new Date(createdAt);
-                const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
-                const updatedDate = new Date(updatedAt);
-                const updatedDateOnly = new Date(updatedDate.getFullYear(), updatedDate.getMonth(), updatedDate.getDate());
-
-                if (createdDateOnly < inicioDate && updatedDateOnly < inicioDate) {
+                if (feedbackDateOnly < inicioDate) {
                     return false;
                 }
             }
 
             if (periodoFin) {
                 const finDate = parseLocalDate(periodoFin);
-                const createdDate = new Date(createdAt);
-                const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
-                const updatedDate = new Date(updatedAt);
-                const updatedDateOnly = new Date(updatedDate.getFullYear(), updatedDate.getMonth(), updatedDate.getDate());
-
-                if (createdDateOnly > finDate && updatedDateOnly > finDate) {
+                finDate.setHours(23, 59, 59, 999);
+                if (feedbackDate > finDate) {
                     return false;
                 }
             }
@@ -486,27 +486,31 @@ function ProgresoPageContent() {
         }
 
         if (periodoInicio || periodoFin) {
-            resultado = resultado.filter((f: FeedbackSemanal) => { // Type function parameters
+            resultado = resultado.filter((f: FeedbackSemanal) => {
                 const createdAt = f.created_at;
                 const updatedAt = f.updated_at || createdAt;
 
                 if (!createdAt) return true;
 
-                const createdDate = new Date(createdAt);
-                const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
-                const updatedDate = new Date(updatedAt);
-                const updatedDateOnly = new Date(updatedDate.getFullYear(), updatedDate.getMonth(), updatedDate.getDate());
+                // Use the most recent date (updated if different, otherwise created)
+                const fechaRelevante = updatedAt && updatedAt !== createdAt ? updatedAt : createdAt;
+                if (!fechaRelevante) return true;
+
+                // Apply same filtering logic as sessions
+                const feedbackDate = new Date(fechaRelevante);
+                const feedbackDateOnly = new Date(feedbackDate.getFullYear(), feedbackDate.getMonth(), feedbackDate.getDate());
 
                 if (periodoInicio) {
                     const inicioDate = parseLocalDate(periodoInicio);
-                    if (createdDateOnly < inicioDate && updatedDateOnly < inicioDate) {
+                    if (feedbackDateOnly < inicioDate) {
                         return false;
                     }
                 }
 
                 if (periodoFin) {
                     const finDate = parseLocalDate(periodoFin);
-                    if (createdDateOnly > finDate && updatedDateOnly > finDate) {
+                    finDate.setHours(23, 59, 59, 999);
+                    if (feedbackDate > finDate) {
                         return false;
                     }
                 }
@@ -1039,25 +1043,27 @@ function ProgresoPageContent() {
                     </div>
                 )}
 
-                {/* 4. MOCHILA TAB (Placeholder/Redirect) */}
+                {/* 4. MOCHILA TAB */}
                 {tabActiva === 'mochila' && (
                     <div className="space-y-6 animate-in slide-in-from-left-2 duration-300">
-                        {/* We could embed the backpack component here or redirect */}
-                        <CardAny className={componentStyles.components.cardBase}>
-                            <EmptyState
-                                icon={<Backpack className="w-12 h-12 text-muted-foreground" />}
-                                title="Mochila del Estudiante"
-                                description="Gestiona tu repertorio y ejercicios activos"
-                                action={
-                                    <Button
-                                        variant="default"
-                                        onClick={() => navigate(toStudia({}))}
-                                    >
-                                        Ir a Mochila
-                                    </Button>
-                                }
+                        {/* Require single student selection */}
+                        {!effectiveStudentId ? (
+                            <CardAny className={componentStyles.components.cardBase}>
+                                <EmptyState
+                                    icon={<Backpack className="w-12 h-12 text-muted-foreground" />}
+                                    title="Selecciona un Estudiante"
+                                    description={isEstu
+                                        ? "Tu mochila muestra el estado actual de todos tus ejercicios y piezas."
+                                        : "Selecciona un estudiante arriba para ver su mochila de práctica."
+                                    }
+                                />
+                            </CardAny>
+                        ) : (
+                            <MochilaViewContent
+                                studentId={effectiveStudentId}
+                                navigate={navigate}
                             />
-                        </CardAny>
+                        )}
                     </div>
                 )}
 
@@ -1067,7 +1073,7 @@ function ProgresoPageContent() {
                         <FeedbackUnificadoTabAny
                             feedbacks={isEstu ? feedbacksSemanal : feedbacksParaProfAdmin}
                             evaluaciones={evaluacionesFiltradas} // Legacy support
-                            registros={registrosFiltradosUnicos.filter(r => r.calificacion && r.nota)} // Solo sesiones con nota
+                            registros={registrosFiltradosUnicos.filter(r => r.calificacion)} // Sessions with rating
                             usuarios={usuarios}
                             isEstu={isEstu}
                             onMediaClick={handleMediaClick}

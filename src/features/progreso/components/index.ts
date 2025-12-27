@@ -26,5 +26,6 @@ export { default as ComparativaEstudiantes } from './ComparativaEstudiantes';
 export { default as HabilidadesRadarChart } from './HabilidadesRadarChart';
 export { default as HeatmapActividad } from './HeatmapActividad';
 export { default as HeatmapFranjas } from './HeatmapFranjas';
+export { default as MochilaViewContent } from './MochilaViewContent';
 export { default as ProgresoPorPieza } from './ProgresoPorPieza';
 export { default as TotalXPDisplay } from './TotalXPDisplay';
