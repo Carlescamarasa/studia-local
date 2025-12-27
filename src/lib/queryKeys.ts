@@ -28,6 +28,7 @@ export const QUERY_KEYS = {
     // Processed/Computed Skills Data
     // ============================================================================
     STUDENT_SKILLS_PROCESSED: (studentId: string) => ['student-skills-processed', studentId] as const,
+    STUDENT_SKILLS_RADAR: (studentId: string) => ['student-skills-radar', studentId] as const,
     HABILIDADES_STATS: (studentId: string) => ['habilidades-stats', studentId] as const,
 
     // ============================================================================
