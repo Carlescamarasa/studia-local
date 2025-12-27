@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import { getNombreVisible, formatLocalDate, parseLocalDate, startOfMonday, resolveUserIdActual } from "../components/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { calcularTiempoSesion } from "../components/study/sessionSequence";
-import SessionContentView from "../components/study/SessionContentView";
+import SessionContentView from "@/shared/components/study/SessionContentView";
 import PageHeader from "@/components/ds/PageHeader";
 import { LoadingSpinner } from "@/components/ds";
 import { componentStyles } from "@/design/componentStyles";

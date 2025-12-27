@@ -23,7 +23,7 @@ import RequireRole from "@/components/auth/RequireRole";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 import { cn } from "@/lib/utils";
-import SessionContentView from "../components/study/SessionContentView";
+import SessionContentView from "@/shared/components/study/SessionContentView";
 import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
 import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
 import { log } from "@/utils/log";

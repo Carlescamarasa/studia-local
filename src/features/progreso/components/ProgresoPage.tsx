@@ -84,7 +84,7 @@ import {
     TopEjerciciosTab,
 } from "./index";
 
-import ModalFeedbackSemanal from "@/components/calendario/ModalFeedbackSemanal";
+import ModalFeedbackSemanal from "@/shared/components/feedback/ModalFeedbackSemanal";
 import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
 
 import { StudiaUser, RegistroSesion, RegistroBloque, FeedbackSemanal, StudentBackpackItem } from "@/shared/types/domain";

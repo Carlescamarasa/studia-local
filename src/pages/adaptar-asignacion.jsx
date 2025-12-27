@@ -29,7 +29,7 @@ import { componentStyles } from "@/design/componentStyles";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "@/components/study/sessionSequence";
 import RequireRole from "@/components/auth/RequireRole";
 
-import SessionContentView from "@/components/study/SessionContentView";
+import SessionContentView from "@/shared/components/study/SessionContentView";
 
 // Componente Sortable para Sesión (similar a PlanEditor pero adaptado)
 function SortableSesionAdaptar({

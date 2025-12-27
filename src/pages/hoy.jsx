@@ -43,7 +43,7 @@ import {
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import PeriodHeader from "../components/common/PeriodHeader";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "../components/study/sessionSequence";
-import SessionContentView from "../components/study/SessionContentView";
+import SessionContentView from "@/shared/components/study/SessionContentView";
 import { toast } from "sonner";
 import { useSidebar } from "@/components/ui/SidebarState";
 import PageHeader from "@/components/ds/PageHeader";

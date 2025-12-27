@@ -45,7 +45,7 @@ const StudiaConceptPage = lazy(() => import("@/pages/StudiaConceptPage.jsx"));
 // Removed ContenidoMultimediaPage
 const MochilaPage = lazy(() => import("@/pages/MochilaPage.jsx"));
 const Progreso = lazy(() => import("@/pages/progreso.jsx"));
-const Cuaderno = lazy(() => import("@/pages/cuaderno.jsx"));
+const Cuaderno = lazy(() => import("@/features/cuaderno"));
 // Legacy: Preparacion removed, now redirects to Cuaderno
 const Configuracion = lazy(() => import("@/pages/admin/configuracion.jsx"));
 const Studia = lazy(() => import("@/pages/studia.jsx"));
