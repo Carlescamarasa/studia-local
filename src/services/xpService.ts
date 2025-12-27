@@ -83,6 +83,10 @@ export async function computePracticeXP(
  * Compute lifetime practice XP (all time)
  * Wrapper around computePracticeXP with a large window
  * 
+ * NOTE: This is a data processor function (not a React hook).
+ * Direct API calls are appropriate here. For UI components/hooks,
+ * use useAllStudentXPTotals() or derived hooks to leverage React Query cache.
+ * 
  * @param studentId - Student ID
  * @returns Object with XP per skill (uncapped)
  */
@@ -90,6 +94,7 @@ export async function computeLifetimePracticeXP(
     studentId: string
 ): Promise<RecentXPResult> {
     try {
+        // Direct API call is OK in service functions (not React hooks)
         const totals = await localDataClient.entities.StudentXPTotal.filter({ studentId });
 
         const result: RecentXPResult = {
@@ -207,6 +212,10 @@ export async function computeEvaluationXP(
  * Compute manual XP adjustments from professor evaluations (last N days)
  * Returns XP for Mot/Art/Flex that was manually awarded by professors
  * 
+ * NOTE: This is a data processor function (not a React hook).
+ * Direct API calls are appropriate here. For UI components/hooks,
+ * use useAllStudentXPTotals() or derived hooks to leverage React Query cache.
+ * 
  * @param studentId - Student ID
  * @param windowDays - Number of days to look back (default: 30)
  * @returns XP for motricidad, articulacion, flexibilidad from professor adjustments
@@ -220,7 +229,7 @@ export async function computeManualXP(
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - windowDays);
 
-        // Get all XP totals for this student
+        // Direct API call is OK in service functions (not React hooks)
         const xpRecords = await localDataClient.entities.StudentXPTotal.filter({ studentId });
 
         const result = {
@@ -248,6 +257,13 @@ export async function computeManualXP(
     }
 }
 
+/**
+ * Add XP to a student's skill total (mutation)
+ * 
+ * NOTE: Direct API calls for CREATE/UPDATE operations are appropriate
+ * because this is a mutation, not a query. Mutations should invalidate
+ * the React Query cache (which this function does automatically).
+ */
 export async function addXP(
     studentId: string,
     skill: XPSkill,
@@ -256,7 +272,7 @@ export async function addXP(
     timestamp?: string
 ): Promise<void> {
     try {
-        // Get current total XP for this skill
+        // Direct API call is OK for mutations (CREATE/UPDATE operations)
         const existing = await localDataClient.entities.StudentXPTotal.filter({
             studentId,
             skill
@@ -343,11 +359,16 @@ export async function addXP(
 /**
  * Get total accumulated XP for all skills for a student
  * 
+ * NOTE: This is a data processor function (not a React hook).
+ * Direct API calls are appropriate here. For UI components/hooks,
+ * use useTotalXP() to leverage React Query cache.
+ * 
  * @param studentId - Student ID
  * @returns Array of XP totals per skill
  */
 export async function computeTotalXP(studentId: string): Promise<StudentXPTotal[]> {
     try {
+        // Direct API call is OK in service functions (not React hooks)
         const totals = await localDataClient.entities.StudentXPTotal.filter({ studentId });
         return totals as StudentXPTotal[];
     } catch (error) {
