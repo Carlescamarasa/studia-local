@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { computePracticeXP, capXPForDisplay } from '@/services/xpService';
 import { localDataClient } from '@/api/localDataClient';
-import { useUsers } from '@/hooks/entities/useUsers';
+import { useUsers, type UserEntity } from '@/hooks/entities/useUsers';
+import { useLevelsConfig } from '@/hooks/entities/useLevelsConfig';
 import type { RecentXPResult, StudentXPTotal } from '@/services/xpService';
 
 /**
@@ -229,11 +230,8 @@ export function useAggregateLevelGoals(studentIds: string[]) {
     const { data: users = [] } = useUsers();
 
     // 2. Fetch all level configs
-    const { data: levelConfigs = [] } = useQuery({
-        queryKey: ['level-configs-all'],
-        queryFn: () => localDataClient.entities.LevelConfig.list(),
-        staleTime: 1000 * 60 * 60, // 1 hour cache, these rarely change
-    });
+    // 2. Fetch all level configs
+    const { data: levelConfigs = [] } = useLevelsConfig();
 
     return useMemo(() => {
         const result = { motricidad: 0, articulacion: 0, flexibilidad: 0 };
@@ -245,7 +243,7 @@ export function useAggregateLevelGoals(studentIds: string[]) {
         const studentIdSet = new Set(studentIds);
 
         // For each selected student
-        users.forEach(user => {
+        users.forEach((user: UserEntity) => {
             if (!studentIdSet.has(user.id)) return;
 
             const currentLevel = user.nivelTecnico || 1;

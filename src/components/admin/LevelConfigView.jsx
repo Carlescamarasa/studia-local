@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { localDataClient } from '@/api/localDataClient';
+import { useLevelsConfig } from '@/hooks/entities/useLevelsConfig';
+import { QUERY_KEYS } from '@/lib/queryKeys';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ds/Card';
 import { Button } from '@/components/ds/Button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +43,34 @@ export default function LevelConfigView() {
     const [importCandidates, setImportCandidates] = useState([]);
     const [selectedImportIds, setSelectedImportIds] = useState([]);
 
+    const queryClient = useQueryClient();
+    const { data: levelsData, isLoading: levelsLoading } = useLevelsConfig();
+
+    // Sync hook data to local state
+    useEffect(() => {
+        if (levelsData) {
+            // Ensure we have configs for levels 1-10
+            const fullLevels = [];
+            for (let i = 1; i <= 10; i++) {
+                const existing = levelsData.find(l => l.level === i);
+                if (existing) {
+                    fullLevels.push(existing);
+                } else {
+                    fullLevels.push({
+                        level: i,
+                        minXpFlex: 0,
+                        minXpMotr: 0,
+                        minXpArt: 0,
+                        minEvalSound: 0,
+                        minEvalCog: 0,
+                        evidenceWindowDays: 30
+                    });
+                }
+            }
+            setLevels(fullLevels);
+        }
+    }, [levelsData]);
+
     // Modal edit states for criteria
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editingCriteria, setEditingCriteria] = useState(null);
@@ -64,31 +95,8 @@ export default function LevelConfigView() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [levelsData, criteriaData] = await Promise.all([
-                localDataClient.entities.LevelConfig.list(),
-                localDataClient.entities.LevelKeyCriteria.list()
-            ]);
-
-            // Ensure we have configs for levels 1-10
-            const fullLevels = [];
-            for (let i = 1; i <= 10; i++) {
-                const existing = levelsData.find(l => l.level === i);
-                if (existing) {
-                    fullLevels.push(existing);
-                } else {
-                    fullLevels.push({
-                        level: i,
-                        minXpFlex: 0,
-                        minXpMotr: 0,
-                        minXpArt: 0,
-                        minEvalSound: 0,
-                        minEvalCog: 0,
-                        evidenceWindowDays: 30
-                    });
-                }
-            }
-
-            setLevels(fullLevels);
+            // Only fetch criteria manually now, levels come from hook
+            const criteriaData = await localDataClient.entities.LevelKeyCriteria.list();
             setCriteria(criteriaData);
         } catch (error) {
             console.error('Error loading level config:', error);
@@ -118,8 +126,10 @@ export default function LevelConfigView() {
             }
             toast.success(`Nivel ${levelConfig.level} guardado`);
 
-            // Reload to get fresh data (especially if created)
-            loadData();
+            // Invalidate query to refresh hook data
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.LEVEL_CONFIGS_ALL });
+
+            // loadData(); // No longer needed for levels, but maybe for criteria if collateral? No.
         } catch (error) {
             console.error('Error saving level:', error);
             toast.error('Error al guardar');
