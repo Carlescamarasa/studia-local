@@ -48,16 +48,12 @@ export default function PerfilPage() {
     queryKey: ['targetUser', userIdParam],
     queryFn: async () => {
       if (userIdParam && effectiveUser?.rolPersonalizado === 'ADMIN') {
-        // Use allUsers from hook if available, otherwise fetch via API
-        if (allUsers) {
-          return allUsers.find(u => u.id === userIdParam);
-        }
-        const users = await remoteDataAPI.usuarios.list();
-        return users.find(u => u.id === userIdParam);
+        // OPTIMIZACIÓN: Usar allUsers de useUsers() - datos ya cacheados
+        return allUsers?.find(u => u.id === userIdParam) || null;
       }
       return effectiveUser;
     },
-    enabled: true,
+    enabled: !!allUsers, // Esperar a que allUsers esté disponible
   });
 
   const getNombreCompleto = (user) => {
