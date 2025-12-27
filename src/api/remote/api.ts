@@ -135,7 +135,7 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
     if (error) {
       // Si falla, ya tenemos el email del usuario autenticado en el mapa (si estaba en userIds)
       // Solo loguear en desarrollo para debugging
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.warn('[remoteDataAPI] Error al invocar get-user-emails:', error);
       }
       return emailMap;
@@ -152,7 +152,7 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
 
   } catch (error) {
     // Si falla, ya tenemos el email del usuario autenticado en el mapa (si estaba en userIds)
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.warn('[remoteDataAPI] Excepción al obtener emails:', error);
     }
   }
@@ -282,7 +282,7 @@ export function createRemoteDataAPI(): AppDataAPI {
               supabase
                 .from('profiles')
                 .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at, nivel, nivel_tecnico, telefono')
-                .in('id', profesorIdsArray) as Promise<any>
+                .in('id', profesorIdsArray) as unknown as Promise<any>
             );
 
             if (!profesoresError && profesoresData && Array.isArray(profesoresData)) {
@@ -616,7 +616,7 @@ export function createRemoteDataAPI(): AppDataAPI {
               } catch (authError) {
                 // Si falla, no es crítico - el nombre ya está en profiles
                 // Solo loguear en desarrollo
-                if (process.env.NODE_ENV === 'development') {
+                if (import.meta.env.DEV) {
                   console.warn('[remoteDataAPI] No se pudo sincronizar full_name con auth.users:', authError);
                 }
               }
@@ -624,7 +624,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           } catch (syncError) {
             // No es crítico si falla la sincronización con auth.users
             // El nombre principal está en profiles que es la fuente de verdad
-            if (process.env.NODE_ENV === 'development') {
+            if (import.meta.env.DEV) {
               console.warn('[remoteDataAPI] Error al sincronizar con auth.users:', syncError);
             }
           }
