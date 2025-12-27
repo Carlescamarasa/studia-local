@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { localDataClient } from '../api/localDataClient';
 import { useAggregateLevelGoals } from './useXP';
-import useFeedbacksSemanal from './entities/useFeedbacksSemanal';
+import { useFeedbacksSemanal } from './entities/useFeedbacksSemanal';
+import { useEvaluacionesTecnicas } from './entities/useEvaluacionesTecnicas';
 
 export type DataSource = 'evaluaciones' | 'experiencia' | 'ambas';
 
@@ -69,13 +70,7 @@ export function useHabilidadesStats(alumnoId: string, options?: HabilidadesStats
     const loadingTotalXP = !allXPData;
 
     // Fetch ALL evaluations if not provided
-    const { data: fetchedEvaluations } = useQuery({
-        queryKey: ['evaluacionesTecnicas'], // Standardized key
-        queryFn: () => localDataClient.entities.EvaluacionTecnica.list(),
-        staleTime: 1000 * 60 * 5,
-        enabled: !options?.providedEvaluations,
-        refetchOnWindowFocus: false
-    });
+    const { data: fetchedEvaluations } = useEvaluacionesTecnicas();
 
     const allEvaluations = options?.providedEvaluations || fetchedEvaluations;
 
@@ -269,13 +264,7 @@ export function useHabilidadesStatsMultiple(studentIds: string[], options?: Habi
 
 
     // 3. Fetch all Evaluations & Feedbacks if not provided
-    const { data: fetchedEvaluations } = useQuery({
-        queryKey: ['evaluacionesTecnicas'], // Standardized key
-        queryFn: () => localDataClient.entities.EvaluacionTecnica.list(),
-        staleTime: 1000 * 60 * 5,
-        enabled: !options?.providedEvaluations,
-        refetchOnWindowFocus: false
-    });
+    const { data: fetchedEvaluations } = useEvaluacionesTecnicas();
 
     const allEvaluations = options?.providedEvaluations || fetchedEvaluations;
 

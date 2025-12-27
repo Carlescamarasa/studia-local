@@ -121,56 +121,40 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
   }
 
   try {
-    // Obtener token de sesión
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      // Si no hay sesión, devolver solo el email del usuario autenticado (si ya lo añadimos)
-      return emailMap;
-    }
-
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl) {
-      // Sin URL configurada, devolver solo el email del usuario autenticado
-      return emailMap;
-    }
-
     // Si solo pedimos el email del usuario actual, no llamar a la Edge Function
     if (authUser && userIds.length === 1 && userIds[0] === authUser.id) {
       return emailMap;
     }
 
-    const headers: Record<string, string> = {
-      'Authorization': `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json',
-    };
-
-    // Añadir apikey si está disponible (algunas Edge Functions lo requieren)
-    if (supabaseAnonKey) {
-      headers['apikey'] = supabaseAnonKey;
-    }
-
-    const response = await fetch(`${supabaseUrl}/functions/v1/get-user-emails`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ userIds }),
+    // Usar supabase.functions.invoke para llamar a la Edge Function
+    // Esto maneja automáticamente la autenticación y la URL base
+    const { data, error } = await supabase.functions.invoke('get-user-emails', {
+      body: { userIds }
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success && data.emails) {
-        // Convertir objeto a Map
-        for (const [userId, email] of Object.entries(data.emails)) {
-          if (email) {
-            emailMap.set(userId, email as string);
-          }
+    if (error) {
+      // Si falla, ya tenemos el email del usuario autenticado en el mapa (si estaba en userIds)
+      // Solo loguear en desarrollo para debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[remoteDataAPI] Error al invocar get-user-emails:', error);
+      }
+      return emailMap;
+    }
+
+    if (data && data.success && data.emails) {
+      // Convertir objeto a Map
+      for (const [userId, email] of Object.entries(data.emails)) {
+        if (email) {
+          emailMap.set(userId, email as string);
         }
       }
     }
-    // Si falla (403, etc.), ya tenemos el email del usuario autenticado en el mapa
+
   } catch (error) {
     // Si falla, ya tenemos el email del usuario autenticado en el mapa (si estaba en userIds)
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[remoteDataAPI] Excepción al obtener emails:', error);
+    }
   }
 
   return emailMap;
@@ -1127,6 +1111,20 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (error) throw error;
         return normalizeISOFields(snakeToCamel<RegistroBloque>(data));
       },
+      bulkCreate: async (data: any[]) => {
+        const snakeData = data.map((item: any) => camelToSnake({
+          ...item,
+          id: item.id || generateId('registroBloque'),
+        }));
+
+        const { data: result, error } = await supabase
+          .from('registros_bloque')
+          .insert(snakeData)
+          .select();
+
+        if (error) throw error;
+        return (result || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(r)));
+      },
       delete: async (id: string) => {
         const { error } = await supabase
           .from('registros_bloque')
@@ -1277,7 +1275,7 @@ export function createRemoteDataAPI(): AppDataAPI {
     feedbacksSemanal: {
       list: async (sort: string = '-created_at'): Promise<FeedbackSemanal[]> => {
         const raw = await fetchFeedbacksSemanalList(sort);
-        return raw.map(f => {
+        return raw.map((f: any) => {
           const camel = snakeToCamel<FeedbackSemanal>(f);
           return normalizeAsignacionISO(camel);
         });
@@ -1295,7 +1293,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         }
 
         const raw = await fetchFeedbacksSemanalByFilter(snakeFilters, limit);
-        return raw.map(f => {
+        return raw.map((f: any) => {
           const camel = snakeToCamel<FeedbackSemanal>(f);
           return normalizeAsignacionISO(camel);
         });
@@ -1875,6 +1873,26 @@ export function createRemoteDataAPI(): AppDataAPI {
         evaluacionesTecnicas: (raw.evaluacionesTecnicas || []).map(snakeToCamel),
         feedbacksSemanal: (raw.feedbacksSemanal || []).map(snakeToCamel).map(normalizeAsignacionISO),
         registrosSesion
+      };
+    },
+    getSeedStats: async () => {
+      const { data, error } = await supabase.rpc('get_seed_stats');
+      if (error) {
+        console.error('[remoteDataAPI] Error en getSeedStats:', error);
+        throw error;
+      }
+      return data as {
+        usersCount: number;
+        usersAdmin: number;
+        usersProf: number;
+        usersEstu: number;
+        piezas: number;
+        planes: number;
+        bloques: number;
+        asignaciones: number;
+        registrosSesion: number;
+        registrosBloques: number;
+        feedbacks: number;
       };
     }
   };

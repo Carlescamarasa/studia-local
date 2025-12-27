@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUsers } from "@/hooks/entities/useUsers";
 import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
 import { useRegistrosSesion } from "@/hooks/entities/useRegistrosSesion";
+import { useEvaluacionesTecnicas } from "@/hooks/entities/useEvaluacionesTecnicas";
 import useFeedbacksSemanal from "@/hooks/entities/useFeedbacksSemanal";
 import { Button } from "@/components/ds/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ds";
@@ -63,11 +64,7 @@ function SemanaPageContent() {
   const { data: registrosSesion = [] } = useRegistrosSesion();
 
   // Evaluaciones técnicas
-  const { data: evaluacionesTecnicas = [] } = useQuery({
-    queryKey: ['evaluacionesTecnicas'],
-    queryFn: () => localDataClient.entities.EvaluacionTecnica.list(),
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: evaluacionesTecnicas = [] } = useEvaluacionesTecnicas();
 
   // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
   // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD

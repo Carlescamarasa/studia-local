@@ -1,7 +1,7 @@
 import { supabase, withAuthErrorHandling } from './client';
 import { snakeToCamel, camelToSnake, toSnakeCase, normalizeISOFields } from './utils';
 import { generateId } from './id';
-import type { RegistroSesion, RegistroBloque } from '@/types/domain';
+import type { RegistroSesion, RegistroBloque } from '../../types/domain';
 
 /**
  * Obtiene una vista previa de los registros de sesión (limitado a 20)
@@ -58,7 +58,7 @@ export async function fetchRecentRegistrosSesion(): Promise<any[]> {
     return (data as any[]) || [];
 }
 
-export async function fetchRegistrosSesionList(sort?: string): Promise<RegistroSesion[]> {
+export async function fetchRegistrosSesionList(sort?: string, options: { includeBlocks?: boolean } = { includeBlocks: true }): Promise<RegistroSesion[]> {
     let query = supabase.from('registros_sesion').select('*');
 
     if (sort) {
@@ -73,12 +73,12 @@ export async function fetchRegistrosSesionList(sort?: string): Promise<RegistroS
         throw sessionsError;
     }
 
-    const sessions = (sessionsData || []).map((r: any) => {
+    const sessions: RegistroSesion[] = (sessionsData || []).map((r: any) => {
         const camel = snakeToCamel<RegistroSesion>(r);
         return normalizeISOFields<RegistroSesion>(camel);
     });
 
-    if (sessions.length === 0) return [];
+    if (sessions.length === 0 || options.includeBlocks === false) return sessions;
 
     // Fetch associated blocks in batches to avoid URL length limits
     const sessionIds = sessions.map(s => s.id);
@@ -146,7 +146,7 @@ export async function fetchRegistroSesion(id: string): Promise<RegistroSesion | 
     };
 }
 
-export async function fetchRegistrosSesionByFilter(filters: Record<string, any>, limit?: number | null): Promise<RegistroSesion[]> {
+export async function fetchRegistrosSesionByFilter(filters: Record<string, any>, limit?: number | null, options: { includeBlocks?: boolean } = { includeBlocks: true }): Promise<RegistroSesion[]> {
     let query = supabase.from('registros_sesion').select('*');
 
     for (const [key, value] of Object.entries(filters)) {
@@ -161,12 +161,12 @@ export async function fetchRegistrosSesionByFilter(filters: Record<string, any>,
     const { data: sessionsData, error: sessionsError } = await query;
     if (sessionsError) throw sessionsError;
 
-    const sessions = (sessionsData || []).map((r: any) => {
+    const sessions: RegistroSesion[] = (sessionsData || []).map((r: any) => {
         const camel = snakeToCamel<RegistroSesion>(r);
         return normalizeISOFields<RegistroSesion>(camel);
     });
 
-    if (sessions.length === 0) return [];
+    if (sessions.length === 0 || options.includeBlocks === false) return sessions;
 
     // Fetch associated blocks in batches to avoid URL length limits
     const sessionIds = sessions.map(s => s.id);

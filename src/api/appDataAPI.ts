@@ -165,5 +165,18 @@ export interface AppDataAPI {
     feedbacksSemanal: FeedbackSemanal[];
     registrosSesion: RegistroSesion[];
   }>;
+  getSeedStats?: () => Promise<{
+    usersCount: number;
+    usersAdmin: number;
+    usersProf: number;
+    usersEstu: number;
+    piezas: number;
+    planes: number;
+    bloques: number;
+    asignaciones: number;
+    registrosSesion: number;
+    registrosBloques: number;
+    feedbacks: number;
+  }>;
 }
 

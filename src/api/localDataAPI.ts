@@ -43,18 +43,18 @@ function mapLocalEntityToDomain<T extends { created_at?: string; created_date?: 
   dateFields: string[] = ['created_at', 'updated_at']
 ): T {
   const mapped = { ...entity };
-  
+
   // Mapear created_date a created_at si existe
   if (mapped.created_date && !mapped.created_at) {
     mapped.created_at = mapped.created_date;
     delete mapped.created_date;
   }
-  
+
   // Asegurar que updated_at existe
   if (!mapped.updated_at) {
     mapped.updated_at = mapped.created_at || new Date().toISOString();
   }
-  
+
   return mapped as T;
 }
 
@@ -189,8 +189,8 @@ export function createLocalDataAPI(): AppDataAPI {
       },
     },
     registrosSesion: {
-      list: async (sort?: string) => {
-        const registros = await localDataClient.entities.RegistroSesion.list(sort);
+      list: async (sort?: string, options?: { includeBlocks?: boolean }) => {
+        const registros = await localDataClient.entities.RegistroSesion.list(sort, options);
         return registros.map(r => mapLocalEntityToDomain<RegistroSesion>(r));
       },
       get: async (id: string) => {

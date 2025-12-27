@@ -38,8 +38,8 @@ export async function computePracticeXP(
     windowDays: number = 30
 ): Promise<RecentXPResult> {
     try {
-        // Get all completed blocks for the student (RegistroBloque)
-        const allBlocks = await localDataClient.entities.RegistroBloque.list();
+        // Get all completed blocks for the student (RegistroBloque) - Filtered to avoid N+1/Full scan
+        const allBlocks = await localDataClient.entities.RegistroBloque.filter({ alumnoId: studentId });
 
         // Filter blocks completed in the last N days for this student
         const cutoffDate = new Date();
@@ -362,8 +362,8 @@ export async function syncXPWithBloques(studentId?: string): Promise<void> {
         for (const student of students) {
             console.log(`[XP Migration] Processing student ${student.id}...`);
 
-            // Get all completed blocks for this student
-            const blocks = await localDataClient.entities.RegistroBloque.list();
+            // Get all completed blocks for this student - Filtered to avoid N+1/Full scan
+            const blocks = await localDataClient.entities.RegistroBloque.filter({ alumnoId: student.id });
 
             const completedBlocks = blocks.filter((b: any) =>
                 b.alumnoId === student.id && b.estado === 'completado' && b.completadoEn
