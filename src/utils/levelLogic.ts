@@ -143,10 +143,31 @@ export async function canPromote(studentId: string, currentLevel: number, provid
 
 /**
  * Executes the promotion of a student.
+ * 
+ * TODO: Refactor to receive user data as parameter instead of direct API call
+ * 
+ * RECOMMENDED REFACTORING:
+ * Instead of:
+ *   await promoteLevel(studentId, newLevel, reason, authorId)
+ * 
+ * Change signature to:
+ *   async function promoteLevel(
+ *     studentId: string,
+ *     currentLevel: number,  // Pass current level from useUsers() data
+ *     newLevel: number,
+ *     reason: string,
+ *     authorId: string
+ *   )
+ * 
+ * This way, calling components can use:
+ *   const { data: users } = useUsers();
+ *   const user = users.find(u => u.id === studentId);
+ *   await promoteLevel(studentId, user.nivelTecnico, newLevel, reason, authorId);
  */
 export async function promoteLevel(studentId: string, newLevel: number, reason: string, authorId: string): Promise<void> {
     // 1. Update User Profile
     // We need to fetch the user first to get current data
+    // TODO: migrate to useUsers() - usar React Query hook en lugar de API directa
     const user = await localDataClient.entities.User.get(studentId);
     if (!user) throw new Error('User not found');
 

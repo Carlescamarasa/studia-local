@@ -4,6 +4,7 @@ import { Loader2, TrendingUp, Trophy } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { localDataClient } from '@/api/localDataClient';
 import { Badge } from '@/components/ds';
+import { useUsers } from '@/hooks/entities/useUsers';
 
 interface TotalXPDisplayProps {
     studentId?: string;
@@ -41,12 +42,14 @@ export default function TotalXPDisplay({ studentId, studentIds, filter = ['evalu
     const isLoadingTotal = isMultiple ? isLoadingTotalMultiple : isLoadingTotalSingle;
     const isLoadingPractice = isMultiple ? isLoadingPracticeMultiple : isLoadingPracticeSingle;
 
-    // Fetch student profile to get current level (only for single student)
-    const { data: studentProfile } = useQuery({
-        queryKey: ['student-profile', singleId],
-        queryFn: () => localDataClient.entities.User.get(singleId),
-        enabled: !!singleId && !isMultiple
-    });
+    // OPTIMIZED: Use useUsers() for student profile data
+    const { data: allUsers = [], isLoading: isLoadingUsers } = useUsers();
+
+    // Fetch student profile from cache - lookup instead of individual query
+    const studentProfile = useMemo(() => {
+        if (isMultiple || !singleId) return null;
+        return allUsers.find((u: any) => u.id === singleId) || null;
+    }, [isMultiple, singleId, allUsers]);
 
     const currentLevel = studentProfile?.nivelTecnico || 1;
 
@@ -69,7 +72,7 @@ export default function TotalXPDisplay({ studentId, studentIds, filter = ['evalu
         );
     }
 
-    if (isLoadingTotal || isLoadingPractice) {
+    if (isLoadingTotal || isLoadingPractice || isLoadingUsers) {
         return (
             <div className="flex items-center justify-center p-4">
                 <Loader2 className="animate-spin h-5 w-5 text-muted-foreground" />
@@ -129,7 +132,7 @@ export default function TotalXPDisplay({ studentId, studentIds, filter = ['evalu
                     Nivel {currentLevel}
                     <span className="mx-1 opacity-50">·</span>
                     <span className="text-muted-foreground font-normal">
-                        {studentProfile.etiquetaNivel || (currentLevel < 3 ? 'Principiante' : currentLevel < 6 ? 'Intermedio' : 'Avanzado')}
+                        {currentLevel < 3 ? 'Principiante' : currentLevel < 6 ? 'Intermedio' : 'Avanzado'}
                     </span>
                 </span>
             </Badge>
