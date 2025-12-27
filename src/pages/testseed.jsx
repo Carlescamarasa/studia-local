@@ -78,17 +78,7 @@ export default function TestSeedPage({ embedded = false }) {
   const { data: stats, isLoading, refetch: refetchStats } = useQuery({
     queryKey: ['seedStats'],
     queryFn: async () => {
-      const [users, piezas, planes, bloques, asignaciones, registrosSesion, registrosBloques, feedbacks] = await Promise.all([
-        localDataClient.entities.User.list(),
-        localDataClient.entities.Pieza.list(),
-        localDataClient.entities.Plan.list(),
-        localDataClient.entities.Bloque.list(),
-        localDataClient.entities.Asignacion.list(),
-        localDataClient.entities.RegistroSesion.list(),
-        localDataClient.entities.RegistroBloque.list(),
-        localDataClient.entities.FeedbackSemanal.list(),
-      ]);
-      return { users, piezas, planes, bloques, asignaciones, registrosSesion, registrosBloques, feedbacks };
+      return await localDataClient.getSeedStats();
     },
   });
 
@@ -1839,8 +1829,19 @@ export default function TestSeedPage({ embedded = false }) {
     const tests = [];
 
     try {
-      const { data: freshData } = await refetchStats();
-      const data = freshData || stats;
+      addLog('📦 Obteniendo datos completos para pruebas...', 'info');
+      const [users, piezas, planes, bloques, asignaciones, registrosSesion, registrosBloques, feedbacks] = await Promise.all([
+        localDataClient.entities.User.list(),
+        localDataClient.entities.Pieza.list(),
+        localDataClient.entities.Plan.list(),
+        localDataClient.entities.Bloque.list(),
+        localDataClient.entities.Asignacion.list(),
+        localDataClient.entities.RegistroSesion.list('', { includeBlocks: false }),
+        localDataClient.entities.RegistroBloque.list(),
+        localDataClient.entities.FeedbackSemanal.list(),
+      ]);
+
+      const data = { users, piezas, planes, bloques, asignaciones, registrosSesion, registrosBloques, feedbacks };
 
       if (!data) {
         addLog('❌ No se pudieron cargar los datos', 'error');
@@ -2003,19 +2004,19 @@ export default function TestSeedPage({ embedded = false }) {
   };
 
   // Derived state for KPIs
-  const countPiezas = stats?.piezas.length || 0;
-  const countPlanes = stats?.planes.length || 0;
-  const countBloques = stats?.bloques.length || 0;
-  const countAsignaciones = stats?.asignaciones.length || 0;
-  const countFeedbacks = stats?.feedbacks.length || 0;
-  const countRegistrosSesion = stats?.registrosSesion.length || 0;
-  const countRegistrosBloques = stats?.registrosBloques.length || 0;
+  const countPiezas = stats?.piezas || 0;
+  const countPlanes = stats?.planes || 0;
+  const countBloques = stats?.bloques || 0;
+  const countAsignaciones = stats?.asignaciones || 0;
+  const countFeedbacks = stats?.feedbacks || 0;
+  const countRegistrosSesion = stats?.registrosSesion || 0;
+  const countRegistrosBloques = stats?.registrosBloques || 0;
 
   // Usuarios por rol
-  const countUsuarios = stats?.users.length || 0;
-  const countAdmin = stats?.users.filter(u => u.rolPersonalizado === 'ADMIN').length || 0;
-  const countProf = stats?.users.filter(u => u.rolPersonalizado === 'PROF').length || 0;
-  const countEstu = stats?.users.filter(u => u.rolPersonalizado === 'ESTU').length || 0;
+  const countUsuarios = stats?.usersCount || 0;
+  const countAdmin = stats?.usersAdmin || 0;
+  const countProf = stats?.usersProf || 0;
+  const countEstu = stats?.usersEstu || 0;
 
   // ======================== RENDER ========================
   if (effectiveUser?.rolPersonalizado !== 'ADMIN') {

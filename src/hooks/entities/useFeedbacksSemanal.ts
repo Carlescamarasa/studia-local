@@ -1,17 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
-import { remoteDataAPI } from '@/api/remoteDataAPI';
+import { remoteDataAPI } from '../../api/remote/api';
 
-export default function useFeedbacksSemanal() {
-    const { data, isLoading, error } = useQuery({
+/**
+ * Hook para obtener los feedbacks semanales.
+ * 
+ * Centraliza el acceso usando React Query para caching y estado.
+ * Usa remoteDataAPI.feedbacksSemanal.list() bajo el capó.
+ */
+export function useFeedbacksSemanal() {
+    return useQuery({
         queryKey: ['feedbacksSemanal'],
         queryFn: () => remoteDataAPI.feedbacksSemanal.list(),
-        staleTime: 5 * 60 * 1000,
-        gcTime: 10 * 60 * 1000,
+        staleTime: 5 * 60 * 1000, // 5 min
+        gcTime: 10 * 60 * 1000,   // 10 min
     });
-
-    return {
-        data: data || [],
-        isLoading,
-        error,
-    };
 }

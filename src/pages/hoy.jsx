@@ -1177,15 +1177,13 @@ function HoyPageContent() {
       const nuevoId = nuevoRegistro.id;
       setRegistroSesionId(nuevoId);
 
-      // 2. Guardar todos los bloques pendientes vinculados a esta sesión
-      const promesasBloques = bloquesPendientesRef.current.map(bloque => {
-        return localDataClient.entities.RegistroBloque.create({
-          ...bloque,
-          registroSesionId: nuevoId
-        });
-      });
+      // 2. Guardar todos los bloques pendientes vinculados a esta sesión en una sola llamada (bulk)
+      const bloquesToCreate = bloquesPendientesRef.current.map(bloque => ({
+        ...bloque,
+        registroSesionId: nuevoId
+      }));
 
-      await Promise.all(promesasBloques);
+      await localDataClient.entities.RegistroBloque.bulkCreate(bloquesToCreate);
 
       // --- BACKPACK INTEGRATION ---
       try {

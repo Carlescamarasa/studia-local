@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 export function useEvaluaciones(alumnoId?: string) {
     const queryClient = useQueryClient();
 
-    // Query: Obtener evaluaciones del alumno
+    // Query: Obtener evaluaciones del alumno (usando el queryKey estandarizado)
     const evaluacionesQuery = useQuery({
         queryKey: ['evaluacionesTecnicas', alumnoId],
         queryFn: async () => {
@@ -20,6 +20,7 @@ export function useEvaluaciones(alumnoId?: string) {
         },
         enabled: !!alumnoId,
         staleTime: 1000 * 60 * 5, // 5 minutos de caché
+        gcTime: 1000 * 60 * 10,   // 10 minutos
         refetchOnWindowFocus: false,
     });
 
@@ -29,8 +30,8 @@ export function useEvaluaciones(alumnoId?: string) {
             return localDataClient.entities.EvaluacionTecnica.create(data);
         },
         onSuccess: (newEvaluacion) => {
-            // Invalidar query del alumno específico y las estadísticas relacionadas
-            queryClient.invalidateQueries({ queryKey: ['evaluaciones', newEvaluacion.alumnoId] });
+            // Invalidar query global y del alumno específico
+            queryClient.invalidateQueries({ queryKey: ['evaluacionesTecnicas'] });
             queryClient.invalidateQueries({ queryKey: ['qualitative-xp', newEvaluacion.alumnoId] });
             queryClient.invalidateQueries({ queryKey: ['total-xp-v2', newEvaluacion.alumnoId] });
             toast.success('Evaluación creada correctamente');
@@ -47,7 +48,7 @@ export function useEvaluaciones(alumnoId?: string) {
             return localDataClient.entities.EvaluacionTecnica.update(id, data);
         },
         onSuccess: (updatedEvaluacion) => {
-            queryClient.invalidateQueries({ queryKey: ['evaluaciones', updatedEvaluacion.alumnoId] });
+            queryClient.invalidateQueries({ queryKey: ['evaluacionesTecnicas'] });
             queryClient.invalidateQueries({ queryKey: ['qualitative-xp', updatedEvaluacion.alumnoId] });
             queryClient.invalidateQueries({ queryKey: ['total-xp-v2', updatedEvaluacion.alumnoId] });
             toast.success('Evaluación actualizada correctamente');
@@ -61,18 +62,16 @@ export function useEvaluaciones(alumnoId?: string) {
     // Mutation: Eliminar evaluación
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            // Necesitamos el alumnoId para invalidar la caché, así que primero obtenemos la evaluación o asumimos que el componente lo sabe
-            // Como deleteItem solo devuelve success, invalidaremos usando el alumnoId del contexto si está disponible
             return localDataClient.entities.EvaluacionTecnica.delete(id);
         },
         onSuccess: () => {
+            // Invalidar todo el cache de evaluaciones técnicas ya que no tenemos el alumnoId aquí fácilmente
+            // pero el hook useEvaluacionesTecnicas se mantendrá actualizado
+            queryClient.invalidateQueries({ queryKey: ['evaluacionesTecnicas'] });
             if (alumnoId) {
-                queryClient.invalidateQueries({ queryKey: ['evaluaciones', alumnoId] });
                 queryClient.invalidateQueries({ queryKey: ['qualitative-xp', alumnoId] });
                 queryClient.invalidateQueries({ queryKey: ['total-xp-v2', alumnoId] });
             } else {
-                // Si no tenemos alumnoId en el contexto, invalidamos todas las evaluaciones (menos eficiente pero seguro)
-                queryClient.invalidateQueries({ queryKey: ['evaluaciones'] });
                 queryClient.invalidateQueries({ queryKey: ['qualitative-xp'] });
                 queryClient.invalidateQueries({ queryKey: ['total-xp-v2'] });
             }
@@ -102,3 +101,4 @@ export function useEvaluaciones(alumnoId?: string) {
         isDeleting: deleteMutation.isPending,
     };
 }
+

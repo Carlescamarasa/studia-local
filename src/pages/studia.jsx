@@ -593,14 +593,13 @@ function StudiaPageContent() {
             const nuevoId = nuevoRegistro.id;
             setRegistroSesionId(nuevoId);
 
-            const promesasBloques = bloquesPendientesRef.current.map(bloque => {
-                return localDataClient.entities.RegistroBloque.create({
-                    ...bloque,
-                    registroSesionId: nuevoId
-                });
-            });
+            // 2. Guardar todos los bloques pendientes vinculados a esta sesión en una sola llamada (bulk)
+            const bloquesToCreate = bloquesPendientesRef.current.map(bloque => ({
+                ...bloque,
+                registroSesionId: nuevoId
+            }));
 
-            await Promise.all(promesasBloques);
+            await localDataClient.entities.RegistroBloque.bulkCreate(bloquesToCreate);
 
             try {
                 await updateBackpackFromSession({

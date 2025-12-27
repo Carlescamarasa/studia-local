@@ -28,7 +28,7 @@ import MediaLinksInput from "@/components/common/MediaLinksInput";
 import { normalizeMediaLinks } from "@/components/utils/media";
 import { cn } from "@/lib/utils";
 import { localDataClient } from '@/api/localDataClient';
-import useFeedbacksSemanal from "@/hooks/entities/useFeedbacksSemanal";
+import { useFeedbacksSemanal } from "@/hooks/entities/useFeedbacksSemanal";
 import { useUsers } from '@/hooks/entities/useUsers';
 import { computeKeyCriteriaStatus, canPromote, promoteLevel } from '@/utils/levelLogic';
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";

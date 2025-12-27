@@ -23,7 +23,7 @@ import { createPageUrl } from "@/utils";
 import UserActionsMenu from "@/components/common/UserActionsMenu";
 import SessionContentView from "@/components/study/SessionContentView";
 import { calcularTiempoSesion } from "@/components/study/sessionSequence";
-import useFeedbacksSemanal from "@/hooks/entities/useFeedbacksSemanal";
+import { useFeedbacksSemanal } from "@/hooks/entities/useFeedbacksSemanal";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
 import MediaPreviewModal from "@/components/common/MediaPreviewModal";
 import MediaViewer from "@/components/common/MediaViewer";

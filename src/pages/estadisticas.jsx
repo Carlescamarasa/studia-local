@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUsers } from "@/hooks/entities/useUsers";
 import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
 import { useRegistrosSesion } from "@/hooks/entities/useRegistrosSesion";
+import { useEvaluacionesTecnicas } from "@/hooks/entities/useEvaluacionesTecnicas";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { Button } from "@/components/ds/Button";
@@ -54,7 +55,7 @@ import ComparativaEstudiantes from "@/components/estadisticas/ComparativaEstudia
 import { useEstadisticas, safeNumber } from "@/components/estadisticas/hooks/useEstadisticas";
 import { formatDuracionHM, formatLocalDate, parseLocalDate, startOfMonday } from "@/components/estadisticas/utils";
 import { shouldIgnoreHotkey } from "@/utils/hotkeys";
-import useFeedbacksSemanal from "@/hooks/entities/useFeedbacksSemanal";
+import { useFeedbacksSemanal } from "@/hooks/entities/useFeedbacksSemanal";
 
 function EstadisticasPageContent() {
   const navigate = useNavigate();
@@ -178,13 +179,7 @@ function EstadisticasPageContent() {
   const { data: feedbacksSemanal = [] } = useFeedbacksSemanal();
 
   // Evaluaciones técnicas
-  const { data: evaluacionesTecnicas = [] } = useQuery({
-    queryKey: ['evaluacionesTecnicas'],
-    queryFn: async () => {
-      return await localDataClient.entities.EvaluacionTecnica.list();
-    },
-    staleTime: 2 * 60 * 1000, // 2 min
-  });
+  const { data: evaluacionesTecnicas = [] } = useEvaluacionesTecnicas();
 
   const estudiantes = usuarios.filter(u => u.rolPersonalizado === 'ESTU');
   const profesores = usuarios.filter(u => u.rolPersonalizado === 'PROF');

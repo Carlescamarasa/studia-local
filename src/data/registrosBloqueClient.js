@@ -9,6 +9,9 @@ export const RegistrosBloqueAPI = {
   createRegistroBloque(data) {
     return createItem(ENTITY_KEY, data);
   },
+  bulkCreateRegistrosBloque(items) {
+    return Promise.all(items.map(item => createItem(ENTITY_KEY, item)));
+  },
   updateRegistroBloque(id, updates) {
     return updateItem(ENTITY_KEY, id, updates);
   },

@@ -152,11 +152,11 @@ function createEntityAPI(entityName, dataKey, entityApi) {
   const apiKey = entityToAPIKey[entityName];
 
   return {
-    list: async (sort = '') => {
+    list: async (sort = '', options = {}) => {
       const api = getDataAPI();
       if (api && apiKey) {
         // Modo remote: usar API remota
-        return await api[apiKey].list(sort);
+        return await api[apiKey].list(sort, options);
       }
 
       // Modo local: usar código existente
@@ -309,11 +309,26 @@ function createEntityAPI(entityName, dataKey, entityApi) {
         return await api[apiKey].bulkCreate(items);
       }
 
-      // Modo local o si no hay bulkCreate: crear de forma secuencial
+      // Modo local: usar bulk API específica si existe (ej: para RegistroBloque)
+      const apiBulkCreate =
+        entityName === 'RegistroBloque' ? RegistrosBloqueAPI.bulkCreateRegistrosBloque :
+          null;
+
+      if (apiBulkCreate) {
+        const newItems = await apiBulkCreate(items);
+        if (!Array.isArray(localDataRef[dataKey])) {
+          localDataRef[dataKey] = [];
+        }
+        localDataRef[dataKey].push(...newItems);
+        return newItems;
+      }
+
+      // Fallback: creación secuencial
       const created = [];
+      const currentAPI = createEntityAPI(entityName, dataKey, entityApi);
       for (const item of items) {
         // eslint-disable-next-line no-await-in-loop
-        const newItem = await this.create(item);
+        const newItem = await currentAPI.create(item);
         created.push(newItem);
       }
       return created;
@@ -742,6 +757,29 @@ export const localDataClient = {
       evaluacionesTecnicas: evalFiltradas,
       feedbacksSemanal: feedbacksFiltrados,
       registrosSesion: sesionesFiltrados
+    };
+  },
+
+  getSeedStats: async () => {
+    const api = getDataAPI();
+    if (api && api.getSeedStats) {
+      return await api.getSeedStats();
+    }
+
+    // Fallback Local
+    const usuarios = localDataRef.usuarios || [];
+    return {
+      usersCount: usuarios.length,
+      usersAdmin: usuarios.filter(u => u.rolPersonalizado === 'ADMIN').length,
+      usersProf: usuarios.filter(u => u.rolPersonalizado === 'PROF').length,
+      usersEstu: usuarios.filter(u => u.rolPersonalizado === 'ESTU').length,
+      piezas: (localDataRef.piezas || []).length,
+      planes: (localDataRef.planes || []).length,
+      bloques: (localDataRef.bloques || []).length,
+      asignaciones: (localDataRef.asignaciones || []).length,
+      registrosSesion: (localDataRef.registrosSesion || []).length,
+      registrosBloques: (localDataRef.registrosBloque || []).length,
+      feedbacks: (localDataRef.feedbacksSemanal || []).length,
     };
   }
 };

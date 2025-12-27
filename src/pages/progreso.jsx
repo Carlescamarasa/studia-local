@@ -102,6 +102,8 @@ import { toStudia } from "@/lib/routes";
 import { format, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
 
+import { useFeedbacksSemanal } from "@/hooks/entities/useFeedbacksSemanal";
+
 // Valid tabs for normalization
 const VALID_TABS = ['resumen', 'habilidades', 'estadisticas', 'mochila', 'feedback', 'comparar'];
 
@@ -231,13 +233,16 @@ function ProgresoPageContent() {
     const {
         xpTotals = [],
         evaluacionesTecnicas = [],
-        feedbacksSemanal = [],
         registrosSesion: registros = []
     } = progressSummary || {};
 
+    const { data: feedbacksSemanal = [], refetch: refetchFeedbacksHook } = useFeedbacksSemanal();
 
-
-    const refetchFeedbacks = refetchSummary;
+    // Maintain compatibility with existing refetch calls
+    const refetchFeedbacks = () => {
+        refetchSummary();
+        refetchFeedbacksHook();
+    };
 
     const registrosSesionValidos = useMemo(
         () => registros.filter(r => r.calificacion != null),
