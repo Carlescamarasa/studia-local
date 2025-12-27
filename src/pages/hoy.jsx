@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { updateBackpackFromSession } from '@/services/backpackService';
+import { updateBackpackFromSession } from '@/shared/services/backpackService';
 import { localDataClient } from "@/api/localDataClient";
 import { createRemoteDataAPI } from "@/api/remoteDataAPI";
 import { useAsignaciones } from "@/hooks/entities/useAsignaciones";

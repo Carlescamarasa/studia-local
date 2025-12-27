@@ -5,7 +5,7 @@
  * Repaso mode: Random variation selection based on student level
  */
 
-import type { Variation } from '@/types/domain';
+import type { Variation } from '@/shared/types/domain';
 
 /**
  * Filter variations eligible for a student's level

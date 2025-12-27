@@ -29,7 +29,7 @@ import {
     DialogDescription
 } from '../ui/dialog';
 import { Slider } from '../ui/slider';
-import { computeEvaluationXP, addXP } from '../../services/xpService';
+import { computeEvaluationXP, addXP } from '@/shared/services/xpService';
 import { QUERY_KEYS } from '../../lib/queryKeys';
 import { useUsers } from '../../hooks/entities/useUsers';
 import { useMemo } from 'react';

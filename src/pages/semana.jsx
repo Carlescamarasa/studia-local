@@ -3,7 +3,7 @@ import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUsers } from "@/hooks/entities/useUsers";
 import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
-import { useRegistrosSesion } from "@/hooks/entities/useRegistrosSesion";
+import { useRegistrosSesion } from "@/features/estudio/hooks/useRegistrosSesion";
 import { useEvaluacionesTecnicas } from "@/hooks/entities/useEvaluacionesTecnicas";
 import { useFeedbacksSemanal } from "@/hooks/entities/useFeedbacksSemanal";
 import { Button } from "@/components/ds/Button";

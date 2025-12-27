@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api';
 import { QUERY_KEYS } from '@/lib/queryKeys';
-import type { LevelConfig } from '@/types/domain';
+import type { LevelConfig } from '@/shared/types/domain';
 
 export const useLevelsConfig = () => {
     return useQuery<LevelConfig[]>({

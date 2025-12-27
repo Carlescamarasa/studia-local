@@ -1,7 +1,7 @@
 import { supabase, withAuthErrorHandling } from './client';
 import { snakeToCamel, camelToSnake, toSnakeCase } from './utils';
 import { generateId } from './id';
-import type { Pieza } from '@/types/domain';
+import type { Pieza } from '@/shared/types/domain';
 
 /**
  * Obtiene todas las piezas (para migración de multimedia)

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { localDataClient } from '../api/localDataClient';
-import { EvaluacionTecnica, CreateEvaluacionTecnicaInput, UpdateEvaluacionTecnicaInput } from '../types/domain';
+import { EvaluacionTecnica, CreateEvaluacionTecnicaInput, UpdateEvaluacionTecnicaInput } from '@/shared/types/domain';
 import { toast } from 'sonner';
 import { QUERY_KEYS } from '../lib/queryKeys';
 

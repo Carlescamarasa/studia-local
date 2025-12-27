@@ -3,7 +3,7 @@
  */
 
 import { supabase } from '@/lib/supabaseClient';
-import type { SupportTicket, SupportMensaje, CreateSupportTicketInput, CreateSupportMensajeInput, UpdateSupportTicketInput } from '@/types/domain';
+import type { SupportTicket, SupportMensaje, CreateSupportTicketInput, CreateSupportMensajeInput, UpdateSupportTicketInput } from '@/shared/types/domain';
 
 /**
  * Obtener todos los tickets de un alumno (incluye nombres de perfiles)
