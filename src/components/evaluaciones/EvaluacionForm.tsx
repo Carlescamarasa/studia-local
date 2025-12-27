@@ -1,36 +1,37 @@
-import { componentStyles } from '@/design/componentStyles';
 import React, { useState, useEffect } from 'react';
-import { useEvaluaciones } from '@/hooks/useEvaluaciones';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { useEvaluaciones } from '../../hooks/useEvaluaciones';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
 import { Loader2, Trophy, AlertCircle, CheckCircle2, ArrowRight, X, HelpCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { localDataClient } from '@/api/localDataClient';
-import { computeKeyCriteriaStatus, canPromote, promoteLevel, CriteriaStatusResult, PromotionCheckResult } from '@/utils/levelLogic';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { localDataClient } from '../../api/localDataClient';
+import { computeKeyCriteriaStatus, canPromote, promoteLevel, CriteriaStatusResult, PromotionCheckResult } from '../../utils/levelLogic';
+import { Checkbox } from '../ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { toast } from 'sonner';
-import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
+import { useEffectiveUser } from "../../providers/EffectiveUserProvider";
 import CurrentXPInline from './CurrentXPInline';
-import { Separator } from '@/components/ui/separator';
-import Badge from '@/components/ds/Badge';
+import { Separator } from '../ui/separator';
+import Badge from '../ds/Badge';
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from '../ui/tooltip';
 import {
     DialogHeader,
     DialogTitle,
     DialogFooter,
     DialogDescription
-} from "@/components/ui/dialog";
-import { Slider } from "@/components/ui/slider";
-import { computeEvaluationXP } from '@/services/xpService';
+} from '../ui/dialog';
+import { Slider } from '../ui/slider';
+import { computeEvaluationXP, addXP } from '../../services/xpService';
+import { QUERY_KEYS } from '../../lib/queryKeys';
+
 
 interface EvaluacionFormProps {
     alumnoId: string;
@@ -139,7 +140,7 @@ export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProp
                     criterionId: criterionId,
                     status: newStatus,
                     assessedAt: new Date().toISOString(),
-                    assessedBy: effectiveUser?.id
+                    assessedBy: effectiveUser?.effectiveUserId
                 });
             }
 
@@ -156,7 +157,7 @@ export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProp
         if (!confirm(`¿Confirmar promoción a Nivel ${currentLevel + 1}?`)) return;
 
         try {
-            await promoteLevel(alumnoId, currentLevel + 1, 'Promoción por evaluación', effectiveUser?.id || 'system');
+            await promoteLevel(alumnoId, currentLevel + 1, 'Promoción por evaluación', effectiveUser?.effectiveUserId || 'system');
             toast.success(`¡Alumno promovido a Nivel ${currentLevel + 1}!`);
             loadLevelData();
         } catch (error) {
@@ -170,7 +171,7 @@ export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProp
 
         const nuevaEvaluacion = {
             alumnoId,
-            profesorId: effectiveUser?.id || 'unknown',
+            profesorId: effectiveUser?.effectiveUserId || 'unknown',
             fecha: new Date(fecha).toISOString(),
             habilidades: {
                 // Scale down to 0-10 for DB storage
@@ -187,8 +188,6 @@ export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProp
 
             // Apply XP Deltas
             if (deltaMotricidad || deltaArticulacion || deltaFlexibilidad) {
-                const { addXP } = await import('@/services/xpService');
-
                 if (deltaMotricidad) await addXP(alumnoId, 'motricidad', parseInt(deltaMotricidad), 'PROF');
                 if (deltaArticulacion) await addXP(alumnoId, 'articulacion', parseInt(deltaArticulacion), 'PROF');
                 if (deltaFlexibilidad) await addXP(alumnoId, 'flexibilidad', parseInt(deltaFlexibilidad), 'PROF');
@@ -198,9 +197,8 @@ export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProp
 
             const queryClient = (window as any).__queryClient;
             if (queryClient) {
-                queryClient.invalidateQueries({ queryKey: ['habilidades-stats', alumnoId] });
-                queryClient.invalidateQueries({ queryKey: ['total-xp', alumnoId] });
-                queryClient.invalidateQueries({ queryKey: ['recent-xp', alumnoId] });
+                // Use centralized invalidation helper
+                QUERY_KEYS.invalidateStudentSkills(queryClient, alumnoId);
             }
             if (onClose) onClose();
         } catch (error) {
@@ -215,7 +213,9 @@ export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProp
             <DialogHeader className="px-6 py-4 border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] shrink-0 flex flex-row items-center justify-between pr-12">
                 <div className="flex items-center justify-between">
                     <div className="flex flex-col gap-0.5">
+                        {/* @ts-ignore */}
                         <DialogTitle className="text-[var(--color-text-primary)]">Nueva Evaluación Técnica</DialogTitle>
+                        {/* @ts-ignore */}
                         <DialogDescription className="text-[var(--color-text-secondary)]">
                             {format(new Date(fecha), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
                         </DialogDescription>
@@ -224,7 +224,7 @@ export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProp
                         <Input
                             type="date"
                             value={fecha}
-                            onChange={(e) => setFecha(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFecha(e.target.value)}
                             className="w-auto h-8 text-xs bg-[var(--color-surface-default)] text-[var(--color-text-primary)] border-[var(--color-border-default)]"
                         />
                     </div>

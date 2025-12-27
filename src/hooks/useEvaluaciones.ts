@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { localDataClient } from '@/api/localDataClient';
-import { EvaluacionTecnica, CreateEvaluacionTecnicaInput, UpdateEvaluacionTecnicaInput } from '@/types/domain';
+import { localDataClient } from '../api/localDataClient';
+import { EvaluacionTecnica, CreateEvaluacionTecnicaInput, UpdateEvaluacionTecnicaInput } from '../types/domain';
 import { toast } from 'sonner';
+import { QUERY_KEYS } from '../lib/queryKeys';
 
 /**
  * Hook para gestionar las evaluaciones técnicas de los estudiantes.
@@ -13,7 +14,7 @@ export function useEvaluaciones(alumnoId?: string) {
 
     // Query: Obtener evaluaciones del alumno (usando el queryKey estandarizado)
     const evaluacionesQuery = useQuery({
-        queryKey: ['evaluacionesTecnicas', alumnoId],
+        queryKey: QUERY_KEYS.EVALUACIONES_TECNICAS_STUDENT(alumnoId || ''),
         queryFn: async () => {
             if (!alumnoId) return [];
             return localDataClient.entities.EvaluacionTecnica.filter({ alumnoId });
@@ -30,10 +31,8 @@ export function useEvaluaciones(alumnoId?: string) {
             return localDataClient.entities.EvaluacionTecnica.create(data);
         },
         onSuccess: (newEvaluacion) => {
-            // Invalidar query global y del alumno específico
-            queryClient.invalidateQueries({ queryKey: ['evaluacionesTecnicas'] });
-            queryClient.invalidateQueries({ queryKey: ['qualitative-xp', newEvaluacion.alumnoId] });
-            queryClient.invalidateQueries({ queryKey: ['total-xp-v2', newEvaluacion.alumnoId] });
+            // Invalidar query global y del alumno específico usando helper centralizado
+            QUERY_KEYS.invalidateStudentSkills(queryClient, newEvaluacion.alumnoId);
             toast.success('Evaluación creada correctamente');
         },
         onError: (error: any) => {
@@ -48,9 +47,7 @@ export function useEvaluaciones(alumnoId?: string) {
             return localDataClient.entities.EvaluacionTecnica.update(id, data);
         },
         onSuccess: (updatedEvaluacion) => {
-            queryClient.invalidateQueries({ queryKey: ['evaluacionesTecnicas'] });
-            queryClient.invalidateQueries({ queryKey: ['qualitative-xp', updatedEvaluacion.alumnoId] });
-            queryClient.invalidateQueries({ queryKey: ['total-xp-v2', updatedEvaluacion.alumnoId] });
+            QUERY_KEYS.invalidateStudentSkills(queryClient, updatedEvaluacion.alumnoId);
             toast.success('Evaluación actualizada correctamente');
         },
         onError: (error: any) => {
@@ -65,15 +62,10 @@ export function useEvaluaciones(alumnoId?: string) {
             return localDataClient.entities.EvaluacionTecnica.delete(id);
         },
         onSuccess: () => {
-            // Invalidar todo el cache de evaluaciones técnicas ya que no tenemos el alumnoId aquí fácilmente
-            // pero el hook useEvaluacionesTecnicas se mantendrá actualizado
-            queryClient.invalidateQueries({ queryKey: ['evaluacionesTecnicas'] });
+            // Invalidar cache de evaluaciones técnicas
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.EVALUACIONES_TECNICAS });
             if (alumnoId) {
-                queryClient.invalidateQueries({ queryKey: ['qualitative-xp', alumnoId] });
-                queryClient.invalidateQueries({ queryKey: ['total-xp-v2', alumnoId] });
-            } else {
-                queryClient.invalidateQueries({ queryKey: ['qualitative-xp'] });
-                queryClient.invalidateQueries({ queryKey: ['total-xp-v2'] });
+                QUERY_KEYS.invalidateStudentSkills(queryClient, alumnoId);
             }
             toast.success('Evaluación eliminada correctamente');
         },
