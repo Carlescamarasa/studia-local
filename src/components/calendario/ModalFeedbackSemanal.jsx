@@ -28,6 +28,7 @@ import MediaLinksInput from "@/components/common/MediaLinksInput";
 import { normalizeMediaLinks } from "@/components/utils/media";
 import { cn } from "@/lib/utils";
 import { localDataClient } from '@/api/localDataClient';
+import useFeedbacksSemanal from "@/hooks/entities/useFeedbacksSemanal";
 import { useUsers } from '@/hooks/entities/useUsers';
 import { computeKeyCriteriaStatus, canPromote, promoteLevel } from '@/utils/levelLogic';
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
@@ -186,6 +187,8 @@ export default function ModalFeedbackSemanal({
     };
 
     // LOAD DATA
+    const { data: allFeedbacks = [], isLoading: isLoadingFeedbacks } = useFeedbacksSemanal();
+
     useEffect(() => {
         if (open) {
             loadLevelData(); // Always reload level data on open
@@ -194,40 +197,26 @@ export default function ModalFeedbackSemanal({
                 // If feedback prop is provided (edit mode), use it directly
                 hydrateFormFromFeedback(feedback);
             } else if (studentId && weekStartISO) {
-                // If no feedback prop but we have studentId + week, try to fetch existing
-                loadExistingFeedback();
+                // If no feedback prop but we have studentId + week, try to find existing in cache
+                if (!isLoadingFeedbacks) {
+                    const existing = allFeedbacks.find(f =>
+                        (f.alumnoId === studentId || f.alumno_id === studentId || f.student_id === studentId) &&
+                        f.semanaInicioISO === weekStartISO
+                    );
+
+                    if (existing) {
+                        hydrateFormFromFeedback(existing);
+                    } else {
+                        // Truly new
+                        resetForm();
+                    }
+                }
             } else {
                 // Reset form for truly new feedback
                 resetForm();
             }
         }
-    }, [open, feedback, studentId, weekStartISO]);
-
-    // Fetch existing feedback for this student + week (if any)
-    const loadExistingFeedback = async () => {
-        if (!studentId || !weekStartISO) {
-            console.warn('[ModalFeedbackSemanal] loadExistingFeedback: Missing studentId or weekStartISO', { studentId, weekStartISO });
-            return;
-        }
-        try {
-            console.log('[ModalFeedbackSemanal] loadExistingFeedback: Searching...', { studentId, weekStartISO });
-            const allFeedbacks = await localDataClient.entities.FeedbackSemanal.list();
-            console.log('[ModalFeedbackSemanal] loadExistingFeedback: All feedbacks', allFeedbacks);
-            const existing = allFeedbacks.find(f =>
-                f.alumnoId === studentId &&
-                f.semanaInicioISO === weekStartISO
-            );
-            console.log('[ModalFeedbackSemanal] loadExistingFeedback: Matched', existing);
-            if (existing) {
-                hydrateFormFromFeedback(existing);
-            } else {
-                resetForm();
-            }
-        } catch (error) {
-            console.error('Error loading existing feedback:', error);
-            resetForm();
-        }
-    };
+    }, [open, feedback, studentId, weekStartISO, allFeedbacks, isLoadingFeedbacks]);
 
     const resetForm = () => {
         setNotaProfesor("");

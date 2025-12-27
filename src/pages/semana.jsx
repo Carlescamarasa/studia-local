@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUsers } from "@/hooks/entities/useUsers";
 import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
 import { useRegistrosSesion } from "@/hooks/entities/useRegistrosSesion";
+import useFeedbacksSemanal from "@/hooks/entities/useFeedbacksSemanal";
 import { Button } from "@/components/ds/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ds";
 import { Badge } from "@/components/ds";
@@ -54,11 +55,8 @@ function SemanaPageContent() {
 
   const { data: asignaciones = [] } = useAsignaciones();
 
-  const { data: feedbacksSemanal = [] } = useQuery({
-    queryKey: ['feedbacksSemanal'],
-    queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_at'),
-    staleTime: 5 * 60 * 1000,
-  });
+  // Feedbacks semanales via hook
+  const { data: feedbacksSemanal = [] } = useFeedbacksSemanal();
 
   const { data: usuarios = [] } = useUsers();
 

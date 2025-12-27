@@ -54,6 +54,7 @@ import ComparativaEstudiantes from "@/components/estadisticas/ComparativaEstudia
 import { useEstadisticas, safeNumber } from "@/components/estadisticas/hooks/useEstadisticas";
 import { formatDuracionHM, formatLocalDate, parseLocalDate, startOfMonday } from "@/components/estadisticas/utils";
 import { shouldIgnoreHotkey } from "@/utils/hotkeys";
+import useFeedbacksSemanal from "@/hooks/entities/useFeedbacksSemanal";
 
 function EstadisticasPageContent() {
   const navigate = useNavigate();
@@ -174,13 +175,7 @@ function EstadisticasPageContent() {
   // Usar hook centralizado para la lista general de asignaciones
   const { data: asignaciones = [] } = useAsignaciones();
 
-  const { data: feedbacksSemanal = [] } = useQuery({
-    queryKey: ['feedbacksSemanal'],
-    queryFn: async () => {
-      return await localDataClient.entities.FeedbackSemanal.list('-created_at');
-    },
-    staleTime: 2 * 60 * 1000, // 2 min
-  });
+  const { data: feedbacksSemanal = [] } = useFeedbacksSemanal();
 
   // Evaluaciones técnicas
   const { data: evaluacionesTecnicas = [] } = useQuery({
