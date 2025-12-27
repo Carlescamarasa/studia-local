@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { updateBackpackFromSession } from '@/shared/services/backpackService';
 import { localDataClient } from "@/api/localDataClient";
 import { createRemoteDataAPI } from "@/api/remoteDataAPI";
 import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
@@ -8,26 +9,57 @@ import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 const remoteDataAPI = createRemoteDataAPI();
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
-import { Button } from "@/components/ds/Button";
+import { Button } from "@/components/ds/Button"; // Updated import path
 import { Badge } from "@/components/ds";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ds";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  ChevronLeft,
   ChevronRight,
+  Pause,
+  Play,
+  RotateCcw,
+  SkipForward,
+  Maximize2,
+  BookOpen,
+  CheckCircle,
+  Clock,
+  Music,
+  MoreVertical,
+  Flag,
+  ChevronsRight,
+  ChevronUp,
   ChevronDown,
+  Target,
+  X,
+  Piano,
   PlayCircle,
   User,
   Calendar,
   Layers,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Shuffle,
   AlertTriangle,
-  Backpack,
-  Music,
-  Target
+  List,
+  HelpCircle,
+  Minimize2,
+  XCircle,
+  Shuffle,
+  Menu,
+  ShieldAlert,
+  Save,
+  FileText,
+  Video,
+  ExternalLink,
+  ImageIcon,
+  Backpack
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { cn } from "@/lib/utils";
 import { toStudia } from "@/lib/routes";
 import {
@@ -43,11 +75,20 @@ import {
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import PeriodHeader from "../components/common/PeriodHeader";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "../components/study/sessionSequence";
+import TimelineProgreso from "../features/estudio/components/TimelineProgreso";
+import ModalCancelar from "../features/estudio/components/ModalCancelar";
+import ResumenFinal from "../features/estudio/components/ResumenFinal";
+import Metronomo from "../components/study/Metronomo";
+import PianoPanel from "../components/study/PianoPanel"; // Refactored component
 import SessionContentView from "../components/study/SessionContentView";
+// detectMediaType eliminado, usamos resolveMedia de media.jsx
+
+import ReportErrorButtonInTimer from "../components/common/ReportErrorButtonInTimer";
 import { toast } from "sonner";
 import { useSidebar } from "@/components/ui/SidebarState";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
+import MediaEmbed from "../components/common/MediaEmbed";
 import CustomAudioPlayer from "../components/common/CustomAudioPlayer";
 import { MediaIcon, getMediaLabel } from "../components/common/MediaEmbed";
 import { resolveMedia, MediaKind } from "../components/utils/media";
@@ -103,22 +144,6 @@ function HoyPageContent() {
   const { closeSidebar, abierto, toggleSidebar } = useSidebar();
   const { showHotkeysModal, setShowHotkeysModal } = useHotkeysModal();
 
-  const focoLabels = {
-    GEN: 'General',
-    LIG: 'Ligadura',
-    RIT: 'Ritmo',
-    ART: 'Articulación',
-    'S&A': 'Sonido y Aire'
-  };
-
-  const focoColors = {
-    GEN: componentStyles.status.badgeDefault,
-    LIG: componentStyles.status.badgeInfo,
-    RIT: componentStyles.status.badgeDefault,
-    ART: componentStyles.status.badgeSuccess,
-    'S&A': componentStyles.status.badgeDefault,
-  };
-
   const [semanaActualISO, setSemanaActualISO] = useState(() => {
     return calcularLunesSemanaISO(new Date());
   });
@@ -140,6 +165,166 @@ function HoyPageContent() {
   const [asignacionSeleccionadaId, setAsignacionSeleccionadaId] = useState(null); // Para múltiples asignaciones
   const [sesionSeleccionada, setSesionSeleccionada] = useState(0);
   const [sesionesConResumenExpandido, setSesionesConResumenExpandido] = useState(new Set());
+  const [sesionActiva, setSesionActiva] = useState(null);
+
+  const [indiceActual, setIndiceActual] = useState(0);
+  const [tiempoActual, setTiempoActual] = useState(0);
+  const [cronometroActivo, setCronometroActiva] = useState(false);
+  // Layout and UI state
+  const [timerCollapsed, setTimerCollapsed] = useState(false); // Collapsed by default? No, usually open.
+  const [footerHeight, setFooterHeight] = useState(80); // Default height
+  const footerRef = useRef(null);
+
+  // Desktop detection for sidebar-aware positioning
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Measure footer height for PianoPanel positioning
+  // Helper to get REAL bottom offset
+  const measureFooterOffset = () => {
+    if (!footerRef.current) return 0;
+    const viewportH = window.visualViewport?.height ?? window.innerHeight;
+    const rect = footerRef.current.getBoundingClientRect();
+    const offset = Math.max(0, Math.round(viewportH - rect.top));
+    return offset;
+  };
+
+  useEffect(() => {
+    if (!footerRef.current) return;
+
+    const updateFooterHeight = () => {
+      const h = measureFooterOffset();
+      setFooterHeight(h);
+    };
+
+    // Initial measure with robust loop for load stability (Chrome Hotfix)
+    const measureAndLoop = () => {
+      updateFooterHeight();
+      let rafId;
+      const startTime = performance.now();
+      const loop = (time) => {
+        updateFooterHeight();
+        // Poll for 1000ms to ensure initial layout/transitions (e.g. fonts, dynamic content) are caught
+        if (time - startTime < 1000) {
+          rafId = requestAnimationFrame(loop);
+        }
+      };
+      rafId = requestAnimationFrame(loop);
+      return () => cancelAnimationFrame(rafId);
+    };
+
+    const cancelLoop = measureAndLoop();
+
+    // ResizeObserver
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(updateFooterHeight);
+    });
+
+    resizeObserver.observe(footerRef.current);
+
+    // Window resize fallback
+    window.addEventListener('resize', updateFooterHeight);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateFooterHeight);
+    }
+
+    return () => {
+      cancelLoop();
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateFooterHeight);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateFooterHeight);
+      }
+    };
+  }, []);
+
+  // Force re-measure when collapse state changes (Chrome Hotfix)
+  useEffect(() => {
+    if (!footerRef.current) return;
+    const update = () => setFooterHeight(measureFooterOffset());
+    update();
+
+    let rafId;
+    const startTime = performance.now();
+    const loop = (time) => {
+      update();
+      if (time - startTime < 400) {
+        rafId = requestAnimationFrame(loop);
+      }
+    };
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
+  }, [timerCollapsed]);
+
+  // Handler for Piano Toggle
+  const handleTogglePiano = () => {
+    if (!mostrarPiano) {
+      // Opening: Force measure FIRST
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const offset = measureFooterOffset();
+          setFooterHeight(offset);
+          setMostrarPiano(true);
+        });
+      });
+      // Backup check
+      setTimeout(() => {
+        setFooterHeight(measureFooterOffset());
+      }, 80);
+    } else {
+      setMostrarPiano(false);
+    }
+  };
+  const [completados, setCompletados] = useState(new Set());
+  const [omitidos, setOmitidos] = useState(new Set());
+  const [pantallaCompleta, setPantallaCompleta] = useState(false);
+  const [mostrarItinerario, setMostrarItinerario] = useState(false);
+  const [mostrarModalCancelar, setMostrarModalCancelar] = useState(false);
+  const [rondasExpandidasItinerario, setRondasExpandidasItinerario] = useState(new Set());
+  const [cronometroPausadoPorModal, setCronometroPausadoPorModal] = useState(false);
+  const [sesionFinalizada, setSesionFinalizada] = useState(false);
+  const [datosFinal, setDatosFinal] = useState(null);
+  const [mediaFullscreen, setMediaFullscreen] = useState(null);
+  const [mediaModal, setMediaModal] = useState(null); // Para el popup de materiales
+  const [reportModalAbierto, setReportModalAbierto] = useState(false);
+  const [pianoCerradoPorUsuario, setPianoCerradoPorUsuario] = useState(true); // Control del fab del piano
+  const [mostrarPiano, setMostrarPiano] = useState(false); // Modal del piano
+  const [ppmAlcanzado, setPpmAlcanzado] = useState(null);
+
+  // Estado para la posición del timer arrastrable
+  const [timerPosition, setTimerPosition] = useState(() => {
+    const saved = localStorage.getItem('timer-position');
+    if (saved) {
+      try {
+        const { top, left } = JSON.parse(saved);
+        return { top, left };
+      } catch (e) {
+        // Si hay error, usar valores por defecto
+      }
+    }
+    // Valores por defecto: esquina superior derecha
+    return { top: 16, left: null, right: 16 };
+  });
+  const [isDraggingTimer, setIsDraggingTimer] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const timerRef = useRef(null);
+
+  const [registroSesionId, setRegistroSesionId] = useState(null);
+  const [timestampInicio, setTimestampInicio] = useState(null);
+  const [timestampUltimoPausa, setTimestampUltimoPausa] = useState(null);
+  const [tiempoAcumuladoAntesPausa, setTiempoAcumuladoAntesPausa] = useState(0);
+  const heartbeatIntervalRef = useRef(null);
+  const colaOfflineRef = useRef([]);
+  const bloquesPendientesRef = useRef([]); // Almacenar bloques en memoria hasta finalizar
+
+  const sidebarCerradoRef = useRef(false);
 
   // Usar el nuevo provider de impersonación para obtener el usuario efectivo
   const { effectiveUserId, effectiveEmail, isImpersonating } = useEffectiveUser();
@@ -255,15 +440,160 @@ function HoyPageContent() {
     }
   }
 
-  // Navigation function - empezarSesion navigates to /studia
-  const empezarSesion = (sesion, sesionIdxProp) => {
-    const url = toStudia({
-      asignacionId: asignacionActiva?.id,
-      semanaIdx: semanaIdx,
-      sesionIdx: sesionIdxProp,
+  useEffect(() => {
+    if (sesionActiva && !sesionFinalizada && !sidebarCerradoRef.current) {
+      closeSidebar();
+      sidebarCerradoRef.current = true;
+    }
+    if (!sesionActiva) {
+      sidebarCerradoRef.current = false;
+    }
+  }, [sesionActiva, sesionFinalizada, closeSidebar]);
+
+  // Notificar cuando el timer está visible o no
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('timer-state-change', {
+      detail: { visible: !!sesionActiva }
+    }));
+
+    return () => {
+      // Notificar cuando el timer se oculta
+      window.dispatchEvent(new CustomEvent('timer-state-change', {
+        detail: { visible: false }
+      }));
+    };
+  }, [sesionActiva]);
+
+  // useEffect para manejar el arrastre del timer
+  useEffect(() => {
+    if (!isDraggingTimer) return;
+
+    const handleMouseMove = (e) => {
+      const newLeft = e.clientX - dragOffset.x;
+      const newTop = e.clientY - dragOffset.y;
+
+      // Limitar a los bordes de la ventana
+      const maxLeft = window.innerWidth - (timerRef.current?.offsetWidth || 200);
+      const maxTop = window.innerHeight - (timerRef.current?.offsetHeight || 100);
+      const minLeft = 0;
+      const minTop = 0;
+
+      const clampedLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
+      const clampedTop = Math.max(minTop, Math.min(maxTop, newTop));
+
+      const newPosition = { top: clampedTop, left: clampedLeft, right: null };
+      setTimerPosition(newPosition);
+
+      // Guardar en localStorage
+      localStorage.setItem('timer-position', JSON.stringify({ top: clampedTop, left: clampedLeft }));
+    };
+
+    const handleTouchMove = (e) => {
+      const touch = e.touches[0];
+      const newLeft = touch.clientX - dragOffset.x;
+      const newTop = touch.clientY - dragOffset.y;
+
+      // Limitar a los bordes de la ventana
+      const maxLeft = window.innerWidth - (timerRef.current?.offsetWidth || 200);
+      const maxTop = window.innerHeight - (timerRef.current?.offsetHeight || 100);
+      const minLeft = 0;
+      const minTop = 0;
+
+      const clampedLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
+      const clampedTop = Math.max(minTop, Math.min(maxTop, newTop));
+
+      const newPosition = { top: clampedTop, left: clampedLeft, right: null };
+      setTimerPosition(newPosition);
+
+      // Guardar en localStorage
+      localStorage.setItem('timer-position', JSON.stringify({ top: clampedTop, left: clampedLeft }));
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingTimer(false);
+    };
+
+    const handleTouchEnd = () => {
+      setIsDraggingTimer(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isDraggingTimer, dragOffset]);
+
+  // Handlers para arrastrar el timer (usando useCallback para mantener referencias estables)
+  const handleTimerMouseDown = React.useCallback((e) => {
+    if (!timerRef.current) return;
+    const rect = timerRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
     });
-    navigate(url);
-  };
+    setIsDraggingTimer(true);
+    e.preventDefault();
+  }, []);
+
+  const handleTimerTouchStart = React.useCallback((e) => {
+    if (!timerRef.current) return;
+    const touch = e.touches[0];
+    const rect = timerRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top,
+    });
+    setIsDraggingTimer(true);
+    e.preventDefault();
+  }, []);
+
+  useEffect(() => {
+    if (!cronometroActivo || !sesionActiva || sesionFinalizada) {
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+      return;
+    }
+
+    const listaEjecucion = aplanarSesion(sesionActiva);
+    const ejercicioActual = listaEjecucion[indiceActual];
+
+    if (ejercicioActual?.tipo === 'AD') {
+      setCronometroActiva(false);
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const ahora = Date.now();
+      const tiempoDesdeInicio = timestampInicio ? Math.floor((ahora - timestampInicio) / 1000) : 0;
+      const tiempoTotal = tiempoAcumuladoAntesPausa + tiempoDesdeInicio;
+
+      if (tiempoTotal >= 18000) {
+        setTiempoActual(18000);
+        setCronometroActiva(false);
+        toast.error("⏳ Tiempo máximo alcanzado (5h). Sesión guardada.");
+        setSesionFinalizada(true);
+        return;
+      }
+
+      setTiempoActual(tiempoTotal);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [cronometroActivo, sesionActiva, indiceActual, sesionFinalizada, timestampInicio, tiempoAcumuladoAntesPausa]);
+
 
   // Main selection UI - No player code here
   // Navigation to /studia handled by empezarSesion() function
@@ -648,3 +978,4 @@ function HoyPageContent() {
     </div>
   );
 }
+

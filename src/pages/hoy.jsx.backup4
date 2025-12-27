@@ -23,19 +23,14 @@ import {
   Clock,
   Shuffle,
   AlertTriangle,
-  Backpack,
-  Music,
-  Target
+  Backpack
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { toStudia } from "@/lib/routes";
 import {
-  calcularLunesSemanaISO,
   calcularOffsetSemanas,
-  calcularTiempoSesion,
   aplanarSesion,
-  getNombreVisible,
   formatLocalDate,
   parseLocalDate,
   isoWeekNumberLocal
@@ -102,22 +97,6 @@ function HoyPageContent() {
   const navigate = useNavigate();
   const { closeSidebar, abierto, toggleSidebar } = useSidebar();
   const { showHotkeysModal, setShowHotkeysModal } = useHotkeysModal();
-
-  const focoLabels = {
-    GEN: 'General',
-    LIG: 'Ligadura',
-    RIT: 'Ritmo',
-    ART: 'Articulación',
-    'S&A': 'Sonido y Aire'
-  };
-
-  const focoColors = {
-    GEN: componentStyles.status.badgeDefault,
-    LIG: componentStyles.status.badgeInfo,
-    RIT: componentStyles.status.badgeDefault,
-    ART: componentStyles.status.badgeSuccess,
-    'S&A': componentStyles.status.badgeDefault,
-  };
 
   const [semanaActualISO, setSemanaActualISO] = useState(() => {
     return calcularLunesSemanaISO(new Date());
@@ -254,6 +233,161 @@ function HoyPageContent() {
       semanaDelPlan = null;
     }
   }
+
+  useEffect(() => {
+    if (sesionActiva && !sesionFinalizada && !sidebarCerradoRef.current) {
+      closeSidebar();
+      sidebarCerradoRef.current = true;
+    }
+    if (!sesionActiva) {
+      sidebarCerradoRef.current = false;
+    }
+  }, [sesionActiva, sesionFinalizada, closeSidebar]);
+
+  // Notificar cuando el timer está visible o no
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('timer-state-change', {
+      detail: { visible: !!sesionActiva }
+    }));
+
+    return () => {
+      // Notificar cuando el timer se oculta
+      window.dispatchEvent(new CustomEvent('timer-state-change', {
+        detail: { visible: false }
+      }));
+    };
+  }, [sesionActiva]);
+
+  // useEffect para manejar el arrastre del timer
+  useEffect(() => {
+    if (!isDraggingTimer) return;
+
+    const handleMouseMove = (e) => {
+      const newLeft = e.clientX - dragOffset.x;
+      const newTop = e.clientY - dragOffset.y;
+
+      // Limitar a los bordes de la ventana
+      const maxLeft = window.innerWidth - (timerRef.current?.offsetWidth || 200);
+      const maxTop = window.innerHeight - (timerRef.current?.offsetHeight || 100);
+      const minLeft = 0;
+      const minTop = 0;
+
+      const clampedLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
+      const clampedTop = Math.max(minTop, Math.min(maxTop, newTop));
+
+      const newPosition = { top: clampedTop, left: clampedLeft, right: null };
+      setTimerPosition(newPosition);
+
+      // Guardar en localStorage
+      localStorage.setItem('timer-position', JSON.stringify({ top: clampedTop, left: clampedLeft }));
+    };
+
+    const handleTouchMove = (e) => {
+      const touch = e.touches[0];
+      const newLeft = touch.clientX - dragOffset.x;
+      const newTop = touch.clientY - dragOffset.y;
+
+      // Limitar a los bordes de la ventana
+      const maxLeft = window.innerWidth - (timerRef.current?.offsetWidth || 200);
+      const maxTop = window.innerHeight - (timerRef.current?.offsetHeight || 100);
+      const minLeft = 0;
+      const minTop = 0;
+
+      const clampedLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
+      const clampedTop = Math.max(minTop, Math.min(maxTop, newTop));
+
+      const newPosition = { top: clampedTop, left: clampedLeft, right: null };
+      setTimerPosition(newPosition);
+
+      // Guardar en localStorage
+      localStorage.setItem('timer-position', JSON.stringify({ top: clampedTop, left: clampedLeft }));
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingTimer(false);
+    };
+
+    const handleTouchEnd = () => {
+      setIsDraggingTimer(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isDraggingTimer, dragOffset]);
+
+  // Handlers para arrastrar el timer (usando useCallback para mantener referencias estables)
+  const handleTimerMouseDown = React.useCallback((e) => {
+    if (!timerRef.current) return;
+    const rect = timerRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+    setIsDraggingTimer(true);
+    e.preventDefault();
+  }, []);
+
+  const handleTimerTouchStart = React.useCallback((e) => {
+    if (!timerRef.current) return;
+    const touch = e.touches[0];
+    const rect = timerRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top,
+    });
+    setIsDraggingTimer(true);
+    e.preventDefault();
+  }, []);
+
+  useEffect(() => {
+    if (!cronometroActivo || !sesionActiva || sesionFinalizada) {
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+      return;
+    }
+
+    const listaEjecucion = aplanarSesion(sesionActiva);
+    const ejercicioActual = listaEjecucion[indiceActual];
+
+    if (ejercicioActual?.tipo === 'AD') {
+      setCronometroActiva(false);
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const ahora = Date.now();
+      const tiempoDesdeInicio = timestampInicio ? Math.floor((ahora - timestampInicio) / 1000) : 0;
+      const tiempoTotal = tiempoAcumuladoAntesPausa + tiempoDesdeInicio;
+
+      if (tiempoTotal >= 18000) {
+        setTiempoActual(18000);
+        setCronometroActiva(false);
+        toast.error("⏳ Tiempo máximo alcanzado (5h). Sesión guardada.");
+        setSesionFinalizada(true);
+        return;
+      }
+
+      setTiempoActual(tiempoTotal);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [cronometroActivo, sesionActiva, indiceActual, sesionFinalizada, timestampInicio, tiempoAcumuladoAntesPausa]);
+
 
   // Navigation function - empezarSesion navigates to /studia
   const empezarSesion = (sesion, sesionIdxProp) => {
@@ -648,3 +782,4 @@ function HoyPageContent() {
     </div>
   );
 }
+
