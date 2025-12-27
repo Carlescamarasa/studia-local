@@ -13,7 +13,7 @@ export { supabase };
  * Detecta errores 401/403 y dispara un evento personalizado para que AuthProvider pueda reaccionar
  */
 export async function withAuthErrorHandling<T>(
-    promise: any
+    promise: PromiseLike<{ data: T | null; error: any; count?: number | null }>
 ): Promise<{ data: T | null; error: any; count?: number | null }> {
     try {
         const result = await promise;

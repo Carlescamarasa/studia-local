@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { localDataClient } from '@/api/localDataClient';
-import { useAggregateLevelGoals } from '@/hooks/useXP';
+import { localDataClient } from '../api/localDataClient';
+import { useAggregateLevelGoals } from './useXP';
+import useFeedbacksSemanal from './entities/useFeedbacksSemanal';
 
 export type DataSource = 'evaluaciones' | 'experiencia' | 'ambas';
 
@@ -79,13 +80,7 @@ export function useHabilidadesStats(alumnoId: string, options?: HabilidadesStats
     const allEvaluations = options?.providedEvaluations || fetchedEvaluations;
 
     // Fetch ALL feedbacks if not provided
-    const { data: fetchedFeedbacks } = useQuery({
-        queryKey: ['feedbacksSemanal'],
-        queryFn: () => localDataClient.entities.FeedbackSemanal.list(),
-        staleTime: 1000 * 60 * 5,
-        enabled: !options?.providedFeedbacks,
-        refetchOnWindowFocus: false
-    });
+    const { data: fetchedFeedbacks } = useFeedbacksSemanal();
 
     const allFeedbacks = options?.providedFeedbacks || fetchedFeedbacks;
 
@@ -284,13 +279,7 @@ export function useHabilidadesStatsMultiple(studentIds: string[], options?: Habi
 
     const allEvaluations = options?.providedEvaluations || fetchedEvaluations;
 
-    const { data: fetchedFeedbacks } = useQuery({
-        queryKey: ['feedbacksSemanal'],
-        queryFn: () => localDataClient.entities.FeedbackSemanal.list(),
-        staleTime: 1000 * 60 * 5,
-        enabled: !options?.providedFeedbacks,
-        refetchOnWindowFocus: false
-    });
+    const { data: fetchedFeedbacks } = useFeedbacksSemanal();
 
     const allFeedbacks = options?.providedFeedbacks || fetchedFeedbacks;
 

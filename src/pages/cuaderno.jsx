@@ -23,6 +23,7 @@ import { createPageUrl } from "@/utils";
 import UserActionsMenu from "@/components/common/UserActionsMenu";
 import SessionContentView from "@/components/study/SessionContentView";
 import { calcularTiempoSesion } from "@/components/study/sessionSequence";
+import useFeedbacksSemanal from "@/hooks/entities/useFeedbacksSemanal";
 import MediaLinksBadges from "@/components/common/MediaLinksBadges";
 import MediaPreviewModal from "@/components/common/MediaPreviewModal";
 import MediaViewer from "@/components/common/MediaViewer";
@@ -227,11 +228,7 @@ function CuadernoEstudiantesTab({ semanaActualISO, searchTerm }) {
     const { data: usuarios = [] } = useUsers();
     const { data: asignacionesRaw = [] } = useAsignaciones();
 
-    const { data: feedbacksSemanalRaw = [] } = useQuery({
-        queryKey: ['feedbacksSemanal'],
-        queryFn: () => localDataClient.entities.FeedbackSemanal.list('-created_at'),
-        staleTime: 5 * 60 * 1000,
-    });
+    const { data: feedbacksSemanalRaw = [] } = useFeedbacksSemanal();
 
     const userIdActual = useMemo(() => resolveUserIdActual(effectiveUser, usuarios), [effectiveUser, usuarios]);
 
