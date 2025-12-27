@@ -19,8 +19,8 @@ export default function ReportErrorButton() {
       onClick={handleClick}
       size="icon"
       className={`
-        fixed bottom-6 right-6 z-[9999]
-        w-14 h-14 rounded-full shadow-lg
+        fixed top-4 right-4 z-[100000]
+        w-12 h-12 rounded-full shadow-lg
         bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]
         text-white
         transition-all hover:scale-110

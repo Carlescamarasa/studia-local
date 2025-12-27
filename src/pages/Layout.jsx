@@ -611,10 +611,7 @@ function LayoutContent() {
           />
         )}
 
-        {/* Global Error Report Button for Mobile (<450px) - Except on /studia */}
-        {isMobile && location.pathname !== '/studia' && (
-          <ReportErrorButton />
-        )}
+
 
         {/* Sidebar - Comportamiento por breakpoint:
             Mobile: Drawer overlay (cerrado por defecto)
@@ -632,7 +629,7 @@ function LayoutContent() {
           className={`
             z-[200] flex flex-col sidebar-modern
             transition-all duration-200 will-change-transform transform-gpu
-            fixed top-0 left-0 h-screen
+            fixed ${location.pathname.startsWith('/studia') ? 'top-0' : 'top-[40px] h-[calc(100vh-40px)]'} left-0
             border-r border-[var(--color-border-strong)]
             shadow-[1px_0_4px_rgba(0,0,0,0.2)]
             ${isMobile
