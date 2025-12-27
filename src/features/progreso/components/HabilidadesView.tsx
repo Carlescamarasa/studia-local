@@ -9,7 +9,10 @@ import {
     useLifetimePracticeXP,
     useTotalXPMultiple,
     useLifetimePracticeXPMultiple,
-    useAggregateLevelGoals
+    useAggregateLevelGoals,
+    useRecentXP, // [NEW] Import for Forma mode (30 days)
+    useRecentEvaluationXP, // [NEW]
+    useRecentManualXP // [NEW]
 } from '../hooks/useXP';
 import { Activity, Target, Star, Layers, Info, TrendingUp, BookOpen, PieChart, CheckCircle2, Circle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -91,15 +94,177 @@ export default function HabilidadesView({
     // =========================================================================
 
     // Single student hooks
-    const { data: totalXPSingle, isLoading: isLoadingTotalSingle } = useTotalXP(singleId, xpData);
-    const { data: practiceXPSingle, isLoading: isLoadingPracticeSingle } = useLifetimePracticeXP(singleId, xpData);
+    const { data: totalXPSingle, isLoading: isLoadingTotalSingle } = useTotalXP(singleId);
+    const { data: practiceXPSingle, isLoading: isLoadingPracticeSingle } = useLifetimePracticeXP(singleId);
 
     // Multi-student hooks
-    const { data: totalXPMultiple, isLoading: isLoadingTotalMultiple } = useTotalXPMultiple(isMultiple ? effectiveIds : [], xpData);
-    const { data: practiceXPMultiple, isLoading: isLoadingPracticeMultiple } = useLifetimePracticeXPMultiple(isMultiple ? effectiveIds : [], xpData);
+    const { data: totalXPMultiple, isLoading: isLoadingTotalMultiple } = useTotalXPMultiple(isMultiple ? effectiveIds : []);
+    const { data: practiceXPMultiple, isLoading: isLoadingPracticeMultiple } = useLifetimePracticeXPMultiple(isMultiple ? effectiveIds : []);
 
     // Aggregated Goals (maxXP denominator)
     const aggregatedGoals = useAggregateLevelGoals(effectiveIds);
+
+    // =========================================================================
+    // FORMA / RANGO LOGIC (STRICT SEPARATION)
+    // =========================================================================
+
+    // 1. FORMA DATA (Last 30 Days) - Remote Fetch
+    const { data: recentPracticeXP, isLoading: isLoadingRecentP } = useRecentXP(singleId, 30);
+    const { data: recentEvalXP, isLoading: isLoadingRecentE } = useRecentEvaluationXP(singleId, 30);
+    const { data: recentManualXP, isLoading: isLoadingRecentM } = useRecentManualXP(singleId, 30);
+
+    const formaTotalXP = useMemo(() => {
+        const practice = recentPracticeXP || { motricidad: 0, articulacion: 0, flexibilidad: 0 };
+        const manual = recentManualXP || { motricidad: 0, articulacion: 0, flexibilidad: 0 };
+
+        // Forma = Practice(30d) + Manual(30d) + Eval(0-100? No, recent eval is singular. We treat it as score)
+        // Wait, for Radar, we need Accumulated XP for dimensions? 
+        // No, "Forma" radar is 0-100 normalized score.
+        // RecentXP service returns 0-100 based.
+        // EvalXP service returns 0-100 based.
+        // ManualXP service returns 0-100 based.
+        // So we can just merge them for the Radar.
+
+        return {
+            // Use MAX to pick the best representation of ability
+            motricidad: Math.max(practice.motricidad, manual.motricidad),
+            articulacion: Math.max(practice.articulacion, manual.articulacion),
+            flexibilidad: Math.max(practice.flexibilidad, manual.flexibilidad),
+            // Evaluation props are separate (Sonido, Cognicion)
+            sonido: recentEvalXP?.sonido || 0,
+            cognicion: recentEvalXP?.cognicion || 0
+        };
+    }, [recentPracticeXP, recentEvalXP, recentManualXP]);
+
+
+    // 2. RANGO DATA (Selected Range) - Client-side Calculation
+    const rangeTotalXP = useMemo(() => {
+        if (!xpData) return { motricidad: 0, articulacion: 0, flexibilidad: 0, sonido: 0, cognicion: 0 };
+
+        // A. Practice XP (Computed from selected sessions)
+        const practiceResult = { motricidad: 0, articulacion: 0, flexibilidad: 0 };
+
+        // Helper to calc XP
+        const calcBlockXP = (block: any) => {
+            if (!block.ppmObjetivo || !block.ppmAlcanzado?.bpm) return 0;
+            const ratio = block.ppmAlcanzado.bpm / block.ppmObjetivo.bpm;
+            if (ratio >= 1.0) return 100;
+            if (ratio >= 0.9) return 80;
+            if (ratio >= 0.75) return 60;
+            if (ratio >= 0.5) return 40;
+            return 20;
+        };
+
+        xpData.forEach((session: any) => {
+            if (session.registrosBloque) {
+                session.registrosBloque.forEach((block: any) => {
+                    if (block.estado === 'completado' && block.ppmObjetivo && block.ppmAlcanzado) {
+                        const earned = calcBlockXP(block);
+                        // Distribute evenly and normalize? 
+                        // Wait, Range View should probably show ACCUMULATED volume or NORMALIZED score?
+                        // "Forma" = 0-100 Score. "Rango" usually implies Volume/Effort over time.
+                        // BUT, the Radar Chart is 0-100 fixed axis.
+                        // So "Rango" on Radar must also be 0-100 Score representing performance *during that range*.
+                        // We will Average the performance of blocks in range.
+
+                        // Simplified Strategy for now: Sum then Cap at 100 (Volume based) or keep consistent with Service?
+                        // Service logic: `xp.motricidad += earnedXP / 3`. This is volume.
+                        // Then `capXPForDisplay` caps at 100.
+                        // So yes, Sum then Cap.
+
+                        practiceResult.motricidad += earned / 3;
+                        practiceResult.articulacion += earned / 3;
+                        practiceResult.flexibilidad += earned / 3;
+                    }
+                });
+            }
+        });
+
+        // Cap at 100 for Radar consistency
+        practiceResult.motricidad = Math.min(practiceResult.motricidad, 100);
+        practiceResult.articulacion = Math.min(practiceResult.articulacion, 100);
+        practiceResult.flexibilidad = Math.min(practiceResult.flexibilidad, 100);
+
+
+        // B. Evaluation XP (From Evaluations in Range)
+        let maxSonido = 0;
+        let maxCognicion = 0;
+
+        if (evaluations && evaluations.length > 0) {
+            evaluations.forEach((e: any) => {
+                const s = e.habilidades?.sonido || 0;
+                const c = e.habilidades?.cognitivo || 0;
+                if (s * 10 > maxSonido) maxSonido = s * 10;
+                if (c * 10 > maxCognicion) maxCognicion = c * 10;
+            });
+        }
+
+        // C. Manual XP (Not easily available in range without fetching history, assuming 0 or minimal for range view unless we fetch history)
+        // For now, assume 0 manual XP impact for arbitrary ranges to be safe, or just stick to practice.
+
+        return {
+            ...practiceResult,
+            sonido: maxSonido,
+            cognicion: maxCognicion
+        };
+
+    }, [xpData, evaluations]);
+
+
+    // 3. EFFECTIVE DATA SELECTION
+    // We switch ENTIRE data object based on mode
+    const radarData = useMemo(() => {
+        if (effectiveViewMode === 'forma') {
+            return formaTotalXP;
+        } else {
+            return rangeTotalXP;
+        }
+    }, [effectiveViewMode, formaTotalXP, rangeTotalXP]);
+
+    // Calculate aggregated totals separately for the numeric counters (Total XP)
+    // The Progress Counters should likely show LIFETIME totals always? 
+    // OR should they match the view?
+    // User complaint: "Forma/Rango numbers are identical".
+    // This implies he expects the NUMBERS to change.
+    // So counters should also follow the Mode.
+
+    // However, "Level Progress" usually depends on Lifetime Accumulation.
+    // Let's make:
+    // - Radar: Mode-specific (0-100)
+    // - Big Numbers (Counters): Mode-specific (Volume)
+    // - Level Progress: Always Lifetime (Contextual)
+
+    const displayCounters = useMemo(() => {
+        if (effectiveViewMode === 'forma') {
+            // Uncapped volume for counters? 
+            // `useRecentXP` returns NON-CAPPED data? No, it caps at 100 in the hook?
+            // `useRecentXP` calls `capXPForDisplay`.
+            // We might need uncapped for counters if Forma is "Volume last 30 days".
+            // But usually "Forma" = "Fitness Level" (0-100).
+            // Let's stick to using the RadarData values for consistency for now.
+            return {
+                motricidad: radarData.motricidad, // These are 0-100
+                articulacion: radarData.articulacion,
+                flexibilidad: radarData.flexibilidad
+            };
+        } else {
+            // Rango
+            return {
+                motricidad: radarData.motricidad,
+                articulacion: radarData.articulacion,
+                flexibilidad: radarData.flexibilidad
+            };
+        }
+    }, [effectiveViewMode, radarData]);
+
+
+    // Need separate Lifetime stats for the Level Progress Bars?
+    // The current UI binds `total` to the same source.
+    // Let's grab strict Lifetime stats for Level Bars.
+
+    const lifetimeTotalObj = useMemo(() => totalXPToObject(isMultiple ? totalXPMultiple : totalXPSingle), [isMultiple, totalXPMultiple, totalXPSingle]);
+
+
 
     // OPTIMIZED: Use useUsers() for all user data (both single and multiple students)
     const { data: usersFromHook = [], isLoading: isLoadingUsers } = useUsers();
@@ -225,8 +390,49 @@ export default function HabilidadesView({
         ? (isLoadingTotalMultiple || isLoadingPracticeMultiple)
         : (isLoadingTotalSingle || isLoadingPracticeSingle);
 
-    const total = totalXPToObject(totalXP);
-    const practice = practiceXP || { motricidad: 0, articulacion: 0, flexibilidad: 0 };
+    // COUNTERS: Always show LIFETIME accumulated XP
+    // RADAR: Changes based on Forma/Rango filter (uses radarData which is 0-100 normalized)
+    const total = lifetimeTotalObj;
+    // practiceXPSingle/Multiple are already RecentXPResult objects { motricidad, articulacion, flexibilidad }
+    const practice = (isMultiple ? practiceXPMultiple : practiceXPSingle) || { motricidad: 0, articulacion: 0, flexibilidad: 0 };
+
+    // We pass `radarData` (normalized 0-100) to the Radar component
+    // But we need to ensure the existing `practice` and `total` usages are aligned.
+
+    // NOTE: The previous code used `total` for both counters and radar.
+    // Now we split: 
+    // `radarData` -> For useHabilidadesStats (Radar)
+    // `total` -> For Counter Display (Big Numbers)
+
+    // If we want "Forma" specifically, we should pass that to the radar hooks?
+
+    // The `useHabilidadesStats` hook internally calls `useStudentSkillsRadar` which fetches data.
+    // BUT we are using `providedData` in many places.
+    // Let's update the `providedData` being passed to `useXP` hooks? No, we shouldn't manipulate upstream.
+
+    // Actually, `HabilidadesView` renders `HabilidadesStats` (which is inline here?).
+    // Ah, wait. `HabilidadesView` IS the main component.
+
+
+
+    // `useHabilidadesStats` fetches its own data via RPC. 
+    // IF we are in "Forma" mode (RPC default), it works.
+    // IF we are in "Rango", the RPC won't know our range.
+    // WE NEED TO OVERRIDE THE RADAR DATA LOCALLY for Rango.
+
+    // Construct overridden stats object
+    const effectiveHabilidadesStats = useMemo(() => {
+        if (isMultiple) return null; // TODO: handle multi
+
+        return {
+            motricidad: radarData.motricidad,
+            articulacion: radarData.articulacion,
+            flexibilidad: radarData.flexibilidad,
+            sonido: radarData.sonido,
+            cognicion: radarData.cognicion,
+            // ... other fields if needed
+        };
+    }, [radarData, isMultiple]);
 
     // =========================================================================
     // QUALITATIVE DATA HOOKS (for Sonido/Cognición)
@@ -389,24 +595,44 @@ export default function HabilidadesView({
                                     <button
                                         onClick={() => setViewMode('forma')}
                                         className={cn(
-                                            "px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded transition-all",
+                                            "px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded transition-all flex items-center gap-1",
                                             effectiveViewMode === 'forma'
                                                 ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm"
                                                 : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                                         )}
                                     >
                                         Forma
+                                        <TooltipProvider>
+                                            <Tooltip delayDuration={0}>
+                                                <TooltipTrigger asChild>
+                                                    <Info className="w-3 h-3 opacity-50" />
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Rendimiento últimos 30 días</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
                                     </button>
                                     <button
                                         onClick={() => setViewMode('rango')}
                                         className={cn(
-                                            "px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded transition-all",
+                                            "px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded transition-all flex items-center gap-1",
                                             effectiveViewMode === 'rango'
                                                 ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm"
                                                 : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                                         )}
                                     >
                                         Rango
+                                        <TooltipProvider>
+                                            <Tooltip delayDuration={0}>
+                                                <TooltipTrigger asChild>
+                                                    <Info className="w-3 h-3 opacity-50" />
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Rendimiento en fechas seleccionadas</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
                                     </button>
                                 </div>
                             )}

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { computePracticeXP, capXPForDisplay } from '@/shared/services/xpService';
+import { computePracticeXP, computeEvaluationXP, computeManualXP, capXPForDisplay } from '@/shared/services/xpService';
 import { localDataClient } from '@/api/localDataClient';
 import { useUsers, type UserEntity } from '@/hooks/entities/useUsers';
 import { useLevelsConfig } from '@/hooks/entities/useLevelsConfig';
@@ -22,6 +22,36 @@ export function useRecentXP(studentId: string, windowDays: number = 30) {
         },
         enabled: !!studentId,
         staleTime: 1000 * 60 * 5, // 5 minutes cache
+        refetchOnWindowFocus: false,
+    });
+}
+
+/**
+ * Hook to fetch recent Evaluation XP (Sonido/Cognición)
+ */
+export function useRecentEvaluationXP(studentId: string, windowDays: number = 30) {
+    return useQuery<{ sonido: number; cognicion: number }>({
+        queryKey: ['recent-eval-xp', studentId, windowDays],
+        queryFn: async () => {
+            return await computeEvaluationXP(studentId, windowDays);
+        },
+        enabled: !!studentId,
+        staleTime: 1000 * 60 * 5,
+        refetchOnWindowFocus: false,
+    });
+}
+
+/**
+ * Hook to fetch recent Manual XP (Professor adjustments)
+ */
+export function useRecentManualXP(studentId: string, windowDays: number = 30) {
+    return useQuery<{ motricidad: number; articulacion: number; flexibilidad: number }>({
+        queryKey: ['recent-manual-xp', studentId, windowDays],
+        queryFn: async () => {
+            return await computeManualXP(studentId, windowDays);
+        },
+        enabled: !!studentId,
+        staleTime: 1000 * 60 * 5,
         refetchOnWindowFocus: false,
     });
 }
