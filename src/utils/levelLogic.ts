@@ -99,11 +99,14 @@ export interface PromotionCheckResult {
 /**
  * Checks if a student can be promoted to the next level.
  */
-export async function canPromote(studentId: string, currentLevel: number): Promise<PromotionCheckResult> {
+export async function canPromote(studentId: string, currentLevel: number, providedConfigs?: LevelConfig[]): Promise<PromotionCheckResult> {
     const nextLevel = currentLevel + 1;
 
     // 1. Get Config for CURRENT level (requirements to EXIT current level)
-    const allConfigs = await localDataClient.entities.LevelConfig.list();
+    let allConfigs = providedConfigs;
+    if (!allConfigs) {
+        allConfigs = await localDataClient.entities.LevelConfig.list();
+    }
     const config = allConfigs.find((c: any) => c.level === currentLevel);
 
     if (!config) {

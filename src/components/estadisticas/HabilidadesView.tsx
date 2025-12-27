@@ -21,6 +21,7 @@ import CompactCard from './CompactCard';
 import { useQuery } from '@tanstack/react-query';
 import { localDataClient } from '@/api/localDataClient';
 import { useUsers } from '@/hooks/entities/useUsers';
+import { useLevelConfig } from '@/hooks/entities/useLevelsConfig';
 import { cn } from '@/lib/utils';
 import { computeKeyCriteriaStatus, CriteriaStatusResult } from '@/utils/levelLogic';
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
@@ -147,14 +148,7 @@ export default function HabilidadesView({
     const currentLevel = studentProfile?.nivelTecnico || 1;
     // Note: We show criteria for currentLevel (what student achieved/needs at this level)
 
-    const { data: currentLevelConfig } = useQuery({
-        queryKey: ['level-config', currentLevel],
-        queryFn: async () => {
-            const configs = await localDataClient.entities.LevelConfig.list();
-            return configs.find((c: any) => c.level === currentLevel) || null;
-        },
-        enabled: !isMultiple && !!currentLevel
-    });
+    const currentLevelConfig = useLevelConfig(currentLevel || 0);
 
     // =========================================================================
     // LEVEL CRITERIA STATE (for single student)

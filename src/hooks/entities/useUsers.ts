@@ -2,6 +2,22 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 import { remoteDataAPI } from '@/api/remote/api';
 
+export interface UserEntity {
+    id: string;
+    fullName: string;
+    nombreCompleto: string;
+    rolPersonalizado: string;
+    role: string;
+    profesorAsignadoId: string | null;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+    nivel: string | null;
+    nivelTecnico: number | null;
+    telefono: string | null;
+    profesorNombre: string | null;
+}
+
 interface UserFromRPC {
     id: string;
     fullName: string;
@@ -37,7 +53,7 @@ interface UserFromRPC {
  * const estudiantes = users?.filter(u => u.rolPersonalizado === 'ESTU');
  */
 export function useUsers() {
-    return useQuery({
+    return useQuery<UserEntity[]>({
         queryKey: ['users'],
         queryFn: async () => {
             try {
