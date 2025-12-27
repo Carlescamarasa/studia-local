@@ -3,7 +3,7 @@ import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCurrentUser } from "@/api/localDataClient";
 import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
-import { useUsers } from "@/hooks/entities/useUsers";
+import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,7 @@ export default function AsignacionesActivas() {
   const asignaciones = allAsignaciones.filter(a => a.estado === 'publicada' || a.estado === 'en_curso');
   const isLoading = false; // Hook handles loading internally
 
-  const { data: usuarios = [] } = useUsers();
+
 
   const cerrarMutation = useMutation({
     mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'cerrada' }),
@@ -60,10 +60,9 @@ export default function AsignacionesActivas() {
   });
 
   const filteredAsignaciones = asignaciones.filter(a => {
-    const alumno = usuarios.find(u => u.id === a.alumnoId);
-    const alumnoNombreBase = alumno ? displayName(alumno) : '';
-    const alumnoNombreSnap = a.alumno?.nombreCompleto || a.alumno?.full_name || '';
-    const alumnoNombre = (alumnoNombreBase || alumnoNombreSnap).toLowerCase();
+    // Usar nombre embebido del RPC (alumnoNombre) o fallback a nombre en snapshot
+    // Nota: el RPC devuelve 'alumnoNombre', pero si es null/undefined usamos snapshots
+    const alumnoNombre = (a.alumnoNombre || a.alumno?.full_name || '').toLowerCase();
     const term = searchTerm.toLowerCase();
     const matchSearch =
       alumnoNombre.includes(term) ||
@@ -125,7 +124,7 @@ export default function AsignacionesActivas() {
           ) : (
             <div className="space-y-3">
               {filteredAsignaciones.map((asignacion) => {
-                const alumno = usuarios.find(u => u.id === asignacion.alumnoId);
+                // No necesitamos lookup de usuario aquí si usarmos datos embebidos
                 return (
                   <Card key={asignacion.id} className="hover:shadow-md transition-shadow">
                     <CardContent className="pt-4">
@@ -133,9 +132,7 @@ export default function AsignacionesActivas() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <h4 className="font-semibold truncate">
-                              {alumno
-                                ? displayName(alumno)
-                                : displayNameById(asignacion.alumnoId)}
+                              {asignacion.alumnoNombre || displayNameById(asignacion.alumnoId)}
                             </h4>
                             <Badge className={estadoColors[asignacion.estado]}>
                               {estadoLabels[asignacion.estado]}
@@ -153,6 +150,7 @@ export default function AsignacionesActivas() {
                             </p>
                           </div>
                         </div>
+
                         <div className="flex gap-2">
                           <Button
                             size="sm"
@@ -189,10 +187,10 @@ export default function AsignacionesActivas() {
                   </Card>
                 );
               })}
-            </div>
+            </div >
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </CardContent >
+      </Card >
+    </div >
   );
 }

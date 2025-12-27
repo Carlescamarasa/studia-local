@@ -399,8 +399,8 @@ function AsignacionesPageContent() {
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       resultado = resultado.filter(a => {
-        const alumno = usuarios.find(u => u.id === a.alumnoId);
-        const nombreAlumno = getNombreVisible(alumno).toLowerCase();
+        // Usar data embebida
+        const nombreAlumno = (a.alumnoNombre || '').toLowerCase();
         const pieza = (a.piezaSnapshot?.nombre || '').toLowerCase();
         return nombreAlumno.includes(term) || pieza.includes(term);
       });
@@ -428,11 +428,11 @@ function AsignacionesPageContent() {
       key: 'alumno',
       label: 'Estudiante',
       render: (a) => {
+        // Usar embedded alumnoNombre del RPC
+        const nombreAlumno = a.alumnoNombre || (a.alumnoId ? displayNameById(a.alumnoId) : 'Sin nombre');
+        // Si necesitamos email y no está en RPC, podríamos buscar en usuarios (si existen)
         const alumno = usuarios.find(u => u.id === a.alumnoId);
-        // Si no se encuentra el usuario, intentar obtener nombre por ID usando displayNameById
-        const nombreAlumno = alumno
-          ? getNombreVisible(alumno)
-          : (a.alumnoId ? displayNameById(a.alumnoId) : 'Sin nombre');
+
         return (
           <div>
             <p className="font-medium text-sm">{nombreAlumno}</p>
@@ -445,10 +445,13 @@ function AsignacionesPageContent() {
       key: 'profesor',
       label: 'Profesor',
       render: (a) => {
+        // Usar embedded profesorNombre del RPC
+        const nombreProfesor = a.profesorNombre || (a.profesorId ? displayNameById(a.profesorId) : 'Sin asignar');
         const profesor = usuarios.find(u => u.id === a.profesorId);
+
         return (
           <div>
-            <p className="font-medium text-sm">{getNombreVisible(profesor)}</p>
+            <p className="font-medium text-sm">{nombreProfesor}</p>
             {profesor?.email && (
               <p className="text-xs text-ui/80">{profesor.email}</p>
             )}
