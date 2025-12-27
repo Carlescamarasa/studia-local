@@ -15,7 +15,7 @@ import PageHeader from '@/components/ds/PageHeader';
 import { componentStyles } from '@/design/componentStyles';
 import { listErrorReports, updateErrorReport, updateMultipleErrorReports, deleteErrorReport, deleteMultipleErrorReports } from '@/api/errorReportsAPI';
 import { useAuth } from '@/auth/AuthProvider';
-import AudioPlayer from '@/components/common/AudioPlayer';
+import AudioPlayer from '@/shared/components/media/AudioPlayer';
 
 const CATEGORY_LABELS = {
   algo_no_funciona: 'Algo no funciona',

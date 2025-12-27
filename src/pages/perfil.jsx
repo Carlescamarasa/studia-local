@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { displayName } from "../components/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { useSearchParams } from "react-router-dom";
-import MediaLinksInput from "@/components/common/MediaLinksInput";
+import MediaLinksInput from "@/shared/components/media/MediaLinksInput";
 import PageHeader from "@/components/ds/PageHeader";
 import { LoadingSpinner } from "@/components/ds";
 import { componentStyles } from "@/design/componentStyles";

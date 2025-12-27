@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { X, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import MediaLinksInput from "../common/MediaLinksInput";
-import MediaPreviewModal from "../common/MediaPreviewModal";
+import MediaLinksInput from "@/shared/components/media/MediaLinksInput";
+import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
 
 export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
   const [motivo, setMotivo] = useState("terminado");
@@ -57,8 +57,8 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
                   key={m.value}
                   onClick={() => setMotivo(m.value)}
                   className={`w-full text-left p-3 border rounded-lg transition-colors ${motivo === m.value
-                      ? 'border-brand-500 bg-brand-50'
-                      : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
+                    ? 'border-brand-500 bg-brand-50'
+                    : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
                     }`}
                 >
                   <div className="flex items-center gap-2">
@@ -81,8 +81,8 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }) {
                   key={cal.value}
                   onClick={() => setCalificacion(cal.value)}
                   className={`p-3 border-2 rounded-lg transition-all text-center ${calificacion === cal.value
-                      ? cal.color + ' shadow-sm'
-                      : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
+                    ? cal.color + ' shadow-sm'
+                    : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
                     }`}
                 >
                   <div className="text-2xl mb-1">{cal.emoji}</div>

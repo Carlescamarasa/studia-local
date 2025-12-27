@@ -24,8 +24,8 @@ import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 import { cn } from "@/lib/utils";
 import SessionContentView from "../components/study/SessionContentView";
-import MediaLinksBadges from "@/components/common/MediaLinksBadges";
-import MediaPreviewModal from "@/components/common/MediaPreviewModal";
+import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
+import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
 import { log } from "@/utils/log";
 
 // --- Helpers de fechas locales ---

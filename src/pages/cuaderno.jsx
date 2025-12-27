@@ -24,9 +24,9 @@ import UserActionsMenu from "@/components/common/UserActionsMenu";
 import SessionContentView from "@/components/study/SessionContentView";
 import { calcularTiempoSesion } from "@/components/study/sessionSequence";
 import { useFeedbacksSemanal } from "@/hooks/entities/useFeedbacksSemanal";
-import MediaLinksBadges from "@/components/common/MediaLinksBadges";
-import MediaPreviewModal from "@/components/common/MediaPreviewModal";
-import MediaViewer from "@/components/common/MediaViewer";
+import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
+import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
+import MediaViewer from "@/shared/components/media/MediaViewer";
 import ModalFeedbackSemanal from "@/components/calendario/ModalFeedbackSemanal";
 import { Checkbox } from "@/components/ui/checkbox";
 

@@ -1,6 +1,6 @@
 import React from "react";
 import { obtenerColorTipoEvento, obtenerLabelTipoEvento } from "./utils";
-import MediaLinksBadges from "@/components/common/MediaLinksBadges";
+import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
 
 export default function EventoImportante({ evento, onClick, variant = 'default', onMediaClick }) {
   const colores = obtenerColorTipoEvento(evento.tipo);
@@ -11,23 +11,23 @@ export default function EventoImportante({ evento, onClick, variant = 'default',
     let linea3 = null;
     // Verificar si es all_day
     const isAllDay = evento.all_day === true;
-    
+
     if (!isAllDay && evento.start_at) {
       try {
         // Usar start_at si está disponible (nuevo formato)
         const fechaInicioObj = new Date(evento.start_at);
-        const horaInicio = fechaInicioObj.toLocaleTimeString('es-ES', { 
-          hour: '2-digit', 
+        const horaInicio = fechaInicioObj.toLocaleTimeString('es-ES', {
+          hour: '2-digit',
           minute: '2-digit',
-          hour12: false 
+          hour12: false
         });
-        
+
         if (evento.end_at) {
           const fechaFinObj = new Date(evento.end_at);
-          const horaFin = fechaFinObj.toLocaleTimeString('es-ES', { 
-            hour: '2-digit', 
+          const horaFin = fechaFinObj.toLocaleTimeString('es-ES', {
+            hour: '2-digit',
             minute: '2-digit',
-            hour12: false 
+            hour12: false
           });
           linea3 = `${horaInicio}–${horaFin}h`;
         } else {
@@ -38,10 +38,10 @@ export default function EventoImportante({ evento, onClick, variant = 'default',
         if (evento.fechaInicio && evento.fechaInicio.includes('T')) {
           try {
             const fechaInicioObj = new Date(evento.fechaInicio);
-            const horaInicio = fechaInicioObj.toLocaleTimeString('es-ES', { 
-              hour: '2-digit', 
+            const horaInicio = fechaInicioObj.toLocaleTimeString('es-ES', {
+              hour: '2-digit',
               minute: '2-digit',
-              hour12: false 
+              hour12: false
             });
             linea3 = `${horaInicio}h`;
           } catch (e2) {
@@ -53,10 +53,10 @@ export default function EventoImportante({ evento, onClick, variant = 'default',
       // Fallback: usar fechaInicio legacy si tiene hora
       try {
         const fechaInicioObj = new Date(evento.fechaInicio);
-        const horaInicio = fechaInicioObj.toLocaleTimeString('es-ES', { 
-          hour: '2-digit', 
+        const horaInicio = fechaInicioObj.toLocaleTimeString('es-ES', {
+          hour: '2-digit',
           minute: '2-digit',
-          hour12: false 
+          hour12: false
         });
         linea3 = `${horaInicio}h`;
       } catch (e) {
@@ -102,23 +102,23 @@ export default function EventoImportante({ evento, onClick, variant = 'default',
   // Calcular línea 3: hora (solo si no es todo el día)
   let linea3 = null;
   const isAllDay = evento.all_day === true;
-  
+
   if (!isAllDay && evento.start_at) {
     try {
       // Usar start_at si está disponible (nuevo formato)
       const fechaInicioObj = new Date(evento.start_at);
-      const horaInicio = fechaInicioObj.toLocaleTimeString('es-ES', { 
-        hour: '2-digit', 
+      const horaInicio = fechaInicioObj.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
         minute: '2-digit',
-        hour12: false 
+        hour12: false
       });
-      
+
       if (evento.end_at) {
         const fechaFinObj = new Date(evento.end_at);
-        const horaFin = fechaFinObj.toLocaleTimeString('es-ES', { 
-          hour: '2-digit', 
+        const horaFin = fechaFinObj.toLocaleTimeString('es-ES', {
+          hour: '2-digit',
           minute: '2-digit',
-          hour12: false 
+          hour12: false
         });
         linea3 = `${horaInicio}–${horaFin}h`;
       } else {
@@ -129,10 +129,10 @@ export default function EventoImportante({ evento, onClick, variant = 'default',
       if (evento.fechaInicio && evento.fechaInicio.includes('T')) {
         try {
           const fechaInicioObj = new Date(evento.fechaInicio);
-          const horaInicio = fechaInicioObj.toLocaleTimeString('es-ES', { 
-            hour: '2-digit', 
+          const horaInicio = fechaInicioObj.toLocaleTimeString('es-ES', {
+            hour: '2-digit',
             minute: '2-digit',
-            hour12: false 
+            hour12: false
           });
           linea3 = `${horaInicio}h`;
         } catch (e2) {
@@ -144,10 +144,10 @@ export default function EventoImportante({ evento, onClick, variant = 'default',
     // Fallback: usar fechaInicio legacy si tiene hora
     try {
       const fechaInicioObj = new Date(evento.fechaInicio);
-      const horaInicio = fechaInicioObj.toLocaleTimeString('es-ES', { 
-        hour: '2-digit', 
+      const horaInicio = fechaInicioObj.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
         minute: '2-digit',
-        hour12: false 
+        hour12: false
       });
       linea3 = `${horaInicio}h`;
     } catch (e) {
@@ -183,7 +183,7 @@ export default function EventoImportante({ evento, onClick, variant = 'default',
             compact={true}
             maxDisplay={3}
           />
-      </div>
+        </div>
       )}
     </div>
   );

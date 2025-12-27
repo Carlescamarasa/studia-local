@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTotalXP, totalXPToObject } from '@/hooks/useXP';
+import { useTotalXP, totalXPToObject } from '@/features/progreso/hooks/useXP';
 import { Loader2 } from 'lucide-react';
 
 interface CurrentXPInlineProps {

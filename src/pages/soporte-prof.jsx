@@ -35,9 +35,9 @@ import {
   createMensaje
 } from "@/data/supportTicketsClient";
 import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
-import MediaLinksBadges from "@/components/common/MediaLinksBadges";
-import MediaPreviewModal from "@/components/common/MediaPreviewModal";
-import MediaLinksInput from "@/components/common/MediaLinksInput";
+import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
+import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
+import MediaLinksInput from "@/shared/components/media/MediaLinksInput";
 import { useAuth } from "@/auth/AuthProvider";
 
 function SoporteProfPageContent() {
