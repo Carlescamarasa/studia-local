@@ -600,7 +600,6 @@ function LayoutContent() {
           stopImpersonation={stopImpersonation}
           isMobile={isMobile}
         />
-        {/* Overlay mobile - Only restrict to isMobile (<450px) as requested */}
         {isMobile && (
           <div
             className={`fixed inset-0 bg-black/30 z-[190] transition-opacity duration-200 ${abierto ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -610,6 +609,11 @@ function LayoutContent() {
             }}
             aria-hidden="true"
           />
+        )}
+
+        {/* Global Error Report Button for Mobile (<450px) - Except on /studia */}
+        {isMobile && location.pathname !== '/studia' && (
+          <ReportErrorButton />
         )}
 
         {/* Sidebar - Comportamiento por breakpoint:
