@@ -64,8 +64,6 @@ export function EffectiveUserProvider({ children }) {
     }, []);
 
     // SEGURIDAD: Si el usuario real hace logout, limpiar la impersonación inmediatamente
-    // SEGURIDAD: Si el usuario real hace logout, limpiar la impersonación inmediatamente
-    // SEGURIDAD: Si el usuario real hace logout, limpiar la impersonación inmediatamente
     // Solo ejecutar si ya terminó de cargar la sesión (evitar falso positivo al recargar)
     useEffect(() => {
         if (!loading && !user && impersonatedUser) {
