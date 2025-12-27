@@ -5,7 +5,7 @@ import { useUsers } from "@/hooks/entities/useUsers";
 import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
 import { useRegistrosSesion } from "@/hooks/entities/useRegistrosSesion";
 import { useEvaluacionesTecnicas } from "@/hooks/entities/useEvaluacionesTecnicas";
-import useFeedbacksSemanal from "@/hooks/entities/useFeedbacksSemanal";
+import { useFeedbacksSemanal } from "@/hooks/entities/useFeedbacksSemanal";
 import { Button } from "@/components/ds/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ds";
 import { Badge } from "@/components/ds";

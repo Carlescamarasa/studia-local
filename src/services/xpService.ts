@@ -1,4 +1,5 @@
 import { localDataClient } from '@/api/localDataClient';
+import { QUERY_KEYS } from '@/lib/queryKeys';
 
 /**
  * XP Service - Manages student experience points (XP) for skill tracking
@@ -318,6 +319,21 @@ export async function addXP(
         }
 
         console.log(`[XP] Added ${amount} XP to ${skill} for student ${studentId} (source: ${source}). New Total: ${newTotal}`);
+
+        // Automatically invalidate relevant caches
+        if (typeof window !== 'undefined' && (window as any).__queryClient) {
+            const queryClient = (window as any).__queryClient;
+
+            // Invalidate XP data (both global and student-specific)
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.STUDENT_XP_ALL });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.STUDENT_XP(studentId) });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.TOTAL_XP(studentId) });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.RECENT_XP(studentId, 30) });
+
+            // Invalidate processed skills data (radar, stats)
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.STUDENT_SKILLS_PROCESSED(studentId) });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HABILIDADES_STATS(studentId) });
+        }
     } catch (error) {
         console.error('Error adding XP:', error);
         throw error;

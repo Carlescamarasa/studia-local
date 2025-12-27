@@ -16,7 +16,16 @@ import type {
   RegistroSesion,
   RegistroBloque,
   FeedbackSemanal,
-} from '@/types/domain';
+  EventoCalendario,
+  EvaluacionTecnica,
+  LevelConfig,
+  LevelKeyCriteria,
+  StudentCriteriaStatus,
+  StudentLevelHistory,
+  StudentXPTotal,
+  StudentBackpackItem,
+  MediaAsset,
+} from '../types/domain';
 
 /**
  * Helper para mapear usuarios del formato local al formato de dominio
@@ -36,22 +45,25 @@ function mapLocalUserToDomain(user: any): StudiaUser {
 
 /**
  * Helper para mapear entidades del formato local al formato de dominio
- * (convierte camelCase a snake_case para campos de fecha)
+ * (convierte camelCase a snake_case para campos de fecha si es necesario)
  */
-function mapLocalEntityToDomain<T extends { created_at?: string; created_date?: string; updated_at?: string }>(
-  entity: any,
-  dateFields: string[] = ['created_at', 'updated_at']
+function mapLocalEntityToDomain<T>(
+  entity: any
 ): T {
   const mapped = { ...entity };
 
   // Mapear created_date a created_at si existe
   if (mapped.created_date && !mapped.created_at) {
     mapped.created_at = mapped.created_date;
-    delete mapped.created_date;
   }
 
-  // Asegurar que updated_at existe
-  if (!mapped.updated_at) {
+  // Mapear createdAt a created_at si existe (para tipos camelCase en domain.ts)
+  if (mapped.createdAt && !mapped.created_at) {
+    mapped.created_at = mapped.createdAt;
+  }
+
+  // Asegurar que updated_at o updatedAt existe
+  if (!mapped.updated_at && !mapped.updatedAt) {
     mapped.updated_at = mapped.created_at || new Date().toISOString();
   }
 
@@ -237,6 +249,14 @@ export function createLocalDataAPI(): AppDataAPI {
       delete: async (id: string) => {
         return await localDataClient.entities.RegistroBloque.delete(id);
       },
+      bulkCreate: async (items) => {
+        const bulkCreate = localDataClient.entities.RegistroBloque.bulkCreate;
+        if (bulkCreate) {
+          const registros = await bulkCreate(items);
+          return registros.map(r => mapLocalEntityToDomain<RegistroBloque>(r));
+        }
+        return [];
+      },
     },
     feedbacksSemanal: {
       list: async (sort?: string) => {
@@ -263,6 +283,241 @@ export function createLocalDataAPI(): AppDataAPI {
         return await localDataClient.entities.FeedbackSemanal.delete(id);
       },
     },
+    eventosCalendario: {
+      list: async (sort?: string) => {
+        const items = await localDataClient.entities.EventoCalendario.list(sort);
+        return items.map(i => mapLocalEntityToDomain<EventoCalendario>(i));
+      },
+      get: async (id: string) => {
+        const item = await localDataClient.entities.EventoCalendario.get(id);
+        return item ? mapLocalEntityToDomain<EventoCalendario>(item) : null;
+      },
+      filter: async (filters: Record<string, any>, limit?: number | null) => {
+        const items = await localDataClient.entities.EventoCalendario.filter(filters, limit || undefined);
+        return items.map(i => mapLocalEntityToDomain<EventoCalendario>(i));
+      },
+      create: async (data) => {
+        const item = await localDataClient.entities.EventoCalendario.create(data);
+        return mapLocalEntityToDomain<EventoCalendario>(item);
+      },
+      update: async (id: string, updates: any) => {
+        const item = await localDataClient.entities.EventoCalendario.update(id, updates);
+        return mapLocalEntityToDomain<EventoCalendario>(item);
+      },
+      delete: async (id: string) => {
+        return await localDataClient.entities.EventoCalendario.delete(id);
+      },
+    },
+    evaluaciones: {
+      list: async (sort?: string) => {
+        const items = await localDataClient.entities.EvaluacionTecnica.list(sort);
+        return items.map(i => mapLocalEntityToDomain<EvaluacionTecnica>(i));
+      },
+      get: async (id: string) => {
+        const item = await localDataClient.entities.EvaluacionTecnica.get(id);
+        return item ? mapLocalEntityToDomain<EvaluacionTecnica>(item) : null;
+      },
+      filter: async (filters: Record<string, any>, limit?: number | null) => {
+        const items = await localDataClient.entities.EvaluacionTecnica.filter(filters, limit || undefined);
+        return items.map(i => mapLocalEntityToDomain<EvaluacionTecnica>(i));
+      },
+      create: async (data) => {
+        const item = await localDataClient.entities.EvaluacionTecnica.create(data);
+        return mapLocalEntityToDomain<EvaluacionTecnica>(item);
+      },
+      update: async (id: string, updates: any) => {
+        const item = await localDataClient.entities.EvaluacionTecnica.update(id, updates);
+        return mapLocalEntityToDomain<EvaluacionTecnica>(item);
+      },
+      delete: async (id: string) => {
+        return await localDataClient.entities.EvaluacionTecnica.delete(id);
+      },
+    },
+    levelsConfig: {
+      list: async (sort?: string) => {
+        const items = await localDataClient.entities.LevelConfig.list(sort);
+        return items.map(i => mapLocalEntityToDomain<LevelConfig>(i));
+      },
+      get: async (id: string) => {
+        const item = await localDataClient.entities.LevelConfig.get(id);
+        return item ? mapLocalEntityToDomain<LevelConfig>(item) : null;
+      },
+      filter: async (filters: Record<string, any>, limit?: number | null) => {
+        const items = await localDataClient.entities.LevelConfig.filter(filters, limit || undefined);
+        return items.map(i => mapLocalEntityToDomain<LevelConfig>(i));
+      },
+      create: async (data) => {
+        const item = await localDataClient.entities.LevelConfig.create(data);
+        return mapLocalEntityToDomain<LevelConfig>(item);
+      },
+      update: async (id: string, updates: any) => {
+        const item = await localDataClient.entities.LevelConfig.update(id, updates);
+        return mapLocalEntityToDomain<LevelConfig>(item);
+      },
+      delete: async (id: string) => {
+        return await localDataClient.entities.LevelConfig.delete(id);
+      },
+    },
+    levelKeyCriteria: {
+      list: async (sort?: string) => {
+        const items = await localDataClient.entities.LevelKeyCriteria.list(sort);
+        return items.map(i => mapLocalEntityToDomain<LevelKeyCriteria>(i));
+      },
+      get: async (id: string) => {
+        const item = await localDataClient.entities.LevelKeyCriteria.get(id);
+        return item ? mapLocalEntityToDomain<LevelKeyCriteria>(item) : null;
+      },
+      filter: async (filters: Record<string, any>, limit?: number | null) => {
+        const items = await localDataClient.entities.LevelKeyCriteria.filter(filters, limit || undefined);
+        return items.map(i => mapLocalEntityToDomain<LevelKeyCriteria>(i));
+      },
+      create: async (data) => {
+        const item = await localDataClient.entities.LevelKeyCriteria.create(data);
+        return mapLocalEntityToDomain<LevelKeyCriteria>(item);
+      },
+      update: async (id: string, updates: any) => {
+        const item = await localDataClient.entities.LevelKeyCriteria.update(id, updates);
+        return mapLocalEntityToDomain<LevelKeyCriteria>(item);
+      },
+      delete: async (id: string) => {
+        return await localDataClient.entities.LevelKeyCriteria.delete(id);
+      },
+    },
+    studentCriteriaStatus: {
+      list: async (sort?: string) => {
+        const items = await localDataClient.entities.StudentCriteriaStatus.list(sort);
+        return items.map(i => mapLocalEntityToDomain<StudentCriteriaStatus>(i));
+      },
+      get: async (id: string) => {
+        const item = await localDataClient.entities.StudentCriteriaStatus.get(id);
+        return item ? mapLocalEntityToDomain<StudentCriteriaStatus>(item) : null;
+      },
+      filter: async (filters: Record<string, any>, limit?: number | null) => {
+        const items = await localDataClient.entities.StudentCriteriaStatus.filter(filters, limit || undefined);
+        return items.map(i => mapLocalEntityToDomain<StudentCriteriaStatus>(i));
+      },
+      create: async (data) => {
+        const item = await localDataClient.entities.StudentCriteriaStatus.create(data);
+        return mapLocalEntityToDomain<StudentCriteriaStatus>(item);
+      },
+      update: async (id: string, updates: any) => {
+        const item = await localDataClient.entities.StudentCriteriaStatus.update(id, updates);
+        return mapLocalEntityToDomain<StudentCriteriaStatus>(item);
+      },
+      delete: async (id: string) => {
+        return await localDataClient.entities.StudentCriteriaStatus.delete(id);
+      },
+    },
+    studentLevelHistory: {
+      list: async (sort?: string) => {
+        const items = await localDataClient.entities.StudentLevelHistory.list(sort);
+        return items.map(i => mapLocalEntityToDomain<StudentLevelHistory>(i));
+      },
+      get: async (id: string) => {
+        const item = await localDataClient.entities.StudentLevelHistory.get(id);
+        return item ? mapLocalEntityToDomain<StudentLevelHistory>(item) : null;
+      },
+      filter: async (filters: Record<string, any>, limit?: number | null) => {
+        const items = await localDataClient.entities.StudentLevelHistory.filter(filters, limit || undefined);
+        return items.map(i => mapLocalEntityToDomain<StudentLevelHistory>(i));
+      },
+      create: async (data) => {
+        const item = await localDataClient.entities.StudentLevelHistory.create(data);
+        return mapLocalEntityToDomain<StudentLevelHistory>(item);
+      },
+      update: async (id: string, updates: any) => {
+        const item = await localDataClient.entities.StudentLevelHistory.update(id, updates);
+        return mapLocalEntityToDomain<StudentLevelHistory>(item);
+      },
+      delete: async (id: string) => {
+        return await localDataClient.entities.StudentLevelHistory.delete(id);
+      },
+    },
+    studentXpTotal: {
+      list: async (sort?: string) => {
+        const items = await localDataClient.entities.StudentXPTotal.list(sort);
+        return items.map(i => mapLocalEntityToDomain<StudentXPTotal>(i));
+      },
+      get: async (id: string) => {
+        const item = await localDataClient.entities.StudentXPTotal.get(id);
+        return item ? mapLocalEntityToDomain<StudentXPTotal>(item) : null;
+      },
+      filter: async (filters: Record<string, any>, limit?: number | null) => {
+        const items = await localDataClient.entities.StudentXPTotal.filter(filters, limit || undefined);
+        return items.map(i => mapLocalEntityToDomain<StudentXPTotal>(i));
+      },
+      create: async (data) => {
+        const item = await localDataClient.entities.StudentXPTotal.create(data);
+        return mapLocalEntityToDomain<StudentXPTotal>(item);
+      },
+      update: async (id: string, updates: any) => {
+        const item = await localDataClient.entities.StudentXPTotal.update(id, updates);
+        return mapLocalEntityToDomain<StudentXPTotal>(item);
+      },
+      delete: async (id: string) => {
+        return await localDataClient.entities.StudentXPTotal.delete(id);
+      },
+    },
+    studentBackpack: {
+      list: async (sort?: string) => {
+        const items = await localDataClient.entities.StudentBackpack.list(sort);
+        return items.map(i => mapLocalEntityToDomain<StudentBackpackItem>(i));
+      },
+      get: async (id: string) => {
+        const item = await localDataClient.entities.StudentBackpack.get(id);
+        return item ? mapLocalEntityToDomain<StudentBackpackItem>(item) : null;
+      },
+      filter: async (filters: Record<string, any>, limit?: number | null) => {
+        const items = await localDataClient.entities.StudentBackpack.filter(filters, limit || undefined);
+        return items.map(i => mapLocalEntityToDomain<StudentBackpackItem>(i));
+      },
+      create: async (data) => {
+        const item = await localDataClient.entities.StudentBackpack.create(data);
+        return mapLocalEntityToDomain<StudentBackpackItem>(item);
+      },
+      update: async (id: string, updates: any) => {
+        const item = await localDataClient.entities.StudentBackpack.update(id, updates);
+        return mapLocalEntityToDomain<StudentBackpackItem>(item);
+      },
+      delete: async (id: string) => {
+        return await localDataClient.entities.StudentBackpack.delete(id);
+      },
+    },
+    mediaAssets: {
+      list: async (sort?: string) => {
+        const items = await localDataClient.entities.MediaAsset.list(sort);
+        return items.map(i => mapLocalEntityToDomain<MediaAsset>(i));
+      },
+      get: async (id: string) => {
+        const item = await localDataClient.entities.MediaAsset.get(id);
+        return item ? mapLocalEntityToDomain<MediaAsset>(item) : null;
+      },
+      filter: async (filters: Record<string, any>, limit?: number | null) => {
+        const items = await localDataClient.entities.MediaAsset.filter(filters, limit || undefined);
+        return items.map(i => mapLocalEntityToDomain<MediaAsset>(i));
+      },
+      create: async (data) => {
+        const item = await localDataClient.entities.MediaAsset.create(data);
+        return mapLocalEntityToDomain<MediaAsset>(item);
+      },
+      update: async (id: string, updates: any) => {
+        const item = await localDataClient.entities.MediaAsset.update(id, updates);
+        return mapLocalEntityToDomain<MediaAsset>(item);
+      },
+      delete: async (id: string) => {
+        return await localDataClient.entities.MediaAsset.delete(id);
+      },
+    },
+
+    // RPC Methods
+    getCalendarSummary: (startDate: Date, endDate: Date, userId?: string) => {
+      return localDataClient.getCalendarSummary(startDate, endDate, userId);
+    },
+    getProgressSummary: (studentId?: string) => {
+      return localDataClient.getProgressSummary(studentId);
+    },
+    getSeedStats: () => {
+      return localDataClient.getSeedStats();
+    },
   };
 }
-

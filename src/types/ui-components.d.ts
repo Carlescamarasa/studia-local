@@ -46,13 +46,7 @@ declare module '@/components/ui/toggle-group' {
     export const ToggleGroupItem: any;
 }
 
-declare module '@/components/ds/Badge' {
-    export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
-        variant?: 'default' | 'secondary' | 'destructive' | 'outline';
-    }
-    const Badge: React.FC<BadgeProps>;
-    export default Badge;
-}
+
 
 declare module '@/components/ui/checkbox' {
     export interface CheckboxProps extends React.ComponentPropsWithoutRef<typeof import('@radix-ui/react-checkbox').Root> {
