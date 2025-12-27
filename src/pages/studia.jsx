@@ -15,6 +15,9 @@ import { useUsers } from "@/hooks/entities/useUsers";
 import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
 import { useBloques } from "@/hooks/entities/useBloques";
 import { updateBackpackFromSession } from '@/shared/services/backpackService';
+import { createRemoteDataAPI } from "@/api/remoteDataAPI";
+import { localDataClient } from "@/api/localDataClient";
+import { useQuery } from "@tanstack/react-query";
 
 import RequireRole from "@/components/auth/RequireRole";
 import { ROUTES } from "@/lib/routes";
@@ -117,6 +120,10 @@ function StudiaPageContent() {
     const semanaIdxParam = parseInt(searchParams.get('semanaIdx') || '0', 10);
     const sesionIdxParam = parseInt(searchParams.get('sesionIdx') || '0', 10);
 
+    // Try Mode - detect from URL params (mode=try&codes=...)
+    const isTryMode = searchParams.get('mode') === 'try';
+    const tryCodes = searchParams.get('codes')?.split(',').filter(Boolean) || [];
+
     // Session state
     const [sesionActiva, setSesionActiva] = useState(null);
     const [indiceActual, setIndiceActual] = useState(0);
@@ -196,11 +203,24 @@ function StudiaPageContent() {
 
     const userIdActual = alumnoActual?.id || effectiveUser?.id;
 
-    // Load assignments (centralized hook)
+    // Load assignments (centralized hook) - In try mode, we still load but won't use them
     const { data: asignacionesRaw = [], isLoading: loadingAsignaciones } = useAsignaciones();
 
-    // Load blocks with variations (centralized hook)
-    const { data: bloquesActuales = [] } = useBloques();
+    // Load blocks with variations - Use remoteDataAPI query for try mode (same as hoy.jsx)
+    const { data: bloquesActuales = [] } = useQuery({
+        queryKey: ['bloques-with-variations'],
+        queryFn: async () => {
+            try {
+                const bloques = await remoteDataAPI.bloques.list();
+                return bloques || [];
+            } catch (error) {
+                console.error('[Try Mode] Error fetching bloques from Supabase, falling back to localStorage:', error);
+                const localRes = await localDataClient.entities.Bloque.list();
+                return localRes || [];
+            }
+        },
+        staleTime: 30 * 1000,
+    });
 
     // Filter valid assignments
     const asignaciones = useMemo(() => {
@@ -212,18 +232,94 @@ function StudiaPageContent() {
         });
     }, [asignacionesRaw]);
 
-    // Find the specific assignment
+    // Try Mode: Create mock assignment
+    const tryModeAsignacion = useMemo(() => {
+        if (!isTryMode) return null;
+        return {
+            id: 'try-mode-session',
+            alumnoId: userIdActual,
+            plan: {
+                nombre: 'Modo Prueba',
+                semanas: [{
+                    nombre: 'Sesión de Prueba',
+                    sesiones: [{
+                        nombre: 'Modo Prueba',
+                        foco: 'GEN',
+                        bloques: [] // Will be populated by the try effect
+                    }]
+                }]
+            },
+            piezaSnapshot: {
+                nombre: 'Sin pieza asignada',
+            }
+        };
+    }, [isTryMode, userIdActual]);
+
+    // Find the specific assignment (or use try mode)
     const asignacionActiva = useMemo(() => {
+        if (isTryMode) return tryModeAsignacion;
         if (!asignacionIdParam) return null;
         return asignaciones.find(a => a.id === asignacionIdParam) || null;
-    }, [asignaciones, asignacionIdParam]);
+    }, [isTryMode, tryModeAsignacion, asignaciones, asignacionIdParam]);
 
     // Get week and session
     const semanaDelPlan = asignacionActiva?.plan?.semanas?.[semanaIdxParam] || null;
     const sesionDelPlan = semanaDelPlan?.sesiones?.[sesionIdxParam] || null;
 
-    // Initialize session on mount
+    // TRY MODE: Create session from URL codes
     useEffect(() => {
+        if (!isTryMode || tryCodes.length === 0) return;
+        if (sesionActiva) return; // Already started
+        if (bloquesActuales.length === 0) return; // Wait for bloques to load
+
+        console.log('[TryMode] Creating session from codes:', tryCodes);
+
+        // Create bloques from codes, merging full bloque data
+        const bloques = tryCodes.map((code, idx) => {
+            const dbBloque = bloquesActuales.find(b => b.code === code);
+
+            if (dbBloque) {
+                return {
+                    ...dbBloque,
+                    modo: 'estudio',
+                };
+            }
+
+            // Fallback for exercises not found in DB
+            return {
+                tipo: 'PR',
+                code: code,
+                nombre: `Ejercicio ${idx + 1}`,
+                duracionSeg: 300,
+                modo: 'estudio',
+            };
+        });
+
+        const trySesion = {
+            nombre: 'Modo Prueba',
+            foco: 'GEN',
+            bloques: bloques,
+        };
+
+        console.log('[TryMode] Session created:', trySesion);
+        setSesionActiva(trySesion);
+        setIndiceActual(0);
+        setTiempoActual(0);
+        setCronometroActiva(false);
+        setCompletados(new Set());
+        setOmitidos(new Set());
+        setSesionFinalizada(false);
+        setDatosFinal(null);
+        setRegistroSesionId(null);
+        bloquesPendientesRef.current = [];
+        setTimestampInicio(Date.now());
+        setTimestampUltimoPausa(null);
+        setTiempoAcumuladoAntesPausa(0);
+    }, [isTryMode, tryCodes, sesionActiva, bloquesActuales]);
+
+    // Initialize session on mount (skip in try mode)
+    useEffect(() => {
+        if (isTryMode) return; // Skip normal session loading in try mode
         if (!sesionDelPlan || sesionActiva) return;
 
         // Process session with variations (same logic as empezarSesion in hoy.jsx)
@@ -547,7 +643,12 @@ function StudiaPageContent() {
 
     const salirSinGuardar = () => {
         setMostrarModalCancelar(false);
-        cerrarSesion();
+        if (isTryMode) {
+            // In try mode, navigate back instead of closing session
+            navigate(-1);
+        } else {
+            cerrarSesion();
+        }
     };
 
     const finalizarSesion = async (calidad, notas, mediaLinks) => {
@@ -725,8 +826,8 @@ function StudiaPageContent() {
         );
     }
 
-    // Error state - no assignment found
-    if (!asignacionActiva || !semanaDelPlan || !sesionDelPlan) {
+    // Error state - no assignment found (skip check in try mode)
+    if (!isTryMode && (!asignacionActiva || !semanaDelPlan || !sesionDelPlan)) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center p-4">
                 <Card className="max-w-md">
@@ -745,8 +846,25 @@ function StudiaPageContent() {
         );
     }
 
-    // Session finished - show summary
+    // Session finished - show summary (skip in try mode)
     if (sesionFinalizada) {
+        // In try mode, skip feedback modal and navigate back directly
+        if (isTryMode) {
+            // Use effect to navigate back after state settles
+            React.useEffect(() => {
+                const timer = setTimeout(() => {
+                    navigate(-1);
+                }, 100);
+                return () => clearTimeout(timer);
+            }, []);
+
+            return (
+                <div className="min-h-screen bg-background flex items-center justify-center">
+                    <LoadingSpinner size="xl" text="Finalizando modo prueba..." />
+                </div>
+            );
+        }
+
         const listaEjecucion = aplanarSesion(sesionActiva);
         const tiempoPrevisto = listaEjecucion
             .filter(e => e.tipo !== 'AD')
@@ -1165,6 +1283,7 @@ function StudiaPageContent() {
                     onGuardarYSalir={guardarYSalir}
                     onSalirSinGuardar={salirSinGuardar}
                     onContinuar={() => setMostrarModalCancelar(false)}
+                    hideGuardar={isTryMode}
                 />
             )}
 
