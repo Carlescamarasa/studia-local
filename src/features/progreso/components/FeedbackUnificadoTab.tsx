@@ -432,11 +432,11 @@ export default function FeedbackUnificadoTab({
                             </div>
 
                             <TablePagination
-                                data={itemsFiltrados as any[]}
+                                data={itemsFiltrados as any}
                                 currentPage={pagina}
                                 pageSize={pageSize}
                                 onPageChange={setPagina}
-                                onPageSizeChange={(newSize) => {
+                                onPageSizeChange={(newSize: number) => {
                                     setPageSize(newSize);
                                     setPagina(1);
                                 }}
@@ -453,6 +453,8 @@ export default function FeedbackUnificadoTab({
                 registroSesion={registroSesionSeleccionado}
                 usuarios={Object.values(usuariosMap)}
                 onMediaClick={onMediaClick}
+                userIdActual={userIdActual || ""}
+                userRole={userRole}
             />
 
             <ModalFeedbackDetalle

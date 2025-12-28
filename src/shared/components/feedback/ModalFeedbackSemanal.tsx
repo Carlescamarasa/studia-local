@@ -124,8 +124,8 @@ export default function ModalFeedbackSemanal({
     const [notaProfesor, setNotaProfesor] = useState("");
 
     // 3. Multimedia
-    const [mediaLinks, setMediaLinks] = useState([]);
-    const [videoFile, setVideoFile] = useState(null);
+    const [mediaLinks, setMediaLinks] = useState<any[]>([]);
+    const [videoFile, setVideoFile] = useState<File | null>(null);
     const [uploadingVideo, setUploadingVideo] = useState(false);
 
     // --- OPTIMISTIC UI: Calculate projected promotion status based on current inputs ---
@@ -374,20 +374,19 @@ export default function ModalFeedbackSemanal({
                 setUploadingVideo(true);
                 try {
                     const uploadResult = await uploadVideoToYouTube(videoFile, {
-                        contexto: 'feedback_profesor',
+                        contexto: 'sesion_estudio',
                         profesor_id: (effectiveUser as any)?.id || "unknown",
                         profesor_nombre: (effectiveUser as any)?.full_name || (effectiveUser as any)?.email || 'Profesor',
                         alumno_id: studentId,
-                        semana_inicio_iso: weekStartISO,
                         comentarios: notaProfesor,
-                    });
+                    } as any);
 
                     if (uploadResult.ok && uploadResult.videoUrl) {
                         finalMediaLinks.push(uploadResult.videoUrl);
                     } else {
                         throw new Error(uploadResult.error || 'Error al subir el vídeo');
                     }
-                } catch (videoError) {
+                } catch (videoError: any) {
                     console.error("Error upload video", videoError);
                     toast({ variant: "destructive", title: "Error vídeo", description: "No se pudo subir el vídeo." });
                     setUploadingVideo(false);
@@ -555,13 +554,13 @@ export default function ModalFeedbackSemanal({
 
                                                     {/* Experiencia (XP) Section */}
                                                     {(() => {
-                                                        const xpItems = projectedPromotionStatus?.missing?.filter(m => m.includes('XP:')) || [];
+                                                        const xpItems = projectedPromotionStatus?.missing?.filter((m: any) => m.includes('XP:')) || [];
                                                         if (xpItems.length === 0) return null;
                                                         return (
                                                             <div>
                                                                 <p className="font-medium text-xs uppercase text-[var(--color-text-secondary)]">Experiencia</p>
                                                                 <ul className="text-xs list-disc pl-4 mt-1">
-                                                                    {xpItems.map((m, i) => {
+                                                                    {xpItems.map((m: any, i: number) => {
                                                                         const cleaned = m.replace(' XP:', ':');
                                                                         return <li key={i}>{cleaned}</li>;
                                                                     })}
@@ -572,7 +571,7 @@ export default function ModalFeedbackSemanal({
 
                                                     {/* Criterios Section */}
                                                     {(() => {
-                                                        const criteriaItems = projectedPromotionStatus?.missing?.filter(m => m.startsWith('Criterio:')) || [];
+                                                        const criteriaItems = projectedPromotionStatus?.missing?.filter((m: any) => m.startsWith('Criterio:')) || [];
                                                         if (criteriaItems.length === 0) return null;
                                                         return (
                                                             <div>
@@ -580,7 +579,7 @@ export default function ModalFeedbackSemanal({
                                                                 <ul className="text-xs list-disc pl-4 mt-1">
                                                                     {criteriaItems.map((m: any, i: number) => {
                                                                         const desc = m.replace('Criterio: ', '');
-                                                                        const criterion = nextLevelCriteria.find((c: any) => c.criterion.description === desc);
+                                                                        const criterion = nextLevelCriteria.find((c: any) => (c.criterion as any).description === desc);
                                                                         const skill = (criterion as any)?.criterion?.skill || '';
                                                                         const skillLabel = skill.charAt(0).toUpperCase() + skill.slice(1);
                                                                         return <li key={i}>{skillLabel}: {desc}</li>;
@@ -621,10 +620,10 @@ export default function ModalFeedbackSemanal({
                                             />
                                             <div className="grid gap-0.5 leading-none">
                                                 <label htmlFor={`crit-${item.criterion.id}`} className="text-xs font-medium text-[var(--color-text-primary)] cursor-pointer">
-                                                    {item.criterion.description}
+                                                    {(item.criterion as any).description}
                                                 </label>
                                                 <span className="text-[10px] text-[var(--color-text-secondary)] uppercase">
-                                                    {item.criterion.skill} • {item.criterion.source}
+                                                    {(item.criterion as any).skill} • {(item.criterion as any).source}
                                                 </span>
                                             </div>
                                         </div>
@@ -764,8 +763,8 @@ export default function ModalFeedbackSemanal({
                                                             // Map skill ID to short key used in promotionCheck.xp
                                                             const shortKey = skill.id === 'motricidad' ? 'motr' : skill.id === 'articulacion' ? 'art' : 'flex';
                                                             const currentTotal = promotionCheck?.xp?.[shortKey] || 0;
-                                                            const originalVal = originalXpDeltas[skill.id] || 0;
-                                                            const inputVal = Number(skill.value) || 0;
+                                                            const originalVal = (originalXpDeltas as any)[skill.id] || 0;
+                                                            const inputVal = Number((skill as any).value) || 0;
 
                                                             const hasInput = skill.value !== "" && skill.value !== "0";
 
@@ -827,14 +826,14 @@ export default function ModalFeedbackSemanal({
                                         Añade enlaces a vídeos, partituras o grabaciones para el alumno.
                                     </p>
                                     <MediaLinksInput
-                                        value={mediaLinks}
+                                        value={mediaLinks as any}
                                         onChange={setMediaLinks}
                                         showFileUpload={true}
-                                        videoFile={videoFile}
-                                        onVideoFileChange={setVideoFile}
+                                        videoFile={videoFile as any}
+                                        onVideoFileChange={setVideoFile as any}
                                         uploadingVideo={uploadingVideo}
                                         disabled={isSubmitting || uploadingVideo}
-                                        onPreview={onMediaClick ? (idx) => onMediaClick(mediaLinks, idx) : undefined}
+                                        onPreview={onMediaClick ? (idx: number) => onMediaClick(mediaLinks, idx) : undefined}
                                     />
                                 </div>
                             </div>

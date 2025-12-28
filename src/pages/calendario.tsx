@@ -486,9 +486,9 @@ function CalendarioPageContent() {
           open={!!eventoSeleccionado}
           onOpenChange={handleCerrarModal}
           registroSesion={eventoSeleccionado}
-          usuarios={usuarios}
-          userIdActual={userIdActual}
-          userRole={userRole}
+          usuarios={usuarios as any[]}
+          userIdActual={userIdActual || ""}
+          userRole={userRole as any}
           onDelete={handleDeleteSesion}
         />
       )}
@@ -527,7 +527,7 @@ function CalendarioPageContent() {
             open={true}
             onOpenChange={handleCerrarModal}
             evento={eventoSeleccionado}
-            userIdActual={userIdActual}
+            userIdActual={userIdActual || ""}
           />
         )
       )}
