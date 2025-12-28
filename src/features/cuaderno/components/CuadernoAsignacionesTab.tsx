@@ -1,5 +1,11 @@
 import React from "react";
+// @ts-expect-error AsignacionesTab is not typed yet
 import AsignacionesTab from "./AsignacionesTab";
+
+interface CuadernoAsignacionesTabProps {
+    semanaActualISO: string;
+    searchTerm: string;
+}
 
 /**
  * CuadernoAsignacionesTab - Wrapper for AsignacionesTab component
@@ -7,7 +13,7 @@ import AsignacionesTab from "./AsignacionesTab";
 export default function CuadernoAsignacionesTab({
     semanaActualISO,
     searchTerm
-}) {
+}: CuadernoAsignacionesTabProps) {
     return (
         <AsignacionesTab
             externalSearchTerm={searchTerm}

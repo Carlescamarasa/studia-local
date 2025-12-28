@@ -1,6 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { componentStyles } from "@/design/componentStyles";
 import { Input } from "@/components/ui/input";
 import { Search, X } from "lucide-react";
@@ -9,6 +8,7 @@ import CuadernoHeader from "./CuadernoHeader";
 import CuadernoTabs from "./CuadernoTabs";
 import CuadernoEstudiantesTab from "./CuadernoEstudiantesTab";
 import CuadernoAsignacionesTab from "./CuadernoAsignacionesTab";
+// @ts-expect-error FormularioRapido is not typed yet
 import FormularioRapido from "@/features/asignaciones/components/FormularioRapido";
 import {
     formatLocalDate,
@@ -16,6 +16,8 @@ import {
     startOfMonday,
     calcularLunesSemanaISO
 } from "../utils";
+
+type TabValue = 'estudiantes' | 'asignaciones';
 
 /**
  * CuadernoContent - Main content component for cuaderno feature
@@ -25,7 +27,7 @@ export default function CuadernoContent() {
     const [searchParams, setSearchParams] = useSearchParams();
     const tabFromUrl = searchParams.get('tab');
 
-    const [activeTab, setActiveTab] = useState(tabFromUrl === 'asignaciones' ? 'asignaciones' : 'estudiantes');
+    const [activeTab, setActiveTab] = useState<TabValue>(tabFromUrl === 'asignaciones' ? 'asignaciones' : 'estudiantes');
     const [searchTerm, setSearchTerm] = useState('');
     const [showForm, setShowForm] = useState(false);
 
@@ -34,12 +36,12 @@ export default function CuadernoContent() {
         return calcularLunesSemanaISO(new Date());
     });
 
-    const handleTabChange = (newTab) => {
+    const handleTabChange = (newTab: TabValue) => {
         setActiveTab(newTab);
         setSearchParams({ tab: newTab });
     };
 
-    const cambiarSemana = (direccion) => {
+    const cambiarSemana = (direccion: number) => {
         const base = parseLocalDate(semanaActualISO);
         base.setDate(base.getDate() + (direccion * 7));
         const lunes = startOfMonday(base);

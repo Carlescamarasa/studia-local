@@ -5,12 +5,82 @@ import {
     Notebook, Music, PlayCircle, ChevronRight, MessageSquare,
     Edit, Trash2
 } from "lucide-react";
+// @ts-expect-error UserActionsMenu is not typed
 import UserActionsMenu from "@/components/common/UserActionsMenu";
 import SessionContentView from "@/shared/components/study/SessionContentView";
+// @ts-expect-error MediaLinksBadges is not typed
 import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
 import { calcularTiempoSesion } from "@/components/study/sessionSequence";
 import { displayName } from "@/components/utils/helpers";
 import { focoLabels } from "../utils";
+
+// Types
+interface Usuario {
+    id: string;
+    nombre?: string;
+    email?: string;
+    rolPersonalizado?: string;
+}
+
+interface Sesion {
+    nombre: string;
+    foco?: string;
+    [key: string]: unknown;
+}
+
+interface Semana {
+    nombre?: string;
+    sesiones?: Sesion[];
+}
+
+interface Asignacion {
+    id: string;
+    piezaSnapshot?: {
+        nombre?: string;
+    };
+    plan?: {
+        nombre?: string;
+        semanas?: Semana[];
+    };
+}
+
+interface MediaLink {
+    url: string;
+    tipo?: string;
+}
+
+interface Feedback {
+    id: string;
+    profesorId: string;
+    notaProfesor?: string;
+    lastEditedAt?: string;
+    mediaLinks?: MediaLink[];
+    habilidades?: {
+        sonido?: number;
+        cognicion?: number;
+        xpDeltas?: {
+            motricidad?: number;
+            articulacion?: number;
+            flexibilidad?: number;
+        };
+    };
+}
+
+interface EstudianteCardProps {
+    alumno: Usuario;
+    asignacionActiva?: Asignacion | null;
+    semana?: Semana | null;
+    semanaIdx: number;
+    feedback?: Feedback | null;
+    usuarios: Usuario[];
+    userIdActual: string;
+    isAdmin: boolean;
+    expandedSessions: Set<string>;
+    onToggleSession: (key: string) => void;
+    onOpenFeedback: (alumno: Usuario, feedback?: Feedback | null) => void;
+    onDeleteFeedback: (id: string) => void;
+    onPreviewMedia: (idx: number, links: MediaLink[]) => void;
+}
 
 /**
  * EstudianteCard - Individual student card showing assignment and feedback info
@@ -29,7 +99,7 @@ export default function EstudianteCard({
     onOpenFeedback,
     onDeleteFeedback,
     onPreviewMedia,
-}) {
+}: EstudianteCardProps) {
     const nombre = displayName(alumno);
 
     return (
@@ -155,7 +225,17 @@ export default function EstudianteCard({
     );
 }
 
-function FeedbackDisplay({ feedback, usuarios, userIdActual, isAdmin, onEdit, onDelete, onPreviewMedia }) {
+interface FeedbackDisplayProps {
+    feedback: Feedback;
+    usuarios: Usuario[];
+    userIdActual: string;
+    isAdmin: boolean;
+    onEdit: () => void;
+    onDelete: () => void;
+    onPreviewMedia: (idx: number, links: MediaLink[]) => void;
+}
+
+function FeedbackDisplay({ feedback, usuarios, userIdActual, isAdmin, onEdit, onDelete, onPreviewMedia }: FeedbackDisplayProps) {
     const habilidades = feedback.habilidades || {};
     const xpDeltas = habilidades.xpDeltas || {};
     const hasXP = xpDeltas.motricidad || xpDeltas.articulacion || xpDeltas.flexibilidad;
@@ -234,7 +314,7 @@ function FeedbackDisplay({ feedback, usuarios, userIdActual, isAdmin, onEdit, on
             {feedback.mediaLinks && feedback.mediaLinks.length > 0 && (
                 <MediaLinksBadges
                     mediaLinks={feedback.mediaLinks}
-                    onMediaClick={(idx) => onPreviewMedia(idx, feedback.mediaLinks)}
+                    onMediaClick={(idx: number) => onPreviewMedia(idx, feedback.mediaLinks!)}
                     compact
                     maxDisplay={2}
                 />

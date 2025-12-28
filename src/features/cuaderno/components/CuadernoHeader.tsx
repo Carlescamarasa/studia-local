@@ -1,10 +1,18 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Notebook, Plus } from "lucide-react";
+// @ts-expect-error PeriodHeader is not typed
 import PeriodHeader from "@/components/common/PeriodHeader";
 import { parseLocalDate, isoWeekNumber } from "../utils";
+
+interface CuadernoHeaderProps {
+    semanaActualISO: string;
+    onPrev: () => void;
+    onNext: () => void;
+    onToday: () => void;
+    onNuevaAsignacion?: () => void;
+}
 
 /**
  * CuadernoHeader - Header with week navigation and "Nueva Asignación" button
@@ -15,9 +23,7 @@ export default function CuadernoHeader({
     onNext,
     onToday,
     onNuevaAsignacion
-}) {
-    const navigate = useNavigate();
-
+}: CuadernoHeaderProps) {
     const lunesSemana = parseLocalDate(semanaActualISO);
     const domingoSemana = new Date(lunesSemana);
     domingoSemana.setDate(lunesSemana.getDate() + 6);
