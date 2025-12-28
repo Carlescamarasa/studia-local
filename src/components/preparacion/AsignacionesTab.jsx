@@ -16,7 +16,7 @@ import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import UnifiedTable from "@/components/tables/UnifiedTable";
 import FormularioRapido from "@/components/asignaciones/FormularioRapido";
-import StudentSearchBar from "@/components/asignaciones/StudentSearchBar";
+import StudentSearchBar from "@/features/asignaciones/components/StudentSearchBar";
 import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, resolveUserIdActual, startOfMonday, calcularLunesSemanaISO, calcularOffsetSemanas, isoWeekNumberLocal } from "@/components/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

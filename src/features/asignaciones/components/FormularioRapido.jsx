@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Save, Users, Music, BookOpen, Calendar, Settings, Target, Plus, Ban } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
-import StudentSearchBarAsync from "@/components/asignaciones/StudentSearchBarAsync";
+import StudentSearchBarAsync from "@/features/asignaciones/components/StudentSearchBarAsync";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
