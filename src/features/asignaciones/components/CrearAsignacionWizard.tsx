@@ -19,12 +19,55 @@ import { formatLocalDate, parseLocalDate, startOfMonday, displayName } from "@/c
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { useAuth } from "@/auth/AuthProvider";
 import { useUsers } from "@/hooks/entities/useUsers";
+import { componentStyles } from "@/design/componentStyles";
 
-export default function CrearAsignacionWizard({ onClose }) {
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
+type FocoKey = 'GEN' | 'SON' | 'FLX' | 'MOT' | 'ART' | 'COG';
+
+interface WizardFormData {
+  estudiantesIds: string[];
+  piezaId: string;
+  planId: string;
+  fechaSeleccionada: string;
+  semanaInicioISO: string;
+  foco: string;
+  notas: string;
+  publicarAlTerminar: boolean;
+}
+
+interface Pieza {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  nivel?: string;
+  tiempoObjetivoSeg?: number;
+  elementos?: unknown[];
+}
+
+interface Plan {
+  id: string;
+  nombre: string;
+  semanas?: unknown[];
+  focoGeneral?: string;
+  objetivoSemanalPorDefecto?: string;
+}
+
+interface CrearAsignacionWizardProps {
+  onClose: () => void;
+}
+
+// ============================================================================
+// Component
+// ============================================================================
+
+export default function CrearAsignacionWizard({ onClose }: CrearAsignacionWizardProps) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
+  const [step, setStep] = useState<number>(1);
+  const [formData, setFormData] = useState<WizardFormData>({
     estudiantesIds: [],
     piezaId: '',
     planId: '',
@@ -34,9 +77,9 @@ export default function CrearAsignacionWizard({ onClose }) {
     notas: '',
     publicarAlTerminar: false,
   });
-  const [searchEstudiante, setSearchEstudiante] = useState('');
-  const [searchPieza, setSearchPieza] = useState('');
-  const [searchPlan, setSearchPlan] = useState('');
+  const [searchEstudiante, setSearchEstudiante] = useState<string>('');
+  const [searchPieza, setSearchPieza] = useState<string>('');
+  const [searchPlan, setSearchPlan] = useState<string>('');
 
   const effectiveUser = useEffectiveUser();
   const { user: authUser, authError: authErrorContext } = useAuth();
@@ -48,24 +91,24 @@ export default function CrearAsignacionWizard({ onClose }) {
     [allUsers]
   );
 
-  const { data: piezas = [] } = useQuery({
+  const { data: piezas = [] } = useQuery<Pieza[]>({
     queryKey: ['piezas'],
     queryFn: () => localDataClient.entities.Pieza.list(),
   });
 
-  const { data: planes = [] } = useQuery({
+  const { data: planes = [] } = useQuery<Plan[]>({
     queryKey: ['planes'],
     queryFn: () => localDataClient.entities.Plan.list(),
   });
 
   const crearAsignacionesMutation = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async (data: WizardFormData) => {
       // Usar usuario del contexto AuthProvider en lugar de llamar directamente a supabase.auth.getUser()
       // Verificar si hay error de autenticación en el contexto
       if (authErrorContext) {
-        const isSessionNotFound = authErrorContext.message?.includes('session_not_found') ||
-          authErrorContext.status === 403 ||
-          authErrorContext.code === 'session_not_found';
+        const isSessionNotFound = (authErrorContext as Error).message?.includes('session_not_found') ||
+          (authErrorContext as { status?: number }).status === 403 ||
+          (authErrorContext as { code?: string }).code === 'session_not_found';
         if (isSessionNotFound) {
           throw new Error('Sesión expirada. Por favor, vuelve a iniciar sesión.');
         }
@@ -77,21 +120,22 @@ export default function CrearAsignacionWizard({ onClose }) {
         throw new Error('Usuario no autenticado. Por favor, inicia sesión nuevamente.');
       }
 
-      // Usar authUser.id (del contexto) si está disponible, sino effectiveUser?.id
-      const profesorId = authUser?.id || effectiveUser?.id;
+      // Usar authUser.id (del contexto) si está disponible, sino effectiveUser?.effectiveUserId
+      const profesorId = authUser?.id || effectiveUser?.effectiveUserId;
 
       if (!profesorId) {
         throw new Error('No se pudo obtener el ID del profesor. Por favor, inicia sesión nuevamente.');
       }
 
       // Logging para depuración
-      console.log('[CrearAsignacionWizard] Creando asignación:', {
-        authUid: authUser.id,
-        effectiveUserId: effectiveUser?.id,
-        profesorId,
-        match: authUser.id === effectiveUser?.id,
-        estudiantesIds: data.estudiantesIds.length,
-      });
+      if (import.meta.env.DEV) {
+        console.log('[CrearAsignacionWizard] Creando asignación:', {
+          authUid: authUser?.id,
+          effectiveUserId: effectiveUser?.effectiveUserId,
+          profesorId,
+          estudiantesIds: data.estudiantesIds.length,
+        });
+      }
 
       const pieza = piezas.find(p => p.id === data.piezaId);
       const plan = planes.find(p => p.id === data.planId);
@@ -135,23 +179,23 @@ export default function CrearAsignacionWizard({ onClose }) {
           results.push(result);
         } catch (error) {
           console.error('[CrearAsignacionWizard] Error al crear asignación:', {
-            error: error?.message || error,
-            code: error?.code,
-            status: error?.status,
-            details: error?.details,
+            error: (error as Error)?.message || error,
+            code: (error as { code?: string })?.code,
+            status: (error as { status?: number })?.status,
+            details: (error as { details?: unknown })?.details,
             asignacion,
           });
 
           const alumno = estudiantes.find(e => e.id === asignacion.alumnoId);
-          const errorMessage = error?.message || 'Error desconocido';
+          const errorMessage = (error as Error)?.message || 'Error desconocido';
 
           // Mensajes de error más descriptivos
-          if (error?.code === '42501' || errorMessage.includes('row-level security')) {
+          if ((error as { code?: string })?.code === '42501' || errorMessage.includes('row-level security')) {
             toast.error(`❌ Error de permisos: No tienes permiso para crear esta asignación. Verifica que estés autenticado correctamente.`);
-          } else if (errorMessage.includes('CORS') || error?.status === null) {
+          } else if (errorMessage.includes('CORS') || (error as { status?: number | null })?.status === null) {
             toast.error(`❌ Error de CORS: Problema de conexión con el servidor. Verifica tu conexión y configuración de CORS en Supabase.`);
           } else {
-            toast.error(`❌ No se pudo crear la asignación para ${alumno?.full_name || 'el estudiante'}: ${errorMessage}`);
+            toast.error(`❌ No se pudo crear la asignación para ${alumno?.fullName || 'el estudiante'}: ${errorMessage}`);
           }
         }
       }
@@ -174,12 +218,12 @@ export default function CrearAsignacionWizard({ onClose }) {
     },
   });
 
-  const calcularLunesSemanaISO = (fecha) => {
+  const calcularLunesSemanaISO = (fecha: string): string => {
     const date = parseLocalDate(fecha);
     return formatLocalDate(startOfMonday(date));
   };
 
-  const getDomingoSemana = (lunes) => {
+  const getDomingoSemana = (lunes: string): string => {
     const date = parseLocalDate(lunes);
     date.setDate(date.getDate() + 6);
     return formatLocalDate(date);
@@ -193,8 +237,7 @@ export default function CrearAsignacionWizard({ onClose }) {
   }, [formData.fechaSeleccionada]);
 
   const filteredEstudiantes = estudiantes.filter(e =>
-    displayName(e).toLowerCase().includes(searchEstudiante.toLowerCase()) ||
-    e.email?.toLowerCase().includes(searchEstudiante.toLowerCase())
+    displayName(e).toLowerCase().includes(searchEstudiante.toLowerCase())
   );
 
   const filteredPiezas = piezas.filter(p =>
@@ -205,7 +248,7 @@ export default function CrearAsignacionWizard({ onClose }) {
     p.nombre?.toLowerCase().includes(searchPlan.toLowerCase())
   );
 
-  const toggleEstudiante = (id) => {
+  const toggleEstudiante = (id: string) => {
     if (formData.estudiantesIds.includes(id)) {
       setFormData({
         ...formData,
@@ -245,7 +288,7 @@ export default function CrearAsignacionWizard({ onClose }) {
     { num: 5, label: 'Opciones', icon: Settings },
   ];
 
-  const focoLabels = {
+  const focoLabels: Record<string, string> = {
     GEN: 'General',
     SON: 'Sonido',
     FLX: 'Flexibilidad',
@@ -578,7 +621,7 @@ export default function CrearAsignacionWizard({ onClose }) {
                   <Checkbox
                     id="publicar"
                     checked={formData.publicarAlTerminar}
-                    onCheckedChange={(checked) => setFormData({ ...formData, publicarAlTerminar: checked })}
+                    onCheckedChange={(checked) => setFormData({ ...formData, publicarAlTerminar: checked === true })}
                   />
                   <div className="flex-1">
                     <Label htmlFor="publicar" className="cursor-pointer font-medium text-ui">

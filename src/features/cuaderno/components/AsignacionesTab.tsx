@@ -15,11 +15,13 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import UnifiedTable from "@/components/tables/UnifiedTable";
+// @ts-expect-error FormularioRapido at old path uses JSX
 import FormularioRapido from "@/components/asignaciones/FormularioRapido";
 import StudentSearchBar from "@/features/asignaciones/components/StudentSearchBar";
 import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, resolveUserIdActual, startOfMonday, calcularLunesSemanaISO, calcularOffsetSemanas, isoWeekNumberLocal } from "@/components/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// @ts-expect-error MultiSelect is not typed yet
 import MultiSelect from "@/components/ui/MultiSelect";
 import PageHeader from "@/components/ds/PageHeader";
 import PeriodHeader from "@/components/common/PeriodHeader";
@@ -35,20 +37,52 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
+interface AsignacionesTabProps {
+    externalSearchTerm?: string | null;
+    externalSemanaISO?: string | null;
+    hideTitle?: boolean;
+    hideSearchAndWeek?: boolean;
+}
+
+type EstadoFilter = 'all' | 'borrador' | 'publicada' | 'en_curso' | 'cerrada';
+type OrdenFilter = 'recent' | 'oldest' | 'student_asc' | 'student_desc';
+type TipoAsignacion = 'profesor' | 'estudiante' | null;
+
+interface Asignacion {
+    id: string;
+    alumnoId: string;
+    profesorId?: string;
+    piezaId?: string | null;
+    piezaSnapshot?: { nombre?: string; nivel?: string; };
+    plan?: { nombre?: string; semanas?: unknown[]; };
+    semanaInicioISO: string;
+    estado: string;
+    foco?: string;
+    notas?: string | null;
+}
+
+// ============================================================================
+// Component
+// ============================================================================
+
 export default function AsignacionesTab({
     externalSearchTerm = null,
     externalSemanaISO = null,
     hideTitle = false,
     hideSearchAndWeek = false
-}) {
+}: AsignacionesTabProps) {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const [internalSearchTerm, setInternalSearchTerm] = useState('');
-    const [estadoFilter, setEstadoFilter] = useState('all');
-    const [profesoresFilter, setProfesoresFilter] = useState([]);
-    const [ordenFilter, setOrdenFilter] = useState('recent'); // 'recent', 'oldest', 'student_asc', 'student_desc'
-    const [showForm, setShowForm] = useState(false);
+    const [internalSearchTerm, setInternalSearchTerm] = useState<string>('');
+    const [estadoFilter, setEstadoFilter] = useState<EstadoFilter>('all');
+    const [profesoresFilter, setProfesoresFilter] = useState<string[]>([]);
+    const [ordenFilter, setOrdenFilter] = useState<OrdenFilter>('recent');
+    const [showForm, setShowForm] = useState<boolean>(false);
 
     // Use external props if provided, otherwise internal state
     const searchTerm = externalSearchTerm !== null ? externalSearchTerm : internalSearchTerm;
@@ -64,7 +98,7 @@ export default function AsignacionesTab({
     }, [action]);
 
     // Estado para filtro por semana (ISO formato YYYY-MM-DD)
-    const [internalSemanaISO, setInternalSemanaISO] = useState(() => {
+    const [internalSemanaISO, setInternalSemanaISO] = useState<string>(() => {
         const hoy = new Date();
         return formatLocalDate(startOfMonday(hoy));
     });
@@ -74,7 +108,7 @@ export default function AsignacionesTab({
     // Helper para convertir ISO a Date (compatibilidad con código existente)
     const semanaSeleccionada = parseLocalDate(semanaSeleccionadaISO);
 
-    const cambiarSemana = (direccion) => {
+    const cambiarSemana = (direccion: number): void => {
         if (externalSemanaISO) return; // Controlled externally
         const base = parseLocalDate(internalSemanaISO);
         base.setDate(base.getDate() + (direccion * 7));
@@ -83,20 +117,20 @@ export default function AsignacionesTab({
         if (nextISO !== internalSemanaISO) setInternalSemanaISO(nextISO);
     };
 
-    const irSemanaActual = () => {
+    const irSemanaActual = (): void => {
         if (externalSemanaISO) return; // Controlled externally
         const lunes = startOfMonday(new Date());
         setInternalSemanaISO(formatLocalDate(lunes));
     };
 
 
-    const [showAsignarProfesorDialog, setShowAsignarProfesorDialog] = useState(false);
-    const [showAsignarEstudianteDialog, setShowAsignarEstudianteDialog] = useState(false);
-    const [asignacionParaAsignar, setAsignacionParaAsignar] = useState(null);
-    const [idsParaAsignar, setIdsParaAsignar] = useState(null);
-    const [tipoAsignacion, setTipoAsignacion] = useState(null); // 'profesor' o 'estudiante'
-    const [profesorSeleccionado, setProfesorSeleccionado] = useState('');
-    const [estudianteSeleccionado, setEstudianteSeleccionado] = useState('');
+    const [showAsignarProfesorDialog, setShowAsignarProfesorDialog] = useState<boolean>(false);
+    const [showAsignarEstudianteDialog, setShowAsignarEstudianteDialog] = useState<boolean>(false);
+    const [asignacionParaAsignar, setAsignacionParaAsignar] = useState<string | null>(null);
+    const [idsParaAsignar, setIdsParaAsignar] = useState<string[] | null>(null);
+    const [tipoAsignacion, setTipoAsignacion] = useState<TipoAsignacion>(null);
+    const [profesorSeleccionado, setProfesorSeleccionado] = useState<string>('');
+    const [estudianteSeleccionado, setEstudianteSeleccionado] = useState<string>('');
 
     const effectiveUser = useEffectiveUser();
 

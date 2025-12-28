@@ -3,6 +3,7 @@ import { getCachedAuthUser } from "@/auth/authUserCache";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUsers } from "@/hooks/entities/useUsers";
+import type { UserEntity } from "@/hooks/entities/useUsers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,13 +22,71 @@ import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
 import { supabase } from "@/lib/supabaseClient";
+// @ts-expect-error PieceEditor not typed yet
 import PieceEditor from "@/components/editor/PieceEditor";
+// @ts-expect-error PlanEditor not typed yet
 import PlanEditor from "@/components/editor/PlanEditor";
 
-export default function FormularioRapido({ onClose, initialStudentId = null }) {
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
+type FocoKey = 'GEN' | 'TEC' | 'INT' | 'MEM' | 'RIT' | 'SON' | 'OTR';
+
+interface FormularioFormData {
+  estudiantesIds: string[];
+  piezaId: string;
+  planId: string;
+  fechaSeleccionada: string;
+  semanaInicioISO: string;
+  foco: FocoKey;
+  notas: string;
+  publicarAhora: boolean;
+  adaptarPlanAhora: boolean;
+}
+
+interface FormErrors {
+  estudiantes?: string | null;
+  pieza?: string | null;
+  plan?: string | null;
+  fecha?: string | null;
+}
+
+interface Pieza {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  nivel?: string;
+  tiempoObjetivoSeg?: number;
+  elementos?: unknown[];
+}
+
+interface Plan {
+  id: string;
+  nombre: string;
+  semanas?: unknown[];
+  focoGeneral?: string;
+}
+
+interface SelectedStudent {
+  id: string;
+  nombre: string;
+  email?: string;
+}
+
+interface FormularioRapidoProps {
+  onClose: () => void;
+  initialStudentId?: string | null;
+}
+
+// ============================================================================
+// Component
+// ============================================================================
+
+export default function FormularioRapido({ onClose, initialStudentId = null }: FormularioRapidoProps) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormularioFormData>({
     estudiantesIds: initialStudentId ? [initialStudentId] : [],
     piezaId: '',
     planId: '',
@@ -38,11 +97,11 @@ export default function FormularioRapido({ onClose, initialStudentId = null }) {
     publicarAhora: false,
     adaptarPlanAhora: true,
   });
-  const [filtroProfesor, setFiltroProfesor] = useState('all');
-  const [piezaEditorAbierto, setPiezaEditorAbierto] = useState(false);
-  const [planEditorAbierto, setPlanEditorAbierto] = useState(false);
-  const [contadorPiezasAntes, setContadorPiezasAntes] = useState(null);
-  const [contadorPlanesAntes, setContadorPlanesAntes] = useState(null);
+  const [filtroProfesor, setFiltroProfesor] = useState<string>('all');
+  const [piezaEditorAbierto, setPiezaEditorAbierto] = useState<boolean>(false);
+  const [planEditorAbierto, setPlanEditorAbierto] = useState<boolean>(false);
+  const [contadorPiezasAntes, setContadorPiezasAntes] = useState<number | null>(null);
+  const [contadorPlanesAntes, setContadorPlanesAntes] = useState<number | null>(null);
 
   const effectiveUser = useEffectiveUser();
 
@@ -69,10 +128,9 @@ export default function FormularioRapido({ onClose, initialStudentId = null }) {
         return {
           id: usuario.id,
           nombre: displayName(usuario),
-          email: usuario.email,
         };
       })
-      .filter(Boolean);
+      .filter((s): s is SelectedStudent => s !== null);
   }, [formData.estudiantesIds, usuarios]);
 
   const { data: piezas = [] } = useQuery({
@@ -86,18 +144,14 @@ export default function FormularioRapido({ onClose, initialStudentId = null }) {
   });
 
   const crearAsignacionesMutation = useMutation({
-
-
-    // ...
-
-    mutationFn: async (data) => {
+    mutationFn: async (data: FormularioFormData) => {
       // Intentar obtener usuario de Supabase, pero no bloquear si falla si tenemos effectiveUser
       const authUser = await getCachedAuthUser();
 
-      const profesorId = authUser?.id || effectiveUser?.id;
+      const profesorId = authUser?.id || effectiveUser?.effectiveUserId;
 
       if (!profesorId) {
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
           console.error('[FormularioRapido] No se encontró usuario autenticado ni effectiveUser');
         }
         throw new Error('Usuario no autenticado. Por favor, inicia sesión nuevamente.');
@@ -148,22 +202,22 @@ export default function FormularioRapido({ onClose, initialStudentId = null }) {
           const result = await localDataClient.entities.Asignacion.create(asignacion);
           results.push(result);
         } catch (error) {
-          if (process.env.NODE_ENV === 'development') {
+          if (import.meta.env.DEV) {
             console.error('[FormularioRapido] Error al crear asignación:', {
-              error: error?.message || error,
-              code: error?.code,
-              status: error?.status,
-              details: error?.details,
+              error: (error as Error)?.message || error,
+              code: (error as { code?: string })?.code,
+              status: (error as { status?: number })?.status,
+              details: (error as { details?: unknown })?.details,
               asignacion,
             });
           }
 
           const alumno = usuarios.find(e => e.id === asignacion.alumnoId && e.rolPersonalizado === 'ESTU');
-          const errorMessage = error?.message || 'Error desconocido';
+          const errorMessage = (error as Error)?.message || 'Error desconocido';
 
-          if (error?.code === '42501' || errorMessage.includes('row-level security')) {
+          if ((error as { code?: string })?.code === '42501' || errorMessage.includes('row-level security')) {
             toast.error(`❌ Error de permisos: No tienes permiso para crear esta asignación. Verifica que estés autenticado correctamente.`);
-          } else if (errorMessage.includes('CORS') || error?.status === null) {
+          } else if (errorMessage.includes('CORS') || (error as { status?: number | null })?.status === null) {
             toast.error(`❌ Error de CORS: Problema de conexión con el servidor. Verifica tu conexión y configuración de CORS en Supabase.`);
           } else {
             toast.error(`❌ No se pudo crear la asignación para ${displayName(alumno)}: ${errorMessage}`);
@@ -197,18 +251,18 @@ export default function FormularioRapido({ onClose, initialStudentId = null }) {
     },
   });
 
-  const calcularLunesSemanaISO = (fecha) => {
+  const calcularLunesSemanaISO = (fecha: string): string => {
     const date = parseLocalDate(fecha);
     return formatLocalDate(startOfMonday(date));
   };
 
-  const getDomingoSemana = (lunes) => {
+  const getDomingoSemana = (lunes: string): string => {
     const date = parseLocalDate(lunes);
     date.setDate(date.getDate() + 6);
     return formatLocalDate(date);
   };
 
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const focoLabels = {
     GEN: 'General',
@@ -239,17 +293,17 @@ export default function FormularioRapido({ onClose, initialStudentId = null }) {
     }
   }, [formData.fechaSeleccionada]);
 
-  const handlePiezaEditorClose = useCallback((newPieceId) => {
+  const handlePiezaEditorClose = useCallback((newPieceId: string | null) => {
     setPiezaEditorAbierto(false);
-    if (newPieceId && piezas.length < contadorPiezasAntes + 1) {
+    if (newPieceId && contadorPiezasAntes !== null && piezas.length < contadorPiezasAntes + 1) {
       queryClient.invalidateQueries({ queryKey: ['piezas'] });
       setFormData(prev => ({ ...prev, piezaId: newPieceId }));
     }
   }, [piezas.length, contadorPiezasAntes, queryClient]);
 
-  const handlePlanEditorClose = useCallback((newPlanId) => {
+  const handlePlanEditorClose = useCallback((newPlanId: string | null) => {
     setPlanEditorAbierto(false);
-    if (newPlanId && planes.length < contadorPlanesAntes + 1) {
+    if (newPlanId && contadorPlanesAntes !== null && planes.length < contadorPlanesAntes + 1) {
       queryClient.invalidateQueries({ queryKey: ['planes'] });
       setFormData(prev => ({ ...prev, planId: newPlanId }));
     }
