@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUsers } from "@/hooks/entities/useUsers";
 import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
 import { useRegistrosSesion } from "@/features/estudio/hooks/useRegistrosSesion";
-import { useEvaluacionesTecnicas } from "@/hooks/entities/useEvaluacionesTecnicas";
+import { useEvaluacionesTecnicas } from "@/features/evaluaciones/hooks/useEvaluacionesTecnicas";
 import { useFeedbacksSemanal } from "@/hooks/entities/useFeedbacksSemanal";
 import { Button } from "@/components/ds/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ds";

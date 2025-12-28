@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
 import { ClipboardCheck, Gauge, Music, Brain, Zap, Target } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import UnifiedTable from "@/components/tables/UnifiedTable";
-import { parseLocalDate } from "../utils/progresoUtils";
+import { parseLocalDate } from "@/features/progreso/utils/progresoUtils";
 
 /**
  * EvaluacionesTab - Muestra evaluaciones técnicas del profesor
@@ -52,7 +52,7 @@ export default function EvaluacionesTab({
             skills.push(
                 <div key="sonido" className="flex items-center gap-1.5 text-xs">
                     <Music className="w-3.5 h-3.5 text-blue-500" />
-                    <span className="font-medium">Sonido:</span>
+                    <span className="font-medium text-[var(--color-text-primary)]">Sonido:</span>
                     <span className="text-[var(--color-text-primary)]">{habilidades.sonido}/10</span>
                 </div>
             );
@@ -63,7 +63,7 @@ export default function EvaluacionesTab({
             skills.push(
                 <div key="flexibilidad" className="flex items-center gap-1.5 text-xs">
                     <Zap className="w-3.5 h-3.5 text-yellow-500" />
-                    <span className="font-medium">Flexibilidad:</span>
+                    <span className="font-medium text-[var(--color-text-primary)]">Flexibilidad:</span>
                     <span className="text-[var(--color-text-primary)]">{habilidades.flexibilidad}/10</span>
                 </div>
             );
@@ -74,7 +74,7 @@ export default function EvaluacionesTab({
             skills.push(
                 <div key="cognitivo" className="flex items-center gap-1.5 text-xs">
                     <Brain className="w-3.5 h-3.5 text-purple-500" />
-                    <span className="font-medium">Cognición:</span>
+                    <span className="font-medium text-[var(--color-text-primary)]">Cognición:</span>
                     <span className="text-[var(--color-text-primary)]">{habilidades.cognitivo}/10</span>
                 </div>
             );
@@ -85,7 +85,7 @@ export default function EvaluacionesTab({
             skills.push(
                 <div key="motricidad" className="flex items-center gap-1.5 text-xs">
                     <Gauge className="w-3.5 h-3.5 text-green-500" />
-                    <span className="font-medium">Motricidad:</span>
+                    <span className="font-medium text-[var(--color-text-primary)]">Motricidad:</span>
                     <span className="text-[var(--color-text-primary)]">{habilidades.motricidad} BPM</span>
                 </div>
             );
@@ -103,7 +103,7 @@ export default function EvaluacionesTab({
                 skills.push(
                     <div key="articulacion" className="flex items-center gap-1.5 text-xs">
                         <Target className="w-3.5 h-3.5 text-orange-500" />
-                        <span className="font-medium">Articulación:</span>
+                        <span className="font-medium text-[var(--color-text-primary)]">Articulación:</span>
                         <span className="text-[var(--color-text-primary)]">{artParts.join(', ')} BPM</span>
                     </div>
                 );
@@ -186,6 +186,7 @@ export default function EvaluacionesTab({
                         columns={columns}
                         defaultPageSize={compact ? 5 : 10}
                         keyField="id"
+                        onRowClick={() => { }}
                     />
                 )}
             </CardContent>

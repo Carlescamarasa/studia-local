@@ -16,7 +16,7 @@ export default function CurrentXPInline({ studentId, skill, simple, target }: Cu
         return (
             <div className="flex items-center gap-2 text-sm">
                 <Loader2 className="animate-spin h-4 w-4" />
-                <span className="text-muted-foreground">Cargando...</span>
+                <span className="text-[var(--color-text-secondary)]">Cargando...</span>
             </div>
         );
     }
@@ -32,7 +32,7 @@ export default function CurrentXPInline({ studentId, skill, simple, target }: Cu
         }
         return (
             <div>
-                <span className="text-muted-foreground capitalize">{skill}:</span>{' '}
+                <span className="text-[var(--color-text-secondary)] capitalize">{skill}:</span>{' '}
                 <span className="font-mono font-semibold">{displayValue}</span>
             </div>
         );
@@ -41,15 +41,15 @@ export default function CurrentXPInline({ studentId, skill, simple, target }: Cu
     return (
         <div className="flex gap-6 text-sm">
             <div>
-                <span className="text-muted-foreground">Motricidad:</span>{' '}
+                <span className="text-[var(--color-text-secondary)]">Motricidad:</span>{' '}
                 <span className="font-mono font-semibold">{Math.round(xp.motricidad)} XP</span>
             </div>
             <div>
-                <span className="text-muted-foreground">Articulación:</span>{' '}
+                <span className="text-[var(--color-text-secondary)]">Articulación:</span>{' '}
                 <span className="font-mono font-semibold">{Math.round(xp.articulacion)} XP</span>
             </div>
             <div>
-                <span className="text-muted-foreground">Flexibilidad:</span>{' '}
+                <span className="text-[var(--color-text-secondary)]">Flexibilidad:</span>{' '}
                 <span className="font-mono font-semibold">{Math.round(xp.flexibilidad)} XP</span>
             </div>
         </div>

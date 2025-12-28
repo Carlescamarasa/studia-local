@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { localDataClient } from '../api/localDataClient';
+import { localDataClient } from '@/api/localDataClient';
 import { EvaluacionTecnica, CreateEvaluacionTecnicaInput, UpdateEvaluacionTecnicaInput } from '@/shared/types/domain';
 import { toast } from 'sonner';
-import { QUERY_KEYS } from '../lib/queryKeys';
+import { QUERY_KEYS } from '@/lib/queryKeys';
 
 /**
  * Hook para gestionar las evaluaciones técnicas de los estudiantes.
@@ -93,4 +93,3 @@ export function useEvaluaciones(alumnoId?: string) {
         isDeleting: deleteMutation.isPending,
     };
 }
-

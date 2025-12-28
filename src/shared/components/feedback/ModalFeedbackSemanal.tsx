@@ -34,7 +34,7 @@ import { computeKeyCriteriaStatus, canPromote, promoteLevel } from '@/utils/leve
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { Checkbox } from '@/components/ui/checkbox';
 import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
-import CurrentXPInline from '@/components/evaluaciones/CurrentXPInline';
+import { CurrentXPInline } from '@/features/evaluaciones/components';
 
 interface FeedbackData {
     id?: string;

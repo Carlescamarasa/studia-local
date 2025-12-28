@@ -1,38 +1,36 @@
-import React, { useState, useEffect } from 'react';
-import { useEvaluaciones } from '../../hooks/useEvaluaciones';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Textarea } from '../ui/textarea';
-import { Loader2, Trophy, AlertCircle, CheckCircle2, ArrowRight, X, HelpCircle } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useEvaluaciones } from '../hooks/useEvaluaciones';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Loader2, Trophy, HelpCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { localDataClient } from '../../api/localDataClient';
-import { computeKeyCriteriaStatus, canPromote, promoteLevel, CriteriaStatusResult, PromotionCheckResult } from '../../utils/levelLogic';
-import { Checkbox } from '../ui/checkbox';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { localDataClient } from '@/api/localDataClient';
+import { computeKeyCriteriaStatus, canPromote, promoteLevel, CriteriaStatusResult, PromotionCheckResult } from '@/utils/levelLogic';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { useEffectiveUser } from "../../providers/EffectiveUserProvider";
+import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import CurrentXPInline from './CurrentXPInline';
-import { Separator } from '../ui/separator';
-import Badge from '../ds/Badge';
+import { Separator } from '@/components/ui/separator';
+import Badge from '@/components/ds/Badge';
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-} from '../ui/tooltip';
+} from '@/components/ui/tooltip';
 import {
     DialogHeader,
     DialogTitle,
     DialogFooter,
     DialogDescription
-} from '../ui/dialog';
-import { Slider } from '../ui/slider';
-import { computeEvaluationXP, addXP } from '@/shared/services/xpService';
-import { QUERY_KEYS } from '../../lib/queryKeys';
-import { useUsers } from '../../hooks/entities/useUsers';
-import { useMemo } from 'react';
+} from '@/components/ui/dialog';
+import { Slider } from '@/components/ui/slider';
+import { addXP } from '@/shared/services/xpService';
+import { QUERY_KEYS } from '@/lib/queryKeys';
+import { useUsers } from '@/hooks/entities/useUsers';
 
 
 interface EvaluacionFormProps {
@@ -44,7 +42,7 @@ export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProp
     const effectiveUser = useEffectiveUser();
 
     // OPTIMIZED: Use useUsers() for student data
-    const { data: allUsers = [], isLoading: isLoadingUsers } = useUsers();
+    const { data: allUsers = [] } = useUsers();
 
     // Get student profile from cache
     const studentProfile = useMemo(() =>
@@ -186,8 +184,6 @@ export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProp
             notas: notas.trim() || undefined
         };
 
-        console.log('[EvaluacionForm] ENVIANDO (Submit):', nuevaEvaluacion);
-
         try {
             await createEvaluacion(nuevaEvaluacion);
 
@@ -196,8 +192,6 @@ export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProp
                 if (deltaMotricidad) await addXP(alumnoId, 'motricidad', parseInt(deltaMotricidad), 'PROF');
                 if (deltaArticulacion) await addXP(alumnoId, 'articulacion', parseInt(deltaArticulacion), 'PROF');
                 if (deltaFlexibilidad) await addXP(alumnoId, 'flexibilidad', parseInt(deltaFlexibilidad), 'PROF');
-
-                console.log('[XP] Manual deltas applied by professor');
             }
 
             const queryClient = (window as any).__queryClient;
@@ -218,9 +212,7 @@ export default function EvaluacionForm({ alumnoId, onClose }: EvaluacionFormProp
             <DialogHeader className="px-6 py-4 border-b border-[var(--color-border-default)] bg-[var(--color-surface-muted)] shrink-0 flex flex-row items-center justify-between pr-12">
                 <div className="flex items-center justify-between">
                     <div className="flex flex-col gap-0.5">
-                        {/* @ts-ignore */}
                         <DialogTitle className="text-[var(--color-text-primary)]">Nueva Evaluación Técnica</DialogTitle>
-                        {/* @ts-ignore */}
                         <DialogDescription className="text-[var(--color-text-secondary)]">
                             {format(new Date(fecha), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
                         </DialogDescription>

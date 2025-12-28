@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAllStudentXPTotals, useAggregateLevelGoals } from './useXP';
-import { useEvaluacionesTecnicas } from '@/hooks/entities/useEvaluacionesTecnicas';
+import { useEvaluacionesTecnicas } from '@/features/evaluaciones/hooks/useEvaluacionesTecnicas';
 import { useFeedbacksSemanal } from '@/hooks/entities/useFeedbacksSemanal';
 import { QUERY_KEYS } from '@/lib/queryKeys';
 import type { StudentXPTotal } from '@/shared/services/xpService';

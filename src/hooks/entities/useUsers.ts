@@ -1,19 +1,19 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 import { remoteDataAPI } from '@/api/remote/api';
+import { StudiaUser, UserRole } from '@/shared/types/domain';
 
-export interface UserEntity {
-    id: string;
+export interface UserEntity extends StudiaUser {
     fullName: string;
     nombreCompleto: string;
     rolPersonalizado: string;
-    role: string;
+    role: UserRole;
     profesorAsignadoId: string | null;
     isActive: boolean;
     createdAt: string;
     updatedAt: string;
     nivel: string | null;
-    nivelTecnico: number | null;
+    nivelTecnico?: number;
     telefono: string | null;
     profesorNombre: string | null;
 }
@@ -27,7 +27,7 @@ interface UserFromRPC {
     createdAt: string;
     updatedAt: string;
     nivel: string | null;
-    nivelTecnico: number | null;
+    nivelTecnico?: number;
     telefono: string | null;
     profesorNombre: string | null;
 }
@@ -64,7 +64,7 @@ export function useUsers() {
                     // Si la RPC no existe (error 42883), usar fallback
                     if (error.code === '42883' || error.message?.includes('does not exist')) {
                         console.warn('[useUsers] RPC get_users_summary no disponible, usando fallback');
-                        return await remoteDataAPI.usuarios.list();
+                        return await remoteDataAPI.usuarios.list() as UserEntity[];
                     }
                     throw error;
                 }
@@ -73,16 +73,22 @@ export function useUsers() {
                 const profiles = data?.profiles || [];
                 return profiles.map((p: UserFromRPC) => ({
                     id: p.id,
+                    email: '', // Fallback required by StudiaUser
                     fullName: p.fullName,
+                    full_name: p.fullName,
                     nombreCompleto: p.fullName,
                     rolPersonalizado: p.role,
-                    role: p.role,
+                    role: p.role as any,
                     profesorAsignadoId: p.profesorAsignadoId,
+                    profesor_asignado_id: p.profesorAsignadoId,
                     isActive: p.isActive,
+                    is_active: p.isActive,
                     createdAt: p.createdAt,
+                    created_at: p.createdAt,
                     updatedAt: p.updatedAt,
+                    updated_at: p.updatedAt,
                     nivel: p.nivel,
-                    nivelTecnico: p.nivelTecnico,
+                    nivelTecnico: p.nivelTecnico ?? undefined,
                     telefono: p.telefono,
                     // Añadir nombre del profesor directamente (evita lookups)
                     profesorNombre: p.profesorNombre,
@@ -90,7 +96,7 @@ export function useUsers() {
             } catch (error) {
                 // Fallback si falla la RPC
                 console.warn('[useUsers] Error en RPC, usando fallback:', error);
-                return await remoteDataAPI.usuarios.list();
+                return await remoteDataAPI.usuarios.list() as UserEntity[];
             }
         },
         staleTime: 5 * 60 * 1000, // 5 minutos - evita refetches innecesarios

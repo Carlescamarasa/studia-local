@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useAllStudentXPTotals, useAggregateLevelGoals } from './useXP';
 import { useFeedbacksSemanal } from '@/hooks/entities/useFeedbacksSemanal';
-import { useEvaluacionesTecnicas } from '@/hooks/entities/useEvaluacionesTecnicas';
+import { useEvaluacionesTecnicas } from '@/features/evaluaciones/hooks/useEvaluacionesTecnicas';
 
 export type DataSource = 'evaluaciones' | 'experiencia' | 'ambas';
 

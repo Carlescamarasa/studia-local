@@ -19,14 +19,6 @@ const getCalificacionBadge = (cal: number | undefined | null) => {
     return componentStyles.status.badgeDefault;
 };
 
-// Cast internal JSX components to any to avoid TS errors
-const CardAny: any = Card;
-const SelectAny: any = Select;
-const SelectTriggerAny: any = SelectTrigger;
-const SelectContentAny: any = SelectContent;
-const SelectItemAny: any = SelectItem;
-const SelectValueAny: any = SelectValue;
-
 /**
  * AutoevaluacionesTab - Tab de historial de autoevaluaciones del estudiante
  */
@@ -122,7 +114,7 @@ export default function AutoevaluacionesTab({ registros = [], usuarios, userIdAc
 
     return (
         <>
-            <CardAny className={componentStyles.components.cardBase}>
+            <Card className={componentStyles.components.cardBase}>
                 <CardHeader>
                     <div className="flex items-center justify-between flex-wrap gap-3">
                         <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
@@ -130,18 +122,18 @@ export default function AutoevaluacionesTab({ registros = [], usuarios, userIdAc
                             Sesiones
                         </CardTitle>
                         <div className="flex items-center gap-3 flex-wrap">
-                            <SelectAny value={calificacionFilter} onValueChange={setCalificacionFilter}>
-                                <SelectTriggerAny className="w-full sm:w-[150px]">
-                                    <SelectValueAny placeholder="Calificación" />
-                                </SelectTriggerAny>
-                                <SelectContentAny>
-                                    <SelectItemAny value="all">Todas</SelectItemAny>
-                                    <SelectItemAny value="4">4 estrellas</SelectItemAny>
-                                    <SelectItemAny value="3">3 estrellas</SelectItemAny>
-                                    <SelectItemAny value="2">2 estrellas</SelectItemAny>
-                                    <SelectItemAny value="1">1 estrella</SelectItemAny>
-                                </SelectContentAny>
-                            </SelectAny>
+                            <Select value={calificacionFilter} onValueChange={setCalificacionFilter}>
+                                <SelectTrigger className="w-full sm:w-[150px]">
+                                    <SelectValue placeholder="Calificación" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todas</SelectItem>
+                                    <SelectItem value="4">4 estrellas</SelectItem>
+                                    <SelectItem value="3">3 estrellas</SelectItem>
+                                    <SelectItem value="2">2 estrellas</SelectItem>
+                                    <SelectItem value="1">1 estrella</SelectItem>
+                                </SelectContent>
+                            </Select>
                             <div className="flex items-center gap-2">
                                 <Checkbox
                                     id="solo-notas"
@@ -176,7 +168,7 @@ export default function AutoevaluacionesTab({ registros = [], usuarios, userIdAc
                         />
                     )}
                 </CardContent>
-            </CardAny>
+            </Card>
 
             <ModalSesion
                 open={modalSesionOpen}
@@ -184,7 +176,7 @@ export default function AutoevaluacionesTab({ registros = [], usuarios, userIdAc
                 registroSesion={registroSesionSeleccionado}
                 usuarios={usuarios}
                 userIdActual={userIdActual}
-                userRole={userRole}
+                userRole={userRole as any}
                 onMediaClick={onMediaClick}
             />
         </>
