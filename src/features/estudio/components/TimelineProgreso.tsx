@@ -1,18 +1,25 @@
 import React from "react";
 
-export default function TimelineProgreso({ tiempoActual, tiempoObjetivo, label, className = "" }) {
+interface TimelineProgresoProps {
+  tiempoActual: number;
+  tiempoObjetivo: number;
+  label: string;
+  className?: string;
+}
+
+export default function TimelineProgreso({ tiempoActual, tiempoObjetivo, label, className = "" }: TimelineProgresoProps) {
   if (tiempoObjetivo === 0) return null;
-  
+
   const porcentaje = Math.min((tiempoActual / tiempoObjetivo) * 100, 100);
   const excedido = tiempoActual > tiempoObjetivo;
-  
+
   let colorBarra = "bg-[var(--color-success)]";
   if (excedido) {
     colorBarra = "bg-[var(--color-danger)]";
   } else if (porcentaje > 85) {
     colorBarra = "bg-[var(--color-warning)]";
   }
-  
+
   return (
     <div className={className}>
       <div className="flex items-center justify-between text-xs text-ui/80 mb-1">
@@ -22,7 +29,7 @@ export default function TimelineProgreso({ tiempoActual, tiempoObjetivo, label, 
         </span>
       </div>
       <div className="bg-[var(--color-border-default)]/50 rounded-full h-1.5 overflow-hidden">
-        <div 
+        <div
           className={`${colorBarra} h-full transition-all duration-300`}
           style={{ width: `${porcentaje}%` }}
         />

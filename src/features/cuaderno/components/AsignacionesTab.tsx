@@ -15,8 +15,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import UnifiedTable from "@/components/tables/UnifiedTable";
-// @ts-expect-error FormularioRapido at old path uses JSX
-import FormularioRapido from "@/components/asignaciones/FormularioRapido";
+import FormularioRapido from "@/features/asignaciones/components/FormularioRapido";
 import StudentSearchBar from "@/features/asignaciones/components/StudentSearchBar";
 import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, resolveUserIdActual, startOfMonday, calcularLunesSemanaISO, calcularOffsetSemanas, isoWeekNumberLocal } from "@/components/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";

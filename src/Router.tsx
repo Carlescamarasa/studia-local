@@ -44,7 +44,7 @@ const Ayuda = lazy(() => import("@/pages/ayuda.jsx"));
 const StudiaConceptPage = lazy(() => import("@/pages/StudiaConceptPage.jsx"));
 // Removed ContenidoMultimediaPage
 const MochilaPage = lazy(() => import("@/pages/MochilaPage.jsx"));
-const Progreso = lazy(() => import("@/pages/progreso.jsx"));
+const Progreso = lazy(() => import("@/pages/progreso"));
 const Cuaderno = lazy(() => import("@/features/cuaderno"));
 // Legacy: Preparacion removed, now redirects to Cuaderno
 const Configuracion = lazy(() => import("@/pages/admin/configuracion.jsx"));
@@ -66,11 +66,10 @@ const PageLoader = () => (
  * Preserves query params: semana, alumnoId, tab
  */
 function RedirectToCuaderno() {
-  const { user } = useAuth();
+  const { appRole } = useAuth();
   const [searchParams] = useSearchParams();
 
-  const role = user?.rolPersonalizado;
-  const isProfOrAdmin = role === 'PROF' || role === 'ADMIN';
+  const isProfOrAdmin = appRole === 'PROF' || appRole === 'ADMIN';
 
   if (!isProfOrAdmin) {
     return <Navigate to="/" replace />;
@@ -81,7 +80,7 @@ function RedirectToCuaderno() {
 
   // Preserve semana param
   if (searchParams.has('semana')) {
-    newParams.set('semana', searchParams.get('semana'));
+    newParams.set('semana', searchParams.get('semana')!);
   }
 
   // Preserve alumnoId/studentId
@@ -92,7 +91,7 @@ function RedirectToCuaderno() {
 
   // Map tab from preparacion if exists
   if (searchParams.has('tab')) {
-    newParams.set('tab', searchParams.get('tab'));
+    newParams.set('tab', searchParams.get('tab')!);
   }
 
   const queryString = newParams.toString();
@@ -111,7 +110,7 @@ export default function AppRouter() {
         <Route path="/invitation" element={<PublicRoute><InvitationPage /></PublicRoute>} />
 
         {/* Ruta de debug - accesible sin autenticación para facilitar depuración */}
-        {process.env.NODE_ENV === 'development' && (
+        {import.meta.env.DEV && (
           <>
             <Route path="/debug/formulario-rapido" element={<DebugFormularioRapido />} />
             <Route path="/concept" element={<StudiaConceptPage />} />

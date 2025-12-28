@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import FormularioRapido from "@/components/asignaciones/FormularioRapido";
+import FormularioRapido from "@/features/asignaciones/components/FormularioRapido";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/auth/AuthProvider";
 import { DataProvider } from "@/providers/DataProvider";
@@ -64,7 +64,7 @@ function DebugFormularioRapidoPage() {
               {/* Fondo simple para debug - contenedor relative para que los fixed funcionen correctamente */}
               <div className="relative min-h-screen w-full bg-slate-900">
                 {/* FormularioRapido con debugInline=true para renderizar sin portal */}
-                <FormularioRapido 
+                <FormularioRapido
                   onClose={handleClose}
                   debugInline={true}
                 />
