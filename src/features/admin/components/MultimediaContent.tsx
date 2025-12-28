@@ -5,5 +5,5 @@
 import ContenidoMultimediaPage from '@/pages/contenido-multimedia';
 
 export default function MultimediaContent() {
-    return <ContenidoMultimediaPage embedded />; \n
+    return <ContenidoMultimediaPage embedded />;
 }

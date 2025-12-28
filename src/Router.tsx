@@ -6,7 +6,7 @@ import { useAuth } from "@/auth/AuthProvider";
 
 // Lazy load de páginas para code-splitting
 const IndexPage = lazy(() => import("@/pages/index.jsx"));
-const Usuarios = lazy(() => import("@/pages/usuarios.jsx"));
+const Usuarios = lazy(() => import("@/features/admin/pages/UsuariosPage"));
 const Reportes = lazy(() => import("@/pages/reportes.jsx"));
 const Planes = lazy(() => import("@/pages/planes.jsx"));
 const Piezas = lazy(() => import("@/pages/piezas.jsx"));
@@ -47,7 +47,7 @@ const MochilaPage = lazy(() => import("@/pages/MochilaPage.jsx"));
 const Progreso = lazy(() => import("@/pages/progreso"));
 const Cuaderno = lazy(() => import("@/features/cuaderno"));
 // Legacy: Preparacion removed, now redirects to Cuaderno
-const Configuracion = lazy(() => import("@/pages/admin/configuracion.jsx"));
+const Configuracion = lazy(() => import("@/features/admin/pages/ConfiguracionPage"));
 const Studia = lazy(() => import("@/pages/studia.jsx"));
 const NotFound = lazy(() => import("@/pages/NotFound.jsx"));
 

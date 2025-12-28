@@ -2,8 +2,8 @@ import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Settings, Info, Layout, Activity, Package, PlayCircle, ShieldCheck } from 'lucide-react';
 import PageHeader from '@/components/ds/PageHeader';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
-import { RequireRole } from '@/components/auth/RequireRole';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import RequireRole from '@/components/auth/RequireRole';
 import { useEffectiveUser } from '@/providers/EffectiveUserProvider';
 import { Loader2 } from 'lucide-react';
 
@@ -36,7 +36,7 @@ export default function ConfiguracionPage() {
     };
 
     return (
-        <RequireRole role="ADMIN">
+        <RequireRole anyOf={['ADMIN']}>
             <div className="min-h-screen bg-background">
                 <PageHeader
                     icon={Settings}

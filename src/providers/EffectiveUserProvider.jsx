@@ -136,6 +136,7 @@ export function useEffectiveUser() {
         if (import.meta.env.DEV && import.meta.hot) {
             console.warn('[EffectiveUserProvider] useEffectiveUser llamado sin provider durante HMR');
             return {
+                loading: false,
                 isImpersonating: false,
                 effectiveUserId: null,
                 effectiveRole: 'ESTU',
@@ -145,7 +146,7 @@ export function useEffectiveUser() {
                 realRole: 'ESTU',
                 realUserName: null,
                 realEmail: null,
-                startImpersonation: () => { },
+                startImpersonation: (userId, role, userName, email = null) => { },
                 stopImpersonation: () => { },
             };
         }

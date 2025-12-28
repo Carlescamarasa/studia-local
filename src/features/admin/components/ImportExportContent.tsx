@@ -5,5 +5,5 @@
 import ImportExportPage from '@/pages/import-export';
 
 export default function ImportExportContent() {
-    return <ImportExportPage embedded />; \n
+    return <ImportExportPage embedded />;
 }
