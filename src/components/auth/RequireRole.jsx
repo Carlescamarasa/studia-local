@@ -11,8 +11,9 @@ import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
  * Si el usuario no tiene uno de los roles permitidos, muestra mensaje de "Acceso denegado".
  * 
  * NOTA: Si realRole === 'ADMIN', siempre tiene acceso (admin override).
+ * @param {{ children: React.ReactNode, anyOf?: Array<'ADMIN' | 'PROF' | 'ESTU'> }} props
  */
-export default function RequireRole({ children, anyOf = [] }) {
+export default function RequireRole({ children, anyOf = /** @type {Array<'ADMIN' | 'PROF' | 'ESTU'>} */ ([]) }) {
   const { effectiveRole, realRole, loading: effectiveLoading } = useEffectiveUser();
 
   // Esperar a que termine de cargar

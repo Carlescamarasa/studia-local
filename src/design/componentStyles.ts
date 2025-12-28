@@ -15,6 +15,102 @@ const CARD_TONE_SECONDARY = "ui-card app-card border-2 border-[var(--color-secon
 const PANEL_SESSION = "ui-panel app-panel bg-[var(--color-surface-muted)] hover:shadow-md transition-all";
 const CARD_METRIC = "ui-card app-card border border-[var(--color-border-default)]/20 bg-[var(--color-surface)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300";
 
+/**
+ * Z-Index Scale - Sistema de capas unificado
+ * 
+ * Diseñado para soportar hasta 4+ capas de modales anidados.
+ * Cada capa de modal tiene espacio para overlay + modal + popovers internos.
+ * 
+ * Layers:
+ * - 0-9: Contenido base
+ * - 10-99: Elementos sticky (headers, toolbars)
+ * - 100-199: Dropdowns, popovers, tooltips del contenido
+ * - 200-299: Sidebar y header fijo
+ * - 300-399: Modal nivel 1 (overlay: 300, modal: 310, popovers: 320)
+ * - 400-499: Modal nivel 2 (overlay: 400, modal: 410, popovers: 420)
+ * - 500-599: Modal nivel 3 (overlay: 500, modal: 510, popovers: 520)
+ * - 600-699: Modal nivel 4 (overlay: 600, modal: 610, popovers: 620)
+ * - 900-999: Toast/notificaciones (siempre visibles)
+ * - 9999: DevTools
+ */
+export const zIndex = {
+  // Base content
+  base: 0,
+  sticky: 10,
+
+  // Content-level popovers
+  dropdown: 100,
+  popover: 100,
+  tooltip: 110,
+
+  // Navigation
+  sidebar: 200,
+  header: 210,
+
+  // Modal Layer 1
+  overlay1: 300,
+  modal1: 310,
+  modalPopover1: 320,
+
+  // Modal Layer 2 (modal inside modal)
+  overlay2: 400,
+  modal2: 410,
+  modalPopover2: 420,
+
+  // Modal Layer 3
+  overlay3: 500,
+  modal3: 510,
+  modalPopover3: 520,
+
+  // Modal Layer 4
+  overlay4: 600,
+  modal4: 610,
+  modalPopover4: 620,
+
+  // Always on top
+  toast: 900,
+  devtools: 9999,
+} as const;
+
+// Clases Tailwind correspondientes
+export const zIndexClasses = {
+  base: "z-0",
+  sticky: "z-10",
+  dropdown: "z-[100]",
+  popover: "z-[100]",
+  tooltip: "z-[110]",
+  sidebar: "z-[200]",
+  header: "z-[210]",
+  // Modal 1
+  overlay1: "z-[300]",
+  modal1: "z-[310]",
+  modalPopover1: "z-[320]",
+  // Modal 2
+  overlay2: "z-[400]",
+  modal2: "z-[410]",
+  modalPopover2: "z-[420]",
+  // Modal 3
+  overlay3: "z-[500]",
+  modal3: "z-[510]",
+  modalPopover3: "z-[520]",
+  // Modal 4
+  overlay4: "z-[600]",
+  modal4: "z-[610]",
+  modalPopover4: "z-[620]",
+  // Always on top
+  toast: "z-[900]",
+  devtools: "z-[9999]",
+} as const;
+
+// Helper para obtener z-index de modal por nivel
+export const getModalZIndex = (level: 1 | 2 | 3 | 4) => ({
+  overlay: 200 + (level * 100),
+  modal: 210 + (level * 100),
+  popover: 220 + (level * 100),
+});
+
+
+
 export const componentStyles = {
   layout: {
     // Fondos y backgrounds (compatibilidad hacia atrás)

@@ -13,8 +13,8 @@ const Piezas = lazy(() => import("@/pages/piezas.jsx"));
 const Sesiones = lazy(() => import("@/pages/sesiones.jsx"));
 const Semana = lazy(() => import("@/pages/semana.jsx"));
 const Semanas = lazy(() => import("@/pages/semanas.jsx"));
-const AsignacionDetalle = lazy(() => import("@/pages/asignacion-detalle.jsx"));
-const AdaptarAsignacion = lazy(() => import("@/pages/adaptar-asignacion.jsx"));
+const AsignacionDetalle = lazy(() => import("@/features/asignaciones/pages/AsignacionDetallePage"));
+const AdaptarAsignacion = lazy(() => import("@/features/asignaciones/pages/AdaptarAsignacionPage"));
 const Hoy = lazy(() => import("@/pages/hoy.jsx"));
 const Perfil = lazy(() => import("@/pages/perfil.jsx"));
 const ImportExport = lazy(() => import("@/pages/import-export.jsx")); // Still used in redirect? No, redirect goes to config?tab=import. The page itself is likely used inside Config tabs or not. Layout says Config uses ImportExportContent.  Actually ImportExport page might be different from Content. Let's check config imports. 

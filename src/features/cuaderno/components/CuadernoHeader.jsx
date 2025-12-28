@@ -13,7 +13,8 @@ export default function CuadernoHeader({
     semanaActualISO,
     onPrev,
     onNext,
-    onToday
+    onToday,
+    onNuevaAsignacion
 }) {
     const navigate = useNavigate();
 
@@ -25,7 +26,7 @@ export default function CuadernoHeader({
     const rangeTextSemana = `${lunesSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} – ${domingoSemana.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
     const handleNuevaAsignacion = () => {
-        navigate('/asignaciones/nueva');
+        onNuevaAsignacion?.();
     };
 
     return (

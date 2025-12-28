@@ -9,6 +9,7 @@ import CuadernoHeader from "./CuadernoHeader";
 import CuadernoTabs from "./CuadernoTabs";
 import CuadernoEstudiantesTab from "./CuadernoEstudiantesTab";
 import CuadernoAsignacionesTab from "./CuadernoAsignacionesTab";
+import FormularioRapido from "@/features/asignaciones/components/FormularioRapido";
 import {
     formatLocalDate,
     parseLocalDate,
@@ -26,6 +27,7 @@ export default function CuadernoContent() {
 
     const [activeTab, setActiveTab] = useState(tabFromUrl === 'asignaciones' ? 'asignaciones' : 'estudiantes');
     const [searchTerm, setSearchTerm] = useState('');
+    const [showForm, setShowForm] = useState(false);
 
     // Week State Logic
     const [semanaActualISO, setSemanaActualISO] = useState(() => {
@@ -57,7 +59,13 @@ export default function CuadernoContent() {
                 onPrev={() => cambiarSemana(-1)}
                 onNext={() => cambiarSemana(1)}
                 onToday={irSemanaActual}
+                onNuevaAsignacion={() => setShowForm(true)}
             />
+
+            {/* FormularioRapido - Component handles its own overlay via createPortal */}
+            {showForm && (
+                <FormularioRapido onClose={() => setShowForm(false)} />
+            )}
 
             <div className="studia-section">
                 {/* Search Bar */}

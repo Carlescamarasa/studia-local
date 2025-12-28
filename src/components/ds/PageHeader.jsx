@@ -8,7 +8,7 @@ import { useLocation } from "react-router-dom";
 
 /**
  * PageHeader - Componente unificado para headers de página
- * @param {string} icon - Nombre del componente de icono de lucide-react
+ * @param {React.ComponentType<{className?: string}>} icon - Componente de icono de lucide-react
  * @param {string} title - Título de la página
  * @param {string} subtitle - Subtítulo (opcional)
  * @param {React.ReactNode} actions - Slot para acciones (botones, etc.)

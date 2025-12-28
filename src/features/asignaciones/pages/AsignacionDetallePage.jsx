@@ -22,9 +22,9 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 // Preserving all helper functions and components used in the original file
-import { getNombreVisible, formatLocalDate, parseLocalDate, startOfMonday, resolveUserIdActual } from "../components/utils/helpers";
+import { getNombreVisible, formatLocalDate, parseLocalDate, startOfMonday, resolveUserIdActual } from "@/components/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { calcularTiempoSesion } from "../components/study/sessionSequence";
+import { calcularTiempoSesion } from "@/components/study/sessionSequence";
 import SessionContentView from "@/shared/components/study/SessionContentView";
 import PageHeader from "@/components/ds/PageHeader";
 import { LoadingSpinner } from "@/components/ds";
