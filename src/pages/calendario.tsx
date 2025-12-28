@@ -14,16 +14,19 @@ import VistaSemana from "../components/calendario/VistaSemana";
 import VistaMes from "../components/calendario/VistaMes";
 import VistaLista from "../components/calendario/VistaLista";
 import ModalSesion from "../components/calendario/ModalSesion";
-import ModalFeedback from "../components/calendario/ModalFeedback";
+import ModalFeedbackDetalle from "@/shared/components/feedback/ModalFeedbackDetalle";
 import ModalAsignacion from "../components/calendario/ModalAsignacion";
 import ModalCrearEvento from "../components/calendario/ModalCrearEvento";
 import ModalEventoResumen from "../components/calendario/ModalEventoResumen";
+import ModalFeedbackSemanal from "@/shared/components/feedback/ModalFeedbackSemanal";
 import { componentStyles } from "@/design/componentStyles";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { startOfMonday, formatLocalDate } from "../components/calendario/utils";
+import { startOfMonday, formatLocalDate, Sesion, Feedback, Asignacion, EventoImportante as EventoImp, Usuario } from "../components/calendario/utils";
 import { startOfMonth, endOfMonth } from "date-fns";
+
+type TipoEvento = 'sesion' | 'feedback' | 'asignacion' | 'evento';
 
 function CalendarioPageContent() {
   const isMobile = useIsMobile();
@@ -38,10 +41,11 @@ function CalendarioPageContent() {
     }
   }, [isMobile, vista]);
   const [fechaActual, setFechaActual] = useState(new Date());
-  const [eventoSeleccionado, setEventoSeleccionado] = useState(null);
-  const [tipoEventoSeleccionado, setTipoEventoSeleccionado] = useState(null); // 'sesion' | 'feedback' | 'asignacion' | 'evento'
-  const [filtroTipoGlobal, setFiltroTipoGlobal] = useState('all'); // Filtro global para todas las vistas
-  const [feedbackEditando, setFeedbackEditando] = useState(null);
+  const [eventoSeleccionado, setEventoSeleccionado] = useState<any>(null);
+  const [tipoEventoSeleccionado, setTipoEventoSeleccionado] = useState<TipoEvento | null>(null);
+  const [filtroTipoGlobal, setFiltroTipoGlobal] = useState('all');
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const [feedbackEditando, setFeedbackEditando] = useState<Feedback | null>(null);
 
   // User and role detection - use effectiveRole from new provider for impersonation
   const { effectiveUserId, effectiveEmail, effectiveRole, isImpersonating } = useEffectiveUser();
@@ -92,7 +96,7 @@ function CalendarioPageContent() {
     queryFn: () => localDataClient.getCalendarSummary(
       dateRange.start,
       dateRange.end,
-      isEstu ? userIdActual : null
+      isEstu ? (effectiveUserId || "") : undefined
     ),
     placeholderData: (prev) => prev, // Keep previous data while fetching new month
     staleTime: 5 * 60 * 1000,
@@ -120,31 +124,30 @@ function CalendarioPageContent() {
 
     if (isEstu) {
       // Estudiante: solo sus propios registros
-      sesiones = sesiones.filter(r => r.alumnoId === userIdActual);
-      feedbacks = feedbacks.filter(f => f.alumnoId === userIdActual);
-      asignacionesFiltradas = asignacionesFiltradas.filter(a => a.alumnoId === userIdActual);
+      sesiones = sesiones.filter((r: Sesion) => r.alumnoId === userIdActual);
+      feedbacks = feedbacks.filter((f: Feedback) => f.alumnoId === userIdActual);
+      asignacionesFiltradas = asignacionesFiltradas.filter((a: Asignacion) => a.alumnoId === userIdActual);
     } else if (isProf) {
       // Profesor: por defecto solo sus estudiantes
-      // Obtener IDs de estudiantes que tienen asignaciones con este profesor
       const estudiantesIds = new Set(
         asignaciones
-          .filter(a => a.profesorId === userIdActual)
-          .map(a => a.alumnoId)
+          .filter((a: Asignacion) => a.profesorId === userIdActual)
+          .map((a: Asignacion) => a.alumnoId)
       );
 
-      sesiones = sesiones.filter(r => estudiantesIds.has(r.alumnoId));
-      feedbacks = feedbacks.filter(f =>
-        f.profesorId === userIdActual || estudiantesIds.has(f.alumnoId)
+      sesiones = sesiones.filter((r: Sesion) => estudiantesIds.has(r.alumnoId));
+      feedbacks = feedbacks.filter((f: Feedback) =>
+        f.profesorId === userIdActual || (f.alumnoId && estudiantesIds.has(f.alumnoId))
       );
-      asignacionesFiltradas = asignacionesFiltradas.filter(a =>
+      asignacionesFiltradas = asignacionesFiltradas.filter((a: Asignacion) =>
         a.profesorId === userIdActual
       );
     }
     // Admin: ve todo (sin filtrar)
 
     // Filtrar eventos importantes por visibilidad
-    eventosImportantes = eventosImportantes.filter(e =>
-      e.visiblePara && e.visiblePara.includes(userRole)
+    eventosImportantes = eventosImportantes.filter((e: EventoImp) =>
+      e.visiblePara && e.visiblePara.includes(userRole as any)
     );
 
     return {
@@ -155,7 +158,7 @@ function CalendarioPageContent() {
     };
   }, [registrosSesion, feedbacksSemanal, asignaciones, eventos, userRole, userIdActual, isEstu, isProf]);
 
-  const handleEventoClick = (evento, tipo) => {
+  const handleEventoClick = (evento: any, tipo: TipoEvento) => {
     setEventoSeleccionado(evento);
     setTipoEventoSeleccionado(tipo);
   };
@@ -165,7 +168,7 @@ function CalendarioPageContent() {
     setEventoSeleccionado(null);
   };
 
-  const handleCerrarModal = (open) => {
+  const handleCerrarModal = (open: boolean) => {
     if (!open) {
       setEventoSeleccionado(null);
       setTipoEventoSeleccionado(null);
@@ -175,7 +178,7 @@ function CalendarioPageContent() {
 
   // Mutaciones para eliminar
   const deleteSesionMutation = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (id: string) => {
       return await localDataClient.entities.RegistroSesion.delete(id);
     },
     onSuccess: () => {
@@ -190,7 +193,7 @@ function CalendarioPageContent() {
   });
 
   const deleteFeedbackMutation = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (id: string) => {
       return await localDataClient.entities.FeedbackSemanal.delete(id);
     },
     onSuccess: () => {
@@ -205,7 +208,7 @@ function CalendarioPageContent() {
   });
 
   const deleteAsignacionMutation = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (id: string) => {
       return await localDataClient.entities.Asignacion.delete(id);
     },
     onSuccess: () => {
@@ -219,27 +222,36 @@ function CalendarioPageContent() {
     },
   });
 
-  const handleEditFeedback = (feedback) => {
-    setFeedbackEditando(feedback);
-    // Aquí se podría abrir un drawer de edición similar a agenda.jsx
-    // Por ahora, navegamos a la página de estadísticas donde se puede editar
-    navigate(`/estadisticas`);
+  const handleEditFeedback = (feedback: any) => {
+    // Abrir el modal de edición de feedback semanal
+    setFeedbackEditando(feedback as Feedback);
+    setEventoSeleccionado(null);
+    setTipoEventoSeleccionado(null);
+    setFeedbackModalOpen(true);
   };
 
-  const handleDeleteSesion = (id) => {
+  const handleCloseFeedbackEdit = (open: boolean) => {
+    if (!open) {
+      setFeedbackEditando(null);
+      setFeedbackModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['calendarSummary'] });
+    }
+  };
+
+  const handleDeleteSesion = (id: string) => {
     deleteSesionMutation.mutate(id);
   };
 
-  const handleDeleteFeedback = (id) => {
+  const handleDeleteFeedback = (id: string) => {
     deleteFeedbackMutation.mutate(id);
   };
 
-  const handleDeleteAsignacion = (id) => {
+  const handleDeleteAsignacion = (id: string) => {
     deleteAsignacionMutation.mutate(id);
   };
 
   // Funciones de navegación según la vista
-  const navegarPeriodo = (direccion) => {
+  const navegarPeriodo = (direccion: number) => {
     const nuevaFecha = new Date(fechaActual);
     if (vista === 'mes') {
       // Navegar por meses
@@ -282,7 +294,7 @@ function CalendarioPageContent() {
       const domingo = new Date(lunes);
       domingo.setDate(lunes.getDate() + 6);
       const numeroSemana = isoWeekNumberLocal(lunes);
-      const formatoFecha = (fecha) => {
+      const formatoFecha = (fecha: Date) => {
         const dia = fecha.getDate();
         const mes = fecha.toLocaleDateString('es-ES', { month: 'short' });
         return `${dia} ${mes}`;
@@ -307,6 +319,7 @@ function CalendarioPageContent() {
             onPrev={() => navegarPeriodo(-1)}
             onNext={() => navegarPeriodo(1)}
             onToday={irHoy}
+            className=""
           />
         }
       />
@@ -438,7 +451,7 @@ function CalendarioPageContent() {
             onFechaChange={setFechaActual}
             eventos={eventosFiltrados}
             onEventoClick={handleEventoClick}
-            usuarios={usuarios}
+            usuarios={usuarios as any[]}
             filtroTipo={filtroTipoGlobal}
             registrosSesion={registrosSesion}
           />
@@ -449,7 +462,7 @@ function CalendarioPageContent() {
             onFechaChange={setFechaActual}
             eventos={eventosFiltrados}
             onEventoClick={handleEventoClick}
-            usuarios={usuarios}
+            usuarios={usuarios as any[]}
             filtroTipo={filtroTipoGlobal}
           />
         )}
@@ -480,14 +493,14 @@ function CalendarioPageContent() {
         />
       )}
       {tipoEventoSeleccionado === 'feedback' && eventoSeleccionado && (
-        <ModalFeedback
+        <ModalFeedbackDetalle
           open={!!eventoSeleccionado}
           onOpenChange={handleCerrarModal}
-          feedback={eventoSeleccionado}
-          usuarios={usuarios}
-          userIdActual={userIdActual}
-          userRole={userRole}
-          onEdit={handleEditFeedback}
+          feedback={eventoSeleccionado as any}
+          usuarios={usuarios as any[]}
+          userIdActual={effectiveUserId || ""}
+          userRole={userRole as any}
+          onEdit={(f) => handleEditFeedback(f)}
           onDelete={handleDeleteFeedback}
         />
       )}
@@ -495,10 +508,10 @@ function CalendarioPageContent() {
         <ModalAsignacion
           open={!!eventoSeleccionado}
           onOpenChange={handleCerrarModal}
-          asignacion={eventoSeleccionado}
-          usuarios={usuarios}
-          userIdActual={userIdActual}
-          userRole={userRole}
+          asignacion={eventoSeleccionado as any}
+          usuarios={usuarios as any[]}
+          userIdActual={effectiveUserId || ""}
+          userRole={userRole as any}
           onDelete={handleDeleteAsignacion}
         />
       )}
@@ -518,6 +531,18 @@ function CalendarioPageContent() {
           />
         )
       )}
+
+      {/* Modal de edición de feedback semanal */}
+      <ModalFeedbackSemanal
+        open={feedbackModalOpen}
+        onOpenChange={handleCloseFeedbackEdit}
+        studentId={feedbackEditando?.alumnoId || ''}
+        weekStartISO={feedbackEditando?.semanaInicioISO || ''}
+        feedback={feedbackEditando as any}
+        usuarios={usuarios as any[]}
+        userIdActual={effectiveUserId || ""}
+        onSaved={() => handleCloseFeedbackEdit(false)}
+      />
     </div>
   );
 }

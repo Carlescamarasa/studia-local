@@ -8,6 +8,27 @@ import {
 } from "@/components/ui/dialog";
 import { CalendarDays, Clock } from "lucide-react";
 
+interface EventoData {
+    id: string;
+    titulo?: string;
+    descripcion?: string;
+    tipo?: 'encuentro' | 'masterclass' | 'colectiva' | 'otro';
+    tipoEvento?: string;
+    all_day?: boolean;
+    todoElDia?: boolean;
+    start_at?: string;
+    end_at?: string;
+    fechaInicio?: string;
+    fechaFin?: string;
+    [key: string]: unknown;
+}
+
+interface ModalEventoResumenProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    evento: EventoData | null;
+}
+
 /**
  * Modal de solo lectura para ver detalles de un evento del calendario.
  * Usado por ESTU (estudiantes) que no pueden editar eventos.
@@ -16,11 +37,11 @@ export default function ModalEventoResumen({
     open,
     onOpenChange,
     evento,
-}) {
+}: ModalEventoResumenProps) {
     if (!evento) return null;
 
     // Formatear fecha
-    const formatFecha = (dateStr) => {
+    const formatFecha = (dateStr: string | undefined): string => {
         if (!dateStr) return '—';
         const date = new Date(dateStr);
         return date.toLocaleDateString('es-ES', {
@@ -32,7 +53,7 @@ export default function ModalEventoResumen({
     };
 
     // Formatear hora con formato "02:40h" (sin ceros iniciales en hora)
-    const formatHoraCompact = (dateStr) => {
+    const formatHoraCompact = (dateStr: string | undefined): string => {
         if (!dateStr) return '';
         const date = new Date(dateStr);
         const h = date.getHours();
@@ -40,8 +61,8 @@ export default function ModalEventoResumen({
         return `${h}:${m}`;
     };
 
-    // Tipos de evento (del selector: encuentro, masterclass, colectiva, otro)
-    const tipoLabels = {
+    // Tipos de evento
+    const tipoLabels: Record<string, string> = {
         encuentro: 'Encuentro',
         masterclass: 'Masterclass',
         colectiva: 'Colectiva',
@@ -49,9 +70,8 @@ export default function ModalEventoResumen({
     };
 
     // Construir string de hora (inicio–finh)
-    const horaDisplay = () => {
+    const horaDisplay = (): string => {
         if (evento.all_day || evento.todoElDia) return 'Todo el día';
-        // Priorizar start_at/end_at, fallback a fechaInicio/fechaFin
         const inicioStr = evento.start_at || evento.fechaInicio;
         const finStr = evento.end_at || evento.fechaFin;
         const inicio = formatHoraCompact(inicioStr);
@@ -61,8 +81,7 @@ export default function ModalEventoResumen({
         return `${inicio}–${fin}h`;
     };
 
-    // El campo es "tipo", no "tipoEvento"
-    const tipoValue = evento.tipo || evento.tipoEvento;
+    const tipoValue = evento.tipo || evento.tipoEvento || '';
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -78,7 +97,6 @@ export default function ModalEventoResumen({
                 </DialogHeader>
 
                 <div className="space-y-3 text-sm">
-                    {/* Título con tipo: "Colectiva: Audición" */}
                     <div className="pb-2 border-b border-[var(--color-border-default)]">
                         <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
                             <span className="text-[var(--color-text-secondary)]">
@@ -93,16 +111,13 @@ export default function ModalEventoResumen({
                         )}
                     </div>
 
-                    {/* Información en grid */}
                     <div className="grid grid-cols-2 gap-2">
-                        {/* Fecha inicio */}
                         <div className="flex items-center gap-1.5">
                             <CalendarDays className="w-3.5 h-3.5 text-[var(--color-text-secondary)] shrink-0" />
                             <span className="text-xs text-[var(--color-text-secondary)]">Inicio:</span>
                             <span className="font-medium">{formatFecha(evento.start_at || evento.fechaInicio)}</span>
                         </div>
 
-                        {/* Hora (inicio–finh) */}
                         <div className="flex items-center gap-1.5">
                             <Clock className="w-3.5 h-3.5 text-[var(--color-text-secondary)] shrink-0" />
                             <span className="text-xs text-[var(--color-text-secondary)]">Hora:</span>

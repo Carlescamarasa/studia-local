@@ -6,16 +6,39 @@ import EventoSesion from "./EventoSesion";
 import EventoFeedback from "./EventoFeedback";
 import EventoAsignacion from "./EventoAsignacion";
 import EventoImportante from "./EventoImportante";
-import { agruparEventosPorDia, startOfMonday, endOfSunday, formatLocalDate } from "./utils";
+import {
+  agruparEventosPorDia,
+  startOfMonday,
+  endOfSunday,
+  formatLocalDate,
+  parseLocalDate,
+  Usuario,
+  EventosCalendario,
+  Sesion,
+  Feedback,
+  Asignacion,
+  EventoImportante as EventoImp,
+  TipoEvento
+} from "./utils";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ds";
 import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
 
-export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipo = 'all', registrosSesion = [] }) {
+interface VistaSemanaProps {
+  fechaActual: Date;
+  onFechaChange: (fecha: Date) => void;
+  eventos: EventosCalendario;
+  onEventoClick: (evento: any, tipo: TipoEvento) => void;
+  usuarios: Usuario[];
+  filtroTipo?: string;
+  registrosSesion?: Sesion[];
+}
+
+export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipo = 'all', registrosSesion = [] }: VistaSemanaProps) {
   const isMobile = useIsMobile();
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
-  const [diaSeleccionado, setDiaSeleccionado] = useState(() => formatLocalDate(new Date()));
+  const [diaSeleccionado, setDiaSeleccionado] = useState<string>(() => formatLocalDate(new Date()));
 
   // Detectar tamaño de ventana para tablet
   useEffect(() => {
@@ -57,7 +80,7 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
     return agruparEventosPorDia(eventosFiltrados, lunesSemana, domingoSemana);
   }, [eventos, lunesSemana, domingoSemana, filtroTipo]);
 
-  const navegarSemana = (direccion) => {
+  const navegarSemana = (direccion: number) => {
     const nuevaFecha = new Date(lunesSemana);
     nuevaFecha.setDate(lunesSemana.getDate() + (direccion * 7));
     onFechaChange(nuevaFecha);
@@ -79,9 +102,8 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
 
   // En móvil, obtener eventos del día seleccionado
   const eventosDiaSeleccionado = useMemo(() => {
-    if (!isMobile) return null;
-    return eventosPorDia[diaSeleccionado] || { sesiones: [], feedbacks: [], asignaciones: [], eventos: [] };
-  }, [isMobile, diaSeleccionado, eventosPorDia]);
+    return (diaSeleccionado ? eventosPorDia[diaSeleccionado] : null) || { sesiones: [], feedbacks: [], asignaciones: [], eventos: [] };
+  }, [diaSeleccionado, eventosPorDia]);
 
   // En tablet, mostrar 4 días a la vez (Lun-Jue o Vie-Dom según la semana)
   const diasVisiblesTablet = useMemo(() => {
@@ -93,7 +115,7 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
   }, [isTablet, diasSemana, fechaActual]);
 
   // Normalizar media links para EventoImportante
-  const normalizeMediaLinks = (rawLinks) => {
+  const normalizeMediaLinks = (rawLinks: any[]): string[] => {
     if (!rawLinks || !Array.isArray(rawLinks)) return [];
     return rawLinks
       .map((raw) => {
@@ -107,10 +129,10 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
   };
 
   const [showMediaModal, setShowMediaModal] = useState(false);
-  const [selectedMediaLinks, setSelectedMediaLinks] = useState([]);
+  const [selectedMediaLinks, setSelectedMediaLinks] = useState<string[]>([]);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
 
-  const handleMediaClick = (index, mediaLinks) => {
+  const handleMediaClick = (index: number, mediaLinks: any[]) => {
     if (!mediaLinks || !Array.isArray(mediaLinks) || mediaLinks.length === 0) return;
     const normalizedLinks = normalizeMediaLinks(mediaLinks);
     if (normalizedLinks.length === 0) return;
@@ -121,12 +143,13 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
   };
 
   // Renderizar evento compacto para desktop/tablet (variante week)
-  const renderEventoCompacto = (evento, tipo, fechaDia = null) => {
+  const renderEventoCompacto = (evento: any, tipo: TipoEvento, fechaDiaISO: string | null = null) => {
     const props = {
       usuarios,
       onClick: () => onEventoClick(evento, tipo),
-      variant: 'week'
+      variant: 'week' as const
     };
+    const fechaDia = fechaDiaISO ? parseLocalDate(fechaDiaISO) : null;
     switch (tipo) {
       case 'sesion':
         return <EventoSesion key={evento.id} sesion={evento} {...props} onMediaClick={handleMediaClick} />;
@@ -181,10 +204,10 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
                   key={fechaISO}
                   onClick={() => setDiaSeleccionado(fechaISO)}
                   className={`flex flex-col items-center justify-center min-w-[60px] px-3 py-2 rounded-lg border transition-colors shrink-0 ${estaSeleccionado
-                      ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
-                      : esHoy
-                        ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)]'
-                        : 'bg-[var(--color-surface-muted)] border-[var(--color-border-default)] text-[var(--color-text-primary)]'
+                    ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                    : esHoy
+                      ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)]'
+                      : 'bg-[var(--color-surface-muted)] border-[var(--color-border-default)] text-[var(--color-text-primary)]'
                     }`}
                 >
                   <span className="text-xs font-medium">
@@ -223,7 +246,7 @@ export default function VistaSemana({ fechaActual, onFechaChange, eventos, onEve
                 onClick={() => onEventoClick(asignacion, 'asignacion')}
                 variant="week"
                 registrosSesion={registrosSesion}
-                fechaEvento={diaSeleccionado}
+                fechaEvento={diaSeleccionado ? parseLocalDate(diaSeleccionado) : null}
               />
             ))}
             {eventosDiaSeleccionado.sesiones.map(sesion => (

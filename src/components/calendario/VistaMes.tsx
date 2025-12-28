@@ -6,16 +6,38 @@ import EventoSesion from "./EventoSesion";
 import EventoFeedback from "./EventoFeedback";
 import EventoAsignacion from "./EventoAsignacion";
 import EventoImportante from "./EventoImportante";
-import { agruparEventosPorDia, startOfMonday, formatLocalDate, parseLocalDate, formatearFechaEvento } from "./utils";
+import {
+  agruparEventosPorDia,
+  startOfMonday,
+  formatLocalDate,
+  parseLocalDate,
+  formatearFechaEvento,
+  Usuario,
+  EventosCalendario,
+  Sesion,
+  Feedback,
+  Asignacion,
+  EventoImportante as EventoImp,
+  TipoEvento
+} from "./utils";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-export default function VistaMes({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipo = 'all' }) {
+interface VistaMesProps {
+  fechaActual: Date;
+  onFechaChange: (fecha: Date) => void;
+  eventos: EventosCalendario;
+  onEventoClick: (evento: any, tipo: TipoEvento) => void;
+  usuarios: Usuario[];
+  filtroTipo?: string;
+}
+
+export default function VistaMes({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipo = 'all' }: VistaMesProps) {
   const isMobile = useIsMobile();
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
-  const [diaSeleccionado, setDiaSeleccionado] = useState(null);
+  const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(null);
 
   // Detectar tamaño de ventana
   useEffect(() => {
@@ -34,7 +56,7 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
     const ultimoDiaMes = new Date(fechaActual.getFullYear(), fechaActual.getMonth() + 1, 0);
 
     // Helper function to find the end of Sunday for a given date
-    const endOfSunday = (date) => {
+    const endOfSunday = (date: Date) => {
       const dayOfWeek = date.getDay(); // 0 for Sunday, 1 for Monday, ..., 6 for Saturday
       const diff = dayOfWeek === 0 ? 0 : 7 - dayOfWeek; // Days to add to reach next Sunday
       const domingo = new Date(date);
@@ -69,7 +91,7 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
     return agruparEventosPorDia(eventosFiltrados, primerLunes, ultimoDomingo);
   }, [eventos, primerLunes, ultimoDomingo, filtroTipo]);
 
-  const navegarMes = (direccion) => {
+  const navegarMes = (direccion: number) => {
     const nuevaFecha = new Date(fechaActual);
     nuevaFecha.setMonth(fechaActual.getMonth() + direccion);
     onFechaChange(nuevaFecha);
@@ -88,18 +110,17 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
   const nombresDias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
   // Renderizar lista de eventos del día seleccionado
-  const renderEventosDelDia = (dia = diaSeleccionado) => {
-    if (!dia) return null;
-    const fechaISO = formatLocalDate(dia);
-    const eventosDiaSeleccionado = eventosPorDia[fechaISO] || { sesiones: [], feedbacks: [], asignaciones: [], eventos: [] };
+  const renderEventosDelDia = (diaISO = diaSeleccionado) => {
+    if (!diaISO) return null;
+    const eventosDiaSeleccionado = eventosPorDia[diaISO] || { sesiones: [], feedbacks: [], asignaciones: [], eventos: [] };
 
     if (!eventosDiaSeleccionado) return null;
 
     const todosEventos = [
-      ...eventosDiaSeleccionado.eventos.map(e => ({ tipo: 'evento', evento: e, prioridad: 1 })),
-      ...eventosDiaSeleccionado.asignaciones.map(a => ({ tipo: 'asignacion', evento: a, prioridad: 2 })),
-      ...eventosDiaSeleccionado.sesiones.map(s => ({ tipo: 'sesion', evento: s, prioridad: 3 })),
-      ...eventosDiaSeleccionado.feedbacks.map(f => ({ tipo: 'feedback', evento: f, prioridad: 4 })),
+      ...eventosDiaSeleccionado.eventos.map(e => ({ tipo: 'evento', evento: e as EventoImp, prioridad: 1 })),
+      ...eventosDiaSeleccionado.asignaciones.map(a => ({ tipo: 'asignacion', evento: a as Asignacion, prioridad: 2 })),
+      ...eventosDiaSeleccionado.sesiones.map(s => ({ tipo: 'sesion', evento: s as Sesion, prioridad: 3 })),
+      ...eventosDiaSeleccionado.feedbacks.map(f => ({ tipo: 'feedback', evento: f as Feedback, prioridad: 4 })),
     ].sort((a, b) => a.prioridad - b.prioridad);
 
     if (todosEventos.length === 0) {
@@ -116,7 +137,7 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
           <div key={`${item.tipo}-${item.evento.id}-${idx}`}>
             {item.tipo === 'evento' && (
               <EventoImportante
-                evento={item.evento}
+                evento={item.evento as EventoImp}
                 onClick={() => {
                   onEventoClick(item.evento, 'evento');
                   setDiaSeleccionado(null);
@@ -125,18 +146,18 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
             )}
             {item.tipo === 'asignacion' && (
               <EventoAsignacion
-                asignacion={item.evento}
+                asignacion={item.evento as Asignacion}
                 usuarios={usuarios}
                 onClick={() => {
                   onEventoClick(item.evento, 'asignacion');
                   setDiaSeleccionado(null);
                 }}
-                fechaEvento={diaSeleccionado}
+                fechaEvento={diaSeleccionado ? parseLocalDate(diaSeleccionado) : null}
               />
             )}
             {item.tipo === 'sesion' && (
               <EventoSesion
-                sesion={item.evento}
+                sesion={item.evento as Sesion}
                 usuarios={usuarios}
                 onClick={() => {
                   onEventoClick(item.evento, 'sesion');
@@ -146,7 +167,7 @@ export default function VistaMes({ fechaActual, onFechaChange, eventos, onEvento
             )}
             {item.tipo === 'feedback' && (
               <EventoFeedback
-                feedback={item.evento}
+                feedback={item.evento as Feedback}
                 usuarios={usuarios}
                 onClick={() => {
                   onEventoClick(item.evento, 'feedback');

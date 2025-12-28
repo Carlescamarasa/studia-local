@@ -7,25 +7,43 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ds";
+import { Button } from "@/components/ds/Button";
 import { getNombreVisible } from "@/components/utils/helpers";
 import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
-import { MessageSquare, Calendar, User, Music, Brain, TrendingUp, Zap, Gauge, Target } from "lucide-react";
+import { MessageSquare, Calendar, User, Music, Brain, TrendingUp, Zap, Gauge, Target, Edit, Trash2 } from "lucide-react";
 import { startOfWeek, endOfWeek, format } from "date-fns";
 import { es } from "date-fns/locale";
 
 /**
- * ModalDetalleFeedback - Modal de solo lectura para ver detalles de un feedback semanal unificado.
+ * ModalFeedbackDetalle - Shared component for viewing feedback details.
+ * Supports scores, XP deltas, and optional edit/delete actions.
  */
-export interface ModalDetalleFeedbackProps {
+export interface ModalFeedbackDetalleProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     feedback: any;
     usuarios: any[];
     onMediaClick?: (mediaLinks: any[], index: number) => void;
     isMediaModalOpen?: boolean;
+    // Optional: for edit/delete functionality
+    onEdit?: (feedback: any) => void;
+    onDelete?: (id: string) => void;
+    userIdActual?: string;
+    userRole?: 'ADMIN' | 'PROF' | 'ESTU';
 }
 
-export default function ModalDetalleFeedback({ open, onOpenChange, feedback, usuarios, onMediaClick, isMediaModalOpen }: ModalDetalleFeedbackProps) {
+export default function ModalFeedbackDetalle({
+    open,
+    onOpenChange,
+    feedback,
+    usuarios,
+    onMediaClick,
+    isMediaModalOpen,
+    onEdit,
+    onDelete,
+    userIdActual,
+    userRole = 'ESTU'
+}: ModalFeedbackDetalleProps) {
     // Use ref to always have the latest isMediaModalOpen value (avoids stale closure in event handlers)
     const isMediaModalOpenRef = useRef(isMediaModalOpen);
     useEffect(() => {
@@ -46,9 +64,31 @@ export default function ModalDetalleFeedback({ open, onOpenChange, feedback, usu
         rangoSemana = `${format(start, "d MMM", { locale: es })} - ${format(end, "d MMM", { locale: es })}`;
     }
 
-    // Parsear XP Deltas si existen (guardados en xp_delta_by_skill)
-    const xpDeltas = feedback.xp_delta_by_skill || {};
+    // Parsear XP Deltas si existen (guardados en xp_delta_by_skill o habilidades.xpDeltas)
+    const xpDeltas = feedback.xp_delta_by_skill || feedback.habilidades?.xpDeltas || {};
     const hasXpDeltas = Object.keys(xpDeltas).length > 0;
+
+    // Permission checks for edit/delete
+    const isAdmin = userRole === 'ADMIN';
+    const isProf = userRole === 'PROF';
+    const canEdit = onEdit && (isAdmin || (isProf && feedback.profesorId === userIdActual));
+    const canDelete = onDelete && (isAdmin || (isProf && feedback.profesorId === userIdActual));
+
+    const handleEdit = () => {
+        if (onEdit) {
+            onEdit(feedback);
+            onOpenChange(false);
+        }
+    };
+
+    const handleDelete = () => {
+        if (window.confirm('¿Eliminar este feedback? Esta acción no se puede deshacer.')) {
+            if (onDelete) {
+                onDelete(feedback.id);
+                onOpenChange(false);
+            }
+        }
+    };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -56,7 +96,6 @@ export default function ModalDetalleFeedback({ open, onOpenChange, feedback, usu
                 className="max-w-lg max-h-[90vh] overflow-y-auto p-4"
                 onPointerDownOutside={(e) => {
                     // PRIORITY 1: If media modal is open, NEVER close this dialog
-                    // Using ref to avoid stale closure - always get the CURRENT value
                     if (isMediaModalOpenRef.current) {
                         e.preventDefault();
                         return;
@@ -109,9 +148,9 @@ export default function ModalDetalleFeedback({ open, onOpenChange, feedback, usu
                             <span className="text-xs text-[var(--color-text-secondary)]">Semana:</span>
                             <span>{rangoSemana}</span>
                         </div>
-                        {(feedback.lastEditedAt || feedback.updated_at || feedback.updatedAt || feedback.timestamp || feedback.createdAt || feedback.created_at) && (
+                        {(feedback.lastEditedAt || feedback.updated_at || feedback.updatedAt || feedback.created_at) && (
                             <div className="col-span-2 text-[10px] text-[var(--color-text-muted)] italic text-right">
-                                Última edición: {new Date(feedback.lastEditedAt || feedback.updated_at || feedback.updatedAt || feedback.timestamp || feedback.createdAt || feedback.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                Última edición: {new Date(feedback.lastEditedAt || feedback.updated_at || feedback.updatedAt || feedback.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                             </div>
                         )}
                     </div>
@@ -178,16 +217,43 @@ export default function ModalDetalleFeedback({ open, onOpenChange, feedback, usu
 
                     {/* 3. Multimedia */}
                     {feedback.mediaLinks && feedback.mediaLinks.length > 0 && (
-                        <div className="pt-1">
+                        <div className="pt-1 pb-2 border-b border-[var(--color-border-default)]">
                             <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)] mb-2">Multimedia Adjunto</h4>
                             <MediaLinksBadges
                                 mediaLinks={feedback.mediaLinks}
                                 compact={false}
-                                onMediaClick={onMediaClick ? (index) => onMediaClick(feedback.mediaLinks, index) : undefined}
+                                onMediaClick={onMediaClick ? (index: number) => onMediaClick(feedback.mediaLinks, index) : undefined}
                             />
                         </div>
                     )}
 
+                    {/* 4. Action Buttons */}
+                    {(canEdit || canDelete) && (
+                        <div className="flex gap-2 pt-2">
+                            {canEdit && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleEdit}
+                                    className="flex-1"
+                                >
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Editar
+                                </Button>
+                            )}
+                            {canDelete && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleDelete}
+                                    className="flex-1 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)]"
+                                >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Eliminar
+                                </Button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>

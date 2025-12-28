@@ -15,7 +15,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
 import { useUsers } from "@/hooks/entities/useUsers";
 import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
@@ -110,7 +110,7 @@ import {
     List,
     Info,
     CheckCircle2,
-    Circle
+    Plus
 } from "lucide-react";
 
 import { useFeedbacksSemanal } from "@/hooks/entities/useFeedbacksSemanal";
@@ -292,6 +292,24 @@ function ProgresoPageContent() {
     const refetchFeedbacks = () => {
         refetchSummary();
         refetchFeedbacksHook();
+    };
+
+    const deleteFeedbackMutation = useMutation({
+        mutationFn: async (id: string) => {
+            return await localDataClient.entities.FeedbackSemanal.delete(id);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['feedbacksSemanal'] });
+            queryClient.invalidateQueries({ queryKey: ['progressSummary'] });
+            toast.success('✅ Feedback eliminado');
+        },
+        onError: () => {
+            toast.error('❌ Error al eliminar feedback');
+        },
+    });
+
+    const handleDeleteFeedback = (id: string) => {
+        deleteFeedbackMutation.mutate(id);
     };
 
     const registrosSesionValidos = useMemo(
@@ -1078,15 +1096,16 @@ function ProgresoPageContent() {
                             isEstu={isEstu}
                             onMediaClick={handleMediaClick}
                             isMediaModalOpen={mediaModalOpen}
+                            onEditFeedback={handleEditFeedback}
+                            onDeleteFeedback={handleDeleteFeedback}
+                            userIdActual={userIdActual}
+                            userRole={effectiveRole}
                             actionButton={
                                 (isProf || isAdmin) ? (
-                                    <ModalFeedbackSemanalAny
-                                        usuarios={usuarios}
-                                        userIdActual={userIdActual} // Pass current user id (PROF)
-                                        userRole={effectiveRole} // Pass effective role
-                                        onFeedbackSaved={() => refetchFeedbacks()}
-                                        defaultStudentId={alumnosSeleccionados[0] || ''} // Preselect if one student filtered
-                                    />
+                                    <Button size="sm" onClick={handleCreateFeedback}>
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Nuevo Feedback
+                                    </Button>
                                 ) : null
                             }
                         />
@@ -1112,6 +1131,20 @@ function ProgresoPageContent() {
                 mediaLinks={mediaModalLinks}
                 initialIndex={mediaModalIndex}
             />
+
+            {/* Modal para Crear/Editar Feedback Semanal (Controlado) */}
+            {(isProf || isAdmin) && (
+                <ModalFeedbackSemanalAny
+                    open={feedbackModalOpen}
+                    onOpenChange={setFeedbackModalOpen}
+                    feedback={selectedFeedback}
+                    usuarios={usuarios}
+                    userIdActual={userIdActual}
+                    userRole={effectiveRole}
+                    onFeedbackSaved={() => refetchFeedbacks()}
+                    defaultStudentId={alumnosSeleccionados[0] || ''}
+                />
+            )}
 
         </div>
     );

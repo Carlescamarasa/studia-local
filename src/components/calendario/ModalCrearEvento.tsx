@@ -18,12 +18,33 @@ import { toast } from "sonner";
 import { componentStyles } from "@/design/componentStyles";
 import { generateId } from "@/data/localStorageClient";
 
-const pad2 = (n) => String(n).padStart(2, "0");
-const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-const formatLocalTime = (d) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+interface EventoData {
+  id: string;
+  titulo?: string;
+  descripcion?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+  start_at?: string;
+  end_at?: string;
+  all_day?: boolean;
+  tipo?: 'encuentro' | 'masterclass' | 'colectiva' | 'otro';
+  visiblePara?: string[];
+  [key: string]: unknown;
+}
+
+interface ModalCrearEventoProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  evento?: EventoData | null;
+  userIdActual: string;
+}
+
+const pad2 = (n: number): string => String(n).padStart(2, "0");
+const formatLocalDate = (d: Date): string => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const formatLocalTime = (d: Date): string => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 
 // Helper para convertir fecha + hora a ISO timestamp
-const buildISO = (dateStr, timeStr = null) => {
+const buildISO = (dateStr: string, timeStr: string | null = null): string | null => {
   if (!dateStr) return null;
   const date = new Date(dateStr);
   if (timeStr) {
@@ -36,7 +57,7 @@ const buildISO = (dateStr, timeStr = null) => {
 };
 
 // Helper para extraer fecha y hora de un ISO timestamp
-const parseISO = (isoStr) => {
+const parseISO = (isoStr: string | undefined): { date: string; time: string } => {
   if (!isoStr) return { date: '', time: '' };
   const date = new Date(isoStr);
   return {
@@ -45,7 +66,7 @@ const parseISO = (isoStr) => {
   };
 };
 
-export default function ModalCrearEvento({ open, onOpenChange, evento, userIdActual }) {
+export default function ModalCrearEvento({ open, onOpenChange, evento, userIdActual }: ModalCrearEventoProps) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     titulo: '',

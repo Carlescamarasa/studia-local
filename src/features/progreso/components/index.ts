@@ -18,7 +18,6 @@ export { default as TiposBloquesTab } from './TiposBloquesTab';
 export { default as TopEjerciciosTab } from './TopEjerciciosTab';
 
 // Modals
-export { default as ModalDetalleFeedback } from './ModalDetalleFeedback';
 export { default as TopEjercicioModal } from './TopEjercicioModal';
 
 // Visualizations

@@ -36,6 +36,29 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
 import CurrentXPInline from '@/components/evaluaciones/CurrentXPInline';
 
+interface FeedbackData {
+    id?: string;
+    notaProfesor?: string;
+    sonido?: number;
+    cognicion?: number;
+    habilidades?: Record<string, unknown>;
+    mediaLinks?: unknown[];
+    [key: string]: unknown;
+}
+
+interface ModalFeedbackSemanalProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    feedback?: FeedbackData | null;
+    studentId: string;
+    weekStartISO: string;
+    weekLabel?: string;
+    onSaved?: () => void;
+    onMediaClick?: (mediaLinks: unknown[], index: number) => void;
+    usuarios?: any[];
+    userIdActual?: string;
+}
+
 /**
  * Modal para crear o editar Feedback Semanal UNFICADO.
  * Layout: 2 Columnas.
@@ -51,7 +74,7 @@ export default function ModalFeedbackSemanal({
     weekLabel,
     onSaved,
     onMediaClick
-}) {
+}: ModalFeedbackSemanalProps) {
     const { toast } = useToast();
     const effectiveUser = useEffectiveUser();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -62,8 +85,8 @@ export default function ModalFeedbackSemanal({
     useEffect(() => {
         const mqMobile = window.matchMedia('(max-width: 1023px)');
         const mqTablet = window.matchMedia('(min-width: 450px) and (max-width: 1023px)');
-        const handleMobileChange = (e) => setIsMobile(e.matches);
-        const handleTabletChange = (e) => setIsTablet(e.matches);
+        const handleMobileChange = (e: any) => setIsMobile(e.matches);
+        const handleTabletChange = (e: any) => setIsTablet(e.matches);
         setIsMobile(mqMobile.matches);
         setIsTablet(mqTablet.matches);
         mqMobile.addEventListener('change', handleMobileChange);
@@ -79,9 +102,9 @@ export default function ModalFeedbackSemanal({
 
     // --- LEFT COLUMN STATE (Level Logic) ---
     const [currentLevel, setCurrentLevel] = useState(0);
-    const [currentLevelConfig, setCurrentLevelConfig] = useState(null); // Config for CURRENT level (XP targets)
-    const [nextLevelCriteria, setNextLevelCriteria] = useState([]);
-    const [promotionCheck, setPromotionCheck] = useState(null);
+    const [currentLevelConfig, setCurrentLevelConfig] = useState<any>(null); // Config for CURRENT level (XP targets)
+    const [nextLevelCriteria, setNextLevelCriteria] = useState<any[]>([]);
+    const [promotionCheck, setPromotionCheck] = useState<any>(null);
     const [loadingLevelData, setLoadingLevelData] = useState(false);
 
     // --- RIGHT COLUMN STATE ---
@@ -149,7 +172,7 @@ export default function ModalFeedbackSemanal({
 
 
     // Helper to hydrate form from feedback data
-    const hydrateFormFromFeedback = (fb) => {
+    const hydrateFormFromFeedback = (fb: any) => {
         console.log('[ModalFeedbackSemanal] hydrateFormFromFeedback:', fb);
         setNotaProfesor(fb.notaProfesor || "");
 
@@ -199,7 +222,7 @@ export default function ModalFeedbackSemanal({
             } else if (studentId && weekStartISO) {
                 // If no feedback prop but we have studentId + week, try to find existing in cache
                 if (!isLoadingFeedbacks) {
-                    const existing = allFeedbacks.find(f =>
+                    const existing = allFeedbacks.find((f: any) =>
                         (f.alumnoId === studentId || f.alumno_id === studentId || f.student_id === studentId) &&
                         f.semanaInicioISO === weekStartISO
                     );
@@ -264,7 +287,7 @@ export default function ModalFeedbackSemanal({
         }
     };
 
-    const handleCriteriaToggle = async (criterionId, currentStatus) => {
+    const handleCriteriaToggle = async (criterionId: string, currentStatus: string) => {
         const newStatus = currentStatus === 'PASSED' ? 'FAILED' : 'PASSED';
         // Optimistic update
         setNextLevelCriteria(prev => prev.map(c =>
@@ -276,14 +299,14 @@ export default function ModalFeedbackSemanal({
             const existing = allStatus.find(s => s.studentId === studentId && s.criterionId === criterionId);
 
             if (existing && existing.id && existing.id.length === 36) {
-                await localDataClient.entities.StudentCriteriaStatus.update(existing.id, { status: newStatus });
+                await localDataClient.entities.StudentCriteriaStatus.update(existing.id, { status: newStatus as any });
             } else {
                 await localDataClient.entities.StudentCriteriaStatus.create({
                     studentId: studentId,
                     criterionId: criterionId,
-                    status: newStatus,
+                    status: newStatus as any,
                     assessedAt: new Date().toISOString(),
-                    assessedBy: effectiveUser?.id
+                    assessedBy: (effectiveUser as any)?.id
                 });
             }
             const check = await canPromote(studentId, currentLevel);
@@ -300,7 +323,7 @@ export default function ModalFeedbackSemanal({
 
         try {
             const reason = force ? 'Promoción forzada por profesor' : 'Promoción por evaluación';
-            await promoteLevel(studentId, nextLevel, reason, effectiveUser?.id || 'system');
+            await promoteLevel(studentId, nextLevel, reason, (effectiveUser as any)?.id || 'system');
 
             // Reset XP inputs for the new level context
             setDeltaMotricidad("");
@@ -321,7 +344,7 @@ export default function ModalFeedbackSemanal({
         const prevLevel = currentLevel - 1;
 
         try {
-            await promoteLevel(studentId, prevLevel, 'Descenso de nivel por profesor', effectiveUser?.id || 'system');
+            await promoteLevel(studentId, prevLevel, 'Descenso de nivel por profesor', (effectiveUser as any)?.id || 'system');
 
             // Reset XP inputs for the new level context
             setDeltaMotricidad("");
@@ -352,8 +375,8 @@ export default function ModalFeedbackSemanal({
                 try {
                     const uploadResult = await uploadVideoToYouTube(videoFile, {
                         contexto: 'feedback_profesor',
-                        profesor_id: effectiveUser?.id || "unknown",
-                        profesor_nombre: effectiveUser?.full_name || effectiveUser?.email || 'Profesor',
+                        profesor_id: (effectiveUser as any)?.id || "unknown",
+                        profesor_nombre: (effectiveUser as any)?.full_name || (effectiveUser as any)?.email || 'Profesor',
                         alumno_id: studentId,
                         semana_inicio_iso: weekStartISO,
                         comentarios: notaProfesor,
@@ -377,7 +400,7 @@ export default function ModalFeedbackSemanal({
             }
 
             // XP Deltas object
-            const xpDeltas = {};
+            const xpDeltas: any = {};
             if (deltaMotricidad) xpDeltas.motricidad = Number(deltaMotricidad);
             if (deltaArticulacion) xpDeltas.articulacion = Number(deltaArticulacion);
             if (deltaFlexibilidad) xpDeltas.flexibilidad = Number(deltaFlexibilidad);
@@ -417,7 +440,7 @@ export default function ModalFeedbackSemanal({
 
             const dataToSave = {
                 alumnoId: studentId,
-                profesorId: effectiveUser?.id || "current-prof-id",
+                profesorId: (effectiveUser as any)?.id || "current-prof-id",
                 semanaInicioISO: weekStartISO,
                 notaProfesor: notaProfesor,
                 sonido: Number(sonido),
@@ -555,10 +578,10 @@ export default function ModalFeedbackSemanal({
                                                             <div>
                                                                 <p className="font-medium text-xs uppercase text-[var(--color-text-secondary)]">Criterios</p>
                                                                 <ul className="text-xs list-disc pl-4 mt-1">
-                                                                    {criteriaItems.map((m, i) => {
+                                                                    {criteriaItems.map((m: any, i: number) => {
                                                                         const desc = m.replace('Criterio: ', '');
-                                                                        const criterion = nextLevelCriteria.find(c => c.criterion.description === desc);
-                                                                        const skill = criterion?.criterion?.skill || '';
+                                                                        const criterion = nextLevelCriteria.find((c: any) => c.criterion.description === desc);
+                                                                        const skill = (criterion as any)?.criterion?.skill || '';
                                                                         const skillLabel = skill.charAt(0).toUpperCase() + skill.slice(1);
                                                                         return <li key={i}>{skillLabel}: {desc}</li>;
                                                                     })}
@@ -587,7 +610,7 @@ export default function ModalFeedbackSemanal({
                                     </span>
                                 </div>
                                 <div className={cn("space-y-1 overflow-y-auto pr-1", isTablet ? "max-h-[100px]" : isMobile ? "max-h-[150px]" : "max-h-[300px]")}>
-                                    {nextLevelCriteria.map((item) => (
+                                    {nextLevelCriteria.map((item: any) => (
                                         <div key={item.criterion.id} className="flex items-start space-x-2 p-1.5 rounded hover:bg-[var(--color-surface-muted)] transition-colors">
                                             <Checkbox
                                                 id={`crit-${item.criterion.id}`}
@@ -760,7 +783,7 @@ export default function ModalFeedbackSemanal({
                                                                 );
                                                             }
 
-                                                            return <CurrentXPInline studentId={studentId} skill={skill.id} simple target={skill.targetXP} />;
+                                                            return <CurrentXPInline studentId={studentId} skill={skill.id as any} simple target={skill.targetXP} />;
                                                         })()}
                                                     </div>
                                                 </div>

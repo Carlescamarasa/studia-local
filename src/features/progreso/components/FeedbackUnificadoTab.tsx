@@ -8,7 +8,7 @@ import { MediaIcon } from "@/shared/components/media/MediaEmbed";
 import { displayName } from "@/components/utils/helpers";
 import { cn } from "@/lib/utils";
 import ModalSesion from "@/components/calendario/ModalSesion";
-import ModalDetalleFeedback from "./ModalDetalleFeedback";
+import ModalFeedbackDetalle from "@/shared/components/feedback/ModalFeedbackDetalle";
 import { Button } from "@/components/ds/Button";
 
 /**
@@ -22,10 +22,13 @@ export interface FeedbackUnificadoTabProps {
     usuarios: any | any[];
     isEstu: boolean;
     onEditFeedback?: (feedback: any) => void;
+    onDeleteFeedback?: (id: string) => void;
     puedeEditar?: (feedback: any) => boolean;
     onMediaClick?: (mediaLinks: any[], index: number) => void;
     isMediaModalOpen?: boolean;
     actionButton?: React.ReactNode;
+    userIdActual?: string;
+    userRole?: 'ADMIN' | 'PROF' | 'ESTU';
 }
 
 export default function FeedbackUnificadoTab({
@@ -35,10 +38,13 @@ export default function FeedbackUnificadoTab({
     usuarios = {},
     isEstu = false,
     onEditFeedback,
+    onDeleteFeedback,
     puedeEditar,
     onMediaClick,
     isMediaModalOpen,
-    actionButton
+    actionButton,
+    userIdActual,
+    userRole = 'ESTU'
 }: FeedbackUnificadoTabProps) {
     const isMobile = useIsMobile();
 
@@ -449,13 +455,17 @@ export default function FeedbackUnificadoTab({
                 onMediaClick={onMediaClick}
             />
 
-            <ModalDetalleFeedback
+            <ModalFeedbackDetalle
                 open={modalFeedbackOpen}
                 onOpenChange={setModalFeedbackOpen}
                 feedback={feedbackSeleccionado}
                 usuarios={Object.values(usuariosMap)}
                 onMediaClick={onMediaClick}
                 isMediaModalOpen={isMediaModalOpen}
+                onEdit={onEditFeedback}
+                onDelete={onDeleteFeedback}
+                userIdActual={userIdActual}
+                userRole={userRole}
             />
         </>
     );

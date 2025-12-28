@@ -8,9 +8,33 @@ import EventoSesion from "./EventoSesion";
 import EventoFeedback from "./EventoFeedback";
 import EventoAsignacion from "./EventoAsignacion";
 import EventoImportante from "./EventoImportante";
-import { formatLocalDate, parseLocalDate, formatearFechaEvento, startOfMonday, formatearHora } from "./utils";
+import {
+  formatLocalDate,
+  parseLocalDate,
+  formatearFechaEvento,
+  startOfMonday,
+  formatearHora,
+  Usuario,
+  EventosCalendario,
+  Sesion,
+  Feedback,
+  Asignacion,
+  EventoImportante as EventoImp,
+  TipoEvento
+} from "./utils";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+interface VistaListaProps {
+  fechaActual: Date;
+  onFechaChange: (fecha: Date) => void;
+  eventos: EventosCalendario;
+  onEventoClick: (evento: any, tipo: TipoEvento) => void;
+  usuarios: Usuario[];
+  filtroTipoGlobal?: string;
+  setFiltroTipoGlobal: (tipo: string) => void;
+  registrosSesion?: Sesion[];
+}
 
 /**
  * Vista Lista del calendario
@@ -18,7 +42,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
  * Muestra eventos en un rango de "Hoy + 7 días" (7 días en total: hoy hasta hoy+6)
  * Los eventos están ordenados por fecha ASC y hora ASC, agrupados por día
  */
-export default function VistaLista({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipoGlobal, setFiltroTipoGlobal, registrosSesion = [] }) {
+export default function VistaLista({ fechaActual, onFechaChange, eventos, onEventoClick, usuarios, filtroTipoGlobal, setFiltroTipoGlobal, registrosSesion = [] }: VistaListaProps) {
   const isMobile = useIsMobile();
   const [busqueda, setBusqueda] = useState('');
   const filtroTipo = filtroTipoGlobal || 'all';
@@ -48,12 +72,12 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
 
   // Combinar todos los eventos en una lista plana con fecha y hora
   const eventosLista = useMemo(() => {
-    const lista = [];
+    const lista: { tipo: string; evento: any; fecha: string; fechaISO: string; horaISO: string; prioridad: number }[] = [];
 
     // Agregar eventos importantes
     eventos.eventosImportantes.forEach(evento => {
       const fechaEvento = parseLocalDate(evento.fechaInicio);
-      if (fechaEvento >= lunesSemana && fechaEvento <= domingoSemana) {
+      if (fechaEvento.getTime() >= lunesSemana.getTime() && fechaEvento.getTime() <= domingoSemana.getTime()) {
         const horaISO = evento.fechaInicio?.includes('T') ? evento.fechaInicio : `${evento.fechaInicio}T00:00:00`;
         lista.push({
           tipo: 'evento',
@@ -80,7 +104,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
           const fechaISO = formatLocalDate(fecha);
 
           // Solo incluir si está en el rango visible
-          if (fecha >= lunesSemana && fecha <= domingoSemana) {
+          if (fecha.getTime() >= lunesSemana.getTime() && fecha.getTime() <= domingoSemana.getTime()) {
             lista.push({
               tipo: 'asignacion',
               evento: asignacion,
@@ -99,7 +123,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
       if (sesion.inicioISO) {
         const fecha = sesion.inicioISO.split('T')[0];
         const fechaSesion = parseLocalDate(fecha);
-        if (fechaSesion >= lunesSemana && fechaSesion <= domingoSemana) {
+        if (fechaSesion.getTime() >= lunesSemana.getTime() && fechaSesion.getTime() <= domingoSemana.getTime()) {
           lista.push({
             tipo: 'sesion',
             evento: sesion,
@@ -116,7 +140,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
     eventos.feedbacks.forEach(feedback => {
       if (feedback.semanaInicioISO) {
         const fechaFeedback = parseLocalDate(feedback.semanaInicioISO);
-        if (fechaFeedback >= lunesSemana && fechaFeedback <= domingoSemana) {
+        if (fechaFeedback.getTime() >= lunesSemana.getTime() && fechaFeedback.getTime() <= domingoSemana.getTime()) {
           lista.push({
             tipo: 'feedback',
             evento: feedback,
@@ -148,7 +172,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
       }
 
       // Ordenar por fecha ascendente (más antiguo primero)
-      return fechaA - fechaB;
+      return fechaA.getTime() - fechaB.getTime();
     });
 
     return lista;
@@ -168,18 +192,18 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
       const termino = busqueda.toLowerCase();
       filtrados = filtrados.filter(e => {
         if (e.tipo === 'sesion') {
-          const sesion = e.evento;
+          const sesion = e.evento as Sesion;
           return (sesion.sesionNombre || '').toLowerCase().includes(termino) ||
             (sesion.piezaNombre || '').toLowerCase().includes(termino) ||
             (sesion.notas || '').toLowerCase().includes(termino);
         } else if (e.tipo === 'feedback') {
-          const feedback = e.evento;
+          const feedback = e.evento as Feedback;
           return (feedback.notaProfesor || '').toLowerCase().includes(termino);
         } else if (e.tipo === 'asignacion') {
-          const asignacion = e.evento;
+          const asignacion = e.evento as Asignacion;
           return (asignacion.piezaSnapshot?.nombre || '').toLowerCase().includes(termino);
         } else if (e.tipo === 'evento') {
-          const evento = e.evento;
+          const evento = e.evento as EventoImp;
           return (evento.titulo || '').toLowerCase().includes(termino) ||
             (evento.descripcion || '').toLowerCase().includes(termino);
         }
@@ -193,9 +217,9 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
   // Agrupar por fecha
   const eventosPorFecha = useMemo(() => {
     if (!eventosFiltrados || eventosFiltrados.length === 0) {
-      return {};
+      return {} as Record<string, any[]>;
     }
-    const agrupados = {};
+    const agrupados: Record<string, any[]> = {};
     eventosFiltrados.forEach(item => {
       if (item && item.fecha) {
         const fecha = item.fecha;
@@ -221,7 +245,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
       try {
         const fechaA = parseLocalDate(a);
         const fechaB = parseLocalDate(b);
-        return fechaA - fechaB;
+        return (fechaA.getTime() - fechaB.getTime());
       } catch (e) {
         console.error('[VistaLista] Error ordenando fechas:', e);
         return 0;
@@ -230,7 +254,7 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
   }, [eventosPorFecha]);
 
   // Navegación: mueve el rango una semana hacia atrás o adelante
-  const navegarFechas = (direccion) => {
+  const navegarFechas = (direccion: number) => {
     const nuevaFecha = new Date(lunesSemana);
     nuevaFecha.setDate(lunesSemana.getDate() + (direccion * 7));
     onFechaChange(nuevaFecha);
@@ -362,11 +386,11 @@ export default function VistaLista({ fechaActual, onFechaChange, eventos, onEven
                         )}
                         {item.tipo === 'asignacion' && (
                           <EventoAsignacion
-                            asignacion={item.evento}
+                            asignacion={item.evento as Asignacion}
                             usuarios={usuarios}
                             onClick={() => onEventoClick(item.evento, 'asignacion')}
                             registrosSesion={registrosSesion}
-                            fechaEvento={item.fechaISO}
+                            fechaEvento={item.fecha ? parseLocalDate(item.fecha) : null}
                           />
                         )}
                         {item.tipo === 'sesion' && (
