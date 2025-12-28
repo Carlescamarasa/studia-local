@@ -389,7 +389,7 @@ export default function FormularioRapido({ onClose, initialStudentId = null }: F
                         <SelectTrigger id="filtro-profesor" className={`w-full mt-1 ${componentStyles.controls.selectDefault}`}>
                           <SelectValue placeholder="Todos los profesores" />
                         </SelectTrigger>
-                        <SelectContent zIndex="z-[320]">
+                        <SelectContent className="z-[320]">
                           <SelectItem value="all">Todos los profesores</SelectItem>
                           {profesores.map((prof) => (
                             <SelectItem key={prof.value} value={prof.value}>
@@ -570,7 +570,7 @@ export default function FormularioRapido({ onClose, initialStudentId = null }: F
                         side="bottom"
                         align="start"
                         sideOffset={4}
-                        className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                        className="z-[400] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                       >
                         {planes.length === 0 ? (
                           <div className="p-2 text-sm text-[var(--color-text-secondary)]">No hay planes</div>
@@ -620,7 +620,7 @@ export default function FormularioRapido({ onClose, initialStudentId = null }: F
                         side="bottom"
                         align="start"
                         sideOffset={4}
-                        className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
+                        className="z-[400] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                       >
                         {Object.entries(focoLabels).map(([key, label]) => (
                           <SelectItem key={key} value={key}>{label}</SelectItem>
