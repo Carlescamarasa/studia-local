@@ -28,7 +28,7 @@ const MAX_LINKS = 10;
 /**
  * Extrae el ID del archivo de una URL de Google Drive
  */
-function extractGoogleDriveId(url) {
+function extractGoogleDriveId(url: string): string | null {
   // Formato: drive.google.com/file/d/{id}
   const fileMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (fileMatch) return fileMatch[1];
@@ -47,29 +47,28 @@ function extractGoogleDriveId(url) {
 /**
  * Fetch con timeout personalizado y manejo silencioso de errores
  */
-function fetchWithTimeout(url, options = {}, timeout = 6000) {
+function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 6000): Promise<Response | null> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   return fetch(url, { ...options, signal: controller.signal })
     .finally(() => clearTimeout(timeoutId))
-    .catch(error => {
+    .catch((error: Error) => {
       // Silenciar todos los errores (timeout, CORS, QUIC, etc.)
-      // No lanzar el error, simplemente retornar null
+      const msg = error.message || '';
       if (error.name === 'AbortError' ||
-        error.message?.includes('timeout') ||
-        error.message?.includes('QUIC') ||
-        error.message?.includes('CORS') ||
-        error.message?.includes('Failed to fetch')) {
+        msg.includes('timeout') ||
+        msg.includes('QUIC') ||
+        msg.includes('CORS') ||
+        msg.includes('Failed to fetch')) {
         return null;
       }
-      // Para otros errores, también silenciar
       return null;
     });
 }
 
-function usePageTitle(url) {
-  const [title, setTitle] = useState(null);
+function usePageTitle(url: string | null) {
+  const [title, setTitle] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -124,7 +123,7 @@ function usePageTitle(url) {
 
               if (!pageTitle) {
                 const driveTitle = doc.querySelector('[data-title]')?.getAttribute('data-title') ||
-                  doc.querySelector('.docs-title-input')?.value ||
+                  (doc.querySelector('.docs-title-input') as HTMLInputElement)?.value ||
                   doc.querySelector('title')?.textContent?.split(' - ')[0]?.trim();
                 if (driveTitle) {
                   pageTitle = driveTitle;
@@ -225,6 +224,21 @@ import { ArrowUp, ArrowDown, Pencil, Check, GripVertical, ExternalLink } from 'l
  * Componente individual para cada enlace multimedia
  * Permite usar hooks dentro del map
  */
+interface MediaLinkItemProps {
+  url: string;
+  name?: string | null;
+  index: number;
+  isValid: boolean;
+  label: string;
+  totalItems: number;
+  onPreview?: (index: number) => void;
+  onRemove: (index: number) => void;
+  onMove: (index: number, direction: number) => void;
+  onRename: (index: number, newName: string | null) => void;
+  isVideoFile?: boolean;
+  showMoveControls?: boolean;
+}
+
 function MediaLinkItem({
   url,
   name,
@@ -238,7 +252,7 @@ function MediaLinkItem({
   onRename,
   isVideoFile = false,
   showMoveControls = true
-}) {
+}: MediaLinkItemProps) {
   const { title, isLoading } = usePageTitle(!isVideoFile ? url : null); // Don't fetch title for video files
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(name || '');
@@ -271,7 +285,7 @@ function MediaLinkItem({
     setIsEditing(false);
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleSaveRename();
@@ -380,7 +394,7 @@ function MediaLinkItem({
               </p>
             )}
 
-            {!isVideoFile && onRename && (
+            {!isVideoFile && (
               <Button
                 type="button"
                 variant="ghost"
@@ -481,9 +495,9 @@ export default function MediaLinksInput({
   disabled = false,
   videoId = "video-upload"
 }: MediaLinksInputProps) {
-  const videoFileInputRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const dropzoneRef = useRef(null);
+  const videoFileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropzoneRef = useRef<HTMLDivElement>(null);
   const [inputText, setInputText] = useState('');
   const [isDragActive, setIsDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -495,25 +509,25 @@ export default function MediaLinksInput({
     return item;
   }) : [];
 
-  const handleDragEnter = (e) => {
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     if (!disabled) setIsDragActive(true);
   };
 
-  const handleDragLeave = (e) => {
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragActive(false);
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     if (!disabled) setIsDragActive(true);
   };
 
-  const handleUnifiedDrop = async (e) => {
+  const handleUnifiedDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragActive(false);
@@ -548,7 +562,7 @@ export default function MediaLinksInput({
   };
 
   // Upload files to Supabase Storage
-  const handleFileUpload = async (files) => {
+  const handleFileUpload = async (files: File[]) => {
     if (files.length === 0) return;
 
     // Filter to accepted types only
@@ -590,19 +604,19 @@ export default function MediaLinksInput({
           try {
             // Map simplified types to DB types
             const type = detectFileType(file);
-            const assetTypeMap = { 'image': 'image', 'video': 'video', 'audio': 'audio', 'pdf': 'pdf' };
+            const assetTypeMap: Record<string, string> = { 'image': 'image', 'video': 'video', 'audio': 'audio', 'pdf': 'pdf' };
             const fileType = assetTypeMap[type] || 'other';
 
             const newAsset = await remoteDataAPI.mediaAssets.create({
               url: result.url,
               name: file.name,
-              originalName: file.name,
+
               fileType: fileType,
               state: 'uploaded',
               storagePath: result.path,
-              originType: originType,
-              originId: originId,
-              originLabel: originLabel,
+              originType: (originType as "ejercicio" | "variacion" | "feedback_profesor" | "feedback_sesion" | "centro_dudas" | "otro") || 'otro',
+              originId: originId!,
+              originLabel: originLabel || undefined,
               originContext: {}
             });
             onAssetRegistered(newAsset);
@@ -634,7 +648,7 @@ export default function MediaLinksInput({
     }
   };
 
-  const handleInputKeyDown = (e) => {
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleParseInput();
@@ -670,7 +684,7 @@ export default function MediaLinksInput({
     setInputText('');
   };
 
-  const handleRemoveItem = (index) => {
+  const handleRemoveItem = (index: number) => {
     // If video is present, indices might be shifted in the UI? 
     // No, we will manage two separate lists in the UI render but handle removal by knowing what we are removing.
     // However, if we unify the list visually, we should probably know the source.
@@ -680,14 +694,14 @@ export default function MediaLinksInput({
     onChange(updated);
   };
 
-  const handleMove = (index, direction) => {
+  const handleMove = (index: number, direction: number) => {
     if (index + direction < 0 || index + direction >= richItems.length) return;
     const newItems = [...richItems];
     [newItems[index], newItems[index + direction]] = [newItems[index + direction], newItems[index]];
     onChange(newItems);
   };
 
-  const handleRename = (index, newName) => {
+  const handleRename = (index: number, newName: string | null) => {
     const newItems = [...richItems];
     if (newItems[index]) {
       newItems[index] = { ...newItems[index], name: newName };
@@ -848,7 +862,10 @@ export default function MediaLinksInput({
                 index={-1} // Special index
                 totalItems={currentCount}
                 showMoveControls={false}
-                onRemove={() => onVideoFileChange(null)}
+                label="Vídeo"
+                onMove={() => { }}
+                onRename={() => { }}
+                onRemove={() => onVideoFileChange?.(null)}
               />
             </div>
           )}
