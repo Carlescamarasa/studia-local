@@ -146,7 +146,7 @@ export default function PerfilModal({
         // Si no se encontró por ID y tenemos email, buscar por email
         if (effectiveEmail) {
           const userByEmail = allUsers.find(u =>
-            u.email && u.email.toLowerCase().trim() === effectiveEmail.toLowerCase().trim()
+            u.email && u.email.toLowerCase().trim() === ((effectiveEmail as string | null) || '').toLowerCase().trim()
           );
           if (userByEmail) {
             return userByEmail;
@@ -158,7 +158,7 @@ export default function PerfilModal({
       return {
         id: targetUserIdToLoad,
         email: effectiveEmail,
-        nombreCompleto: effectiveEmail?.split('@')[0],
+        nombreCompleto: ((effectiveEmail as string | null) || '').split('@')[0],
         rolPersonalizado: 'ESTU',
         profesorAsignadoId: null,
         profesor_asignado_id: null, // Fallback safe
@@ -166,7 +166,7 @@ export default function PerfilModal({
         nivel: null,
         nivelTecnico: null,
         mediaLinks: [],
-        full_name: effectiveEmail?.split('@')[0],
+        full_name: (effectiveEmail as string | null)?.split('@')[0],
       };
     },
     enabled: open && !!targetUserIdToLoad && !!allUsers,
@@ -202,7 +202,7 @@ export default function PerfilModal({
 
         if (!supabaseUrl) return null;
 
-        const headers = {
+        const headers: Record<string, string> = {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         };
@@ -294,7 +294,7 @@ export default function PerfilModal({
   }, [allUsers, targetUser?.profesorAsignadoId, targetUser?.profesor_asignado_id, editedData?.profesorAsignadoId, profesorAsignadoDirecto]);
 
   // Extraer código de país del teléfono si existe
-  const extractCountryCodeFromPhone = (phone) => {
+  const extractCountryCodeFromPhone = (phone: string | null | undefined) => {
     if (!phone) return '+34';
 
     // Buscar si el teléfono empieza con un código de país conocido
@@ -317,13 +317,13 @@ export default function PerfilModal({
   };
 
   // Filtrar y normalizar entrada de teléfono (solo permitir números, espacios, guiones)
-  const filterPhoneInput = (value) => {
+  const filterPhoneInput = (value: string) => {
     // Permitir solo números, espacios, guiones, paréntesis y puntos
     return value.replace(/[^\d\s\-\(\)\.]/g, '');
   };
 
   // Normalizar número de teléfono (eliminar espacios, guiones, paréntesis, etc.)
-  const normalizePhoneNumber = (phone, countryCode) => {
+  const normalizePhoneNumber = (phone: string | null | undefined, countryCode: string) => {
     if (!phone) return '';
 
     // Eliminar código de país si está presente
@@ -347,13 +347,13 @@ export default function PerfilModal({
   };
 
   // Obtener longitud de dígitos estándar para un código de país
-  const getCountryDigits = (countryCode) => {
+  const getCountryDigits = (countryCode: string) => {
     const country = countryCodes.find(cc => cc.code === countryCode);
     return country?.digits || 9; // Default: 9 dígitos (España)
   };
 
   // Generar link de WhatsApp (solo si el número tiene la longitud correcta)
-  const getWhatsAppLink = (phone, countryCode) => {
+  const getWhatsAppLink = (phone: string | null | undefined, countryCode: string) => {
     if (!phone) return null;
 
     const normalized = normalizePhoneNumber(phone, countryCode);
@@ -402,14 +402,14 @@ export default function PerfilModal({
         nivel: targetUser.nivel || null,
         nivelTecnico: targetUser.nivelTecnico || 1,
         telefono: normalizedPhone,
-        mediaLinks: targetUser.mediaLinks || [],
+        mediaLinks: (targetUser as any).mediaLinks || [],
       });
       setSaveResult(null);
     }
   }, [targetUser, open, targetUserEmail]); // Añadir targetUserEmail como dependencia para actualizar cuando cambie
 
-  const updateUserMutation = useMutation({
-    mutationFn: async (data) => {
+  const updateUserMutation = useMutation<any, Error, any>({
+    mutationFn: async (data: any) => {
       if (!targetUser?.id) {
         throw new Error('No se puede actualizar: usuario no encontrado');
       }
@@ -433,11 +433,11 @@ export default function PerfilModal({
         // Si estamos actualizando nuestro propio perfil, también actualizar la lista de usuarios
         if (targetUser?.id === effectiveUser?.id) {
           // Actualizar el usuario en la lista de usuarios
-          queryClient.setQueryData(['allUsers'], (oldData) => {
+          queryClient.setQueryData(['allUsers'], (oldData: any[]) => {
             if (!oldData) return oldData;
             return oldData.map(u => u.id === updatedUser.id ? updatedUser : u);
           });
-          queryClient.setQueryData(['users'], (oldData) => {
+          queryClient.setQueryData(['users'], (oldData: any[]) => {
             if (!oldData) return oldData;
             return oldData.map(u => u.id === updatedUser.id ? updatedUser : u);
           });
@@ -523,7 +523,7 @@ export default function PerfilModal({
       // Salir del modo edición
       setIsEditingPhone(false);
       toast.success('Teléfono guardado correctamente');
-    } catch (error) {
+    } catch (error: any) {
       log.error('[PerfilModal] Error al guardar teléfono:', {
         error: error?.message || error,
         code: error?.code,
@@ -591,7 +591,7 @@ export default function PerfilModal({
     // Preparar datos para guardar
     // Solo incluir profesorAsignadoId si realmente ha cambiado o si es necesario actualizarlo
     // IMPORTANTE: full_name es la fuente de verdad en profiles
-    const dataToSave = {
+    const dataToSave: any = {
       nombreCompleto: editedData.nombreCompleto,
       full_name: editedData.nombreCompleto, // Sincronizar con full_name en profiles
       rolPersonalizado: editedData.rolPersonalizado,
@@ -688,7 +688,7 @@ export default function PerfilModal({
   };
 
   // Cambiar contraseña directamente (solo para el propio usuario)
-  const updatePasswordMutation = useMutation({
+  const updatePasswordMutation = useMutation<any, Error, { currentPassword: string, newPassword: string }>({
     mutationFn: async ({ currentPassword, newPassword }) => {
       if (!isEditingOwnProfile) {
         throw new Error('Solo puedes cambiar tu propia contraseña directamente.');
@@ -744,7 +744,7 @@ export default function PerfilModal({
     },
   });
 
-  const handleUpdatePassword = async (e) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordResult(null);
 
@@ -797,7 +797,7 @@ export default function PerfilModal({
   // Verificar tanto por ID como por email para asegurar que funciona en todos los casos
   const isEditingOwnProfile = targetUser?.id === effectiveUser?.id ||
     (targetUser?.email && effectiveUser?.email &&
-      targetUser.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim()) ||
+      targetUser.email.toLowerCase().trim() === ((effectiveUser?.email as string | null) || '').toLowerCase().trim()) ||
     (!userId && targetUser?.id === effectiveUser?.id); // Si no hay userId, siempre es el perfil propio
   const userRole = effectiveUser?.rolPersonalizado;
 
@@ -927,7 +927,7 @@ export default function PerfilModal({
                       <div className="relative">
                         <Input
                           id="role"
-                          value={roleLabels[editedData.rolPersonalizado]}
+                          value={roleLabels[editedData.rolPersonalizado as keyof typeof roleLabels] || editedData.rolPersonalizado}
                           disabled
                           className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
                         />
@@ -1072,7 +1072,7 @@ export default function PerfilModal({
                             <Input
                               id="telefono"
                               type="tel"
-                              value={targetUser?.telefono ? String(targetUser.telefono) : ''}
+                              value={targetUser?.telefono ? String(targetUser?.telefono) : ''}
                               readOnly
                               onClick={() => setIsEditingPhone(true)}
                               className={`flex-1 ${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-pointer`}
@@ -1082,12 +1082,12 @@ export default function PerfilModal({
                             {(() => {
                               try {
                                 if (!targetUser?.telefono) return null;
-                                const countryCode = extractCountryCodeFromPhone(targetUser.telefono);
-                                const whatsappLink = getWhatsAppLink(targetUser.telefono, countryCode);
+                                const countryCode = extractCountryCodeFromPhone(targetUser?.telefono);
+                                const whatsappLink = getWhatsAppLink(targetUser?.telefono, countryCode);
                                 if (!whatsappLink) return null;
                                 return (
                                   <a
-                                    href={whatsappLink}
+                                    href={whatsappLink || undefined}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center justify-center w-10 h-10 rounded-lg bg-[#25D366] text-white hover:bg-[#20BA5A] transition-colors flex-shrink-0"
@@ -1206,12 +1206,14 @@ export default function PerfilModal({
                           value={editedData.nivelTecnico || ''}
                           onChange={(e) => {
                             const val = e.target.value === '' ? null : parseInt(e.target.value);
-                            if (val === null || (!isNaN(val) && val >= 1 && val <= 10)) {
+                            if (val === null || (val !== null && !isNaN(val) && val >= 1 && val <= 10)) {
                               // Calcular automáticamente el nivel de experiencia
                               let nuevoNivel = 'principiante';
-                              if (val >= 4 && val <= 6) nuevoNivel = 'intermedio';
-                              else if (val >= 7 && val <= 9) nuevoNivel = 'avanzado';
-                              else if (val >= 10) nuevoNivel = 'profesional';
+                              if (val !== null) {
+                                if (val >= 4 && val <= 6) nuevoNivel = 'intermedio';
+                                else if (val >= 7 && val <= 9) nuevoNivel = 'avanzado';
+                                else if (val >= 10) nuevoNivel = 'profesional';
+                              }
 
                               setEditedData({
                                 ...editedData,
