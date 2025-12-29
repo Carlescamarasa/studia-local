@@ -4,26 +4,23 @@ import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { cn } from "@/lib/utils";
 
-/**
- * PeriodHeader - Date navigation header with inline controls
- * Format: < {IconToday} {Label · Range} >
- * 
- * @param {Object} props
- * @param {string} props.label - Etiqueta principal (ej: "Semana 47")
- * @param {string} props.rangeText - Texto del rango (ej: "17–23 nov 2025")
- * @param {Function} props.onPrev - Handler para ir al período anterior
- * @param {Function} props.onNext - Handler para ir al período siguiente
- * @param {Function} props.onToday - Handler para ir al período actual
- * @param {string} props.className - Clases adicionales
- */
+interface PeriodHeaderProps {
+  label: string;
+  rangeText: string;
+  onPrev: () => void;
+  onNext: () => void;
+  onToday: () => void;
+  className?: string; // Optional
+}
+
 export default function PeriodHeader({
   label,
   rangeText,
   onPrev,
   onNext,
   onToday,
-  className
-}) {
+  className = ""
+}: PeriodHeaderProps) {
   return (
     <div className={cn("flex items-center gap-1 sm:gap-2", className)}>
       <Button

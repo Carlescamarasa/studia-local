@@ -8,7 +8,7 @@ export { default as StatsDateHeader } from './StatsDateHeader';
 export { default as StreakMetric } from './StreakMetric';
 
 // Tabs
-export { AutoevaluacionesTab, EvaluacionesTab } from '@/features/evaluaciones/components';
+
 export { default as FeedbackTab } from './FeedbackTab';
 export { default as FeedbackUnificadoTab } from './FeedbackUnificadoTab';
 export { default as ProgresoTab } from './ProgresoTab';

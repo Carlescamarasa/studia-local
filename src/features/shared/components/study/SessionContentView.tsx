@@ -4,12 +4,12 @@ import { ChevronDown, ChevronRight, Layers, Shuffle, Eye, Zap, Clock } from "luc
 import { getSecuencia, ensureRondaIds } from "@/features/estudio/components/sessionSequence";
 import { componentStyles } from "@/design/componentStyles";
 
-interface MediaItem {
+export interface MediaItem {
     url: string;
     name?: string | null;
 }
 
-interface Variation {
+export interface Variation {
     id?: string;
     label?: string;
     mediaItems?: MediaItem[];
@@ -19,7 +19,7 @@ interface Variation {
     duracion_seg?: number;
 }
 
-interface Bloque {
+export interface Bloque {
     code: string;
     id?: string;
     tipo: string;
@@ -31,14 +31,14 @@ interface Bloque {
     content?: Variation[];
 }
 
-interface Ronda {
-    id: string;
+export interface Ronda {
+    id?: string;
     aleatoria?: boolean;
-    repeticiones: number;
+    repeticiones?: number;
     bloques: string[];
 }
 
-interface Sesion {
+export interface Sesion {
     bloques?: Bloque[];
     rondas?: Ronda[];
     foco?: string;
@@ -233,7 +233,7 @@ export default function SessionContentView({
                                 </div>
                                 <span className="flex-1 text-[var(--color-text-primary)] font-medium truncate">
                                     {r.aleatoria && <Shuffle className="w-3 h-3 inline mr-1 text-[var(--color-primary)]" />}
-                                    × {r.repeticiones} repeticiones ({r.bloques.length} ejercicios)
+                                    × {r.repeticiones || 1} repeticiones ({r.bloques.length} ejercicios)
                                 </span>
                             </div>
 

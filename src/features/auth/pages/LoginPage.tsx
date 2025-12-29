@@ -8,12 +8,12 @@ import { toast } from 'sonner';
 import { Music, Sun, Moon } from 'lucide-react';
 import logoLTS from '@/assets/Logo_LTS.svg';
 import { getAppName } from '@/features/shared/utils/appMeta';
-import { LoginForm } from './components/LoginForm';
-import { ForgotPasswordForm } from './components/ForgotPasswordForm';
-import { useRateLimit } from './hooks/useRateLimit';
-import { useAuthErrors } from './hooks/useAuthErrors';
-import { authConfig } from './config/authConfig';
-import { authMessages } from './config/authMessages';
+import { LoginForm } from '../components/LoginForm';
+import { ForgotPasswordForm } from '../components/ForgotPasswordForm';
+import { useRateLimit } from '../hooks/useRateLimit';
+import { useAuthErrors } from '../hooks/useAuthErrors';
+import { authConfig } from '../config/authConfig';
+import { authMessages } from '../config/authMessages';
 
 const REMEMBER_EMAIL_KEY = 'studia_remember_email';
 const REMEMBER_EMAIL_ENABLED_KEY = 'studia_remember_email_enabled';

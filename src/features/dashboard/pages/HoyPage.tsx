@@ -30,6 +30,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { toStudia } from "@/lib/routes";
+import { createPageUrl } from "@/utils";
 import {
   calcularLunesSemanaISO,
   calcularOffsetSemanas,
@@ -41,9 +42,9 @@ import {
   isoWeekNumberLocal
 } from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import PeriodHeader from "../components/common/PeriodHeader";
-import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "../components/study/sessionSequence";
-import SessionContentView from "@/features/shared/components/study/SessionContentView";
+import PeriodHeader from "@/features/shared/components/common/PeriodHeader";
+import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "@/features/estudio/components/sessionSequence";
+import SessionContentView, { Sesion } from "@/features/shared/components/study/SessionContentView";
 import { toast } from "sonner";
 import { useSidebar } from "@/features/shared/components/ui/SidebarState";
 import { PageHeader } from "@/features/shared/components/ds/PageHeader";
@@ -59,7 +60,7 @@ import RequireRole from "@/features/auth/components/RequireRole";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/features/shared/components/ui/tooltip";
 
 // --- Helpers de fechas locales (para formateo de semana) ---
-const startOfMonday = (date) => {
+const startOfMonday = (date: Date) => {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const dow = d.getDay();
   const diff = dow === 0 ? -6 : 1 - dow;
@@ -67,7 +68,26 @@ const startOfMonday = (date) => {
   return d;
 };
 
-const InfoSection = ({ title, icon, children, defaultOpen = true }) => {
+// Adapter helper to convert PlanSesion (with object blocks) to Sesion (with string codes) for the view
+const adaptForView = (s: any): Sesion => {
+  if (!s) return {} as Sesion;
+  return {
+    ...s,
+    rondas: s.rondas?.map((r: any) => ({
+      ...r,
+      bloques: r.bloques?.map((b: any) => typeof b === 'string' ? b : b.code) || []
+    })) || []
+  };
+};
+
+interface InfoSectionProps {
+  title: string;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}
+
+const InfoSection = ({ title, icon, children, defaultOpen = true }: InfoSectionProps) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   return (
     <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4 last:border-b-0">
@@ -103,7 +123,7 @@ function HoyPageContent() {
   const { closeSidebar, abierto, toggleSidebar } = useSidebar();
   const { showHotkeysModal, setShowHotkeysModal } = useHotkeysModal();
 
-  const focoLabels = {
+  const focoLabels: Record<string, string> = {
     GEN: 'General',
     LIG: 'Ligadura',
     RIT: 'Ritmo',
@@ -111,7 +131,7 @@ function HoyPageContent() {
     'S&A': 'Sonido y Aire'
   };
 
-  const focoColors = {
+  const focoColors: Record<string, string> = {
     GEN: componentStyles.status.badgeDefault,
     LIG: componentStyles.status.badgeInfo,
     RIT: componentStyles.status.badgeDefault,
@@ -123,7 +143,7 @@ function HoyPageContent() {
     return calcularLunesSemanaISO(new Date());
   });
 
-  const cambiarSemana = (direccion) => {
+  const cambiarSemana = (direccion: number) => {
     const base = parseLocalDate(semanaActualISO);
     base.setDate(base.getDate() + (direccion * 7));
     const lunes = startOfMonday(base);
@@ -137,7 +157,7 @@ function HoyPageContent() {
   };
 
 
-  const [asignacionSeleccionadaId, setAsignacionSeleccionadaId] = useState(null); // Para múltiples asignaciones
+  const [asignacionSeleccionadaId, setAsignacionSeleccionadaId] = useState<string | null>(null); // Para múltiples asignaciones
   const [sesionSeleccionada, setSesionSeleccionada] = useState(0);
   const [sesionesConResumenExpandido, setSesionesConResumenExpandido] = useState(new Set());
 
@@ -256,7 +276,7 @@ function HoyPageContent() {
   }
 
   // Navigation function - empezarSesion navigates to /studia
-  const empezarSesion = (sesion, sesionIdxProp) => {
+  const empezarSesion = (sesion: any, sesionIdxProp: number) => {
     const url = toStudia({
       asignacionId: asignacionActiva?.id,
       semanaIdx: semanaIdx,
@@ -363,8 +383,8 @@ function HoyPageContent() {
                           </div>
                           <h2 className={`text-base font-bold text-[var(--color-text-primary)] font-headings`}>{semanaAsignacion.nombre}</h2>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <Badge className={focoColors[semanaAsignacion.foco]}>
-                              {focoLabels[semanaAsignacion.foco]}
+                            <Badge className={focoColors[semanaAsignacion.foco || 'GEN']}>
+                              {focoLabels[semanaAsignacion.foco || 'GEN']}
                             </Badge>
                             <span className="text-sm text-[var(--color-text-secondary)]">
                               ({semanaAsignacion.sesiones?.length || 0} sesiones)
@@ -384,7 +404,7 @@ function HoyPageContent() {
                               const segundos = tiempoTotal % 60;
                               const resumenExpandido = sesionesConResumenExpandido.has(`${asignacion.id}-${sesionIdx}`);
 
-                              const toggleResumen = (e) => {
+                              const toggleResumen = (e: React.MouseEvent) => {
                                 e.stopPropagation();
                                 setSesionesConResumenExpandido(prev => {
                                   const next = new Set(prev);
@@ -424,8 +444,8 @@ function HoyPageContent() {
                                         <Clock className="w-3 h-3 mr-1" />
                                         {minutos}:{String(segundos).padStart(2, '0')} min
                                       </Badge>
-                                      <Badge className={`${focoColors[sesion.foco]} text-xs px-2 py-0.5`} variant="outline">
-                                        Foco: {focoLabels[sesion.foco]}
+                                      <Badge className={`${focoColors[sesion.foco || 'GEN']} text-xs px-2 py-0.5`} variant="outline">
+                                        Foco: {focoLabels[sesion.foco || 'GEN']}
                                       </Badge>
                                       {sesion.foco !== semanaAsignacion.foco && (
                                         <Badge className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5" variant="outline">
@@ -457,7 +477,7 @@ function HoyPageContent() {
                                     {/* Resumen expandido */}
                                     {resumenExpandido && (
                                       <div className="border-t border-[var(--color-border-default)] pt-2" onClick={(e) => e.stopPropagation()}>
-                                        <SessionContentView sesion={sesion} compact dbBloques={bloquesActuales} semanaFoco={semanaAsignacion.foco} />
+                                        <SessionContentView sesion={adaptForView(sesion)} compact dbBloques={bloquesActuales} semanaFoco={semanaAsignacion.foco} />
                                       </div>
                                     )}
 
@@ -496,8 +516,8 @@ function HoyPageContent() {
                 <div className="mb-3">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <h2 className={`text-base font-bold text-[var(--color-text-primary)] font-headings`}>{semanaDelPlan.nombre}</h2>
-                    <Badge className={focoColors[semanaDelPlan.foco]}>
-                      {focoLabels[semanaDelPlan.foco]}
+                    <Badge className={focoColors[semanaDelPlan.foco || 'GEN']}>
+                      {focoLabels[semanaDelPlan.foco || 'GEN']}
                     </Badge>
                     <span className="text-sm text-[var(--color-text-secondary)]">
                       ({semanaDelPlan.sesiones?.length || 0} sesiones)
@@ -518,7 +538,7 @@ function HoyPageContent() {
                         const segundos = tiempoTotal % 60;
                         const resumenExpandido = sesionesConResumenExpandido.has(sesionIdx);
 
-                        const toggleResumen = (e) => {
+                        const toggleResumen = (e: React.MouseEvent) => {
                           e.stopPropagation();
                           setSesionesConResumenExpandido(prev => {
                             const next = new Set(prev);
@@ -556,8 +576,8 @@ function HoyPageContent() {
                                   <Clock className="w-3 h-3 mr-1" />
                                   {minutos}:{String(segundos).padStart(2, '0')} min
                                 </Badge>
-                                <Badge className={`${focoColors[sesion.foco]} text-xs px-2 py-0.5`} variant="outline">
-                                  Foco: {focoLabels[sesion.foco]}
+                                <Badge className={`${focoColors[sesion.foco || 'GEN']} text-xs px-2 py-0.5`} variant="outline">
+                                  Foco: {focoLabels[sesion.foco || 'GEN']}
                                 </Badge>
                               </div>
 
@@ -583,7 +603,7 @@ function HoyPageContent() {
                               {/* Resumen expandido */}
                               {resumenExpandido && (
                                 <div className="border-t border-[var(--color-border-default)] pt-2" onClick={(e) => e.stopPropagation()}>
-                                  <SessionContentView sesion={sesion} compact dbBloques={bloquesActuales} semanaFoco={semanaDelPlan?.foco} />
+                                  <SessionContentView sesion={adaptForView(sesion)} compact dbBloques={bloquesActuales} semanaFoco={semanaDelPlan?.foco} />
                                 </div>
                               )}
 

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useAllStudentXPTotals, useAggregateLevelGoals } from './useXP';
 import { useFeedbacksSemanal } from '@/features/progreso/hooks/useFeedbacksSemanal';
-import { useEvaluacionesTecnicas } from '@/features/evaluaciones/hooks/useEvaluacionesTecnicas';
+
 
 export type DataSource = 'evaluaciones' | 'experiencia' | 'ambas';
 
@@ -128,9 +128,8 @@ export function useHabilidadesStatsMultiple(studentIds: string[], options?: Habi
 
 
     // 3. Fetch all Evaluations & Feedbacks if not provided
-    const { data: fetchedEvaluations } = useEvaluacionesTecnicas();
-
-    const allEvaluations = options?.providedEvaluations || fetchedEvaluations;
+    // useEvaluacionesTecnicas removed
+    const allEvaluations: any[] = options?.providedEvaluations || [];
 
     const { data: fetchedFeedbacks } = useFeedbacksSemanal();
 
@@ -283,6 +282,6 @@ export function useHabilidadesStatsMultiple(studentIds: string[], options?: Habi
 
     return {
         radarStats,
-        isLoading: isLoadingXP || !allXPData || !allEvaluations
+        isLoading: isLoadingXP || !allXPData
     };
 }

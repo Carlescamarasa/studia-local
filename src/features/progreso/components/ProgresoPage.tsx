@@ -69,7 +69,6 @@ import TabBoundary from "@/features/shared/components/common/TabBoundary";
 import UnifiedTable from "@/features/shared/components/tables/UnifiedTable";
 
 import {
-    AutoevaluacionesTab,
     ComparativaEstudiantes,
     FeedbackUnificadoTab,
     HeatmapFranjas,
@@ -137,7 +136,6 @@ const ModalFeedbackSemanalAny: any = ModalFeedbackSemanal;
 const MediaPreviewModalAny: any = MediaPreviewModal;
 const HeatmapFranjasAny: any = HeatmapFranjas;
 const TiposBloquesTabAny: any = TiposBloquesTab;
-const AutoevaluacionesTabAny: any = AutoevaluacionesTab;
 const TopEjerciciosTabAny: any = TopEjerciciosTab;
 const ComparativaEstudiantesAny: any = ComparativaEstudiantes;
 
@@ -282,7 +280,6 @@ function ProgresoPageContent() {
 
     const {
         xpTotals = [],
-        evaluacionesTecnicas = [],
         registrosSesion: registros = []
     } = progressSummary || {};
 
@@ -555,46 +552,7 @@ function ProgresoPageContent() {
         return resultado;
     }, [feedbacksSemanal, alumnosSeleccionados, estudiantesDelProfesor, periodoInicio, periodoFin, isEstu, isProf, usuarios]);
 
-    const evaluacionesFiltradas = useMemo(() => {
-        let resultado = [...evaluacionesTecnicas];
 
-        if (effectiveStudentId) {
-            resultado = resultado.filter(e => e.alumnoId === effectiveStudentId);
-        } else if (isEstu) {
-            resultado = resultado.filter(e => e.alumnoId === userIdActual);
-        } else if (alumnosSeleccionados.length > 0 && alumnosSeleccionados[0]) {
-            resultado = resultado.filter(e => alumnosSeleccionados.includes(e.alumnoId));
-        }
-
-        if (periodoInicio || periodoFin) {
-            resultado = resultado.filter(e => {
-                const fechaEval = e.fecha || e.created_at;
-                if (!fechaEval) return true;
-
-                const evalDate = parseLocalDate(fechaEval.split('T')[0]);
-
-                if (periodoInicio) {
-                    const inicioDate = parseLocalDate(periodoInicio);
-                    if (evalDate < inicioDate) return false;
-                }
-
-                if (periodoFin) {
-                    const finDate = parseLocalDate(periodoFin);
-                    if (evalDate > finDate) return false;
-                }
-
-                return true;
-            });
-        }
-
-        resultado.sort((a, b) => {
-            const fechaA = a.createdAt || a.created_at || '';
-            const fechaB = b.createdAt || b.created_at || '';
-            return fechaB.localeCompare(fechaA);
-        });
-
-        return resultado;
-    }, [evaluacionesTecnicas, effectiveStudentId, userIdActual, alumnosSeleccionados, periodoInicio, periodoFin, isEstu]);
 
     const usuariosMap = useMemo(() => {
         const map: Record<string, any> = {};
@@ -1001,7 +959,7 @@ function ProgresoPageContent() {
                             alumnosSeleccionados={effectiveIds}
                             userIdActual={userIdActual}
                             xpData={registrosFiltradosUnicos}
-                            evaluations={evaluacionesFiltradas}
+                            evaluations={[]}
                             users={usuarios}
                             fechaInicio={periodoInicio}
                             fechaFin={periodoFin}
@@ -1090,7 +1048,7 @@ function ProgresoPageContent() {
                     <div className="space-y-6 animate-in slide-in-from-left-2 duration-300">
                         <FeedbackUnificadoTabAny
                             feedbacks={isEstu ? feedbacksSemanal : feedbacksParaProfAdmin}
-                            evaluaciones={evaluacionesFiltradas} // Legacy support
+                            evaluaciones={[]} // Legacy support
                             registros={registrosFiltradosUnicos.filter(r => r.calificacion)} // Sessions with rating
                             usuarios={usuarios}
                             isEstu={isEstu}

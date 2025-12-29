@@ -34,7 +34,7 @@ import { computeKeyCriteriaStatus, canPromote, promoteLevel } from '@/utils/leve
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { Checkbox } from '@/features/shared/components/ui/checkbox';
 import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
-import { CurrentXPInline } from '@/features/evaluaciones/components';
+
 
 interface FeedbackData {
     id?: string;
@@ -782,7 +782,12 @@ export default function ModalFeedbackSemanal({
                                                                 );
                                                             }
 
-                                                            return <CurrentXPInline studentId={studentId} skill={skill.id as any} simple target={skill.targetXP} />;
+                                                            return (
+                                                                <div className="flex items-center gap-1.5 font-mono text-[11px] md:text-xs">
+                                                                    <span className="text-[var(--color-text-primary)] font-bold">{currentTotal}</span>
+                                                                    <span className="text-[var(--color-text-muted)] ml-1">/ {skill.targetXP} XP</span>
+                                                                </div>
+                                                            );
                                                         })()}
                                                     </div>
                                                 </div>

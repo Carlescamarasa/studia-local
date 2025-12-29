@@ -4,14 +4,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUsers } from "@/features/admin/hooks/useUsers";
 import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
 import { useRegistrosSesion } from "@/features/estudio/hooks/useRegistrosSesion";
-import { useEvaluacionesTecnicas } from "@/features/evaluaciones/hooks/useEvaluacionesTecnicas";
+
 import { useFeedbacksSemanal } from "@/features/progreso/hooks/useFeedbacksSemanal";
 import { Button } from "@/features/shared/components/ds/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/features/shared/components/ds";
 import { Badge } from "@/features/shared/components/ds";
 import { Alert, AlertDescription } from "@/features/shared/components/ds";
 import {
-  Music, Calendar, Target, PlayCircle, MessageSquare, Layers, ChevronLeft, ChevronRight, ChevronDown, Home, Clock, CheckCircle2, Star, Trash2, BookOpen, ClipboardCheck, Gauge, Brain, Zap
+  Music, Calendar, Target, PlayCircle, MessageSquare, Layers, ChevronLeft, ChevronRight, ChevronDown, Home, Clock, CheckCircle2, Star, Trash2, BookOpen
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -50,7 +50,7 @@ function SemanaPageContent() {
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [selectedMediaLinks, setSelectedMediaLinks] = useState<string[]>([]);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
-  const [tipoFeedbackSemana, setTipoFeedbackSemana] = useState('todos'); // 'todos' | 'profesor' | 'sesiones' | 'evaluaciones'
+  const [tipoFeedbackSemana, setTipoFeedbackSemana] = useState('todos'); // 'todos' | 'profesor' | 'sesiones'
   const queryClient = useQueryClient();
 
   const { effectiveUserId, effectiveEmail } = useEffectiveUser();
@@ -64,8 +64,7 @@ function SemanaPageContent() {
 
   const { data: registrosSesion = [] } = useRegistrosSesion();
 
-  // Evaluaciones técnicas
-  const { data: evaluacionesTecnicas = [] } = useEvaluacionesTecnicas();
+
 
   // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
   // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD
@@ -161,36 +160,9 @@ function SemanaPageContent() {
       }
     });
 
-    // Agregar evaluaciones técnicas (solo de la semana actual)
-    evaluacionesTecnicas
-      .filter(e => e.alumnoId === userIdActual)
-      .forEach(evaluacion => {
-        // Supabase returns createdAt (camelCase), local has created_at or created_date, fallback to fecha
-        const fechaEval = evaluacion.createdAt || evaluacion.created_at || evaluacion.created_date || evaluacion.fecha;
-        if (!fechaEval) return;
-        const evalDate = parseLocalDate(fechaEval.split('T')[0]);
-        if (evalDate >= lunesSemana && evalDate <= domingoSemana) {
-          // Prioritize createdAt/created_at for timestamp (accurate hour:minute)
-          const timestamp = evaluacion.createdAt
-            ? new Date(evaluacion.createdAt)
-            : evaluacion.created_at
-              ? new Date(evaluacion.created_at)
-              : evaluacion.created_date
-                ? new Date(evaluacion.created_date)
-                : new Date(fechaEval);
-          items.push({
-            tipo: 'evaluacion',
-            fecha: evalDate,
-            timestamp: timestamp,
-            fechaISO: fechaEval,
-            data: evaluacion,
-          });
-        }
-      });
-
     // Ordenar por timestamp descendente (más reciente primero)
     return items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }, [feedbacksProfesor, registrosSesionesAlumno, evaluacionesTecnicas, userIdActual, semanaActualISO]);
+  }, [feedbacksProfesor, registrosSesionesAlumno, userIdActual, semanaActualISO]);
 
   // Mapa de usuarios para mostrar nombres
   const usuariosMap = useMemo(() => {
@@ -210,8 +182,6 @@ function SemanaPageContent() {
       return itemsCombinados.filter(item => item.tipo === 'registro');
     } else if (tipoFeedbackSemana === 'feedback') {
       return itemsCombinados.filter(item => item.tipo === 'feedback');
-    } else if (tipoFeedbackSemana === 'evaluaciones') {
-      return itemsCombinados.filter(item => item.tipo === 'evaluacion');
     }
     return itemsCombinados;
   }, [itemsCombinados, tipoFeedbackSemana]);
@@ -525,15 +495,7 @@ function SemanaPageContent() {
                     <MessageSquare className="w-3.5 h-3.5 mr-1" />
                     Feedback
                   </Button>
-                  <Button
-                    variant={tipoFeedbackSemana === 'evaluaciones' ? 'primary' : 'outline'}
-                    size="sm"
-                    onClick={() => setTipoFeedbackSemana('evaluaciones')}
-                    className="text-xs h-8 sm:h-9 rounded-xl focus-brand transition-all"
-                  >
-                    <ClipboardCheck className="w-3.5 h-3.5 mr-1" />
-                    Evaluaciones
-                  </Button>
+
                 </div>
 
                 {itemsFiltrados.length === 0 ? (
@@ -542,8 +504,6 @@ function SemanaPageContent() {
                       <BookOpen className={`w-12 h-12 mx-auto mb-3 ${componentStyles.empty.emptyIcon} text-[var(--color-text-secondary)]`} />
                     ) : tipoFeedbackSemana === 'feedback' ? (
                       <MessageSquare className={`w-12 h-12 mx-auto mb-3 ${componentStyles.empty.emptyIcon} text-[var(--color-text-secondary)]`} />
-                    ) : tipoFeedbackSemana === 'evaluaciones' ? (
-                      <ClipboardCheck className={`w-12 h-12 mx-auto mb-3 ${componentStyles.empty.emptyIcon} text-[var(--color-text-secondary)]`} />
                     ) : (
                       <Calendar className={`w-12 h-12 mx-auto mb-3 ${componentStyles.empty.emptyIcon} text-[var(--color-text-secondary)]`} />
                     )}
@@ -554,7 +514,7 @@ function SemanaPageContent() {
                           ? 'No hay registros de sesiones esta semana'
                           : tipoFeedbackSemana === 'feedback'
                             ? 'No hay feedback del profesor esta semana'
-                            : 'No hay evaluaciones técnicas esta semana'}
+                            : 'No hay actividad esta semana'}
                     </p>
                   </div>
                 ) : (
@@ -606,71 +566,7 @@ function SemanaPageContent() {
                         );
                       }
 
-                      // Renderizar Evaluación Técnica
-                      if (item.tipo === 'evaluacion') {
-                        const evaluacion = item.data;
-                        const prof = usuariosMap[evaluacion.profesorId];
-                        const profNombre = prof ? displayName(prof) : 'Profesor';
-                        const fechaFormateada = item.timestamp.toLocaleDateString('es-ES', {
-                          day: 'numeric',
-                          month: 'short',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        });
 
-                        const habilidades = evaluacion.habilidades || {};
-                        const skills = [];
-
-                        if (habilidades.sonido != null) skills.push({ icon: <Music className="w-3.5 h-3.5 text-blue-500" />, name: 'Sonido', value: `${habilidades.sonido}/10` });
-                        if (habilidades.flexibilidad != null) skills.push({ icon: <Zap className="w-3.5 h-3.5 text-yellow-500" />, name: 'Flexibilidad', value: `${habilidades.flexibilidad}/10` });
-                        if (habilidades.cognitivo != null) skills.push({ icon: <Brain className="w-3.5 h-3.5 text-purple-500" />, name: 'Cognición', value: `${habilidades.cognitivo}/10` });
-                        if (habilidades.motricidad != null) skills.push({ icon: <Gauge className="w-3.5 h-3.5 text-green-500" />, name: 'Motricidad', value: `${habilidades.motricidad} BPM` });
-                        if (habilidades.articulacion) {
-                          const art = habilidades.articulacion;
-                          const parts = [];
-                          if (art.t != null) parts.push(`T: ${art.t}`);
-                          if (art.tk != null) parts.push(`TK: ${art.tk}`);
-                          if (art.ttk != null) parts.push(`TTK: ${art.ttk}`);
-                          if (parts.length > 0) skills.push({ icon: <Target className="w-3.5 h-3.5 text-orange-500" />, name: 'Articulación', value: `${parts.join(', ')} BPM` });
-                        }
-
-                        return (
-                          <div key={`evaluacion-${evaluacion.id}`} className="flex items-start gap-2 py-2 px-3 border-l-4 border-l-[var(--color-primary)] bg-[var(--color-primary)]/5 hover:bg-[var(--color-primary)]/10 transition-colors">
-                            <ClipboardCheck className="w-4 h-4 text-[var(--color-primary)] mt-0.5 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <p className="text-xs text-[var(--color-text-secondary)] font-medium">📋 Evaluación técnica</p>
-                                {evaluacion.profesorId && (
-                                  <span className="text-xs text-[var(--color-text-secondary)]">
-                                    • {profNombre}
-                                  </span>
-                                )}
-                                <span className="text-xs text-[var(--color-text-secondary)]">
-                                  • {fechaFormateada}
-                                </span>
-                              </div>
-                              {skills.length > 0 ? (
-                                <div className="flex flex-wrap gap-x-4 gap-y-1">
-                                  {skills.map((skill, idx) => (
-                                    <div key={idx} className="flex items-center gap-1.5 text-xs">
-                                      {skill.icon}
-                                      <span className="font-medium">{skill.name}:</span>
-                                      <span className="text-[var(--color-text-primary)]">{skill.value}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <p className="text-xs text-[var(--color-text-secondary)] italic">Sin datos evaluados</p>
-                              )}
-                              {evaluacion.notas && (
-                                <p className="text-sm text-[var(--color-text-primary)] italic break-words mt-1">
-                                  "{evaluacion.notas}"
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      }
 
                       // Renderizar Registro de Sesión
                       if (item.tipo === 'registro') {

@@ -16,7 +16,7 @@ import { getAppName } from '@/features/shared/utils/appMeta';
 import { log } from '@/utils/log';
 import { createPageUrl } from '@/utils';
 import { roleHome } from '@/features/auth/components/roleMap';
-import { validatePasswordStrength, validateEmail, isEmpty } from './utils/validation';
+import { validatePasswordStrength, validateEmail, isEmpty } from '../utils/validation';
 
 export default function InvitationPage() {
   const [fullName, setFullName] = useState('');
@@ -25,11 +25,13 @@ export default function InvitationPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [userEmail, setUserEmail] = useState('');
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
-  const { user, loading: authLoading, appRole } = useAuth();
+  // @ts-ignore - useAuth user type inference is not perfect yet
+  const { user, loading: authLoading, appRole } = useAuth() as any;
   const appName = getAppName();
   const { design, activeMode, setActiveMode } = useDesign();
+  // @ts-ignore - design possibly null
   const primaryColor = design?.colors?.primary || '#fd9840';
 
   useEffect(() => {
@@ -83,7 +85,7 @@ export default function InvitationPage() {
     }
   }, [user, userEmail]);
 
-  const validateField = (field, value) => {
+  const validateField = (field: string, value: string) => {
     const fieldErrors = { ...errors };
 
     if (field === 'full_name') {
@@ -117,7 +119,7 @@ export default function InvitationPage() {
     return Object.keys(fieldErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validar todos los campos
@@ -167,7 +169,7 @@ export default function InvitationPage() {
       setTimeout(() => {
         if (user || currentUser) {
           // Si el usuario está autenticado, redirigir a su página de inicio según su rol
-          const targetPage = roleHome[appRole] || roleHome.ESTU;
+          const targetPage = roleHome[appRole as keyof typeof roleHome] || roleHome.ESTU;
           const pageName = targetPage.replace(/^\//, '');
           navigate(createPageUrl(pageName), { replace: true });
         } else {
@@ -175,7 +177,7 @@ export default function InvitationPage() {
           navigate('/login', { replace: true });
         }
       }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       log.error('Error al completar registro:', error);
       const errorMessage = error.message?.toLowerCase() || '';
 
@@ -190,7 +192,7 @@ export default function InvitationPage() {
     }
   };
 
-  const PageLayout = ({ children }) => (
+  const PageLayout = ({ children }: { children: React.ReactNode }) => (
     <div
       className={componentStyles.auth.loginPageContainer}
       style={{

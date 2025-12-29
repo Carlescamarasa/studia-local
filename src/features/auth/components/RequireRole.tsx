@@ -6,14 +6,12 @@ import { Shield, ArrowLeft } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 
-/**
- * Componente guard que valida acceso por rol.
- * Si el usuario no tiene uno de los roles permitidos, muestra mensaje de "Acceso denegado".
- * 
- * NOTA: Si realRole === 'ADMIN', siempre tiene acceso (admin override).
- * @param {{ children: React.ReactNode, anyOf?: Array<'ADMIN' | 'PROF' | 'ESTU'> }} props
- */
-export default function RequireRole({ children, anyOf = /** @type {Array<'ADMIN' | 'PROF' | 'ESTU'>} */ ([]) }) {
+interface RequireRoleProps {
+  children: React.ReactNode;
+  anyOf?: Array<'ADMIN' | 'PROF' | 'ESTU'>;
+}
+
+export default function RequireRole({ children, anyOf = [] }: RequireRoleProps) {
   const { effectiveRole, realRole, loading: effectiveLoading } = useEffectiveUser();
 
   // Esperar a que termine de cargar
@@ -27,7 +25,7 @@ export default function RequireRole({ children, anyOf = /** @type {Array<'ADMIN'
   }
 
   // Si tiene acceso por rol efectivo, renderizar children
-  if (anyOf.includes(effectiveRole)) {
+  if (effectiveRole && (anyOf as string[]).includes(effectiveRole)) {
     return <>{children}</>;
   }
 
