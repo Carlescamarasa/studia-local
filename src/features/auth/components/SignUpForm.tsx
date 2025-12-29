@@ -8,19 +8,34 @@ import { validateEmail, isEmpty } from '../utils/validation';
 import { componentStyles } from '@/design/componentStyles';
 import { authConfig } from '../config/authConfig';
 
+interface SignUpFormProps {
+  onSubmit: (data: { email: string; full_name: string; nivel: string | null }) => void;
+  isLoading: boolean;
+}
+
+interface SignUpErrors {
+  email?: string;
+  full_name?: string;
+}
+
+interface SignUpTouched {
+  email?: boolean;
+  full_name?: boolean;
+}
+
 /**
  * Formulario de registro público (futuro)
  * Reutiliza la misma estructura que CreateUserModal pero para registro público
  */
-export function SignUpForm({ onSubmit, isLoading }) {
+export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [nivel, setNivel] = useState('');
-  const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
+  const [errors, setErrors] = useState<SignUpErrors>({});
+  const [touched, setTouched] = useState<SignUpTouched>({});
 
-  const validateField = (field, value) => {
-    const fieldErrors = {};
+  const validateField = (field: 'email' | 'full_name', value: string) => {
+    const fieldErrors: SignUpErrors = {};
 
     if (field === 'email') {
       if (isEmpty(value)) {
@@ -40,21 +55,21 @@ export function SignUpForm({ onSubmit, isLoading }) {
     return Object.keys(fieldErrors).length === 0;
   };
 
-  const handleEmailChange = (value) => {
+  const handleEmailChange = (value: string) => {
     setEmail(value);
     if (authConfig.ux.validateOnChange && touched.email) {
       validateField('email', value);
     }
   };
 
-  const handleFullNameChange = (value) => {
+  const handleFullNameChange = (value: string) => {
     setFullName(value);
     if (authConfig.ux.validateOnChange && touched.full_name) {
       validateField('full_name', value);
     }
   };
 
-  const handleBlur = (field) => {
+  const handleBlur = (field: 'email' | 'full_name') => {
     setTouched(prev => ({ ...prev, [field]: true }));
     if (authConfig.ux.validateOnBlur) {
       if (field === 'email') validateField('email', email);
@@ -62,7 +77,7 @@ export function SignUpForm({ onSubmit, isLoading }) {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     const emailValid = validateField('email', email);

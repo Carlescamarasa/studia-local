@@ -2,28 +2,36 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 
+interface CreateUserData {
+  email: string;
+  full_name: string;
+  nivel?: string | null;
+  profesor_asignado_id?: string | null;
+  sendInvitation?: boolean;
+}
+
 /**
  * Hook para crear usuarios usando la Edge Function
  */
 export function useCreateUser() {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const createUser = useCallback(async (userData) => {
+  const createUser = useCallback(async (userData: CreateUserData) => {
     setIsLoading(true);
     setError(null);
 
     try {
       // Obtener el token de sesión actual
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+
       if (sessionError || !session) {
         throw new Error('No hay sesión activa. Por favor, inicia sesión.');
       }
 
       // Obtener la URL de Supabase desde las variables de entorno
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      
+
       if (!supabaseUrl) {
         throw new Error('VITE_SUPABASE_URL no está configurada');
       }
@@ -50,7 +58,7 @@ export function useCreateUser() {
       }
 
       return result;
-    } catch (err) {
+    } catch (err: any) {
       const errorMessage = err.message || 'Error al crear usuario';
       setError(errorMessage);
       throw err;

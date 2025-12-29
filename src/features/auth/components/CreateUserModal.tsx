@@ -18,14 +18,31 @@ import { validateEmail, isEmpty, normalizeEmail } from '../utils/validation';
 import { componentStyles } from '@/design/componentStyles';
 import { toast } from 'sonner';
 import { useUsers } from '@/features/admin/hooks/useUsers';
+import { StudiaUser } from '@/features/shared/types/domain';
 
-export function CreateUserModal({ open, onOpenChange, onSuccess }) {
+interface CreateUserModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: (user: any) => void;
+}
+
+interface CreateUserErrors {
+  email?: string;
+  full_name?: string;
+}
+
+interface CreateUserTouched {
+  email?: boolean;
+  full_name?: boolean;
+}
+
+export function CreateUserModal({ open, onOpenChange, onSuccess }: CreateUserModalProps) {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [nivel, setNivel] = useState('');
   const [profesorAsignadoId, setProfesorAsignadoId] = useState('');
-  const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
+  const [errors, setErrors] = useState<CreateUserErrors>({});
+  const [touched, setTouched] = useState<CreateUserTouched>({});
 
   const { createUser, isLoading } = useCreateUser();
 
@@ -48,8 +65,8 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }) {
     }
   }, [open]);
 
-  const validateField = (field, value) => {
-    const fieldErrors = {};
+  const validateField = (field: 'email' | 'full_name', value: string) => {
+    const fieldErrors: CreateUserErrors = {};
 
     if (field === 'email') {
       if (isEmpty(value)) {
@@ -69,27 +86,27 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }) {
     return Object.keys(fieldErrors).length === 0;
   };
 
-  const handleEmailChange = (value) => {
+  const handleEmailChange = (value: string) => {
     setEmail(value);
     if (touched.email) {
       validateField('email', value);
     }
   };
 
-  const handleFullNameChange = (value) => {
+  const handleFullNameChange = (value: string) => {
     setFullName(value);
     if (touched.full_name) {
       validateField('full_name', value);
     }
   };
 
-  const handleBlur = (field) => {
+  const handleBlur = (field: 'email' | 'full_name') => {
     setTouched(prev => ({ ...prev, [field]: true }));
     if (field === 'email') validateField('email', email);
     if (field === 'full_name') validateField('full_name', fullName);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validar todos los campos
@@ -118,7 +135,7 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }) {
       }
 
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al crear usuario:', error);
       toast.error(error.message || 'Error al crear usuario');
     }

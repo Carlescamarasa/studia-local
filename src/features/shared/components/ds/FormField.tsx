@@ -15,6 +15,17 @@ import { AlertCircle, CheckCircle2, HelpCircle } from "lucide-react";
  * @param {ReactNode} children - Input/Select/Textarea
  * @param {string} className - Clases adicionales
  */
+interface FormFieldProps extends React.HTMLAttributes<HTMLDivElement> {
+  label?: string;
+  required?: boolean;
+  optional?: boolean;
+  error?: string;
+  success?: string;
+  help?: string;
+  helpText?: string;
+  children: React.ReactElement | React.ReactNode;
+}
+
 export function FormField({
   label,
   required = false,
@@ -22,11 +33,11 @@ export function FormField({
   error,
   success,
   help,
-  helpText, // Nueva prop para ayudar con el warning de React
+  helpText,
   children,
   className,
   ...props
-}) {
+}: FormFieldProps) {
   // Combinar help y helpText (helpText es el alias común usado en el proyecto)
   const helpMessage = help || helpText;
   const labelClass = cn(
@@ -37,37 +48,38 @@ export function FormField({
 
   // Generar ID único si no existe
   const fieldId = useMemo(() => {
-    return children?.props?.id || `field-${Math.random().toString(36).substr(2, 9)}`;
+    return (children as React.ReactElement<any>)?.props?.id || `field-${Math.random().toString(36).substr(2, 9)}`;
   }, [children]);
 
   // Función recursiva para encontrar y mejorar el Input
-  const enhanceInputInTree = (element, isRoot = false) => {
+  const enhanceInputInTree = (element: React.ReactNode, isRoot = false): React.ReactNode => {
     if (!React.isValidElement(element)) {
       return element;
     }
 
+    const reactElement = element as React.ReactElement<any>;
+
     // Si es un Input (verificamos por props comunes de input o por displayName)
-    const isInput = element.props?.type === 'password' ||
-      element.props?.type === 'text' ||
-      element.props?.type === 'email' ||
-      element.props?.type === 'number' ||
-      element.props?.type === 'tel' ||
-      element.props?.type === 'url' ||
-      element.type === 'input' ||
-      (element.type?.name === 'Input') ||
-      (element.type?.displayName === 'Input') ||
-      (typeof element.type === 'object' && element.type?.render?.name === 'Input');
+    const isInput = reactElement.props?.type === 'password' ||
+      reactElement.props?.type === 'text' ||
+      reactElement.props?.type === 'email' ||
+      reactElement.props?.type === 'number' ||
+      reactElement.props?.type === 'tel' ||
+      reactElement.props?.type === 'url' ||
+      reactElement.type === 'input' ||
+      (reactElement.type as any)?.name === 'Input' ||
+      (reactElement.type as any)?.displayName === 'Input' ||
+      (typeof reactElement.type === 'object' && (reactElement.type as any)?.render?.name === 'Input');
 
     if (isInput) {
       // Es un Input, aplicar clases de error/success
-      // inputError ya incluye ctrl-field, así que solo agregamos las clases de estado
       const inputClassName = cn(
-        element.props.className,
+        reactElement.props.className,
         error && componentStyles.forms.inputError,
         success && componentStyles.forms.inputSuccess
       );
 
-      return React.cloneElement(element, {
+      return React.cloneElement(reactElement, {
         id: fieldId,
         className: inputClassName,
         "aria-invalid": error ? "true" : undefined,
@@ -76,12 +88,12 @@ export function FormField({
     }
 
     // Si tiene children, procesarlos recursivamente
-    if (element.props.children) {
-      const enhancedChildren = React.Children.map(element.props.children, (child) =>
+    if (reactElement.props.children) {
+      const enhancedChildrenInTree = React.Children.map(reactElement.props.children, (child) =>
         enhanceInputInTree(child, false)
       );
-      return React.cloneElement(element, {
-        children: enhancedChildren,
+      return React.cloneElement(reactElement, {
+        children: enhancedChildrenInTree,
       });
     }
 

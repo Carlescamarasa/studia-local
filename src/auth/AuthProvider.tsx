@@ -2,15 +2,18 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { supabase } from '@/lib/supabaseClient';
 import { isAuthError } from '@/lib/authHelpers';
 import { toast } from 'sonner';
+import { AuthState, AuthContextValue } from '@/features/auth/types';
+import { UserRole, StudiaUser } from '@/features/shared/types/domain';
+import { Session } from '@supabase/supabase-js';
 
-const AuthContext = createContext(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 /**
  * Calcula el rol de la aplicación basándose en el email del usuario
- * @param {string} email - Email del usuario
- * @returns {string} - Rol: 'ADMIN', 'PROF' o 'ESTU'
+ * @param {string | undefined} email - Email del usuario
+ * @returns {UserRole} - Rol: 'ADMIN', 'PROF' o 'ESTU'
  */
-function calculateAppRoleFromEmail(email) {
+function calculateAppRoleFromEmail(email?: string): UserRole {
   if (!email) return 'ESTU';
 
   const normalizedEmail = email.toLowerCase().trim();
@@ -30,24 +33,23 @@ function calculateAppRoleFromEmail(email) {
   return 'ESTU';
 }
 
-export function AuthProvider({ children }) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ============================================================================
   // ESTADO UNIFICADO DE AUTENTICACIÓN
   // ============================================================================
-  // Usamos un estado unificado para evitar condiciones de carrera y bucles
-  const [authState, setAuthState] = useState({
+  const [authState, setAuthState] = useState<AuthState>({
     session: null,
     user: null,
     profile: null,
-    loading: true,           // Solo true durante carga inicial
-    initialProfileLoaded: false, // Flag para saber si ya cargamos el perfil inicial
+    loading: true,
+    initialProfileLoaded: false,
     error: null,
   });
 
   // Refs para control de carga
   const fetchingProfileRef = useRef(false);
-  const lastProfileUserIdRef = useRef(null); // Trackear último userId cargado
-  const sessionCheckIntervalRef = useRef(null);
+  const lastProfileUserIdRef = useRef<string | null>(null);
+  const sessionCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionNotFoundShownRef = useRef(false);
 
   // Extraer valores del estado para compatibilidad
@@ -57,7 +59,6 @@ export function AuthProvider({ children }) {
   const loading = authState.loading;
   const authError = authState.error;
 
-  // Calcular appRole basándose en el email del usuario
   const appRole = useMemo(() => {
     return calculateAppRoleFromEmail(user?.email);
   }, [user?.email]);
@@ -65,8 +66,7 @@ export function AuthProvider({ children }) {
   // ============================================================================
   // FUNCIÓN PARA CARGAR PERFIL - OPTIMIZADA
   // ============================================================================
-  // Solo carga el perfil una vez por usuario y evita recargas innecesarias
-  const fetchProfile = useCallback(async (userId, isInitialLoad = false) => {
+  const fetchProfile = useCallback(async (userId: string | null, isInitialLoad = false) => {
     if (!userId) {
       setAuthState(prev => ({ ...prev, profile: null }));
       lastProfileUserIdRef.current = null;
@@ -74,12 +74,10 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    // Evitar múltiples llamadas simultáneas para el mismo usuario
     if (fetchingProfileRef.current && lastProfileUserIdRef.current === userId) {
       return;
     }
 
-    // Evitar llamadas si ya tenemos el perfil cargado para este usuario
     if (lastProfileUserIdRef.current === userId && authState.profile?.id === userId) {
       return;
     }
@@ -88,63 +86,13 @@ export function AuthProvider({ children }) {
     lastProfileUserIdRef.current = userId;
 
     try {
-      // Petición específica a la tabla profiles
-      const profileQuery = supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at')
         .eq('id', userId)
         .single();
 
-      const { data, error } = await profileQuery;
-
       if (error) {
-        // Separar errores de red de "no hay perfil"
-        // Solo considerar NetworkError si viene de esta petición específica a profiles
-        const isNetworkError = error.message?.includes('NetworkError') ||
-          (error.message?.includes('fetch') && !error.code) ||
-          error.name === 'TypeError';
-
-        if (isNetworkError) {
-          // Error de red en la petición a profiles: registrar específicamente
-          if (import.meta.env.DEV) {
-            console.warn('[AuthProvider] Error de red al cargar perfil desde /profiles:', {
-              userId,
-              error: error.message,
-              code: error.code,
-              endpoint: 'profiles',
-            });
-          }
-          setAuthState(prev => ({
-            ...prev,
-            profile: null,
-            loading: isInitialLoad ? false : prev.loading,
-          }));
-          fetchingProfileRef.current = false;
-          return;
-        }
-
-        // Si no hay perfil o hay error de RLS, usar valores por defecto
-        if (error.message.includes('infinite recursion')) {
-          console.error('[AuthProvider] Error de políticas RLS en Supabase:', {
-            error: error.message,
-            code: error.code,
-            userId,
-          });
-        } else if (error.code === 'PGRST116') {
-          // No hay fila: realmente no existe perfil
-          console.warn('[AuthProvider] No se encontró perfil en la tabla profiles:', {
-            userId,
-          });
-        } else {
-          // Otro tipo de error
-          if (import.meta.env.DEV) {
-            console.warn('[AuthProvider] Error al cargar perfil:', {
-              userId,
-              error: error.message,
-              code: error.code,
-            });
-          }
-        }
         setAuthState(prev => ({
           ...prev,
           profile: null,
@@ -154,74 +102,15 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      // Si hay data, establecer perfil
-      if (!data) {
-        // Respuesta 200 pero sin datos
-        if (import.meta.env.DEV) {
-          console.warn('[AuthProvider] No se encontró perfil en la tabla profiles (respuesta vacía):', {
-            userId,
-          });
-        }
-        setAuthState(prev => ({
-          ...prev,
-          profile: null,
-          loading: isInitialLoad ? false : prev.loading,
-        }));
-        fetchingProfileRef.current = false;
-        return;
-      }
-
-      // Actualizar estado con el perfil cargado
       setAuthState(prev => ({
         ...prev,
-        profile: data,
+        profile: data as StudiaUser,
         initialProfileLoaded: isInitialLoad ? true : prev.initialProfileLoaded,
-        loading: isInitialLoad ? false : prev.loading, // Solo cambiar loading en carga inicial
+        loading: isInitialLoad ? false : prev.loading,
       }));
-
-      if (import.meta.env.DEV) {
-      }
 
       fetchingProfileRef.current = false;
     } catch (err) {
-      // Error de red o excepción no controlada en la petición a profiles
-      // Detectar errores de red de varias formas, pero SOLO si vienen de esta petición
-      const errorMessage = err?.message || err?.toString() || '';
-      const errorName = err?.name || '';
-
-      // Verificar que el error realmente viene de la petición a profiles
-      // Los errores de otras peticiones no deberían llegar aquí si se manejan bien
-      const isNetworkError =
-        (errorMessage.includes('NetworkError') ||
-          errorMessage.includes('Failed to fetch') ||
-          (errorName === 'TypeError' && errorMessage.includes('fetch'))) &&
-        // Asegurar que no es un error de otra petición (por ejemplo, Edge Functions)
-        !errorMessage.includes('/functions/v1/');
-
-      if (isNetworkError) {
-        // Error de red específico de la petición a profiles
-        // Registrar como warning en lugar de error para no saturar la consola
-        // Solo en desarrollo mostramos el error completo
-        if (import.meta.env.DEV) {
-          console.warn('[AuthProvider] Error de red al cargar perfil desde /profiles (se reintentará automáticamente):', {
-            userId,
-            error: errorMessage || errorName,
-            endpoint: 'profiles',
-          });
-        }
-        // No tratar como "no hay perfil"; el problema es de red
-        // Mantener profile como null pero permitir reintentos
-      } else {
-        // Otro tipo de error o error que no es de network
-        console.error('[AuthProvider] Error obteniendo perfil desde /profiles:', {
-          error: errorMessage || err,
-          code: err?.code,
-          userId,
-          endpoint: 'profiles',
-          // Si el error menciona otro endpoint, indicarlo
-          suspectedEndpoint: errorMessage.includes('/functions/') ? 'edge-function' : 'profiles',
-        });
-      }
       setAuthState(prev => ({
         ...prev,
         profile: null,
@@ -229,446 +118,15 @@ export function AuthProvider({ children }) {
       }));
       fetchingProfileRef.current = false;
     }
-  }, []); // Sin dependencias - función estable que no cambia
-
-  // ============================================================================
-  // FLUJO DE CARGA DE PERFIL OPTIMIZADO
-  // ============================================================================
-  // 1. Se ejecuta UNA VEZ al montar el componente (sin dependencias que cambien)
-  // 2. Obtiene la sesión inicial
-  // 3. Si hay sesión y usuario, carga el perfil UNA VEZ
-  // 4. Se suscribe a cambios de autenticación
-  // 5. Solo recarga el perfil si cambia el ID del usuario (nuevo login)
-  // ============================================================================
-  useEffect(() => {
-    let isMounted = true;
-    const SESSION_TIMEOUT_MS = 10000; // 10 second timeout for session fetch
-
-    // Helper: getSession with timeout to prevent infinite loading on stale tokens
-    const getSessionWithTimeout = () => {
-      const sessionPromise = supabase.auth.getSession();
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Session fetch timeout - possible stale token')), SESSION_TIMEOUT_MS)
-      );
-      return Promise.race([sessionPromise, timeoutPromise]);
-    };
-
-    // Obtener sesión inicial con timeout
-    getSessionWithTimeout()
-      .then(async ({ data: { session }, error }) => {
-        if (!isMounted) return;
-
-        // Manejar errores de sesión explícitamente
-        if (error) {
-          const isSessionNotFound = error.message?.includes('session_not_found') ||
-            error.status === 403 ||
-            error.code === 'session_not_found';
-
-          if (isSessionNotFound && !sessionNotFoundShownRef.current) {
-            sessionNotFoundShownRef.current = true;
-            toast.error('Sesión expirada. Por favor, vuelve a iniciar sesión.', {
-              duration: 5000,
-            });
-
-            // Limpiar estado
-            setAuthState({
-              session: null,
-              user: null,
-              profile: null,
-              loading: false,
-              initialProfileLoaded: false,
-              error,
-            });
-            lastProfileUserIdRef.current = null;
-            fetchingProfileRef.current = false;
-
-            // Limpiar tokens locales
-            try {
-              await supabase.auth.signOut();
-            } catch (signOutError) {
-              // Ignorar errores al cerrar sesión
-            }
-
-            // Redirigir a login después de 2 segundos
-            setTimeout(() => {
-              if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/login') {
-                window.location.href = '/auth/login';
-              }
-            }, 2000);
-
-            return;
-          }
-        }
-
-        // Actualizar estado con sesión inicial
-        setAuthState(prev => ({
-          ...prev,
-          session,
-          user: session?.user ?? null,
-          error: null,
-        }));
-        sessionNotFoundShownRef.current = false;
-
-        // Solo cargar perfil si hay sesión y usuario, y no está ya cargado
-        if (session?.user?.id) {
-          // Cargar perfil inicial (loading será true hasta que termine)
-          await fetchProfile(session.user.id, true);
-        } else {
-          // No hay sesión - marcar como cargado sin perfil
-          setAuthState(prev => ({
-            ...prev,
-            profile: null,
-            loading: false,
-            initialProfileLoaded: true,
-          }));
-        }
-      })
-      .catch((err) => {
-        // Timeout o error de red en getSession
-        if (!isMounted) return;
-
-        console.warn('[AuthProvider] Session fetch failed/timed out:', err.message);
-
-        // En caso de timeout, limpiar estado y permitir que el usuario inicie sesión
-        setAuthState({
-          session: null,
-          user: null,
-          profile: null,
-          loading: false,
-          initialProfileLoaded: true,
-          error: null, // No mostrar error, simplemente redirigir a login
-        });
-        lastProfileUserIdRef.current = null;
-        fetchingProfileRef.current = false;
-
-        // Limpiar tokens potencialmente corruptos
-        try {
-          supabase.auth.signOut().catch(() => { });
-        } catch (e) {
-          // Ignorar
-        }
-      });
-
-    // Suscribirse a cambios de autenticación
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!isMounted) return;
-
-      // Manejar eventos específicos de expiración
-      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-        if (event === 'SIGNED_OUT') {
-          // Sesión cerrada explícitamente o expirada
-          setAuthState({
-            session: null,
-            user: null,
-            profile: null,
-            loading: false,
-            initialProfileLoaded: false,
-            error: null,
-          });
-          lastProfileUserIdRef.current = null;
-          fetchingProfileRef.current = false;
-          sessionNotFoundShownRef.current = false;
-          return;
-        } else if (event === 'TOKEN_REFRESHED') {
-          // Token refrescado - verificar que la sesión sigue válida
-          // NO recargar el perfil a menos que cambie el usuario
-          if (session?.user) {
-            setAuthState(prev => ({
-              ...prev,
-              session,
-              user: session.user,
-              error: null,
-            }));
-            sessionNotFoundShownRef.current = false;
-            // Solo recargar perfil si el usuario cambió (muy raro en TOKEN_REFRESHED)
-            if (session.user.id && lastProfileUserIdRef.current !== session.user.id) {
-              if (import.meta.env.DEV) {
-              }
-              fetchProfile(session.user.id, false).catch(err => {
-                if (import.meta.env.DEV) {
-                  console.error('[AuthProvider] Error obteniendo perfil después de refresh:', err);
-                }
-              });
-            }
-          } else {
-            // Token refrescado pero no hay sesión válida - limpiar
-            setAuthState({
-              session: null,
-              user: null,
-              profile: null,
-              loading: false,
-              initialProfileLoaded: false,
-              error: null,
-            });
-            lastProfileUserIdRef.current = null;
-            fetchingProfileRef.current = false;
-            sessionNotFoundShownRef.current = false;
-          }
-          return;
-        }
-      }
-
-      // Si no hay sesión (sesión expirada o usuario cerrado sesión), limpiar estado
-      if (!session) {
-        setAuthState({
-          session: null,
-          user: null,
-          profile: null,
-          loading: false,
-          initialProfileLoaded: false,
-          error: null,
-        });
-        lastProfileUserIdRef.current = null;
-        fetchingProfileRef.current = false;
-        sessionNotFoundShownRef.current = false;
-        return;
-      }
-
-      // Actualizar usuario inmediatamente
-      const userIdChanged = !authState.user || authState.user.id !== session.user.id;
-
-      setAuthState(prev => ({
-        ...prev,
-        session,
-        user: session.user,
-        error: null,
-        // Solo poner loading en true si es un usuario nuevo y aún no tenemos perfil
-        loading: userIdChanged && !prev.initialProfileLoaded ? true : prev.loading,
-      }));
-      sessionNotFoundShownRef.current = false;
-
-      // Obtener perfil solo si el usuario cambió (nuevo login)
-      if (session?.user?.id && userIdChanged) {
-        if (import.meta.env.DEV) {
-        }
-        fetchProfile(session.user.id, !authState.initialProfileLoaded).catch(err => {
-          if (import.meta.env.DEV) {
-            console.error('[AuthProvider] Error obteniendo perfil en onAuthStateChange:', err);
-          }
-        });
-      } else if (session?.user?.id && !userIdChanged) {
-        // Mismo usuario, no recargar perfil
-      }
-    });
-
-    // Escuchar eventos de error de autenticación desde remoteDataAPI
-    const handleAuthErrorEvent = async (event) => {
-      if (!isMounted) return;
-      const error = event.detail?.error;
-      if (error && isAuthError(error)) {
-        const isSessionNotFound = error.message?.includes('session_not_found') ||
-          error.status === 403 ||
-          error.code === 'session_not_found';
-
-        // Forzar cierre de sesión cuando se detecta error de autenticación
-        setAuthState({
-          session: null,
-          user: null,
-          profile: null,
-          loading: false,
-          initialProfileLoaded: false,
-          error,
-        });
-        lastProfileUserIdRef.current = null;
-        fetchingProfileRef.current = false;
-        sessionNotFoundShownRef.current = false;
-
-        // Mostrar mensaje solo si no se ha mostrado recientemente
-        if (isSessionNotFound && !sessionNotFoundShownRef.current) {
-          sessionNotFoundShownRef.current = true;
-          toast.error('Sesión expirada. Por favor, vuelve a iniciar sesión.', {
-            duration: 5000,
-          });
-
-          // Redirigir a login después de 2 segundos
-          setTimeout(() => {
-            if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/login') {
-              window.location.href = '/auth/login';
-            }
-          }, 2000);
-        }
-
-        try {
-          await supabase.auth.signOut();
-        } catch (signOutError) {
-          // Ignorar errores al cerrar sesión
-        }
-      }
-    };
-
-    window.addEventListener('auth-error', handleAuthErrorEvent);
-
-    // Verificación periódica de sesión (cada 30 minutos) - REDUCIDO para evitar spam
-    // IMPORTANTE: Solo verifica la sesión, NO recarga el perfil a menos que cambie el usuario
-    sessionCheckIntervalRef.current = setInterval(async () => {
-      if (!isMounted) return;
-
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-
-        if (error && isAuthError(error)) {
-          const isSessionNotFound = error.message?.includes('session_not_found') ||
-            error.status === 403 ||
-            error.code === 'session_not_found';
-
-          // Sesión expirada - limpiar estado
-          setAuthState({
-            session: null,
-            user: null,
-            profile: null,
-            loading: false,
-            initialProfileLoaded: false,
-            error,
-          });
-          lastProfileUserIdRef.current = null;
-          fetchingProfileRef.current = false;
-
-          // Mostrar mensaje solo si no se ha mostrado recientemente
-          if (isSessionNotFound && !sessionNotFoundShownRef.current) {
-            sessionNotFoundShownRef.current = true;
-            toast.error('Sesión expirada. Por favor, vuelve a iniciar sesión.', {
-              duration: 5000,
-            });
-
-            // Limpiar tokens locales
-            try {
-              await supabase.auth.signOut();
-            } catch (signOutError) {
-              // Ignorar errores al cerrar sesión
-            }
-
-            // Redirigir a login después de 2 segundos
-            setTimeout(() => {
-              if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/login') {
-                window.location.href = '/auth/login';
-              }
-            }, 2000);
-          }
-          return;
-        }
-
-        // Actualizar estado solo si cambió algo
-        setAuthState(prev => {
-          // Si no hay sesión pero tenemos usuario en estado, limpiar
-          if (!session && prev.user) {
-            return {
-              session: null,
-              user: null,
-              profile: null,
-              loading: false,
-              initialProfileLoaded: false,
-              error: null,
-            };
-          }
-
-          // Si hay sesión pero el usuario cambió, actualizar (muy raro)
-          if (session?.user && (!prev.user || prev.user.id !== session.user.id)) {
-            return {
-              ...prev,
-              session,
-              user: session.user,
-              error: null,
-            };
-          }
-
-          // Solo actualizar error si cambió
-          if (prev.error !== null) {
-            return { ...prev, error: null };
-          }
-
-          return prev; // No hay cambios
-        });
-
-        // Solo recargar perfil si cambió el usuario (muy raro en verificación periódica)
-        if (session?.user?.id && lastProfileUserIdRef.current !== session.user.id) {
-          if (import.meta.env.DEV) {
-          }
-          fetchProfile(session.user.id, false).catch(err => {
-            if (import.meta.env.DEV) {
-              console.error('[AuthProvider] Error obteniendo perfil en verificación periódica:', err);
-            }
-          });
-        }
-      } catch (err) {
-        // Error al verificar sesión - no hacer nada para no interrumpir la experiencia
-        if (import.meta.env.DEV) {
-          console.warn('[AuthProvider] Error en verificación periódica de sesión:', err);
-        }
-      }
-    }, 30 * 60 * 1000); // 30 minutos (reducido de 5 minutos para evitar llamadas innecesarias)
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-      window.removeEventListener('auth-error', handleAuthErrorEvent);
-      if (sessionCheckIntervalRef.current) {
-        clearInterval(sessionCheckIntervalRef.current);
-        sessionCheckIntervalRef.current = null;
-      }
-    };
-    // IMPORTANTE: Sin dependencias que cambien frecuentemente
-    // Solo se ejecuta al montar/desmontar el componente
-    // fetchProfile está memoizado y se accede a través del ref cuando es necesario
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Dependencias vacías: solo se ejecuta una vez
-
-
-
-  const signIn = useCallback(async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      throw error;
-    }
-
-    // Actualizar estado inmediatamente después del login exitoso
-    // onAuthStateChange se disparará también, pero esto asegura respuesta rápida
-    if (data?.user) {
-      setAuthState(prev => ({
-        ...prev,
-        user: data.user,
-        // Mantener loading hasta que se cargue el perfil inicial
-        loading: !prev.initialProfileLoaded,
-      }));
-
-      // Obtener perfil en background (no bloquear)
-      if (data.user.id) {
-        fetchProfile(data.user.id, !authState.initialProfileLoaded).catch(err => {
-          if (import.meta.env.DEV) {
-            console.error('[AuthProvider] Error obteniendo perfil después del login:', err);
-          }
-        });
-      }
-    }
-
-    return data;
-  }, []); // fetchProfile está en el scope del componente, no necesita estar en deps
+  }, [authState.profile?.id]);
 
   const signOut = useCallback(async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      // Si el error es que no hay sesión (403, AuthSessionMissingError), es válido continuar
-      // ya que el objetivo es cerrar sesión y si no hay sesión, ya estamos en el estado deseado
-      if (error && error.message !== 'Auth session missing!' && error.message !== 'JWT expired') {
-        // Solo lanzar error si no es un error de sesión faltante
-        throw error;
-      }
+      await supabase.auth.signOut();
     } catch (error) {
-      // Si es un error de sesión faltante, es válido continuar con la limpieza
-      if (error?.message?.includes('Auth session missing') || error?.message?.includes('JWT expired')) {
-        // Continuar con la limpieza aunque falló el signOut
-      } else {
-        // Otros errores pueden ser importantes, relanzarlos
-        throw error;
-      }
+      // Ignore signout errors if session is already missing
     }
 
-    // Limpiar perfil al cerrar sesión (siempre, incluso si falló el signOut)
     setAuthState({
       session: null,
       user: null,
@@ -682,180 +140,193 @@ export function AuthProvider({ children }) {
     sessionNotFoundShownRef.current = false;
   }, []);
 
-  // Función para verificar manualmente la sesión
-  const checkSession = useCallback(async () => {
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession();
+  const handleAuthErrorEvent = useCallback(async (event: any) => {
+    const error = event.detail?.error;
+    if (error && isAuthError(error)) {
+      const isSessionNotFound = error.message?.includes('session_not_found') ||
+        error.status === 403 ||
+        error.code === 'session_not_found';
 
-      if (error && isAuthError(error)) {
-        const isSessionNotFound = error.message?.includes('session_not_found') ||
-          error.status === 403 ||
-          error.code === 'session_not_found';
+      setAuthState({
+        session: null,
+        user: null,
+        profile: null,
+        loading: false,
+        initialProfileLoaded: false,
+        error,
+      });
+      lastProfileUserIdRef.current = null;
+      fetchingProfileRef.current = false;
 
-        // Sesión expirada - limpiar estado
+      if (isSessionNotFound && !sessionNotFoundShownRef.current) {
+        sessionNotFoundShownRef.current = true;
+        toast.error('Sesión expirada. Por favor, vuelve a iniciar sesión.');
+
+        setTimeout(() => {
+          if (!window.location.pathname.includes('/auth/login')) {
+            window.location.href = '/auth/login';
+          }
+        }, 2000);
+      }
+
+      try {
+        await supabase.auth.signOut();
+      } catch (signOutError) { }
+    }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('auth-error', handleAuthErrorEvent);
+    return () => window.removeEventListener('auth-error', handleAuthErrorEvent);
+  }, [handleAuthErrorEvent]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const SESSION_TIMEOUT_MS = 10000;
+
+    const getSessionWithTimeout = (): Promise<{ data: { session: Session | null }; error: any }> => {
+      const sessionPromise = supabase.auth.getSession();
+      const timeoutPromise = new Promise<{ data: { session: Session | null }; error: any }>((_, reject) =>
+        setTimeout(() => reject(new Error('Session fetch timeout')), SESSION_TIMEOUT_MS)
+      );
+      return Promise.race([sessionPromise as any, timeoutPromise]);
+    };
+
+    getSessionWithTimeout()
+      .then(async ({ data: { session }, error }) => {
+        if (!isMounted) return;
+
+        if (error) {
+          // Handle initial session fetch error
+        }
+
+        setAuthState(prev => ({
+          ...prev,
+          session,
+          user: session?.user ?? null,
+          error: null,
+        }));
+
+        if (session?.user?.id) {
+          await fetchProfile(session.user.id, true);
+        } else {
+          setAuthState(prev => ({
+            ...prev,
+            profile: null,
+            loading: false,
+            initialProfileLoaded: true,
+          }));
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setAuthState(prev => ({ ...prev, loading: false, initialProfileLoaded: true }));
+      });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+
+      if (event === 'SIGNED_OUT') {
         setAuthState({
           session: null,
           user: null,
           profile: null,
           loading: false,
           initialProfileLoaded: false,
-          error,
+          error: null,
         });
         lastProfileUserIdRef.current = null;
         fetchingProfileRef.current = false;
-
-        // Mostrar mensaje solo si no se ha mostrado recientemente
-        if (isSessionNotFound && !sessionNotFoundShownRef.current) {
-          sessionNotFoundShownRef.current = true;
-          toast.error('Sesión expirada. Por favor, vuelve a iniciar sesión.', {
-            duration: 5000,
-          });
-
-          // Limpiar tokens locales
-          try {
-            await supabase.auth.signOut();
-          } catch (signOutError) {
-            // Ignorar errores al cerrar sesión
-          }
-
-          // Redirigir a login después de 2 segundos
-          setTimeout(() => {
-            if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/login') {
-              window.location.href = '/auth/login';
-            }
-          }, 2000);
-        }
-
-        return false;
+        return;
       }
 
-      // Hay sesión válida - actualizar estado si es necesario
-      if (!session) {
-        // No hay sesión - limpiar si tenemos usuario en estado
-        if (authState.user) {
-          setAuthState({
-            session: null,
-            user: null,
-            profile: null,
-            loading: false,
-            initialProfileLoaded: false,
-            error: null,
-          });
-          lastProfileUserIdRef.current = null;
-          fetchingProfileRef.current = false;
-          sessionNotFoundShownRef.current = false;
-        }
-        return false;
-      }
+      const userIdChanged = !user || user.id !== session?.user.id;
 
-      // Hay sesión válida - actualizar estado solo si cambió el usuario
-      const userIdChanged = !authState.user || authState.user.id !== session.user.id;
-      if (userIdChanged) {
+      if (session) {
         setAuthState(prev => ({
           ...prev,
           session,
           user: session.user,
           error: null,
+          loading: userIdChanged ? true : prev.loading,
         }));
-        sessionNotFoundShownRef.current = false;
-        if (session.user.id) {
-          await fetchProfile(session.user.id, !authState.initialProfileLoaded);
+
+        if (userIdChanged) {
+          await fetchProfile(session.user.id, false);
         }
       }
-
-      return true;
-    } catch (err) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('[AuthProvider] Error al verificar sesión:', err);
-      }
-      return false;
-    }
-  }, []); // Sin dependencias - función estable
-
-  // Función para manejar errores de autenticación
-  const handleAuthError = useCallback(async (error) => {
-    if (!isAuthError(error)) {
-      return;
-    }
-
-    // Forzar cierre de sesión
-    await signOut();
-  }, [signOut]);
-
-  // Función para recuperar contraseña
-  const resetPassword = useCallback(async (email) => {
-    // Usar la misma lógica que authPasswordHelpers para consistencia
-    const appUrl = import.meta.env.VITE_APP_URL;
-    let redirectTo;
-
-    if (appUrl) {
-      const baseUrl = appUrl.endsWith('/') ? appUrl.slice(0, -1) : appUrl;
-      redirectTo = `${baseUrl}/reset-password`;
-    } else if (typeof window !== 'undefined') {
-      redirectTo = `${window.location.origin}/reset-password`;
-    } else {
-      redirectTo = '/reset-password';
-    }
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo,
     });
 
-    if (error) {
-      throw error;
-    }
+    sessionCheckIntervalRef.current = setInterval(async () => {
+      if (!isMounted) return;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session && user) {
+          await signOut();
+        }
+      } catch (e) { }
+    }, 30 * 60 * 1000);
 
-    return true;
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+      if (sessionCheckIntervalRef.current) {
+        clearInterval(sessionCheckIntervalRef.current as any);
+      }
+    };
+  }, [fetchProfile, user, signOut]);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+
+    if (data?.user) {
+      setAuthState(prev => ({ ...prev, user: data.user, loading: true }));
+      await fetchProfile(data.user.id, false);
+    }
+    return data;
+  }, [fetchProfile]);
+
+  const checkSession = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return !!session;
+    } catch {
+      return false;
+    }
   }, []);
 
-  // Usar useMemo para estabilizar el valor del contexto
-  // Extraer valores del estado unificado
-  const value = useMemo(() => ({
-    user: authState.user,
-    session: authState.session,
-    profile: authState.profile,
+  const resetPassword = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw error;
+  }, []);
+
+  const value = useMemo<AuthContextValue>(() => ({
+    user,
+    session,
+    profile,
+    loading,
+    authError,
     appRole,
-    loading: authState.loading,
-    authError: authState.error,
     signIn,
     signOut,
     checkSession,
-    handleAuthError,
     resetPassword,
-  }), [authState.user, authState.session, authState.profile, authState.loading, authState.error, appRole, signIn, signOut, checkSession, handleAuthError, resetPassword]);
+  }), [user, session, profile, loading, authError, appRole, signIn, signOut, checkSession, resetPassword]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
-
-  if (!context) {
-    // En desarrollo, durante HMR, intenta no crashear toda la app
-    if (import.meta.env.DEV && import.meta.hot) {
-      if (import.meta.env.DEV) {
-        console.warn('[AuthProvider] useAuth llamado sin provider durante HMR - devolviendo objeto temporal');
-      }
-      // Devuelve un objeto mínimo para que nada explote durante HMR
-      return {
-        session: null,
-        user: null,
-        profile: null,
-        appRole: 'ESTU',
-        loading: true,
-        authError: null,
-        signIn: async () => ({ user: null, session: null }),
-        signOut: async () => { },
-        checkSession: async () => false,
-        handleAuthError: async () => { },
-        resetPassword: async () => true,
-      };
-    }
-
-    // En producción, sí quiero que esto sea un error duro
-    throw new Error('useAuth debe usarse dentro de AuthProvider');
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
   }
-
   return context;
 }
-

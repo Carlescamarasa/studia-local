@@ -4,13 +4,22 @@ import { authConfig } from '../config/authConfig';
 const STORAGE_KEY = 'studia_login_attempts';
 const STORAGE_TIMESTAMP_KEY = 'studia_login_timestamp';
 
+export interface RateLimitStatus {
+  attempts: number;
+  isLocked: boolean;
+  remainingAttempts: number;
+  getRemainingTime: () => number;
+  recordFailedAttempt: () => void;
+  resetAttempts: () => void;
+}
+
 /**
  * Hook para manejar rate limiting y protección contra fuerza bruta
  */
-export function useRateLimit() {
+export function useRateLimit(): RateLimitStatus {
   const [attempts, setAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
-  const [lockoutUntil, setLockoutUntil] = useState(null);
+  const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
 
   useEffect(() => {
     // Cargar intentos guardados
@@ -50,7 +59,7 @@ export function useRateLimit() {
   const recordFailedAttempt = useCallback(() => {
     const newAttempts = attempts + 1;
     const timestamp = Date.now();
-    
+
     setAttempts(newAttempts);
     localStorage.setItem(STORAGE_KEY, newAttempts.toString());
     localStorage.setItem(STORAGE_TIMESTAMP_KEY, timestamp.toString());

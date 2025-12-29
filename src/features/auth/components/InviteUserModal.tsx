@@ -16,11 +16,25 @@ import { componentStyles } from '@/design/componentStyles';
 import { toast } from 'sonner';
 import { inviteUserByEmail, sendPasswordResetAdmin } from '@/api/userAdmin';
 
-export function InviteUserModal({ open, onOpenChange, onSuccess }) {
+interface InviteUserModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
+}
+
+interface InviteUserErrors {
+  email?: string;
+}
+
+interface InviteUserTouched {
+  email?: boolean;
+}
+
+export function InviteUserModal({ open, onOpenChange, onSuccess }: InviteUserModalProps) {
   const [alias, setAlias] = useState('');
   const [email, setEmail] = useState('');
-  const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
+  const [errors, setErrors] = useState<InviteUserErrors>({});
+  const [touched, setTouched] = useState<InviteUserTouched>({});
   const [isLoading, setIsLoading] = useState(false);
 
   // Resetear formulario cuando se cierra
@@ -33,8 +47,8 @@ export function InviteUserModal({ open, onOpenChange, onSuccess }) {
     }
   }, [open]);
 
-  const validateField = (field, value) => {
-    const fieldErrors = {};
+  const validateField = (field: 'email', value: string) => {
+    const fieldErrors: InviteUserErrors = {};
 
     if (field === 'email') {
       if (isEmpty(value)) {
@@ -48,19 +62,19 @@ export function InviteUserModal({ open, onOpenChange, onSuccess }) {
     return Object.keys(fieldErrors).length === 0;
   };
 
-  const handleEmailChange = (value) => {
+  const handleEmailChange = (value: string) => {
     setEmail(value);
     if (touched.email) {
       validateField('email', value);
     }
   };
 
-  const handleBlur = (field) => {
+  const handleBlur = (field: 'email') => {
     setTouched(prev => ({ ...prev, [field]: true }));
     if (field === 'email') validateField('email', email);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validar email
@@ -106,7 +120,7 @@ export function InviteUserModal({ open, onOpenChange, onSuccess }) {
       }
 
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al enviar invitación:', error);
       toast.error(error.message || 'Error al enviar invitación');
     } finally {

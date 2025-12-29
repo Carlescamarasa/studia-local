@@ -9,8 +9,27 @@ import { useLoginForm } from '../hooks/useLoginForm';
 import { normalizeEmail } from '../utils/validation';
 import { authConfig } from '../config/authConfig';
 import { componentStyles } from '@/design/componentStyles';
+import { useRateLimit, RateLimitStatus } from '../hooks/useRateLimit';
 
-export function LoginForm({ onSubmit, isLoading, rememberMe, onRememberMeChange, rateLimit, initialEmail = '', onForgotPassword }) {
+interface LoginFormProps {
+  onSubmit: (email: string, password: string) => void;
+  isLoading: boolean;
+  rememberMe: boolean;
+  onRememberMeChange: (checked: boolean) => void;
+  rateLimit: RateLimitStatus;
+  initialEmail?: string;
+  onForgotPassword?: () => void;
+}
+
+export function LoginForm({
+  onSubmit,
+  isLoading,
+  rememberMe,
+  onRememberMeChange,
+  rateLimit,
+  initialEmail = '',
+  onForgotPassword
+}: LoginFormProps) {
   const {
     email,
     password,
@@ -23,7 +42,7 @@ export function LoginForm({ onSubmit, isLoading, rememberMe, onRememberMeChange,
 
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm() && !rateLimit.isLocked) {
       onSubmit(normalizeEmail(email), password);

@@ -11,8 +11,10 @@
 
 import React, { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
+import { UserRole } from '@/features/shared/types/domain';
+import { EffectiveUserContextValue, ImpersonationData } from '@/features/auth/types';
 
-const EffectiveUserContext = createContext(null);
+const EffectiveUserContext = createContext<EffectiveUserContextValue | null>(null);
 const STORAGE_KEY = 'studia_impersonation';
 
 /**
@@ -20,15 +22,15 @@ const STORAGE_KEY = 'studia_impersonation';
  * 
  * Debe usarse dentro de AuthProvider para tener acceso a useAuth().
  */
-export function EffectiveUserProvider({ children }) {
+export function EffectiveUserProvider({ children }: { children: React.ReactNode }) {
     const { user, appRole, profile, loading } = useAuth();
 
     // Estado de suplantación (inicializado desde localStorage si existe)
-    const [impersonatedUser, setImpersonatedUser] = useState(() => {
+    const [impersonatedUser, setImpersonatedUser] = useState<ImpersonationData | null>(() => {
         try {
             const stored = localStorage.getItem(STORAGE_KEY);
             if (stored) {
-                const parsed = JSON.parse(stored);
+                const parsed = JSON.parse(stored) as ImpersonationData;
                 return parsed;
             }
         } catch (e) {
@@ -49,12 +51,12 @@ export function EffectiveUserProvider({ children }) {
     }, [impersonatedUser]);
 
     // Iniciar suplantación
-    const startImpersonation = useCallback((userId, role, userName, email = null) => {
+    const startImpersonation = useCallback((userId: string, role: UserRole, userName: string, email: string | null = null) => {
         if (!userId || !role) {
             console.warn('[EffectiveUserProvider] startImpersonation requiere userId y role');
             return;
         }
-        const data = { userId, role, userName: userName || null, email: email || null };
+        const data: ImpersonationData = { userId, role, userName: userName || null, email: email || null };
         setImpersonatedUser(data);
     }, []);
 
@@ -72,7 +74,7 @@ export function EffectiveUserProvider({ children }) {
     }, [user, impersonatedUser, stopImpersonation, loading]);
 
     // Calcular valores del contexto
-    const value = useMemo(() => {
+    const value = useMemo<EffectiveUserContextValue>(() => {
         // Bloquear cálculo si está cargando o no hay perfil (para evitar estados inconsistentes)
         // Esto asegura que nadie accede a useEffectiveUser antes de tener toda la info
         if (loading || (user && !profile)) {
@@ -128,7 +130,7 @@ export function EffectiveUserProvider({ children }) {
 /**
  * Hook para acceder al contexto de usuario efectivo
  */
-export function useEffectiveUser() {
+export function useEffectiveUser(): EffectiveUserContextValue {
     const context = useContext(EffectiveUserContext);
 
     if (!context) {
@@ -146,7 +148,7 @@ export function useEffectiveUser() {
                 realRole: 'ESTU',
                 realUserName: null,
                 realEmail: null,
-                startImpersonation: (userId, role, userName, email = null) => { },
+                startImpersonation: (userId: string, role: UserRole, userName: string, email: string | null = null) => { },
                 stopImpersonation: () => { },
             };
         }
