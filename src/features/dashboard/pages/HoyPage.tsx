@@ -28,7 +28,7 @@ import {
   Music,
   Target
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { toStudia } from "@/lib/routes";
 import { createPageUrl } from "@/utils";
@@ -121,6 +121,7 @@ export default function HoyPage() {
 
 function HoyPageContent() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { closeSidebar, abierto, toggleSidebar } = useSidebar();
   const { showHotkeysModal, setShowHotkeysModal } = useHotkeysModal();
 
@@ -141,8 +142,20 @@ function HoyPageContent() {
   };
 
   const [semanaActualISO, setSemanaActualISO] = useState(() => {
+    const semanaUrl = searchParams.get('semana');
+    if (semanaUrl) return semanaUrl;
     return calcularLunesSemanaISO(new Date());
   });
+
+  // Sync semana to URL
+  useEffect(() => {
+    const lunesActual = calcularLunesSemanaISO(new Date());
+    if (semanaActualISO !== lunesActual) {
+      setSearchParams({ semana: semanaActualISO }, { replace: true });
+    } else {
+      setSearchParams({}, { replace: true });
+    }
+  }, [semanaActualISO, setSearchParams]);
 
   const cambiarSemana = (direccion: number) => {
     const base = parseLocalDate(semanaActualISO);
@@ -233,12 +246,17 @@ function HoyPageContent() {
     ? asignacionesActivas.find(a => a.id === asignacionSeleccionadaId)
     : asignacionesActivas[0] || null;
 
-  // Si no hay selección y hay asignaciones, seleccionar la primera automáticamente
+  // Si no hay selección o la selección actual no es válida para esta semana, seleccionar la primera
   useEffect(() => {
-    if (!asignacionSeleccionadaId && asignacionesActivas.length > 0) {
-      setAsignacionSeleccionadaId(asignacionesActivas[0].id);
+    if (asignacionesActivas.length > 0) {
+      const seleccionValida = asignacionesActivas.some(a => a.id === asignacionSeleccionadaId);
+      if (!seleccionValida) {
+        setAsignacionSeleccionadaId(asignacionesActivas[0].id);
+      }
+    } else if (asignacionSeleccionadaId !== null) {
+      setAsignacionSeleccionadaId(null);
     }
-  }, [asignacionesActivas.length, asignacionSeleccionadaId]);
+  }, [asignacionesActivas, asignacionSeleccionadaId]);
 
   // Calcular semanaDelPlan de forma más robusta
   let semanaDelPlan = null;

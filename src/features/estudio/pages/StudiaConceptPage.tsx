@@ -31,8 +31,68 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient'; // Real Data Switch
 import { deleteBloque, fetchPlanesPreview, fetchRegistrosSesionPreview } from "@/api/remoteDataAPI";
 
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+type ExerciseTypeKey = 'TC' | 'FL' | 'SON' | 'ART' | 'MEC' | 'CA' | 'CB' | 'TM' | 'VC' | 'AD' | 'FM';
+
+interface ExerciseVariation {
+    label: string;
+    min_level: number;
+    tags: string[];
+    asset_url: string | null;
+}
+
+interface StudiaExercise {
+    id: string;
+    title: string;
+    type: ExerciseTypeKey;
+    category: string;
+    mode: 'learning' | 'review' | 'archived';
+    status: 'active' | 'mastered' | 'archived';
+    dur: number;
+    asset: string;
+    variations: ExerciseVariation[];
+    raw: any;
+}
+
+interface ItineraryItem extends StudiaExercise {
+    isFocus: boolean;
+    activeVariation?: ExerciseVariation | null;
+}
+
+interface StudentItinerary {
+    items: ItineraryItem[];
+    totalMin: number;
+}
+
+interface StudiaPlan {
+    id: string;
+    nombre: string;
+    objetivo_semanal_por_defecto?: string;
+    objetivoSemanalPorDefecto?: string;
+    semanas?: string | any[];
+}
+
+interface StudiaSession {
+    id: string;
+    duracion_real_seg?: number;
+    duracionRealSeg?: number;
+    duracion_objetivo_seg?: number;
+    duracionObjetivoSeg?: number;
+    created_at?: string;
+    created_date?: string;
+}
+
+interface ExerciseFormData {
+    nombre: string;
+    tipo: string;
+    duracion: number;
+}
+
 // Helper for Categories
-const TYPE_MAP = {
+const TYPE_MAP: Record<ExerciseTypeKey, { label: string; color: string }> = {
     'TC': { label: 'Técnica', color: 'bg-blue-100 text-blue-700' },
     'FL': { label: 'Flexibilidad', color: 'bg-green-100 text-green-700' },
     'SON': { label: 'Sonido', color: 'bg-purple-100 text-purple-700' },
@@ -61,30 +121,30 @@ const MOCKED_VARIATIONS = {
 
 export default function StudiaConceptPage() {
     // State for Real Data
-    const [localExercises, setLocalExercises] = useState([]);
-    const [realPlanes, setRealPlanes] = useState([]);
-    const [realSessions, setRealSessions] = useState([]);
+    const [localExercises, setLocalExercises] = useState<StudiaExercise[]>([]);
+    const [realPlanes, setRealPlanes] = useState<StudiaPlan[]>([]);
+    const [realSessions, setRealSessions] = useState<StudiaSession[]>([]);
     const [loading, setLoading] = useState(true);
 
     // State for UI
-    const [view, setView] = useState('profe'); // 'profe' | 'student'
+    const [view, setView] = useState<'profe' | 'student' | 'dashboard'>('profe');
     const [activeTab, setActiveTab] = useState('ejercicios');
     const [showArchived, setShowArchived] = useState(false);
 
     // Dashboard Accordion State
-    const [expandedVarId, setExpandedVarId] = useState(null);
+    const [expandedVarId, setExpandedVarId] = useState<string | null>(null);
     const [showBackpack, setShowBackpack] = useState(false); // Toggle List vs Backpack Cloud
 
     // Derived State
-    const [studentItinerary, setStudentItinerary] = useState({ items: [], totalMin: 0 });
+    const [studentItinerary, setStudentItinerary] = useState<StudentItinerary>({ items: [], totalMin: 0 });
 
     // --- CRUD STATE ---
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingId, setEditingId] = useState(null); // If null -> Create Mode
-    const [formData, setFormData] = useState({ nombre: '', tipo: 'TC', duracion: 5 });
+    const [editingId, setEditingId] = useState<string | null>(null); // If null -> Create Mode
+    const [formData, setFormData] = useState<ExerciseFormData>({ nombre: '', tipo: 'TC', duracion: 5 });
 
     // --- CRUD HANDLERS ---
-    const handleOpenModal = (exercise = null) => {
+    const handleOpenModal = (exercise: StudiaExercise | null = null) => {
         if (exercise) {
             setEditingId(exercise.id);
             setFormData({
@@ -105,11 +165,12 @@ export default function StudiaConceptPage() {
         setLoading(true);
         // Optimistic / Local Update Preparation
         const tempId = editingId || `temp_${Date.now()}`;
-        const newItem = {
+        const exerciseType = formData.tipo as ExerciseTypeKey;
+        const newItem: StudiaExercise = {
             id: tempId,
             title: formData.nombre,
-            type: formData.tipo,
-            category: TYPE_MAP[formData.tipo]?.label || 'General',
+            type: exerciseType,
+            category: TYPE_MAP[exerciseType]?.label || 'General',
             mode: 'learning',
             status: 'active',
             dur: formData.duracion,
@@ -161,7 +222,7 @@ export default function StudiaConceptPage() {
                 }
                 toast.success("Ejercicio creado");
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error saving:", error);
             toast.error(`Error al guardar: ${error.message}`);
         } finally {
@@ -169,7 +230,7 @@ export default function StudiaConceptPage() {
         }
     };
 
-    const handleDeleteExercise = async (id) => {
+    const handleDeleteExercise = async (id: string) => {
         if (!confirm("¿Seguro que quieres borrar este ejercicio?")) return;
 
         // Optimistic Delete
@@ -200,18 +261,18 @@ export default function StudiaConceptPage() {
 
                 if (bloques) {
                     // Map Bloques and Attach MOCKED VARIATIONS (For Demo: Attach to first few items regardless of ID)
-                    const mappedBloques = bloques.map((b, idx) => {
-                        let vars = [];
+                    const mappedBloques: StudiaExercise[] = bloques.map((b: any, idx: number) => {
+                        let vars: ExerciseVariation[] = [];
                         // DEMO HACK: Force attach variations to the first 2 items to guarantee UI testing
                         if (idx === 0) vars = MOCKED_VARIATIONS['TC-COL-0004'];
                         else if (idx === 1) vars = MOCKED_VARIATIONS['TC-CLA-0002'];
-                        // Standard match (if IDs matched)
-                        else vars = MOCKED_VARIATIONS[b.code] || MOCKED_VARIATIONS[b.id] || [];
+                        // Standard match (if IDs matched) - skip for safety
 
-                        const categoryInfo = TYPE_MAP[b.tipo] || { label: 'General', color: 'text-slate-600 bg-slate-50' };
+                        const bloqueType = (b.tipo || 'TC') as ExerciseTypeKey;
+                        const categoryInfo = TYPE_MAP[bloqueType] || { label: 'General', color: 'text-slate-600 bg-slate-50' };
                         // Simulate lifecycle status (since real data might not have per-student status yet)
-                        let mode = 'learning';
-                        let status = 'active';
+                        let mode: 'learning' | 'review' | 'archived' = 'learning';
+                        let status: 'active' | 'mastered' | 'archived' = 'active';
                         if (idx % 3 === 0) { mode = 'review'; status = 'mastered'; }
                         if (idx % 10 === 0) { mode = 'archived'; status = 'archived'; }
 
@@ -219,12 +280,12 @@ export default function StudiaConceptPage() {
                         const dur = Math.round((b.duracion_seg || b.duracionSeg || 300) / 60);
 
                         return {
-                            id: b.id,
-                            title: b.nombre,
-                            type: b.tipo,
+                            id: b.id as string,
+                            title: b.nombre as string,
+                            type: bloqueType,
                             category: categoryInfo.label,
-                            mode: mode,
-                            status: status,
+                            mode,
+                            status,
                             dur: dur || 5,
                             asset: 'resource.pdf',
                             variations: vars,
@@ -234,14 +295,14 @@ export default function StudiaConceptPage() {
                     setLocalExercises(mappedBloques);
 
                     // Generate Itinerary (Mock Logic: 1st=Focus, others=Review with Variations)
-                    const itinerary = mappedBloques.slice(0, 4).map((ex, i) => {
-                        const mode = i === 0 ? 'learning' : 'review';
-                        let activeVar = null;
+                    const itinerary: ItineraryItem[] = mappedBloques.slice(0, 4).map((ex, i) => {
+                        const itemMode: 'learning' | 'review' = i === 0 ? 'learning' : 'review';
+                        let activeVar: ExerciseVariation | null = null;
 
-                        if (mode === 'review' && ex.variations.length > 0) {
+                        if (itemMode === 'review' && ex.variations.length > 0) {
                             // Filter by Level (Mock User Level = 2)
                             // 100% Random Selection from Valid Pool
-                            const valid = ex.variations.filter(v => v.min_level <= 2);
+                            const valid = ex.variations.filter((v: ExerciseVariation) => v.min_level <= 2);
                             if (valid.length > 0) {
                                 activeVar = valid[Math.floor(Math.random() * valid.length)];
                             }
@@ -249,8 +310,8 @@ export default function StudiaConceptPage() {
 
                         return {
                             ...ex,
-                            mode: mode,
-                            isFocus: mode === 'learning',
+                            mode: itemMode,
+                            isFocus: itemMode === 'learning',
                             activeVariation: activeVar
                         };
                     });
@@ -286,16 +347,16 @@ export default function StudiaConceptPage() {
     const dailyBudget = 50; // Hardcoded for mockup
 
     // Actions (Simulated Updates)
-    const approveMastery = (id) => {
+    const approveMastery = (id: string) => {
         setLocalExercises(prev => prev.map(ex =>
-            ex.id === id ? { ...ex, mode: 'review', status: 'mastered', dur: 5 } : ex
+            ex.id === id ? { ...ex, mode: 'review' as const, status: 'mastered' as const, dur: 5 } : ex
         ));
         toast.success("Ejercicio movido a La Mochila");
     };
 
-    const toggleArchive = (id, shouldArchive) => {
+    const toggleArchive = (id: string, shouldArchive: boolean) => {
         setLocalExercises(prev => prev.map(ex =>
-            ex.id === id ? { ...ex, mode: shouldArchive ? 'archived' : 'review', status: shouldArchive ? 'archived' : 'mastered' } : ex
+            ex.id === id ? { ...ex, mode: (shouldArchive ? 'archived' : 'review') as StudiaExercise['mode'], status: (shouldArchive ? 'archived' : 'mastered') as StudiaExercise['status'] } : ex
         ));
         toast.info(shouldArchive ? "Ejercicio archivado" : "Ejercicio reactivado");
     };
@@ -304,7 +365,7 @@ export default function StudiaConceptPage() {
     const generateItinerary = () => {
         const learning = localExercises.filter(e => e.mode === 'learning');
         const reviewPool = localExercises.filter(e => e.mode === 'review');
-        const reviewSelected = [];
+        const reviewSelected: StudiaExercise[] = [];
 
         let currentMin = learning.reduce((acc, val) => acc + val.dur, 0);
 
@@ -318,7 +379,7 @@ export default function StudiaConceptPage() {
             }
         }
 
-        const allItems = [
+        const allItems: ItineraryItem[] = [
             ...learning.map(i => ({ ...i, isFocus: true })),
             ...reviewSelected.map(i => ({ ...i, isFocus: false }))
         ];
@@ -558,7 +619,7 @@ export default function StudiaConceptPage() {
                                                         {/* VARIATIONS VIEWER (Accordion) */}
                                                         {expandedVarId === ex.id && ex.variations.length > 0 && (
                                                             <tr className="bg-slate-50/50">
-                                                                <td colSpan="5" className="px-4 py-2 p-0">
+                                                                <td colSpan={5} className="px-4 py-2 p-0">
                                                                     <div className="ml-8 border-l-2 border-slate-200 pl-4 space-y-2 mb-3 mt-1">
                                                                         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Variaciones ({ex.variations.length})</div>
                                                                         {ex.variations.map((v, idx) => (
@@ -678,7 +739,7 @@ export default function StudiaConceptPage() {
                                                     value={formData.tipo}
                                                     onChange={e => setFormData({ ...formData, tipo: e.target.value })}
                                                 >
-                                                    {Object.keys(TYPE_MAP).map(key => (
+                                                    {(Object.keys(TYPE_MAP) as ExerciseTypeKey[]).map(key => (
                                                         <option key={key} value={key}>{key} - {TYPE_MAP[key].label}</option>
                                                     ))}
                                                 </select>

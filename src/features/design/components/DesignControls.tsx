@@ -28,9 +28,62 @@ import {
 } from "lucide-react";
 import { DESIGN_CONTROLS, SECTIONS } from "@/data/designControlsMap";
 
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+interface DesignControlOption {
+    value: string;
+    label: string;
+}
+
+interface DesignControl {
+    id: string;
+    label: string;
+    description: string;
+    path: string;
+    type: 'switch' | 'select' | 'color' | 'number' | 'text';
+    section: string;
+    subsection?: string;
+    level: 'basic' | 'advanced';
+    keywords?: string[];
+    options?: DesignControlOption[];
+    min?: number;
+    max?: number;
+    step?: number;
+}
+
+interface DesignSection {
+    id: string;
+    label: string;
+    icon: string;
+}
+
+interface ControlInputProps {
+    control: DesignControl;
+    value: any;
+    onChange: (value: any) => void;
+    className?: string;
+}
+
+interface ControlRowProps {
+    control: DesignControl;
+    value: any;
+    onChange: (value: any) => void;
+    isFavorite: boolean;
+    onToggleFavorite: (id: string) => void;
+    componentStyles?: any;
+}
+
+interface DesignControlsProps {
+    design: any;
+    setDesignPartial: (path: string, value: any) => void;
+    componentStyles?: any;
+}
+
 // Helper to get nested value
-const getNestedValue = (obj, path, defaultValue) => {
-    return path.split('.').reduce((acc, part) => (acc && acc[part] !== undefined) ? acc[part] : undefined, obj) ?? defaultValue;
+const getNestedValue = (obj: any, path: string, defaultValue?: any): any => {
+    return path.split('.').reduce((acc: any, part: string) => (acc && acc[part] !== undefined) ? acc[part] : undefined, obj) ?? defaultValue;
 };
 
 // Icons map
@@ -44,7 +97,7 @@ const ICONS = {
     Accessibility
 };
 
-function ControlInput({ control, value, onChange, className }) {
+function ControlInput({ control, value, onChange, className }: ControlInputProps) {
     if (control.type === 'switch') {
         return (
             <Switch
@@ -61,7 +114,7 @@ function ControlInput({ control, value, onChange, className }) {
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                    {control.options?.map(opt => (
+                    {control.options?.map((opt: DesignControlOption) => (
                         <SelectItem key={opt.value} value={opt.value}>
                             {opt.label}
                         </SelectItem>
@@ -118,7 +171,7 @@ function ControlInput({ control, value, onChange, className }) {
     );
 }
 
-function ControlRow({ control, value, onChange, isFavorite, onToggleFavorite, componentStyles }) {
+function ControlRow({ control, value, onChange, isFavorite, onToggleFavorite, componentStyles }: ControlRowProps) {
     return (
         <div className="flex items-start justify-between gap-4 py-3 border-b border-[var(--color-border-default)] last:border-0 hover:bg-[var(--color-surface-muted)]/30 px-2 -mx-2 rounded-lg transition-colors group">
             <div className="flex-1 min-w-0">
@@ -158,7 +211,7 @@ function ControlRow({ control, value, onChange, isFavorite, onToggleFavorite, co
     );
 }
 
-export function DesignControls({ design, setDesignPartial, componentStyles }) {
+export function DesignControls({ design, setDesignPartial, componentStyles }: DesignControlsProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [showAdvanced, setShowAdvanced] = useState(() => {
         try {
@@ -168,12 +221,12 @@ export function DesignControls({ design, setDesignPartial, componentStyles }) {
         }
     });
 
-    const handleToggleAdvanced = (checked) => {
+    const handleToggleAdvanced = (checked: boolean) => {
         setShowAdvanced(checked);
         localStorage.setItem('studia_design_show_advanced', String(checked));
     };
 
-    const [favorites, setFavorites] = useState([]);
+    const [favorites, setFavorites] = useState<string[]>([]);
     // Load favorites on mount
     useEffect(() => {
         try {
@@ -183,9 +236,9 @@ export function DesignControls({ design, setDesignPartial, componentStyles }) {
     }, []);
 
     // Save favorites on change
-    const toggleFavorite = (id) => {
+    const toggleFavorite = (id: string) => {
         const newFavs = favorites.includes(id)
-            ? favorites.filter(f => f !== id)
+            ? favorites.filter((f: string) => f !== id)
             : [...favorites, id];
         setFavorites(newFavs);
         localStorage.setItem('studia_design_favorites', JSON.stringify(newFavs));
@@ -193,7 +246,7 @@ export function DesignControls({ design, setDesignPartial, componentStyles }) {
 
     // Filter controls
     const filteredControls = useMemo(() => {
-        let matches = DESIGN_CONTROLS;
+        let matches = DESIGN_CONTROLS as DesignControl[];
 
         // 1. Text Search
         if (searchQuery.trim()) {
@@ -216,13 +269,13 @@ export function DesignControls({ design, setDesignPartial, componentStyles }) {
 
     // Group controls by section
     const groupedControls = useMemo(() => {
-        const groups = {};
+        const groups: Record<string, { meta: DesignSection; items: DesignControl[] }> = {};
 
         // Initialize groups from SECTIONS
-        SECTIONS.forEach(s => groups[s.id] = { meta: s, items: [] });
+        (SECTIONS as DesignSection[]).forEach(s => groups[s.id] = { meta: s, items: [] });
         // Add implicit "Other" if needed, but we try to map everything
 
-        filteredControls.forEach(control => {
+        filteredControls.forEach((control: DesignControl) => {
             if (groups[control.section]) {
                 groups[control.section].items.push(control);
             }
@@ -237,7 +290,7 @@ export function DesignControls({ design, setDesignPartial, componentStyles }) {
     }, [searchQuery]);
 
     const favoriteControls = useMemo(() => {
-        return DESIGN_CONTROLS.filter(c => favorites.includes(c.id));
+        return (DESIGN_CONTROLS as DesignControl[]).filter(c => favorites.includes(c.id));
     }, [favorites]);
 
     return (
@@ -288,14 +341,14 @@ export function DesignControls({ design, setDesignPartial, componentStyles }) {
 
             {/* Main Accordion */}
             <Accordion type="multiple" defaultValue={activeSections} className="w-full">
-                {SECTIONS.map(section => {
+                {(SECTIONS as DesignSection[]).map(section => {
                     const group = groupedControls[section.id];
                     if (!group || group.items.length === 0) return null;
-                    const Icon = ICONS[section.icon] || Box;
+                    const Icon = ICONS[section.icon as keyof typeof ICONS] || Box;
 
                     // Group Items by Subsection if available
-                    const subsectionGroups = {};
-                    const rootItems = [];
+                    const subsectionGroups: Record<string, DesignControl[]> = {};
+                    const rootItems: DesignControl[] = [];
 
                     group.items.forEach(item => {
                         if (item.subsection) {
@@ -352,7 +405,7 @@ export function DesignControls({ design, setDesignPartial, componentStyles }) {
                                                 {subLabel}
                                             </h4>
                                             <div className="space-y-1">
-                                                {items.map(control => (
+                                                {(items as DesignControl[]).map((control: DesignControl) => (
                                                     <ControlRow
                                                         key={control.id}
                                                         control={control}

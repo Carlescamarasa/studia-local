@@ -35,16 +35,17 @@ export default function PeriodHeader({
 
       <Button
         variant="outline"
-        size="icon"
+        size="sm"
         onClick={onToday}
         className={cn(
-          "h-8 w-8 sm:h-9 sm:w-9 hidden lg:flex",
+          "h-8 sm:h-9 px-2 sm:px-3 flex items-center gap-1",
           componentStyles.buttons.outline
         )}
         title="Ir a hoy"
         aria-label="Ir a hoy"
       >
         <Calendar className="h-4 w-4" />
+        <span className="text-xs sm:text-sm">Hoy</span>
       </Button>
 
       <span className="text-xs sm:text-sm font-medium mx-1 sm:mx-2 min-w-[120px] text-center whitespace-nowrap overflow-hidden text-ellipsis">
