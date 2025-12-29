@@ -33,7 +33,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { log } from "@/utils/log";
 import { sendPasswordResetEmailFor } from "@/lib/authPasswordHelpers";
-import { useUserActions } from "@/pages/auth/hooks/useUserActions";
+import { useUserActions } from "@/features/auth/hooks/useUserActions";
 
 export default function PerfilModal({
   open,

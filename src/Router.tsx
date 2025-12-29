@@ -5,48 +5,48 @@ import PublicRoute from "@/components/auth/PublicRoute";
 import { useAuth } from "@/auth/AuthProvider";
 
 // Lazy load de páginas para code-splitting
-const IndexPage = lazy(() => import("@/pages/index.jsx"));
+const IndexPage = lazy(() => import("@/features/dashboard/pages/IndexPage"));
 const Usuarios = lazy(() => import("@/features/admin/pages/UsuariosPage"));
 const Reportes = lazy(() => import("@/features/reports/pages/ReportesPage"));
-const Planes = lazy(() => import("@/pages/planes.jsx"));
-const Piezas = lazy(() => import("@/pages/piezas.jsx"));
-const Sesiones = lazy(() => import("@/pages/sesiones.jsx"));
+const Planes = lazy(() => import("@/features/planning/pages/PlanesPage"));
+const Piezas = lazy(() => import("@/features/repertoire/pages/PiezasPage"));
+const Sesiones = lazy(() => import("@/features/sessions/pages/SesionesPage"));
 const Semana = lazy(() => import("@/features/progreso/pages/SemanaPage"));
 const Semanas = lazy(() => import("@/features/progreso/pages/SemanasPage"));
 const AsignacionDetalle = lazy(() => import("@/features/asignaciones/pages/AsignacionDetallePage"));
 const AdaptarAsignacion = lazy(() => import("@/features/asignaciones/pages/AdaptarAsignacionPage"));
-const Hoy = lazy(() => import("@/pages/hoy.jsx"));
-const Perfil = lazy(() => import("@/pages/perfil.jsx"));
+const Hoy = lazy(() => import("@/features/dashboard/pages/HoyPage"));
+const Perfil = lazy(() => import("@/features/user/pages/PerfilPage"));
 
 // Student
-const Calendario = lazy(() => import("@/pages/calendario.jsx"));
-const LocalPage = lazy(() => import("@/pages/local.jsx"));
+const Calendario = lazy(() => import("@/features/calendar/pages/CalendarioPage"));
+const LocalPage = lazy(() => import("@/features/local/pages/LocalPage"));
 const Biblioteca = lazy(() => import("@/features/library/pages/BibliotecaPage"));
 // Removed Design
 // Removed Testseed
-const TestLoading = lazy(() => import("@/pages/test-loading.jsx"));
-const Layout = lazy(() => import("@/pages/Layout.jsx"));
-const QAVisualPage = lazy(() => import("@/pages/qa-visual.jsx"));
-const LoginPage = lazy(() => import("@/pages/auth/LoginPage.jsx"));
-const ResetPasswordPage = lazy(() => import("@/pages/auth/ResetPasswordPage.jsx"));
-const InvitationPage = lazy(() => import("@/pages/auth/InvitationPage.jsx"));
-const DebugFormularioRapido = lazy(() => import("@/pages/DebugFormularioRapido.jsx"));
-const DebugSubidaYT = lazy(() => import("@/pages/debug/DebugSubidaYTPage.jsx"));
-const LevelSystemDebug = lazy(() => import("@/pages/debug/LevelSystemDebug.jsx"));
-const Soporte = lazy(() => import("@/pages/soporte.jsx"));
-const SoporteProf = lazy(() => import("@/pages/soporte-prof.jsx"));
-const Ayuda = lazy(() => import("@/pages/ayuda.jsx"));
+const TestLoading = lazy(() => import("@/features/dev/pages/TestLoadingPage"));
+const Layout = lazy(() => import("@/features/ui/Layout"));
+const QAVisualPage = lazy(() => import("@/features/qa/pages/QAVisualPage"));
+const LoginPage = lazy(() => import("@/features/auth/pages/LoginPage"));
+const ResetPasswordPage = lazy(() => import("@/features/auth/pages/ResetPasswordPage"));
+const InvitationPage = lazy(() => import("@/features/auth/pages/InvitationPage"));
+const DebugFormularioRapido = lazy(() => import("@/features/debug/pages/DebugFormularioRapidoPage"));
+const DebugSubidaYT = lazy(() => import("@/features/debug/pages/DebugSubidaYTPage"));
+const LevelSystemDebug = lazy(() => import("@/features/debug/pages/LevelSystemDebugPage"));
+const Soporte = lazy(() => import("@/features/support/pages/SoportePage"));
+const SoporteProf = lazy(() => import("@/features/support/pages/SoporteProfPage"));
+const Ayuda = lazy(() => import("@/features/support/pages/AyudaPage"));
 // Removed AppVersion (admin/AppVersion)
 // Removed Habilidades
-const StudiaConceptPage = lazy(() => import("@/pages/StudiaConceptPage.jsx"));
+const StudiaConceptPage = lazy(() => import("@/features/estudio/pages/StudiaConceptPage"));
 // Removed ContenidoMultimediaPage
-const MochilaPage = lazy(() => import("@/pages/MochilaPage.jsx"));
-const Progreso = lazy(() => import("@/pages/progreso"));
+const MochilaPage = lazy(() => import("@/features/progreso/pages/MochilaPage"));
+const Progreso = lazy(() => import("@/features/progreso/components/ProgresoPage"));
 const Cuaderno = lazy(() => import("@/features/cuaderno"));
-// Legacy: Preparacion removed, now redirects to Cuaderno
+// Legacy: Preparacion removed
 const Configuracion = lazy(() => import("@/features/admin/pages/ConfiguracionPage"));
 const Studia = lazy(() => import("@/features/estudio/pages/StudiaPage"));
-const NotFound = lazy(() => import("@/pages/NotFound.jsx"));
+const NotFound = lazy(() => import("@/features/ui/NotFound"));
 
 // Componente de carga
 const PageLoader = () => (

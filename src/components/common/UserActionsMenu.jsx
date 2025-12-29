@@ -30,7 +30,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { localDataClient } from "@/api/localDataClient";
 import { setProfileActive } from "@/api/remoteDataAPI";
 import { sendPasswordResetAdmin } from "@/api/userAdmin";
-import { useUserActions } from "@/pages/auth/hooks/useUserActions";
+import { useUserActions } from "@/features/auth/hooks/useUserActions";
 import { getNombreVisible } from "@/components/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { ROUTES, toProgreso } from "@/lib/routes";

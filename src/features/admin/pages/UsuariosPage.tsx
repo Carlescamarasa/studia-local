@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 import { useUsers } from "@/hooks/entities/useUsers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { useUserActions } from "@/pages/auth/hooks/useUserActions";
+import { useUserActions } from "@/features/auth/hooks/useUserActions";
 import { inviteUserByEmail, sendPasswordResetAdmin } from "@/api/userAdmin";
 import { createPageUrl } from "@/utils";
 import { componentStyles } from "@/design/componentStyles";
@@ -19,8 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RequireRole from "@/components/auth/RequireRole";
 import PerfilModal from "@/components/common/PerfilModal";
-import { CreateUserModal } from "@/pages/auth/components/CreateUserModal";
-import { InviteUserModal } from "@/pages/auth/components/InviteUserModal";
+import { CreateUserModal } from "@/features/auth/components/CreateUserModal";
+import { InviteUserModal } from "@/features/auth/components/InviteUserModal";
 
 import { userService, User } from "../services/userService";
 import UserTable from "../components/UserTable";
