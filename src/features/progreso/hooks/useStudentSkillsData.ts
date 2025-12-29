@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAllStudentXPTotals, useAggregateLevelGoals } from './useXP';
 import { useEvaluacionesTecnicas } from '@/features/evaluaciones/hooks/useEvaluacionesTecnicas';
-import { useFeedbacksSemanal } from '@/hooks/entities/useFeedbacksSemanal';
+import { useFeedbacksSemanal } from '@/features/progreso/hooks/useFeedbacksSemanal';
 import { QUERY_KEYS } from '@/lib/queryKeys';
-import type { StudentXPTotal } from '@/shared/services/xpService';
+import type { StudentXPTotal } from '@/features/shared/services/xpService';
 
 /**
  * Interface for the processed skills data

@@ -1,6 +1,6 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/features/shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ui/card";
 import { X, AlertTriangle, Save, LogOut } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 

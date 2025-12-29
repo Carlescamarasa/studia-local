@@ -1,6 +1,6 @@
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
-import PageHeader from "@/components/ds/PageHeader";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
+import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 
 export default function PiezasPage() {

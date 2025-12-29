@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ds';
+import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/components/ds';
 import { componentStyles } from '@/design/componentStyles';
-import { useDesign } from '@/components/design/DesignProvider';
+import { useDesign } from '@/features/design/components/DesignProvider';
 import { toast } from 'sonner';
 import { Music, Sun, Moon } from 'lucide-react';
 import logoLTS from '@/assets/Logo_LTS.svg';
-import { getAppName } from '@/components/utils/appMeta';
+import { getAppName } from '@/features/shared/utils/appMeta';
 import { LoginForm } from './components/LoginForm';
 import { ForgotPasswordForm } from './components/ForgotPasswordForm';
 import { useRateLimit } from './hooks/useRateLimit';

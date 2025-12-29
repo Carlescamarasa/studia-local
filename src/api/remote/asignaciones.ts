@@ -8,7 +8,7 @@ import {
 } from './utils';
 import { generateId } from './id';
 import { resolvePlanForAsignacion } from './planes';
-import type { Asignacion, Plan } from '@/shared/types/domain';
+import type { Asignacion, Plan } from '@/features/shared/types/domain';
 
 export async function fetchAsignaciones(sort?: string): Promise<Asignacion[]> {
     try {

@@ -3,7 +3,7 @@
  */
 import React from 'react';
 // @ts-ignore
-import LevelConfigView from '@/components/admin/LevelConfigView';
+import LevelConfigView from '@/features/admin/components/LevelConfigView';
 
 export default function LevelConfigContent() {
     return <LevelConfigView />;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Play, Loader2, Download } from 'lucide-react';
-import { Button } from '@/components/ds/Button';
+import { Button } from '@/features/shared/components/ds/Button';
 import { componentStyles } from '@/design/componentStyles';
 import { supabase } from '@/lib/supabaseClient';
 import { localDataClient } from '@/api/localDataClient';

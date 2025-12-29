@@ -6,7 +6,7 @@ import {
     StudentLevelHistory,
     RegistroSesion,
     RegistroBloque
-} from "@/shared/types/domain";
+} from "@/features/shared/types/domain";
 
 // --- XP Calculation ---
 
@@ -17,7 +17,7 @@ import {
  * @param windowDays The number of days to look back for practice data.
  * @returns An object with XP values (0-100) for each skill.
  */
-import { computeTotalXP } from "@/shared/services/xpService";
+import { computeTotalXP } from "@/features/shared/services/xpService";
 
 /**
  * Calculates XP for Flex, Motr, Art based on total accumulated XP.

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Play, Trash2, Eye, Copy, Loader2, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ds/Button';
+import { Button } from '@/features/shared/components/ds/Button';
 import { componentStyles } from '@/design/componentStyles';
 import { toast } from 'sonner';
 // @ts-ignore - Assuming these utils are available

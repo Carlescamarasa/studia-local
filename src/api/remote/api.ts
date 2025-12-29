@@ -93,7 +93,7 @@ import type {
   SupportTicket,
   SupportMensaje,
   LevelConfig,
-} from '@/shared/types/domain';
+} from '@/features/shared/types/domain';
 
 
 

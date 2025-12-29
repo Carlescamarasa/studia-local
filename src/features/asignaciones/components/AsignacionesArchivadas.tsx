@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ui/card";
+import { Button } from "@/features/shared/components/ui/button";
+import { Input } from "@/features/shared/components/ui/input";
+import { Badge } from "@/features/shared/components/ui/badge";
 import { RotateCcw, Trash2, Search, Archive } from "lucide-react";
 import { toast } from "sonner";
-import { displayNameById } from "@/components/utils/helpers";
+import { displayNameById } from "@/features/shared/utils/helpers";
 
 interface Asignacion {
     id: string;

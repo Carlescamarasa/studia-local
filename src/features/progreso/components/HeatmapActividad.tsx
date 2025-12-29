@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
 import { Calendar } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { computePracticeXP, canPromote, computeKeyCriteriaStatus } from '@/utils/levelLogic';
 import { localDataClient } from '@/api/localDataClient';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ds/Card';
+import { Button } from '@/features/shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/components/ds/Card';
 
 export default function LevelSystemDebug() {
     const [logs, setLogs] = useState([]);

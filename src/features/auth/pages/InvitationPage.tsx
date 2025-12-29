@@ -3,19 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { getCachedAuthUser } from '@/auth/authUserCache';
 import { useAuth } from '@/auth/AuthProvider';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ds';
+import { Button } from '@/features/shared/components/ui/button';
+import { Input } from '@/features/shared/components/ui/input';
+import { Label } from '@/features/shared/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/components/ds';
 import { componentStyles } from '@/design/componentStyles';
-import { useDesign } from '@/components/design/DesignProvider';
+import { useDesign } from '@/features/design/components/DesignProvider';
 import { toast } from 'sonner';
 import { UserPlus, CheckCircle, Mail, Music, Sun, Moon } from 'lucide-react';
 import logoLTS from '@/assets/Logo_LTS.svg';
-import { getAppName } from '@/components/utils/appMeta';
+import { getAppName } from '@/features/shared/utils/appMeta';
 import { log } from '@/utils/log';
 import { createPageUrl } from '@/utils';
-import { roleHome } from '@/components/auth/roleMap';
+import { roleHome } from '@/features/auth/components/roleMap';
 import { validatePasswordStrength, validateEmail, isEmpty } from './utils/validation';
 
 export default function InvitationPage() {

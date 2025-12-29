@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
+import { Popover, PopoverContent, PopoverTrigger } from "@/features/shared/components/ui/popover";
 import { ComposedChart, LineChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Clock, TrendingUp, CheckCircle, XCircle, Activity, LayoutList, Target, Info } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import TiposBloquesTab from "./TiposBloquesTab";
 import TopEjerciciosTab from "./TopEjerciciosTab";
 import HeatmapFranjas from "./HeatmapFranjas";
-import { RegistroSesion } from "@/shared/types/domain";
+import { RegistroSesion } from "@/features/shared/types/domain";
 
 /**
  * ProgresoTab - Tab de progreso con opciones Rendimiento (Métricas) y Ejercicios.

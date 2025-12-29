@@ -4,18 +4,18 @@
 
 import React, { useState } from 'react';
 import { useAppVersion } from '@/hooks/useAppVersion';
-import { Card, CardContent, CardHeader, CardTitle, Badge } from '@/components/ds';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle, Badge } from '@/features/shared/components/ds';
+import { Button } from '@/features/shared/components/ui/button';
+import { Input } from '@/features/shared/components/ui/input';
+import { Textarea } from '@/features/shared/components/ui/textarea';
+import { Label } from '@/features/shared/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/features/shared/components/ui/dialog';
 import { Tag, Plus, RefreshCw, CheckCircle, Calendar, User, FileText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { componentStyles } from '@/design/componentStyles';
-import { displayName } from '@/components/utils/helpers';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { displayName } from '@/features/shared/utils/helpers';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/features/shared/components/ui/table';
 
 interface ReleaseNotesItem {
     hash: string;

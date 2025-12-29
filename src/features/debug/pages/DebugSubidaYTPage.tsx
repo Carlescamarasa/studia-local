@@ -1,15 +1,15 @@
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ds";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
+import { Button } from "@/features/shared/components/ui/button";
+import { Input } from "@/features/shared/components/ui/input";
+import { Label } from "@/features/shared/components/ui/label";
+import { Textarea } from "@/features/shared/components/ui/textarea";
+import { Badge } from "@/features/shared/components/ds";
 import { Upload, Loader2, ExternalLink, AlertCircle, CheckCircle } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { toast } from "sonner";
-import PageHeader from "@/components/ds/PageHeader";
-import RequireRole from "@/components/auth/RequireRole";
+import { PageHeader } from "@/features/shared/components/ds/PageHeader";
+import RequireRole from "@/features/auth/components/RequireRole";
 
 function DebugSubidaYTPageContent() {
   const [file, setFile] = useState(null);

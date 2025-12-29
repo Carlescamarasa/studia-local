@@ -1,17 +1,17 @@
 import React, { useState } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ui/card";
+import { Button } from "@/features/shared/components/ui/button";
+import { Input } from "@/features/shared/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
+import { Badge } from "@/features/shared/components/ui/badge";
 import { Eye, Copy, XCircle, Search, Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { displayNameById } from "@/components/utils/helpers";
+import { displayNameById } from "@/features/shared/utils/helpers";
 
 interface Asignacion {
     id: string;

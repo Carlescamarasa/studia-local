@@ -1,31 +1,31 @@
 import React, { useState, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useUsers } from "@/hooks/entities/useUsers";
-import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
+import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
 import { useRegistrosSesion } from "@/features/estudio/hooks/useRegistrosSesion";
 import { useEvaluacionesTecnicas } from "@/features/evaluaciones/hooks/useEvaluacionesTecnicas";
-import { useFeedbacksSemanal } from "@/hooks/entities/useFeedbacksSemanal";
-import { Button } from "@/components/ds/Button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ds";
-import { Badge } from "@/components/ds";
-import { Alert, AlertDescription } from "@/components/ds";
+import { useFeedbacksSemanal } from "@/features/progreso/hooks/useFeedbacksSemanal";
+import { Button } from "@/features/shared/components/ds/Button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/features/shared/components/ds";
+import { Badge } from "@/features/shared/components/ds";
+import { Alert, AlertDescription } from "@/features/shared/components/ds";
 import {
   Music, Calendar, Target, PlayCircle, MessageSquare, Layers, ChevronLeft, ChevronRight, ChevronDown, Home, Clock, CheckCircle2, Star, Trash2, BookOpen, ClipboardCheck, Gauge, Brain, Zap
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { calcularLunesSemanaISO, calcularOffsetSemanas, calcularTiempoSesion, isoWeekNumberLocal } from "@/components/utils/helpers";
+import { calcularLunesSemanaISO, calcularOffsetSemanas, calcularTiempoSesion, isoWeekNumberLocal } from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { displayName } from "@/components/utils/helpers";
-import PeriodHeader from "@/components/common/PeriodHeader";
-import RequireRole from "@/components/auth/RequireRole";
-import PageHeader from "@/components/ds/PageHeader";
+import { displayName } from "@/features/shared/utils/helpers";
+import PeriodHeader from "@/features/shared/components/common/PeriodHeader";
+import RequireRole from "@/features/auth/components/RequireRole";
+import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 import { cn } from "@/lib/utils";
-import SessionContentView from "@/shared/components/study/SessionContentView";
-import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
-import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
+import SessionContentView from "@/features/shared/components/study/SessionContentView";
+import MediaLinksBadges from "@/features/shared/components/media/MediaLinksBadges";
+import MediaPreviewModal from "@/features/shared/components/media/MediaPreviewModal";
 import { log } from "@/utils/log";
 
 // --- Helpers de fechas locales ---

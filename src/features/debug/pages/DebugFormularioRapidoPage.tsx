@@ -4,8 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/auth/AuthProvider";
 import { DataProvider } from "@/providers/DataProvider";
 import { LocalDataProvider } from "@/local-data/LocalDataProvider";
-import { DesignProvider } from "@/components/design/DesignProvider";
-import { Toaster } from "@/components/ui/toaster";
+import { DesignProvider } from "@/features/design/components/DesignProvider";
+import { Toaster } from "@/features/shared/components/ui/toaster";
 
 // Crear una instancia de QueryClient para debug (puede ser la misma que la global)
 const debugQueryClient = new QueryClient({

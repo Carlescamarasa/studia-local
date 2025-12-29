@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { X, Search, Check, Loader2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/features/shared/components/ui/input";
+import { Badge } from "@/features/shared/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { componentStyles } from "@/design/componentStyles";
-import { useUsers } from "@/hooks/entities/useUsers";
-import { displayName } from "@/components/utils/helpers";
+import { useUsers } from "@/features/admin/hooks/useUsers";
+import { displayName } from "@/features/shared/utils/helpers";
 
 interface Usuario {
     id: string;

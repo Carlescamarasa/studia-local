@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { createRemoteDataAPI } from "@/api/remoteDataAPI";
-import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
+import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 
 // Create remote API instance for fetching bloques with variations
 const remoteDataAPI = createRemoteDataAPI();
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
-import { Button } from "@/components/ds/Button";
-import { Badge } from "@/components/ds";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ds";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
+import { Button } from "@/features/shared/components/ds/Button";
+import { Badge } from "@/features/shared/components/ds";
+import { Alert, AlertDescription, AlertTitle } from "@/features/shared/components/ds";
 import {
   ChevronRight,
   ChevronDown,
@@ -39,24 +39,24 @@ import {
   formatLocalDate,
   parseLocalDate,
   isoWeekNumberLocal
-} from "../components/utils/helpers";
+} from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import PeriodHeader from "../components/common/PeriodHeader";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "../components/study/sessionSequence";
-import SessionContentView from "@/shared/components/study/SessionContentView";
+import SessionContentView from "@/features/shared/components/study/SessionContentView";
 import { toast } from "sonner";
-import { useSidebar } from "@/components/ui/SidebarState";
-import PageHeader from "@/components/ds/PageHeader";
+import { useSidebar } from "@/features/shared/components/ui/SidebarState";
+import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
-import CustomAudioPlayer from "@/shared/components/media/AudioPlayer";
-import { MediaIcon, getMediaLabel } from "@/shared/components/media/MediaEmbed";
-import { resolveMedia, MediaKind } from "@/shared/utils/media";
+import CustomAudioPlayer from "@/features/shared/components/media/AudioPlayer";
+import { MediaIcon, getMediaLabel } from "@/features/shared/components/media/MediaEmbed";
+import { resolveMedia, MediaKind } from "@/features/shared/utils/media";
 import { shouldIgnoreHotkey } from "@/utils/hotkeys";
 import { useHotkeysModal } from "@/hooks/useHotkeysModal.jsx";
 import { getValidVariations, pickRandomVariation } from "@/hooks/useExerciseVariations";
 
-import RequireRole from "@/components/auth/RequireRole";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import RequireRole from "@/features/auth/components/RequireRole";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/features/shared/components/ui/tooltip";
 
 // --- Helpers de fechas locales (para formateo de semana) ---
 const startOfMonday = (date) => {

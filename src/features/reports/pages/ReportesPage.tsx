@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Badge } from '@/components/ds'; // Assuming simple exports, might need adjustment if they are default
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Badge } from '@/features/shared/components/ds'; // Assuming simple exports, might need adjustment if they are default
+import { Button } from '@/features/shared/components/ui/button';
+import { Input } from '@/features/shared/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/components/ui/select';
+import { Textarea } from '@/features/shared/components/ui/textarea';
+import { Label } from '@/features/shared/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/features/shared/components/ui/dialog';
 import { Bug, Clock, CheckCircle, XCircle, Search, Eye, Trash2, CheckSquare, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import RequireRole from '@/components/auth/RequireRole';
-import UnifiedTable from '@/components/tables/UnifiedTable';
-import PageHeader from '@/components/ds/PageHeader';
+import RequireRole from '@/features/auth/components/RequireRole';
+import UnifiedTable from '@/features/shared/components/tables/UnifiedTable';
+import { PageHeader } from '@/features/shared/components/ds/PageHeader';
 import { componentStyles } from '@/design/componentStyles';
 import { listErrorReports, updateErrorReport, updateMultipleErrorReports, deleteErrorReport, deleteMultipleErrorReports } from '@/api/errorReportsAPI';
 import { useAuth } from '@/auth/AuthProvider';
-import AudioPlayer from '@/shared/components/media/AudioPlayer';
+import AudioPlayer from '@/features/shared/components/media/AudioPlayer';
 
 interface ErrorReport {
     id: string;

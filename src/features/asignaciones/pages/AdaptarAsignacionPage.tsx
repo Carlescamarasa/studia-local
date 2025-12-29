@@ -3,10 +3,10 @@ import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { createRemoteDataAPI } from "@/api/remoteDataAPI";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useUsers } from "@/hooks/entities/useUsers";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
-import { Badge } from "@/components/ds";
+import { useUsers } from "@/features/admin/hooks/useUsers";
+import { Button } from "@/features/shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
+import { Badge } from "@/features/shared/components/ds";
 import {
   ArrowLeft, Save, Target, User, Music, BookOpen, Calendar,
   ChevronDown, ChevronRight, Clock, Layers, Plus, Edit, Trash2,
@@ -15,21 +15,21 @@ import {
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { DndProvider, SortableContext, verticalListSortingStrategy, arrayMove } from "@/components/dnd/DndProvider";
+import { DndProvider, SortableContext, verticalListSortingStrategy, arrayMove } from "@/features/shared/components/dnd/DndProvider";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import WeekEditor from "@/components/editor/WeekEditor";
-import SessionEditor from "@/components/editor/SessionEditor";
-import ExerciseEditor from "@/components/editor/ExerciseEditor";
-import { Alert, AlertDescription } from "@/components/ds";
-import PageHeader from "@/components/ds/PageHeader";
-import { LoadingSpinner } from "@/components/ds";
-import { getNombreVisible } from "@/components/utils/helpers";
+import WeekEditor from "@/features/editor/components/WeekEditor";
+import SessionEditor from "@/features/editor/components/SessionEditor";
+import ExerciseEditor from "@/features/editor/components/ExerciseEditor";
+import { Alert, AlertDescription } from "@/features/shared/components/ds";
+import { PageHeader } from "@/features/shared/components/ds/PageHeader";
+import { LoadingSpinner } from "@/features/shared/components/ds";
+import { getNombreVisible } from "@/features/shared/utils/helpers";
 import { componentStyles } from "@/design/componentStyles";
-import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "@/components/study/sessionSequence";
-import RequireRole from "@/components/auth/RequireRole";
+import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "@/features/estudio/components/sessionSequence";
+import RequireRole from "@/features/auth/components/RequireRole";
 
-import SessionContentView from "@/shared/components/study/SessionContentView";
+import SessionContentView from "@/features/shared/components/study/SessionContentView";
 
 // Componente Sortable para Sesión (similar a PlanEditor pero adaptado)
 function SortableSesionAdaptar({

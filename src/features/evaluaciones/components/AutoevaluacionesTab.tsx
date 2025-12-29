@@ -1,13 +1,13 @@
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds/Card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds/Card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
+import { Checkbox } from "@/features/shared/components/ui/checkbox";
 import { List, Star } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
-import UnifiedTable from "@/components/tables/UnifiedTable";
-import { Badge } from "@/components/ds";
-import ModalSesion from "@/components/calendario/ModalSesion";
+import UnifiedTable from "@/features/shared/components/tables/UnifiedTable";
+import { Badge } from "@/features/shared/components/ds";
+import ModalSesion from "@/features/calendar/components/ModalSesion";
 
 const getCalificacionBadge = (cal: number | undefined | null) => {
     if (!cal || cal === 0) return componentStyles.status.badgeDefault;

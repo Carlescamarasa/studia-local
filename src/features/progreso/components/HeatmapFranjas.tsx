@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
 import { Clock } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatLocalDate, parseLocalDate } from "../utils/progresoUtils";
 import { cn } from "@/lib/utils";
-import { RegistroSesion } from "@/shared/types/domain";
+import { RegistroSesion } from "@/features/shared/types/domain";
 
 /**
  * HeatmapFranjas - Heatmap de actividad por franjas horarias

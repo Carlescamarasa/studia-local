@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/features/shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ui/card";
+import { Label } from "@/features/shared/components/ui/label";
+import { Textarea } from "@/features/shared/components/ui/textarea";
 import { X, CheckCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import MediaLinksInput from "@/shared/components/media/MediaLinksInput";
-import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
+import { Alert, AlertDescription } from "@/features/shared/components/ui/alert";
+import MediaLinksInput from "@/features/shared/components/media/MediaLinksInput";
+import MediaPreviewModal from "@/features/shared/components/media/MediaPreviewModal";
 import { componentStyles } from "@/design/componentStyles";
 
 interface FinalizarSesionPayload {

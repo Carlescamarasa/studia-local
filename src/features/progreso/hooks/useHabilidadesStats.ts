@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAllStudentXPTotals, useAggregateLevelGoals } from './useXP';
-import { useFeedbacksSemanal } from '@/hooks/entities/useFeedbacksSemanal';
+import { useFeedbacksSemanal } from '@/features/progreso/hooks/useFeedbacksSemanal';
 import { useEvaluacionesTecnicas } from '@/features/evaluaciones/hooks/useEvaluacionesTecnicas';
 
 export type DataSource = 'evaluaciones' | 'experiencia' | 'ambas';

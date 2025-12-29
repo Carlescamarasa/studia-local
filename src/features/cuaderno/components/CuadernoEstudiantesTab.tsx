@@ -1,23 +1,23 @@
 import React, { useState, useMemo } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ds";
+import { Button } from "@/features/shared/components/ui/button";
+import { Badge } from "@/features/shared/components/ds";
 import { Users } from "lucide-react";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { useUsers } from "@/hooks/entities/useUsers";
-import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
-import { useFeedbacksSemanal } from "@/hooks/entities/useFeedbacksSemanal";
+import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
+import { useFeedbacksSemanal } from "@/features/progreso/hooks/useFeedbacksSemanal";
 import { localDataClient } from "@/api/localDataClient";
 import {
     calcularOffsetSemanas,
     resolveUserIdActual,
     displayName
-} from "@/components/utils/helpers";
+} from "@/features/shared/utils/helpers";
 import { isoWeekNumber, parseLocalDate } from "../utils";
 // @ts-expect-error ModalFeedbackSemanal is not typed
-import ModalFeedbackSemanal from "@/shared/components/feedback/ModalFeedbackSemanal";
+import ModalFeedbackSemanal from "@/features/shared/components/feedback/ModalFeedbackSemanal";
 // @ts-expect-error MediaPreviewModal is not typed
-import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
+import MediaPreviewModal from "@/features/shared/components/media/MediaPreviewModal";
 import EstudianteCard from "./EstudianteCard";
 
 // Types

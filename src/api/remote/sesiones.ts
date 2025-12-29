@@ -1,7 +1,7 @@
 import { supabase, withAuthErrorHandling } from './client';
 import { snakeToCamel, camelToSnake, toSnakeCase, normalizeISOFields } from './utils';
 import { generateId } from './id';
-import type { RegistroSesion, RegistroBloque } from '@/shared/types/domain';
+import type { RegistroSesion, RegistroBloque } from '@/features/shared/types/domain';
 
 /**
  * Obtiene una vista previa de los registros de sesión (limitado a 20)

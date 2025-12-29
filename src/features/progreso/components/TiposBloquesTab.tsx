@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
+import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/features/shared/components/ds";
 import { Layers } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { formatDuracionHM } from "../utils/progresoUtils";

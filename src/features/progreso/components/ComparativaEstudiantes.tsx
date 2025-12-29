@@ -1,10 +1,10 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ds";
+import { Card, CardContent } from "@/features/shared/components/ds";
 import { componentStyles } from "@/design/componentStyles";
 import { formatDuracionHM } from "../utils/progresoUtils";
-import UnifiedTable from "@/components/tables/UnifiedTable";
-import { Badge } from "@/components/ds";
-import { displayName } from "@/components/utils/helpers";
+import UnifiedTable from "@/features/shared/components/tables/UnifiedTable";
+import { Badge } from "@/features/shared/components/ds";
+import { displayName } from "@/features/shared/utils/helpers";
 
 /**
  * ComparativaEstudiantes - Componente para comparar métricas entre estudiantes (PROF/ADMIN)

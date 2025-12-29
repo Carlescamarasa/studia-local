@@ -2,30 +2,30 @@ import React, { useState, useEffect, useCallback } from "react";
 import { getCachedAuthUser } from "@/auth/authUserCache";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useUsers } from "@/hooks/entities/useUsers";
-import type { UserEntity } from "@/hooks/entities/useUsers";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useUsers } from "@/features/admin/hooks/useUsers";
+import type { UserEntity } from "@/features/admin/hooks/useUsers";
+import { Button } from "@/features/shared/components/ui/button";
+import { Input } from "@/features/shared/components/ui/input";
+import { Label } from "@/features/shared/components/ui/label";
+import { Textarea } from "@/features/shared/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ui/card";
 import { X, Save, Users, Music, BookOpen, Calendar, Settings, Target, Plus, Ban } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription } from "@/features/shared/components/ui/alert";
+import { Switch } from "@/features/shared/components/ui/switch";
 import StudentSearchBarAsync from "@/features/asignaciones/components/StudentSearchBarAsync";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { displayName, formatLocalDate, parseLocalDate, startOfMonday } from "@/components/utils/helpers";
+import { displayName, formatLocalDate, parseLocalDate, startOfMonday } from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
 import { supabase } from "@/lib/supabaseClient";
 // @ts-expect-error PieceEditor not typed yet
-import PieceEditor from "@/components/editor/PieceEditor";
+import PieceEditor from "@/features/editor/components/PieceEditor";
 // @ts-expect-error PlanEditor not typed yet
-import PlanEditor from "@/components/editor/PlanEditor";
+import PlanEditor from "@/features/editor/components/PlanEditor";
 
 // ============================================================================
 // Type Definitions

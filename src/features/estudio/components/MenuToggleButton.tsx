@@ -1,12 +1,12 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/features/shared/components/ui/button";
 import { PanelLeft, PanelLeftClose } from "lucide-react";
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@/features/shared/components/ui/tooltip";
 
 interface MenuToggleButtonProps {
     /** Si el menú está abierto */

@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { remoteDataAPI, fetchBloquesPreview, fetchPiezasPreview, fetchFeedbacksSemanales, fetchRegistrosSesionMultimedia, fetchSupportMensajes } from "@/api/remoteDataAPI";
-import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/features/shared/components/ds";
+import { Button } from "@/features/shared/components/ui/button";
+import { Input } from "@/features/shared/components/ui/input";
 import { Search, X, FileVideo, FileAudio, Image as ImageIcon, FileText, Trash2, ExternalLink, Database, RefreshCw } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
 import { toast } from "sonner";
-import UnifiedTable from "@/components/tables/UnifiedTable";
-import PageHeader from "@/components/ds/PageHeader";
+import UnifiedTable from "@/features/shared/components/tables/UnifiedTable";
+import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -127,7 +127,7 @@ const STATE_BADGES = {
 };
 
 
-import { getYouTubeTitle } from "@/shared/utils/media";
+import { getYouTubeTitle } from "@/features/shared/utils/media";
 
 // Componente para renderizar el nombre de forma asíncrona (YouTube titles)
 function AssetDisplayName({ asset, deriveDisplayName }) {

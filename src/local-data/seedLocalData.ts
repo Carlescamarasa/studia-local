@@ -4,7 +4,7 @@
  */
 
 import { localUsers } from './localUsers';
-import { calcularTiempoSesion } from '@/components/utils/helpers';
+import { calcularTiempoSesion } from '@/features/shared/utils/helpers';
 
 // IDs válidos de usuarios (fuente de verdad)
 const VALID_USER_IDS = [

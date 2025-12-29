@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useStudentBackpack } from '@/hooks/useStudentBackpack';
-import { PageHeader, Card, CardContent, CardHeader, CardTitle, Badge, EmptyState } from '@/components/ds';
+import { PageHeader, Card, CardContent, CardHeader, CardTitle, Badge, EmptyState } from '@/features/shared/components/ds';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Backpack, Trophy, Clock, Archive } from 'lucide-react';

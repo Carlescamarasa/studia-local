@@ -1,8 +1,8 @@
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
 import { ClipboardCheck, Gauge, Music, Brain, Zap, Target } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
-import UnifiedTable from "@/components/tables/UnifiedTable";
+import UnifiedTable from "@/features/shared/components/tables/UnifiedTable";
 import { parseLocalDate } from "@/features/progreso/utils/progresoUtils";
 
 /**

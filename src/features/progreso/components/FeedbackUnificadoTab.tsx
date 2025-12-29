@@ -1,15 +1,15 @@
 import React, { useState, useMemo } from "react";
-import { Card, CardContent, Badge } from "@/components/ds";
-import TablePagination from "@/components/common/TablePagination";
+import { Card, CardContent, Badge } from "@/features/shared/components/ds";
+import TablePagination from "@/features/shared/components/common/TablePagination";
 import { MessageSquare, ClipboardCheck, BookOpen, Star, LayoutList, Edit } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { MediaIcon } from "@/shared/components/media/MediaEmbed";
-import { displayName } from "@/components/utils/helpers";
+import { MediaIcon } from "@/features/shared/components/media/MediaEmbed";
+import { displayName } from "@/features/shared/utils/helpers";
 import { cn } from "@/lib/utils";
-import ModalSesion from "@/components/calendario/ModalSesion";
-import ModalFeedbackDetalle from "@/shared/components/feedback/ModalFeedbackDetalle";
-import { Button } from "@/components/ds/Button";
+import ModalSesion from "@/features/calendar/components/ModalSesion";
+import ModalFeedbackDetalle from "@/features/shared/components/feedback/ModalFeedbackDetalle";
+import { Button } from "@/features/shared/components/ds/Button";
 
 /**
  * FeedbackUnificadoTab - Muestra comentarios del profesor, evaluaciones técnicas y sesiones

@@ -9,7 +9,7 @@ import {
   BookOpen, ListMusic, History, Layout as LayoutIcon,
   BarChart3, Calendar, Users, Eye
 } from 'lucide-react';
-import PageHeader from "@/components/ds/PageHeader";
+import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 
 // --- HELPERS & MOCK DATA (Ported from StudiaConceptPage) ---

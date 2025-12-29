@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, ScrollText, Filter, Download, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ds/Button';
+import { Button } from '@/features/shared/components/ds/Button';
 import { componentStyles } from '@/design/componentStyles';
 
 interface LogEntry {

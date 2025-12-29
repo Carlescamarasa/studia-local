@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 // Eliminado: importación de base44Client, ya no es necesaria
 // Reemplazado por lógica local con almacenamiento en localStorage
-import { Card, CardContent } from "@/components/ds";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription } from "@/components/ds";
+import { Card, CardContent } from "@/features/shared/components/ds";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/features/shared/components/ui/tabs";
+import { Alert, AlertDescription } from "@/features/shared/components/ds";
 import { Shield, Music, BookOpen, Layers } from "lucide-react";
-import PiezasTab from "@/components/editor/PiezasTab";
-import PlanesTab from "@/components/editor/PlanesTab";
-import BloquesTab from "@/components/editor/BloquesTab";
-import PageHeader from "@/components/ds/PageHeader";
+import PiezasTab from "@/features/editor/components/PiezasTab";
+import PlanesTab from "@/features/editor/components/PlanesTab";
+import BloquesTab from "@/features/editor/components/BloquesTab";
+import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 

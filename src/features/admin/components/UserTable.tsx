@@ -1,8 +1,8 @@
 import React from 'react';
-import { Badge } from "@/components/ds";
-import UnifiedTable from "@/components/tables/UnifiedTable";
+import { Badge } from "@/features/shared/components/ds";
+import UnifiedTable from "@/features/shared/components/tables/UnifiedTable";
 import { User, UserRole, userService } from '../services/userService';
-import { getNombreVisible } from "@/components/utils/helpers";
+import { getNombreVisible } from "@/features/shared/utils/helpers";
 import { Pencil, Send, KeyRound, Mail, User as UserIcon, Target, Eye, BarChart3, Pause, Play, Trash2, UserCheck, Users as UsersIcon } from "lucide-react";
 import { toast } from 'sonner';
 

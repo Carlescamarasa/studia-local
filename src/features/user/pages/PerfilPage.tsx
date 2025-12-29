@@ -2,29 +2,26 @@ import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { remoteDataAPI } from "@/api/remote/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useUsers } from "@/hooks/entities/useUsers";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ds";
-import { Badge } from "@/components/ds";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ds";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useUsers } from "@/features/admin/hooks/useUsers";
+import { Button } from "@/features/shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, Badge, Alert, AlertDescription, LoadingSpinner } from "@/features/shared/components/ds";
+import { Input } from "@/features/shared/components/ui/input";
+import { Label } from "@/features/shared/components/ui/label";
+import { Textarea } from "@/features/shared/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
 import {
   User, ArrowLeft, Mail, Shield, Target, Music, Save, Edit, AlertCircle, CheckCircle, Sun, Moon, Monitor, KeyRound, Lock
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { displayName } from "../components/utils/helpers";
+import { displayName } from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { useSearchParams } from "react-router-dom";
-import MediaLinksInput from "@/shared/components/media/MediaLinksInput";
-import PageHeader from "@/components/ds/PageHeader";
-import { LoadingSpinner } from "@/components/ds";
+import MediaLinksInput from "@/features/shared/components/media/MediaLinksInput";
+import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
-import { useDesign } from "@/components/design/DesignProvider";
+import { useDesign } from "@/features/design/components/DesignProvider";
 import { sendPasswordResetEmailFor } from "@/lib/authPasswordHelpers";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -35,9 +32,9 @@ export default function PerfilPage() {
   const userIdParam = searchParams.get('userId');
   const { design, activeMode, setActiveMode } = useDesign();
 
-  const [editedData, setEditedData] = useState(null);
-  const [saveResult, setSaveResult] = useState(null);
-  const [passwordResult, setPasswordResult] = useState(null);
+  const [editedData, setEditedData] = useState<any>(null);
+  const [saveResult, setSaveResult] = useState<any>(null);
+  const [passwordResult, setPasswordResult] = useState<any>(null);
 
   const effectiveUser = useEffectiveUser();
 
@@ -45,18 +42,34 @@ export default function PerfilPage() {
   const { data: allUsers } = useUsers();
 
   const { data: targetUser, isLoading } = useQuery({
-    queryKey: ['targetUser', userIdParam],
+    queryKey: ['targetUser', userIdParam, effectiveUser.effectiveUserId],
     queryFn: async () => {
-      if (userIdParam && effectiveUser?.rolPersonalizado === 'ADMIN') {
-        // OPTIMIZACIÓN: Usar allUsers de useUsers() - datos ya cacheados
-        return allUsers?.find(u => u.id === userIdParam) || null;
+      // Si hay userIdParam y soy admin, buscar ese usuario
+      if (userIdParam && effectiveUser?.effectiveRole === 'ADMIN') {
+        const found = allUsers?.find(u => u.id === userIdParam);
+        if (found) return found;
+        return null;
       }
-      return effectiveUser;
+
+      // Si no, soy yo mismo (usar effectiveUserId para buscar en allUsers y tener el objeto completo)
+      if (effectiveUser?.effectiveUserId) {
+        const found = allUsers?.find(u => u.id === effectiveUser.effectiveUserId);
+        if (found) return found;
+      }
+
+      // Fallback si no se encuentra en allUsers (ej. carga inicial), usar datos limitados del context
+      return {
+        id: effectiveUser.effectiveUserId,
+        email: effectiveUser.effectiveEmail,
+        nombreCompleto: effectiveUser.effectiveUserName,
+        rolPersonalizado: effectiveUser.effectiveRole,
+        // Propiedades faltantes se manejarán con defaults en el componente
+      } as any;
     },
-    enabled: !!allUsers, // Esperar a que allUsers esté disponible
+    enabled: !!allUsers && !effectiveUser.loading,
   });
 
-  const getNombreCompleto = (user) => {
+  const getNombreCompleto = (user: any) => {
     if (!user) return '';
     return displayName(user);
   };
@@ -78,12 +91,12 @@ export default function PerfilPage() {
   }, [targetUser]);
 
   const updateUserMutation = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async (data: any) => {
       if (!targetUser || !targetUser.id) {
         throw new Error('No se puede actualizar: usuario no encontrado');
       }
 
-      if (targetUser.id === effectiveUser?.id) {
+      if (targetUser.id === effectiveUser?.effectiveUserId) {
         // Actualizar perfil propio
         return await localDataClient.auth.updateMe(data);
       } else {
@@ -100,14 +113,14 @@ export default function PerfilPage() {
       setSaveResult({ success: true, message: '✅ Usuario actualizado correctamente.' });
       toast.success('Perfil actualizado correctamente.');
 
-      if (targetUser?.id === effectiveUser?.id && editedData.rolPersonalizado !== effectiveUser.rolPersonalizado) {
+      if (targetUser?.id === effectiveUser?.effectiveUserId && editedData.rolPersonalizado !== effectiveUser.effectiveRole) {
         setTimeout(() => {
           const mainPages = {
             ADMIN: '/usuarios',
             PROF: '/cuaderno',
             ESTU: '/hoy'
           };
-          navigate(createPageUrl(mainPages[editedData.rolPersonalizado]?.split('/').pop() || 'hoy'));
+          navigate(createPageUrl(mainPages[editedData.rolPersonalizado as keyof typeof mainPages]?.split('/').pop() || 'hoy'));
           window.location.reload();
         }, 1500);
       }
@@ -136,7 +149,7 @@ export default function PerfilPage() {
       }
     }
 
-    const isChangingOwnRole = targetUser?.id === effectiveUser?.id && editedData.rolPersonalizado !== effectiveUser?.rolPersonalizado;
+    const isChangingOwnRole = targetUser?.id === effectiveUser?.effectiveUserId && editedData.rolPersonalizado !== effectiveUser?.effectiveRole;
 
     if (isChangingOwnRole) {
       if (!window.confirm('¿Estás seguro de cambiar tu propio rol? Esto modificará tu acceso y navegación en la aplicación.')) {
@@ -175,9 +188,9 @@ export default function PerfilPage() {
     ESTU: 'Estudiante',
   };
 
-  const isEditingOwnProfile = targetUser?.id === effectiveUser?.id;
-  const canEditRole = effectiveUser?.rolPersonalizado === 'ADMIN';
-  const canEditProfesor = (effectiveUser?.rolPersonalizado === 'ADMIN' || effectiveUser?.rolPersonalizado === 'PROF')
+  const isEditingOwnProfile = targetUser?.id === effectiveUser?.effectiveUserId;
+  const canEditRole = effectiveUser?.effectiveRole === 'ADMIN';
+  const canEditProfesor = (effectiveUser?.effectiveRole === 'ADMIN' || effectiveUser?.effectiveRole === 'PROF')
     && targetUser?.rolPersonalizado === 'ESTU';
   const isEstudiante = targetUser?.rolPersonalizado === 'ESTU';
   const isProfesor = targetUser?.rolPersonalizado === 'PROF';
@@ -289,7 +302,7 @@ export default function PerfilPage() {
                 <div className="relative">
                   <Input
                     id="role"
-                    value={roleLabels[editedData.rolPersonalizado]}
+                    value={roleLabels[editedData.rolPersonalizado as keyof typeof roleLabels]}
                     disabled
                     className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
                   />
@@ -304,13 +317,13 @@ export default function PerfilPage() {
                 {canEditProfesor ? (
                   <Select
                     value={editedData.profesorAsignadoId}
-                    onValueChange={(value) => setEditedData({ ...editedData, profesorAsignadoId: value })}
+                    onValueChange={(value) => setEditedData({ ...editedData, profesorAsignadoId: value === "unassigned" ? null : value })}
                   >
                     <SelectTrigger id="profesorAsignado" className={componentStyles.controls.selectDefault}>
                       <SelectValue placeholder="Sin asignar" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={null}>Sin asignar</SelectItem>
+                      <SelectItem value="unassigned">Sin asignar</SelectItem>
                       {profesores.map(prof => (
                         <SelectItem key={prof.id} value={prof.id}>
                           {getNombreCompleto(prof)}
@@ -347,14 +360,14 @@ export default function PerfilPage() {
             <div className="space-y-2">
               <Label htmlFor="nivel" className="text-[var(--color-text-primary)]">Nivel Técnico</Label>
               <Select
-                value={editedData.nivel}
-                onValueChange={(value) => setEditedData({ ...editedData, nivel: value })}
+                value={editedData.nivel || "unspecified"}
+                onValueChange={(value) => setEditedData({ ...editedData, nivel: value === "unspecified" ? null : value })}
               >
                 <SelectTrigger id="nivel" className={componentStyles.controls.selectDefault}>
                   <SelectValue placeholder="Seleccionar nivel" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={null}>Sin especificar</SelectItem>
+                  <SelectItem value="unspecified">Sin especificar</SelectItem>
                   <SelectItem value="principiante">Principiante</SelectItem>
                   <SelectItem value="intermedio">Intermedio</SelectItem>
                   <SelectItem value="avanzado">Avanzado</SelectItem>
@@ -404,7 +417,8 @@ export default function PerfilPage() {
             <div className="pt-6 border-t border-[var(--color-border-default)]">
               <MediaLinksInput
                 value={editedData.mediaLinks}
-                onChange={(links) => setEditedData({ ...editedData, mediaLinks: links })}
+                onChange={(links: any) => setEditedData({ ...editedData, mediaLinks: links })}
+                onPreview={() => { }}
               />
               <p className="text-xs mt-2 text-[var(--color-text-primary)]">
                 Enlaces multimedia personales (videos demostrativos, recursos, etc.)
@@ -480,7 +494,7 @@ export default function PerfilPage() {
                         message: `✅ Te hemos enviado un correo a ${session.user.email} para cambiar tu contraseña.`
                       });
                       toast.success('Te hemos enviado un correo para cambiar tu contraseña.');
-                    } catch (error) {
+                    } catch (error: any) {
                       const errorMessage = error.message || 'No se pudo enviar el correo';
                       setPasswordResult({
                         success: false,
@@ -492,7 +506,7 @@ export default function PerfilPage() {
                       }
                     }
                   }}
-                  variant="danger"
+                  variant="destructive"
                   size="sm"
                   className={componentStyles.buttons.danger + " flex-1"}
                 >

@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { createPageUrl } from "@/utils";
-import { roleHome } from "@/components/auth/roleMap";
+import { roleHome } from "@/features/auth/components/roleMap";
 import { Clock } from "lucide-react";
 
 export default function IndexPage() {

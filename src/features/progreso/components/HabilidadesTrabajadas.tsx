@@ -1,7 +1,7 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ds';
+import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/components/ds';
 import { Loader2, Activity } from 'lucide-react';
-import { RegistroBloque, Bloque } from '@/shared/types/domain';
+import { RegistroBloque, Bloque } from '@/features/shared/types/domain';
 
 interface HabilidadesTrabajadasProps {
     data: { skill: string; count: number }[];

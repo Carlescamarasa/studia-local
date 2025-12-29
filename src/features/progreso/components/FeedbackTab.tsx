@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
 import { MessageSquare, Edit } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { useIsMobile } from "@/hooks/use-mobile";
-import UnifiedTable from "@/components/tables/UnifiedTable";
-import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
+import UnifiedTable from "@/features/shared/components/tables/UnifiedTable";
+import MediaLinksBadges from "@/features/shared/components/media/MediaLinksBadges";
 import { formatLocalDate, parseLocalDate } from "../utils/progresoUtils";
 
 /**

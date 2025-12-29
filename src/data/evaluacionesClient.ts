@@ -1,4 +1,4 @@
-import { EvaluacionTecnica, CreateEvaluacionTecnicaInput, UpdateEvaluacionTecnicaInput } from '@/shared/types/domain';
+import { EvaluacionTecnica, CreateEvaluacionTecnicaInput, UpdateEvaluacionTecnicaInput } from '@/features/shared/types/domain';
 // @ts-ignore
 import { getEntity, createItem, updateItem, deleteItem } from './localStorageClient';
 

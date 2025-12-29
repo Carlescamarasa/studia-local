@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/features/shared/components/ui/button";
 import { Users, LayoutList } from "lucide-react";
 
 type TabValue = 'estudiantes' | 'asignaciones';

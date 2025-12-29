@@ -11,15 +11,15 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useUsers } from "@/hooks/entities/useUsers";
-import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
-import { useBloques } from "@/hooks/entities/useBloques";
-import { updateBackpackFromSession } from '@/shared/services/backpackService';
+import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
+import { useBloques } from "@/features/estudio/hooks/useBloques";
+import { updateBackpackFromSession } from '@/features/shared/services/backpackService';
 import { createRemoteDataAPI } from "@/api/remoteDataAPI";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery } from "@tanstack/react-query";
 
-import RequireRole from "@/components/auth/RequireRole";
+import RequireRole from "@/features/auth/components/RequireRole";
 import { ROUTES } from "@/lib/routes";
 import { toast } from "sonner";
 
@@ -29,22 +29,22 @@ import {
     aplanarSesion,
     formatLocalDate,
     parseLocalDate,
-} from "@/components/utils/helpers";
+} from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { ensureRondaIds, getSecuencia } from "@/components/study/sessionSequence";
+import { ensureRondaIds, getSecuencia } from "@/features/estudio/components/sessionSequence";
 import ResumenFinal from "@/features/estudio/components/ResumenFinal";
 import ModalCancelar from "@/features/estudio/components/ModalCancelar";
 import { shouldIgnoreHotkey } from "@/utils/hotkeys";
 import { useHotkeysModal, HotkeysModalProvider } from "@/hooks/useHotkeysModal.jsx";
 import { getValidVariations, pickRandomVariation } from "@/hooks/useExerciseVariations";
-import HotkeysModal from "@/components/common/HotkeysModal";
+import HotkeysModal from "@/features/shared/components/common/HotkeysModal";
 
 // UI Components
-import { Card, CardContent } from "@/components/ds";
-import { Button } from "@/components/ds/Button";
-import { Badge } from "@/components/ds";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ds";
-import { LoadingSpinner } from "@/components/ds";
+import { Card, CardContent } from "@/features/shared/components/ds";
+import { Button } from "@/features/shared/components/ds/Button";
+import { Badge } from "@/features/shared/components/ds";
+import { Alert, AlertDescription, AlertTitle } from "@/features/shared/components/ds";
+import { LoadingSpinner } from "@/features/shared/components/ds";
 import {
     ChevronLeft,
     ChevronRight,
@@ -73,15 +73,15 @@ import {
     Keyboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { useDesign } from "@/components/design/DesignProvider";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/features/shared/components/ui/dialog";
+import { useDesign } from "@/features/design/components/DesignProvider";
 import { componentStyles } from "@/design/componentStyles";
-import Metronomo from "@/components/study/Metronomo";
-import PianoPanel from "@/components/study/PianoPanel";
-import SessionContentView from "@/shared/components/study/SessionContentView";
-import MediaEmbed from "@/shared/components/media/MediaEmbed";
+import Metronomo from "@/features/estudio/components/Metronomo";
+import PianoPanel from "@/features/estudio/components/PianoPanel";
+import SessionContentView from "@/features/shared/components/study/SessionContentView";
+import MediaEmbed from "@/features/shared/components/media/MediaEmbed";
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/features/shared/components/ui/tooltip";
 import { useDockToFooterOffset } from "@/hooks/useDockToFooterOffset";
 
 // Create remote API instance

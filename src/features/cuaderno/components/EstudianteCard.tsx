@@ -1,17 +1,17 @@
 import React from "react";
-import { Badge } from "@/components/ds";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/features/shared/components/ds";
+import { Button } from "@/features/shared/components/ui/button";
 import {
     Notebook, Music, PlayCircle, ChevronRight, MessageSquare,
     Edit, Trash2
 } from "lucide-react";
 // @ts-expect-error UserActionsMenu is not typed
-import UserActionsMenu from "@/components/common/UserActionsMenu";
-import SessionContentView from "@/shared/components/study/SessionContentView";
+import UserActionsMenu from "@/features/shared/components/common/UserActionsMenu";
+import SessionContentView from "@/features/shared/components/study/SessionContentView";
 // @ts-expect-error MediaLinksBadges is not typed
-import MediaLinksBadges from "@/shared/components/media/MediaLinksBadges";
-import { calcularTiempoSesion } from "@/components/study/sessionSequence";
-import { displayName } from "@/components/utils/helpers";
+import MediaLinksBadges from "@/features/shared/components/media/MediaLinksBadges";
+import { calcularTiempoSesion } from "@/features/estudio/components/sessionSequence";
+import { displayName } from "@/features/shared/utils/helpers";
 import { focoLabels } from "../utils";
 
 // Types

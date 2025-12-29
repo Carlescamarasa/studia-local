@@ -15,9 +15,9 @@ import {
     useRecentManualXP // [NEW]
 } from '../hooks/useXP';
 import { Activity, Target, Star, Layers, Info, TrendingUp, BookOpen, PieChart, CheckCircle2, Circle } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import LevelBadge from '@/components/common/LevelBadge';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/features/shared/components/ui/tooltip';
+import LevelBadge from '@/features/shared/components/common/LevelBadge';
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
 
 import {
     CompactCard,
@@ -26,12 +26,12 @@ import {
 } from './index';
 import { useQuery } from '@tanstack/react-query';
 import { localDataClient } from '@/api/localDataClient';
-import { useUsers } from '@/hooks/entities/useUsers';
-import { useLevelConfig } from '@/hooks/entities/useLevelsConfig';
+import { useUsers } from '@/features/admin/hooks/useUsers';
+import { useLevelConfig } from '@/features/admin/hooks/useLevelsConfig';
 import { cn } from '@/lib/utils';
 import { computeKeyCriteriaStatus, CriteriaStatusResult } from '@/utils/levelLogic';
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { Checkbox } from '@/components/ui/checkbox';
+import { Checkbox } from '@/features/shared/components/ui/checkbox';
 
 interface HabilidadesViewProps {
     alumnosSeleccionados?: string[];

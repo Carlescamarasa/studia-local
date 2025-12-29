@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ds";
-import { Badge } from "@/components/ds";
-import { Alert, AlertDescription } from "@/components/ds";
-import Tabs from "@/components/ds/Tabs";
-import { useDesign } from "@/components/design/DesignProvider";
-import RequireRole from "@/components/auth/RequireRole";
+import { Button } from "@/features/shared/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/features/shared/components/ds";
+import { Badge } from "@/features/shared/components/ds";
+import { Alert, AlertDescription } from "@/features/shared/components/ds";
+import { Tabs } from "@/features/shared/components/ds/Tabs";
+import { useDesign } from "@/features/design/components/DesignProvider";
+import RequireRole from "@/features/auth/components/RequireRole";
 import {
   CheckCircle, XCircle, AlertTriangle, RefreshCw, Eye, Settings, Code, Target, Palette
 } from "lucide-react";
-import PageHeader from "@/components/ds/PageHeader";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { RADIUS_MAP, SHADOW_MAP, DEFAULT_DESIGN } from "@/components/design/designConfig";
+import { PageHeader } from "@/features/shared/components/ds/PageHeader";
+import { Input } from "@/features/shared/components/ui/input";
+import { Textarea } from "@/features/shared/components/ui/textarea";
+import { RADIUS_MAP, SHADOW_MAP, DEFAULT_DESIGN } from "@/features/design/components/designConfig";
 
 function QAVisualContent({ embedded = false }) {
   const { config } = useDesign();

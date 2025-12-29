@@ -1,6 +1,6 @@
 import React from "react";
 // @ts-expect-error RequireRole is not typed
-import RequireRole from "@/components/auth/RequireRole";
+import RequireRole from "@/features/auth/components/RequireRole";
 import CuadernoContent from "../components/CuadernoContent";
 
 /**

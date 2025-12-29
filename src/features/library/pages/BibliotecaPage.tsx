@@ -2,12 +2,12 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Music, BookOpen, Layers } from "lucide-react";
-import PiezasTab from "@/components/editor/PiezasTab";
-import PlanesTab from "@/components/editor/PlanesTab";
-import EjerciciosTab from "@/components/editor/EjerciciosTab";
-import RequireRole from "@/components/auth/RequireRole";
-import PageHeader from "@/components/ds/PageHeader";
-import Tabs from "@/components/ds/Tabs";
+import PiezasTab from "@/features/editor/components/PiezasTab";
+import PlanesTab from "@/features/editor/components/PlanesTab";
+import EjerciciosTab from "@/features/editor/components/EjerciciosTab";
+import RequireRole from "@/features/auth/components/RequireRole";
+import { PageHeader } from "@/features/shared/components/ds/PageHeader";
+import { Tabs } from "@/features/shared/components/ds/Tabs";
 
 interface TabItem {
     value: string;

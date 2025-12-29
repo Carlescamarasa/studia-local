@@ -3,8 +3,8 @@ import { useTotalXP, totalXPToObject, useLifetimePracticeXP, useTotalXPMultiple,
 import { Loader2, TrendingUp, Trophy } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { localDataClient } from '@/api/localDataClient';
-import { Badge } from '@/components/ds';
-import { useUsers } from '@/hooks/entities/useUsers';
+import { Badge } from '@/features/shared/components/ds';
+import { useUsers } from '@/features/admin/hooks/useUsers';
 
 interface TotalXPDisplayProps {
     studentId?: string;

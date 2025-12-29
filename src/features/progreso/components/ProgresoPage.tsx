@@ -17,13 +17,13 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
-import { useUsers } from "@/hooks/entities/useUsers";
-import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
-import { resolveUserIdActual, displayName } from "@/components/utils/helpers";
+import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
+import { resolveUserIdActual, displayName } from "@/features/shared/utils/helpers";
 import { toast } from "sonner";
 import { createManualSessionDraft } from '@/services/manualSessionService';
-import { updateBackpackFromSession } from '@/shared/services/backpackService';
-import { getDerivedBackpackStatus } from '@/shared/services/backpackDerivedStatus';
+import { updateBackpackFromSession } from '@/features/shared/services/backpackService';
+import { getDerivedBackpackStatus } from '@/features/shared/services/backpackDerivedStatus';
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { formatLocalDate, parseLocalDate, startOfMonday, formatDuracionHM, formatDurationDDHHMM } from "../utils/progresoUtils";
 import { chooseBucket } from "../utils/chartHelpers";
@@ -41,32 +41,32 @@ import {
 } from "../hooks/useXP";
 
 // UI Components
-import { Card, CardContent, CardHeader, CardTitle, Badge, EmptyState, PageHeader } from "@/components/ds";
-import { Button } from "@/components/ds/Button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle, Badge, EmptyState, PageHeader } from "@/features/shared/components/ds";
+import { Button } from "@/features/shared/components/ds/Button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/features/shared/components/ui/tabs";
 import { componentStyles } from "@/design/componentStyles";
 import { cn } from "@/lib/utils";
-import MultiSelect from "@/components/ui/MultiSelect";
+import MultiSelect from "@/features/shared/components/ui/MultiSelect";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
+} from "@/features/shared/components/ui/select";
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@/features/shared/components/ui/tooltip";
 
 // Tab Components (reutilizados)
 import HabilidadesView from "./HabilidadesView";
 import MochilaViewContent from "./MochilaViewContent";
-import LevelBadge from "@/components/common/LevelBadge";
-import TabBoundary from "@/components/common/TabBoundary";
-import UnifiedTable from "@/components/tables/UnifiedTable";
+import LevelBadge from "@/features/shared/components/common/LevelBadge";
+import TabBoundary from "@/features/shared/components/common/TabBoundary";
+import UnifiedTable from "@/features/shared/components/tables/UnifiedTable";
 
 import {
     AutoevaluacionesTab,
@@ -84,11 +84,11 @@ import {
     TopEjerciciosTab,
 } from "./index";
 
-import ModalFeedbackSemanal from "@/shared/components/feedback/ModalFeedbackSemanal";
-import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
+import ModalFeedbackSemanal from "@/features/shared/components/feedback/ModalFeedbackSemanal";
+import MediaPreviewModal from "@/features/shared/components/media/MediaPreviewModal";
 
-import { StudiaUser, RegistroSesion, RegistroBloque, FeedbackSemanal, StudentBackpackItem } from "@/shared/types/domain";
-import RequireRole from "@/components/auth/RequireRole";
+import { StudiaUser, RegistroSesion, RegistroBloque, FeedbackSemanal, StudentBackpackItem } from "@/features/shared/types/domain";
+import RequireRole from "@/features/auth/components/RequireRole";
 import { toStudia } from "@/lib/routes";
 import { es } from "date-fns/locale";
 import { startOfWeek, format } from "date-fns";
@@ -113,7 +113,7 @@ import {
     Plus
 } from "lucide-react";
 
-import { useFeedbacksSemanal } from "@/hooks/entities/useFeedbacksSemanal";
+import { useFeedbacksSemanal } from "@/features/progreso/hooks/useFeedbacksSemanal";
 import { useIsMobile } from "@/hooks/use-mobile.jsx";
 
 // Cast internal JSX components to any to avoid TS errors

@@ -1,9 +1,9 @@
 import React from "react";
-import { PageHeader } from "@/components/ds";
-import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/features/shared/components/ds";
+import { Button } from "@/features/shared/components/ui/button";
 import { Notebook, Plus } from "lucide-react";
 // @ts-expect-error PeriodHeader is not typed
-import PeriodHeader from "@/components/common/PeriodHeader";
+import PeriodHeader from "@/features/shared/components/common/PeriodHeader";
 import { parseLocalDate, isoWeekNumber } from "../utils";
 
 interface CuadernoHeaderProps {

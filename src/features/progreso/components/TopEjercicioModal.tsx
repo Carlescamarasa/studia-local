@@ -1,9 +1,9 @@
 import React, { useMemo } from "react";
-import { Button } from "@/components/ds/Button";
+import { Button } from "@/features/shared/components/ds/Button";
 import { X, Calendar, Clock, TrendingUp, FileText } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 import { formatDuracionHM, formatLocalDate, parseLocalDate } from "../utils/progresoUtils";
-import { Badge } from "@/components/ds";
+import { Badge } from "@/features/shared/components/ds";
 
 const tipoLabels: Record<string, string> = {
     CA: 'Calentamiento A',

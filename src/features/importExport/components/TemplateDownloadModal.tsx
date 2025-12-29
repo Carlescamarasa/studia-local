@@ -1,7 +1,7 @@
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from '@/components/ui/drawer';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from '@/features/shared/components/ui/drawer';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/features/shared/components/ui/dialog';
+import { Button } from '@/features/shared/components/ui/button';
+import { ScrollArea } from '@/features/shared/components/ui/scroll-area';
 import { FileText, FileJson } from 'lucide-react';
 import { useMobileStrict } from '@/hooks/useMobileStrict';
 import { datasets } from '../registry';

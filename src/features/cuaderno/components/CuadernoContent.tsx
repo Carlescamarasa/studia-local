@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { componentStyles } from "@/design/componentStyles";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/features/shared/components/ui/input";
 import { Search, X } from "lucide-react";
 
 import CuadernoHeader from "./CuadernoHeader";

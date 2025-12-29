@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Settings, ScrollText, Music, Calendar, Layers, Target, MessageSquare, Activity, PlayCircle, Users, Shield } from 'lucide-react';
 import { localDataClient } from '@/api/localDataClient';
-import { Card, CardContent } from '@/components/ds';
+import { Card, CardContent } from '@/features/shared/components/ds';
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import PageHeader from '@/components/ds/PageHeader';
+import { PageHeader } from '@/features/shared/components/ds/PageHeader';
 import ModeToggle from './ModeToggle';
 import SeedsPanel from './SeedsPanel';
 import TestsPanel from './TestsPanel';
 import LogsDrawer from './LogsDrawer';
-import { Button } from '@/components/ds/Button';
+import { Button } from '@/features/shared/components/ds/Button';
 
 interface SeedStat {
     piezas?: number;

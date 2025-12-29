@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { remoteDataAPI } from '@/api/remote/api';
 import { useEffectiveUser } from '@/providers/EffectiveUserProvider';
-import type { StudentBackpackItem } from '@/shared/types/domain';
+import type { StudentBackpackItem } from '@/features/shared/types/domain';
 
 export const QUERY_KEY_BACKPACK = 'studentBackpack';
 

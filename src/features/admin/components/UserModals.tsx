@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
+import { Button } from "@/features/shared/components/ui/button";
 import {
     Dialog,
     DialogContent,
@@ -7,7 +7,7 @@ import {
     DialogTitle,
     DialogDescription,
     DialogFooter,
-} from "@/components/ui/dialog";
+} from "@/features/shared/components/ui/dialog";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -17,12 +17,12 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import MultiSelect from "@/components/ui/MultiSelect";
-import FormField from "@/components/ds/FormField";
+} from "@/features/shared/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
+import MultiSelect from "@/features/shared/components/ui/MultiSelect";
+import { FormField } from "@/features/shared/components/ds/FormField";
 import { componentStyles } from "@/design/componentStyles";
-import { getNombreVisible } from "@/components/utils/helpers";
+import { getNombreVisible } from "@/features/shared/utils/helpers";
 import { User, userService } from '../services/userService';
 import { toast } from 'sonner';
 

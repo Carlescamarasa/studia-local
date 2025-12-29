@@ -1,9 +1,9 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Settings, Info, Layout, Activity, Package, PlayCircle, ShieldCheck } from 'lucide-react';
-import PageHeader from '@/components/ds/PageHeader';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import RequireRole from '@/components/auth/RequireRole';
+import { PageHeader } from '@/features/shared/components/ds/PageHeader';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/features/shared/components/ui/tabs';
+import RequireRole from '@/features/auth/components/RequireRole';
 import { useEffectiveUser } from '@/providers/EffectiveUserProvider';
 import { Loader2 } from 'lucide-react';
 

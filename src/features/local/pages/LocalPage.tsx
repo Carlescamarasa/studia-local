@@ -4,14 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { useLocalData } from '@/local-data/LocalDataProvider';
 import { getCurrentUser, setCurrentUser } from '@/api/localDataClient';
 import { createPageUrl } from '@/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ds';
-import { Button } from '@/components/ds/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/components/ds';
+import { Button } from '@/features/shared/components/ds/Button';
 import { Users, PlayCircle, Calendar, Target, Activity, RefreshCw, Database } from 'lucide-react';
 import { rebuildAllLocalData, rebuildLocalData } from '@/local-data/rebuildLocalData';
 import { printValidationReport } from '@/local-data/verifyLocalData';
 import { toast } from 'sonner';
-import { displayName } from '@/components/utils/helpers';
-import PageHeader from '@/components/ds/PageHeader';
+import { displayName } from '@/features/shared/utils/helpers';
+import { PageHeader } from '@/features/shared/components/ds/PageHeader';
 import { componentStyles } from '@/design/componentStyles';
 
 export default function LocalPage() {

@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { computePracticeXP, computeEvaluationXP, computeManualXP, capXPForDisplay } from '@/shared/services/xpService';
+import { computePracticeXP, computeEvaluationXP, computeManualXP, capXPForDisplay } from '@/features/shared/services/xpService';
 import { localDataClient } from '@/api/localDataClient';
-import { useUsers, type UserEntity } from '@/hooks/entities/useUsers';
-import { useLevelsConfig } from '@/hooks/entities/useLevelsConfig';
-import type { RecentXPResult, StudentXPTotal } from '@/shared/services/xpService';
+import { useUsers, type UserEntity } from '@/features/admin/hooks/useUsers';
+import { useLevelsConfig } from '@/features/admin/hooks/useLevelsConfig';
+import type { RecentXPResult, StudentXPTotal } from '@/features/shared/services/xpService';
 
 /**
  * Hook to fetch recent XP (last N days) for radar display

@@ -1,36 +1,36 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useEvaluaciones } from '../hooks/useEvaluaciones';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/features/shared/components/ui/button';
+import { Input } from '@/features/shared/components/ui/input';
+import { Label } from '@/features/shared/components/ui/label';
+import { Textarea } from '@/features/shared/components/ui/textarea';
 import { Loader2, Trophy, HelpCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { localDataClient } from '@/api/localDataClient';
 import { computeKeyCriteriaStatus, canPromote, promoteLevel, CriteriaStatusResult, PromotionCheckResult } from '@/utils/levelLogic';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Checkbox } from '@/features/shared/components/ui/checkbox';
 import { toast } from 'sonner';
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import CurrentXPInline from './CurrentXPInline';
-import { Separator } from '@/components/ui/separator';
-import Badge from '@/components/ds/Badge';
+import { Separator } from '@/features/shared/components/ui/separator';
+import { Badge } from '@/features/shared/components/ds/Badge';
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from '@/features/shared/components/ui/tooltip';
 import {
     DialogHeader,
     DialogTitle,
     DialogFooter,
     DialogDescription
-} from '@/components/ui/dialog';
-import { Slider } from '@/components/ui/slider';
-import { addXP } from '@/shared/services/xpService';
+} from '@/features/shared/components/ui/dialog';
+import { Slider } from '@/features/shared/components/ui/slider';
+import { addXP } from '@/features/shared/services/xpService';
 import { QUERY_KEYS } from '@/lib/queryKeys';
-import { useUsers } from '@/hooks/entities/useUsers';
+import { useUsers } from '@/features/admin/hooks/useUsers';
 
 
 interface EvaluacionFormProps {

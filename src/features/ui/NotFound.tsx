@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, CardContent } from '@/components/ds';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/features/shared/components/ds';
+import { Button } from '@/features/shared/components/ui/button';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { componentStyles } from '@/design/componentStyles';
 

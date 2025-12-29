@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import PageHeader from '@/components/ds/PageHeader';
-import Tabs from '@/components/ds/Tabs';
-import MarkdownPage from '@/components/help/MarkdownPage';
-import { Card, CardContent } from '@/components/ds';
+import { PageHeader } from '@/features/shared/components/ds/PageHeader';
+import { Tabs } from '@/features/shared/components/ds/Tabs';
+import MarkdownPage from '@/features/support/components/MarkdownPage';
+import { Card, CardContent } from '@/features/shared/components/ds';
 import { componentStyles } from '@/design/componentStyles';
 import { HelpCircle, BookOpen, User, Users, Settings, Keyboard, Video, Info } from 'lucide-react';
 

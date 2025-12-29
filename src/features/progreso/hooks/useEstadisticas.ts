@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { formatLocalDate, parseLocalDate, startOfMonday } from "../utils/progresoUtils";
 import { buildDailySeries, aggregateData } from "../utils/chartHelpers";
-import { RegistroSesion, RegistroBloque } from "@/shared/types/domain";
+import { RegistroSesion, RegistroBloque } from "@/features/shared/types/domain";
 
 /**
  * Normaliza un número, reemplazando valores inválidos por 0

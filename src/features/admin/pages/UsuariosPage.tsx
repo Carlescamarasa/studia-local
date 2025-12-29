@@ -4,21 +4,21 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
-import { useUsers } from "@/hooks/entities/useUsers";
+import { useUsers } from "@/features/admin/hooks/useUsers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { useUserActions } from "@/features/auth/hooks/useUserActions";
 import { inviteUserByEmail, sendPasswordResetAdmin } from "@/api/userAdmin";
 import { createPageUrl } from "@/utils";
 import { componentStyles } from "@/design/componentStyles";
-import { getNombreVisible } from "@/components/utils/helpers";
+import { getNombreVisible } from "@/features/shared/utils/helpers";
 
-import PageHeader from "@/components/ds/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import RequireRole from "@/components/auth/RequireRole";
-import PerfilModal from "@/components/common/PerfilModal";
+import { PageHeader } from "@/features/shared/components/ds/PageHeader";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
+import { Button } from "@/features/shared/components/ui/button";
+import { Input } from "@/features/shared/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
+import RequireRole from "@/features/auth/components/RequireRole";
+import PerfilModal from "@/features/shared/components/common/PerfilModal";
 import { CreateUserModal } from "@/features/auth/components/CreateUserModal";
 import { InviteUserModal } from "@/features/auth/components/InviteUserModal";
 

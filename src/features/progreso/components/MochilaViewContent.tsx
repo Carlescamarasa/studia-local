@@ -1,15 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { useStudentBackpack } from '@/hooks/useStudentBackpack';
-import { Card, CardContent, Badge, EmptyState } from '@/components/ds';
-import { Button } from '@/components/ds/Button';
+import { Card, CardContent, Badge, EmptyState } from '@/features/shared/components/ds';
+import { Button } from '@/features/shared/components/ds/Button';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Backpack, PlayCircle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toStudia } from '@/lib/routes';
-import type { StudentBackpackItem } from '@/shared/types/domain';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Checkbox } from '@/components/ui/checkbox';
+import type { StudentBackpackItem } from '@/features/shared/types/domain';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/features/shared/components/ui/tooltip';
+import { Checkbox } from '@/features/shared/components/ui/checkbox';
 import { createManualSessionDraft } from '@/services/manualSessionService';
 import { toast } from 'sonner';
 

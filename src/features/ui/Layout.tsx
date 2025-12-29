@@ -36,43 +36,43 @@ import {
   MoreVertical,
   ChevronDown,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { LoadingSpinner } from "@/components/ds";
-import SkipLink from "@/components/ds/SkipLink";
+import { Button } from "@/features/shared/components/ui/button";
+import { LoadingSpinner } from "@/features/shared/components/ds";
+import { SkipLink } from "@/features/shared/components/ds/SkipLink";
 import { setCurrentUser, localDataClient } from "@/api/localDataClient";
 import { useLocalData } from "@/local-data/LocalDataProvider";
 import logoLTS from "@/assets/Logo_LTS.svg";
-import RoleBootstrap from "@/components/auth/RoleBootstrap";
+import RoleBootstrap from "@/features/auth/components/RoleBootstrap";
 import { useAuth } from "@/auth/AuthProvider";
 import { isAuthError } from "@/lib/authHelpers";
-import { SidebarProvider, useSidebar } from "@/components/ui/SidebarState";
+import { SidebarProvider, useSidebar } from "@/features/shared/components/ui/SidebarState";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { getAppName } from "@/components/utils/appMeta";
+} from "@/features/shared/components/ui/tooltip";
+import { getAppName } from "@/features/shared/utils/appMeta";
 import { componentStyles } from "@/design/componentStyles";
 import { Outlet } from "react-router-dom";
-import { displayName } from "@/components/utils/helpers";
+import { displayName } from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import PerfilModal from "@/components/common/PerfilModal";
-import { useDesign } from "@/components/design/DesignProvider";
-import ReportErrorButton from "@/components/common/ReportErrorButton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
+import PerfilModal from "@/features/shared/components/common/PerfilModal";
+import { useDesign } from "@/features/design/components/DesignProvider";
+import ReportErrorButton from "@/features/shared/components/common/ReportErrorButton";
 import { useQuery } from "@tanstack/react-query";
 import { listErrorReports } from "@/api/errorReportsAPI";
-import { Badge } from "@/components/ds";
-import { SupportTicketsBadge } from "@/components/common/SupportTicketsBadge";
+import { Badge } from "@/features/shared/components/ds";
+import { SupportTicketsBadge } from "@/features/shared/components/common/SupportTicketsBadge";
 import { shouldIgnoreHotkey, matchesHotkey, getHotkeyById, HOTKEYS_CONFIG, isMac } from "@/utils/hotkeys";
-import HotkeysModal from "@/components/common/HotkeysModal";
+import HotkeysModal from "@/features/shared/components/common/HotkeysModal";
 import { HotkeysModalProvider, useHotkeysModal } from "@/hooks/useHotkeysModal.jsx";
 import { useAppVersion } from "@/hooks/useAppVersion";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
-import LevelBadge from "@/components/common/LevelBadge";
-import HardcodeInspector from "@/components/design/HardcodeInspector";
-import SystemTopBar from "@/components/common/SystemTopBar";
+import LevelBadge from "@/features/shared/components/common/LevelBadge";
+import HardcodeInspector from "@/features/design/components/HardcodeInspector";
+import SystemTopBar from "@/features/shared/components/common/SystemTopBar";
 
 /* ------------------------------ Feature Flags ------------------------------ */
 // Set to true to show floating tool buttons (legacy behavior)

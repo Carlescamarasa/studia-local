@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/features/shared/components/ui/button";
+import { Textarea } from "@/features/shared/components/ui/textarea";
 import { CheckCircle, XCircle, Clock, RotateCcw, Home, Loader2 } from "lucide-react";
-import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
-import MediaLinksInput from "@/shared/components/media/MediaLinksInput";
+import MediaPreviewModal from "@/features/shared/components/media/MediaPreviewModal";
+import MediaLinksInput from "@/features/shared/components/media/MediaLinksInput";
 import { componentStyles } from "@/design/componentStyles";
 import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
 import { toast } from "sonner";
@@ -13,7 +13,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogDescription,
-} from "@/components/ui/dialog";
+} from "@/features/shared/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { shouldIgnoreHotkey } from "@/utils/hotkeys";
 

@@ -2,18 +2,18 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useBloques } from "@/hooks/entities/useBloques";
-import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
-import { useUsers } from "@/hooks/entities/useUsers";
+import { useBloques } from "@/features/estudio/hooks/useBloques";
+import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
+import { useUsers } from "@/features/admin/hooks/useUsers";
 // Updated Card, Badge, Alert paths from @/components/ui to @/components/ds
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ds";
-import { Alert, AlertDescription } from "@/components/ds";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
+import { Button } from "@/features/shared/components/ui/button";
+import { Input } from "@/features/shared/components/ui/input";
+import { Label } from "@/features/shared/components/ui/label";
+import { Textarea } from "@/features/shared/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
+import { Badge } from "@/features/shared/components/ds";
+import { Alert, AlertDescription } from "@/features/shared/components/ds";
 import {
   ArrowLeft, Target, User, Music, BookOpen, Calendar, Settings, ChevronDown, ChevronRight, Clock, Edit, XCircle, Shield, Save, X, SlidersHorizontal, Trash2, // Existing icons
   Eye, CheckCircle2, Layers, PlayCircle, MessageSquare // New icons from outline
@@ -22,12 +22,12 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 // Preserving all helper functions and components used in the original file
-import { getNombreVisible, formatLocalDate, parseLocalDate, startOfMonday, resolveUserIdActual } from "@/components/utils/helpers";
+import { getNombreVisible, formatLocalDate, parseLocalDate, startOfMonday, resolveUserIdActual } from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { calcularTiempoSesion } from "@/components/study/sessionSequence";
-import SessionContentView from "@/shared/components/study/SessionContentView";
-import PageHeader from "@/components/ds/PageHeader";
-import { LoadingSpinner } from "@/components/ds";
+import { calcularTiempoSesion } from "@/features/estudio/components/sessionSequence";
+import SessionContentView from "@/features/shared/components/study/SessionContentView";
+import { PageHeader } from "@/features/shared/components/ds/PageHeader";
+import { LoadingSpinner } from "@/features/shared/components/ds";
 import { componentStyles } from "@/design/componentStyles";
 
 export default function AsignacionDetallePage() {

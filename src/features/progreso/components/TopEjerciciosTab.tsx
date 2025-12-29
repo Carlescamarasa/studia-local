@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ds";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/features/shared/components/ds";
+import { Input } from "@/features/shared/components/ui/input";
 import { Star } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
-import UnifiedTable from "@/components/tables/UnifiedTable";
+import UnifiedTable from "@/features/shared/components/tables/UnifiedTable";
 import { formatDuracionHM } from "../utils/progresoUtils";
 import TopEjercicioModal from "./TopEjercicioModal";
 

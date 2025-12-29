@@ -2,23 +2,23 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/features/shared/components/ui/button";
+import { Input } from "@/features/shared/components/ui/input";
+import { Label } from "@/features/shared/components/ui/label";
+import { Textarea } from "@/features/shared/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ui/card";
 import { X, ChevronRight, ChevronLeft, Check, Search, Calendar, Users, Music, BookOpen, Settings, Target } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/features/shared/components/ui/badge";
+import { Checkbox } from "@/features/shared/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/features/shared/components/ui/alert";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { formatLocalDate, parseLocalDate, startOfMonday, displayName } from "@/components/utils/helpers";
+import { formatLocalDate, parseLocalDate, startOfMonday, displayName } from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { useAuth } from "@/auth/AuthProvider";
-import { useUsers } from "@/hooks/entities/useUsers";
+import { useUsers } from "@/features/admin/hooks/useUsers";
 import { componentStyles } from "@/design/componentStyles";
 
 // ============================================================================

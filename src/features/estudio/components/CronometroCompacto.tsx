@@ -1,6 +1,6 @@
 import React from "react";
 import { Clock } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/features/shared/components/ui/badge";
 
 interface CronometroCompactoProps {
     /** Tiempo actual en segundos */

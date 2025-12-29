@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate, useSearchParams, useLocation } from "react-router-dom";
-import RequireAuth from "@/components/auth/RequireAuth";
-import PublicRoute from "@/components/auth/PublicRoute";
+import RequireAuth from "@/features/auth/components/RequireAuth";
+import PublicRoute from "@/features/auth/components/PublicRoute";
 import { useAuth } from "@/auth/AuthProvider";
 
 // Lazy load de páginas para code-splitting

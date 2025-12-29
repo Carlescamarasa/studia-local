@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, Play, Loader2, CheckCircle2, XCircle, AlertTriangle, Clock } from 'lucide-react';
-import { Button } from '@/components/ds/Button';
+import { Button } from '@/features/shared/components/ds/Button';
 import { componentStyles } from '@/design/componentStyles';
 import TestEvidence from './TestEvidence';
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertTriangle, ExternalLink, FileText, Terminal, ArrowRight, Copy } from 'lucide-react';
-import { Button } from '@/components/ds/Button';
-import { Card, CardContent } from '@/components/ds';
+import { Button } from '@/features/shared/components/ds/Button';
+import { Card, CardContent } from '@/features/shared/components/ds';
 import { componentStyles } from '@/design/componentStyles';
 import { toast } from 'sonner';
 

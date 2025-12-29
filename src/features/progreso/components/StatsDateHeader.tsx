@@ -1,5 +1,5 @@
 import React from "react";
-import DateRangePicker from "@/components/ui/DateRangePicker";
+import DateRangePicker from "@/features/shared/components/ui/DateRangePicker";
 import { cn } from "@/lib/utils";
 
 /**

@@ -2,28 +2,28 @@
 import React, { useState, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAsignaciones } from "@/hooks/entities/useAsignaciones";
-import { useUsers } from "@/hooks/entities/useUsers";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ds";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ds";
-import { Input } from "@/components/ui/input";
+import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
+import { useUsers } from "@/features/admin/hooks/useUsers";
+import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
+import { Button } from "@/features/shared/components/ui/button";
+import { Badge } from "@/features/shared/components/ds";
+import { Input } from "@/features/shared/components/ui/input";
 import {
   Target, Eye, Edit, Copy, Trash2, FileDown, Search, X, Plus, RotateCcw, XCircle, User, Users, ChevronLeft, ChevronRight, Calendar
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import RequireRole from "@/components/auth/RequireRole";
-import UnifiedTable from "@/components/tables/UnifiedTable";
+import RequireRole from "@/features/auth/components/RequireRole";
+import UnifiedTable from "@/features/shared/components/tables/UnifiedTable";
 import FormularioRapido from "@/features/asignaciones/components/FormularioRapido";
 import StudentSearchBar from "@/features/asignaciones/components/StudentSearchBar";
-import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, resolveUserIdActual, startOfMonday, calcularLunesSemanaISO, calcularOffsetSemanas, isoWeekNumberLocal } from "@/components/utils/helpers";
+import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, resolveUserIdActual, startOfMonday, calcularLunesSemanaISO, calcularOffsetSemanas, isoWeekNumberLocal } from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import MultiSelect from "@/components/ui/MultiSelect";
-import PageHeader from "@/components/ds/PageHeader";
-import PeriodHeader from "@/components/common/PeriodHeader";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
+import MultiSelect from "@/features/shared/components/ui/MultiSelect";
+import { PageHeader } from "@/features/shared/components/ds/PageHeader";
+import PeriodHeader from "@/features/shared/components/common/PeriodHeader";
 import { componentStyles } from "@/design/componentStyles";
 import {
   Dialog,
@@ -32,8 +32,8 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+} from "@/features/shared/components/ui/dialog";
+import { Label } from "@/features/shared/components/ui/label";
 
 export default function AsignacionesPage() {
   return (
