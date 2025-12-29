@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
-import { remoteDataAPI } from "@/api/remote/api";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useUsers } from "@/features/shared/hooks/useUsers";
+import { useTargetUser } from "@/features/shared/hooks/useTargetUser";
+import { useUpdateUserMutation } from "@/features/shared/hooks/useUpdateUserMutation";
 import { Button } from "@/features/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Alert, AlertDescription, LoadingSpinner } from "@/features/shared/components/ds";
 import { Input } from "@/features/shared/components/ui/input";
@@ -41,32 +42,9 @@ export default function PerfilPage() {
   // Usar hook centralizado para todos los usuarios
   const { data: allUsers } = useUsers();
 
-  const { data: targetUser, isLoading } = useQuery({
-    queryKey: ['targetUser', userIdParam, effectiveUser.effectiveUserId],
-    queryFn: async () => {
-      // Si hay userIdParam y soy admin, buscar ese usuario
-      if (userIdParam && effectiveUser?.effectiveRole === 'ADMIN') {
-        const found = allUsers?.find(u => u.id === userIdParam);
-        if (found) return found;
-        return null;
-      }
-
-      // Si no, soy yo mismo (usar effectiveUserId para buscar en allUsers y tener el objeto completo)
-      if (effectiveUser?.effectiveUserId) {
-        const found = allUsers?.find(u => u.id === effectiveUser.effectiveUserId);
-        if (found) return found;
-      }
-
-      // Fallback si no se encuentra en allUsers (ej. carga inicial), usar datos limitados del context
-      return {
-        id: effectiveUser.effectiveUserId,
-        email: effectiveUser.effectiveEmail,
-        nombreCompleto: effectiveUser.effectiveUserName,
-        rolPersonalizado: effectiveUser.effectiveRole,
-        // Propiedades faltantes se manejarán con defaults en el componente
-      } as any;
-    },
-    enabled: !!allUsers && !effectiveUser.loading,
+  // Usar hook unificado para cargar el usuario objetivo
+  const { targetUser, isLoading, isEditingOwnProfile } = useTargetUser({
+    userId: userIdParam,
   });
 
   const getNombreCompleto = (user: any) => {
@@ -85,35 +63,20 @@ export default function PerfilPage() {
         profesorAsignadoId: targetUser.profesorAsignadoId || '',
         nivel: targetUser.nivel || '',
         telefono: targetUser.telefono || '',
-        mediaLinks: targetUser.mediaLinks || [],
+        mediaLinks: (targetUser as any).mediaLinks || [],
       });
     }
   }, [targetUser]);
 
-  const updateUserMutation = useMutation({
-    mutationFn: async (data: any) => {
-      if (!targetUser || !targetUser.id) {
-        throw new Error('No se puede actualizar: usuario no encontrado');
-      }
-
-      if (targetUser.id === effectiveUser?.effectiveUserId) {
-        // Actualizar perfil propio
-        return await localDataClient.auth.updateMe(data);
-      } else {
-        // Actualizar perfil de otro usuario (solo admins)
-        return await localDataClient.entities.User.update(targetUser.id, data);
-      }
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      await queryClient.invalidateQueries({ queryKey: ['targetUser'] });
-      await queryClient.invalidateQueries({ queryKey: ['users'] });
-      await queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-
+  // Usar hook unificado para la mutación de actualización
+  const { mutate: updateUser, isPending: isUpdating } = useUpdateUserMutation({
+    targetUserId: targetUser?.id,
+    showToasts: false, // We'll handle toasts manually for custom messages
+    onSuccess: () => {
       setSaveResult({ success: true, message: '✅ Usuario actualizado correctamente.' });
       toast.success('Perfil actualizado correctamente.');
 
-      if (targetUser?.id === effectiveUser?.effectiveUserId && editedData.rolPersonalizado !== effectiveUser.effectiveRole) {
+      if (isEditingOwnProfile && editedData.rolPersonalizado !== effectiveUser.effectiveRole) {
         setTimeout(() => {
           const mainPages = {
             ADMIN: '/usuarios',
@@ -178,7 +141,7 @@ export default function PerfilPage() {
       mediaLinks: editedData.mediaLinks || [],
     };
 
-    updateUserMutation.mutate(dataToSave);
+    updateUser(dataToSave);
   };
 
 
@@ -188,7 +151,7 @@ export default function PerfilPage() {
     ESTU: 'Estudiante',
   };
 
-  const isEditingOwnProfile = targetUser?.id === effectiveUser?.effectiveUserId;
+  // isEditingOwnProfile is now provided by useTargetUser hook
   const canEditRole = effectiveUser?.effectiveRole === 'ADMIN';
   const canEditProfesor = (effectiveUser?.effectiveRole === 'ADMIN' || effectiveUser?.effectiveRole === 'PROF')
     && targetUser?.rolPersonalizado === 'ESTU';
@@ -430,12 +393,12 @@ export default function PerfilPage() {
             <div className="flex items-center justify-between">
               <div className={`text-sm ${componentStyles.typography.smallMetaText}`}>
                 <p className="text-[var(--color-text-primary)]">ID de usuario: <span className="font-mono text-[var(--color-text-secondary)]">{targetUser?.id}</span></p>
-                <p className="text-[var(--color-text-primary)]">Registrado: <span className="text-[var(--color-text-secondary)]">{targetUser?.created_date ? new Date(targetUser.created_date).toLocaleDateString('es-ES') : '-'}</span></p>
+                <p className="text-[var(--color-text-primary)]">Registrado: <span className="text-[var(--color-text-secondary)]">{targetUser?.createdAt ? new Date(targetUser.createdAt).toLocaleDateString('es-ES') : '-'}</span></p>
               </div>
               <div className="flex gap-2">
                 <Button
                   onClick={handleSave}
-                  loading={updateUserMutation.isPending}
+                  loading={isUpdating}
                   loadingText="Guardando..."
                   className={componentStyles.buttons.primary}
                 >
