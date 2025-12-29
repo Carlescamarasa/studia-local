@@ -7,24 +7,21 @@ import { useAuth } from "@/auth/AuthProvider";
 // Lazy load de páginas para code-splitting
 const IndexPage = lazy(() => import("@/pages/index.jsx"));
 const Usuarios = lazy(() => import("@/features/admin/pages/UsuariosPage"));
-const Reportes = lazy(() => import("@/pages/reportes.jsx"));
+const Reportes = lazy(() => import("@/features/reports/pages/ReportesPage"));
 const Planes = lazy(() => import("@/pages/planes.jsx"));
 const Piezas = lazy(() => import("@/pages/piezas.jsx"));
 const Sesiones = lazy(() => import("@/pages/sesiones.jsx"));
-const Semana = lazy(() => import("@/pages/semana.jsx"));
-const Semanas = lazy(() => import("@/pages/semanas.jsx"));
+const Semana = lazy(() => import("@/features/progreso/pages/SemanaPage"));
+const Semanas = lazy(() => import("@/features/progreso/pages/SemanasPage"));
 const AsignacionDetalle = lazy(() => import("@/features/asignaciones/pages/AsignacionDetallePage"));
 const AdaptarAsignacion = lazy(() => import("@/features/asignaciones/pages/AdaptarAsignacionPage"));
 const Hoy = lazy(() => import("@/pages/hoy.jsx"));
 const Perfil = lazy(() => import("@/pages/perfil.jsx"));
-const ImportExport = lazy(() => import("@/pages/import-export.jsx")); // Still used in redirect? No, redirect goes to config?tab=import. The page itself is likely used inside Config tabs or not. Layout says Config uses ImportExportContent.  Actually ImportExport page might be different from Content. Let's check config imports. 
-// Config page imports: import ImportExportContent from "./ImportExportContent". 
-// src/pages/import-export.jsx might be the standalone page. 
-// If I redirect /import-export to /configuracion?tab=import, I don't need the Route for import-export, so I don't need the lazy import of the page.
-// Estudiantes page deprecated - redirects to /preparacion
+
+// Student
 const Calendario = lazy(() => import("@/pages/calendario.jsx"));
 const LocalPage = lazy(() => import("@/pages/local.jsx"));
-const Biblioteca = lazy(() => import("@/pages/biblioteca.jsx"));
+const Biblioteca = lazy(() => import("@/features/library/pages/BibliotecaPage"));
 // Removed Design
 // Removed Testseed
 const TestLoading = lazy(() => import("@/pages/test-loading.jsx"));
@@ -48,7 +45,7 @@ const Progreso = lazy(() => import("@/pages/progreso"));
 const Cuaderno = lazy(() => import("@/features/cuaderno"));
 // Legacy: Preparacion removed, now redirects to Cuaderno
 const Configuracion = lazy(() => import("@/features/admin/pages/ConfiguracionPage"));
-const Studia = lazy(() => import("@/pages/studia.jsx"));
+const Studia = lazy(() => import("@/features/estudio/pages/StudiaPage"));
 const NotFound = lazy(() => import("@/pages/NotFound.jsx"));
 
 // Componente de carga

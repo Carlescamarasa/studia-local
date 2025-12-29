@@ -13,12 +13,14 @@ const DesignContent = lazy(() => import('../components/DesignContent'));
 const MaintenancePanel = lazy(() => import('../components/maintenance/MaintenancePanel'));
 const ImportExportContent = lazy(() => import('../components/ImportExportContent'));
 const MultimediaContent = lazy(() => import('../components/MultimediaContent'));
+const LevelConfigContent = lazy(() => import('../components/LevelConfigContent'));
 
 const TABS = [
     { id: 'version', label: 'Versión', icon: Info, color: 'var(--color-info)' },
     { id: 'design', label: 'Diseño', icon: Layout, color: 'var(--color-primary)' },
     { id: 'maintenance', label: 'Mantenimiento', icon: Activity, color: 'var(--color-warning)' },
     { id: 'multimedia', label: 'Multimedia', icon: PlayCircle, color: 'var(--color-success)' },
+    { id: 'levels', label: 'Niveles', icon: Activity, color: 'var(--color-info)' },
     { id: 'import', label: 'Datos', icon: Package, color: 'var(--color-primary)' },
 ];
 
@@ -82,6 +84,10 @@ export default function ConfiguracionPage() {
 
                             <TabsContent value="multimedia" className="outline-none">
                                 <MultimediaContent />
+                            </TabsContent>
+
+                            <TabsContent value="levels" className="outline-none">
+                                <LevelConfigContent />
                             </TabsContent>
 
                             <TabsContent value="import" className="outline-none">

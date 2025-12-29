@@ -2,8 +2,8 @@
  * ImportExportContent - Embedded import/export content for Configuración page
  */
 
-import ImportExportPage from '@/pages/import-export';
+import ImportExportView from '@/features/importExport/components/ImportExportView';
 
 export default function ImportExportContent() {
-    return <ImportExportPage embedded />;
+    return <ImportExportView />;
 }

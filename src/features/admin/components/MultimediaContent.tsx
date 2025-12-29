@@ -2,7 +2,7 @@
  * MultimediaContent - Embedded multimedia content for Configuración page
  */
 
-import ContenidoMultimediaPage from '@/pages/contenido-multimedia';
+import ContenidoMultimediaPage from './MultimediaManager';
 
 export default function MultimediaContent() {
     return <ContenidoMultimediaPage embedded />;

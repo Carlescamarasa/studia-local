@@ -1025,7 +1025,7 @@ function ProgresoPageContent() {
                                         <TabsTriggerAny
                                             key={tab.id}
                                             value={tab.id}
-                                            className="px-3 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                                            className="px-3 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 whitespace-nowrap text-[var(--color-text-secondary)] data-[state=active]:bg-[var(--color-surface-elevated)] data-[state=active]:text-[var(--color-text-primary)] data-[state=active]:shadow-sm transition-all"
                                         >
                                             <Icon className="w-3.5 h-3.5" />
                                             {tab.label}

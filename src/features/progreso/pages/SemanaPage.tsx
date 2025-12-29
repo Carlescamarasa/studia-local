@@ -15,10 +15,10 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { calcularLunesSemanaISO, calcularOffsetSemanas, calcularTiempoSesion, isoWeekNumberLocal } from "../components/utils/helpers";
+import { calcularLunesSemanaISO, calcularOffsetSemanas, calcularTiempoSesion, isoWeekNumberLocal } from "@/components/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { displayName } from "@/components/utils/helpers";
-import PeriodHeader from "../components/common/PeriodHeader";
+import PeriodHeader from "@/components/common/PeriodHeader";
 import RequireRole from "@/components/auth/RequireRole";
 import PageHeader from "@/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
@@ -29,10 +29,11 @@ import MediaPreviewModal from "@/shared/components/media/MediaPreviewModal";
 import { log } from "@/utils/log";
 
 // --- Helpers de fechas locales ---
-const pad2 = (n) => String(n).padStart(2, "0");
-const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-const parseLocalDate = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
-const startOfMonday = (date) => {
+// --- Helpers de fechas locales ---
+const pad2 = (n: number) => String(n).padStart(2, "0");
+const formatLocalDate = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const parseLocalDate = (s: string) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const startOfMonday = (date: Date) => {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const dow = d.getDay();
   const diff = dow === 0 ? -6 : 1 - dow;
@@ -45,14 +46,14 @@ function SemanaPageContent() {
   const [semanaActualISO, setSemanaActualISO] = useState(() => {
     return calcularLunesSemanaISO(new Date());
   });
-  const [expandedSessions, setExpandedSessions] = useState(new Set());
+  const [expandedSessions, setExpandedSessions] = useState(new Set<string>());
   const [showMediaModal, setShowMediaModal] = useState(false);
-  const [selectedMediaLinks, setSelectedMediaLinks] = useState([]);
+  const [selectedMediaLinks, setSelectedMediaLinks] = useState<string[]>([]);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
   const [tipoFeedbackSemana, setTipoFeedbackSemana] = useState('todos'); // 'todos' | 'profesor' | 'sesiones' | 'evaluaciones'
   const queryClient = useQueryClient();
 
-  const effectiveUser = useEffectiveUser();
+  const { effectiveUserId, effectiveEmail } = useEffectiveUser();
 
   const { data: asignaciones = [] } = useAsignaciones();
 
@@ -68,15 +69,17 @@ function SemanaPageContent() {
 
   // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
   // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD
+  // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
+  // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD
   const usuarioActual = usuarios.find(u => {
-    if (effectiveUser?.email && u.email) {
-      return u.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim();
+    if (effectiveEmail && u.email) {
+      return u.email.toLowerCase().trim() === (effectiveEmail as string).toLowerCase().trim();
     }
-    return u.id === effectiveUser?.id;
-  }) || effectiveUser;
+    return u.id === effectiveUserId;
+  });
 
   // Usar el ID del usuario de la base de datos, no el de Supabase Auth
-  const userIdActual = usuarioActual?.id || effectiveUser?.id;
+  const userIdActual = usuarioActual?.id || effectiveUserId;
 
   const asignacionActiva = asignaciones.find(a => {
     if (a.alumnoId !== userIdActual) return false;
@@ -99,7 +102,7 @@ function SemanaPageContent() {
         // Ordenar por fecha descendente (más reciente primero)
         const dateA = parseLocalDate(a.semanaInicioISO);
         const dateB = parseLocalDate(b.semanaInicioISO);
-        return dateB - dateA;
+        return dateB.getTime() - dateA.getTime();
       });
   }, [feedbacksSemanal, userIdActual]);
 
@@ -112,13 +115,14 @@ function SemanaPageContent() {
       .filter(r => r.calificacion != null) // Solo sesiones válidas (con calificación)
       .sort((a, b) => {
         // Ordenar por fecha descendente (más reciente primero)
-        return new Date(b.inicioISO) - new Date(a.inicioISO);
+        return new Date(b.inicioISO).getTime() - new Date(a.inicioISO).getTime();
       });
   }, [registrosSesion, userIdActual]);
 
   // Combinar feedbacks, evaluaciones y registros, ordenados por timestamp, filtrando solo semana actual
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const itemsCombinados = useMemo(() => {
-    const items = [];
+    const items: any[] = [];
     const lunesSemana = parseLocalDate(semanaActualISO);
     const domingoSemana = new Date(lunesSemana);
     domingoSemana.setDate(domingoSemana.getDate() + 6);
@@ -129,7 +133,7 @@ function SemanaPageContent() {
       const fechaFeedback = feedback.semanaInicioISO ? parseLocalDate(feedback.semanaInicioISO) : null;
       if (fechaFeedback && fechaFeedback >= lunesSemana && fechaFeedback <= domingoSemana) {
         // Supabase returns createdAt (camelCase via snakeToCamel), local has created_at
-        const timestampStr = feedback.createdAt || feedback.created_at;
+        const timestampStr = (feedback as any).createdAt || (feedback as any).created_at;
         const timestamp = timestampStr ? new Date(timestampStr) : fechaFeedback;
         items.push({
           tipo: 'feedback',
@@ -185,12 +189,12 @@ function SemanaPageContent() {
       });
 
     // Ordenar por timestamp descendente (más reciente primero)
-    return items.sort((a, b) => b.timestamp - a.timestamp);
+    return items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [feedbacksProfesor, registrosSesionesAlumno, evaluacionesTecnicas, userIdActual, semanaActualISO]);
 
   // Mapa de usuarios para mostrar nombres
   const usuariosMap = useMemo(() => {
-    const map = {};
+    const map: Record<string, any> = {};
     usuarios.forEach(u => {
       map[u.id] = u;
     });
@@ -213,7 +217,7 @@ function SemanaPageContent() {
   }, [itemsCombinados, tipoFeedbackSemana]);
 
   // Normalizar media links: acepta strings u objetos con url
-  const normalizeMediaLinks = (rawLinks) => {
+  const normalizeMediaLinks = (rawLinks: any) => {
     if (!rawLinks || !Array.isArray(rawLinks)) return [];
     return rawLinks
       .map((raw) => {
@@ -226,7 +230,7 @@ function SemanaPageContent() {
       .filter((url) => typeof url === 'string' && url.length > 0);
   };
 
-  const handlePreviewMedia = (index, mediaLinks) => {
+  const handlePreviewMedia = (index: number, mediaLinks: any[]) => {
     if (!mediaLinks || !Array.isArray(mediaLinks) || mediaLinks.length === 0) return;
 
     // Normalizar media links
@@ -242,7 +246,7 @@ function SemanaPageContent() {
   };
 
   const deleteRegistroMutation = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (id: any) => {
       return await localDataClient.entities.RegistroSesion.delete(id);
     },
     onSuccess: () => {
@@ -250,7 +254,7 @@ function SemanaPageContent() {
     },
   });
 
-  const handleDeleteRegistro = async (registro) => {
+  const handleDeleteRegistro = async (registro: any) => {
     if (!window.confirm('¿Eliminar esta sesión de estudio? Esta acción no se puede deshacer.')) {
       return;
     }
@@ -262,7 +266,7 @@ function SemanaPageContent() {
     }
   };
 
-  const cambiarSemana = (direccion) => {
+  const cambiarSemana = (direccion: number) => {
     const base = parseLocalDate(semanaActualISO);
     base.setDate(base.getDate() + (direccion * 7));
     const lunes = startOfMonday(base);
@@ -293,7 +297,7 @@ function SemanaPageContent() {
     'S&A': componentStyles.status.badgeDefault,
   };
 
-  const toggleSession = (key) => {
+  const toggleSession = (key: string) => {
     setExpandedSessions(prev => {
       const next = new Set(prev);
       next.has(key) ? next.delete(key) : next.add(key);
@@ -324,6 +328,7 @@ function SemanaPageContent() {
                 onPrev={() => cambiarSemana(-1)}
                 onNext={() => cambiarSemana(1)}
                 onToday={irSemanaActual}
+                className=""
               />
             );
           })()
@@ -356,8 +361,8 @@ function SemanaPageContent() {
             <CardHeader>
               <div className="flex items-start md:items-center justify-between gap-3 flex-col md:flex-row">
                 <CardTitle className={componentStyles.typography.cardTitle}>{semanaDelPlan.nombre}</CardTitle>
-                <Badge className={focoColors[semanaDelPlan.foco]}>
-                  {focoLabels[semanaDelPlan.foco]}
+                <Badge className={(focoColors as any)[semanaDelPlan.foco]}>
+                  {(focoLabels as any)[semanaDelPlan.foco]}
                 </Badge>
               </div>
             </CardHeader>
@@ -443,8 +448,8 @@ function SemanaPageContent() {
                                   <Clock className="w-3 h-3 mr-1" />
                                   {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
                                 </Badge>
-                                <Badge className={`rounded-full ${focoColors[sesion.foco]}`} variant="outline">
-                                  {focoLabels[sesion.foco]}
+                                <Badge className={`rounded-full ${(focoColors as any)[sesion.foco]}`} variant="outline">
+                                  {(focoLabels as any)[sesion.foco]}
                                 </Badge>
                               </div>
                               {!isExpanded && (
@@ -462,7 +467,7 @@ function SemanaPageContent() {
                           {/* Contenido expandido */}
                           {isExpanded && (
                             <div className="mt-2" onClick={(e) => e.stopPropagation()}>
-                              <SessionContentView sesion={sesion} compact />
+                              <SessionContentView sesion={sesion as any} compact />
                             </div>
                           )}
                         </div>
@@ -677,7 +682,7 @@ function SemanaPageContent() {
                           minute: '2-digit'
                         });
 
-                        const getCalificacionBadge = (cal) => {
+                        const getCalificacionBadge = (cal: number) => {
                           if (!cal || cal <= 0) return null;
                           const calInt = Math.round(cal);
                           if (calInt === 1) return componentStyles.status.badgeDanger;

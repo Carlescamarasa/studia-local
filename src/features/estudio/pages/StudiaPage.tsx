@@ -125,20 +125,20 @@ function StudiaPageContent() {
     const tryCodes = searchParams.get('codes')?.split(',').filter(Boolean) || [];
 
     // Session state
-    const [sesionActiva, setSesionActiva] = useState(null);
+    const [sesionActiva, setSesionActiva] = useState<any>(null);
     const [indiceActual, setIndiceActual] = useState(0);
     const [tiempoActual, setTiempoActual] = useState(0);
     const [cronometroActivo, setCronometroActiva] = useState(false);
-    const [completados, setCompletados] = useState(new Set());
-    const [omitidos, setOmitidos] = useState(new Set());
+    const [completados, setCompletados] = useState(new Set<number>());
+    const [omitidos, setOmitidos] = useState(new Set<number>());
     const [sesionFinalizada, setSesionFinalizada] = useState(false);
-    const [datosFinal, setDatosFinal] = useState(null);
+    const [datosFinal, setDatosFinal] = useState<any>(null);
     const [mostrarModalCancelar, setMostrarModalCancelar] = useState(false);
     const [mostrarItinerario, setMostrarItinerario] = useState(false);
     const [reportModalAbierto, setReportModalAbierto] = useState(false);
     const [timerCollapsed, setTimerCollapsed] = useState(false);
     const [mostrarPiano, setMostrarPiano] = useState(false);
-    const [ppmAlcanzado, setPpmAlcanzado] = useState(null);
+    const [ppmAlcanzado, setPpmAlcanzado] = useState<number | null>(null);
     const [footerHeight, setFooterHeight] = useState(80);
     const [instruccionesOpen, setInstruccionesOpen] = useState(true);
     const [objetivoOpen, setObjetivoOpen] = useState(true);
@@ -182,26 +182,26 @@ function StudiaPageContent() {
 
     // Timing state
     const [registroSesionId, setRegistroSesionId] = useState(null);
-    const [timestampInicio, setTimestampInicio] = useState(null);
-    const [timestampUltimoPausa, setTimestampUltimoPausa] = useState(null);
+    const [timestampInicio, setTimestampInicio] = useState<number | null>(null);
+    const [timestampUltimoPausa, setTimestampUltimoPausa] = useState<number | null>(null);
     const [tiempoAcumuladoAntesPausa, setTiempoAcumuladoAntesPausa] = useState(0);
-    const bloquesPendientesRef = useRef([]);
-    const colaOfflineRef = useRef([]);
+    const bloquesPendientesRef = useRef<any[]>([]);
+    const colaOfflineRef = useRef<any[]>([]);
 
-    const effectiveUser = useEffectiveUser();
+    const { effectiveUserId, effectiveEmail } = useEffectiveUser();
 
     // Load users (centralized hook)
     const { data: usuarios = [] } = useUsers();
 
     // Find actual user
     const alumnoActual = usuarios.find(u => {
-        if (effectiveUser?.email && u.email) {
-            return u.email.toLowerCase().trim() === effectiveUser.email.toLowerCase().trim();
+        if (effectiveEmail && u.email) {
+            return u.email.toLowerCase().trim() === (effectiveEmail as string).toLowerCase().trim();
         }
-        return u.id === effectiveUser?.id;
-    }) || effectiveUser;
+        return u.id === effectiveUserId;
+    });
 
-    const userIdActual = alumnoActual?.id || effectiveUser?.id;
+    const userIdActual = alumnoActual?.id || effectiveUserId;
 
     // Load assignments (centralized hook) - In try mode, we still load but won't use them
     const { data: asignacionesRaw = [], isLoading: loadingAsignaciones } = useAsignaciones();
@@ -306,8 +306,8 @@ function StudiaPageContent() {
         setIndiceActual(0);
         setTiempoActual(0);
         setCronometroActiva(false);
-        setCompletados(new Set());
-        setOmitidos(new Set());
+        setCompletados(new Set<number>());
+        setOmitidos(new Set<number>());
         setSesionFinalizada(false);
         setDatosFinal(null);
         setRegistroSesionId(null);
@@ -325,7 +325,7 @@ function StudiaPageContent() {
         // Process session with variations (same logic as empezarSesion in hoy.jsx)
         const sesionActualizada = {
             ...sesionDelPlan,
-            bloques: (sesionDelPlan.bloques || []).map(bloqueSnapshot => {
+            bloques: (sesionDelPlan.bloques || []).map((bloqueSnapshot: any) => {
                 const bloqueActual = bloquesActuales.find(b => b.code === bloqueSnapshot.code);
                 if (!bloqueActual) return bloqueSnapshot;
 
@@ -334,7 +334,7 @@ function StudiaPageContent() {
                 let pickedVariation = null;
 
                 if (policy === 'fixed' && fixedVariationKey && bloqueActual.variations) {
-                    pickedVariation = bloqueActual.variations.find(v => v.id === fixedVariationKey || v.label === fixedVariationKey);
+                    pickedVariation = bloqueActual.variations.find((v: any) => v.id === fixedVariationKey || v.label === fixedVariationKey);
                 } else if (policy === 'random' && bloqueActual.variations?.length > 0) {
                     const userLevel = alumnoActual?.nivelTecnico || 1;
                     const validVars = getValidVariations(bloqueActual, userLevel);
@@ -365,9 +365,9 @@ function StudiaPageContent() {
                 } else if (bloqueActual.content?.mediaItems?.length > 0) {
                     mediaLinksFinal = bloqueActual.content.mediaItems;
                 } else if (bloqueActual.mediaLinks?.length > 0) {
-                    mediaLinksFinal = bloqueActual.mediaLinks.map(u => typeof u === 'string' ? { url: u, name: null } : u);
+                    mediaLinksFinal = bloqueActual.mediaLinks.map((u: any) => typeof u === 'string' ? { url: u, name: null } : u);
                 } else if (bloqueSnapshot.mediaLinks?.length > 0) {
-                    mediaLinksFinal = bloqueSnapshot.mediaLinks.map(u => typeof u === 'string' ? { url: u, name: null } : u);
+                    mediaLinksFinal = bloqueSnapshot.mediaLinks.map((u: any) => typeof u === 'string' ? { url: u, name: null } : u);
                 }
 
                 const baseName = bloqueActual.nombre || bloqueSnapshot.nombre;
@@ -394,8 +394,8 @@ function StudiaPageContent() {
         setIndiceActual(0);
         setTiempoActual(0);
         setCronometroActiva(false);
-        setCompletados(new Set());
-        setOmitidos(new Set());
+        setCompletados(new Set<number>());
+        setOmitidos(new Set<number>());
         setSesionFinalizada(false);
         setDatosFinal(null);
         setRegistroSesionId(null);
@@ -497,7 +497,7 @@ function StudiaPageContent() {
     }, [mostrarModalCancelar, mostrarItinerario, showHotkeysModal, reportModalAbierto, pausadoPorModal, sesionFinalizada]);
 
     // Helper functions
-    const guardarRegistroBloque = async (indice, estado, duracionReal = 0) => {
+    const guardarRegistroBloque = async (indice: number, estado: string, duracionReal = 0) => {
         if (!sesionActiva) return;
         const listaEjecucion = aplanarSesion(sesionActiva);
         const bloque = listaEjecucion[indice];
@@ -532,8 +532,8 @@ function StudiaPageContent() {
         setSesionActiva(null);
         setIndiceActual(0);
         setTiempoActual(0);
-        setCompletados(new Set());
-        setOmitidos(new Set());
+        setCompletados(new Set<number>());
+        setOmitidos(new Set<number>());
         setSesionFinalizada(false);
         setDatosFinal(null);
         setRegistroSesionId(null);
@@ -549,8 +549,8 @@ function StudiaPageContent() {
         setIndiceActual(0);
         setTiempoActual(0);
         setCronometroActiva(false);
-        setCompletados(new Set());
-        setOmitidos(new Set());
+        setCompletados(new Set<number>());
+        setOmitidos(new Set<number>());
         setSesionFinalizada(false);
         setDatosFinal(null);
         const ahora = Date.now();
@@ -651,15 +651,15 @@ function StudiaPageContent() {
         }
     };
 
-    const finalizarSesion = async (calidad, notas, mediaLinks) => {
+    const finalizarSesion = async (calidad: number, notas: string, mediaLinks: any[]) => {
         if (!asignacionActiva || !sesionActiva) return;
 
         const listaEjecucion = aplanarSesion(sesionActiva);
         const tiempoPrevisto = listaEjecucion
-            .filter(e => e.tipo !== 'AD')
-            .reduce((sum, e) => sum + (e.duracionSeg || 0), 0);
+            .filter((e: any) => e.tipo !== 'AD')
+            .reduce((sum: number, e: any) => sum + (e.duracionSeg || 0), 0);
 
-        const duracionRealTotal = bloquesPendientesRef.current.reduce((acc, b) => acc + (b.duracionRealSeg || 0), 0);
+        const duracionRealTotal = bloquesPendientesRef.current.reduce((acc: number, b: any) => acc + (b.duracionRealSeg || 0), 0);
 
         const dataRegistro = {
             asignacionId: asignacionActiva.id,
@@ -703,10 +703,12 @@ function StudiaPageContent() {
             await localDataClient.entities.RegistroBloque.bulkCreate(bloquesToCreate);
 
             try {
-                await updateBackpackFromSession({
-                    studentId: userIdActual,
-                    registrosBloque: bloquesPendientesRef.current
-                });
+                if (userIdActual) {
+                    await updateBackpackFromSession({
+                        studentId: userIdActual,
+                        registrosBloque: bloquesPendientesRef.current
+                    });
+                }
             } catch (bpError) {
                 console.error("Error actualizando backpack:", bpError);
             }
@@ -729,7 +731,7 @@ function StudiaPageContent() {
     useEffect(() => {
         if (!sesionActiva || sesionFinalizada) return;
 
-        const handleKeyDown = (e) => {
+        const handleKeyDown = (e: any) => {
             // 1. Priority: ESCAPE (Always handled first)
             if (e.key === 'Escape') {
                 e.preventDefault();

@@ -3,8 +3,8 @@
  */
 
 import React from 'react';
-// @ts-ignore - Assuming DesignPageContent will be migrated later or handled via TS
-import { DesignPageContent } from '@/pages/design';
+// @ts-ignore - Migrated from legacy
+import { DesignPageContent } from '@/features/design/components/DesignPageContent';
 
 interface DesignContentProps {
     hideLevelsTab?: boolean;
