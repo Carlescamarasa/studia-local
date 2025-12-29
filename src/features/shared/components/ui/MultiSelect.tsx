@@ -2,12 +2,20 @@ import React from "react";
 import { Button } from "@/features/shared/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/features/shared/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/features/shared/components/ui/command";
-import { Filter, Check } from "lucide-react";
+import { Filter, Check, LucideIcon } from "lucide-react";
 
-export default function MultiSelect({ label, items, value = [], onChange, icon: Icon = Filter }) {
+interface MultiSelectProps {
+  label: string;
+  items: { value: string; label: string }[];
+  value: string[];
+  onChange: (value: string[]) => void;
+  icon?: LucideIcon;
+}
+
+export default function MultiSelect({ label, items, value = [], onChange, icon: Icon = Filter }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
 
-  const toggleItem = (itemValue) => {
+  const toggleItem = (itemValue: string) => {
     const newValue = value.includes(itemValue)
       ? value.filter(v => v !== itemValue)
       : [...value, itemValue];

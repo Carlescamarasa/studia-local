@@ -445,30 +445,42 @@ function MediaLinkItem({
   );
 }
 
-/**
- * Componente para entrada y gestión de enlaces multimedia
- * Valida, normaliza y muestra preview de enlaces
- * Opcionalmente incluye funcionalidad de subida de video
- */
+export interface MediaItem {
+  url: string;
+  name?: string | null;
+}
+
+interface MediaLinksInputProps {
+  value?: (string | MediaItem)[];
+  onChange: (value: (string | MediaItem)[]) => void;
+  onPreview?: (index: number) => void;
+  showFileUpload?: boolean;
+  videoFile?: File | null;
+  onVideoFileChange?: ((file: File | null) => void) | null;
+  uploadingVideo?: boolean;
+  onAssetRegistered?: ((asset: any) => void) | null;
+  originType?: string | null;
+  originId?: string | null;
+  originLabel?: string | null;
+  disabled?: boolean;
+  videoId?: string;
+}
+
 export default function MediaLinksInput({
-  value = [], // Can be string[] or {url, name}[]
+  value = [],
   onChange,
   onPreview,
-  // File upload props (optional)
   showFileUpload = false,
   videoFile = null,
   onVideoFileChange = null,
   uploadingVideo = false,
-  // DB Registration props (optional)
   onAssetRegistered = null,
   originType = null,
   originId = null,
   originLabel = null,
-
-  // Other props
   disabled = false,
   videoId = "video-upload"
-}) {
+}: MediaLinksInputProps) {
   const videoFileInputRef = useRef(null);
   const fileInputRef = useRef(null);
   const dropzoneRef = useRef(null);
