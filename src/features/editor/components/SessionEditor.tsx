@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
 import { supabase } from "@/lib/supabaseClient";
-import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useUsers } from "@/features/shared/hooks/useUsers";
 import { Button } from "@/features/shared/components/ui/button";
 import { Input } from "@/features/shared/components/ui/input";
 import { Label } from "@/features/shared/components/ui/label";

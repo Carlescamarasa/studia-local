@@ -4,7 +4,7 @@ import { Input } from "@/features/shared/components/ui/input";
 import { Badge } from "@/features/shared/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { componentStyles } from "@/design/componentStyles";
-import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useUsers } from "@/features/shared/hooks/useUsers";
 import { displayName } from "@/features/shared/utils/helpers";
 
 interface Usuario {

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useUsers } from "@/features/shared/hooks/useUsers";
 import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
 import { useRegistrosSesion } from "@/features/estudio/hooks/useRegistrosSesion";
 

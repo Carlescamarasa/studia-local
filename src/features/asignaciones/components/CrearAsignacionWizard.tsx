@@ -18,7 +18,7 @@ import { createPageUrl } from "@/utils";
 import { formatLocalDate, parseLocalDate, startOfMonday, displayName } from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { useAuth } from "@/auth/AuthProvider";
-import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useUsers } from "@/features/shared/hooks/useUsers";
 import { componentStyles } from "@/design/componentStyles";
 
 // ============================================================================

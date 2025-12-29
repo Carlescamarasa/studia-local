@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
-import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useUsers } from "@/features/shared/hooks/useUsers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { useUserActions } from "@/features/auth/hooks/useUserActions";
 import { inviteUserByEmail, sendPasswordResetAdmin } from "@/api/userAdmin";

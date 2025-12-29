@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useUsers } from "@/features/shared/hooks/useUsers";
 import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
 import { Button } from "@/features/shared/components/ui/button";

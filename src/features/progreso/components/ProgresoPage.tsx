@@ -17,7 +17,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
-import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useUsers } from "@/features/shared/hooks/useUsers";
 import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
 import { resolveUserIdActual, displayName } from "@/features/shared/utils/helpers";
 import { toast } from "sonner";

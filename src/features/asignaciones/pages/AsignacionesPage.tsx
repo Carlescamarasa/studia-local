@@ -3,7 +3,7 @@ import React, { useState, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
-import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useUsers } from "@/features/shared/hooks/useUsers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
 import { Button } from "@/features/shared/components/ui/button";
 import { Badge } from "@/features/shared/components/ds";

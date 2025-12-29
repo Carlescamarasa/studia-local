@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { useUsers, type UserEntity } from "@/features/admin/hooks/useUsers";
+import { useUsers, type UserEntity } from "@/features/shared/hooks/useUsers";
 import type { QueryObserverResult } from "@tanstack/react-query";
 
 /**

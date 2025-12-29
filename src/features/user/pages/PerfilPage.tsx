@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { remoteDataAPI } from "@/api/remote/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useUsers } from "@/features/shared/hooks/useUsers";
 import { Button } from "@/features/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Alert, AlertDescription, LoadingSpinner } from "@/features/shared/components/ds";
 import { Input } from "@/features/shared/components/ui/input";

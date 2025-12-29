@@ -4,7 +4,7 @@ import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useBloques } from "@/features/estudio/hooks/useBloques";
 import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
-import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useUsers } from "@/features/shared/hooks/useUsers";
 // Updated Card, Badge, Alert paths from @/components/ui to @/components/ds
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
 import { Button } from "@/features/shared/components/ui/button";

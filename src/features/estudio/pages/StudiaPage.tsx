@@ -11,7 +11,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useUsers } from "@/features/shared/hooks/useUsers";
 import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
 import { useBloques } from "@/features/dashboard/hooks/useBloques";
 import { updateBackpackFromSession } from '@/features/shared/services/backpackService';

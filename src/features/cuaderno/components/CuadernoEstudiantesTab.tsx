@@ -4,7 +4,7 @@ import { Button } from "@/features/shared/components/ui/button";
 import { Badge } from "@/features/shared/components/ds";
 import { Users } from "lucide-react";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useUsers } from "@/features/shared/hooks/useUsers";
 import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
 import { useFeedbacksSemanal } from "@/features/progreso/hooks/useFeedbacksSemanal";
 import { localDataClient } from "@/api/localDataClient";
