@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCalendarSummary } from "@/features/calendar/hooks/useCalendarSummary";
 import { useUsers } from "@/features/admin/hooks/useUsers";
 import { Card, CardContent } from "@/features/shared/components/ds";
 import { Button } from "@/features/shared/components/ds/Button";
@@ -91,17 +92,7 @@ function CalendarioPageContent() {
   const isEstu = effectiveRole === 'ESTU';
 
   // Unified Calendar Fetch (RPC)
-  const { data: calendarSummary } = useQuery({
-    queryKey: ['calendarSummary', dateRange.start.toISOString(), dateRange.end.toISOString(), isEstu ? userIdActual : 'ALL'],
-    queryFn: () => localDataClient.getCalendarSummary(
-      dateRange.start,
-      dateRange.end,
-      isEstu ? (effectiveUserId || "") : undefined
-    ),
-    placeholderData: (prev) => prev, // Keep previous data while fetching new month
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false
-  });
+  const { data: calendarSummary } = useCalendarSummary(dateRange, userIdActual, isEstu);
 
   const {
     registrosSesion = [],

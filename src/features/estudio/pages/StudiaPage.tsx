@@ -13,7 +13,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useUsers } from "@/features/admin/hooks/useUsers";
 import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
-import { useBloques } from "@/features/estudio/hooks/useBloques";
+import { useBloques } from "@/features/dashboard/hooks/useBloques";
 import { updateBackpackFromSession } from '@/features/shared/services/backpackService';
 import { createRemoteDataAPI } from "@/api/remoteDataAPI";
 import { localDataClient } from "@/api/localDataClient";
@@ -207,20 +207,8 @@ function StudiaPageContent() {
     const { data: asignacionesRaw = [], isLoading: loadingAsignaciones } = useAsignaciones();
 
     // Load blocks with variations - Use remoteDataAPI query for try mode (same as hoy.jsx)
-    const { data: bloquesActuales = [] } = useQuery({
-        queryKey: ['bloques-with-variations'],
-        queryFn: async () => {
-            try {
-                const bloques = await remoteDataAPI.bloques.list();
-                return bloques || [];
-            } catch (error) {
-                console.error('[Try Mode] Error fetching bloques from Supabase, falling back to localStorage:', error);
-                const localRes = await localDataClient.entities.Bloque.list();
-                return localRes || [];
-            }
-        },
-        staleTime: 30 * 1000,
-    });
+    // Load blocks with variations - Use standardized hook
+    const { data: bloquesActuales = [] } = useBloques();
 
     // Filter valid assignments
     const asignaciones = useMemo(() => {

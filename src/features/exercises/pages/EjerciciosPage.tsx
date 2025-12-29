@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getCachedAuthUser } from "@/auth/authUserCache";
 import { supabase } from '@/lib/supabaseClient';
-import { fetchPlanesPreviewEjercicios, fetchRecentRegistrosSesion, updateBloque, createBloque, deleteBloque, fetchBloquesListado } from "@/api/remoteDataAPI";
 import { toast } from 'sonner';
 import {
   Flame, Backpack, Check, Clock, Play, Zap, Repeat,
@@ -11,6 +10,12 @@ import {
 } from 'lucide-react';
 import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
+import {
+  useExercisesList,
+  usePlanesPreview,
+  useRecentSessions,
+  useExerciseMutations
+} from "@/features/exercises/hooks/useExercisesData";
 
 // --- HELPERS & MOCK DATA (Ported from StudiaConceptPage) ---
 
@@ -43,88 +48,69 @@ const MOCKED_VARIATIONS = {
 
 export default function EjerciciosPage() {
   // State
-  const [localExercises, setLocalExercises] = useState([]);
-  const [realPlanes, setRealPlanes] = useState([]);
-  const [realSessions, setRealSessions] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('ejercicios');
   const [showArchived, setShowArchived] = useState(false);
 
   // Dashboard Accordion & View State
-  const [expandedVarId, setExpandedVarId] = useState(null);
+  const [expandedVarId, setExpandedVarId] = useState<string | null>(null);
   const [showBackpack, setShowBackpack] = useState(false);
 
   // CRUD State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ nombre: '', tipo: 'TC', duracion: 5 });
 
-  // --- EFFECT: Load Data ---
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        // 1. Fetch Bloques
-        const bloques = await fetchBloquesListado();
+  // Hooks
+  const { data: bloques, isLoading: loadingBloques } = useExercisesList();
+  const { data: realPlanes = [], isLoading: loadingPlanes } = usePlanesPreview();
+  const { data: realSessions = [], isLoading: loadingSessions } = useRecentSessions();
+  const { createExercise, updateExercise, deleteExercise } = useExerciseMutations();
 
-        if (bloques) {
-          const mappedBloques = bloques.map((b, idx) => {
-            let vars = [];
-            // DEMO HACK: Force attach variations to first 2 items
-            if (idx === 0) vars = MOCKED_VARIATIONS['TC-COL-0004'];
-            else if (idx === 1) vars = MOCKED_VARIATIONS['TC-CLA-0002'];
-            else vars = MOCKED_VARIATIONS[b.code] || MOCKED_VARIATIONS[b.id] || [];
+  const loading = loadingBloques || loadingPlanes || loadingSessions;
 
-            // Real logic: map from DB content if available
-            if (b.content && Array.isArray(b.content) && vars.length === 0) {
-              vars = b.content;
-            }
+  // Process Bloques -> localExercises
+  const localExercises = React.useMemo(() => {
+    if (!bloques) return [];
 
-            const categoryInfo = TYPE_MAP[b.tipo] || { label: 'General', color: 'text-slate-600 bg-slate-50' };
-            // Simulate lifecycle
-            let mode = 'learning';
-            let status = 'active';
-            if (idx % 3 === 0) { mode = 'review'; status = 'mastered'; }
-            if (idx % 10 === 0) { mode = 'archived'; status = 'archived'; }
+    return bloques.map((b: any, idx: number) => {
+      let vars: any[] = [];
+      // DEMO HACK: Force attach variations to first 2 items
+      if (idx === 0) vars = MOCKED_VARIATIONS['TC-COL-0004'] || [];
+      else if (idx === 1) vars = MOCKED_VARIATIONS['TC-CLA-0002'] || [];
+      else if (b.code) vars = MOCKED_VARIATIONS[b.code as keyof typeof MOCKED_VARIATIONS] || [];
+      else vars = MOCKED_VARIATIONS[b.id as keyof typeof MOCKED_VARIATIONS] || [];
 
-            const dur = Math.round((b.duracion_seg || b.duracionSeg || 300) / 60);
-
-            return {
-              id: b.id,
-              title: b.nombre,
-              type: b.tipo,
-              category: categoryInfo.label,
-              mode: mode,
-              status: status,
-              dur: dur || 5,
-              asset: 'resource.pdf',
-              variations: vars,
-              raw: b
-            };
-          });
-          setLocalExercises(mappedBloques);
-        }
-
-        // 2. Fetch Planes
-        const planes = await fetchPlanesPreviewEjercicios();
-        if (planes) setRealPlanes(planes);
-
-        // 3. Fetch Sessions
-        const sessions = await fetchRecentRegistrosSesion();
-        if (sessions) setRealSessions(sessions);
-
-      } catch (error) {
-        console.error("Error loading data:", error);
-        toast.error("Error cargando datos");
-      } finally {
-        setLoading(false);
+      // Real logic: map from DB content if available
+      if (b.content && Array.isArray(b.content) && vars.length === 0) {
+        vars = b.content;
       }
-    }
-    loadData();
-  }, []);
+
+      const categoryInfo = TYPE_MAP[b.tipo as keyof typeof TYPE_MAP] || { label: 'General', color: 'text-slate-600 bg-slate-50' };
+      // Simulate lifecycle
+      let mode = 'learning';
+      let status = 'active';
+      if (idx % 3 === 0) { mode = 'review'; status = 'mastered'; }
+      if (idx % 10 === 0) { mode = 'archived'; status = 'archived'; }
+
+      const dur = Math.round((b.duracion_seg || b.duracionSeg || 300) / 60);
+
+      return {
+        id: b.id,
+        title: b.nombre,
+        type: b.tipo,
+        category: categoryInfo.label,
+        mode: mode,
+        status: status,
+        dur: dur || 5,
+        asset: 'resource.pdf',
+        variations: vars,
+        raw: b
+      };
+    });
+  }, [bloques]);
 
   // --- CRUD Handlers ---
-  const handleOpenModal = (exercise = null) => {
+  const handleOpenModal = (exercise: { id: string; title: string; type: string; dur: number } | null = null) => {
     if (exercise) {
       setEditingId(exercise.id);
       setFormData({
@@ -141,7 +127,8 @@ export default function EjerciciosPage() {
 
   const handleSaveExercise = async () => {
     if (!formData.nombre) return toast.error("El nombre es obligatorio");
-    setLoading(true);
+    // setLoading(true); // Handled by mutation status if needed, but we rely on global loading or toast
+
     const tempId = editingId || `temp_${Date.now()}`;
 
     try {
@@ -153,65 +140,39 @@ export default function EjerciciosPage() {
         profesor_id: user?.id
       };
 
-      const newItem = {
-        id: tempId,
-        title: formData.nombre,
-        type: formData.tipo,
-        category: TYPE_MAP[formData.tipo]?.label || 'General',
-        mode: 'learning',
-        status: 'active',
-        dur: formData.duracion,
-        asset: 'resource.pdf',
-        raw: {},
-        variations: []
-      };
-
       if (editingId) {
         // Update
-        setLocalExercises(prev => prev.map(e => e.id === editingId ? { ...e, ...newItem } : e));
         setIsModalOpen(false);
-        await updateBloque(editingId, payload);
+        await updateExercise.mutateAsync({ id: editingId, data: payload });
         toast.success("Ejercicio actualizado");
       } else {
         // Insert
-        setLocalExercises(prev => [newItem, ...prev]);
         setIsModalOpen(false);
-        const data = await createBloque(payload);
-        if (data && data[0]) {
-          setLocalExercises(prev => prev.map(e => e.id === tempId ? { ...e, id: data[0].id } : e));
-        }
+        await createExercise.mutateAsync(payload);
         toast.success("Ejercicio creado");
       }
-    } catch (error) {
-      toast.error(`Error al guardar: ${error.message}`);
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      toast.error(`Error al guardar: ${error.message || 'Error desconocido'}`);
     }
   };
 
-  const handleDeleteExercise = async (id) => {
+  const handleDeleteExercise = async (id: string) => {
     if (!confirm("¿Seguro que quieres borrar este ejercicio?")) return;
-    setLocalExercises(prev => prev.filter(e => e.id !== id));
     try {
-      await deleteBloque(id);
+      await deleteExercise.mutateAsync(id);
       toast.success("Ejercicio eliminado");
     } catch (e) {
       toast.error("Error al eliminar");
     }
   };
 
-  const approveMastery = (id) => {
-    setLocalExercises(prev => prev.map(ex =>
-      ex.id === id ? { ...ex, mode: 'review', status: 'mastered', dur: 5 } : ex
-    ));
-    toast.success("Ejercicio movido a La Mochila");
+  // Placeholder actions for Kanban (Mock persistence not supported in refactor without backend fields)
+  const approveMastery = (id: string) => {
+    toast.info("Funcionalidad de dominio simulada (necesita backend)");
   };
 
-  const toggleArchive = (id, shouldArchive) => {
-    setLocalExercises(prev => prev.map(ex =>
-      ex.id === id ? { ...ex, mode: shouldArchive ? 'archived' : 'review', status: shouldArchive ? 'archived' : 'mastered' } : ex
-    ));
-    toast.info(shouldArchive ? "Archivado" : "Reactivado");
+  const toggleArchive = (id: string, shouldArchive: boolean) => {
+    toast.info(shouldArchive ? "Archivado (simulado)" : "Reactivado (simulado)");
   };
 
   // --- RENDER ---
@@ -277,7 +238,7 @@ export default function EjerciciosPage() {
               <div className="flex flex-wrap gap-2">
                 {localExercises.filter(e => e.mode === 'review').map(ex => (
                   <div key={ex.id} className="bg-white border border-slate-200 rounded-full px-3 py-1.5 flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
-                    <span className={`w-2 h-2 rounded-full ${TYPE_MAP[ex.type]?.color.split(' ')[0].replace('text-', 'bg-')}`}></span>
+                    <span className={`w-2 h-2 rounded-full ${(TYPE_MAP as Record<string, { label: string; color: string }>)[ex.type]?.color.split(' ')[0].replace('text-', 'bg-')}`}></span>
                     <span className="text-sm font-medium text-slate-700">{ex.title}</span>
                     {ex.variations.length > 0 && (
                       <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 rounded-full">{ex.variations.length} vars</span>
@@ -331,7 +292,7 @@ export default function EjerciciosPage() {
                     {/* ACCORDION */}
                     {expandedVarId === ex.id && ex.variations.length > 0 && (
                       <tr className="bg-slate-50/50">
-                        <td colSpan="5" className="px-4 py-2 p-0">
+                        <td colSpan={5} className="px-4 py-2 p-0">
                           <div className="ml-8 border-l-2 border-slate-200 pl-4 space-y-2 mb-3 mt-1">
                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Variaciones ({ex.variations.length})</div>
                             {ex.variations.map((v, idx) => (
@@ -473,7 +434,7 @@ export default function EjerciciosPage() {
                     onChange={e => setFormData({ ...formData, tipo: e.target.value })}
                   >
                     {Object.keys(TYPE_MAP).map(key => (
-                      <option key={key} value={key}>{key} - {TYPE_MAP[key].label}</option>
+                      <option key={key} value={key}>{key} - {(TYPE_MAP as Record<string, { label: string; color: string }>)[key].label}</option>
                     ))}
                   </select>
                 </div>

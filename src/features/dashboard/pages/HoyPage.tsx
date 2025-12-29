@@ -7,6 +7,7 @@ import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 // Create remote API instance for fetching bloques with variations
 const remoteDataAPI = createRemoteDataAPI();
 import { useQuery } from "@tanstack/react-query";
+import { useBloques } from "@/features/dashboard/hooks/useBloques";
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
 import { Button } from "@/features/shared/components/ds/Button";
 import { Badge } from "@/features/shared/components/ds";
@@ -174,31 +175,8 @@ function HoyPageContent() {
   // Usar hook centralizado para asignaciones
   const { data: asignacionesRaw = [] } = useAsignaciones();
 
-  // Cargar bloques actuales desde Supabase (remoteDataAPI tiene content → variations mapping)
-  const { data: bloquesActuales = [] } = useQuery({
-    queryKey: ['bloques-with-variations'],
-    queryFn: async () => {
-      try {
-        // Fetch from Supabase to get content/variations field
-        const bloques = await remoteDataAPI.bloques.list();
-        if (bloques) {
-          console.log('[DEBUG] bloquesActuales sample (from Supabase):', bloques.slice(0, 3).map(b => ({
-            code: b.code,
-            nombre: b.nombre,
-            variations: b.variations,
-            hasVariations: !!(b.variations && b.variations.length > 0)
-          })));
-        }
-        return bloques || [];
-      } catch (error) {
-        console.error('Error fetching bloques from Supabase, falling back to localStorage:', error);
-        // Fallback to localStorage if Supabase fails
-        const localRes = await localDataClient.entities.Bloque.list();
-        return localRes || [];
-      }
-    },
-    staleTime: 30 * 1000, // 30s - needs recent data for study session
-  });
+  // Cargar bloques actuales usando el hook estandarizado
+  const { data: bloquesActuales = [] } = useBloques();
 
 
   // Filtrar y validar asignaciones

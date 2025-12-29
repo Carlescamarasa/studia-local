@@ -2,6 +2,7 @@ import { localUsers } from "@/local-data/localUsers";
 import { getCurrentUser } from "@/api/localDataClient";
 import { useAuth } from "@/auth/AuthProvider";
 import { useLocalData } from "@/local-data/LocalDataProvider";
+import { StudiaUser } from "@/features/shared/types/domain";
 
 /**
  * Obtiene el nombre visible de un usuario según la jerarquía:
@@ -12,7 +13,7 @@ import { useLocalData } from "@/local-data/LocalDataProvider";
  * 5. email (parte local antes de @)
  * 6. "Sin nombre" (fallback final)
  */
-export function displayName(u) {
+export function displayName(u: any): string {
   if (!u) return 'Sin nombre';
 
   // Prioridad 1: full_name (fuente de verdad en profiles)
@@ -36,7 +37,7 @@ export function displayName(u) {
 
   // Si tenemos solo el id, intentar resolver por ID
   if (u.id) {
-    const byId = displayNameById(u.id);
+    const byId: string = displayNameById(u.id);
     if (byId && byId !== 'Sin nombre') return byId;
   }
 
@@ -71,7 +72,7 @@ export const getNombreVisible = displayName;
 /**
  * Obtiene nombre visible por ID buscando en localUsers como fallback local.
  */
-export function displayNameById(userId) {
+export function displayNameById(userId: string | null | undefined): string {
   if (!userId) return 'Sin nombre';
   const user = Array.isArray(localUsers) ? localUsers.find(u => u.id === userId) : null;
   if (user) return displayName(user);
@@ -85,7 +86,7 @@ export function displayNameById(userId) {
  * Formatea minutos a cadena humana: "9 h 42 min" u "42 min" si < 1h
  * Si las horas son >= 24, muestra formato "D d H h M min"
  */
-export function formatDurationMinutes(totalMinutes) {
+export function formatDurationMinutes(totalMinutes: number): string {
   const minutes = Math.max(0, Math.floor(totalMinutes || 0));
   const hours = Math.floor(minutes / 60);
   const rem = minutes % 60;
@@ -118,17 +119,17 @@ export function formatDurationMinutes(totalMinutes) {
 /**
  * Normaliza texto para búsquedas (minúsculas, sin espacios extras)
  */
-export function normalizarTexto(str) {
+export function normalizarTexto(str: string | null | undefined): string {
   if (!str) return '';
   return str.toLowerCase().trim();
 }
 
 // --- Helpers de fechas locales (sin UTC, sin saltos DST) ---
-const pad2 = (n) => String(n).padStart(2, "0");
+const pad2 = (n: number) => String(n).padStart(2, "0");
 
-export const formatLocalDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+export const formatLocalDate = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 
-export const parseLocalDate = (s) => {
+export const parseLocalDate = (s: string) => {
   if (!s || typeof s !== 'string') {
     throw new Error('parseLocalDate: Invalid input');
   }
@@ -136,7 +137,7 @@ export const parseLocalDate = (s) => {
   return new Date(y, m - 1, d);
 };
 
-export const startOfMonday = (date) => {
+export const startOfMonday = (date: Date) => {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const dow = d.getDay();
   const diff = dow === 0 ? -6 : 1 - dow;
@@ -144,17 +145,16 @@ export const startOfMonday = (date) => {
   return d;
 };
 
-export const isoWeekNumberLocal = (date) => {
+export const isoWeekNumberLocal = (date: Date) => {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
   const week1 = new Date(d.getFullYear(), 0, 4);
-  return 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+  return 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
 };
 
 /**
  * Calcula el lunes de la semana ISO para una fecha dada (versión local, sin UTC)
  */
-export function calcularLunesSemanaISO(fecha) {
+export function calcularLunesSemanaISO(fecha: string | Date): string {
   if (typeof fecha === 'string') {
     const d = parseLocalDate(fecha);
     return formatLocalDate(startOfMonday(d));
@@ -166,10 +166,10 @@ export function calcularLunesSemanaISO(fecha) {
 /**
  * Calcula el offset de semanas entre dos fechas ISO (versión local)
  */
-export function calcularOffsetSemanas(semanaInicioISO, semanaActualISO) {
+export function calcularOffsetSemanas(semanaInicioISO: string, semanaActualISO: string): number {
   const inicio = parseLocalDate(semanaInicioISO);
   const actual = parseLocalDate(semanaActualISO);
-  const diffTime = actual - inicio;
+  const diffTime = actual.getTime() - inicio.getTime();
   const diffDays = diffTime / (1000 * 60 * 60 * 24);
   return Math.floor(diffDays / 7);
 }
@@ -177,16 +177,16 @@ export function calcularOffsetSemanas(semanaInicioISO, semanaActualISO) {
 /**
  * Calcula el tiempo total de una sesión (ejercicios + rondas, excluyendo AD)
  */
-export function calcularTiempoSesion(sesion) {
+export function calcularTiempoSesion(sesion: any): number {
   if (!sesion || !sesion.bloques) return 0;
 
   const tiempoEjercicios = sesion.bloques
-    .filter(b => b.tipo !== 'AD')
-    .reduce((total, b) => total + (b.duracionSeg || 0), 0);
+    .filter((b: any) => b.tipo !== 'AD')
+    .reduce((total: number, b: any) => total + (b.duracionSeg || 0), 0);
 
-  const tiempoRondas = (sesion.rondas || []).reduce((total, ronda) => {
-    const tiempoRonda = ronda.bloques.reduce((sum, code) => {
-      const bloque = sesion.bloques.find(b => b.code === code);
+  const tiempoRondas = (sesion.rondas || []).reduce((total: number, ronda: any) => {
+    const tiempoRonda = ronda.bloques.reduce((sum: number, code: any) => {
+      const bloque = sesion.bloques.find((b: any) => b.code === code);
       if (bloque && bloque.tipo !== 'AD') {
         return sum + (bloque.duracionSeg || 0);
       }
@@ -201,18 +201,18 @@ export function calcularTiempoSesion(sesion) {
 /**
  * Aplana las rondas de una sesión en una lista de ejecución secuencial
  */
-export function aplanarSesion(sesion) {
+export function aplanarSesion(sesion: any): any[] {
   if (!sesion || !sesion.bloques) return [];
 
-  const listaEjecucion = [];
+  const listaEjecucion: any[] = [];
 
   // Primero añadir ejercicios normales (no en rondas)
   const codigosEnRondas = new Set();
-  (sesion.rondas || []).forEach(ronda => {
-    ronda.bloques.forEach(code => codigosEnRondas.add(code));
+  (sesion.rondas || []).forEach((ronda: any) => {
+    ronda.bloques.forEach((code: any) => codigosEnRondas.add(code));
   });
 
-  sesion.bloques.forEach((ejercicio, idx) => {
+  sesion.bloques.forEach((ejercicio: any, idx: number) => {
     if (!codigosEnRondas.has(ejercicio.code)) {
       listaEjecucion.push({
         ...ejercicio,
@@ -223,13 +223,13 @@ export function aplanarSesion(sesion) {
   });
 
   // Luego añadir rondas aplanadas
-  (sesion.rondas || []).forEach((ronda, rondaIdx) => {
+  (sesion.rondas || []).forEach((ronda: any, rondaIdx: number) => {
     for (let rep = 0; rep < ronda.repeticiones; rep++) {
-      ronda.bloques.forEach((code) => {
-        const ejercicio = sesion.bloques.find(b => b.code === code);
-        if (ejercicio) {
+      ronda.bloques.forEach((code: any) => {
+        const bloque = sesion.bloques.find((b: any) => b.code === code);
+        if (bloque) {
           listaEjecucion.push({
-            ...ejercicio,
+            ...bloque,
             esRonda: true,
             rondaIdx,
             repeticion: rep + 1,
@@ -252,7 +252,7 @@ export function aplanarSesion(sesion) {
  * @param {Object} options.currentUser - Usuario desde getCurrentUser() (local)
  * @returns {string} - Rol efectivo: 'ADMIN', 'PROF' o 'ESTU'
  */
-export function getEffectiveRole(options = {}) {
+export function getEffectiveRole(options: { appRole?: string, currentUser?: any } = {}): string {
   const { appRole, currentUser } = options;
 
   // Priorizar appRole (modo Supabase) sobre currentUser (modo local)
@@ -294,7 +294,7 @@ export function getEffectiveRole(options = {}) {
  * @param {Array} usuarios - Lista de usuarios de User.list()
  * @returns {string|null} - ID del usuario en la BD, o null si no se puede resolver
  */
-export function resolveUserIdActual(effectiveUser, usuarios = []) {
+export function resolveUserIdActual(effectiveUser: { id?: string, email?: string } | any, usuarios: StudiaUser[] | any[] = []) {
   if (!effectiveUser?.id) return null;
 
   // Estrategia 1: Buscar por ID directamente (prioritario)
