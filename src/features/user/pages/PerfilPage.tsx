@@ -47,17 +47,12 @@ export default function PerfilPage() {
     userId: userIdParam,
   });
 
-  const getNombreCompleto = (user: any) => {
-    if (!user) return '';
-    return displayName(user);
-  };
-
   const profesores = allUsers?.filter(u => u.rolPersonalizado === 'PROF') || [];
 
   useEffect(() => {
     if (targetUser) {
       setEditedData({
-        nombreCompleto: targetUser.nombreCompleto || getNombreCompleto(targetUser),
+        nombreCompleto: targetUser.nombreCompleto || displayName(targetUser),
         email: targetUser.email || '',
         rolPersonalizado: targetUser.rolPersonalizado || 'ESTU',
         profesorAsignadoId: targetUser.profesorAsignadoId || '',
@@ -171,7 +166,7 @@ export default function PerfilPage() {
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto">
       <PageHeader
-        title={isEditingOwnProfile ? 'Mi Perfil' : `Perfil de ${getNombreCompleto(targetUser)}`}
+        title={isEditingOwnProfile ? 'Mi Perfil' : `Perfil de ${displayName(targetUser)}`}
         subtitle={isEditingOwnProfile ? 'Edita tu información personal' : 'Edita la información del usuario'}
       />
 
@@ -289,7 +284,7 @@ export default function PerfilPage() {
                       <SelectItem value="unassigned">Sin asignar</SelectItem>
                       {profesores.map(prof => (
                         <SelectItem key={prof.id} value={prof.id}>
-                          {getNombreCompleto(prof)}
+                          {displayName(prof)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -297,7 +292,7 @@ export default function PerfilPage() {
                 ) : (
                   <Input
                     id="profesorAsignado"
-                    value={editedData.profesorAsignadoId ? getNombreCompleto(allUsers?.find(u => u.id === editedData.profesorAsignadoId)) : 'Sin asignar'}
+                    value={editedData.profesorAsignadoId ? displayName(allUsers?.find(u => u.id === editedData.profesorAsignadoId)) : 'Sin asignar'}
                     disabled
                     className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
                   />
