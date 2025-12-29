@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { X, Search, Check, Loader2 } from "lucide-react";
 import { Input } from "@/features/shared/components/ui/input";
-import { Badge } from "@/features/shared/components/ui/badge";
+import { Badge } from "@/features/shared/components/ds/Badge";
 import { cn } from "@/lib/utils";
 import { componentStyles } from "@/design/componentStyles";
 import { useUsers } from "@/features/shared/hooks/useUsers";

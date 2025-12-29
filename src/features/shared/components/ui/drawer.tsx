@@ -6,10 +6,12 @@ import { Drawer as DrawerPrimitive } from "vaul"
 import { cn } from "@/lib/utils"
 import { componentStyles } from "@/design/componentStyles"
 
+type DrawerProps = React.ComponentProps<typeof DrawerPrimitive.Root>
+
 const Drawer = ({
   shouldScaleBackground = true,
   ...props
-}) => (
+}: DrawerProps) => (
   <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} {...props} />
 )
 Drawer.displayName = "Drawer"

@@ -1,11 +1,10 @@
 "use client";
-import { Toaster as Sonner } from "sonner"
+import * as React from "react";
+import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { componentStyles } from "@/design/componentStyles"
-import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from "lucide-react"
+import { CheckCircle2, AlertCircle, Info, AlertTriangle } from "lucide-react"
 
-const Toaster = ({
-  ...props
-}) => {
+const Toaster: React.FC<ToasterProps> = (props) => {
   return (
     <Sonner
       className="toaster group"
@@ -29,9 +28,10 @@ const Toaster = ({
         warning: <AlertTriangle className="w-5 h-5" />,
         info: <Info className="w-5 h-5" />,
       }}
-      {...props} 
+      {...props}
     />
   );
 }
+Toaster.displayName = "Toaster";
 
 export { Toaster }

@@ -1,5 +1,5 @@
 import React from "react";
-import { Badge } from "@/features/shared/components/ui/badge";
+import { Badge } from "@/features/shared/components/ds/Badge";
 
 export default function LevelBadge({ level, label: customLabel }) {
     if (!level) return null;

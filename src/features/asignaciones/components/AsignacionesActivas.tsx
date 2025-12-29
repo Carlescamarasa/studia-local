@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/comp
 import { Button } from "@/features/shared/components/ui/button";
 import { Input } from "@/features/shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
-import { Badge } from "@/features/shared/components/ui/badge";
+import { Badge } from "@/features/shared/components/ds/Badge";
 import { Eye, Copy, XCircle, Search, Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";

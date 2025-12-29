@@ -23,7 +23,7 @@ import { Badge } from "@/features/shared/components/ds";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/features/shared/components/ui/tooltip";
 import { MessageSquare, Music, Brain, Save, X, Activity, Paperclip, CheckSquare, Trophy, HelpCircle } from "lucide-react";
 // FeedbacksSemanalAPI removed - using localDataClient for Supabase sync
-import { useToast } from "@/features/shared/components/ui/use-toast";
+import { toast } from "sonner";
 import MediaLinksInput from "@/features/shared/components/media/MediaLinksInput";
 import { normalizeMediaLinks } from "@/features/shared/utils/media";
 import { cn } from "@/lib/utils";
@@ -75,7 +75,6 @@ export default function ModalFeedbackSemanal({
     onSaved,
     onMediaClick
 }: ModalFeedbackSemanalProps) {
-    const { toast } = useToast();
     const effectiveUser = useEffectiveUser();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -313,7 +312,7 @@ export default function ModalFeedbackSemanal({
             setPromotionCheck(check);
         } catch (error) {
             console.error('Error updating criteria:', error);
-            toast({ variant: "destructive", title: "Error", description: "Error al actualizar criterio" });
+            toast.error("Error al actualizar criterio");
             loadLevelData();
         }
     };
@@ -335,7 +334,7 @@ export default function ModalFeedbackSemanal({
             await loadLevelData();
         } catch (error) {
             console.error('Error promoting:', error);
-            toast({ variant: "destructive", title: "Error", description: "Error al promover" });
+            toast.error("Error al promover");
         }
     };
 
@@ -355,7 +354,7 @@ export default function ModalFeedbackSemanal({
             await loadLevelData();
         } catch (error) {
             console.error('Error demoting:', error);
-            toast({ variant: "destructive", title: "Error", description: "Error al cambiar nivel" });
+            toast.error("Error al cambiar nivel");
         }
     };
 
@@ -388,7 +387,7 @@ export default function ModalFeedbackSemanal({
                     }
                 } catch (videoError: any) {
                     console.error("Error upload video", videoError);
-                    toast({ variant: "destructive", title: "Error vídeo", description: "No se pudo subir el vídeo." });
+                    toast.error("No se pudo subir el vídeo.");
                     setUploadingVideo(false);
                     // Usually we stop if video fails, or ask user? We'll stop to avoid saving incomplete state.
                     setIsSubmitting(false);
@@ -474,11 +473,7 @@ export default function ModalFeedbackSemanal({
             onOpenChange(false);
         } catch (error) {
             console.error("Error guardando feedback:", error);
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: "No se pudo guardar el feedback.",
-            });
+            toast.error("No se pudo guardar el feedback.");
         } finally {
             setIsSubmitting(false);
         }

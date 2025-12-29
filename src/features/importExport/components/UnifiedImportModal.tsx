@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Upload, FileText, Loader2, AlertCircle, Eye, CheckCircle } from 'lucide-react';
 import { Button } from '@/features/shared/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/components/ui/select';
-import { Badge } from '@/features/shared/components/ui/badge';
+import { Badge } from '@/features/shared/components/ds/Badge';
 import { toast } from 'sonner';
 
 import { datasets, getDataset } from '../registry';

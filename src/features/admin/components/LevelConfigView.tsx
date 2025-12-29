@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/features/shared/components/ui/switch';
 import { toast } from 'sonner';
 import { Loader2, Plus, Trash2, Save, ArrowRight, Copy, Check, AlertCircle, X, ArrowLeftRight, Download } from 'lucide-react';
-import { Badge } from '@/features/shared/components/ui/badge';
+import { Badge } from '@/features/shared/components/ds/Badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/features/shared/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose } from '@/features/shared/components/ui/drawer';
 import { ToggleGroup, ToggleGroupItem } from '@/features/shared/components/ui/toggle-group';

@@ -13,7 +13,7 @@ export function Badge({
   children,
   ...props
 }: {
-  variant?: "neutral" | "default" | "primary" | "success" | "warning" | "danger" | "info" | "outline";
+  variant?: "neutral" | "default" | "primary" | "secondary" | "success" | "warning" | "danger" | "destructive" | "info" | "outline";
   className?: string;
   children?: React.ReactNode;
 } & React.HTMLAttributes<HTMLSpanElement>) {
@@ -21,9 +21,11 @@ export function Badge({
     neutral: "badge-default",
     default: "badge-default",
     primary: "bg-[var(--color-primary-soft)] text-[var(--color-primary)] border border-[var(--color-primary)]",
+    secondary: "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] border border-[var(--color-border)]",
     success: "bg-[var(--color-success)]/10 text-[var(--color-success)] border border-[var(--color-success)]/20",
     warning: "bg-[var(--color-warning)]/10 text-[var(--color-warning)] border border-[var(--color-warning)]/20",
     danger: "bg-[var(--color-danger)]/10 text-[var(--color-danger)] border border-[var(--color-danger)]/20",
+    destructive: "bg-[var(--color-danger)]/10 text-[var(--color-danger)] border border-[var(--color-danger)]/20",
     info: "bg-[var(--color-info)]/10 text-[var(--color-info)] border border-[var(--color-info)]/20",
     outline: "badge-outline"
   }[variant] || "badge-default";

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { AlertTriangle, Check, X, ArrowRight } from 'lucide-react';
 import { Button } from '@/features/shared/components/ui/button';
 import { ScrollArea } from '@/features/shared/components/ui/scroll-area';
-import { Badge } from '@/features/shared/components/ui/badge';
+import { Badge } from '@/features/shared/components/ds/Badge';
 
 /**
  * ImportReviewPanel

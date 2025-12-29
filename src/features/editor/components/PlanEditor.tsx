@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ui/card";
 import { X, Save, Plus, Edit, Trash2, Calendar, ChevronDown, ChevronRight, Copy, PlayCircle, GripVertical, Layers, Clock, Shuffle } from "lucide-react";
 import { Alert, AlertDescription } from "@/features/shared/components/ui/alert";
-import { Badge } from "@/features/shared/components/ui/badge";
+import { Badge } from "@/features/shared/components/ds/Badge";
 import { DndProvider, SortableContext, verticalListSortingStrategy, arrayMove } from "@/features/shared/components/dnd/DndProvider";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";

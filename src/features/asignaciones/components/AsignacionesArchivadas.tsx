@@ -5,7 +5,7 @@ import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ui/card";
 import { Button } from "@/features/shared/components/ui/button";
 import { Input } from "@/features/shared/components/ui/input";
-import { Badge } from "@/features/shared/components/ui/badge";
+import { Badge } from "@/features/shared/components/ds/Badge";
 import { RotateCcw, Trash2, Search, Archive } from "lucide-react";
 import { toast } from "sonner";
 import { displayNameById } from "@/features/shared/utils/helpers";

@@ -9,7 +9,7 @@ import { Textarea } from "@/features/shared/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ui/card";
 import { X, ChevronRight, ChevronLeft, Check, Search, Calendar, Users, Music, BookOpen, Settings, Target } from "lucide-react";
-import { Badge } from "@/features/shared/components/ui/badge";
+import { Badge } from "@/features/shared/components/ds/Badge";
 import { Checkbox } from "@/features/shared/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/features/shared/components/ui/alert";
 import { toast } from "sonner";

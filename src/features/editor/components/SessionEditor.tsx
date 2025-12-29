@@ -10,7 +10,7 @@ import { Label } from "@/features/shared/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ui/card";
 import { X, Save, Plus, Trash2, PlayCircle, Edit, Copy, GripVertical, Search, RotateCcw, AlertTriangle, ChevronDown, ChevronRight, Shuffle, Zap, Eye } from "lucide-react";
-import { Badge } from "@/features/shared/components/ui/badge";
+import { Badge } from "@/features/shared/components/ds/Badge";
 import { Alert, AlertDescription } from "@/features/shared/components/ui/alert";
 import { Checkbox } from "@/features/shared/components/ui/checkbox";
 import { DndProvider, SortableContext, verticalListSortingStrategy, arrayMove } from "@/features/shared/components/dnd/DndProvider";

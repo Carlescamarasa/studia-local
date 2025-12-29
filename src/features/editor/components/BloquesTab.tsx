@@ -3,7 +3,7 @@ import { useBloques } from "@/features/estudio/hooks/useBloques";
 import { Button } from "@/features/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ui/card";
 import { Input } from "@/features/shared/components/ui/input";
-import { Badge } from "@/features/shared/components/ui/badge";
+import { Badge } from "@/features/shared/components/ds/Badge";
 import { Plus, Search, Layers } from "lucide-react";
 import ExerciseEditor from "./ExerciseEditor";
 import { componentStyles } from "@/design/componentStyles";

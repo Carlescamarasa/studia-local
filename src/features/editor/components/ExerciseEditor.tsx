@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ui/card";
 import { X, Save, Plus, Trash2, AlertTriangle, RefreshCw, Info, Music, GripVertical, ArrowUp, ArrowDown, RotateCcw, Play, Image as ImageIcon, FileText, Volume2, Pentagon, Star, Pencil } from "lucide-react";
 import { Alert, AlertDescription } from "@/features/shared/components/ui/alert";
-import { Badge } from "@/features/shared/components/ui/badge";
+import { Badge } from "@/features/shared/components/ds/Badge";
 import { Checkbox } from "@/features/shared/components/ui/checkbox";
 import {
   Tooltip,
@@ -19,9 +19,112 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/features/shared/components/ui/tooltip";
+import { toast } from "sonner";
+
+// ========== TYPE DEFINITIONS ==========
+
+interface MediaItem {
+  url: string;
+  name?: string | null;
+}
+
+interface TargetPPM {
+  nivel: number;
+  bpm: number;
+  unidad: string;
+}
+
+interface Variation {
+  id?: string;
+  label: string;
+  min_level?: number;
+  nivelMinimo?: number;
+  duracionSeg?: number;
+  tags?: string[];
+  asset_url?: string;
+  asset_urls?: string[];
+  media?: MediaItem[];
+}
+
+interface Elemento {
+  nombre: string;
+  [key: string]: unknown;
+}
+
+interface Pieza {
+  id: string;
+  elementos?: Elemento[];
+  [key: string]: unknown;
+}
+
+interface Ejercicio {
+  id?: string;
+  code?: string;
+  nombre?: string;
+  tipo?: string;
+  metodo?: string;
+  duracionSeg?: number;
+  instrucciones?: string;
+  indicadorLogro?: string;
+  indicador_logro?: string;
+  materialesRequeridos?: string[];
+  mediaLinks?: (string | MediaItem)[];
+  media?: Record<string, string>;
+  elementosOrdenados?: string[];
+  piezaRefId?: string | null;
+  targetPPMs?: TargetPPM[];
+  skillTags?: string[];
+  variations?: Variation[];
+  content?: {
+    variations?: Variation[];
+    mediaItems?: MediaItem[];
+  };
+  profesorId?: string | null;
+}
+
+interface FormData {
+  id: string | null;
+  nombre: string;
+  code: string;
+  tipo: string;
+  metodo: string;
+  duracionSeg: number;
+  instrucciones: string;
+  indicadorLogro: string;
+  materialesRequeridos: string[];
+  mediaLinks: (string | MediaItem)[];
+  elementosOrdenados: string[];
+  piezaRefId: string | null;
+  targetPPMs: TargetPPM[];
+  skillTags: string[];
+  variations: Variation[];
+  profesorId?: string | null;
+  content?: {
+    variations?: Variation[];
+    mediaItems?: MediaItem[];
+  };
+  media?: Record<string, string>;
+}
+
+interface MetodoOption {
+  value: string;
+  label: string;
+}
+
+interface SaveResult {
+  success: boolean;
+  message: string;
+}
+
+interface ExerciseEditorProps {
+  ejercicio?: Ejercicio | null;
+  onClose: (result: FormData | null) => void;
+  piezaSnapshot?: Pieza | null;
+  isInlineMode?: boolean;
+}
 
 // Simple UUID generator for frontend use
-function generateUUID() {
+function generateUUID(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
@@ -54,7 +157,7 @@ const SKILL_OPTIONS = [
 ];
 
 // Métodos iniciales por defecto (se cargan en localStorage si no hay ninguno)
-const INITIAL_METODO_OPTIONS = [
+const INITIAL_METODO_OPTIONS: MetodoOption[] = [
   { value: 'ARB', label: 'Arbans' },
   { value: 'CLK', label: 'Clarke' },
   { value: 'SCL', label: 'Escalas' },
@@ -68,7 +171,7 @@ const INITIAL_METODO_OPTIONS = [
 
 
 // Helper para obtener métodos desde localStorage (inicializa con defaults si está vacío)
-const getMetodos = () => {
+const getMetodos = (): MetodoOption[] => {
   try {
     const saved = localStorage.getItem('studia_metodos');
     if (saved) {
@@ -83,15 +186,15 @@ const getMetodos = () => {
 };
 
 // Helper para guardar métodos en localStorage
-const saveMetodos = (metodos) => {
+const saveMetodos = (metodos: MetodoOption[]): void => {
   localStorage.setItem('studia_metodos', JSON.stringify(metodos));
 };
 
 // Helper para obtener el número más alto usado para un método
-const getHighestCodeNumber = (allEjercicios, metodo) => {
+const getHighestCodeNumber = (allEjercicios: Ejercicio[], metodo: string): number => {
   const regex = new RegExp(`^TC-${metodo}-(\\d+)$`);
   let highest = 0;
-  allEjercicios.forEach(ej => {
+  allEjercicios.forEach((ej: Ejercicio) => {
     const match = ej.code?.match(regex);
     if (match) {
       const num = parseInt(match[1], 10);
@@ -101,15 +204,15 @@ const getHighestCodeNumber = (allEjercicios, metodo) => {
   return highest;
 };
 
-export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isInlineMode: initialInlineMode = false }) {
+export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isInlineMode: initialInlineMode = false }: ExerciseEditorProps) {
   const queryClient = useQueryClient();
   const effectiveUser = useEffectiveUser();
-  const [formData, setFormData] = useState({
-    id: null, // Add ID to formData
+  const [formData, setFormData] = useState<FormData>({
+    id: null,
     nombre: '',
     code: '',
     tipo: 'TC',
-    metodo: 'OTR', // Método para ejercicios TC
+    metodo: 'OTR',
     duracionSeg: 0,
     instrucciones: '',
     indicadorLogro: '',
@@ -119,13 +222,13 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
     piezaRefId: null,
     targetPPMs: [],
     skillTags: [],
-    variations: [], // NEW: Array of { label, min_level, tags, asset_urls[] }
+    variations: [],
   });
 
   // State for exercise ID (either from prop or generated)
-  const [exerciseId, setExerciseId] = useState(ejercicio?.id || null);
+  const [exerciseId, setExerciseId] = useState<string | null>(ejercicio?.id || null);
 
-  const handleAssetRegistered = (asset) => {
+  const handleAssetRegistered = (asset: unknown): void => {
     console.log("Asset Registered:", asset);
     // Optional: Refresh media assets list or show notification
   };
@@ -142,14 +245,14 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
   }, [ejercicio, initialInlineMode]);
 
   // Función para convertir el formato antiguo (media object) al nuevo (mediaLinks array)
-  const normalizeMedia = (media) => {
+  const normalizeMedia = (media: (string | MediaItem)[] | Record<string, string> | null | undefined): (string | MediaItem)[] => {
     if (!media) return [];
     if (Array.isArray(media)) {
       // Si ya es un array, normalizarlo
       return normalizeMediaLinks(media);
     }
     // Si es un objeto, convertir a array
-    const urls = [];
+    const urls: string[] = [];
     if (media.video) urls.push(media.video);
     if (media.audio) urls.push(media.audio);
     if (media.imagen) urls.push(media.imagen);
@@ -157,18 +260,18 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
     return normalizeMediaLinks(urls);
   };
   const [nuevoMaterial, setNuevoMaterial] = useState('');
-  const [saveResult, setSaveResult] = useState(null);
+  const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
   const [autoGeneratedCode, setAutoGeneratedCode] = useState(true);
   const [piezaRefId, setPiezaRefId] = useState('');
-  const [selectedElementos, setSelectedElementos] = useState([]);
+  const [selectedElementos, setSelectedElementos] = useState<Elemento[]>([]);
   const [isInlineMode, setIsInlineMode] = useState(initialInlineMode);
 
   // Estado para gestión de métodos (todos son editables)
-  const [metodos, setMetodos] = useState(getMetodos());
+  const [metodos, setMetodos] = useState<MetodoOption[]>(getMetodos());
   const [showMetodoEditor, setShowMetodoEditor] = useState(false);
   const [nuevoMetodoCodigo, setNuevoMetodoCodigo] = useState('');
   const [nuevoMetodoNombre, setNuevoMetodoNombre] = useState('');
-  const [editingMetodo, setEditingMetodo] = useState(null); // { value, label } del método en edición
+  const [editingMetodo, setEditingMetodo] = useState<MetodoOption | null>(null);
 
   // Lista de métodos para el selector
   const metodoOptions = metodos;
@@ -177,12 +280,12 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
   const { data: allEjercicios = [] } = useBloques();
 
   // Verificar si un método está en uso (tiene ejercicios con código > 0000)
-  const isMetodoInUse = (metodoCode) => {
-    return getHighestCodeNumber(allEjercicios, metodoCode) > 0;
+  const isMetodoInUse = (metodoCode: string): boolean => {
+    return getHighestCodeNumber(allEjercicios as unknown as Ejercicio[], metodoCode) > 0;
   };
 
   // Función para añadir un nuevo método
-  const handleAddMetodo = () => {
+  const handleAddMetodo = (): void => {
     const codigo = nuevoMetodoCodigo.toUpperCase().trim();
     const nombre = nuevoMetodoNombre.trim();
     if (!codigo || !nombre) return;
@@ -208,7 +311,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
   };
 
   // Función para eliminar un método (solo si no está en uso)
-  const handleDeleteMetodo = (codigo) => {
+  const handleDeleteMetodo = (codigo: string): void => {
     if (isMetodoInUse(codigo)) {
       setSaveResult({ success: false, message: '❌ No se puede eliminar: hay ejercicios usando este método' });
       setTimeout(() => setSaveResult(null), 3000);
@@ -225,7 +328,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
   };
 
   // Función para iniciar edición de un método
-  const handleStartEditMetodo = (metodo) => {
+  const handleStartEditMetodo = (metodo: MetodoOption): void => {
     if (isMetodoInUse(metodo.value)) {
       setSaveResult({ success: false, message: '❌ No se puede editar: hay ejercicios usando este método' });
       setTimeout(() => setSaveResult(null), 3000);
@@ -237,7 +340,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
   };
 
   // Función para guardar edición de un método
-  const handleSaveEditMetodo = () => {
+  const handleSaveEditMetodo = (): void => {
     if (!editingMetodo) return;
     const nuevoNombre = nuevoMetodoNombre.trim();
     if (!nuevoNombre) return;
@@ -254,7 +357,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
   };
 
   // Función para cancelar edición
-  const handleCancelEditMetodo = () => {
+  const handleCancelEditMetodo = (): void => {
     setEditingMetodo(null);
     setNuevoMetodoCodigo('');
     setNuevoMetodoNombre('');
@@ -269,13 +372,13 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
   const usandoPiezaSnapshot = !!piezaSnapshot;
   const elementosDisponibles = usandoPiezaSnapshot ? (piezaSnapshot?.elementos || []) : (piezaRef?.elementos || []);
 
-  const generateCode = async (tipo, metodo = null) => {
+  const generateCode = async (tipo: string, metodo: string | null = null): Promise<string> => {
     // Para TC, usar formato TC-{método}-{número}
     if (tipo === 'TC' && metodo) {
       const prefix = `TC-${metodo}-`;
       const ejerciciosDeTipo = allEjercicios.filter(e => e.code?.startsWith(prefix));
-      const maxNum = ejerciciosDeTipo.reduce((max, e) => {
-        const match = e.code.match(new RegExp(`${prefix}(\\d+)`));
+      const maxNum = ejerciciosDeTipo.reduce((max: number, e) => {
+        const match = e.code?.match(new RegExp(`${prefix}(\\d+)`));
         if (match) {
           const num = parseInt(match[1]);
           return num > max ? num : max;
@@ -286,8 +389,8 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
     }
     // Para otros tipos, usar formato {tipo}-{número}
     const ejerciciosDeTipo = allEjercicios.filter(e => e.code?.startsWith(`${tipo}-`));
-    const maxNum = ejerciciosDeTipo.reduce((max, e) => {
-      const match = e.code.match(/\d+/);
+    const maxNum = ejerciciosDeTipo.reduce((max: number, e) => {
+      const match = e.code?.match(/\d+/);
       if (match) {
         const num = parseInt(match[0]);
         return num > max ? num : max;

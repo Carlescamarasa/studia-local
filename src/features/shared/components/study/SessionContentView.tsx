@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Badge } from "@/features/shared/components/ui/badge";
+import { Badge } from "@/features/shared/components/ds/Badge";
 import { ChevronDown, ChevronRight, Layers, Shuffle, Eye, Zap, Clock } from "lucide-react";
 import { getSecuencia, ensureRondaIds } from "@/features/estudio/components/sessionSequence";
 import { componentStyles } from "@/design/componentStyles";

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Label } from "@/features/shared/components/ui/label";
 import { Textarea } from "@/features/shared/components/ui/textarea";
-import { Badge } from "@/features/shared/components/ui/badge";
+import { Badge } from "@/features/shared/components/ds/Badge";
 import { Button } from "@/features/shared/components/ui/button";
 import { Input } from "@/features/shared/components/ui/input";
 import { X, Eye, AlertCircle, Upload, HelpCircle, FileText, Image, Music, Loader2, Link as LinkIcon, Video } from "lucide-react";
