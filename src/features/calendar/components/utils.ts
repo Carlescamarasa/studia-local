@@ -11,6 +11,16 @@ import {
     UserRole
 } from "@/features/shared/types/domain";
 
+// Import shared date utilities
+import {
+    formatLocalDate,
+    parseLocalDate,
+    startOfMonday,
+} from "@/features/shared/utils/dateUtils";
+
+// Re-export for backward compatibility
+export { formatLocalDate, parseLocalDate, startOfMonday };
+
 // ==================== Types ====================
 
 export type { Usuario, Sesion, Feedback, Asignacion, EventoImportante };
@@ -45,38 +55,7 @@ export type TipoEventoImportante = EventoImportante['tipo'];
 export type EstadoAsignacion = Asignacion['estado'];
 
 
-// ==================== Helpers ====================
-
-const pad2 = (n: number): string => String(n).padStart(2, "0");
-
-/**
- * Formatea una fecha a formato ISO (YYYY-MM-DD)
- */
-export const formatLocalDate = (d: Date | string): string => {
-    if (typeof d === 'string') {
-        return d.split('T')[0]; // Si ya es string ISO, tomar solo la fecha
-    }
-    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-};
-
-/**
- * Parsea una fecha ISO (YYYY-MM-DD) a objeto Date
- */
-export const parseLocalDate = (s: string): Date => {
-    const [y, m, d] = s.split("-").map(Number);
-    return new Date(y, m - 1, d);
-};
-
-/**
- * Obtiene el lunes de la semana ISO para una fecha dada
- */
-export const startOfMonday = (date: Date): Date => {
-    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const dow = d.getDay();
-    const diff = dow === 0 ? -6 : 1 - dow;
-    d.setDate(d.getDate() + diff);
-    return d;
-};
+// ==================== Calendar-specific Helpers ====================
 
 /**
  * Obtiene el domingo de la semana ISO para una fecha dada

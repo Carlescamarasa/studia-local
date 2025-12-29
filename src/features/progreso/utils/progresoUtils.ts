@@ -2,6 +2,22 @@
  * Utilidades para componentes de estadísticas
  */
 
+// Import shared date utilities
+import {
+  formatLocalDate as sharedFormatLocalDate,
+  parseLocalDate as sharedParseLocalDate,
+  startOfMonday as sharedStartOfMonday,
+  isBetween as sharedIsBetween,
+  getBucketSpec as sharedGetBucketSpec,
+} from '@/features/shared/utils/dateUtils';
+
+// Re-export for backward compatibility
+export const formatLocalDate = sharedFormatLocalDate;
+export const parseLocalDate = sharedParseLocalDate;
+export const startOfMonday = sharedStartOfMonday;
+export const isBetween = sharedIsBetween;
+export const getBucketSpec = sharedGetBucketSpec;
+
 /**
  * Normaliza valores agregados (sin límite superior de 12h)
  */
@@ -65,60 +81,10 @@ export function formatDurationDDHHMM(value: number, unit: 'min' | 'sec' = 'sec')
 }
 
 /**
- * Formatea una fecha a string ISO local YYYY-MM-DD
- */
-export function formatLocalDate(date: Date | null): string {
-  if (!date) return '';
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-/**
- * Parsea un string YYYY-MM-DD a objeto Date local
- */
-export function parseLocalDate(dateStr: string | null): Date {
-  if (!dateStr) return new Date();
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day);
-}
-
-/**
  * Formateador para porcentajes
  */
 export function formatPercent(value: number): string {
   return `${Math.round(value)}%`;
-}
-
-/**
- * Retorna el lunes de la semana de una fecha dada
- */
-export function startOfMonday(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  return new Date(d.setDate(diff));
-}
-
-/**
- * Determina la granularidad óptima (día/semana/mes) dado un rango de fechas.
- */
-export function getBucketSpec(start: string | Date, end: string | Date): string {
-  if (!start || !end) return 'dia';
-
-  const dStart = typeof start === 'string' ? parseLocalDate(start) : start;
-  const dEnd = typeof end === 'string' ? parseLocalDate(end) : end;
-
-  if (!dStart || !dEnd) return 'dia';
-
-  // Diferencia en días
-  const diffTime = Math.abs(dEnd.getTime() - dStart.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays <= 14) return 'dia';
-  if (diffDays <= 90) return 'semana';
-  return 'mes';
 }
 
 /**
@@ -153,12 +119,4 @@ export function formatDurationChart(segundos: number): string {
   return parts.join(' ') || "0m";
 }
 
-/**
- * Retorna true si una fecha está entre start y end (inclusive)
- */
-export function isBetween(date: Date, start: string | Date | null, end: string | Date | null): boolean {
-  if (!start || !end) return true;
-  const dStart = typeof start === 'string' ? parseLocalDate(start) : start;
-  const dEnd = typeof end === 'string' ? parseLocalDate(end) : end;
-  return date >= dStart && date <= dEnd;
-}
+
