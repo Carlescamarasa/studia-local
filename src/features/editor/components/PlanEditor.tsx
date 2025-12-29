@@ -165,8 +165,8 @@ function SortableSesion({
               <Clock className="w-3 h-3 mr-1" />
               {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
             </Badge>
-            <Badge className={`rounded-full ${focoColors[sesion.foco]}`} variant="outline">
-              {focoLabels[sesion.foco]}
+            <Badge className={`rounded-full ${sesion.foco ? focoColors[sesion.foco] : ''}`} variant="outline">
+              {sesion.foco ? focoLabels[sesion.foco] : ''}
             </Badge>
           </div>
           {!isExpanded && (
@@ -221,14 +221,14 @@ function SortableSesion({
                   <>
                     {secuencia.map((item, seqIdx) => {
                       if (item.kind === 'BLOQUE') {
-                        const ejercicio = bloquesMap.get(item.code);
+                        const ejercicio = item.code ? bloquesMap.get(item.code) : null;
                         if (!ejercicio) return null;
 
-                        const ejercicioIndex = sesion.bloques.findIndex(b => b.code === item.code);
+                        const ejercicioIndex = sesion.bloques.findIndex((b: Ejercicio) => b.code === item.code!);
 
                         return (
                           <div key={`bloque-${item.code}-${seqIdx}`} className={componentStyles.items.compactItem}>
-                            <Badge variant="outline" className={`${tipoColors[ejercicio.tipo]} rounded-full ${componentStyles.typography.compactText}`}>
+                            <Badge variant="outline" className={`${ejercicio.tipo ? tipoColors[ejercicio.tipo as keyof typeof tipoColors] : tipoColors.TC} rounded-full ${componentStyles.typography.compactText}`}>
                               {ejercicio.tipo}
                             </Badge>
                             <span className="flex-1 text-[var(--color-text-primary)] font-medium truncate">{ejercicio.nombre}</span>
@@ -311,7 +311,7 @@ function SortableSesion({
                                   }
                                   return (
                                     <div key={eIndex} className={`${componentStyles.items.compactItem} ml-2`}>
-                                      <Badge variant="outline" className={`${componentStyles.typography.compactText} rounded-full ${tipoColors[ejercicio.tipo]}`}>
+                                      <Badge variant="outline" className={`${componentStyles.typography.compactText} rounded-full ${ejercicio.tipo ? tipoColors[ejercicio.tipo as keyof typeof tipoColors] : tipoColors.TC}`}>
                                         {ejercicio.tipo}
                                       </Badge>
                                       <span className="flex-1 text-[var(--color-text-primary)] truncate">{ejercicio.nombre}</span>
@@ -434,8 +434,8 @@ function SortableSemana({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h4 className="font-semibold text-base text-[var(--color-text-primary)]">{semana.nombre}</h4>
-            <Badge className={`rounded-full ${focoColors[semana.foco]}`}>
-              {focoLabels[semana.foco]}
+            <Badge className={`rounded-full ${semana.foco ? focoColors[semana.foco] : ''}`}>
+              {semana.foco ? focoLabels[semana.foco] : ''}
             </Badge>
             <span className="text-sm text-[var(--color-text-secondary)]">
               ({semana.sesiones?.length || 0} sesiones)
@@ -593,7 +593,7 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
   }, [plan]);
 
   const saveMutation = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async (data: PlanFormData & { profesorId?: string | null }) => {
       const semanaNombres = data.semanas.map(s => s.nombre?.trim().toLowerCase());
       const duplicados = semanaNombres.filter((nombre, index) =>
         semanaNombres.indexOf(nombre) !== index
@@ -604,16 +604,16 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
       }
 
       if (plan?.id) {
-        return localDataClient.entities.Plan.update(plan.id, data);
+        return localDataClient.entities.Plan.update(plan.id, data) as Promise<Plan>;
       }
-      return localDataClient.entities.Plan.create(data);
+      return localDataClient.entities.Plan.create(data) as Promise<Plan>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['planes'] });
       setSaveResult({ success: true, message: '✅ Cambios guardados' });
       setTimeout(() => onClose(), 1500);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       setSaveResult({ success: false, message: `❌ ${error.message}` });
     },
   });
@@ -627,18 +627,18 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
     // Añadir profesorId si no existe (solo para creación, no para edición)
     const dataToSave = plan?.id
       ? formData
-      : { ...formData, profesorId: effectiveUser?.id };
+      : { ...formData, profesorId: effectiveUser?.effectiveUserId };
 
-    if (!plan?.id && !effectiveUser?.id) {
+    if (!plan?.id && !effectiveUser?.effectiveUserId) {
       setSaveResult({ success: false, message: '❌ No se pudo identificar el usuario. Por favor, recarga la página.' });
       return;
     }
 
-    saveMutation.mutate(dataToSave);
-  }, [formData, plan?.id, effectiveUser?.id, saveMutation]);
+    saveMutation.mutate(dataToSave as any);
+  }, [formData, plan?.id, effectiveUser?.effectiveUserId, saveMutation]);
 
   const addSemana = useCallback(() => {
-    const newSemana = {
+    const newSemana: Semana = {
       nombre: `Semana ${formData.semanas.length + 1}`,
       objetivo: '',
       foco: 'GEN',
@@ -653,7 +653,7 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
 
   // Atajos de teclado
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       // No capturar si hay subeditor abierto
       if (editingSemana || editingSesion || editingEjercicio) return;
 
@@ -677,14 +677,14 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [editingSemana, editingSesion, editingEjercicio, onClose, handleSave, addSemana]);
 
-  const updateSemana = (index, updatedSemana) => {
+  const updateSemana = (index: number, updatedSemana: Semana) => {
     const newSemanas = [...formData.semanas];
     newSemanas[index] = updatedSemana;
     setFormData({ ...formData, semanas: newSemanas });
     setEditingSemana(null);
   };
 
-  const removeSemana = (index) => {
+  const removeSemana = (index: number) => {
     if (window.confirm('¿Eliminar esta semana y todas sus sesiones?')) {
       setFormData({
         ...formData,
@@ -693,7 +693,7 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
     }
   };
 
-  const duplicateSemana = (index) => {
+  const duplicateSemana = (index: number) => {
     const semana = formData.semanas[index];
     const newSemana = JSON.parse(JSON.stringify(semana));
     newSemana.nombre = `${semana.nombre} (copia)`;
@@ -705,7 +705,7 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
     setTimeout(() => setSaveResult(null), 3000);
   };
 
-  const toggleSemana = (index, e) => {
+  const toggleSemana = (index: number, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     const newExpanded = new Set(expandedSemanas);
     if (newExpanded.has(index)) {
@@ -716,7 +716,7 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
     setExpandedSemanas(newExpanded);
   };
 
-  const toggleSesion = (semanaIndex, sesionIndex, e) => {
+  const toggleSesion = (semanaIndex: number, sesionIndex: number, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     const key = `${semanaIndex}-${sesionIndex}`;
     const newExpanded = new Set(expandedSesiones);
@@ -728,7 +728,7 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
     setExpandedSesiones(newExpanded);
   };
 
-  const toggleEjercicios = (semanaIndex, sesionIndex) => {
+  const toggleEjercicios = (semanaIndex: number, sesionIndex: number) => {
     const key = `${semanaIndex}-${sesionIndex}-ej`;
     const newExpanded = new Set(expandedEjercicios);
     if (newExpanded.has(key)) {
@@ -739,7 +739,7 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
     setExpandedEjercicios(newExpanded);
   };
 
-  const addSesion = (semanaIndex) => {
+  const addSesion = (semanaIndex: number) => {
     const newSemanas = [...formData.semanas];
     if (!newSemanas[semanaIndex].sesiones) {
       newSemanas[semanaIndex].sesiones = [];
@@ -754,14 +754,14 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
     setExpandedSesiones(new Set([...expandedSesiones, `${semanaIndex}-${newSemanas[semanaIndex].sesiones.length - 1}`]));
   };
 
-  const updateSesion = (semanaIndex, sesionIndex, updatedSesion) => {
+  const updateSesion = (semanaIndex: number, sesionIndex: number, updatedSesion: Sesion) => {
     const newSemanas = [...formData.semanas];
     newSemanas[semanaIndex].sesiones[sesionIndex] = updatedSesion;
     setFormData({ ...formData, semanas: newSemanas });
     setEditingSesion(null);
   };
 
-  const removeSesion = (semanaIndex, sesionIndex) => {
+  const removeSesion = (semanaIndex: number, sesionIndex: number) => {
     if (window.confirm('¿Eliminar esta sesión y todas sus rondas?')) {
       const newSemanas = [...formData.semanas];
       newSemanas[semanaIndex].sesiones = newSemanas[semanaIndex].sesiones.filter((_, i) => i !== sesionIndex);
@@ -771,7 +771,7 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
     }
   };
 
-  const updateEjercicioInline = (semanaIndex, sesionIndex, ejercicioIndex, updatedEjercicio) => {
+  const updateEjercicioInline = (semanaIndex: number, sesionIndex: number, ejercicioIndex: number, updatedEjercicio: Ejercicio) => {
     const newSemanas = [...formData.semanas];
     newSemanas[semanaIndex].sesiones[sesionIndex].bloques[ejercicioIndex] = updatedEjercicio;
     setFormData({ ...formData, semanas: newSemanas });
@@ -780,7 +780,7 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
     setTimeout(() => setSaveResult(null), 3000);
   };
 
-  const removeEjercicio = (semanaIndex, sesionIndex, ejercicioIndex) => {
+  const removeEjercicio = (semanaIndex: number, sesionIndex: number, ejercicioIndex: number) => {
     if (window.confirm('¿Eliminar este ejercicio?')) {
       const newSemanas = [...formData.semanas];
       const ejercicio = newSemanas[semanaIndex].sesiones[sesionIndex].bloques[ejercicioIndex];
@@ -792,10 +792,10 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
       // Actualizar referencias en rondas
       if (newSemanas[semanaIndex].sesiones[sesionIndex].rondas) {
         newSemanas[semanaIndex].sesiones[sesionIndex].rondas =
-          newSemanas[semanaIndex].sesiones[sesionIndex].rondas.map(r => ({
+          newSemanas[semanaIndex].sesiones[sesionIndex].rondas.map((r: Ronda) => ({
             ...r,
-            bloques: r.bloques.filter(code => code !== ejercicio.code)
-          })).filter(r => r.bloques.length > 0);
+            bloques: r.bloques.filter((code: string) => code !== ejercicio.code)
+          })).filter((r: Ronda) => r.bloques.length > 0);
       }
 
       setFormData({ ...formData, semanas: newSemanas });
@@ -804,7 +804,7 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
     }
   };
 
-  const updateEjercicioEnRonda = (semanaIndex, sesionIndex, rondaIndex, ejercicioCode, updatedEjercicio) => {
+  const updateEjercicioEnRonda = (semanaIndex: number, sesionIndex: number, rondaIndex: number, ejercicioCode: string, updatedEjercicio: Ejercicio) => {
     const newSemanas = [...formData.semanas];
     const bloqueIndex = newSemanas[semanaIndex].sesiones[sesionIndex].bloques.findIndex(b => b.code === ejercicioCode);
     if (bloqueIndex !== -1) {
@@ -816,7 +816,7 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
     }
   };
 
-  const removeRonda = (semanaIndex, sesionIndex, rondaIndex) => {
+  const removeRonda = (semanaIndex: number, sesionIndex: number, rondaIndex: number) => {
     if (window.confirm('¿Eliminar esta ronda?')) {
       const newSemanas = [...formData.semanas];
       newSemanas[semanaIndex].sesiones[sesionIndex].rondas =
@@ -827,7 +827,7 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
     }
   };
 
-  const toggleRonda = (semanaIndex, sesionIndex, rondaIndex, e) => {
+  const toggleRonda = (semanaIndex: number, sesionIndex: number, rondaIndex: number, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     const key = `${semanaIndex}-${sesionIndex}-ronda-${rondaIndex}`;
     const newExpanded = new Set(expandedEjercicios); // Reutilizamos el mismo set
@@ -840,7 +840,7 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
   };
 
   // Drag & Drop handlers
-  const handleDragEnd = (event) => {
+  const handleDragEnd = (event: any) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -860,8 +860,12 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
 
     // Reordenar sesiones dentro de una semana
     if (activeId.startsWith('sesion-') && overId.startsWith('sesion-')) {
-      const [, activeSemana, activeSesion] = activeId.split('-');
-      const [, overSemana, overSesion] = overId.split('-');
+      const partsA = activeId.split('-');
+      const partsO = overId.split('-');
+      const activeSemana = partsA[1];
+      const activeSesion = partsA[2];
+      const overSemana = partsO[1];
+      const overSesion = partsO[2];
 
       if (activeSemana === overSemana) {
         const semanaIndex = parseInt(activeSemana);
@@ -875,11 +879,12 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
         );
         setFormData({ ...formData, semanas: newSemanas });
       }
+      return;
     }
   };
 
   // Calcular tiempo total de una sesión (incluyendo rondas)
-  const calcularTiempoSesion = (sesion) => {
+  const calcularTiempoSesion = (sesion: Sesion) => {
     if (!sesion.bloques) return 0;
 
     // Tiempo de ejercicios (excluyendo AD)
@@ -934,7 +939,7 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
       {/* Overlay con cierre al hacer clic */}
       <div
         className="fixed inset-0 bg-black/40 z-[220]"
-        onClick={() => onClose(null)}
+        onClick={() => onClose()}
       />
 
       <div className="fixed inset-0 z-[225] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
@@ -992,7 +997,6 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
                   <Select
                     value={formData.piezaId}
                     onValueChange={(v) => setFormData({ ...formData, piezaId: v })}
-                    modal={false}
                   >
                     <SelectTrigger id="pieza" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue placeholder="Selecciona una pieza..." />
@@ -1022,7 +1026,6 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
                   <Select
                     value={formData.focoGeneral}
                     onValueChange={(v) => setFormData({ ...formData, focoGeneral: v })}
-                    modal={false}
                   >
                     <SelectTrigger id="foco" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue />
@@ -1152,16 +1155,22 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
       {editingSemana && (
         <WeekEditor
           semana={editingSemana.semana}
-          onSave={(updated) => updateSemana(editingSemana.index, updated)}
+          onSave={(updated: any) => updateSemana(editingSemana.index, updated)}
           onClose={() => setEditingSemana(null)}
         />
       )}
 
       {editingSesion && (
         <SessionEditor
-          sesion={editingSesion.sesion}
-          pieza={piezas.find(p => p.id === formData.piezaId)}
-          onSave={(updated) => updateSesion(editingSesion.semanaIndex, editingSesion.sesionIndex, updated)}
+          sesion={{ ...editingSesion.sesion, secuencia: [] }} // Ensure it's SessionFormData
+          pieza={piezas.find((p: any) => p.id === formData.piezaId)}
+          piezaSnapshot={null}
+          alumnoId=""
+          onSave={(updated: any) => {
+            if (editingSesion) {
+              updateSesion(editingSesion.semanaIndex, editingSesion.sesionIndex, updated as Sesion);
+            }
+          }}
           onClose={() => setEditingSesion(null)}
         />
       )}
@@ -1169,22 +1178,23 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
       {editingEjercicio && (
         <ExerciseEditor
           ejercicio={editingEjercicio.ejercicio}
-          onClose={(updated) => {
-            if (updated) {
+          onClose={(updated: any) => {
+            const result = updated as Ejercicio | null;
+            if (result) {
               if (editingEjercicio.source === 'ronda') {
                 updateEjercicioEnRonda(
                   editingEjercicio.semanaIndex,
                   editingEjercicio.sesionIndex,
-                  editingEjercicio.rondaIndex,
-                  editingEjercicio.ejercicioCode,
-                  updated
+                  editingEjercicio.rondaIndex!,
+                  editingEjercicio.ejercicioCode!,
+                  result
                 );
               } else {
                 updateEjercicioInline(
                   editingEjercicio.semanaIndex,
                   editingEjercicio.sesionIndex,
-                  editingEjercicio.ejercicioIndex,
-                  updated
+                  editingEjercicio.ejercicioIndex!,
+                  result
                 );
               }
             } else {

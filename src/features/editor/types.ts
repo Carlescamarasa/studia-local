@@ -22,6 +22,7 @@ export interface Variation {
 }
 
 export interface Elemento {
+    id?: string;
     nombre: string;
     media?: {
         video?: string;
@@ -29,13 +30,27 @@ export interface Elemento {
         imagen?: string;
         pdf?: string;
     };
+    mediaLinks?: MediaItem[];
     [key: string]: unknown;
 }
 
 export interface Pieza {
     id: string;
+    nombre?: string;
+    descripcion?: string;
+    nivel?: string;
+    tiempoObjetivoSeg?: number;
     elementos?: Elemento[];
+    profesorId?: string | null;
     [key: string]: unknown;
+}
+
+export interface PiezaFormData {
+    nombre: string;
+    descripcion: string;
+    nivel: string;
+    tiempoObjetivoSeg: number;
+    elementos: Elemento[];
 }
 
 export interface Ejercicio {
