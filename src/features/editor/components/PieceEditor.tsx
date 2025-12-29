@@ -19,36 +19,39 @@ import { normalizeMediaLinks } from "@/features/shared/utils/media";
 import { useDataEntities } from "@/providers/DataProvider";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 
-export default function PieceEditor({ pieza, onClose }) {
+import { Pieza, PiezaFormData, Elemento, NivelPieza } from "../types";
+import { MediaItem } from "@/features/shared/components/media/MediaLinksInput";
+
+export default function PieceEditor({ pieza, onClose }: { pieza?: Pieza | null; onClose: () => void }) {
   const queryClient = useQueryClient();
   const entities = useDataEntities();
   const effectiveUser = useEffectiveUser();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<PiezaFormData>({
     nombre: '',
     descripcion: '',
     nivel: 'principiante',
     tiempoObjetivoSeg: 0,
     elementos: [],
   });
-  const [saveResult, setSaveResult] = useState(null);
+  const [saveResult, setSaveResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Convertir elementos antiguos con media object a mediaLinks array
-  const normalizeElementos = (elementos) => {
+  const normalizeElementos = (elementos: any[]): Elemento[] => {
     return elementos.map(el => {
       // Si tiene el formato antiguo (media object), convertir a array
       if (el.media && typeof el.media === 'object' && !Array.isArray(el.media)) {
-        const urls = [];
+        const urls: string[] = [];
         if (el.media.video) urls.push(el.media.video);
         if (el.media.audio) urls.push(el.media.audio);
         if (el.media.imagen) urls.push(el.media.imagen);
         if (el.media.pdf) urls.push(el.media.pdf);
-        return { ...el, mediaLinks: normalizeMediaLinks(urls), media: undefined };
+        return { ...el, mediaLinks: normalizeMediaLinks(urls), media: undefined } as Elemento;
       }
       // Si ya tiene mediaLinks o está vacío, normalizar
       return {
         ...el,
         mediaLinks: el.mediaLinks ? normalizeMediaLinks(el.mediaLinks) : []
-      };
+      } as Elemento;
     });
   };
 
@@ -65,7 +68,7 @@ export default function PieceEditor({ pieza, onClose }) {
   }, [pieza]);
 
   const saveMutation = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async (data: any) => {
       if (pieza?.id) {
         return entities.Pieza.update(pieza.id, data);
       }
@@ -76,7 +79,7 @@ export default function PieceEditor({ pieza, onClose }) {
       setSaveResult({ success: true, message: '✅ Cambios guardados' });
       setTimeout(() => onClose(), 1500);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       setSaveResult({ success: false, message: `❌ Error: ${error.message}` });
     },
   });
@@ -87,21 +90,20 @@ export default function PieceEditor({ pieza, onClose }) {
       return;
     }
 
-    // Añadir profesorId si no existe (solo para creación, no para edición)
-    const dataToSave = pieza?.id
-      ? formData
-      : { ...formData, profesorId: effectiveUser?.id };
+    // Map mediaLinks to string[] for DB compatibility
+    const dataToSave = {
+      ...(pieza?.id ? formData : { ...formData, profesorId: effectiveUser?.effectiveUserId }),
+      elementos: formData.elementos.map(el => ({
+        ...el,
+        mediaLinks: (el.mediaLinks || []).map((m: any) => typeof m === 'string' ? m : m.url)
+      }))
+    };
 
-    if (!pieza?.id && !effectiveUser?.id) {
-      setSaveResult({ success: false, message: '❌ No se pudo identificar el usuario. Por favor, recarga la página.' });
-      return;
-    }
-
-    saveMutation.mutate(dataToSave);
-  }, [formData, pieza?.id, effectiveUser?.id, saveMutation]);
+    saveMutation.mutate(dataToSave as any);
+  }, [formData, pieza?.id, effectiveUser?.effectiveUserId, saveMutation]);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === '.') {
         e.preventDefault();
         onClose();
@@ -128,25 +130,25 @@ export default function PieceEditor({ pieza, onClose }) {
     });
   };
 
-  const updateElemento = useCallback((index, field, value) => {
+  const updateElemento = useCallback((index: number, field: 'nombre' | 'mediaLinks', value: any) => {
     const newElementos = [...formData.elementos];
     if (field === 'nombre') {
-      newElementos[index].nombre = value;
+      newElementos[index].nombre = value as string;
     } else if (field === 'mediaLinks') {
-      // Normalizar y convertir a array de URLs
-      newElementos[index].mediaLinks = normalizeMediaLinks(value);
+      // Normalizar y mantener objetos
+      newElementos[index].mediaLinks = normalizeMediaLinks(value, true) as MediaItem[];
     }
     setFormData(prev => ({ ...prev, elementos: newElementos }));
   }, [formData.elementos]);
 
-  const removeElemento = (index) => {
+  const removeElemento = (index: number) => {
     setFormData({
       ...formData,
       elementos: formData.elementos.filter((_, i) => i !== index)
     });
   };
 
-  const handleDragEnd = (event) => {
+  const handleDragEnd = (event: any) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -165,7 +167,7 @@ export default function PieceEditor({ pieza, onClose }) {
     <>
       <div
         className="fixed inset-0 bg-black/40 z-[220]"
-        onClick={() => onClose(null)}
+        onClick={() => onClose()}
       />
       <div className="fixed inset-0 z-[225] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
         <div
@@ -241,8 +243,7 @@ export default function PieceEditor({ pieza, onClose }) {
                   <Label htmlFor="nivel" className={componentStyles.typography.cardTitle}>Nivel</Label>
                   <Select
                     value={formData.nivel}
-                    onValueChange={(v) => setFormData({ ...formData, nivel: v })}
-                    modal={false}
+                    onValueChange={(v) => setFormData({ ...formData, nivel: v as NivelPieza })}
                   >
                     <SelectTrigger id="nivel" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue placeholder="Selecciona nivel..." />
@@ -257,7 +258,6 @@ export default function PieceEditor({ pieza, onClose }) {
                       <SelectItem value="principiante">Principiante</SelectItem>
                       <SelectItem value="intermedio">Intermedio</SelectItem>
                       <SelectItem value="avanzado">Avanzado</SelectItem>
-                      <SelectItem value="profesional">Profesional</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -273,7 +273,7 @@ export default function PieceEditor({ pieza, onClose }) {
                     value={Math.floor(formData.tiempoObjetivoSeg / 60)}
                     onChange={(e) => {
                       if (e?.target?.value !== undefined) {
-                        setFormData(prev => ({ ...prev, tiempoObjetivoSeg: parseInt(e.target.value || 0) * 60 }));
+                        setFormData(prev => ({ ...prev, tiempoObjetivoSeg: parseInt(e.target.value.toString() || '0') * 60 }));
                       }
                     }}
                     autoComplete="off"

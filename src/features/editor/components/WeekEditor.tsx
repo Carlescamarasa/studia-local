@@ -9,8 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/comp
 import { X, Save, Calendar } from "lucide-react";
 import { createPortal } from "react-dom";
 
-export default function WeekEditor({ semana, onSave, onClose }) {
-  const [formData, setFormData] = useState({
+import { Semana } from "../types";
+
+export default function WeekEditor({ semana, onSave, onClose }: { semana?: Semana | null; onSave: (updated: Semana) => void; onClose: () => void }) {
+  const [formData, setFormData] = useState<Semana>({
     nombre: '',
     foco: 'GEN',
     objetivo: '',
@@ -33,7 +35,7 @@ export default function WeekEditor({ semana, onSave, onClose }) {
   }, [formData, onSave]);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === '.') {
         e.preventDefault();
         onClose();
@@ -58,13 +60,13 @@ export default function WeekEditor({ semana, onSave, onClose }) {
 
   const modalContent = (
     <>
-      <div 
+      <div
         className="fixed inset-0 bg-black/40 z-[125]"
         onClick={onClose}
       />
-      
+
       <div className="fixed inset-0 z-[130] flex items-center justify-center pointer-events-none p-4 overflow-y-auto">
-        <Card 
+        <Card
           className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col pointer-events-auto shadow-card rounded-[var(--radius-modal)] app-card my-8"
           onClick={(e) => e.stopPropagation()}
         >
@@ -94,18 +96,17 @@ export default function WeekEditor({ semana, onSave, onClose }) {
 
             <div>
               <Label htmlFor="foco">Foco de la Semana *</Label>
-              <Select 
-                value={formData.foco} 
+              <Select
+                value={formData.foco}
                 onValueChange={(v) => setFormData({ ...formData, foco: v })}
-                modal={false}
               >
                 <SelectTrigger id="foco" className="w-full h-10 rounded-[var(--radius-ctrl)] border-[var(--color-border-default)] focus-orange">
                   <SelectValue placeholder="Selecciona foco..." />
                 </SelectTrigger>
-                <SelectContent 
-                  position="popper" 
-                  side="bottom" 
-                  align="start" 
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
                   sideOffset={4}
                   className="z-[230] min-w-[var(--radix-select-trigger-width)] max-h-64 overflow-auto"
                 >

@@ -34,11 +34,13 @@ export interface Elemento {
     [key: string]: unknown;
 }
 
+export type NivelPieza = 'principiante' | 'intermedio' | 'avanzado';
+
 export interface Pieza {
     id: string;
     nombre?: string;
     descripcion?: string;
-    nivel?: string;
+    nivel?: NivelPieza;
     tiempoObjetivoSeg?: number;
     elementos?: Elemento[];
     profesorId?: string | null;
@@ -48,7 +50,7 @@ export interface Pieza {
 export interface PiezaFormData {
     nombre: string;
     descripcion: string;
-    nivel: string;
+    nivel: NivelPieza;
     tiempoObjetivoSeg: number;
     elementos: Elemento[];
 }
