@@ -476,6 +476,8 @@ interface MediaLinksInputProps {
   originType?: string | null;
   originId?: string | null;
   originLabel?: string | null;
+  initialMedia?: MediaItem[];
+  onUpdate?: (items: MediaItem[]) => void;
   disabled?: boolean;
   videoId?: string;
 }
@@ -492,6 +494,8 @@ export default function MediaLinksInput({
   originType = null,
   originId = null,
   originLabel = null,
+  initialMedia = [],
+  onUpdate,
   disabled = false,
   videoId = "video-upload"
 }: MediaLinksInputProps) {
@@ -681,6 +685,7 @@ export default function MediaLinksInput({
     const normalized = normalizeMediaLinks(combined, true).slice(0, MAX_LINKS - (videoFile ? 1 : 0));
 
     onChange(normalized);
+    onUpdate?.(normalized as MediaItem[]);
     setInputText('');
   };
 
@@ -692,6 +697,7 @@ export default function MediaLinksInput({
 
     const updated = richItems.filter((_, i) => i !== index);
     onChange(updated);
+    onUpdate?.(updated);
   };
 
   const handleMove = (index: number, direction: number) => {
@@ -699,6 +705,7 @@ export default function MediaLinksInput({
     const newItems = [...richItems];
     [newItems[index], newItems[index + direction]] = [newItems[index + direction], newItems[index]];
     onChange(newItems);
+    onUpdate?.(newItems);
   };
 
   const handleRename = (index: number, newName: string | null) => {
@@ -706,6 +713,7 @@ export default function MediaLinksInput({
     if (newItems[index]) {
       newItems[index] = { ...newItems[index], name: newName };
       onChange(newItems);
+      onUpdate?.(newItems);
     }
   };
 

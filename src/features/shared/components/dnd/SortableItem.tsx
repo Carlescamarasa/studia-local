@@ -2,13 +2,26 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-export function SortableItem({ 
-  id, 
-  children, 
+interface SortableItemProps {
+  id: string;
+  children: (args: {
+    dragHandleProps: any;
+    isDragging: boolean;
+  }) => React.ReactNode;
+  className?: string;
+  dragHandleClassName?: string;
+  disabled?: boolean;
+  onClick?: () => void;
+}
+
+export function SortableItem({
+  id,
+  children,
   className = '',
   dragHandleClassName = '',
-  disabled = false 
-}) {
+  disabled = false,
+  onClick
+}: SortableItemProps) {
   const {
     attributes,
     listeners,
@@ -16,7 +29,7 @@ export function SortableItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ 
+  } = useSortable({
     id,
     disabled,
   });
@@ -32,6 +45,7 @@ export function SortableItem({
       ref={setNodeRef}
       style={style}
       className={`${className} ${isDragging ? 'shadow-card border-[var(--color-primary)]' : ''}`}
+      onClick={onClick}
     >
       {children({
         dragHandleProps: {

@@ -16,6 +16,7 @@ import { Checkbox } from "@/features/shared/components/ui/checkbox";
 import { DndProvider, SortableContext, verticalListSortingStrategy, arrayMove } from "@/features/shared/components/dnd/DndProvider";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { DragEndEvent } from "@dnd-kit/core";
 import { toast } from "sonner";
 import ExerciseEditor from "./ExerciseEditor";
 import { createPortal } from "react-dom";
@@ -25,6 +26,28 @@ import { SortableItem } from "@/features/shared/components/dnd/SortableItem";
 import { calculateSessionTime } from "@/utils/variationUtils";
 import { formatDurationMinutes } from "@/features/shared/utils/helpers";
 import { Clock } from "lucide-react";
+import { Ejercicio, SessionFormData, Ronda, SecuenciaItem, Pieza, Variation } from "@/features/editor/types";
+
+interface SortableRondaProps {
+  id: string;
+  ronda: Ronda;
+  seqIndex: number;
+  isExpanded: boolean;
+  formData: SessionFormData;
+  expandedRondas: Set<number>;
+  setExpandedRondas: React.Dispatch<React.SetStateAction<Set<number>>>;
+  updateRondaRepeticiones: (id: string, value: string) => void;
+  updateRondaAleatoria: (id: string, value: boolean) => void;
+  duplicateRonda: (id: string) => void;
+  setFormData: React.Dispatch<React.SetStateAction<SessionFormData>>;
+  setEditingEjercicio: (value: { index?: number; ejercicio: Ejercicio | null; piezaSnapshot: Pieza | null } | null) => void;
+  removeEjercicioFromRonda: (rondaIndex: number, code: string) => void;
+  toggleEjercicioModo: (index: number) => void;
+  piezaSnapshot: Pieza | null;
+  pieza: Pieza;
+  tipoColors: Record<string, string>;
+  componentStyles: any;
+}
 
 // Componente Sortable para Ronda
 function SortableRonda({
@@ -46,7 +69,7 @@ function SortableRonda({
   pieza,
   tipoColors,
   componentStyles
-}) {
+}: SortableRondaProps) {
   const {
     attributes,
     listeners,
@@ -104,7 +127,7 @@ function SortableRonda({
             <Label className="text-xs text-[var(--color-text-secondary)] cursor-pointer flex items-center gap-1">
               <Checkbox
                 checked={!!ronda.aleatoria}
-                onCheckedChange={(v) => updateRondaAleatoria(ronda.id, v)}
+                onCheckedChange={(checked) => updateRondaAleatoria(ronda.id, !!checked)}
               />
               <Shuffle className="w-3 h-3" />
               aleatorio
@@ -177,7 +200,7 @@ function SortableRonda({
                         <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 -m-1" onClick={(e) => e.stopPropagation()}>
                           <GripVertical className="w-3 h-3 text-[var(--color-text-secondary)]" />
                         </div>
-                        <Badge variant="outline" className={`shrink-0 rounded-full ${tipoColors[ejercicio.tipo]}`}>
+                        <Badge variant="outline" className={`shrink-0 rounded-full ${tipoColors[ejercicio.tipo as keyof typeof tipoColors] || tipoColors.TC}`}>
                           {ejercicio.tipo}
                         </Badge>
                         <span className="text-sm flex-1 text-[var(--color-text-primary)]">
@@ -245,21 +268,32 @@ function SortableRonda({
   );
 }
 
-export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, onSave, onClose }) {
-  const [formData, setFormData] = useState({
+interface SessionEditorProps {
+  sesion: SessionFormData;
+  pieza: Pieza;
+  piezaSnapshot: Pieza | null;
+  alumnoId: string;
+  onSave: (data: SessionFormData) => void;
+  onClose: () => void;
+}
+
+export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, onSave, onClose }: SessionEditorProps) {
+  const [formData, setFormData] = useState<SessionFormData>({
     nombre: '',
     foco: 'GEN',
     bloques: [],
     rondas: [],
     secuencia: [],
   });
-  const [selectedEjercicios, setSelectedEjercicios] = useState(new Set());
-  const [searchTerm, setSearchTerm] = useState('');
-  const [tiposFilter, setTiposFilter] = useState(new Set());
-  const [expandedRondas, setExpandedRondas] = useState(new Set());
-  const [editingEjercicio, setEditingEjercicio] = useState(null);
 
-  const { data: ejercicios = [], isLoading: isLoadingEjercicios } = useQuery({
+  const [expandedRondas, setExpandedRondas] = useState<Set<number>>(new Set());
+  const [editingEjercicio, setEditingEjercicio] = useState<{ index?: number; ejercicio: Ejercicio | null; piezaSnapshot: Pieza | null } | null>(null);
+  const [selectedEjercicios, setSelectedEjercicios] = useState<Set<string>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [tiposFilter, setTiposFilter] = useState<Set<string>>(new Set(['TC']));
+  const [isInlineMode, setIsInlineMode] = useState(false);
+
+  const { data: ejercicios = [], isLoading: isLoadingEjercicios } = useQuery<Ejercicio[]>({
     queryKey: ['bloques-session-editor'], // Unique key to avoid collision with EjerciciosTab which returns raw snake_case
     queryFn: async () => {
       console.log('[SessionEditor] Fetching blocks from Supabase (forced unique key)...');
@@ -381,7 +415,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
   }, [formData, onSave, handleRepararReferencias]);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (editingEjercicio) return;
 
       if ((e.ctrlKey || e.metaKey) && e.key === '.') {
@@ -409,12 +443,12 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
 
     const matchSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       code.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchTipo = tiposFilter.size === 0 || tiposFilter.has(e.tipo);
+    const matchTipo = tiposFilter.size === 0 || tiposFilter.has(e.tipo || '');
 
     return matchSearch && matchTipo;
   });
 
-  const toggleTipoFilter = (tipo) => {
+  const toggleTipoFilter = (tipo: string) => {
     const newFilters = new Set(tiposFilter);
     if (newFilters.has(tipo)) {
       newFilters.delete(tipo);
@@ -433,36 +467,35 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
   }, [filteredEjercicios.length, ejercicios.length]);
 
   const addEjerciciosSeleccionados = () => {
-    const newBloquesToAdd = [];
-    const newSecItems = [];
+    const newBloquesToAdd: Ejercicio[] = [];
+    const newSecItems: SecuenciaItem[] = [];
 
     selectedEjercicios.forEach(ejercicioId => {
       const ejercicio = ejercicios.find(e => e.id === ejercicioId);
       if (ejercicio) {
-        const exists = formData.bloques.some(b => b.code === ejercicio.code);
-        if (exists && !window.confirm(`El ejercicio ${ejercicio.code} ya existe. ¿Añadir de nuevo?`)) {
+        const fullCode = ejercicio.code || '';
+        const exists = formData.bloques.some(b => b.code === fullCode);
+        if (exists && !window.confirm(`El ejercicio ${fullCode} ya existe. ¿Añadir de nuevo?`)) {
           return;
         }
 
-        const nuevoEjercicio = {
-          nombre: ejercicio.nombre,
-          code: ejercicio.code,
-          tipo: ejercicio.tipo,
-          duracionSeg: ejercicio.duracionSeg,
-          instrucciones: ejercicio.instrucciones,
-          indicadorLogro: ejercicio.indicadorLogro,
-          materialesRequeridos: ejercicio.materialesRequeridos || [],
+        const nuevoEjercicio: Ejercicio = {
+          ...ejercicio,
+          id: uid(), // New ID for the instance in session
+          code: fullCode,
+          nombre: ejercicio.nombre || ejercicio.title || '',
+          // Ensure mandatory fields for local state
           media: ejercicio.media || {},
           elementosOrdenados: ejercicio.elementosOrdenados || [],
           // Include variations in snapshot
-          variations: ejercicio.variations || ejercicio.content || [],
-          content: ejercicio.content || ejercicio.variations || [],
+          variations: (ejercicio.variations || ejercicio.content || []) as any as Variation[],
+          content: (ejercicio.content || ejercicio.variations || []) as any,
         };
 
         if (!exists) {
           newBloquesToAdd.push(nuevoEjercicio);
         }
-        newSecItems.push({ kind: 'BLOQUE', code: ejercicio.code });
+        newSecItems.push({ kind: 'BLOQUE' as const, code: ejercicio.code! });
 
         // Validación pedagógica de BPMs
         if (alumno?.nivelTecnico && ejercicio.targetPPMs?.length) {
@@ -486,8 +519,8 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
   };
 
   const crearRondaDesdeSeleccion = () => {
-    const codigosSeleccionados = [];
-    const newBloquesToAdd = [];
+    const codigosSeleccionados: string[] = [];
+    const newBloquesToAdd: Ejercicio[] = [];
 
     selectedEjercicios.forEach(ejercicioId => {
       const ejercicio = ejercicios.find(e => e.id === ejercicioId);
@@ -505,12 +538,15 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
             media: ejercicio.media || {},
             elementosOrdenados: ejercicio.elementosOrdenados || [],
             // Include variations in snapshot
-            variations: ejercicio.variations || ejercicio.content || [],
-            content: ejercicio.content || ejercicio.variations || [],
+            // Include variations in snapshot
+            variations: (ejercicio.variations || ejercicio.content || []) as any as Variation[],
+            content: (ejercicio.content || ejercicio.variations || []) as any,
           };
           newBloquesToAdd.push(nuevoEjercicio);
         }
-        codigosSeleccionados.push(ejercicio.code);
+        if (ejercicio.code) {
+          codigosSeleccionados.push(ejercicio.code);
+        }
       }
     });
 
@@ -523,9 +559,9 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
       aleatoria: false
     };
 
-    let nuevoSeqIndex;
+    let nuevoSeqIndex: number;
     setFormData(prev => {
-      const nuevaSecuencia = [...prev.secuencia, { kind: 'RONDA', id: nuevaRonda.id }];
+      const nuevaSecuencia: SecuenciaItem[] = [...prev.secuencia, { kind: 'RONDA', id: nuevaRonda.id }];
       nuevoSeqIndex = nuevaSecuencia.length - 1; // Índice de la nueva ronda en la secuencia
 
       return {
@@ -540,7 +576,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     setExpandedRondas(prev => new Set([...prev, nuevoSeqIndex]));
   };
 
-  const updateEjercicioInline = (index, updatedEjercicio) => {
+  const updateEjercicioInline = (index: number, updatedEjercicio: Ejercicio) => {
     const newBloques = [...formData.bloques];
     newBloques[index] = updatedEjercicio;
     setFormData({ ...formData, bloques: newBloques });
@@ -548,11 +584,11 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     toast.success('✅ Ejercicio actualizado');
   };
 
-  const removeEjercicio = (index) => {
+  const removeEjercicio = (index: number) => {
     const ejercicio = formData.bloques[index];
 
     // Check if this exercise is used in any ronda
-    const usedInRonda = formData.rondas.some(r => r.bloques.includes(ejercicio.code));
+    const usedInRonda = formData.rondas.some(r => r.bloques.includes(ejercicio.code!));
 
     if (usedInRonda) {
       // Only remove from secuencia, not from bloques (keep it for rondas)
@@ -572,23 +608,23 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     }
   };
 
-  const removeEjercicioFromRonda = (rondaIndex, ejercicioCode) => {
+  const removeEjercicioFromRonda = (rondaIndex: number, ejercicioCode: string) => {
     const newRondas = [...formData.rondas];
     newRondas[rondaIndex].bloques = newRondas[rondaIndex].bloques.filter(c => c !== ejercicioCode);
     if (newRondas[rondaIndex].bloques.length === 0) {
       newRondas.splice(rondaIndex, 1);
     }
-    setFormData({ ...formData, rondas: newRondas });
+    setFormData(prev => ({ ...prev, rondas: newRondas }));
   };
 
-  const updateRondaRepeticiones = (rondaId, reps) => {
+  const updateRondaRepeticiones = (rondaId: string, reps: string) => {
     const newRondas = formData.rondas.map(r =>
       r.id === rondaId ? { ...r, repeticiones: Math.max(1, parseInt(reps) || 1) } : r
     );
     setFormData({ ...formData, rondas: newRondas });
   };
 
-  const updateRondaAleatoria = (rondaId, aleatoria) => {
+  const updateRondaAleatoria = (rondaId: string, aleatoria: boolean) => {
     const newRondas = formData.rondas.map(r =>
       r.id === rondaId ? { ...r, aleatoria: !!aleatoria } : r
     );
@@ -596,36 +632,36 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
   };
 
   // Toggle between 'foco' and 'repaso' mode for an exercise
-  const toggleEjercicioModo = (index) => {
+  const toggleEjercicioModo = (index: number) => {
     const newBloques = [...formData.bloques];
     const currentModo = newBloques[index].modo || 'foco';
-    newBloques[index].modo = currentModo === 'foco' ? 'repaso' : 'foco';
-    setFormData({ ...formData, bloques: newBloques });
+    newBloques[index] = { ...newBloques[index], modo: currentModo === 'foco' ? 'repaso' : 'foco' };
+    setFormData(prev => ({ ...prev, bloques: newBloques }));
   };
 
-  const duplicateRonda = (rondaId) => {
+  const duplicateRonda = (rondaId: string) => {
     const ronda = formData.rondas.find(r => r.id === rondaId);
     if (!ronda) return;
 
-    const newRonda = { ...JSON.parse(JSON.stringify(ronda)), id: uid() };
+    const newRonda: Ronda = { ...JSON.parse(JSON.stringify(ronda)), id: uid() };
     const rondaIdx = formData.secuencia.findIndex(s => s.kind === 'RONDA' && s.id === rondaId);
 
     const newSecuencia = [...formData.secuencia];
     const nuevoSeqIndex = rondaIdx + 1; // Índice de la nueva ronda en la secuencia
     newSecuencia.splice(nuevoSeqIndex, 0, { kind: 'RONDA', id: newRonda.id });
 
-    setFormData({
-      ...formData,
-      rondas: [...formData.rondas, newRonda],
+    setFormData(prev => ({
+      ...prev,
+      rondas: [...prev.rondas, newRonda],
       secuencia: newSecuencia
-    });
+    }));
 
     // Expandir la ronda duplicada automáticamente
-    setExpandedRondas(prev => new Set([...prev, nuevoSeqIndex]));
+    setExpandedRondas(prev => new Set(Array.from(prev).concat(nuevoSeqIndex)));
     toast.success('✅ Ronda duplicada');
   };
 
-  const handleDragEnd = (event) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -635,8 +671,8 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     // 1) Reordenar dentro de SECUENCIA (ambos son seq-${index})
     if (activeId.startsWith('seq-') && overId.startsWith('seq-') &&
       !activeId.includes('-r-') && !overId.includes('-r-')) {
-      const oldIndex = parseInt(activeId.split('-').pop());
-      const newIndex = parseInt(overId.split('-').pop());
+      const oldIndex = parseInt(activeId.split('-').pop()!);
+      const newIndex = parseInt(overId.split('-').pop()!);
       setFormData({
         ...formData,
         secuencia: arrayMove(formData.secuencia, oldIndex, newIndex),
@@ -651,8 +687,8 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
       const ronda = formData.rondas.find(r => r.id === rondaId);
       if (!ronda) return;
 
-      const oldIndex = parseInt(activeId.split('-').pop());
-      const newIndex = parseInt(overId.split('-').pop());
+      const oldIndex = parseInt(activeId.split('-').pop()!);
+      const newIndex = parseInt(overId.split('-').pop()!);
       const newBloques = arrayMove(ronda.bloques, oldIndex, newIndex);
 
       setFormData({
@@ -670,7 +706,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
       const fromRondaId = activeId.split('-r-')[0];
       const toRondaId = overId.split('-r-')[0];
       const bloqueCode = activeId.split('-r-')[1].split('-')[0];
-      const newIndex = parseInt(overId.split('-').pop());
+      const newIndex = parseInt(overId.split('-').pop()!);
 
       const newRondas = formData.rondas.map(r => {
         if (r.id === fromRondaId) {
@@ -695,15 +731,15 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
 
     // 4) Mover de SECUENCIA (bloque) a RONDA
     if (activeId.startsWith('seq-') && !activeId.includes('-r-') && overId.includes('-r-')) {
-      const activeIndex = parseInt(activeId.split('-').pop());
+      const activeIndex = parseInt(activeId.split('-').pop()!);
       const activeItem = formData.secuencia[activeIndex];
 
       // Sólo permitimos mover BLOQUE a ronda
       if (activeItem.kind !== 'BLOQUE') return;
 
-      const bloqueCode = activeItem.code;
+      const bloqueCode = activeItem.code!;
       const rondaId = overId.split('-r-')[0];
-      const newIndex = parseInt(overId.split('-').pop());
+      const newIndex = parseInt(overId.split('-').pop()!);
 
       // Remover de secuencia
       const newSecuencia = formData.secuencia.filter((_, idx) => idx !== activeIndex);
@@ -730,7 +766,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     if (activeId.includes('-r-') && overId.startsWith('seq-') && !overId.includes('-r-')) {
       const rondaId = activeId.split('-r-')[0];
       const bloqueCode = activeId.split('-r-')[1].split('-')[0];
-      const newIndex = parseInt(overId.split('-').pop());
+      const newIndex = parseInt(overId.split('-').pop()!);
 
       // Remover de ronda
       const newRondas = formData.rondas.map(r =>
@@ -796,10 +832,9 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
 
   // Calcular tiempo total usando la utilidad avanzada que considera modos
   const sessionTime = useMemo(() => {
-    // Aplanar la sesión para el cálculo
-    const flatBlocks = [];
+    // Generate flat list of blocks to calculate time
+    const flatBlocks: Ejercicio[] = [];
 
-    // 1. Bloques sueltos (si están en secuencia y son BLOQUE)
     formData.secuencia.forEach(item => {
       if (item.kind === 'BLOQUE') {
         const bloque = formData.bloques.find(b => b.code === item.code);
@@ -807,9 +842,11 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
       } else if (item.kind === 'RONDA') {
         const ronda = formData.rondas.find(r => r.id === item.id);
         if (ronda) {
+          const bloques = ronda.bloques.filter((b): b is string => !!b);
+          // Add blocks for each repetition
           for (let i = 0; i < ronda.repeticiones; i++) {
-            ronda.bloques.forEach(code => {
-              const bloque = formData.bloques.find(b => b.code === code);
+            bloques.forEach(bCode => {
+              const bloque = formData.bloques.find(b => b.code === bCode);
               if (bloque) flatBlocks.push(bloque);
             });
           }
@@ -818,7 +855,18 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     });
 
     // Calcular tiempo asumiendo un nivel promedio (ej. 5) ya que estamos editando
-    return calculateSessionTime(flatBlocks, 5);
+    const focoBlocks = flatBlocks.filter(b => !b.modo || b.modo === 'foco');
+    const repasoBlocks = flatBlocks.filter(b => b.modo === 'repaso');
+
+    const focoSeconds = focoBlocks.reduce((acc, curr) => acc + (curr.duracionSeg || 0), 0);
+    const repasoSeconds = repasoBlocks.reduce((acc, curr) => acc + (curr.duracionSeg || 0), 0);
+    const totalSeconds = focoSeconds + repasoSeconds;
+
+    return {
+      totalTime: Math.floor(totalSeconds / 60),
+      focoTime: Math.floor(focoSeconds / 60),
+      repasoTime: Math.floor(repasoSeconds / 60)
+    };
   }, [formData]);
 
   const modalContent = (
@@ -931,13 +979,13 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
                                     <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing">
                                       <GripVertical className="w-4 h-4 text-[var(--color-text-secondary)]" />
                                     </div>
-                                    <Badge className={`rounded-full ${tipoColors[bloque.tipo]}`}>
+                                    <Badge className={`rounded-full ${tipoColors[bloque.tipo as keyof typeof tipoColors] || componentStyles.status.badgeDefault}`}>
                                       {bloque.tipo}
                                     </Badge>
                                     <div className="flex-1 min-w-0">
                                       <p className="font-medium text-sm truncate text-[var(--color-text-primary)]">{bloque.nombre}</p>
                                       <p className="text-xs text-[var(--color-text-secondary)]">
-                                        {bloque.code} • {Math.floor(bloque.duracionSeg / 60)}:{String(bloque.duracionSeg % 60).padStart(2, '0')} min
+                                        {bloque.code} • {Math.floor((bloque.duracionSeg || 0) / 60)}:{String((bloque.duracionSeg || 0) % 60).padStart(2, '0')} min
                                       </p>
                                     </div>
                                     <Button
@@ -1038,7 +1086,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
                       <Badge
                         key={key}
                         variant={tiposFilter.has(key) ? "default" : "outline"}
-                        className={`cursor-pointer transition-all rounded-full ${tiposFilter.has(key) ? tipoColors[key] : 'hover:bg-[var(--color-surface-muted)] hover:shadow-sm'
+                        className={`cursor-pointer transition-all rounded-full ${tiposFilter.has(key) ? tipoColors[key as keyof typeof tipoColors] : 'hover:bg-[var(--color-surface-muted)] hover:shadow-sm'
                           }`}
                         onClick={() => toggleTipoFilter(key)}
                       >
@@ -1108,26 +1156,26 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
                   ) : (
                     filteredEjercicios.map((ejercicio) => (
                       <div
-                        key={ejercicio.id}
-                        className={`flex items-center gap-2 p-2 border border-[var(--color-border-default)] rounded-[var(--radius-card)] cursor-pointer transition-all ${selectedEjercicios.has(ejercicio.id)
+                        key={ejercicio.id || 'unknown'}
+                        className={`flex items-center gap-2 p-2 border border-[var(--color-border-default)] rounded-[var(--radius-card)] cursor-pointer transition-all ${selectedEjercicios.has(ejercicio.id!)
                           ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)] shadow-sm'
                           : 'bg-[var(--color-surface-elevated)] hover:bg-[var(--color-surface-muted)] hover:shadow-sm'
                           }`}
                         onClick={() => {
                           const newSelected = new Set(selectedEjercicios);
-                          if (newSelected.has(ejercicio.id)) {
-                            newSelected.delete(ejercicio.id);
+                          if (newSelected.has(ejercicio.id!)) {
+                            newSelected.delete(ejercicio.id!);
                           } else {
-                            newSelected.add(ejercicio.id);
+                            newSelected.add(ejercicio.id!);
                           }
                           setSelectedEjercicios(newSelected);
                         }}
                       >
                         <Checkbox
-                          checked={selectedEjercicios.has(ejercicio.id)}
+                          checked={selectedEjercicios.has(ejercicio.id!)}
                           onCheckedChange={() => { }}
                         />
-                        <Badge variant="outline" className={`shrink-0 rounded-full ${tipoColors[ejercicio.tipo]}`}>
+                        <Badge variant="outline" className={`shrink-0 rounded-full ${tipoColors[(ejercicio.tipo || 'TC') as keyof typeof tipoColors] || tipoColors.TC}`}>
                           {ejercicio.tipo}
                         </Badge>
                         <div className="flex-1 min-w-0">
@@ -1170,8 +1218,8 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
           const dbBloque = ejercicios.find(e => e.code === baseEjercicio.code || e.id === baseEjercicio.id);
           enrichedEjercicio = {
             ...baseEjercicio,
-            variations: baseEjercicio.variations || dbBloque?.variations || dbBloque?.content || [],
-            content: baseEjercicio.content || dbBloque?.content || dbBloque?.variations || [],
+            variations: (baseEjercicio.variations || dbBloque?.variations || dbBloque?.content || []) as Variation[],
+            content: (baseEjercicio.content || dbBloque?.content || dbBloque?.variations || []) as any,
           };
         } else {
           // Creating new

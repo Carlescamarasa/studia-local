@@ -20,96 +20,13 @@ import {
   TooltipTrigger,
 } from "@/features/shared/components/ui/tooltip";
 import { toast } from "sonner";
+import { TargetPPM, Variation, Elemento, Pieza, Ejercicio, EjercicioFormData, MediaItem } from "@/features/editor/types";
 
 // ========== TYPE DEFINITIONS ==========
 
 
 
-interface TargetPPM {
-  nivel: number;
-  bpm: number;
-  unidad: string;
-}
 
-interface Variation {
-  id?: string;
-  label: string;
-  min_level?: number;
-  nivelMinimo?: number;
-  duracionSeg?: number;
-  tags?: string[];
-  asset_url?: string;
-  asset_urls?: string[];
-  media?: MediaItem[];
-}
-
-interface Elemento {
-  nombre: string;
-  media?: {
-    video?: string;
-    audio?: string;
-    imagen?: string;
-    pdf?: string;
-  };
-  [key: string]: unknown;
-}
-
-interface Pieza {
-  id: string;
-  elementos?: Elemento[];
-  [key: string]: unknown;
-}
-
-interface Ejercicio {
-  id?: string;
-  code?: string;
-  nombre?: string;
-  tipo?: string;
-  metodo?: string;
-  duracionSeg?: number;
-  instrucciones?: string;
-  indicadorLogro?: string;
-  indicador_logro?: string;
-  materialesRequeridos?: string[];
-  mediaLinks?: (string | MediaItem)[];
-  media?: Record<string, string>;
-  elementosOrdenados?: string[];
-  piezaRefId?: string | null;
-  targetPPMs?: TargetPPM[];
-  target_ppms?: TargetPPM[];
-  skillTags?: string[];
-  variations?: Variation[];
-  content?: {
-    variations?: Variation[];
-    mediaItems?: MediaItem[];
-  };
-  profesorId?: string | null;
-}
-
-interface EjercicioFormData {
-  id: string | null;
-  nombre: string;
-  code: string;
-  tipo: string;
-  metodo: string;
-  duracionSeg: number;
-  instrucciones: string;
-  indicadorLogro: string;
-  materialesRequeridos: string[];
-  mediaLinks: (string | MediaItem)[];
-  elementosOrdenados: string[];
-  piezaRefId: string | null;
-  targetPPMs: TargetPPM[];
-  target_ppms?: TargetPPM[];
-  skillTags: string[];
-  variations: Variation[];
-  profesorId?: string | null;
-  content?: {
-    variations?: Variation[];
-    mediaItems?: MediaItem[];
-  };
-  media?: Record<string, string>;
-}
 
 interface MetodoOption {
   value: string;
@@ -143,7 +60,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/features/shared/comp
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/features/shared/components/ui/accordion";
 import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
-import MediaLinksInput, { MediaItem } from "@/features/shared/components/media/MediaLinksInput";
+import MediaLinksInput from "@/features/shared/components/media/MediaLinksInput";
 import { normalizeMediaLinks } from "@/features/shared/utils/media";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import MultiSelect from "@/features/shared/components/ui/MultiSelect";
@@ -421,7 +338,22 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
         indicador_logro: ejercicio.indicador_logro, // Check if snake_case field exists
         allKeys: Object.keys(ejercicio)
       });
-      // setIsInlineMode(true); // REMOVED: This was forcing inline mode for all edits
+
+      // Safe access for content union type
+      const content = ejercicio.content;
+      const isLegacyContent = Array.isArray(content);
+      const mediaItems = !isLegacyContent && content ? (content as { mediaItems?: MediaItem[] }).mediaItems || [] : [];
+
+      // Determine variations source safely
+      let variationsList: Variation[] = [];
+      if (isLegacyContent) {
+        variationsList = content as Variation[];
+      } else if (content && (content as { variations?: Variation[] }).variations) {
+        variationsList = (content as { variations?: Variation[] }).variations || [];
+      } else {
+        variationsList = ejercicio.variations || [];
+      }
+
       setFormData({
         id: ejercicio.id || null, // Set ID
         nombre: ejercicio.nombre || '',
@@ -433,16 +365,15 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
         indicadorLogro: ejercicio.indicadorLogro || '',
         materialesRequeridos: ejercicio.materialesRequeridos || [],
         // Load media: Prioritize content.mediaItems (rich objects), then mediaLinks/media (legacy strings)
-        mediaLinks: (ejercicio.content?.mediaItems && ejercicio.content.mediaItems.length > 0)
-          ? ejercicio.content.mediaItems
+        mediaLinks: mediaItems.length > 0
+          ? mediaItems
           : normalizeMedia(ejercicio.mediaLinks || ejercicio.media),
         elementosOrdenados: ejercicio.elementosOrdenados || [],
         skillTags: ejercicio.skillTags || [],
         piezaRefId: ejercicio.piezaRefId || null,
         targetPPMs: ejercicio.targetPPMs || [],
         // Ensure variations have IDs
-        // Fix: Prioritize content.variations because variations prop might be an empty array [] which is truthy
-        variations: (ejercicio.content?.variations && ejercicio.content.variations.length > 0 ? ejercicio.content.variations : (ejercicio.variations || [])).map(v => ({ ...v, id: v.id || generateUUID() })),
+        variations: variationsList.map(v => ({ ...v, id: v.id || generateUUID() })),
         profesorId: ejercicio.profesorId || null
       });
       setPiezaRefId(ejercicio.piezaRefId || '');
@@ -716,8 +647,8 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
         ...(formData.variations || []),
         {
           id: generateUUID(), // Generate ID for new variation
-          label: '',
-          min_level: 1,
+          nombre: '',
+          nivelMinimo: 1,
           duracionSeg: 0,
           tags: [],
           asset_url: ''
@@ -1369,9 +1300,10 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                                 <div className="col-span-12 md:col-span-3">
                                   <Label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Nombre/Etiqueta</Label>
                                   <Input
-                                    value={variation.label || ''}
-                                    onChange={(e) => updateVariation(idx, 'label', e.target.value)}
-                                    placeholder="Ej: Sistema 1"
+                                    id={`var-label-${idx}`}
+                                    value={variation.nombre || ''}
+                                    onChange={(e) => updateVariation(idx, 'nombre', e.target.value)}
+                                    placeholder="Nombre de la variación..."
                                     className="h-9 text-sm w-full"
                                   />
                                 </div>
@@ -1380,11 +1312,12 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                                 <div className="col-span-6 md:col-span-2">
                                   <Label className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5 block">Nivel Mín.</Label>
                                   <Input
+                                    id={`var-min-level-${idx}`}
                                     type="number"
                                     min="1"
-                                    max="10"
-                                    value={variation.min_level || variation.nivelMinimo || 1}
-                                    onChange={(e) => updateVariation(idx, 'min_level', parseInt(e.target.value) || 1)}
+                                    max="100"
+                                    value={variation.nivelMinimo || 1}
+                                    onChange={(e) => updateVariation(idx, 'nivelMinimo', parseInt(e.target.value) || 1)}
                                     className="h-9 text-sm text-center w-full"
                                   />
                                 </div>
@@ -1465,8 +1398,9 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                                     showFileUpload={true}
                                     originType="variacion"
                                     originId={variation.id}
-                                    originLabel={`Variación: ${variation.label || 'Nueva'}`}
-                                    onAssetRegistered={handleAssetRegistered}
+                                    originLabel={`Variación: ${variation.nombre || 'Nueva'}`}
+                                    initialMedia={variation.mediaItems || []}
+                                    onUpdate={(items) => updateVariation(idx, 'mediaItems', items)}
                                   />
                                 </div>
                               </div>

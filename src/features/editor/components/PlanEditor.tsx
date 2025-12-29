@@ -21,6 +21,70 @@ import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "@/features/estudio/components/sessionSequence";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
+import {
+  Plan,
+  Semana,
+  Sesion,
+  Ejercicio,
+  Ronda,
+  SecuenciaItem,
+  PlanFormData
+} from "../types";
+
+interface SortableSesionProps {
+  id: string;
+  sesion: Sesion;
+  semanaIndex: number;
+  sesionIndex: number;
+  expandedSesiones: Set<string>;
+  expandedEjercicios: Set<string>;
+  toggleSesion: (semanaIndex: number, sesionIndex: number, e?: React.MouseEvent) => void;
+  toggleEjercicios: (semanaIndex: number, sesionIndex: number) => void;
+  toggleRonda: (semanaIndex: number, sesionIndex: number, rondaIndex: number, e?: React.MouseEvent) => void;
+  calcularTiempoSesion: (sesion: Sesion) => number;
+  setEditingSesion: (data: { semanaIndex: number; sesionIndex: number; sesion: Sesion }) => void;
+  setEditingEjercicio: (data: any) => void;
+  removeSesion: (semanaIndex: number, sesionIndex: number) => void;
+  removeEjercicio: (semanaIndex: number, sesionIndex: number, ejercicioIndex: number) => void;
+  removeRonda: (semanaIndex: number, sesionIndex: number, rondaIndex: number) => void;
+  focoColors: Record<string, string>;
+  focoLabels: Record<string, string>;
+  tipoColors: Record<string, string>;
+  componentStyles: any;
+  ensureRondaIds: (sesion: Sesion) => Sesion;
+  getSecuencia: (sesion: Sesion) => SecuenciaItem[];
+  mapBloquesByCode: (sesion: Sesion) => Map<string, Ejercicio>;
+}
+
+interface SortableSemanaProps {
+  id: string;
+  semana: Semana;
+  semanaIndex: number;
+  expandedSemanas: Set<number>;
+  expandedSesiones: Set<string>;
+  expandedEjercicios: Set<string>;
+  toggleSemana: (index: number, e?: React.MouseEvent) => void;
+  toggleSesion: (semanaIndex: number, sesionIndex: number, e?: React.MouseEvent) => void;
+  toggleEjercicios: (semanaIndex: number, sesionIndex: number) => void;
+  toggleRonda: (semanaIndex: number, sesionIndex: number, rondaIndex: number, e?: React.MouseEvent) => void;
+  calcularTiempoSesion: (sesion: Sesion) => number;
+  setEditingSemana: (data: { index: number; semana: Semana }) => void;
+  setEditingSesion: (data: { semanaIndex: number; sesionIndex: number; sesion: Sesion }) => void;
+  setEditingEjercicio: (data: any) => void;
+  duplicateSemana: (index: number) => void;
+  removeSemana: (index: number) => void;
+  removeSesion: (semanaIndex: number, sesionIndex: number) => void;
+  removeEjercicio: (semanaIndex: number, sesionIndex: number, ejercicioIndex: number) => void;
+  removeRonda: (semanaIndex: number, sesionIndex: number, rondaIndex: number) => void;
+  addSesion: (semanaIndex: number) => void;
+  focoColors: Record<string, string>;
+  focoLabels: Record<string, string>;
+  tipoColors: Record<string, string>;
+  componentStyles: any;
+  ensureRondaIds: (sesion: Sesion) => Sesion;
+  getSecuencia: (sesion: Sesion) => SecuenciaItem[];
+  mapBloquesByCode: (sesion: Sesion) => Map<string, Ejercicio>;
+}
 
 // Componente Sortable para Sesión
 function SortableSesion({
@@ -46,7 +110,7 @@ function SortableSesion({
   ensureRondaIds,
   getSecuencia,
   mapBloquesByCode
-}) {
+}: SortableSesionProps) {
   const {
     attributes,
     listeners,
@@ -329,7 +393,7 @@ function SortableSemana({
   ensureRondaIds,
   getSecuencia,
   mapBloquesByCode
-}) {
+}: SortableSemanaProps) {
   const {
     attributes,
     listeners,
@@ -480,23 +544,33 @@ function SortableSemana({
   );
 }
 
-export default function PlanEditor({ plan, onClose }) {
+export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClose: () => void }) {
   const queryClient = useQueryClient();
   const effectiveUser = useEffectiveUser();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<PlanFormData>({
     nombre: '',
     focoGeneral: 'GEN',
     objetivoSemanalPorDefecto: '',
     piezaId: '',
     semanas: [],
   });
-  const [expandedSemanas, setExpandedSemanas] = useState(new Set([0]));
-  const [expandedSesiones, setExpandedSesiones] = useState(new Set());
-  const [expandedEjercicios, setExpandedEjercicios] = useState(new Set());
-  const [editingSemana, setEditingSemana] = useState(null);
-  const [editingSesion, setEditingSesion] = useState(null);
-  const [editingEjercicio, setEditingEjercicio] = useState(null);
-  const [saveResult, setSaveResult] = useState(null);
+  const [expandedSemanas, setExpandedSemanas] = useState<Set<number>>(new Set([0]));
+  const [expandedSesiones, setExpandedSesiones] = useState<Set<string>>(new Set());
+  const [expandedEjercicios, setExpandedEjercicios] = useState<Set<string>>(new Set());
+
+  const [editingSemana, setEditingSemana] = useState<{ index: number; semana: Semana } | null>(null);
+  const [editingSesion, setEditingSesion] = useState<{ semanaIndex: number; sesionIndex: number; sesion: Sesion } | null>(null);
+  const [editingEjercicio, setEditingEjercicio] = useState<{
+    semanaIndex: number;
+    sesionIndex: number;
+    ejercicioIndex?: number;
+    rondaIndex?: number;
+    ejercicioCode?: string;
+    ejercicio: Ejercicio;
+    source: 'session' | 'ronda';
+  } | null>(null);
+
+  const [saveResult, setSaveResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const { data: piezas = [] } = useQuery({
     queryKey: ['piezas'],
