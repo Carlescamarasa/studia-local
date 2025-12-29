@@ -502,14 +502,21 @@ function ProgresoPageContent() {
 
         if (periodoInicio || periodoFin) {
             resultado = resultado.filter((f: FeedbackSemanal) => {
-                const createdAt = f.created_at;
-                const updatedAt = f.updated_at || createdAt;
+                // Check multiple possible date field names (snake_case and camelCase)
+                const createdAt = (f as any).created_at || (f as any).createdAt;
+                const updatedAt = (f as any).updated_at || (f as any).updatedAt || createdAt;
 
-                if (!createdAt) return true;
+                // Use semanaInicioISO as fallback date reference
+                const semanaInicio = (f as any).semanaInicioISO;
 
-                // Use the most recent date (updated if different, otherwise created)
-                const fechaRelevante = updatedAt && updatedAt !== createdAt ? updatedAt : createdAt;
-                if (!fechaRelevante) return true;
+                // Determine the best date to use for filtering
+                const fechaRelevante = updatedAt || createdAt || semanaInicio;
+
+                if (!fechaRelevante) {
+                    // When filtering is active, exclude feedbacks without any date
+                    console.log('[FeedbackFilter] Excluding feedback without any date field:', f.id);
+                    return false;
+                }
 
                 // Apply same filtering logic as sessions
                 const feedbackDate = new Date(fechaRelevante);
