@@ -1,6 +1,16 @@
 import { componentStyles } from "@/design/componentStyles";
 import { cn } from "@/lib/utils";
-import { Button } from "./Button";
+import { ReactNode } from "react";
+
+interface EmptyStateProps {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  action?: ReactNode;
+  variant?: 'noData' | 'noResults' | 'error' | 'default';
+  className?: string;
+  [key: string]: any;
+}
 
 /**
  * EmptyState - Componente mejorado para estados vacíos
@@ -20,7 +30,7 @@ export function EmptyState({
   variant = 'default',
   className,
   ...props
-}) {
+}: EmptyStateProps) {
   const containerClass = {
     noData: componentStyles.empty.emptyNoData,
     noResults: componentStyles.empty.emptyNoResults,
