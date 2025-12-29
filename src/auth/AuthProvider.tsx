@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAuthState(prev => ({
           ...prev,
           profile: null,
-          loading: isInitialLoad ? false : prev.loading,
+          loading: false, // Always stop loading when fetch completes
         }));
         fetchingProfileRef.current = false;
         return;
@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         profile: data as StudiaUser,
         initialProfileLoaded: isInitialLoad ? true : prev.initialProfileLoaded,
-        loading: isInitialLoad ? false : prev.loading,
+        loading: false, // Always stop loading when fetch completes
       }));
 
       fetchingProfileRef.current = false;
@@ -114,7 +114,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthState(prev => ({
         ...prev,
         profile: null,
-        loading: isInitialLoad ? false : prev.loading,
+        loading: false, // Always stop loading on crash
+        initialProfileLoaded: isInitialLoad ? true : prev.initialProfileLoaded,
       }));
       fetchingProfileRef.current = false;
     }
