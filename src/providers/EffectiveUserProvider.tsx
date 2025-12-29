@@ -9,7 +9,7 @@
  * para sobrevivir refrescos de página.
  */
 
-import React, { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
 import { UserRole } from '@/features/shared/types/domain';
 import { EffectiveUserContextValue, ImpersonationData } from '@/features/auth/types';
@@ -24,6 +24,9 @@ const STORAGE_KEY = 'studia_impersonation';
  */
 export function EffectiveUserProvider({ children }: { children: React.ReactNode }) {
     const { user, appRole, profile, loading } = useAuth();
+
+    // Ref to track when we're exiting impersonation (to avoid blocking on AuthProvider loading)
+    const isExitingImpersonationRef = useRef(false);
 
     // Estado de suplantación (inicializado desde localStorage si existe)
     const [impersonatedUser, setImpersonatedUser] = useState<ImpersonationData | null>(() => {
@@ -62,7 +65,13 @@ export function EffectiveUserProvider({ children }: { children: React.ReactNode 
 
     // Detener suplantación
     const stopImpersonation = useCallback(() => {
+        // Mark that we're exiting to prevent loading state from blocking
+        isExitingImpersonationRef.current = true;
         setImpersonatedUser(null);
+        // Reset the flag after React has settled the state
+        queueMicrotask(() => {
+            isExitingImpersonationRef.current = false;
+        });
     }, []);
 
     // SEGURIDAD: Si el usuario real hace logout, limpiar la impersonación inmediatamente
@@ -75,9 +84,12 @@ export function EffectiveUserProvider({ children }: { children: React.ReactNode 
 
     // Calcular valores del contexto
     const value = useMemo<EffectiveUserContextValue>(() => {
-        // Bloquear cálculo si está cargando o no hay perfil (para evitar estados inconsistentes)
-        // Esto asegura que nadie accede a useEffectiveUser antes de tener toda la info
-        if (loading || (user && !profile)) {
+        // Block calculation only if AuthProvider is loading AND we're NOT exiting impersonation.
+        // When exiting impersonation, we should NOT block because:
+        // 1. The auth state hasn't changed (same user)
+        // 2. Impersonation is purely local state (localStorage + React)
+        // 3. Blocking here causes the infinite spinner bug
+        if (loading && !isExitingImpersonationRef.current) {
             return {
                 loading: true,
                 isImpersonating: false,

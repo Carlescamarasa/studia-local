@@ -8,30 +8,7 @@ import { Session } from '@supabase/supabase-js';
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-/**
- * Calcula el rol de la aplicación basándose en el email del usuario
- * @param {string | undefined} email - Email del usuario
- * @returns {UserRole} - Rol: 'ADMIN', 'PROF' o 'ESTU'
- */
-function calculateAppRoleFromEmail(email?: string): UserRole {
-  if (!email) return 'ESTU';
 
-  const normalizedEmail = email.toLowerCase().trim();
-
-  // Admin
-  if (normalizedEmail === 'carlescamarasa@gmail.com') {
-    return 'ADMIN';
-  }
-
-  // Profesores
-  if (normalizedEmail === 'carlescamarasa+profe@gmail.com' ||
-    normalizedEmail === 'atorrestrompeta@gmail.com') {
-    return 'PROF';
-  }
-
-  // Por defecto: Estudiante
-  return 'ESTU';
-}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ============================================================================
@@ -59,67 +36,113 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loading = authState.loading;
   const authError = authState.error;
 
-  const appRole = useMemo(() => {
-    return calculateAppRoleFromEmail(user?.email);
-  }, [user?.email]);
+  // Rol basado en el perfil de BD (no emails hardcodeados)
+  const appRole = useMemo((): UserRole => {
+    return profile?.role || 'ESTU';
+  }, [profile?.role]);
 
   // ============================================================================
-  // FUNCIÓN PARA CARGAR PERFIL - OPTIMIZADA
+  // FUNCIÓN PARA CARGAR PERFIL - OPTIMIZADA con TIMEOUT
   // ============================================================================
+  // Stabilize fetchProfile by removing dependency on authState.profile?.id
   const fetchProfile = useCallback(async (userId: string | null, isInitialLoad = false) => {
     if (!userId) {
-      setAuthState(prev => ({ ...prev, profile: null }));
+      setAuthState(prev => ({ ...prev, profile: null, loading: false }));
       lastProfileUserIdRef.current = null;
       fetchingProfileRef.current = false;
       return;
     }
 
     if (fetchingProfileRef.current && lastProfileUserIdRef.current === userId) {
-      return;
-    }
-
-    if (lastProfileUserIdRef.current === userId && authState.profile?.id === userId) {
+      if (import.meta.env.DEV) console.log('[AuthProvider] Already fetching profile for:', userId);
       return;
     }
 
     fetchingProfileRef.current = true;
     lastProfileUserIdRef.current = userId;
 
-    try {
-      const { data, error } = await supabase
+    if (import.meta.env.DEV) console.log('[AuthProvider] Starting profile fetch for:', userId);
+
+    // Helper para hacer una consulta con timeout
+    const fetchWithTimeout = async (timeoutMs: number): Promise<{ data: StudiaUser | null; error: Error | null }> => {
+      const fetchPromise = supabase
         .from('profiles')
         .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at')
         .eq('id', userId)
         .single();
 
-      if (error) {
-        setAuthState(prev => ({
-          ...prev,
-          profile: null,
-          loading: false, // Always stop loading when fetch completes
-        }));
-        fetchingProfileRef.current = false;
-        return;
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Profile fetch timeout')), timeoutMs)
+      );
+
+      try {
+        const result = await Promise.race([fetchPromise, timeoutPromise]);
+        return { data: result.data as StudiaUser, error: result.error };
+      } catch (err) {
+        return { data: null, error: err as Error };
+      }
+    };
+
+    // Retry config
+    const MAX_RETRIES = 3;
+    const INITIAL_DELAY_MS = 100; // Delay inicial para que el cliente REST se inicialice
+    const TIMEOUT_MS = 5000;
+
+    try {
+      // Pequeño delay inicial para evitar race condition con la inicialización del cliente
+      await new Promise(resolve => setTimeout(resolve, INITIAL_DELAY_MS));
+
+      let lastError: Error | null = null;
+
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        if (import.meta.env.DEV) console.log(`[AuthProvider] Fetch attempt ${attempt}/${MAX_RETRIES}...`);
+
+        const { data, error } = await fetchWithTimeout(TIMEOUT_MS);
+
+        if (data && !error) {
+          if (import.meta.env.DEV) console.log('[AuthProvider] Profile loaded successfully');
+          setAuthState(prev => ({
+            ...prev,
+            profile: data,
+            initialProfileLoaded: true,
+            loading: false,
+          }));
+          fetchingProfileRef.current = false;
+          return;
+        }
+
+        lastError = error;
+        if (import.meta.env.DEV) console.warn(`[AuthProvider] Attempt ${attempt} failed:`, error?.message);
+
+        // Backoff exponencial antes del siguiente retry (excepto en el último intento)
+        if (attempt < MAX_RETRIES) {
+          const backoffMs = INITIAL_DELAY_MS * Math.pow(2, attempt);
+          if (import.meta.env.DEV) console.log(`[AuthProvider] Waiting ${backoffMs}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, backoffMs));
+        }
       }
 
-      setAuthState(prev => ({
-        ...prev,
-        profile: data as StudiaUser,
-        initialProfileLoaded: isInitialLoad ? true : prev.initialProfileLoaded,
-        loading: false, // Always stop loading when fetch completes
-      }));
-
-      fetchingProfileRef.current = false;
-    } catch (err) {
+      // Todos los intentos fallaron
+      console.error('[AuthProvider] All fetch attempts failed:', lastError?.message);
       setAuthState(prev => ({
         ...prev,
         profile: null,
-        loading: false, // Always stop loading on crash
-        initialProfileLoaded: isInitialLoad ? true : prev.initialProfileLoaded,
+        loading: false,
+        initialProfileLoaded: true,
+      }));
+      fetchingProfileRef.current = false;
+
+    } catch (err) {
+      console.error('[AuthProvider] Profile fetch crash:', err);
+      setAuthState(prev => ({
+        ...prev,
+        profile: null,
+        loading: false,
+        initialProfileLoaded: true,
       }));
       fetchingProfileRef.current = false;
     }
-  }, [authState.profile?.id]);
+  }, []); // Stable function reference
 
   const signOut = useCallback(async () => {
     try {
@@ -133,7 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user: null,
       profile: null,
       loading: false,
-      initialProfileLoaded: false,
+      initialProfileLoaded: true,
       error: null,
     });
     fetchingProfileRef.current = false;
@@ -183,57 +206,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
-    const SESSION_TIMEOUT_MS = 10000;
 
-    const getSessionWithTimeout = (): Promise<{ data: { session: Session | null }; error: any }> => {
-      const sessionPromise = supabase.auth.getSession();
-      const timeoutPromise = new Promise<{ data: { session: Session | null }; error: any }>((_, reject) =>
-        setTimeout(() => reject(new Error('Session fetch timeout')), SESSION_TIMEOUT_MS)
-      );
-      return Promise.race([sessionPromise as any, timeoutPromise]);
-    };
+    // Use a ref to track if we've handled the initial session to avoid double-processing
+    let initialHandled = false;
 
-    getSessionWithTimeout()
-      .then(async ({ data: { session }, error }) => {
-        if (!isMounted) return;
-
-        if (error) {
-          // Handle initial session fetch error
-        }
-
-        setAuthState(prev => ({
-          ...prev,
-          session,
-          user: session?.user ?? null,
-          error: null,
-        }));
-
-        if (session?.user?.id) {
-          await fetchProfile(session.user.id, true);
-        } else {
-          setAuthState(prev => ({
-            ...prev,
-            profile: null,
-            loading: false,
-            initialProfileLoaded: true,
-          }));
-        }
-      })
-      .catch(() => {
-        if (!isMounted) return;
-        setAuthState(prev => ({ ...prev, loading: false, initialProfileLoaded: true }));
-      });
-
+    // Listen to changes - This handles INITIAL_SESSION as well in v2+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
 
-      if (event === 'SIGNED_OUT') {
+      if (import.meta.env.DEV) console.log('[AuthProvider] Auth event:', event, session?.user?.id);
+
+      // IMPORTANTE: Ignorar SIGNED_IN si aún no hemos recibido INITIAL_SESSION
+      // Esto evita que intentemos fetch del perfil antes de que el cliente REST esté listo
+      if (event === 'SIGNED_IN' && !initialHandled) {
+        if (import.meta.env.DEV) console.log('[AuthProvider] Ignoring early SIGNED_IN, waiting for INITIAL_SESSION...');
+        return;
+      }
+
+      // Marcar como manejado cuando recibimos INITIAL_SESSION
+      if (event === 'INITIAL_SESSION') {
+        initialHandled = true;
+      }
+
+      if (!session) {
         setAuthState({
           session: null,
           user: null,
           profile: null,
           loading: false,
-          initialProfileLoaded: false,
+          initialProfileLoaded: true,
           error: null,
         });
         lastProfileUserIdRef.current = null;
@@ -241,41 +242,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const userIdChanged = !user || user.id !== session?.user.id;
+      const currentUserId = session.user.id;
+      const userIdChanged = lastProfileUserIdRef.current !== currentUserId;
 
-      if (session) {
-        setAuthState(prev => ({
-          ...prev,
-          session,
-          user: session.user,
-          error: null,
-          loading: userIdChanged ? true : prev.loading,
-        }));
+      // Update basic session info
+      setAuthState(prev => ({
+        ...prev,
+        session,
+        user: session.user,
+        error: null,
+        // Only trigger loading if the user actually changed
+        loading: userIdChanged ? true : prev.loading,
+      }));
 
-        if (userIdChanged) {
-          await fetchProfile(session.user.id, false);
-        }
+      // Trigger profile fetch if user changed or it's INITIAL_SESSION
+      if (userIdChanged || event === 'INITIAL_SESSION') {
+        await fetchProfile(currentUserId, event === 'INITIAL_SESSION');
+      } else {
+        // If user is the same, ensure loading is stopped (failsafe)
+        setAuthState(prev => (prev.loading ? { ...prev, loading: false } : prev));
       }
     });
+
+    // Failsafe: If after 3s we are still loading, force a manual check
+    // This handles cases where onAuthStateChange might not fire INITIAL_SESSION on some browsers/versions
+    const failsafeTimeout = setTimeout(async () => {
+      if (isMounted && !initialHandled) {
+        if (import.meta.env.DEV) console.log('[AuthProvider] INITIAL_SESSION failsafe triggered');
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session && isMounted) {
+          setAuthState(prev => ({ ...prev, loading: false, initialProfileLoaded: true }));
+        }
+      }
+    }, 3000);
 
     sessionCheckIntervalRef.current = setInterval(async () => {
       if (!isMounted) return;
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session && user) {
+        if (!session && lastProfileUserIdRef.current) {
           await signOut();
         }
       } catch (e) { }
-    }, 30 * 60 * 1000);
+    }, 10 * 60 * 1000);
 
     return () => {
       isMounted = false;
       subscription.unsubscribe();
+      clearTimeout(failsafeTimeout);
       if (sessionCheckIntervalRef.current) {
         clearInterval(sessionCheckIntervalRef.current as any);
       }
     };
-  }, [fetchProfile, user, signOut]);
+  }, [fetchProfile, signOut]); // Only stable dependencies // Stable dependencies
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });

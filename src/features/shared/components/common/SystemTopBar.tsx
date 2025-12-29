@@ -53,7 +53,6 @@ export default function SystemTopBar({
                         <button
                             onClick={() => {
                                 stopImpersonation();
-                                window.location.reload();
                             }}
                             className="px-2 py-0.5 bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold rounded flex items-center gap-1 transition-colors"
                             title="Salir de la suplantación"
