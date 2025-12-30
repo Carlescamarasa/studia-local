@@ -101,6 +101,10 @@ export default function HabilidadesView({
     const { data: totalXPMultiple, isLoading: isLoadingTotalMultiple } = useTotalXPMultiple(isMultiple ? effectiveIds : []);
     const { data: practiceXPMultiple, isLoading: isLoadingPracticeMultiple } = useLifetimePracticeXPMultiple(isMultiple ? effectiveIds : []);
 
+    const isLoadingXP = isMultiple
+        ? (isLoadingTotalMultiple || isLoadingPracticeMultiple)
+        : (isLoadingTotalSingle || isLoadingPracticeSingle);
+
     // Aggregated Goals (maxXP denominator)
     const aggregatedGoals = useAggregateLevelGoals(effectiveIds);
 
@@ -135,6 +139,26 @@ export default function HabilidadesView({
             cognicion: recentEvalXP?.cognicion || 0
         };
     }, [recentPracticeXP, recentEvalXP, recentManualXP]);
+
+
+
+    // =========================================================================
+    // QUALITATIVE DATA HOOKS (Moved Up for Dependency)
+    // =========================================================================
+    const hookOptions = {
+        providedXPData: xpData,
+        providedEvaluations: evaluations,
+        providedFeedbacks: feedbacks,
+        fechaInicio: effectiveViewMode === 'forma' ? undefined : fechaInicio,
+        fechaFin: effectiveViewMode === 'forma' ? undefined : fechaFin,
+    };
+
+    const { radarStats: singleStats, isLoading: loadingQualSingle } = useHabilidadesStats(isMultiple ? '' : singleId, hookOptions);
+    const { radarStats: multipleStats, isLoading: loadingQualMultiple } = useHabilidadesStatsMultiple(isMultiple ? effectiveIds : [], hookOptions);
+
+    const radarStatsRaw = isMultiple ? multipleStats : singleStats;
+    const isLoadingQual = isMultiple ? loadingQualMultiple : loadingQualSingle;
+    const isLoadingStats = isLoadingXP || isLoadingQual;
 
 
     // 2. RANGO DATA (Selected Range) - Client-side Calculation
@@ -186,18 +210,11 @@ export default function HabilidadesView({
         practiceResult.flexibilidad = Math.min(practiceResult.flexibilidad, 100);
 
 
-        // B. Evaluation XP (From Evaluations in Range)
-        let maxSonido = 0;
-        let maxCognicion = 0;
-
-        if (evaluations && evaluations.length > 0) {
-            evaluations.forEach((e: any) => {
-                const s = e.habilidades?.sonido || 0;
-                const c = e.habilidades?.cognitivo || 0;
-                if (s * 10 > maxSonido) maxSonido = s * 10;
-                if (c * 10 > maxCognicion) maxCognicion = c * 10;
-            });
-        }
+        // B. Evaluation XP - Use the centralized hook logic via radarStatsRaw
+        // This ensures the Radar logic (Forma vs Rango) and the Counters logic are consistent.
+        // We defer to the hook's calculation for Sonido/Cognicion.
+        const maxSonido = radarStatsRaw?.combinedData?.find((d: any) => d.subject === 'Sonido')?.original || 0;
+        const maxCognicion = radarStatsRaw?.combinedData?.find((d: any) => d.subject === 'Cognición')?.original || 0;
 
         // C. Manual XP (Not easily available in range without fetching history, assuming 0 or minimal for range view unless we fetch history)
         // For now, assume 0 manual XP impact for arbitrary ranges to be safe, or just stick to practice.
@@ -208,7 +225,7 @@ export default function HabilidadesView({
             cognicion: maxCognicion
         };
 
-    }, [xpData, evaluations]);
+    }, [xpData, evaluations, radarStatsRaw]);
 
 
     // 3. EFFECTIVE DATA SELECTION
@@ -386,9 +403,6 @@ export default function HabilidadesView({
     // Use appropriate data
     const totalXP = isMultiple ? totalXPMultiple : totalXPSingle;
     const practiceXP = isMultiple ? practiceXPMultiple : practiceXPSingle;
-    const isLoadingXP = isMultiple
-        ? (isLoadingTotalMultiple || isLoadingPracticeMultiple)
-        : (isLoadingTotalSingle || isLoadingPracticeSingle);
 
     // COUNTERS: Always show LIFETIME accumulated XP
     // RADAR: Changes based on Forma/Rango filter (uses radarData which is 0-100 normalized)
@@ -434,22 +448,7 @@ export default function HabilidadesView({
         };
     }, [radarData, isMultiple]);
 
-    // =========================================================================
-    // QUALITATIVE DATA HOOKS (for Sonido/Cognición)
-    // =========================================================================
-    // Pass provided data for deduplication
-    const hookOptions = {
-        providedXPData: xpData,
-        providedEvaluations: evaluations,
-        providedFeedbacks: feedbacks
-    };
-
-    const { radarStats: singleStats, isLoading: loadingQualSingle } = useHabilidadesStats(isMultiple ? '' : singleId, hookOptions);
-    const { radarStats: multipleStats, isLoading: loadingQualMultiple } = useHabilidadesStatsMultiple(isMultiple ? effectiveIds : [], hookOptions);
-
-    const radarStatsRaw = isMultiple ? multipleStats : singleStats;
-    const isLoadingQual = isMultiple ? loadingQualMultiple : loadingQualSingle;
-    const isLoadingStats = isLoadingXP || isLoadingQual;
+    // Qualitative Data Hooks moved up
 
     // =========================================================================
     // HELPER FUNCTIONS (same as Resumen)
@@ -771,7 +770,7 @@ export default function HabilidadesView({
                                             "text-base font-bold",
                                             sourceFilter === 'experiencia' ? "text-[var(--color-text-secondary)]" : "text-[var(--color-text-primary)]"
                                         )}>
-                                            {getDisplayedCognicion().toFixed(1)}
+                                            {getDisplayedCognicion().toFixed(2)}
                                         </span>
                                         <span className="text-[9px] text-[var(--color-text-secondary)]">/10</span>
                                     </div>
@@ -791,7 +790,7 @@ export default function HabilidadesView({
                                             "text-base font-bold",
                                             sourceFilter === 'experiencia' ? "text-[var(--color-text-secondary)]" : "text-[var(--color-text-primary)]"
                                         )}>
-                                            {getDisplayedSonido().toFixed(1)}
+                                            {getDisplayedSonido().toFixed(2)}
                                         </span>
                                         <span className="text-[9px] text-[var(--color-text-secondary)]">/10</span>
                                     </div>

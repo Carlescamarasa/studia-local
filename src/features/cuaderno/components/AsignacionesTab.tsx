@@ -14,13 +14,12 @@ import {
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import UnifiedTable from "@/features/shared/components/tables/UnifiedTable";
+import UnifiedTable, { TableAction } from "@/features/shared/components/tables/UnifiedTable";
 import FormularioRapido from "@/features/asignaciones/components/FormularioRapido";
 import StudentSearchBar from "@/features/asignaciones/components/StudentSearchBar";
 import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, resolveUserIdActual, startOfMonday, calcularLunesSemanaISO, calcularOffsetSemanas, isoWeekNumberLocal } from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
-// @ts-expect-error MultiSelect is not typed yet
 import MultiSelect from "@/features/shared/components/ui/MultiSelect";
 import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import PeriodHeader from "@/features/shared/components/common/PeriodHeader";
@@ -35,6 +34,7 @@ import {
     DialogFooter,
 } from "@/features/shared/components/ui/dialog";
 import { Label } from "@/features/shared/components/ui/label";
+import { Asignacion, PlanSnapshot, PiezaSnapshot } from "@/types/data.types";
 
 // ============================================================================
 // Type Definitions
@@ -50,19 +50,6 @@ interface AsignacionesTabProps {
 type EstadoFilter = 'all' | 'borrador' | 'publicada' | 'en_curso' | 'cerrada';
 type OrdenFilter = 'recent' | 'oldest' | 'student_asc' | 'student_desc';
 type TipoAsignacion = 'profesor' | 'estudiante' | null;
-
-interface Asignacion {
-    id: string;
-    alumnoId: string;
-    profesorId?: string;
-    piezaId?: string | null;
-    piezaSnapshot?: { nombre?: string; nivel?: string; };
-    plan?: { nombre?: string; semanas?: unknown[]; };
-    semanaInicioISO: string;
-    estado: string;
-    foco?: string;
-    notas?: string | null;
-}
 
 // ============================================================================
 // Component
@@ -134,7 +121,7 @@ export default function AsignacionesTab({
     const effectiveUser = useEffectiveUser();
 
     // Usar hooks centralizados
-    const { data: asignacionesRaw = [] } = useAsignaciones();
+    const { data: asignacionesRaw = [] } = useAsignaciones() as { data: Asignacion[] | undefined };
 
     // Usar hook centralizado para usuarios
     const { data: usuarios = [] } = useUsers();
@@ -149,7 +136,7 @@ export default function AsignacionesTab({
 
 
     const cerrarMutation = useMutation({
-        mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'cerrada' }),
+        mutationFn: (id: string) => localDataClient.entities.Asignacion.update(id, { estado: 'cerrada' }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
             toast.success('✅ Asignación cerrada');
@@ -157,7 +144,7 @@ export default function AsignacionesTab({
     });
 
     const reabrirMutation = useMutation({
-        mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'publicada' }),
+        mutationFn: (id: string) => localDataClient.entities.Asignacion.update(id, { estado: 'publicada' }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
             toast.success('✅ Asignación reabierta');
@@ -165,7 +152,7 @@ export default function AsignacionesTab({
     });
 
     const publicarMutation = useMutation({
-        mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'publicada' }),
+        mutationFn: (id: string) => localDataClient.entities.Asignacion.update(id, { estado: 'publicada' }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
             toast.success('✅ Asignación publicada');
@@ -173,7 +160,7 @@ export default function AsignacionesTab({
     });
 
     const duplicarMutation = useMutation({
-        mutationFn: async (asignacion) => {
+        mutationFn: async (asignacion: Asignacion) => {
             const newData = {
                 alumnoId: asignacion.alumnoId,
                 piezaId: asignacion.piezaId,
@@ -183,7 +170,7 @@ export default function AsignacionesTab({
                 notas: asignacion.notas,
                 plan: JSON.parse(JSON.stringify(asignacion.plan)),
                 piezaSnapshot: JSON.parse(JSON.stringify(asignacion.piezaSnapshot)),
-                profesorId: userIdActual || effectiveUser.id,
+                profesorId: userIdActual || effectiveUser.effectiveUserId,
             };
             return localDataClient.entities.Asignacion.create(newData);
         },
@@ -194,7 +181,7 @@ export default function AsignacionesTab({
     });
 
     const eliminarMutation = useMutation({
-        mutationFn: (id) => localDataClient.entities.Asignacion.delete(id),
+        mutationFn: (id: string) => localDataClient.entities.Asignacion.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
             toast.success('✅ Asignación eliminada');
@@ -202,7 +189,7 @@ export default function AsignacionesTab({
     });
 
     const eliminarBulkMutation = useMutation({
-        mutationFn: async (ids) => {
+        mutationFn: async (ids: string[]) => {
             await Promise.all(ids.map(id => localDataClient.entities.Asignacion.delete(id)));
         },
         onSuccess: (_, ids) => {
@@ -212,7 +199,7 @@ export default function AsignacionesTab({
     });
 
     const cerrarBulkMutation = useMutation({
-        mutationFn: async (ids) => {
+        mutationFn: async (ids: string[]) => {
             await Promise.all(ids.map(id => localDataClient.entities.Asignacion.update(id, { estado: 'cerrada' })));
         },
         onSuccess: (_, ids) => {
@@ -222,7 +209,7 @@ export default function AsignacionesTab({
     });
 
     const duplicarBulkMutation = useMutation({
-        mutationFn: async (ids) => {
+        mutationFn: async (ids: string[]) => {
             const asignacionesParaDuplicar = asignacionesFinales.filter(a => ids.includes(a.id));
             await Promise.all(asignacionesParaDuplicar.map(a => {
                 const newData = {
@@ -234,7 +221,7 @@ export default function AsignacionesTab({
                     notas: a.notas,
                     plan: JSON.parse(JSON.stringify(a.plan)),
                     piezaSnapshot: JSON.parse(JSON.stringify(a.piezaSnapshot)),
-                    profesorId: userIdActual || effectiveUser.id,
+                    profesorId: userIdActual || effectiveUser.effectiveUserId,
                 };
                 return localDataClient.entities.Asignacion.create(newData);
             }));
@@ -246,7 +233,7 @@ export default function AsignacionesTab({
     });
 
     const asignarProfesorMutation = useMutation({
-        mutationFn: async ({ id, profesorId }) => {
+        mutationFn: async ({ id, profesorId }: { id: string, profesorId: string }) => {
             return localDataClient.entities.Asignacion.update(id, { profesorId });
         },
         onSuccess: () => {
@@ -260,7 +247,7 @@ export default function AsignacionesTab({
     });
 
     const asignarProfesorBulkMutation = useMutation({
-        mutationFn: async ({ ids, profesorId }) => {
+        mutationFn: async ({ ids, profesorId }: { ids: string[], profesorId: string }) => {
             await Promise.all(ids.map(id => localDataClient.entities.Asignacion.update(id, { profesorId })));
         },
         onSuccess: (_, { ids }) => {
@@ -274,7 +261,7 @@ export default function AsignacionesTab({
     });
 
     const asignarEstudianteMutation = useMutation({
-        mutationFn: async ({ id, alumnoId }) => {
+        mutationFn: async ({ id, alumnoId }: { id: string, alumnoId: string }) => {
             return localDataClient.entities.Asignacion.update(id, { alumnoId });
         },
         onSuccess: () => {
@@ -288,7 +275,7 @@ export default function AsignacionesTab({
     });
 
     const asignarEstudianteBulkMutation = useMutation({
-        mutationFn: async ({ ids, alumnoId }) => {
+        mutationFn: async ({ ids, alumnoId }: { ids: string[], alumnoId: string }) => {
             await Promise.all(ids.map(id => localDataClient.entities.Asignacion.update(id, { alumnoId })));
         },
         onSuccess: (_, { ids }) => {
@@ -404,9 +391,9 @@ export default function AsignacionesTab({
             try {
                 const inicioPlan = parseLocalDate(a.semanaInicioISO);
                 const numSemanas = a.plan.semanas.length;
-                const semanaActual = parseLocalDate(semanaSeleccionadaISO);
+                const semanaActualDate = parseLocalDate(semanaSeleccionadaISO);
 
-                const diffTime = semanaActual - inicioPlan;
+                const diffTime = semanaActualDate.getTime() - inicioPlan.getTime();
                 const diffDays = diffTime / (1000 * 60 * 60 * 24);
                 const offsetWeeks = Math.floor(diffDays / 7);
 
@@ -421,7 +408,7 @@ export default function AsignacionesTab({
         }
 
         if (profesoresFilter.length > 0) {
-            resultado = resultado.filter(a => profesoresFilter.includes(a.profesorId));
+            resultado = resultado.filter(a => a.profesorId && profesoresFilter.includes(a.profesorId));
         }
 
         if (searchTerm) {
@@ -475,7 +462,7 @@ export default function AsignacionesTab({
         {
             key: 'alumno',
             label: 'Estudiante',
-            render: (a) => {
+            render: (a: Asignacion) => {
                 const alumno = usuarios.find(u => u.id === a.alumnoId);
                 const nombreAlumno = alumno
                     ? getNombreVisible(alumno)
@@ -491,7 +478,7 @@ export default function AsignacionesTab({
         {
             key: 'profesor',
             label: 'Profesor',
-            render: (a) => {
+            render: (a: Asignacion) => {
                 const profesor = usuarios.find(u => u.id === a.profesorId);
                 return (
                     <div>
@@ -506,7 +493,7 @@ export default function AsignacionesTab({
         {
             key: 'pieza',
             label: 'Pieza',
-            render: (a) => (
+            render: (a: Asignacion) => (
                 <div>
                     <p className="font-medium text-sm">{a.piezaSnapshot?.nombre}</p>
                     <p className="text-xs text-ui/80">{a.piezaSnapshot?.nivel}</p>
@@ -516,7 +503,7 @@ export default function AsignacionesTab({
         {
             key: 'plan',
             label: 'Plan',
-            render: (a) => {
+            render: (a: Asignacion) => {
                 let semanaActual = null;
                 let numSemanas = 0;
                 let indicador = '';
@@ -525,9 +512,9 @@ export default function AsignacionesTab({
                     try {
                         const inicioPlan = parseLocalDate(a.semanaInicioISO);
                         numSemanas = a.plan.semanas.length;
-                        const semanaActualPlan = parseLocalDate(semanaSeleccionadaISO);
+                        const semanaActualDate = parseLocalDate(semanaSeleccionadaISO);
 
-                        const diffTime = semanaActualPlan - inicioPlan;
+                        const diffTime = semanaActualDate.getTime() - inicioPlan.getTime();
                         const diffDays = diffTime / (1000 * 60 * 60 * 24);
                         const offsetWeeks = Math.floor(diffDays / 7);
 
@@ -567,7 +554,7 @@ export default function AsignacionesTab({
         {
             key: 'inicio',
             label: 'Inicio',
-            render: (a) => {
+            render: (a: Asignacion) => {
                 if (!a.semanaInicioISO) {
                     return <p className="text-sm text-ui/60">-</p>;
                 }
@@ -581,9 +568,9 @@ export default function AsignacionesTab({
         {
             key: 'estado',
             label: 'Estado',
-            render: (a) => (
-                <Badge className={`rounded-full ${estadoColors[a.estado]}`}>
-                    {estadoLabels[a.estado]}
+            render: (a: Asignacion) => (
+                <Badge className={`rounded-full ${estadoColors[a.estado as keyof typeof estadoColors]}`}>
+                    {estadoLabels[a.estado as keyof typeof estadoLabels]}
                 </Badge>
             ),
         },
@@ -654,7 +641,7 @@ export default function AsignacionesTab({
                     <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
                         {/* Sorting Selector */}
                         <div className="w-full md:w-auto min-w-[200px]">
-                            <Select value={ordenFilter} onValueChange={setOrdenFilter}>
+                            <Select value={ordenFilter} onValueChange={(val) => setOrdenFilter(val as OrdenFilter)}>
                                 <SelectTrigger className={`${componentStyles.controls.selectDefault}`}>
                                     <SelectValue placeholder="Ordenar por" />
                                 </SelectTrigger>
@@ -675,7 +662,7 @@ export default function AsignacionesTab({
                                         key={key}
                                         variant={estadoFilter === key ? "default" : "ghost"}
                                         size="sm"
-                                        onClick={() => setEstadoFilter(key)}
+                                        onClick={() => setEstadoFilter(key as EstadoFilter)}
                                         className={cn(
                                             "h-8 px-3 transition-all",
                                             estadoFilter === key
@@ -744,6 +731,7 @@ export default function AsignacionesTab({
                                     label: 'Cambiar profesor',
                                     icon: User,
                                     onClick: (ids) => {
+                                        if (!ids) return;
                                         setIdsParaAsignar(ids);
                                         setAsignacionParaAsignar(null);
                                         setTipoAsignacion('profesor');
@@ -756,6 +744,7 @@ export default function AsignacionesTab({
                                     label: 'Cambiar estudiante',
                                     icon: Users,
                                     onClick: (ids) => {
+                                        if (!ids) return;
                                         setIdsParaAsignar(ids);
                                         setAsignacionParaAsignar(null);
                                         setTipoAsignacion('estudiante');
@@ -768,6 +757,7 @@ export default function AsignacionesTab({
                                     label: 'Duplicar',
                                     icon: Copy,
                                     onClick: (ids) => {
+                                        if (!ids) return;
                                         if (window.confirm(`¿Duplicar ${ids.length} asignación${ids.length > 1 ? 'es' : ''} como borradores?`)) {
                                             duplicarBulkMutation.mutate(ids);
                                         }
@@ -778,6 +768,7 @@ export default function AsignacionesTab({
                                     label: 'Cerrar',
                                     icon: XCircle,
                                     onClick: (ids) => {
+                                        if (!ids) return;
                                         if (window.confirm(`¿Cerrar ${ids.length} asignación${ids.length > 1 ? 'es' : ''}?`)) {
                                             cerrarBulkMutation.mutate(ids);
                                         }
@@ -788,6 +779,7 @@ export default function AsignacionesTab({
                                     label: 'Eliminar',
                                     icon: Trash2,
                                     onClick: (ids) => {
+                                        if (!ids) return;
                                         if (window.confirm(`¿Eliminar permanentemente ${ids.length} asignación${ids.length > 1 ? 'es' : ''}?`)) {
                                             eliminarBulkMutation.mutate(ids);
                                         }
@@ -798,6 +790,7 @@ export default function AsignacionesTab({
                                     label: 'Exportar CSV',
                                     icon: FileDown,
                                     onClick: (ids) => {
+                                        if (!ids) return;
                                         const asignacionesSeleccionadas = asignacionesFinales.filter(a => ids.includes(a.id));
                                         const headers = ['Estudiante', 'Profesor', 'Pieza', 'Plan', 'Inicio', 'Estado', 'Semanas'];
                                         const rows = asignacionesSeleccionadas.map(a => {
@@ -825,8 +818,8 @@ export default function AsignacionesTab({
                                     },
                                 },
                             ]}
-                            getRowActions={(a) => {
-                                const actions = [
+                            getRowActions={(a): TableAction<Asignacion>[] => {
+                                const actions: TableAction<Asignacion>[] = [
                                     {
                                         id: 'view',
                                         label: 'Ver detalle',
@@ -910,7 +903,7 @@ export default function AsignacionesTab({
                                 actions.push({
                                     id: 'delete',
                                     label: 'Eliminar',
-                                    destructive: true,
+                                    variant: 'destructive',
                                     onClick: () => {
                                         if (window.confirm('¿Eliminar permanentemente esta asignación?')) {
                                             eliminarMutation.mutate(a.id);

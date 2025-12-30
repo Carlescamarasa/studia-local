@@ -23,24 +23,109 @@ import { getAllPresets, saveCustomPreset, deleteCustomPreset, exportCustomPreset
 import LevelConfigView from "@/features/admin/components/LevelConfigView";
 import { DesignControls } from "@/features/design/components/DesignControls";
 import { DesignStatusBlock } from "@/features/design/components/DesignStatusBlock";
+import { QAVisualContent } from "@/features/qa/pages/QAVisualPage";
 
 // ... existing imports ...
 
-// ... inside DesignPageContent ...
+interface BasePreset {
+  id: string;
+  label: string;
+  description?: string;
+  design: any;
+}
+
+interface PresetUI {
+  id: string;
+  name: string;
+  label?: string;
+  description?: string;
+  config: any;
+  design?: any;
+  isBase?: boolean;
+}
+
+// ... existing interfaces ...
+interface LayoutValues {
+  maxWidth: string;
+  paddingX: string;
+  paddingY: string;
+  gapX: string;
+  gapY: string;
+}
+
+interface LabeledRowProps {
+  label: string;
+  children: React.ReactNode;
+}
+
+interface DiffAccordionProps {
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+interface DiagnosticMetric {
+  value: string | null;
+  valid: boolean;
+  missing: boolean;
+  status: 'ok' | 'missing' | 'invalid';
+}
+
+interface SelectedElement {
+  tag: string;
+  classes: string[];
+  styles: {
+    borderRadius: string;
+    boxShadow: string;
+    background: string;
+    color: string;
+    padding: string;
+  };
+}
+
+interface DesignAuditReport {
+  summary: {
+    filesScanned: number;
+    totalIssues: number;
+    issues: Record<string, number>;
+  };
+  issues: Record<string, any[]>;
+  scannedFiles: Set<string>;
+  scannedAt: string;
+}
+
+interface AuditResults {
+  filesScanned: number;
+  matchesTotal: number;
+  perFile: any[];
+  durationMs: number;
+  compiled: any;
+  reason?: string;
+  summary?: string;
+}
+
+interface DesignPageContentProps {
+  embedded?: boolean;
+  hideLevelsTab?: boolean;
+}
+
+// ============================================================================
+// COMPONENTS
+// ============================================================================
 
 const componentStyles = {
   layout: {
     page: "container mx-auto p-6 max-w-[var(--page-max-width)]",
     grid2: "grid grid-cols-1 md:grid-cols-2 gap-6",
+    grid3: "grid grid-cols-1 md:grid-cols-3 gap-6",
   },
+  // ... rest of componentStyles unchanged ...
   controls: {
-    inputDefault: "ctrl-field", // Use global CSS class that consumes --input-radius
-    selectDefault: "ctrl-field", // Use global CSS class
+    inputDefault: "ctrl-field",
+    selectDefault: "ctrl-field",
     inputSm: "ctrl-field h-8 text-xs",
     inputUnderline: "ctrl-field--underline",
   },
   containers: {
-    // Use app-card CSS class which consumes --card-radius from tokens
     cardBase: "app-card",
     cardElevated: "app-card bg-[var(--color-surface-elevated)]",
     cardMetric: "app-card",
@@ -54,7 +139,6 @@ const componentStyles = {
     smallMetaText: "text-xs text-muted-foreground",
   },
   buttons: {
-    // Button variants now consume .btn class which uses --button-radius
     primary: "btn-primary",
     secondary: "btn-secondary",
     outline: "btn-outline",
@@ -72,7 +156,13 @@ const componentStyles = {
 };
 
 function LayoutValuesDebug() {
-  const [values, setValues] = useState({});
+  const [values, setValues] = useState<LayoutValues>({
+    maxWidth: '',
+    paddingX: '',
+    paddingY: '',
+    gapX: '',
+    gapY: '',
+  });
 
   useEffect(() => {
     const updateValues = () => {
@@ -86,11 +176,9 @@ function LayoutValuesDebug() {
       });
     };
     updateValues();
-    // Actualizar cuando cambie el diseño
     const interval = setInterval(updateValues, 500);
     return () => clearInterval(interval);
   }, []);
-
 
   return (
     <div className="mt-4 p-3 bg-[var(--color-surface-muted)] rounded-lg text-xs">
@@ -106,7 +194,7 @@ function LayoutValuesDebug() {
   );
 }
 
-function LabeledRow({ label, children }) {
+function LabeledRow({ label, children }: LabeledRowProps) {
   return (
     <div className="flex items-center justify-between gap-4 py-3 border-b border-[var(--color-border-default)] last:border-0">
       <Label className="text-sm text-[var(--color-text-primary)] font-medium">{label}</Label>
@@ -114,6 +202,9 @@ function LabeledRow({ label, children }) {
     </div>
   );
 }
+
+// ... rest of PREVIEW BANNER ...
+
 
 // ============================================================================
 // PREVIEW BANNER COMPONENT
@@ -164,7 +255,12 @@ function PreviewBanner() {
 // ============================================================================
 // DIFF ACCORDION COMPONENT
 // ============================================================================
-function DiffAccordion({ isOpen, onToggle }) {
+interface DiffAccordionProps {
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+function DiffAccordion({ isOpen, onToggle }: DiffAccordionProps) {
   // const [isOpen, setIsOpen] = useState(false); // Controlled now
   const [openSections, setOpenSections] = useState({ common: true, light: false, dark: false });
   const {
@@ -182,13 +278,13 @@ function DiffAccordion({ isOpen, onToggle }) {
 
   if (!hasChanges) return null;
 
-  const toggleSection = (section) => {
+  const toggleSection = (section: 'common' | 'light' | 'dark') => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const renderChangeList = (changes, scope) => (
+  const renderChangeList = (changes: any[], scope: string) => (
     <div className="space-y-1">
-      {changes.map((change, idx) => (
+      {changes.map((change: any, idx: number) => (
         <div
           key={idx}
           className="flex items-center justify-between gap-2 p-2 rounded-lg bg-[var(--color-surface-elevated)] border border-[var(--color-border-muted)] text-xs"
@@ -363,7 +459,7 @@ function DiffAccordion({ isOpen, onToggle }) {
 
 /**
  * Enhanced Diagnostic Overlay
- * 
+ *
  * Features:
  * - Always on top (z-index: 2147483647)
  * - Draggable with handle
@@ -373,9 +469,9 @@ function DiffAccordion({ isOpen, onToggle }) {
  * - Session storage for position and settings
  * - Copy report functionality
  */
-function DiagnosticOverlay({ active }) {
-  const [metrics, setMetrics] = useState({});
-  const [position, setPosition] = useState(() => {
+function DiagnosticOverlay({ active }: { active: boolean }) {
+  const [metrics, setMetrics] = useState<Record<string, DiagnosticMetric>>({});
+  const [position, setPosition] = useState<{ x: number; y: number }>(() => {
     try {
       const saved = sessionStorage.getItem('studia_diagnostic_position');
       return saved ? JSON.parse(saved) : { x: window.innerWidth - 340, y: 20 };
@@ -393,8 +489,8 @@ function DiagnosticOverlay({ active }) {
     }
   });
   const [pickerMode, setPickerMode] = useState(false);
-  const [selectedElement, setSelectedElement] = useState(null);
-  const overlayRef = useRef(null);
+  const [selectedElement, setSelectedElement] = useState<SelectedElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   // Core tokens to monitor
   const MONITORED_TOKENS = [
@@ -407,20 +503,20 @@ function DiagnosticOverlay({ active }) {
   // Update metrics from CSS variables
   const updateMetrics = useCallback(() => {
     const root = getComputedStyle(document.documentElement);
-    const newMetrics = {};
+    const newMetrics: Record<string, DiagnosticMetric> = {};
 
     MONITORED_TOKENS.forEach(token => {
       const value = root.getPropertyValue(token).trim();
       newMetrics[token] = {
         value: value || null,
-        valid: value && value !== 'none' && value !== '' && !value.includes('NaN'),
+        valid: value !== '' && value !== 'none' && !value.includes('NaN'),
         missing: !value,
         status: !value ? 'missing' : (value === 'none' || value.includes('NaN') ? 'invalid' : 'ok')
       };
     });
 
     setMetrics(newMetrics);
-  }, []);
+  }, [MONITORED_TOKENS]);
 
   // Real-time monitoring via MutationObserver
   useEffect(() => {
@@ -446,7 +542,7 @@ function DiagnosticOverlay({ active }) {
   useEffect(() => {
     if (!active || !followCursor) return;
 
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       const offset = 20;
       const width = 320;
       const height = 400;
@@ -466,7 +562,7 @@ function DiagnosticOverlay({ active }) {
   }, [active, followCursor]);
 
   // Dragging logic
-  const handleMouseDown = (e) => {
+  const handleMouseDown = (e: React.MouseEvent) => {
     if (followCursor) return; // Disable drag in follow mode
     setIsDragging(true);
     setDragStart({
@@ -478,7 +574,7 @@ function DiagnosticOverlay({ active }) {
   useEffect(() => {
     if (!isDragging) return;
 
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       const newX = e.clientX - dragStart.x;
       const newY = e.clientY - dragStart.y;
 
@@ -520,11 +616,12 @@ function DiagnosticOverlay({ active }) {
   useEffect(() => {
     if (!pickerMode) return;
 
-    const handleClick = (e) => {
+    const handleClick = (e: MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
 
-      const element = e.target;
+      const element = e.target as HTMLElement;
+      if (!element) return;
       const computed = getComputedStyle(element);
 
       setSelectedElement({
@@ -575,7 +672,7 @@ function DiagnosticOverlay({ active }) {
 
   if (!active) return null;
 
-  const statusCounts = Object.values(metrics).reduce((acc, m) => {
+  const statusCounts = Object.values(metrics).reduce((acc: Record<string, number>, m) => {
     acc[m.status] = (acc[m.status] || 0) + 1;
     return acc;
   }, {});
@@ -676,26 +773,30 @@ function DiagnosticOverlay({ active }) {
   );
 }
 
-function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
+function DesignPageContent({ embedded = false, hideLevelsTab = false }: DesignPageContentProps) {
   const { design, setDesign, setDesignPartial, resetDesign, exportDesign, importDesign, loadPreset, currentPresetId, setPresetId, basePresets, activeMode, setActiveMode } = useDesign();
   // Aliases para compatibilidad
   const config = design;
   const setConfig = setDesign;
   const reset = resetDesign;
   const [activeSection, setActiveSection] = useState('controls');
-  const [qaTabsValue, setQaTabsValue] = useState('one');
-  const [qaOutput, setQaOutput] = useState('');
+  const [qaTabsValue, setQaTabsValue] = useState<string | null>('one');
+  const [qaOutput, setQaOutput] = useState<AuditResults | null>(null);
   const [qaRunning, setQaRunning] = useState(false);
-  const [auditReport, setAuditReport] = useState(null);
+  const [auditReport, setAuditReport] = useState<DesignAuditReport | null>(null);
   const [auditRunning, setAuditRunning] = useState(false);
   const [auditProfile, setAuditProfile] = useState('full');
+
+  const handleControlChange = (path: string, value: any, explicitScope?: 'light' | 'dark' | undefined) => {
+    setDesignPartial(path, value, explicitScope);
+  };
   const [showSavePresetModal, setShowSavePresetModal] = useState(false);
   const [presetName, setPresetName] = useState('');
   const [presetDescription, setPresetDescription] = useState('');
   const [showImportExportModal, setShowImportExportModal] = useState(false);
   const [importPresetsJson, setImportPresetsJson] = useState('');
   const [importError, setImportError] = useState('');
-  const [activeAccordion, setActiveAccordion] = useState(null);
+  const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
   const [showDiagnostic, setShowDiagnostic] = useState(() => {
     try {
       return sessionStorage.getItem('studia_diagnostic_mode') === 'true';
@@ -704,7 +805,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
     }
   });
 
-  const handleToggleDiagnostic = (checked) => {
+  const handleToggleDiagnostic = (checked: boolean) => {
     setShowDiagnostic(checked);
     sessionStorage.setItem('studia_diagnostic_mode', String(checked));
   };
@@ -727,14 +828,17 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
   const customPresets = useMemo(() => getAllPresets(), [config]);
   const allPresets = useMemo(() => {
     // Convertir basePresets a formato compatible con la UI
-    const basePresetsMap = {};
+    const basePresetsMap: Record<string, PresetUI> = {};
     if (basePresets && Array.isArray(basePresets)) {
-      basePresets.forEach(preset => {
+      basePresets.forEach((preset: BasePreset) => {
         basePresetsMap[preset.id] = {
           name: preset.label,
           description: preset.description,
           config: preset.design,
           isBase: true, // Marcar como preset base
+          id: preset.id, // Ensure id is present for base presets
+          label: preset.label, // Add label for BasePreset compatibility
+          design: preset.design, // Add design for BasePreset compatibility
         };
       });
     }
@@ -747,8 +851,8 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
       const json = JSON.stringify(config, null, 2);
       navigator.clipboard.writeText(json);
       toast.success('✅ Configuración copiada al portapapeles');
-    } catch (err) {
-      toast.error('❌ Error al copiar');
+    } catch (err: any) {
+      toast.error('❌ Error al copiar: ' + err.message);
     }
   }, [config]);
 
@@ -778,9 +882,9 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
     }
   }, [presetName, presetDescription, config]);
 
-  const handleLoadPreset = useCallback((presetId) => {
+  const handleLoadPreset = useCallback((presetId: string) => {
     // Verificar si es un preset base
-    const basePreset = basePresets?.find(p => p.id === presetId);
+    const basePreset = (basePresets as BasePreset[] | undefined)?.find((p: BasePreset) => p.id === presetId);
     if (basePreset) {
       // Cargar preset base usando setPresetId
       setPresetId(presetId);
@@ -797,7 +901,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
     }
   }, [loadPreset, basePresets, setPresetId]);
 
-  const handleDeletePreset = useCallback((presetId) => {
+  const handleDeletePreset = useCallback((presetId: string) => {
     if (!window.confirm('¿Eliminar este preset?')) return;
 
     const result = deleteCustomPreset(presetId);
@@ -814,7 +918,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
       const json = exportCustomPresets();
       navigator.clipboard.writeText(json);
       toast.success('✅ Presets personalizados copiados al portapapeles');
-    } catch (err) {
+    } catch (err: any) {
       toast.error('❌ Error al exportar: ' + err.message);
     }
   }, []);
@@ -836,54 +940,45 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
         setImportError('Error al importar: ' + result.error);
         toast.error('❌ Error al importar presets');
       }
-    } catch (e) {
+    } catch (e: any) {
       setImportError('JSON inválido: ' + e.message);
       toast.error('❌ JSON inválido');
     }
   }, [importPresetsJson, config, setConfig]);
 
-  const handleRunAudit = useCallback(async (profileKey) => {
-    setAuditRunning(true);
-    const profile = QUICK_PROFILES[profileKey || auditProfile];
-    if (!profile) {
-      toast.error('❌ Perfil de auditoría no encontrado.');
-      setAuditRunning(false);
-      return;
-    }
-
-    toast.info(`🔍 Iniciando auditoría: ${profile.name}...`);
-    setAuditReport(null);
+  const handleRunAudit = useCallback(async (profileKey: string) => {
+    setQaRunning(true);
     try {
-      const auditSpec = parseAuditSpec(profile.spec);
-      const report = await runAudit(auditSpec);
-      setAuditReport(report);
-      const totalIssues = report?.summary?.totalIssues || 0;
-      if (totalIssues > 0) {
-        toast.warning(`⚠️ Auditoría completada: ${totalIssues} problemas encontrados.`);
-      } else {
-        toast.success('✅ Auditoría completada: ¡Sin problemas encontrados!');
-      }
-    } catch (err) {
+      const profile = (QUICK_PROFILES as Record<string, any>)[profileKey];
+      const results = await runAudit(parseAuditSpec(profile.spec));
+      setQaOutput(results as AuditResults);
+    } catch (err: any) {
       toast.error('❌ Error en auditoría: ' + err.message);
-      console.error(err);
     } finally {
-      setAuditRunning(false);
+      setQaRunning(false);
     }
-  }, [auditProfile]);
+  }, []);
 
   const handleCopyAudit = useCallback(() => {
     if (!auditReport) return;
     try {
       navigator.clipboard.writeText(JSON.stringify(auditReport, null, 2));
       toast.success('✅ Informe de auditoría copiado');
-    } catch (err) {
-      toast.error('❌ Error al copiar');
+    } catch (err: any) {
+      toast.error('❌ Error al copiar: ' + err.message);
     }
   }, [auditReport]);
 
   const handleVisualSmoke = useCallback(() => {
     setQaRunning(true);
-    setQaOutput('Ejecutando visual smoke...');
+    setQaOutput({
+      filesScanned: 0,
+      matchesTotal: 0,
+      perFile: [],
+      durationMs: 0,
+      compiled: {},
+      summary: 'Ejecutando visual smoke...'
+    } as AuditResults);
 
     setTimeout(() => {
       const checks = [
@@ -916,7 +1011,14 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
         }
       });
 
-      setQaOutput(`VISUAL SMOKE TEST\n${'='.repeat(50)}\n\n${results.join('\n')}`);
+      setQaOutput({
+        filesScanned: 0,
+        matchesTotal: 0,
+        perFile: [],
+        durationMs: 0,
+        compiled: {},
+        summary: `VISUAL SMOKE TEST\n${'='.repeat(50)}\n\n${results.join('\n')}`
+      } as AuditResults);
       setQaRunning(false);
       toast.success('✅ Visual smoke completado');
     }, 600);
@@ -924,7 +1026,14 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
 
   const handleA11yQuick = useCallback(() => {
     setQaRunning(true);
-    setQaOutput('Ejecutando a11y quick-check...');
+    setQaOutput({
+      filesScanned: 0,
+      matchesTotal: 0,
+      perFile: [],
+      durationMs: 0,
+      compiled: {},
+      summary: 'Ejecutando a11y quick-check...'
+    } as AuditResults);
 
     setTimeout(() => {
       const results = [];
@@ -983,7 +1092,14 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
       results.push('ℹ️ Usar herramienta externa para análisis completo');
       results.push('✅ Design System usa tokens con contraste WCAG AA+');
 
-      setQaOutput(`A11Y QUICK-CHECK\n${'='.repeat(50)}\n\n${results.join('\n')}`);
+      setQaOutput({
+        filesScanned: 0,
+        matchesTotal: 0,
+        perFile: [],
+        durationMs: 0,
+        compiled: {},
+        summary: `A11Y QUICK CHECK\n${'='.repeat(50)}\n\n${results.join('\n')}`
+      } as AuditResults);
       setQaRunning(false);
 
       const errors = results.filter(r => r.startsWith('❌')).length;
@@ -1080,7 +1196,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
 
                   <div className={componentStyles.layout.grid2}>
                     {/* Base Presets */}
-                    {Object.values(allPresets).filter(p => p.isBase).map((preset) => (
+                    {(Object.values(allPresets) as PresetUI[]).filter(p => p.isBase).map((preset: PresetUI) => (
                       <Card
                         key={preset.id || Math.random()}
                         className={`app-panel cursor-pointer transition-all border ${currentPresetId === preset.id ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
@@ -1107,7 +1223,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                     ))}
 
                     {/* Custom Presets */}
-                    {Object.values(allPresets).filter(p => !p.isBase).map((preset) => (
+                    {(Object.values(allPresets) as PresetUI[]).filter(p => !p.isBase).map((preset: PresetUI) => (
                       <Card
                         key={preset.id || Math.random()}
                         className={`app-panel cursor-pointer transition-all border ${currentPresetId === preset.id ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]' : 'border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]'
@@ -1192,7 +1308,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
             {/* Design Controls */}
             <DesignControls
               design={config}
-              setDesignPartial={setDesignPartial}
+              setDesignPartial={handleControlChange}
               componentStyles={componentStyles}
             />
           </div>
@@ -1239,80 +1355,94 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }) {
                 </div>
               </CardHeader>
               <CardContent className="pt-4 text-[var(--color-text-primary)]">
-                {auditReport ? (
-                  <div className="space-y-4">
-                    <div className={componentStyles.layout.grid2}>
-                      <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
-                        <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Archivos escaneados</div>
-                        <div className="text-2xl font-bold text-[var(--color-text-primary)]">{auditReport?.summary?.filesScanned || 0}</div>
-                      </Card>
-                      <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
-                        <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Problemas encontrados</div>
-                        <div className="text-2xl font-bold text-[var(--color-text-primary)]">{auditReport?.summary?.totalIssues || 0}</div>
-                      </Card>
-                    </div>
-
-                    {(auditReport?.summary?.totalIssues || 0) === 0 && (
-                      <Alert variant="success">
-                        <CheckCircle className="h-4 w-4" />
-                        <AlertDescription>¡Excelente! No se encontraron problemas de diseño con el perfil "{QUICK_PROFILES[auditProfile]?.name}".</AlertDescription>
-                      </Alert>
-                    )}
-
-                    {(auditReport?.summary?.totalIssues || 0) > 0 && auditReport?.summary?.issues && (
-                      <div className={componentStyles.layout.grid2}>
-                        {Object.entries(auditReport.summary.issues).map(([k, v]) => (
-                          <Card key={k} className="bg-[var(--color-surface-elevated)] rounded-lg p-3 border border-[var(--color-border-default)]">
-                            <div className="text-xs uppercase tracking-wide text-[var(--color-text-secondary)] mb-1">{k}</div>
-                            <div className="text-xl font-semibold text-[var(--color-text-primary)]">{v}</div>
+                {(() => {
+                  const report = auditReport;
+                  if (report) {
+                    return (
+                      <div className="space-y-4">
+                        <div className={componentStyles.layout.grid2}>
+                          <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
+                            <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Archivos escaneados</div>
+                            <div className="text-2xl font-bold text-[var(--color-text-primary)]">{report.summary.filesScanned}</div>
                           </Card>
-                        ))}
-                      </div>
-                    )}
-
-                    {auditReport?.issues && (
-                      <details className=" border border-[var(--color-border-default)] p-4 bg-[var(--color-surface-muted)]">
-                        <summary className="cursor-pointer font-medium text-[var(--color-text-primary)]">Detalles por categoría</summary>
-                        <div className="mt-4 space-y-4 max-h-[420px] overflow-auto">
-                          {Object.entries(auditReport.issues).map(([bucket, items]) => (
-                            items.length > 0 && (
-                              <Card key={bucket} className="bg-[var(--color-surface-elevated)] rounded-lg p-3 border border-[var(--color-border-default)]">
-                                <div className="mb-3 font-semibold text-[var(--color-text-primary)] flex items-center justify-between">
-                                  <span>{bucket}</span>
-                                  <Badge className={`rounded-full ${componentStyles.status.badgeDanger}`}>
-                                    {items.length}
-                                  </Badge>
-                                </div>
-                                <ul className="space-y-2 text-sm">
-                                  {items.slice(0, 50).map((it, idx) => (
-                                    <li key={idx} className="border-l-2 border-[var(--color-primary)]/30 pl-3 py-1">
-                                      <div className="text-[11px] text-[var(--color-text-secondary)]">{it.file}:{it.line}</div>
-                                      <div className="font-mono text-xs text-[var(--color-text-primary)] bg-[var(--color-surface-muted)] p-1 rounded mt-1">{it.snippet}</div>
-                                    </li>
-                                  ))}
-                                </ul>
-                                {items.length > 50 && (
-                                  <div className="text-xs text-[var(--color-text-secondary)] mt-3 text-center">
-                                    +{items.length - 50} más (usa "Copiar JSON" para ver todo)
-                                  </div>
-                                )}
-                              </Card>
-                            )
-                          ))}
+                          <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
+                            <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Problemas encontrados</div>
+                            <div className="text-2xl font-bold text-[var(--color-text-primary)]">{report.summary.totalIssues}</div>
+                          </Card>
                         </div>
-                      </details>
-                    )}
 
-                    <Button variant="outline" onClick={handleCopyAudit} className="h-9  w-full">
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copiar informe JSON completo
-                    </Button>
-                  </div>
-                ) : (
-                  <p className="text-sm text-[var(--color-text-secondary)]">
-                    Selecciona un perfil y pulsa "Ejecutar Auditoría" para analizar estilos y clases en todo el proyecto.
-                  </p>
-                )}
+                        {report.summary.totalIssues === 0 && (
+                          <Alert variant="info" className="bg-[hsl(var(--success))]/10 border-[hsl(var(--success))]/20">
+                            <CheckCircle className="h-4 w-4 text-[hsl(var(--success))]" />
+                            <AlertDescription className="text-[hsl(var(--success))]">
+                              ¡Excelente! No se encontraron problemas de diseño con el perfil "{((QUICK_PROFILES as Record<string, any>)[auditProfile])?.name}".
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
+                        {report.summary.totalIssues > 0 && report.summary.issues && (
+                          <div className={componentStyles.layout.grid2}>
+                            {Object.entries(report.summary.issues).map(([k, v]) => (
+                              <Card key={k} className="bg-[var(--color-surface-elevated)] rounded-lg p-3 border border-[var(--color-border-default)]">
+                                <div className="text-xs uppercase tracking-wide text-[var(--color-text-secondary)] mb-1">{k}</div>
+                                <div className="text-xl font-semibold text-[var(--color-text-primary)]">{v}</div>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+
+                        {report.issues && (
+                          <details className=" border border-[var(--color-border-default)] p-4 bg-[var(--color-surface-muted)]">
+                            <summary className="cursor-pointer font-medium text-[var(--color-text-primary)]">Detalles por categoría</summary>
+                            <div className="mt-4 space-y-4 max-h-[420px] overflow-auto">
+                              {Object.entries(report.issues).map(([bucket, items]) => (
+                                items.length > 0 && (
+                                  <Card key={bucket} className="bg-[var(--color-surface-elevated)] rounded-lg p-3 border border-[var(--color-border-default)]">
+                                    <div className="mb-3 font-semibold text-[var(--color-text-primary)] flex items-center justify-between">
+                                      <span>{bucket}</span>
+                                      <Badge className={`rounded-full ${componentStyles.status.badgeDanger}`}>
+                                        {items.length}
+                                      </Badge>
+                                    </div>
+                                    <ul className="space-y-2 text-sm">
+                                      {items.slice(0, 50).map((it, idx) => (
+                                        <li key={idx} className="border-l-2 border-[var(--color-primary)]/30 pl-3 py-1">
+                                          <div className="text-[11px] text-[var(--color-text-secondary)]">{it.file}:{it.line}</div>
+                                          <div className="font-mono text-xs text-[var(--color-text-primary)] bg-[var(--color-surface-muted)] p-1 rounded mt-1">{it.snippet}</div>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                    {items.length > 50 && (
+                                      <div className="text-xs text-[var(--color-text-secondary)] mt-3 text-center">
+                                        +{items.length - 50} más (usa "Copiar JSON" para ver todo)
+                                      </div>
+                                    )}
+                                  </Card>
+                                )
+                              ))}
+                            </div>
+                          </details>
+                        )}
+
+                        <Button variant="outline" onClick={handleCopyAudit} className="h-9  w-full">
+                          <Copy className="w-4 h-4 mr-2" />
+                          Copiar informe JSON completo
+                        </Button>
+                      </div>
+                    );
+                  }
+
+                  if (!auditRunning) {
+                    return (
+                      <div className="h-64 flex flex-col items-center justify-center text-[var(--color-text-muted)] border-2 border-dashed border-[var(--color-border-muted)] rounded-xl">
+                        <Scan className="w-12 h-12 mb-4 opacity-20" />
+                        <p>Selecciona un perfil y ejecuta la auditoría</p>
+                      </div>
+                    );
+                  }
+
+                  return null;
+                })()}
               </CardContent>
             </Card>
           )

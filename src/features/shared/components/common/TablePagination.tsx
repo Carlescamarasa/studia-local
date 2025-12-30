@@ -18,6 +18,15 @@ import {
 } from '@/features/shared/components/ui/select';
 import { componentStyles } from '@/design/componentStyles';
 
+interface TablePaginationProps<T = any> {
+  data: T[];
+  pageSize?: number;
+  currentPage?: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+  pageSizeOptions?: number[];
+}
+
 export default function TablePagination({
   data = [],
   pageSize = 10,
@@ -25,21 +34,18 @@ export default function TablePagination({
   onPageChange,
   onPageSizeChange,
   pageSizeOptions = [10, 25, 50, 100],
-}) {
+}: TablePaginationProps) {
   const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, data.length);
-  const paginatedData = useMemo(() => {
-    return data.slice(startIndex, endIndex);
-  }, [data, startIndex, endIndex]);
 
-  const handlePageChange = (newPage) => {
+  const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       onPageChange(newPage);
     }
   };
 
-  const handlePageSizeChange = (newSize) => {
+  const handlePageSizeChange = (newSize: string) => {
     const newPageSize = parseInt(newSize);
     onPageSizeChange(newPageSize);
     const newTotalPages = Math.max(1, Math.ceil(data.length / newPageSize));
@@ -49,9 +55,9 @@ export default function TablePagination({
   };
 
   const getPageNumbers = () => {
-    const pages = [];
+    const pages: (number | 'ellipsis')[] = [];
     const maxVisible = 5;
-    
+
     if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
@@ -79,7 +85,7 @@ export default function TablePagination({
         pages.push(totalPages);
       }
     }
-    
+
     return pages;
   };
 
@@ -119,7 +125,7 @@ export default function TablePagination({
                 aria-disabled={currentPage === 1}
               />
             </PaginationItem>
-            
+
             {getPageNumbers().map((page, index) => {
               if (page === 'ellipsis') {
                 return (
@@ -128,7 +134,7 @@ export default function TablePagination({
                   </PaginationItem>
                 );
               }
-              
+
               return (
                 <PaginationItem key={page}>
                   <PaginationLink
@@ -141,7 +147,7 @@ export default function TablePagination({
                 </PaginationItem>
               );
             })}
-            
+
             <PaginationItem>
               <PaginationNext
                 onClick={() => handlePageChange(currentPage + 1)}

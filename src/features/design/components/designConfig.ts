@@ -1511,7 +1511,7 @@ export function revertChangeInOverlay(
 
   if (scope === 'common' && result.common) {
     deleteNestedPath(result.common, path);
-  } else if (result.modes?.[scope]) {
+  } else if (scope !== 'common' && result.modes?.[scope]) {
     deleteNestedPath(result.modes[scope]!, path);
   }
 

@@ -14,9 +14,30 @@ import { Input } from "@/features/shared/components/ui/input";
 import { Textarea } from "@/features/shared/components/ui/textarea";
 import { RADIUS_MAP, SHADOW_MAP, DEFAULT_DESIGN } from "@/features/design/components/designConfig";
 
-function QAVisualContent({ embedded = false }) {
-  const { config } = useDesign();
-  const [checks, setChecks] = useState([]);
+interface QAVisualContentProps {
+  embedded?: boolean;
+}
+
+interface CheckResult {
+  category: string;
+  name: string;
+  expected: string;
+  actual: string;
+  pass: boolean;
+}
+
+const componentStyles = {
+  layout: {
+    grid2: "grid grid-cols-1 md:grid-cols-2 gap-4",
+    grid3: "grid grid-cols-1 md:grid-cols-3 gap-4",
+  }
+};
+
+function QAVisualContent({ embedded = false }: QAVisualContentProps) {
+  const { design } = useDesign();
+  const config = design; // Compatibility alias
+
+  const [checks, setChecks] = useState<CheckResult[]>([]);
   const [activeTab, setActiveTab] = useState('components');
 
   const runChecks = () => {
@@ -131,7 +152,7 @@ function QAVisualContent({ embedded = false }) {
   const failed = checks.filter(c => !c.pass).length;
   const total = checks.length;
 
-  const groupedChecks = checks.reduce((acc, check) => {
+  const checksByCategory = checks.reduce<Record<string, CheckResult[]>>((acc, check) => {
     if (!acc[check.category]) acc[check.category] = [];
     acc[check.category].push(check);
     return acc;
@@ -192,43 +213,38 @@ function QAVisualContent({ embedded = false }) {
 
         {activeTab === 'components' && (
           <div className="space-y-4">
-            {Object.entries(groupedChecks).map(([category, categoryChecks]) => (
-              <Card key={category} className="app-card">
-                <CardHeader className="border-b border-[var(--color-border-default)]">
-                  <CardTitle className="text-lg">{category}</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="space-y-2">
-                    {categoryChecks.map((check, idx) => (
-                      <div
-                        key={idx}
-                        className={`flex items-start gap-3 p-3 app-panel border-2 ${
-                          check.pass
-                            ? 'border-[hsl(var(--success))]/20 bg-[hsl(var(--success))]/5'
-                            : 'border-[hsl(var(--danger))]/20 bg-[hsl(var(--danger))]/5'
-                        }`}
-                      >
-                        {check.pass ? (
-                          <CheckCircle className="w-5 h-5 text-[hsl(var(--success))] shrink-0 mt-0.5" />
-                        ) : (
-                          <XCircle className="w-5 h-5 text-[hsl(var(--danger))] shrink-0 mt-0.5" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm text-ui">{check.name}</p>
-                          <div className="flex gap-4 mt-1 text-xs">
-                            <span className="text-ui/80">
-                              Esperado: <code className="bg-muted px-1 rounded">{check.expected}</code>
-                            </span>
-                            <span className="text-ui/80">
-                              Actual: <code className="bg-muted px-1 rounded">{check.actual}</code>
-                            </span>
+            {Object.entries(checksByCategory).map(([category, categoryChecks]: [string, CheckResult[]]) => (
+              <div key={category} className="space-y-4">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mt-6 first:mt-0">
+                  {category}
+                </h3>
+                <div className={componentStyles.layout.grid2}>
+                  {(categoryChecks as CheckResult[]).map((check: CheckResult, idx: number) => (
+                    <Card key={idx} className={`p-3 border ${check.pass ? 'border-green-100 bg-green-50/30' : 'border-red-100 bg-red-50/30'}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <div className="text-xs font-medium text-[var(--color-text-primary)] mb-1">{check.name}</div>
+                          <div className="text-[10px] space-y-0.5">
+                            <div className="text-[var(--color-text-muted)] flex justify-between">
+                              <span>Esperado:</span>
+                              <span className="font-mono">{check.expected}</span>
+                            </div>
+                            <div className={`${check.pass ? 'text-green-700' : 'text-red-700'} flex justify-between`}>
+                              <span>Real:</span>
+                              <span className="font-mono">{check.actual}</span>
+                            </div>
                           </div>
                         </div>
+                        {check.pass ? (
+                          <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                        ) : (
+                          <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                        )}
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                    </Card>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}

@@ -113,6 +113,7 @@ import {
 } from "lucide-react";
 
 import { useFeedbacksSemanal } from "@/features/progreso/hooks/useFeedbacksSemanal";
+import { useEvaluacionesTecnicas } from "@/features/progreso/hooks/useEvaluacionesTecnicas";
 import { useIsMobile } from "@/hooks/use-mobile.jsx";
 
 // Cast internal JSX components to any to avoid TS errors
@@ -257,10 +258,12 @@ function ProgresoPageContent() {
     }, [isEstu, selectedStudentIds, userIdActual]);
 
     const effectiveIds = useMemo(() => {
-        if (!effectiveStudentId && isProf) return estudiantesDelProfesor;
-        if (!effectiveStudentId && isAdmin) return usuarios.filter(u => u.rolPersonalizado === 'ESTU').map(u => u.id);
-        return effectiveStudentId ? [effectiveStudentId] : [];
-    }, [effectiveStudentId, isProf, isAdmin, estudiantesDelProfesor, usuarios]);
+        if (selectedStudentIds.length > 0) return selectedStudentIds;
+        if (isEstu) return [userIdActual].filter((id): id is string => !!id);
+        if (isProf) return estudiantesDelProfesor;
+        if (isAdmin) return usuarios.filter(u => u.rolPersonalizado === 'ESTU').map(u => u.id);
+        return [];
+    }, [selectedStudentIds, isEstu, userIdActual, isProf, isAdmin, estudiantesDelProfesor, usuarios]);
 
     // Level calculation for Resumen
     const aggregateLevelGoals = useAggregateLevelGoals(effectiveIds);
@@ -284,6 +287,7 @@ function ProgresoPageContent() {
     } = progressSummary || {};
 
     const { data: feedbacksSemanal = [], refetch: refetchFeedbacksHook } = useFeedbacksSemanal();
+    const { data: evaluacionesTecnicas = [] } = useEvaluacionesTecnicas();
 
     // Maintain compatibility with existing refetch calls
     const refetchFeedbacks = () => {
@@ -946,6 +950,16 @@ function ProgresoPageContent() {
                             registrosFiltrados={registrosFiltradosUnicos}
                             user={(isEstu && userIdActual) ? usuariosMap[userIdActual] : null}
                             aggregateLevelGoals={aggregateLevelGoals}
+                            // Props for HabilidadesView
+                            alumnosSeleccionados={effectiveIds}
+                            allStudentIds={estudiantes.map(e => e.id)}
+                            userIdActual={userIdActual}
+                            fechaInicio={periodoInicio}
+                            fechaFin={periodoFin}
+                            xpData={registrosFiltradosUnicos}
+                            evaluations={evaluacionesTecnicas}
+                            feedbacks={feedbacksSemanal}
+                            users={usuarios}
                         />
                     </div>
                 )}
@@ -957,7 +971,7 @@ function ProgresoPageContent() {
                             alumnosSeleccionados={effectiveIds}
                             userIdActual={userIdActual}
                             xpData={registrosFiltradosUnicos}
-                            evaluations={[]}
+                            evaluations={evaluacionesTecnicas}
                             users={usuarios}
                             fechaInicio={periodoInicio}
                             fechaFin={periodoFin}

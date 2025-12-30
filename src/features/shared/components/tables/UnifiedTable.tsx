@@ -20,7 +20,12 @@ import {
  * Used to filter out empty fields in mobile view to avoid showing "Label: -" or similar
  * This function should be used on rawValue (the actual data), not on rendered ReactNodes
  */
-function isEmptyRawValue(value) {
+/**
+ * Helper function to check if a raw value should be considered "empty"
+ * Used to filter out empty fields in mobile view to avoid showing "Label: -" or similar
+ * This function should be used on rawValue (the actual data), not on rendered ReactNodes
+ */
+function isEmptyRawValue(value: any) {
   if (value === null || value === undefined) return true;
   if (typeof value === 'number' && Number.isNaN(value)) return true;
   if (typeof value === 'string') {
@@ -34,7 +39,45 @@ function isEmptyRawValue(value) {
   return false;
 }
 
-export default function UnifiedTable({
+export interface TableColumn<T> {
+  key: string;
+  label: string;
+  render?: (item: T, index: number) => React.ReactNode;
+  sortable?: boolean;
+  sortValue?: (item: T) => any;
+  mobileHidden?: boolean;
+  mobileIsPrimary?: boolean;
+  mobileLabel?: string;
+  mobileFullRow?: boolean;
+  rawValue?: any | ((item: T) => any);
+}
+
+export interface TableAction<T = any> {
+  id: string;
+  label: string;
+  icon?: React.ComponentType<{ className?: string }> | React.ReactNode;
+  onClick: (item?: T) => void;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+}
+
+export interface UnifiedTableProps<T> {
+  columns: TableColumn<T>[];
+  data: T[];
+  onRowClick?: (item: T) => void;
+  rowActions?: ((item: T) => TableAction<T>[]) | null;
+  getRowActions?: ((item: T) => TableAction<T>[]) | null;
+  bulkActions?: TableAction<any[]>[] | null;
+  keyField?: string;
+  selectable?: boolean;
+  emptyMessage?: string;
+  emptyIcon?: React.ComponentType<{ className?: string }>;
+  paginated?: boolean;
+  defaultPageSize?: number;
+  selectedKeys?: Set<any> | null;
+  onSelectionChange?: ((keys: Set<any>) => void) | null;
+}
+
+export default function UnifiedTable<T>({
   columns,
   data,
   onRowClick,
@@ -50,17 +93,17 @@ export default function UnifiedTable({
   // Props for controlled selection
   selectedKeys = null,
   onSelectionChange = null
-}) {
-  const [sortColumn, setSortColumn] = useState(null);
-  const [sortDirection, setSortDirection] = useState('asc');
-  const [internalSelectedItems, setInternalSelectedItems] = useState(new Set());
+}: UnifiedTableProps<T>) {
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [internalSelectedItems, setInternalSelectedItems] = useState(new Set<any>());
 
   // Use external selection if provided, otherwise internal
   const selectedItems = selectedKeys || internalSelectedItems;
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(defaultPageSize);
 
-  const handleSort = (columnKey) => {
+  const handleSort = (columnKey: string) => {
     if (!columnKey) return;
 
     if (sortColumn === columnKey) {
@@ -74,12 +117,12 @@ export default function UnifiedTable({
   const sortedData = useMemo(() => {
     if (!sortColumn) return data;
 
-    return [...data].sort((a, b) => {
+    return [...data].sort((a: T, b: T) => {
       const column = columns.find(c => c.key === sortColumn);
       if (!column) return 0;
 
-      const aVal = column.sortValue ? column.sortValue(a) : a[sortColumn];
-      const bVal = column.sortValue ? column.sortValue(b) : b[sortColumn];
+      const aVal = column.sortValue ? column.sortValue(a) : (a as any)[sortColumn];
+      const bVal = column.sortValue ? column.sortValue(b) : (b as any)[sortColumn];
 
       if (aVal === bVal) return 0;
       if (aVal == null) return 1;
@@ -99,7 +142,7 @@ export default function UnifiedTable({
     return sortedData.slice(startIndex, endIndex);
   }, [sortedData, paginated, currentPage, pageSize]);
 
-  const toggleSelection = (itemKey) => {
+  const toggleSelection = (itemKey: any) => {
     const newSelected = new Set(selectedItems);
     if (newSelected.has(itemKey)) {
       newSelected.delete(itemKey);
@@ -117,11 +160,11 @@ export default function UnifiedTable({
   };
 
   const toggleSelectAll = () => {
-    let newSelected;
+    let newSelected: Set<any>;
     if (selectedItems.size === data.length && data.length > 0) {
       newSelected = new Set();
     } else {
-      newSelected = new Set(data.map(item => item[keyField]));
+      newSelected = new Set(data.map(item => (item as any)[keyField as string]));
     }
 
     if (onSelectionChange) {
@@ -235,11 +278,20 @@ export default function UnifiedTable({
                               key={idx}
                               onClick={() => {
                                 action.onClick(Array.from(selectedItems));
-                                setSelectedItems(new Set());
+                                setInternalSelectedItems(new Set());
                               }}
                               className="cursor-pointer"
                             >
-                              {action.icon && <action.icon className="mr-2 h-4 w-4" />}
+                              {(() => {
+                                if (!action.icon) return null;
+                                const Icon = action.icon;
+                                if (React.isValidElement(Icon)) return <span className="mr-2">{Icon}</span>;
+                                if (typeof Icon === 'function' || (typeof Icon === 'object' && Icon !== null)) {
+                                  const Comp = Icon as React.ElementType;
+                                  return <Comp className="mr-2 h-4 w-4" />;
+                                }
+                                return null;
+                              })()}
                               {action.label}
                             </DropdownMenuItem>
                           ))}
@@ -255,7 +307,8 @@ export default function UnifiedTable({
               >
                 {displayData.map((item, index) => {
                   const actions = getRowActions ? getRowActions(item) : (rowActions ? rowActions(item) : []);
-                  const isSelected = selectedItems.has(item[keyField]);
+                  const itemKey = (item as any)[keyField as string];
+                  const isSelected = selectedItems.has(itemKey);
 
                   // Si solo hay una acción, ejecutarla directamente en el click de la fila si no hay onRowClick
                   const handleRowClick = () => {
@@ -273,30 +326,31 @@ export default function UnifiedTable({
 
                   return (
                     <TableRow
-                      key={item[keyField]}
+                      key={itemKey}
+                      //@ts-ignore - clickable is a valid prop in our table.tsx
                       clickable={!!(onRowClick || (hasOnlyOneAction && actions.length === 1))}
                       selected={isSelected}
                       className="group hover:bg-[var(--color-surface-muted)]/50 transition-colors"
                       onClick={handleRowClick}
                     >
                       {selectable && (
-                        <TableCell onClick={(e) => e.stopPropagation()} className="py-2 px-3">
+                        <TableCell onClick={(e: React.MouseEvent) => e.stopPropagation()} className="py-2 px-3">
                           <Checkbox
                             checked={isSelected}
-                            onCheckedChange={() => toggleSelection(item[keyField])}
-                            aria-label={`Seleccionar ${item[keyField]}`}
+                            onCheckedChange={() => toggleSelection(itemKey)}
+                            aria-label={`Seleccionar ${itemKey}`}
                           />
                         </TableCell>
                       )}
                       {columns.map((col) => (
                         <TableCell key={col.key} className="py-2 px-3 text-sm">
-                          {col.render ? col.render(item, globalIndex) : item[col.key]}
+                          {col.render ? col.render(item, globalIndex) : (item as any)[col.key]}
                         </TableCell>
                       ))}
                       {hasActions && !shouldHideActionsColumn && (
-                        <TableCell className="text-right py-2 px-3" onClick={(e) => e.stopPropagation()}>
+                        <TableCell className="text-right py-2 px-3" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                           <div className="flex justify-end">
-                            <RowActionsMenu actions={actions} />
+                            <RowActionsMenu actions={actions as any} />
                           </div>
                         </TableCell>
                       )}
@@ -309,11 +363,11 @@ export default function UnifiedTable({
 
           {paginated && (
             <TablePagination
-              data={sortedData}
+              data={sortedData as any}
               pageSize={pageSize}
               currentPage={currentPage}
               onPageChange={setCurrentPage}
-              onPageSizeChange={(newSize) => {
+              onPageSizeChange={(newSize: number) => {
                 setPageSize(newSize);
                 setCurrentPage(1);
               }}
@@ -333,7 +387,7 @@ export default function UnifiedTable({
                     size="sm"
                     onClick={() => {
                       action.onClick(Array.from(selectedItems));
-                      setSelectedItems(new Set());
+                      setInternalSelectedItems(new Set());
                     }}
                     className={cn(
                       componentStyles.buttons.outline,
@@ -345,12 +399,16 @@ export default function UnifiedTable({
                     )}
                     title={action.label}
                   >
-                    {action.icon && (
-                      <action.icon className={cn(
-                        "w-4 h-4 shrink-0",
-                        !isMobile && "mr-2"
-                      )} />
-                    )}
+                    {(() => {
+                      if (!action.icon) return null;
+                      const Icon = action.icon;
+                      if (React.isValidElement(Icon)) return <span className={cn("shrink-0", !isMobile && "mr-2")}>{Icon}</span>;
+                      if (typeof Icon === 'function' || (typeof Icon === 'object' && Icon !== null)) {
+                        const Comp = Icon as React.ElementType;
+                        return <Comp className={cn("w-4 h-4 shrink-0", !isMobile && "mr-2")} />;
+                      }
+                      return null;
+                    })()}
                     {(!isMobile || !action.icon) && (
                       <span className="text-[10px] sm:text-xs truncate">
                         {action.label}
@@ -367,7 +425,8 @@ export default function UnifiedTable({
           <div className="space-y-2 w-full">
             {displayData.map((item) => {
               const actions = getRowActions ? getRowActions(item) : (rowActions ? rowActions(item) : []);
-              const isSelected = selectedItems.has(item[keyField]);
+              const itemKey = (item as any)[keyField as string];
+              const isSelected = selectedItems.has(itemKey);
 
               // Si solo hay una acción, ejecutarla directamente en el click de la tarjeta
               const handleCardClick = () => {
@@ -384,7 +443,7 @@ export default function UnifiedTable({
 
               // Renderizar columna primaria (título)
               const primaryContent = primaryColumn
-                ? (primaryColumn.render ? primaryColumn.render(item) : item[primaryColumn.key])
+                ? (primaryColumn.render ? primaryColumn.render(item, 0) : (item as any)[primaryColumn.key])
                 : null;
 
               // Renderizar columnas de detalle
@@ -399,11 +458,11 @@ export default function UnifiedTable({
                   ? col.rawValue(item)
                   : col.rawValue !== undefined
                     ? col.rawValue
-                    : item[col.key];
+                    : (item as any)[col.key];
 
                 // Obtener displayValue: el ReactNode renderizado (si existe render) o el rawValue
                 const displayValue = typeof col.render === 'function'
-                  ? col.render(item)
+                  ? col.render(item, 0)
                   : rawValue;
 
                 return { label, value: displayValue, rawValue, key: col.key, fullRow: col.mobileFullRow };
@@ -418,7 +477,7 @@ export default function UnifiedTable({
                 if (typeof detail.value === 'object' && detail.value !== null) {
                   const isReactElement = React.isValidElement
                     ? React.isValidElement(detail.value)
-                    : (detail.value && typeof detail.value === 'object' && '$$typeof' in detail.value);
+                    : (detail.value && typeof detail.value === 'object' && '$$typeof' in (detail.value as any));
 
                   if (isReactElement) {
                     // Si hay un rawValue definido y está vacío, filtrar
@@ -437,7 +496,7 @@ export default function UnifiedTable({
 
               return (
                 <div
-                  key={item[keyField]}
+                  key={itemKey}
                   className={cn(
                     "ui-card app-card w-full text-left box-border relative",
                     "bg-[var(--color-surface-default)] dark:bg-[var(--color-surface-elevated)] border border-[var(--color-border-default)]",
@@ -449,20 +508,20 @@ export default function UnifiedTable({
                 >
                   {/* Actions menu in top right */}
                   {actions.length > 0 && (
-                    <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
-                      <RowActionsMenu actions={actions} />
+                    <div className="absolute top-3 right-3" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                      <RowActionsMenu actions={actions as any} />
                     </div>
                   )}
                   {/* All fields in one flex-wrap row */}
                   <div className="px-4 py-3 md:px-5 md:py-4 flex flex-wrap items-center gap-x-4 gap-y-3 w-full text-xs text-[var(--color-text-secondary)]">
                     {/* Checkbox if selectable */}
                     {selectable && (
-                      <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                      <div onClick={(e: React.MouseEvent) => e.stopPropagation()} className="shrink-0">
                         <Checkbox
                           checked={isSelected}
-                          onCheckedChange={() => toggleSelection(item[keyField])}
+                          onCheckedChange={() => toggleSelection(itemKey)}
                           className="h-4 w-4"
-                          aria-label={`Seleccionar ${item[keyField]}`}
+                          aria-label={`Seleccionar ${itemKey}`}
                         />
                       </div>
                     )}
@@ -500,11 +559,11 @@ export default function UnifiedTable({
 
           {paginated && (
             <TablePagination
-              data={sortedData}
+              data={sortedData as any}
               pageSize={pageSize}
               currentPage={currentPage}
               onPageChange={setCurrentPage}
-              onPageSizeChange={(newSize) => {
+              onPageSizeChange={(newSize: number) => {
                 setPageSize(newSize);
                 setCurrentPage(1);
               }}
@@ -524,7 +583,7 @@ export default function UnifiedTable({
                     size="sm"
                     onClick={() => {
                       action.onClick(Array.from(selectedItems));
-                      setSelectedItems(new Set());
+                      setInternalSelectedItems(new Set());
                     }}
                     className={cn(
                       componentStyles.buttons.outline,
@@ -536,12 +595,16 @@ export default function UnifiedTable({
                     )}
                     title={action.label}
                   >
-                    {action.icon && (
-                      <action.icon className={cn(
-                        "w-4 h-4 shrink-0",
-                        !isMobile && "mr-2"
-                      )} />
-                    )}
+                    {(() => {
+                      if (!action.icon) return null;
+                      const Icon = action.icon;
+                      if (React.isValidElement(Icon)) return <span className={cn("shrink-0", !isMobile && "mr-2")}>{Icon}</span>;
+                      if (typeof Icon === 'function' || (typeof Icon === 'object' && Icon !== null)) {
+                        const Comp = Icon as React.ElementType;
+                        return <Comp className={cn("w-4 h-4 shrink-0", !isMobile && "mr-2")} />;
+                      }
+                      return null;
+                    })()}
                     {(!isMobile || !action.icon) && (
                       <span className="text-[10px] sm:text-xs truncate">
                         {action.label}

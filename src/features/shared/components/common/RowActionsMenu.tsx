@@ -8,6 +8,20 @@ import {
   DropdownMenuTrigger,
 } from "@/features/shared/components/ui/dropdown-menu";
 
+interface RowAction {
+  id?: string;
+  label: string;
+  icon?: React.ComponentType<{ className?: string }> | React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  className?: string;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+}
+
+interface RowActionsMenuProps {
+  actions: RowAction[];
+}
+
 /**
  * RowActionsMenu - Menú de acciones para filas de tabla
  * 100% conectado al Design System
@@ -15,7 +29,7 @@ import {
  * - Visible en hover/focus para accesibilidad
  * - Dropdown con tokens del DS
  */
-export default function RowActionsMenu({ actions = [] }) {
+export default function RowActionsMenu({ actions = [] }: RowActionsMenuProps) {
   if (!actions || actions.length === 0) return null;
 
   return (
@@ -40,20 +54,24 @@ export default function RowActionsMenu({ actions = [] }) {
             if (React.isValidElement(IconComponent)) {
               // Already a rendered element, use as-is
               iconElement = IconComponent;
-            } else {
+            } else if (typeof IconComponent === 'function' || (typeof IconComponent === 'object' && IconComponent !== null)) {
               // Component reference (function or forwardRef object), render it
-              iconElement = <IconComponent className="h-4 w-4" />;
+              const Component = IconComponent as React.ComponentType<{ className?: string }>;
+              iconElement = <Component className="h-4 w-4" />;
             }
           }
+
+          // Use destructive variant styles if needed
+          const isDestructive = action.variant === 'destructive';
 
           return (
             <DropdownMenuItem
               key={action.id || index}
               onClick={action.onClick}
               disabled={action.disabled}
-              className="cursor-pointer focus-brand"
+              className={`cursor-pointer focus-brand ${isDestructive ? 'text-destructive focus:text-destructive' : ''} ${action.className || ''}`}
             >
-              {iconElement && <span className="mr-2">{iconElement}</span>}
+              {iconElement && <span className={`mr-2 ${isDestructive ? 'text-destructive' : ''}`}>{iconElement}</span>}
               {action.label}
             </DropdownMenuItem>
           );

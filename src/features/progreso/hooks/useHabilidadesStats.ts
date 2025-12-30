@@ -9,6 +9,8 @@ interface HabilidadesStatsOptions {
     providedXPData?: any[];
     providedEvaluations?: any[];
     providedFeedbacks?: any[];
+    fechaInicio?: string;
+    fechaFin?: string;
 }
 
 import { useStudentSkillsRadar } from './useStudentSkillsRadar';
@@ -139,8 +141,18 @@ export function useHabilidadesStatsMultiple(studentIds: string[], options?: Habi
     const aggregatedQualitative = useMemo(() => {
         if ((!allEvaluations && !allFeedbacks) || studentIds.length === 0) return { sonido: 0, cognicion: 0 };
 
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - 30);
+        // Stateful Logic: For Sonido/Cognicion, we want the LATEST value known up to endDate.
+        // We do NOT restrict by startDate (cutoffDate) because a grade given 3 months ago is still valid if no newer grade exists.
+
+        // However, we still need to respect endDate to allow "Time Travel" (what was my grade at that time).
+        // If no endDate provided, it defaults to NOW (latest current).
+
+        let endDate = new Date();
+        if (options?.fechaFin) {
+            endDate = new Date(options.fechaFin);
+            // Set end of day for inclusive filtering
+            endDate.setHours(23, 59, 59, 999);
+        }
 
         let sonidoSum = 0;
         let cognicionSum = 0;
@@ -149,26 +161,34 @@ export function useHabilidadesStatsMultiple(studentIds: string[], options?: Habi
         studentIds.forEach(alumnoId => {
             // 1. Process Evaluations
             const relevantEvaluations = (allEvaluations || [])
-                .filter((e: any) => e.alumnoId === alumnoId && e.fecha && new Date(e.fecha) >= cutoffDate)
+                .filter((e: any) => {
+                    const eId = e.alumnoId || e.student_id || e.studentId;
+                    const eDate = e.fecha ? new Date(e.fecha) : null;
+                    // Strict: Must be BEFORE or ON endDate. No start date limit.
+                    return eId === alumnoId && eDate && eDate <= endDate;
+                })
                 .map((e: any) => ({
                     date: new Date(e.fecha),
                     sonido: e.habilidades?.sonido,
-                    cognicion: e.habilidades?.cognitivo
+                    cognicion: e.habilidades?.cognitivo // Use cognitivo per domain
                 }));
 
             // 2. Process Feedbacks
-            // NOTE: sonido/cognicion are stored INSIDE habilidades JSONB
             const relevantFeedbacks = (allFeedbacks || [])
-                .filter((f: any) => f.alumnoId === alumnoId && (f.semanaInicioISO || f.created_at || f.createdAt))
+                .filter((f: any) => {
+                    const fId = f.alumnoId || f.student_id || f.studentId;
+                    return fId === alumnoId && (f.semanaInicioISO || f.created_at || f.createdAt);
+                })
                 .filter((f: any) => {
                     const d = new Date(f.semanaInicioISO || f.created_at || f.createdAt);
-                    return d >= cutoffDate;
+                    // Strict: Must be BEFORE or ON endDate. No start date limit.
+                    return d <= endDate;
                 })
                 .map((f: any) => ({
                     date: new Date(f.semanaInicioISO || f.created_at || f.createdAt),
                     // Read from habilidades JSONB where remoteDataAPI stores them
                     sonido: f.habilidades?.sonido ?? f.sonido,
-                    cognicion: f.habilidades?.cognicion ?? f.cognicion
+                    cognicion: f.habilidades?.cognitivo ?? f.cognicion // Use cognitivo per domain
                 }));
 
             // 3. Merge and Sort Descending
@@ -233,8 +253,8 @@ export function useHabilidadesStatsMultiple(studentIds: string[], options?: Habi
                     A: qualitative.sonido,
                     B: undefined,
                     Total: qualitative.sonido,
-                    original: Math.round(qualitative.sonido * 10) / 10,
-                    originalTotal: Math.round(qualitative.sonido * 10) / 10,
+                    original: Math.round(qualitative.sonido * 100) / 100,
+                    originalTotal: Math.round(qualitative.sonido * 100) / 100,
                     fullMark: 10
                 },
                 {
@@ -272,8 +292,8 @@ export function useHabilidadesStatsMultiple(studentIds: string[], options?: Habi
                     A: qualitative.cognicion,
                     B: undefined,
                     Total: qualitative.cognicion,
-                    original: Math.round(qualitative.cognicion * 10) / 10,
-                    originalTotal: Math.round(qualitative.cognicion * 10) / 10,
+                    original: Math.round(qualitative.cognicion * 100) / 100,
+                    originalTotal: Math.round(qualitative.cognicion * 100) / 100,
                     fullMark: 10
                 },
             ]

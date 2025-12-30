@@ -4,9 +4,10 @@ import StreakMetric from "./StreakMetric";
 import RatingStarsMetric from "./RatingStarsMetric";
 import { Timer, Clock, CalendarRange, Repeat } from "lucide-react";
 import { formatDurationDDHHMM, formatDurationChart } from "../utils/progresoUtils";
+import HabilidadesView from "./HabilidadesView";
 
 /**
- * ResumenTab - Tab de resumen con 6 KPIs unificados visualmente.
+ * ResumenTab - Tab de resumen con 6 KPIs unificados visualmente y vista de habilidades.
  */
 export interface ResumenTabProps {
     kpis: {
@@ -20,11 +21,32 @@ export interface ResumenTabProps {
         semanasDistintas: number;
         mediaSemanalSesiones: number;
     };
+    // Props for HabilidadesView
+    alumnosSeleccionados?: string[];
+    allStudentIds?: string[];
+    userIdActual?: string;
+    fechaInicio?: string;
+    fechaFin?: string;
+    xpData?: any[];
+    evaluations?: any[];
+    feedbacks?: any[];
+    users?: any[];
 }
 
-export default function ResumenTab({ kpis }: ResumenTabProps) {
+export default function ResumenTab({
+    kpis,
+    alumnosSeleccionados,
+    allStudentIds,
+    userIdActual,
+    fechaInicio,
+    fechaFin,
+    xpData,
+    evaluations,
+    feedbacks,
+    users
+}: ResumenTabProps) {
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4 border-b border-[var(--color-border-default)] pb-6">
                 {/* 1. Tiempo Total */}
                 <KpiTile
@@ -68,6 +90,24 @@ export default function ResumenTab({ kpis }: ResumenTabProps) {
                     value={kpis.mediaSemanalSesiones.toFixed(1)}
                     valueClassName="text-[var(--color-success)]"
                     subtext="ses/sem · media"
+                />
+            </div>
+
+            {/* Panel de Habilidades - cálculos totales (sin filtros de forma/rango) */}
+            <div className="mt-6">
+                <HabilidadesView
+                    alumnosSeleccionados={alumnosSeleccionados}
+                    allStudentIds={allStudentIds}
+                    userIdActual={userIdActual}
+                    fechaInicio={fechaInicio}
+                    fechaFin={fechaFin}
+                    xpData={xpData}
+                    evaluations={evaluations}
+                    feedbacks={feedbacks}
+                    users={users}
+                    hideViewModeToggle={true}
+                    forceViewMode="rango"
+                    customTitle="Habilidades"
                 />
             </div>
         </div>

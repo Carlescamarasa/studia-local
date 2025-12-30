@@ -2,7 +2,10 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { componentStyles } from "@/design/componentStyles"
 
-const Table = React.forwardRef(({ className, ...props }, ref) => (
+const Table = React.forwardRef<
+  HTMLTableElement,
+  React.TableHTMLAttributes<HTMLTableElement>
+>(({ className, ...props }, ref) => (
   <table
     ref={ref}
     className={cn("w-full caption-bottom text-sm border-collapse bg-card overflow-hidden", className)}
@@ -11,7 +14,10 @@ const Table = React.forwardRef(({ className, ...props }, ref) => (
 ))
 Table.displayName = "Table"
 
-const TableContainer = React.forwardRef(({ className, ...props }, ref) => (
+const TableContainer = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
   <div
     ref={ref}
     className={cn("ui-table-shell w-full overflow-hidden", className)}
@@ -20,7 +26,10 @@ const TableContainer = React.forwardRef(({ className, ...props }, ref) => (
 ))
 TableContainer.displayName = "TableContainer"
 
-const TableHeader = React.forwardRef(({ className, sticky = false, ...props }, ref) => {
+const TableHeader = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement> & { sticky?: boolean }
+>(({ className, sticky = false, ...props }, ref) => {
   const stickyClass = sticky ? componentStyles.table.header : "";
   return (
     <thead
@@ -32,7 +41,10 @@ const TableHeader = React.forwardRef(({ className, sticky = false, ...props }, r
 })
 TableHeader.displayName = "TableHeader"
 
-const TableBody = React.forwardRef(({ className, zebra = false, ...props }, ref) => {
+const TableBody = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement> & { zebra?: boolean }
+>(({ className, zebra = false, ...props }, ref) => {
   const zebraClass = zebra ? "[&_tr:nth-child(even)]:bg-[var(--color-surface-muted)]/30" : "";
   return (
     <tbody
@@ -44,7 +56,10 @@ const TableBody = React.forwardRef(({ className, zebra = false, ...props }, ref)
 })
 TableBody.displayName = "TableBody"
 
-const TableFooter = React.forwardRef(({ className, ...props }, ref) => (
+const TableFooter = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
   <tfoot
     ref={ref}
     className={cn(
@@ -56,7 +71,10 @@ const TableFooter = React.forwardRef(({ className, ...props }, ref) => (
 ))
 TableFooter.displayName = "TableFooter"
 
-const TableRow = React.forwardRef(({ className, clickable = false, selected = false, ...props }, ref) => {
+const TableRow = React.forwardRef<
+  HTMLTableRowElement,
+  React.HTMLAttributes<HTMLTableRowElement> & { clickable?: boolean; selected?: boolean }
+>(({ className, clickable = false, selected = false, ...props }, ref) => {
   const clickableClass = clickable ? componentStyles.table.rowClickable : "";
   const selectedClass = selected ? componentStyles.table.rowSelected : "";
   return (
@@ -75,7 +93,10 @@ const TableRow = React.forwardRef(({ className, clickable = false, selected = fa
 })
 TableRow.displayName = "TableRow"
 
-const TableHead = React.forwardRef(({ className, sortable = false, ...props }, ref) => {
+const TableHead = React.forwardRef<
+  HTMLTableCellElement,
+  React.ThHTMLAttributes<HTMLTableCellElement> & { sortable?: boolean }
+>(({ className, sortable = false, ...props }, ref) => {
   const sortableClass = sortable ? componentStyles.table.headerCellSortable : "";
   return (
     <th
@@ -92,7 +113,10 @@ const TableHead = React.forwardRef(({ className, sortable = false, ...props }, r
 })
 TableHead.displayName = "TableHead"
 
-const TableCell = React.forwardRef(({ className, compact = false, ...props }, ref) => {
+const TableCell = React.forwardRef<
+  HTMLTableCellElement,
+  React.TdHTMLAttributes<HTMLTableCellElement> & { compact?: boolean }
+>(({ className, compact = false, ...props }, ref) => {
   const cellClass = compact ? componentStyles.table.cellCompact : componentStyles.table.cell;
   return (
     <td
@@ -104,7 +128,10 @@ const TableCell = React.forwardRef(({ className, compact = false, ...props }, re
 })
 TableCell.displayName = "TableCell"
 
-const TableCaption = React.forwardRef(({ className, ...props }, ref) => (
+const TableCaption = React.forwardRef<
+  HTMLTableCaptionElement,
+  React.HTMLAttributes<HTMLTableCaptionElement>
+>(({ className, ...props }, ref) => (
   <caption
     ref={ref}
     className={cn("mt-4 text-sm text-muted", className)}
