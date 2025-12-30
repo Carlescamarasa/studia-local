@@ -160,7 +160,7 @@ export default function ProgresoPage() {
     const anyOfRoles: any = ['ESTU', 'PROF', 'ADMIN'];
 
     return (
-        <div className="min-h-screen bg-transparent p-4 md:p-6 lg:p-8 animate-in fade-in duration-500">
+        <div className="min-h-screen bg-transparent animate-in fade-in duration-500">
             <RequireRole anyOf={anyOfRoles}>
                 <ProgresoPageContent />
             </RequireRole>
@@ -840,46 +840,38 @@ function ProgresoPageContent() {
     // ============================================================================
 
     return (
-        <div className="space-y-6 pb-20 md:pb-0">
-            {/* Header: Selectors & Filters */}
-            <div className="flex flex-col gap-4">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">
-                            Progreso
-                        </h1>
-                        <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-                            Seguimiento detallado de tu evolución musical
-                        </p>
-                    </div>
-
-                    {/* Global Student Selector (Bloque 2) - Only visible to PROF/ADMIN */}
-                    {(isProf || isAdmin) && (
-                        <div className="w-full md:w-auto">
+        <div className="studia-section space-y-6 pb-20 md:pb-0">
+            {/* Header: Using PageHeader for consistency */}
+            <PageHeaderAny
+                icon={Activity}
+                title="Progreso"
+                subtitle="Seguimiento detallado de tu evolución musical"
+                actions={
+                    <div className="flex flex-wrap items-center gap-2">
+                        {/* Date Range Picker */}
+                        <StatsDateHeaderAny
+                            startDate={periodoInicio}
+                            endDate={periodoFin}
+                            onDateChange={({ from, to }: { from: string | null; to: string | null }) => {
+                                setPeriodoInicio(from || '');
+                                setPeriodoFin(to || '');
+                                if (from || to) setRangoPreset('personalizado');
+                            }}
+                            presets={presets}
+                        />
+                        {/* Student Selector - Only for PROF/ADMIN */}
+                        {(isProf || isAdmin) && (
                             <MultiSelectAny
-                                items={estudiantesDisponibles.map(e => ({ value: e.id, label: displayName(e) }))}
+                                items={estudiantesDisponibles.map((e: any) => ({ value: e.id, label: displayName(e) }))}
                                 value={selectedStudentIds}
                                 onChange={setSelectedStudentIds}
                                 label="Alumnos"
-                                className="w-full md:w-[280px]"
+                                className="w-full md:w-[220px]"
                             />
-                        </div>
-                    )}
-                </div>
-
-                {/* Date Range & Presets */}
-                {/* Date Range & Presets */}
-                <StatsDateHeader
-                    startDate={periodoInicio}
-                    endDate={periodoFin}
-                    onDateChange={({ from, to }) => {
-                        setPeriodoInicio(from || '');
-                        setPeriodoFin(to || '');
-                        if (from || to) setRangoPreset('personalizado');
-                    }}
-                    presets={presets}
-                />
-            </div>
+                        )}
+                    </div>
+                }
+            />
 
             {/* Navigation Tabs (Bloque 1) - Manual State Management */}
             <div className="w-full">
@@ -916,8 +908,8 @@ function ProgresoPageContent() {
                     </SelectAny>
                 </div>
 
-                {/* Desktop Tabs List */}
-                <div className="hidden md:flex border-b border-[var(--color-border-default)] mb-6 ">
+                {/* Desktop/Tablet Tabs List - Using design system styles */}
+                <div className={cn(componentStyles.tabs.tabsSegmentedContainer, "hidden md:inline-flex mb-6")} data-testid="tabs-segmented">
                     {tabItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = tabActiva === item.value;
@@ -926,13 +918,12 @@ function ProgresoPageContent() {
                                 key={item.value}
                                 onClick={() => setTabActiva(item.value)}
                                 className={cn(
-                                    "flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all hover:text-[var(--color-primary)] hover:bg-[var(--color-surface-elevated)]/50 rounded-t-sm",
-                                    isActive
-                                        ? "border-[var(--color-primary)] text-[var(--color-primary)]"
-                                        : "border-transparent text-[var(--color-text-secondary)]"
+                                    componentStyles.tabs.tabsSegmentedItem,
+                                    "flex flex-col items-center gap-1",
+                                    isActive && componentStyles.tabs.tabsSegmentedItemActive
                                 )}
                             >
-                                <Icon className={cn("w-4 h-4", isActive ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]")} />
+                                <Icon className={cn("w-5 h-5", isActive ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]")} />
                                 {item.label}
                             </button>
                         );
