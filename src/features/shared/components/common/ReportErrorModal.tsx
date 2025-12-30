@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useLocation } from 'react-router-dom';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogOverlay, DialogPortal } from '@/features/shared/components/ui/dialog';
-import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from '@/features/shared/components/ui/button';
 import { Textarea } from '@/features/shared/components/ui/textarea';
 import { Label } from '@/features/shared/components/ui/label';
@@ -28,6 +26,56 @@ import {
   DrawerPortal,
   DrawerClose
 } from '@/features/shared/components/ui/drawer';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogOverlay,
+  DialogPortal
+} from '@/features/shared/components/ui/dialog';
+
+interface ScreenshotState {
+  blob: Blob;
+  url: string;
+}
+
+interface AudioRecordingState {
+  blob: Blob;
+  url: string;
+}
+
+interface ReportErrorModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  initialError?: Error | string | null;
+  initialCategory?: string | null;
+}
+
+interface ContextData {
+  url: string;
+  pathname: string;
+  userAgent: string;
+  screenSize: {
+    width: number;
+    height: number;
+  };
+  timestamp: string;
+  userId: string | null;
+  userEmail: string | null;
+  consoleLogs: {
+    message: string;
+    timestamp: string;
+  };
+  error: {
+    message: string;
+    stack?: string;
+    name?: string;
+  } | null;
+  mediaLinks?: string[];
+}
 
 const CATEGORIES = [
   {
@@ -57,7 +105,7 @@ const CATEGORIES = [
   }
 ];
 
-export default function ReportErrorModal({ open, onOpenChange, initialError = null, initialCategory = null }) {
+export default function ReportErrorModal({ open, onOpenChange, initialError = null, initialCategory = null }: ReportErrorModalProps) {
   // Hooks siempre en el mismo orden
   const auth = useAuth();
   const location = useLocation();
@@ -66,35 +114,30 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   const user = auth?.user || null;
 
   // Estados siempre en el mismo orden
-  const [category, setCategory] = useState('');
-  const [description, setDescription] = useState('');
-  const [screenshot, setScreenshot] = useState(null);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const screenshotPreviewRef = useRef(null);
+  const [category, setCategory] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+  const [screenshot, setScreenshot] = useState<ScreenshotState | null>(null);
+  const [isCapturing, setIsCapturing] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const screenshotPreviewRef = useRef<HTMLImageElement>(null);
 
   // Estados para grabación de voz
-  const [audioRecording, setAudioRecording] = useState(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
-  const recordingTimerRef = useRef(null);
+  const [audioRecording, setAudioRecording] = useState<AudioRecordingState | null>(null);
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [recordingTime, setRecordingTime] = useState<number>(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<BlobPart[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
 
   // Estados para video y mediaLinks
-  const [videoFile, setVideoFile] = useState(null);
-  const [mediaLinks, setMediaLinks] = useState([]);
-  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [mediaLinks, setMediaLinks] = useState<string[]>([]);
+  const [uploadingVideo, setUploadingVideo] = useState<boolean>(false);
 
   // Capturar logs recientes de la consola
   const captureConsoleLogs = () => {
-    const logs = [];
-    const originalLog = console.log;
-    const originalError = console.error;
-    const originalWarn = console.warn;
-
     // Interceptar logs (esto es una aproximación, los logs reales se capturan del estado)
     // Por ahora, retornamos un mensaje indicando que los logs están disponibles
     return {
@@ -104,7 +147,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   };
 
   // Capturar contexto automático
-  const captureContext = React.useCallback(() => {
+  const captureContext = React.useCallback((): ContextData => {
     return {
       url: typeof window !== 'undefined' ? window.location.href : '',
       pathname: location?.pathname || '',
@@ -118,9 +161,9 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       userEmail: user?.email || null,
       consoleLogs: captureConsoleLogs(),
       error: initialError ? {
-        message: initialError?.message || String(initialError),
-        stack: initialError?.stack,
-        name: initialError?.name
+        message: (initialError as any)?.message || String(initialError),
+        stack: (initialError as any)?.stack,
+        name: (initialError as any)?.name
       } : null
     };
   }, [location?.pathname, user?.id, user?.email, initialError]);
@@ -144,14 +187,14 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
 
       // Encontrar el contenedor principal que incluye sidebar + main
       // #main-content contiene tanto el sidebar como el área principal
-      const mainContent = document.querySelector('#main-content') || document.querySelector('main') || document.body;
+      const mainContent = document.querySelector('#main-content') || document.querySelector('main') || document.body as HTMLElement;
 
       // Capturar usando html-to-image (soporta CSS moderno y variables P3)
-      const dataUrl = await toPng(mainContent, {
+      const dataUrl = await toPng(mainContent as HTMLElement, {
         cacheBust: true,
         backgroundColor: null,
         skipFonts: true, // Avoid "font is undefined" error in embed-webfonts
-        filter: (node) => {
+        filter: (node: any) => {
           // Excluir nodos que no sean elementos
           if (!node.tagName) return true;
 
@@ -162,6 +205,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
 
           // Excluir overlays y modales
           try {
+            // @ts-ignore
             const style = window.getComputedStyle(node);
             const zIndex = parseInt(style.zIndex);
             const isHighZIndex = zIndex >= 50;
@@ -216,7 +260,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   };
 
   // Subir screenshot a Supabase Storage
-  const uploadScreenshot = async (blob) => {
+  const uploadScreenshot = async (blob: Blob) => {
     if (!blob || !user) return null;
 
     try {
@@ -243,7 +287,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   };
 
   // Subir audio a Supabase Storage
-  const uploadAudio = async (blob) => {
+  const uploadAudio = async (blob: Blob) => {
     if (!blob || !user) return null;
 
     try {
@@ -325,7 +369,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   };
 
   // Formatear tiempo de grabación
-  const formatRecordingTime = (seconds) => {
+  const formatRecordingTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -364,7 +408,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       }
 
       // Subir video si existe
-      let videoUrl = null;
+      let videoUrl: string | null = null;
       if (videoFile) {
         setUploadingVideo(true);
         try {
@@ -380,7 +424,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
           } else {
             throw new Error(uploadResult.error || 'Error al subir el vídeo');
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error('[ReportErrorModal] Error subiendo vídeo:', error);
           toast.error(`Error al subir el vídeo: ${error instanceof Error ? error.message : 'Error desconocido'}`);
           setUploadingVideo(false);
@@ -404,12 +448,12 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       }
 
       // Crear reporte usando la API
-      const report = await createErrorReport({
+      await createErrorReport({
         userId: user?.id || null,
         category: category,
         description: description.trim(),
-        screenshotUrl: screenshotUrl,
-        audioUrl: audioUrl,
+        screenshotUrl: screenshotUrl || undefined,
+        audioUrl: audioUrl || undefined,
         context: context,
       });
 
@@ -427,7 +471,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       setVideoFile(null);
       setMediaLinks([]);
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('[ReportErrorModal] Error enviando reporte:', {
         error: error?.message || error,
         code: error?.code,
@@ -439,7 +483,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   };
 
   // Ref para rastrear si el cierre es temporal (para captura) o definitivo
-  const isTemporaryCloseRef = useRef(false);
+  const isTemporaryCloseRef = useRef<boolean>(false);
 
   // Limpiar y establecer valores iniciales cuando se abre/cierra el modal
   useEffect(() => {
@@ -454,8 +498,8 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       if (initialError) {
         setCategory(initialCategory || 'algo_no_funciona');
         // Manejar tanto objetos Error como objetos serializados
-        const errorMessage = initialError?.message ||
-          (typeof initialError?.toString === 'function' ? initialError.toString() : null) ||
+        const errorMessage = (initialError as any)?.message ||
+          (typeof (initialError as any)?.toString === 'function' ? (initialError as any).toString() : null) ||
           (typeof initialError === 'string' ? initialError : String(initialError || ''));
         setDescription(errorMessage);
       } else if (initialCategory) {
@@ -487,13 +531,14 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
 
   // Escuchar eventos para abrir modal
   useEffect(() => {
-    const handleOpenReport = (event) => {
-      if (event.detail?.error) {
-        const errorMessage = event.detail.error?.message || event.detail.error?.toString || String(event.detail.error || '');
-        setCategory(event.detail.category || 'algo_no_funciona');
+    const handleOpenReport = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail?.error) {
+        const errorMessage = customEvent.detail.error?.message || customEvent.detail.error?.toString || String(customEvent.detail.error || '');
+        setCategory(customEvent.detail.category || 'algo_no_funciona');
         setDescription(errorMessage);
-      } else if (event.detail?.category) {
-        setCategory(event.detail.category);
+      } else if (customEvent.detail?.category) {
+        setCategory(customEvent.detail.category);
       }
       // El modal se abre desde el componente padre (Layout)
     };
@@ -535,14 +580,14 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
 
     // Listener para prevenir hotkeys del modo estudio (Space, Enter, 'n', etc.)
     // pero permitir Escape y letras normales para inputs
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       // Permitir Escape siempre
       if (e.key === 'Escape') {
         return;
       }
 
       // Permitir si está en un input, textarea, select o contenteditable
-      const target = e.target;
+      const target = e.target as HTMLElement;
       if (target && (
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
@@ -571,7 +616,6 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       }
     };
 
-    // Usar capture: true para interceptar antes de que llegue a hoy.jsx
     // Usar capture: true para interceptar antes de que llegue a hoy.jsx
     window.addEventListener('keydown', handleKeyDown, { capture: true, passive: false });
 
@@ -705,7 +749,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
           <div className="mt-2">
             <ScreenshotEditor
               imageUrl={screenshot.url}
-              onSave={(edited) => {
+              onSave={(edited: any) => {
                 if (screenshot.blob) {
                   URL.revokeObjectURL(screenshot.url);
                 }
@@ -811,28 +855,25 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
 
   if (isDesktop) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange} modal={true}>
-        <DialogPortal>
-          <DialogOverlay className="!z-[9997]" />
-          <DialogPrimitive.Content className={`fixed left-[50%] top-[50%] !z-[9998] grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.16)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-[var(--radius-modal)] max-w-2xl max-h-[90vh] overflow-y-auto ${componentStyles.modal.sizeLg}`}>
-            <DialogHeader>
-              <DialogTitle>{commonTitle}</DialogTitle>
-              <DialogDescription>{commonDesc}</DialogDescription>
-            </DialogHeader>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className={`${componentStyles.modal.content} sm:max-w-2xl max-h-[90vh] overflow-y-auto`}>
+          <DialogHeader className={componentStyles.modal.header}>
+            <DialogTitle className={componentStyles.modal.title}>
+              {commonTitle}
+            </DialogTitle>
+            <DialogDescription className={componentStyles.modal.description}>
+              {commonDesc}
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="overflow-visible">
-              {formContent}
-            </div>
+          <div className="py-4">
+            {formContent}
+          </div>
 
-            <DialogFooter>
-              {commonFooterButtons}
-            </DialogFooter>
-            <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-              <X className="h-5 w-5" />
-              <span className="sr-only">Close</span>
-            </DialogPrimitive.Close>
-          </DialogPrimitive.Content>
-        </DialogPortal>
+          <DialogFooter className={`flex-row justify-end space-x-2 ${componentStyles.modal.footer}`}>
+            {commonFooterButtons}
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     );
   }
@@ -840,20 +881,21 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[90vh] flex flex-col">
-        <DrawerHeader className="text-left shrink-0">
+        <DrawerHeader className="text-left">
           <DrawerTitle>{commonTitle}</DrawerTitle>
           <DrawerDescription>{commonDesc}</DrawerDescription>
         </DrawerHeader>
 
-        <div className="flex-1 overflow-y-auto px-4 pb-4">
+        <div className="p-4 overflow-y-auto flex-1">
           {formContent}
         </div>
 
-        <DrawerFooter className="pt-2 shrink-0 flex flex-row flex-wrap gap-2">
-          {commonFooterButtons}
+        <DrawerFooter className="pt-2">
+          <div className="flex gap-3 w-full">
+            {commonFooterButtons}
+          </div>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );
 }
-

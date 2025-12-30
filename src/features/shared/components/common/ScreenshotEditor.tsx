@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Button } from '@/features/shared/components/ui/button';
-import { Pencil, ArrowRight, Circle, Square, Type, Undo, Redo, Save, X } from 'lucide-react';
+import { Pencil, ArrowRight, Circle, Square, Type, Undo, Redo, Save } from 'lucide-react';
 import { componentStyles } from '@/design/componentStyles';
 
 const TOOLS = {
@@ -9,7 +9,9 @@ const TOOLS = {
   CIRCLE: 'circle',
   RECT: 'rect',
   TEXT: 'text',
-};
+} as const;
+
+type ToolType = typeof TOOLS[keyof typeof TOOLS];
 
 const COLORS = [
   { value: '#ef4444', label: 'Rojo' },
@@ -18,24 +20,35 @@ const COLORS = [
   { value: '#000000', label: 'Negro' },
 ];
 
-export default function ScreenshotEditor({ imageUrl, onSave, onCancel }) {
-  const canvasRef = useRef(null);
-  const [tool, setTool] = useState(TOOLS.PEN);
-  const [color, setColor] = useState(COLORS[0].value);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [startPos, setStartPos] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [textInput, setTextInput] = useState('');
-  const [textPos, setTextPos] = useState(null);
-  const imageRef = useRef(null);
-  const historyRef = useRef([]);
-  const historyIndexRef = useRef(-1);
-  
+interface Point {
+  x: number;
+  y: number;
+}
+
+interface ScreenshotEditorProps {
+  imageUrl: string;
+  onSave: (result: { blob: Blob; url: string }) => void;
+  onCancel: () => void;
+}
+
+export default function ScreenshotEditor({ imageUrl, onSave, onCancel }: ScreenshotEditorProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [tool, setTool] = useState<ToolType>(TOOLS.PEN);
+  const [color, setColor] = useState<string>(COLORS[0].value);
+  const [isDrawing, setIsDrawing] = useState<boolean>(false);
+  const [startPos, setStartPos] = useState<Point | null>(null);
+  const [history, setHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  const [textInput, setTextInput] = useState<string>('');
+  const [textPos, setTextPos] = useState<Point | null>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  const historyRef = useRef<string[]>([]);
+  const historyIndexRef = useRef<number>(-1);
+
   useEffect(() => {
     historyRef.current = history;
   }, [history]);
-  
+
   useEffect(() => {
     historyIndexRef.current = historyIndex;
   }, [historyIndex]);
@@ -45,20 +58,22 @@ export default function ScreenshotEditor({ imageUrl, onSave, onCancel }) {
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    
+
     img.onload = () => {
       const maxWidth = 1200;
       const maxHeight = 800;
       let { width, height } = img;
-      
+
       if (width > maxWidth || height > maxHeight) {
         const ratio = Math.min(maxWidth / width, maxHeight / height);
         width = width * ratio;
         height = height * ratio;
       }
-      
+
       canvas.width = width;
       canvas.height = height;
       ctx.drawImage(img, 0, 0, width, height);
@@ -69,14 +84,14 @@ export default function ScreenshotEditor({ imageUrl, onSave, onCancel }) {
       historyRef.current = [imageData];
       historyIndexRef.current = 0;
     };
-    
+
     img.src = imageUrl;
   }, [imageUrl]);
 
   const saveToHistory = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const imageData = canvas.toDataURL();
     const currentIndex = historyIndexRef.current;
     setHistory(prev => {
@@ -90,14 +105,16 @@ export default function ScreenshotEditor({ imageUrl, onSave, onCancel }) {
     });
   }, []);
 
-  const restoreFromHistory = useCallback((index) => {
+  const restoreFromHistory = useCallback((index: number) => {
     const currentHistory = historyRef.current;
     if (index < 0 || index >= currentHistory.length) return;
-    
+
     const canvas = canvasRef.current;
     if (!canvas || !imageRef.current) return;
-    
+
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
     const img = new Image();
     img.onload = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -108,25 +125,27 @@ export default function ScreenshotEditor({ imageUrl, onSave, onCancel }) {
     img.src = currentHistory[index];
   }, []);
 
-  const getMousePos = (e) => {
+  const getMousePos = (e: React.MouseEvent | MouseEvent): Point | null => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
-    
+
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    
+
     return {
       x: (e.clientX - rect.left) * scaleX,
       y: (e.clientY - rect.top) * scaleY,
     };
   };
 
-  const draw = useCallback((start, end) => {
+  const draw = useCallback((start: Point, end: Point) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
     ctx.strokeStyle = color;
     ctx.fillStyle = color;
     ctx.lineWidth = 3;
@@ -140,13 +159,13 @@ export default function ScreenshotEditor({ imageUrl, onSave, onCancel }) {
         ctx.lineTo(end.x, end.y);
         ctx.stroke();
         break;
-        
+
       case TOOLS.ARROW:
         const dx = end.x - start.x;
         const dy = end.y - start.y;
         const angle = Math.atan2(dy, dx);
         const headlen = 15;
-        
+
         ctx.beginPath();
         ctx.moveTo(start.x, start.y);
         ctx.lineTo(end.x, end.y);
@@ -155,42 +174,44 @@ export default function ScreenshotEditor({ imageUrl, onSave, onCancel }) {
         ctx.lineTo(end.x - headlen * Math.cos(angle + Math.PI / 6), end.y - headlen * Math.sin(angle + Math.PI / 6));
         ctx.stroke();
         break;
-        
+
       case TOOLS.CIRCLE:
         const radius = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
         ctx.beginPath();
         ctx.arc(start.x, start.y, radius, 0, 2 * Math.PI);
         ctx.stroke();
         break;
-        
+
       case TOOLS.RECT:
         ctx.strokeRect(start.x, start.y, end.x - start.x, end.y - start.y);
         break;
-        
+
       default:
         break;
     }
   }, [tool, color]);
 
-  const handleMouseDown = (e) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement> | MouseEvent) => {
+    // Cast simple MouseEvent to React.MouseEvent-like object or handle generically
+    // Since getMousePos works with clientX/Y, standard MouseEvent is fine
+    const pos = getMousePos(e);
+
     if (tool === TOOLS.TEXT) {
-      const pos = getMousePos(e);
       if (pos) {
         setTextPos(pos);
       }
       return;
     }
 
-    const pos = getMousePos(e);
     if (!pos) return;
-    
+
     setIsDrawing(true);
     setStartPos(pos);
   };
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement> | MouseEvent) => {
     if (!isDrawing || !startPos || tool === TOOLS.TEXT) return;
-    
+
     const currentPos = getMousePos(e);
     if (!currentPos) return;
 
@@ -200,8 +221,10 @@ export default function ScreenshotEditor({ imageUrl, onSave, onCancel }) {
     } else {
       const canvas = canvasRef.current;
       if (!canvas || !imageRef.current) return;
-      
+
       const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
       const img = new Image();
       img.onload = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -223,22 +246,24 @@ export default function ScreenshotEditor({ imageUrl, onSave, onCancel }) {
     }
   };
 
-  const handleMouseUp = (e) => {
+  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement> | MouseEvent) => {
     if (!isDrawing || !startPos || tool === TOOLS.TEXT) {
       setIsDrawing(false);
       return;
     }
-    
+
     const endPos = getMousePos(e);
     if (endPos && tool !== TOOLS.PEN) {
       const canvas = canvasRef.current;
       if (!canvas || !imageRef.current) return;
-      
+
       const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const currentHistory = historyRef.current;
       const currentIndex = historyIndexRef.current;
-      
+
       if (currentIndex >= 0 && currentHistory[currentIndex]) {
         const historyImg = new Image();
         historyImg.onload = () => {
@@ -259,18 +284,20 @@ export default function ScreenshotEditor({ imageUrl, onSave, onCancel }) {
     } else if (tool === TOOLS.PEN) {
       saveToHistory();
     }
-    
+
     setIsDrawing(false);
     setStartPos(null);
   };
 
   const handleTextSubmit = () => {
     if (!textInput || !textPos) return;
-    
+
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
     ctx.fillStyle = color;
     ctx.font = '20px Arial';
     ctx.fillText(textInput, textPos.x, textPos.y);
@@ -294,7 +321,7 @@ export default function ScreenshotEditor({ imageUrl, onSave, onCancel }) {
   const handleSave = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     canvas.toBlob((blob) => {
       if (blob && onSave) {
         const url = URL.createObjectURL(blob);
@@ -358,22 +385,21 @@ export default function ScreenshotEditor({ imageUrl, onSave, onCancel }) {
             Texto
           </Button>
         </div>
-        
+
         <div className="flex gap-1 border-r pr-2">
           {COLORS.map((c) => (
             <button
               key={c.value}
               type="button"
               onClick={() => setColor(c.value)}
-              className={`w-8 h-8 rounded border-2 ${
-                color === c.value ? 'border-[var(--color-primary)] scale-110' : 'border-gray-300'
-              }`}
+              className={`w-8 h-8 rounded border-2 ${color === c.value ? 'border-[var(--color-primary)] scale-110' : 'border-gray-300'
+                }`}
               style={{ backgroundColor: c.value }}
               title={c.label}
             />
           ))}
         </div>
-        
+
         <div className="flex gap-1">
           <Button
             type="button"
@@ -427,7 +453,7 @@ export default function ScreenshotEditor({ imageUrl, onSave, onCancel }) {
           }}
           onTouchEnd={(e) => {
             e.preventDefault();
-            handleMouseUp(e);
+            handleMouseUp(e as any as MouseEvent); // cast to match signature if needed
           }}
           className="max-w-full h-auto cursor-crosshair"
           style={{ touchAction: 'none' }}
@@ -490,4 +516,3 @@ export default function ScreenshotEditor({ imageUrl, onSave, onCancel }) {
     </div>
   );
 }
-

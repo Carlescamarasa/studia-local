@@ -547,7 +547,7 @@ export async function rebuildAllLocalData(options: RebuildOptions = {}) {
             estado: 'publicada',
             foco: 'GEN',
             notas: `Asignación automática - semana del ${parseLocalDate(semanaInicioISO).toLocaleDateString('es-ES')}`,
-            plan: JSON.parse(JSON.stringify(planBase)),
+            plan: JSON.parse(JSON.stringify(planBase!)),
             piezaSnapshot: {
               nombre: piezaBase.nombre,
               descripcion: piezaBase.descripcion,

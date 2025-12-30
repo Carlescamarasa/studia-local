@@ -128,7 +128,7 @@ export interface Bloque {
   id: string;
   nombre: string;
   code: string;
-  tipo: 'CA' | 'CB' | 'TC' | 'FM' | 'VC' | 'AD';
+  tipo: 'CA' | 'CB' | 'TC' | 'TM' | 'FM' | 'VC' | 'AD';
   duracionSeg: number;
   instrucciones?: string;
   indicadorLogro?: string;
@@ -176,7 +176,7 @@ export interface SesionBloque {
   id?: string;
   code: string;
   nombre: string;
-  tipo: 'CA' | 'CB' | 'TC' | 'FM' | 'VC' | 'AD';
+  tipo: 'CA' | 'CB' | 'TC' | 'TM' | 'FM' | 'VC' | 'AD';
   duracionSeg: number;
   [key: string]: any; // Permite campos adicionales del bloque original
 }
@@ -323,7 +323,7 @@ export interface RegistroBloque {
   semanaIdx: number;
   sesionIdx: number;
   ordenEjecucion: number;
-  tipo: 'CA' | 'CB' | 'TC' | 'FM' | 'VC' | 'AD';
+  tipo: 'CA' | 'CB' | 'TC' | 'TM' | 'FM' | 'VC' | 'AD';
   code: string;
   nombre: string;
   duracionObjetivoSeg: number;

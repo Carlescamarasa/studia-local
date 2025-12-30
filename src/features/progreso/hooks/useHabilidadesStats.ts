@@ -17,18 +17,98 @@ import { useStudentSkillsRadar } from './useStudentSkillsRadar';
 
 
 
+// Helper for Stateful Logic
+function calculateStatefulQualitative(
+    studentIds: string[],
+    allEvaluations: any[],
+    allFeedbacks: any[],
+    endDate: Date
+) {
+    if ((!allEvaluations && !allFeedbacks) || studentIds.length === 0) return { sonido: 0, cognicion: 0 };
+
+    let sonidoSum = 0;
+    let cognicionSum = 0;
+
+    // Iterate students to sum their latest evaluation (if any)
+    studentIds.forEach(alumnoId => {
+        // 1. Process Evaluations
+        const relevantEvaluations = (allEvaluations || [])
+            .filter((e: any) => {
+                const eId = e.alumnoId || e.student_id || e.studentId;
+                const eDate = e.fecha ? new Date(e.fecha) : null;
+                // Strict: Must be BEFORE or ON endDate. No start date limit.
+                return eId === alumnoId && eDate && eDate <= endDate;
+            })
+            .map((e: any) => ({
+                date: new Date(e.fecha),
+                sonido: e.habilidades?.sonido,
+                cognicion: e.habilidades?.cognitivo // Use cognitivo per domain
+            }));
+
+        // 2. Process Feedbacks
+        const relevantFeedbacks = (allFeedbacks || [])
+            .filter((f: any) => {
+                const fId = f.alumnoId || f.student_id || f.studentId;
+                return fId === alumnoId && (f.semanaInicioISO || f.created_at || f.createdAt);
+            })
+            .filter((f: any) => {
+                const d = new Date(f.semanaInicioISO || f.created_at || f.createdAt);
+                // Strict: Must be BEFORE or ON endDate. No start date limit.
+                return d <= endDate;
+            })
+            .map((f: any) => ({
+                date: new Date(f.semanaInicioISO || f.created_at || f.createdAt),
+                // Read from habilidades JSONB where remoteDataAPI stores them
+                sonido: f.habilidades?.sonido ?? f.sonido,
+                cognicion: f.habilidades?.cognitivo ?? f.cognicion // Use cognitivo per domain
+            }));
+
+        // 3. Merge and Sort Descending
+        const combined = [...relevantEvaluations, ...relevantFeedbacks].sort((a, b) => b.date.getTime() - a.date.getTime());
+
+        // 4. Find latest non-null values for this student
+        const latestSonido = combined.find(r => r.sonido != null)?.sonido || 0;
+        const latestCognicion = combined.find(r => r.cognicion != null)?.cognicion || 0;
+
+        sonidoSum += latestSonido;
+        cognicionSum += latestCognicion;
+    });
+
+    const totalStudents = studentIds.length;
+    return {
+        sonido: totalStudents > 0 ? sonidoSum / totalStudents : 0,
+        cognicion: totalStudents > 0 ? cognicionSum / totalStudents : 0
+    };
+}
+
 /**
  * Hook to get normalized skills radar stats.
  * Uses get_student_skills_radar RPC via useStudentSkillsRadar hook.
  *
  * @param alumnoId - Student ID
- * @param options - @deprecated Legacy options for manual data injection (ignored for single student)
+ * @param options - Options for manual data injection
  */
 export function useHabilidadesStats(alumnoId: string, options?: HabilidadesStatsOptions) {
-    // 1. RPC Data Fetching (Always use RPC for single student)
+    // 1. RPC Data Fetching (Always use RPC for single student XP/Metrics)
     const { data: rpcData, isLoading: loadingRPC } = useStudentSkillsRadar(alumnoId);
 
-    // Combine into 5-axis radar data using RPC response
+    // 2. Override Qualitative Data with Stateful Logic (Client-side)
+    // We fetch raw data (or use provided) to ensure consistency with Multi view
+    const allEvaluations = options?.providedEvaluations || [];
+    const { data: fetchedFeedbacks } = useFeedbacksSemanal(); // Fetch if not provided
+    const allFeedbacks = options?.providedFeedbacks || fetchedFeedbacks;
+
+    const statefulQualitative = useMemo(() => {
+        let endDate = new Date();
+        if (options?.fechaFin) {
+            endDate = new Date(options.fechaFin);
+            endDate.setHours(23, 59, 59, 999);
+        }
+        return calculateStatefulQualitative([alumnoId], allEvaluations || [], allFeedbacks || [], endDate);
+    }, [alumnoId, allEvaluations, allFeedbacks, options?.fechaFin]);
+
+
+    // Combine into 5-axis radar data using RPC response but OVERRIDING Sonido/Cognicion
     const radarStats = useMemo(() => {
         if (!rpcData) return null;
 
@@ -38,9 +118,10 @@ export function useHabilidadesStats(alumnoId: string, options?: HabilidadesStats
                     subject: 'Sonido',
                     A: undefined,
                     B: undefined,
-                    Total: rpcData.sonido,
-                    original: rpcData.sonido,
-                    originalTotal: rpcData.sonido,
+                    // OVERRIDE RPC with stateful logic
+                    Total: statefulQualitative.sonido,
+                    original: statefulQualitative.sonido,
+                    originalTotal: statefulQualitative.sonido,
                     fullMark: 10
                 },
                 {
@@ -77,14 +158,15 @@ export function useHabilidadesStats(alumnoId: string, options?: HabilidadesStats
                     subject: 'Cognición',
                     A: undefined,
                     B: undefined,
-                    Total: rpcData.cognicion,
-                    original: rpcData.cognicion,
-                    originalTotal: rpcData.cognicion,
+                    // OVERRIDE RPC with stateful logic
+                    Total: statefulQualitative.cognicion,
+                    original: statefulQualitative.cognicion,
+                    originalTotal: statefulQualitative.cognicion,
                     fullMark: 10
                 },
             ]
         };
-    }, [rpcData]);
+    }, [rpcData, statefulQualitative]);
 
     return {
         radarStats,
@@ -139,14 +221,6 @@ export function useHabilidadesStatsMultiple(studentIds: string[], options?: Habi
 
     // 4. Aggregate Qualitative (Average including Missing as 0)
     const aggregatedQualitative = useMemo(() => {
-        if ((!allEvaluations && !allFeedbacks) || studentIds.length === 0) return { sonido: 0, cognicion: 0 };
-
-        // Stateful Logic: For Sonido/Cognicion, we want the LATEST value known up to endDate.
-        // We do NOT restrict by startDate (cutoffDate) because a grade given 3 months ago is still valid if no newer grade exists.
-
-        // However, we still need to respect endDate to allow "Time Travel" (what was my grade at that time).
-        // If no endDate provided, it defaults to NOW (latest current).
-
         let endDate = new Date();
         if (options?.fechaFin) {
             endDate = new Date(options.fechaFin);
@@ -154,62 +228,8 @@ export function useHabilidadesStatsMultiple(studentIds: string[], options?: Habi
             endDate.setHours(23, 59, 59, 999);
         }
 
-        let sonidoSum = 0;
-        let cognicionSum = 0;
-
-        // Iterate students to sum their latest evaluation (if any)
-        studentIds.forEach(alumnoId => {
-            // 1. Process Evaluations
-            const relevantEvaluations = (allEvaluations || [])
-                .filter((e: any) => {
-                    const eId = e.alumnoId || e.student_id || e.studentId;
-                    const eDate = e.fecha ? new Date(e.fecha) : null;
-                    // Strict: Must be BEFORE or ON endDate. No start date limit.
-                    return eId === alumnoId && eDate && eDate <= endDate;
-                })
-                .map((e: any) => ({
-                    date: new Date(e.fecha),
-                    sonido: e.habilidades?.sonido,
-                    cognicion: e.habilidades?.cognitivo // Use cognitivo per domain
-                }));
-
-            // 2. Process Feedbacks
-            const relevantFeedbacks = (allFeedbacks || [])
-                .filter((f: any) => {
-                    const fId = f.alumnoId || f.student_id || f.studentId;
-                    return fId === alumnoId && (f.semanaInicioISO || f.created_at || f.createdAt);
-                })
-                .filter((f: any) => {
-                    const d = new Date(f.semanaInicioISO || f.created_at || f.createdAt);
-                    // Strict: Must be BEFORE or ON endDate. No start date limit.
-                    return d <= endDate;
-                })
-                .map((f: any) => ({
-                    date: new Date(f.semanaInicioISO || f.created_at || f.createdAt),
-                    // Read from habilidades JSONB where remoteDataAPI stores them
-                    sonido: f.habilidades?.sonido ?? f.sonido,
-                    cognicion: f.habilidades?.cognitivo ?? f.cognicion // Use cognitivo per domain
-                }));
-
-            // 3. Merge and Sort Descending
-            const combined = [...relevantEvaluations, ...relevantFeedbacks].sort((a, b) => b.date.getTime() - a.date.getTime());
-
-            // 4. Find latest non-null values for this student
-            const latestSonido = combined.find(r => r.sonido != null)?.sonido || 0;
-            const latestCognicion = combined.find(r => r.cognicion != null)?.cognicion || 0;
-
-            sonidoSum += latestSonido;
-            cognicionSum += latestCognicion;
-        });
-
-        // FIX: Divide by total selected students (missing data counts as 0)
-        const totalStudents = studentIds.length; // Ensure this is > 0, which is handled by wrapper
-
-        return {
-            sonido: totalStudents > 0 ? sonidoSum / totalStudents : 0,
-            cognicion: totalStudents > 0 ? cognicionSum / totalStudents : 0
-        };
-    }, [allEvaluations, allFeedbacks, studentIds]);
+        return calculateStatefulQualitative(studentIds, allEvaluations || [], allFeedbacks || [], endDate);
+    }, [allEvaluations, allFeedbacks, studentIds, options?.fechaFin]);
 
     // 5. Build Radar Stats
     const radarStats = useMemo(() => {

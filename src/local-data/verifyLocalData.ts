@@ -3,15 +3,31 @@
 
 import { localUsers } from './localUsers';
 import { loadFromStorage } from '@/data/localStorageClient';
+import {
+  LocalData,
+  Asignacion,
+  Bloque,
+  FeedbackSemanal,
+  Pieza,
+  Plan,
+  RegistroBloque,
+  RegistroSesion,
+  Usuario
+} from '@/types/data.types';
 
-// Desde ahora, la validación se hace contra la estructura unificada en localStorage (studia_data)
+export interface ValidationReport {
+  ok: string[];
+  warnings: string[];
+  errors: string[];
+  stats: Record<string, number>;
+}
 
 /**
  * Valida la coherencia de todos los datos locales
- * @returns {Object} Reporte de validación con errores, warnings y estadísticas
+ * @returns {ValidationReport} Reporte de validación con errores, warnings y estadísticas
  */
-export function verifyLocalData() {
-  const report = {
+export function verifyLocalData(): ValidationReport {
+  const report: ValidationReport = {
     ok: [],
     warnings: [],
     errors: [],
@@ -21,14 +37,15 @@ export function verifyLocalData() {
   try {
     // Cargar todos los datos desde studia_data o usar arrays vacíos
     const storage = loadFromStorage() || {};
-    const usuarios = storage.usuarios?.length ? storage.usuarios : localUsers;
-    const asignaciones = Array.isArray(storage.asignaciones) ? storage.asignaciones : [];
-    const bloques = Array.isArray(storage.bloques) ? storage.bloques : [];
-    const feedbacksSemanal = Array.isArray(storage.feedbacksSemanal) ? storage.feedbacksSemanal : [];
-    const piezas = Array.isArray(storage.piezas) ? storage.piezas : [];
-    const planes = Array.isArray(storage.planes) ? storage.planes : [];
-    const registrosBloque = Array.isArray(storage.registrosBloque) ? storage.registrosBloque : [];
-    const registrosSesion = Array.isArray(storage.registrosSesion) ? storage.registrosSesion : [];
+    // @ts-ignore
+    const usuarios: Usuario[] = storage.usuarios?.length ? storage.usuarios : localUsers;
+    const asignaciones: Asignacion[] = Array.isArray(storage.asignaciones) ? storage.asignaciones : [];
+    const bloques: Bloque[] = Array.isArray(storage.bloques) ? storage.bloques : [];
+    const feedbacksSemanal: FeedbackSemanal[] = Array.isArray(storage.feedbacksSemanal) ? storage.feedbacksSemanal : [];
+    const piezas: Pieza[] = Array.isArray(storage.piezas) ? storage.piezas : [];
+    const planes: Plan[] = Array.isArray(storage.planes) ? storage.planes : [];
+    const registrosBloque: RegistroBloque[] = Array.isArray(storage.registrosBloque) ? storage.registrosBloque : [];
+    const registrosSesion: RegistroSesion[] = Array.isArray(storage.registrosSesion) ? storage.registrosSesion : [];
 
     // Estadísticas básicas
     report.stats = {
@@ -59,7 +76,7 @@ export function verifyLocalData() {
 
     // 2. Validar asignaciones
     report.ok.push(`[OK] asignaciones: ${asignaciones.length}`);
-    
+
     // Asignaciones con alumnoId inexistente
     const asignacionesAlumnoInvalido = asignaciones.filter(a => {
       const alumnoId = a.alumnoId || a.estudianteId || a.userId;
@@ -82,6 +99,8 @@ export function verifyLocalData() {
     // Asignaciones con piezaId inexistente
     const asignacionesPiezaInvalida = asignaciones.filter(a => {
       const piezaId = a.piezaId;
+      // piezaId can be null/undefined in some contexts, but if present should be valid?
+      // Interface says piezaId?: string | null.
       return piezaId && !piezasById.has(piezaId);
     });
     if (asignacionesPiezaInvalida.length > 0) {
@@ -110,7 +129,7 @@ export function verifyLocalData() {
 
     // 4. Validar planes
     report.ok.push(`[OK] planes: ${planes.length}`);
-    
+
     // Planes con piezaId inexistente
     const planesPiezaInvalida = planes.filter(p => {
       const piezaId = p.piezaId;
@@ -122,10 +141,10 @@ export function verifyLocalData() {
 
     // 5. Validar bloques
     report.ok.push(`[OK] bloques: ${bloques.length}`);
-    
+
     // Bloques con piezaId inexistente (si tienen referencia)
     const bloquesPiezaInvalida = bloques.filter(b => {
-      const piezaId = b.piezaId;
+      const piezaId = b.piezaRefId;
       return piezaId && !piezasById.has(piezaId);
     });
     if (bloquesPiezaInvalida.length > 0) {
@@ -134,7 +153,7 @@ export function verifyLocalData() {
 
     // 6. Validar registros de sesión
     report.ok.push(`[OK] registrosSesion: ${registrosSesion.length}`);
-    
+
     // Registros con asignacionId inexistente
     const registrosAsignacionInvalida = registrosSesion.filter(r => {
       const asignacionId = r.asignacionId || r.asignacion_id;
@@ -155,7 +174,7 @@ export function verifyLocalData() {
 
     // 7. Validar registros de bloque
     report.ok.push(`[OK] registrosBloque: ${registrosBloque.length}`);
-    
+
     // Registros con registroSesionId inexistente
     const registrosBloqueSesionInvalida = registrosBloque.filter(r => {
       const sesionId = r.registroSesionId || r.registroSesion_id || r.sesionId;
@@ -176,7 +195,7 @@ export function verifyLocalData() {
 
     // 8. Validar feedbacks semanales
     report.ok.push(`[OK] feedbacksSemanal: ${feedbacksSemanal.length}`);
-    
+
     // Feedbacks con alumnoId inexistente
     const feedbacksAlumnoInvalido = feedbacksSemanal.filter(f => {
       const alumnoId = f.alumnoId || f.estudianteId || f.userId;
@@ -206,7 +225,7 @@ export function verifyLocalData() {
       report.warnings.push(`[WARN] registrosSesion: ${registrosSinFecha.length} registros sin fecha de inicio`);
     }
 
-  } catch (error) {
+  } catch (error: any) {
     report.errors.push(`[ERROR] Error al validar datos: ${error.message}`);
     console.error('Error en verifyLocalData:', error);
   }
@@ -220,109 +239,40 @@ export function verifyLocalData() {
  */
 export function printValidationReport(autoFix = false) {
   const report = verifyLocalData();
-  
+
   // Si autoFix está activado y hay errores, intentar reparar
   if (autoFix && report.errors.length > 0) {
     console.log('\n🔧 Intentando reparar errores automáticamente...');
     console.log('⚠️  Para reparar datos, usa: import { rebuildLocalData } from "./rebuildLocalData"; rebuildLocalData();');
   }
-  
+
   console.log('\n=== VALIDACIÓN DE DATOS LOCALES ===\n');
-  
+
   console.log('📊 ESTADÍSTICAS:');
   Object.entries(report.stats).forEach(([key, value]) => {
     console.log(`  ${key}: ${value}`);
   });
-  
+
   console.log('\n✅ CORRECTO:');
   report.ok.forEach(msg => console.log(`  ${msg}`));
-  
+
   if (report.warnings.length > 0) {
     console.log('\n⚠️  ADVERTENCIAS:');
     report.warnings.forEach(msg => console.log(`  ${msg}`));
   }
-  
+
   if (report.errors.length > 0) {
     console.log('\n❌ ERRORES:');
     report.errors.forEach(msg => console.log(`  ${msg}`));
   }
-  
+
   console.log('\n=== FIN DEL REPORTE ===\n');
-  
+
   return report;
 }
 
-/**
- * ========================================
- * GUÍA DE USO DE verifyLocalData.js
- * ========================================
- * 
- * 1. CÓMO EJECUTAR printValidationReport()
- * 
- *    Opción A - Desde la consola del navegador:
- *    ```javascript
- *    import { printValidationReport } from './src/local-data/verifyLocalData.js';
- *    printValidationReport();
- *    ```
- * 
- *    Opción B - Desde un componente React (temporal):
- *    ```javascript
- *    import { printValidationReport } from '@/local-data/verifyLocalData';
- *    useEffect(() => {
- *      printValidationReport();
- *    }, []);
- *    ```
- * 
- *    Opción C - Desde un botón en la UI:
- *    ```javascript
- *    import { printValidationReport } from '@/local-data/verifyLocalData';
- *    <Button onClick={() => printValidationReport()}>Validar Datos</Button>
- *    ```
- * 
- * 2. DÓNDE COLOCAR LA LLAMADA
- * 
- *    Recomendado: En la página /local o crear una página /debug
- *    - No afecta el flujo normal de la app
- *    - Fácil de acceder en desarrollo
- *    - Puede ocultarse en producción
- * 
- * 3. CÓMO INTERPRETAR EL REPORTE
- * 
- *    ✅ [OK] - Todo correcto, no hay problemas
- *    ⚠️  [WARN] - Advertencia: datos que pueden causar problemas menores
- *                 Ejemplo: profesorId inexistente (puede ser histórico)
- *    ❌ [ERROR] - Error crítico: datos que rompen funcionalidad
- *                 Ejemplo: alumnoId inexistente en asignación
- * 
- * 4. EJEMPLO DE SALIDA:
- * 
- *    === VALIDACIÓN DE DATOS LOCALES ===
- *    
- *    📊 ESTADÍSTICAS:
- *      usuarios: 12
- *      asignaciones: 45
- *      ...
- *    
- *    ✅ CORRECTO:
- *      [OK] usuarios: 12
- *      [OK] asignaciones: 45
- *    
- *    ⚠️  ADVERTENCIAS:
- *      [WARN] asignaciones: 2 asignaciones tienen profesorId inexistente
- *    
- *    ❌ ERRORES:
- *      [ERROR] asignaciones: 3 asignaciones tienen alumnoId inexistente
- *        Ejemplos: asig_123, asig_456, asig_789
- * 
- * 5. USO RECOMENDADO
- * 
- *    - Ejecutar después de regenerar datos
- *    - Ejecutar antes de hacer cambios importantes
- *    - Ejecutar cuando se detecten errores en la UI
- *    - Integrar en el flujo de regeneración automática
- */
-
 // Auto-ejecutar si se importa directamente (útil para desarrollo)
+// @ts-ignore
 if (import.meta.hot) {
   // Solo en desarrollo, opt-in mediante localStorage
   try {
@@ -334,4 +284,3 @@ if (import.meta.hot) {
     // Ignorar si localStorage no está disponible
   }
 }
-

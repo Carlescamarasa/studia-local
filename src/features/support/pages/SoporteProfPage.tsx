@@ -9,11 +9,8 @@ import { Badge } from "@/features/shared/components/ds";
 import {
   MessageSquare,
   Send,
-  Upload,
   Loader2,
-  X,
   Search,
-  Filter,
   CheckCircle,
   Clock,
   User,
@@ -26,7 +23,6 @@ import { toast } from "sonner";
 import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import RequireRole from "@/features/auth/components/RequireRole";
 import {
-  getTicketsByProfesor,
   getAllTickets,
   getTicketById,
   updateTicket,
@@ -39,25 +35,36 @@ import MediaLinksBadges from "@/features/shared/components/media/MediaLinksBadge
 import MediaPreviewModal from "@/features/shared/components/media/MediaPreviewModal";
 import MediaLinksInput from "@/features/shared/components/media/MediaLinksInput";
 import { useAuth } from "@/auth/AuthProvider";
+import { SupportTicket, SupportMensaje } from '@/features/shared/types/domain';
+
+// Extend interfaces to include client-side augmented properties
+interface ExtendedSupportTicket extends SupportTicket {
+  _alumnoNombre?: string | null;
+  _profesorNombre?: string | null;
+}
+
+interface ExtendedSupportMensaje extends SupportMensaje {
+  _autorNombre?: string | null;
+}
 
 function SoporteProfPageContent() {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
 
   // Todos los hooks deben declararse antes de cualquier return condicional
-  const [selectedTicketId, setSelectedTicketId] = useState(null);
-  const [estadoFilter, setEstadoFilter] = useState('todos');
-  const [searchText, setSearchText] = useState("");
-  const [messageText, setMessageText] = useState("");
-  const [videoFile, setVideoFile] = useState(null);
-  const [mediaLinks, setMediaLinks] = useState([]);
-  const [uploadingVideo, setUploadingVideo] = useState(false);
-  const [selectedMediaIndex, setSelectedMediaIndex] = useState(null);
-  const [selectedMediaLinks, setSelectedMediaLinks] = useState([]);
-  const [showMediaModal, setShowMediaModal] = useState(false);
-  const [alumnoNames, setAlumnoNames] = useState({});
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [estadoFilter, setEstadoFilter] = useState<string>('todos');
+  const [searchText, setSearchText] = useState<string>("");
+  const [messageText, setMessageText] = useState<string>("");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [mediaLinks, setMediaLinks] = useState<string[]>([]);
+  const [uploadingVideo, setUploadingVideo] = useState<boolean>(false);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState<number | null>(null);
+  const [selectedMediaLinks, setSelectedMediaLinks] = useState<string[]>([]);
+  const [showMediaModal, setShowMediaModal] = useState<boolean>(false);
+  const [alumnoNames, setAlumnoNames] = useState<Record<string, string>>({});
   // Filtro de profesor: por defecto "mis_tickets" (solo tickets asignados al profesor actual)
-  const [profesorFilter, setProfesorFilter] = useState('mis_tickets');
+  const [profesorFilter, setProfesorFilter] = useState<'mis_tickets' | 'todos'>('mis_tickets');
 
   // Calcular isAdmin antes de los hooks que lo usan
   const isAdmin = profile?.role === 'ADMIN';
@@ -66,31 +73,22 @@ function SoporteProfPageContent() {
   // Con las nuevas políticas RLS, todos los profesores pueden ver todos los tickets
   const { data: tickets, isLoading: loadingTickets } = useQuery({
     queryKey: ['support-tickets-prof', user?.id, isAdmin],
-    queryFn: async () => {
+    queryFn: async (): Promise<ExtendedSupportTicket[]> => {
       if (!user) return [];
       // Todos los PROF pueden ver todos los tickets ahora (las políticas RLS lo permiten)
-      if (isAdmin) {
-        return getAllTickets();
-      } else {
-        // Aunque el backend devuelve todos los tickets, la UI filtra por profesor asignado por defecto
-        return getAllTickets();
-      }
+      // Aunque el backend devuelve todos los tickets, la UI filtra por profesor asignado por defecto
+      const result = await getAllTickets();
+      return result as ExtendedSupportTicket[];
     },
     enabled: !!user,
     retry: false,
-    onError: (error) => {
-      console.error('[SoporteProf] Error cargando tickets:', error);
-      // No mostrar toast aquí para evitar spam si las tablas no existen aún
-    },
   });
 
   // Obtener nombres de alumnos desde los tickets (ya vienen en la consulta)
-  // Ya no necesitamos hacer peticiones adicionales a profiles
   useEffect(() => {
     if (tickets && tickets.length > 0) {
-      const names = {};
+      const names: Record<string, string> = {};
       tickets.forEach((ticket) => {
-        // Los nombres ya vienen en los tickets desde supportTicketsClient
         if (ticket.alumnoId && ticket._alumnoNombre) {
           names[ticket.alumnoId] = ticket._alumnoNombre;
         }
@@ -108,7 +106,6 @@ function SoporteProfPageContent() {
     if (!isAdmin && profesorFilter === 'mis_tickets') {
       filtered = filtered.filter(t => t.profesorId === user?.id);
     }
-    // Si es admin y el filtro es por profesor específico, se aplicaría aquí (pendiente de implementar selector de profesor)
 
     // Filtrar por estado
     if (estadoFilter !== 'todos') {
@@ -133,14 +130,22 @@ function SoporteProfPageContent() {
   // Obtener ticket seleccionado
   const { data: selectedTicket } = useQuery({
     queryKey: ['support-ticket', selectedTicketId],
-    queryFn: () => getTicketById(selectedTicketId),
+    queryFn: async () => {
+      if (!selectedTicketId) return null;
+      const result = await getTicketById(selectedTicketId);
+      return result as ExtendedSupportTicket | null;
+    },
     enabled: !!selectedTicketId,
   });
 
   // Obtener mensajes del ticket seleccionado
   const { data: mensajes, isLoading: loadingMensajes } = useQuery({
     queryKey: ['support-mensajes', selectedTicketId],
-    queryFn: () => getMensajesByTicket(selectedTicketId),
+    queryFn: async () => {
+      if (!selectedTicketId) return [];
+      const result = await getMensajesByTicket(selectedTicketId);
+      return result as ExtendedSupportMensaje[];
+    },
     enabled: !!selectedTicketId,
   });
 
@@ -152,7 +157,7 @@ function SoporteProfPageContent() {
       queryClient.invalidateQueries({ queryKey: ['support-tickets-prof'] });
       toast.success('Ticket actualizado');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(`Error al actualizar ticket: ${error.message}`);
     },
   });
@@ -160,7 +165,7 @@ function SoporteProfPageContent() {
   // Mutación para crear mensaje
   const createMensajeMutation = useMutation({
     mutationFn: createMensaje,
-    onSuccess: async (mensaje, variables) => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['support-mensajes', selectedTicketId] });
       queryClient.invalidateQueries({ queryKey: ['support-ticket', selectedTicketId] });
       queryClient.invalidateQueries({ queryKey: ['support-tickets-prof'] });
@@ -169,7 +174,7 @@ function SoporteProfPageContent() {
       setMediaLinks([]);
       toast.success('Mensaje enviado');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(`Error al enviar mensaje: ${error.message}`);
       setUploadingVideo(false);
     },
@@ -180,14 +185,14 @@ function SoporteProfPageContent() {
 
   // Mutación para eliminar ticket (solo admin)
   const deleteTicketMutation = useMutation({
-    mutationFn: ({ ticketId, userId, isAdmin }) => deleteTicket(ticketId, userId, isAdmin),
+    mutationFn: ({ ticketId, userId, isAdmin }: { ticketId: string; userId: string; isAdmin: boolean }) => deleteTicket(ticketId, userId, isAdmin),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['support-tickets-prof'] });
       setSelectedTicketId(null);
       setShowDeleteConfirm(false);
       toast.success('Conversación eliminada');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(`Error al eliminar: ${error.message}`);
       setShowDeleteConfirm(false);
     },
@@ -198,12 +203,12 @@ function SoporteProfPageContent() {
     deleteTicketMutation.mutate({ ticketId: selectedTicketId, userId: user.id, isAdmin: true });
   };
 
-  const handleUpdateEstado = (nuevoEstado) => {
+  const handleUpdateEstado = (nuevoEstado: string) => {
     if (!selectedTicketId || !selectedTicket) return;
 
     updateTicketMutation.mutate({
       id: selectedTicketId,
-      estado: nuevoEstado,
+      estado: nuevoEstado as any, // Cast to match expected type if strictly typed
     });
   };
 
@@ -249,7 +254,7 @@ function SoporteProfPageContent() {
       createMensajeMutation.mutate({
         ticketId: selectedTicketId,
         autorId: user.id,
-        rolAutor: isAdmin ? 'admin' : 'profesor', // ADMIN usa 'admin', PROF usa 'profesor'
+        rolAutor: isAdmin ? 'admin' : 'profesor',
         texto: messageText.trim() || (videoFile || mediaLinks.length > 0 ? 'Contenido multimedia adjunto' : ''),
         mediaLinks: finalMediaLinks,
       });
@@ -260,7 +265,7 @@ function SoporteProfPageContent() {
     }
   };
 
-  const getEstadoBadge = (estado) => {
+  const getEstadoBadge = (estado: string | undefined) => {
     switch (estado) {
       case 'abierto':
         return <Badge variant="info">Abierto</Badge>;
@@ -269,11 +274,11 @@ function SoporteProfPageContent() {
       case 'cerrado':
         return <Badge variant="default">Cerrado</Badge>;
       default:
-        return <Badge>{estado}</Badge>;
+        return <Badge>{estado || 'Desconocido'}</Badge>;
     }
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('es-ES', {
       day: '2-digit',
       month: '2-digit',
@@ -615,7 +620,11 @@ function SoporteProfPageContent() {
                       </div>
                       <MediaLinksInput
                         value={mediaLinks}
-                        onChange={setMediaLinks}
+                        onChange={(links) => {
+                          // Adapt MediaInput change to string[] state
+                          const stringLinks = links.map(l => typeof l === 'string' ? l : l.url);
+                          setMediaLinks(stringLinks);
+                        }}
                         showFileUpload={true}
                         videoFile={videoFile}
                         onVideoFileChange={setVideoFile}
@@ -682,4 +691,3 @@ export default function SoporteProfPage() {
     </RequireRole>
   );
 }
-
