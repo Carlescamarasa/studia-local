@@ -4,7 +4,7 @@ import { Button } from "@/features/shared/components/ui/button";
 import { Badge } from "@/features/shared/components/ds";
 import { Users } from "lucide-react";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { useUsers } from "@/features/shared/hooks/useUsers";
+import { useUsers, UserEntity } from "@/features/shared/hooks/useUsers";
 import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
 import { useFeedbacksSemanal } from "@/features/progreso/hooks/useFeedbacksSemanal";
 import { localDataClient } from "@/api/localDataClient";
@@ -14,63 +14,17 @@ import {
     displayName
 } from "@/features/shared/utils/helpers";
 import { isoWeekNumber, parseLocalDate } from "../utils";
-// @ts-expect-error ModalFeedbackSemanal is not typed
+// @ts-ignore - ModalFeedbackSemanal types might be missing or loose
 import ModalFeedbackSemanal from "@/features/shared/components/feedback/ModalFeedbackSemanal";
-// @ts-expect-error MediaPreviewModal is not typed
+// @ts-ignore - MediaPreviewModal types might be missing or loose
 import MediaPreviewModal from "@/features/shared/components/media/MediaPreviewModal";
 import EstudianteCard from "./EstudianteCard";
-
-// Types
-interface Usuario {
-    id: string;
-    nombre?: string;
-    email?: string;
-    rolPersonalizado?: string;
-    profesorAsignadoId?: string;
-}
-
-interface Semana {
-    nombre?: string;
-    sesiones?: Array<{ nombre: string; foco?: string }>;
-}
-
-interface Asignacion {
-    id: string;
-    alumnoId: string;
-    profesorId?: string;
-    semanaInicioISO: string;
-    estado: string;
-    plan?: {
-        nombre?: string;
-        semanas?: Semana[];
-    };
-    piezaSnapshot?: {
-        nombre?: string;
-    };
-}
-
-interface Feedback {
-    id: string;
-    alumnoId: string;
-    profesorId: string;
-    semanaInicioISO: string;
-    notaProfesor?: string;
-    lastEditedAt?: string;
-    mediaLinks?: Array<{ url: string; tipo?: string }>;
-    habilidades?: {
-        sonido?: number;
-        cognicion?: number;
-        xpDeltas?: {
-            motricidad?: number;
-            articulacion?: number;
-            flexibilidad?: number;
-        };
-    };
-}
+import { Asignacion, FeedbackSemanal } from "@/types/data.types";
+import { PlanSnapshot, PiezaSnapshot } from "@/types/data.types";
 
 interface SelectedFeedbackData {
     studentId: string;
-    feedback: Feedback | null;
+    feedback: FeedbackSemanal | null;
     weekStartISO: string;
     weekLabel: string;
 }
@@ -102,9 +56,9 @@ export default function CuadernoEstudiantesTab({ semanaActualISO, searchTerm }: 
     const [previewIndex, setPreviewIndex] = useState(0);
 
     // Data hooks
-    const { data: usuarios = [] } = useUsers() as { data: Usuario[] };
-    const { data: asignacionesRaw = [] } = useAsignaciones() as { data: Asignacion[] };
-    const { data: feedbacksSemanalRaw = [] } = useFeedbacksSemanal() as { data: Feedback[] };
+    const { data: usuarios = [] } = useUsers();
+    const { data: asignacionesRaw = [] } = useAsignaciones();
+    const { data: feedbacksSemanalRaw = [] } = useFeedbacksSemanal();
 
     const userIdActual = useMemo(() =>
         resolveUserIdActual({ id: ctx.effectiveUserId, email: ctx.effectiveEmail }, usuarios),
@@ -112,13 +66,14 @@ export default function CuadernoEstudiantesTab({ semanaActualISO, searchTerm }: 
     );
 
     const estudiantes = useMemo(() =>
-        usuarios.filter((u: Usuario) => u.rolPersonalizado === 'ESTU'),
+        usuarios.filter((u) => u.rolPersonalizado === 'ESTU'),
         [usuarios]
     );
 
     const asignaciones = useMemo(() =>
-        asignacionesRaw.filter((a: Asignacion) => {
+        asignacionesRaw.filter((a) => {
             if (!a.alumnoId) return false;
+            // @ts-ignore - legacy plan structure check
             if (!a.plan || !Array.isArray(a.plan.semanas) || a.plan.semanas.length === 0) return false;
             if (!a.semanaInicioISO) return false;
             return true;
@@ -132,9 +87,9 @@ export default function CuadernoEstudiantesTab({ semanaActualISO, searchTerm }: 
 
         // Role filter
         if (roleFilter === 'mis' && userIdActual) {
-            const asignacionesDelProfesor = asignaciones.filter((a: Asignacion) => a.profesorId === userIdActual);
-            const alumnosAsignadosIds = new Set(asignacionesDelProfesor.map((a: Asignacion) => a.alumnoId));
-            baseList = baseList.filter((e: Usuario) =>
+            const asignacionesDelProfesor = asignaciones.filter((a) => a.profesorId === userIdActual);
+            const alumnosAsignadosIds = new Set(asignacionesDelProfesor.map((a) => a.alumnoId));
+            baseList = baseList.filter((e) =>
                 alumnosAsignadosIds.has(e.id) || e.profesorAsignadoId === userIdActual
             );
         }
@@ -142,32 +97,34 @@ export default function CuadernoEstudiantesTab({ semanaActualISO, searchTerm }: 
         // Search filter
         if (searchTerm) {
             const term = searchTerm.toLowerCase();
-            baseList = baseList.filter((e: Usuario) => {
+            baseList = baseList.filter((e) => {
                 const nombre = displayName(e).toLowerCase();
                 const email = (e.email || '').toLowerCase();
                 return nombre.includes(term) || email.includes(term);
             });
         }
 
-        return baseList.map((alumno: Usuario) => {
-            const asignacionActiva = asignaciones.find((a: Asignacion) => {
+        return baseList.map((alumno) => {
+            const asignacionActiva = asignaciones.find((a) => {
                 if (a.alumnoId !== alumno.id) return false;
                 if (a.estado !== 'publicada' && a.estado !== 'en_curso') return false;
                 const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
+                // @ts-ignore
                 return offset >= 0 && offset < (a.plan?.semanas?.length || 0);
             });
 
-            const feedbacksAlumno = feedbacksSemanalRaw.filter((f: Feedback) =>
+            const feedbacksAlumno = feedbacksSemanalRaw.filter((f) =>
                 f.alumnoId === alumno.id && f.semanaInicioISO === semanaActualISO
             );
-            const feedback = feedbacksAlumno.find((f: Feedback) => f.profesorId === userIdActual) || feedbacksAlumno[0];
+            const feedback = feedbacksAlumno.find((f) => f.profesorId === userIdActual) || feedbacksAlumno[0];
 
             const semanaIdx = asignacionActiva ?
                 calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO) : 0;
+            // @ts-ignore
             const semana = asignacionActiva?.plan?.semanas?.[semanaIdx];
 
             return { id: alumno.id, alumno, asignacionActiva, semana, semanaIdx, feedback };
-        }).filter((row: { asignacionActiva?: Asignacion | null; feedback?: Feedback | null }) => {
+        }).filter((row: { asignacionActiva?: Asignacion | undefined; feedback?: FeedbackSemanal | undefined }) => {
             if (filtroRapido === 'todos') return true;
             if (filtroRapido === 'con-asignacion') return !!row.asignacionActiva;
             if (filtroRapido === 'sin-asignacion') return !row.asignacionActiva;
@@ -185,7 +142,7 @@ export default function CuadernoEstudiantesTab({ semanaActualISO, searchTerm }: 
         });
     };
 
-    const abrirFeedbackModal = (alumno: Usuario, feedbackExistente: Feedback | null = null) => {
+    const abrirFeedbackModal = (alumno: UserEntity, feedbackExistente: FeedbackSemanal | null = null) => {
         const lunesSemana = parseLocalDate(semanaActualISO);
         const domingoSemana = new Date(lunesSemana);
         domingoSemana.setDate(lunesSemana.getDate() + 6);
@@ -263,7 +220,7 @@ export default function CuadernoEstudiantesTab({ semanaActualISO, searchTerm }: 
                         <p>{searchTerm ? 'No se encontraron estudiantes' : 'No hay estudiantes que coincidan con los filtros'}</p>
                     </div>
                 ) : (
-                    tableData.map((row: { id: string; alumno: Usuario; asignacionActiva?: Asignacion | null; semana?: Semana | null; semanaIdx: number; feedback?: Feedback | null }) => (
+                    tableData.map((row: { id: string; alumno: UserEntity; asignacionActiva?: Asignacion | undefined; semana?: any; semanaIdx: number; feedback?: FeedbackSemanal | undefined }) => (
                         <EstudianteCard
                             key={row.id}
                             alumno={row.alumno}
@@ -288,10 +245,10 @@ export default function CuadernoEstudiantesTab({ semanaActualISO, searchTerm }: 
             <ModalFeedbackSemanal
                 open={feedbackModalOpen}
                 onOpenChange={setFeedbackModalOpen}
-                studentId={selectedFeedbackData?.studentId}
+                studentId={selectedFeedbackData?.studentId || ''}
                 feedback={selectedFeedbackData?.feedback}
-                weekStartISO={selectedFeedbackData?.weekStartISO}
-                weekLabel={selectedFeedbackData?.weekLabel}
+                weekStartISO={selectedFeedbackData?.weekStartISO || ''}
+                weekLabel={selectedFeedbackData?.weekLabel || ''}
                 onSaved={handleFeedbackSaved}
             />
 

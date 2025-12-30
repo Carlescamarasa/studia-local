@@ -3,10 +3,15 @@ import { Keyboard } from "lucide-react";
 import { Button } from "@/features/shared/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/features/shared/components/ui/tooltip";
 
-// Contexto para compartir el estado del modal de hotkeys
-const HotkeysModalContext = createContext(null);
+interface HotkeysModalContextType {
+  showHotkeysModal: boolean;
+  setShowHotkeysModal: (show: boolean) => void;
+}
 
-export function HotkeysModalProvider({ children }) {
+// Contexto para compartir el estado del modal de hotkeys
+const HotkeysModalContext = createContext<HotkeysModalContextType | null>(null);
+
+export function HotkeysModalProvider({ children }: { children: React.ReactNode }) {
   const [showHotkeysModal, setShowHotkeysModal] = useState(false);
 
   return (
@@ -25,8 +30,14 @@ export function useHotkeysModal() {
   return context;
 }
 
+interface HotkeysModalButtonProps {
+  className?: string;
+  variant?: "ghost" | "default" | "destructive" | "outline" | "secondary" | "link";
+  size?: "default" | "sm" | "lg" | "icon";
+}
+
 // Componente botón discreto para el header
-export function HotkeysModalButton({ className = "", variant = "ghost", size = "sm" }) {
+export function HotkeysModalButton({ className = "", variant = "ghost", size = "sm" }: HotkeysModalButtonProps) {
   const { setShowHotkeysModal } = useHotkeysModal();
 
   return (

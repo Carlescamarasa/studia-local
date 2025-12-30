@@ -30,7 +30,13 @@ const NAME_TO_SEMITONE = {
  * @param {number} semitones - Number of semitones to transpose (positive = up)
  * @returns {number} Transposed MIDI note
  */
-export function transposeSemitones(midiNote, semitones) {
+/**
+ * Transpose a MIDI note by n semitones
+ * @param {number} midiNote - MIDI note number
+ * @param {number} semitones - Number of semitones to transpose (positive = up)
+ * @returns {number} Transposed MIDI note
+ */
+export function transposeSemitones(midiNote: number, semitones: number): number {
     return midiNote + semitones;
 }
 
@@ -43,7 +49,7 @@ export function transposeSemitones(midiNote, semitones) {
  * @param {'C' | 'Bb'} trumpetKey - Trumpet transposition key
  * @returns {number} Written pitch MIDI number
  */
-export function concertToTrumpetWritten(concertMidi, trumpetKey) {
+export function concertToTrumpetWritten(concertMidi: number, trumpetKey: string): number {
     if (trumpetKey === 'C' || trumpetKey === 'Do') {
         return concertMidi;
     }
@@ -63,7 +69,7 @@ export function concertToTrumpetWritten(concertMidi, trumpetKey) {
  * @param {'C' | 'Bb'} pianoKey - Piano label mode
  * @returns {object} { label, accidental, enharmonic }
  */
-export function pianoLabelForKey(concertMidi, pianoKey) {
+export function pianoLabelForKey(concertMidi: number, pianoKey: string) {
     const midi = pianoKey === 'C' || pianoKey === 'Do'
         ? concertMidi
         : transposeSemitones(concertMidi, 2);
@@ -76,7 +82,7 @@ export function pianoLabelForKey(concertMidi, pianoKey) {
  * @param {number} midi - MIDI note number
  * @returns {object} { label, accidental, enharmonic, octave }
  */
-export function midiToNoteInfo(midi) {
+export function midiToNoteInfo(midi: number) {
     const noteIndex = midi % 12;
     const octave = Math.floor(midi / 12) - 1;
 
@@ -118,7 +124,7 @@ export function midiToNoteInfo(midi) {
  * @param {string} label - Note label (e.g., "Do#", "Sib")
  * @returns {string} Formatted label with ♯ and ♭
  */
-export function formatNoteLabel(label) {
+export function formatNoteLabel(label: string): string {
     return label
         .replace(/#/g, '♯')
         .replace(/b/g, '♭');
@@ -129,7 +135,7 @@ export function formatNoteLabel(label) {
  * @param {string} key - 'Do', 'C', 'Sib', 'Bb'
  * @returns {'C' | 'Bb'}
  */
-export function normalizeKey(key) {
+export function normalizeKey(key: string): 'C' | 'Bb' {
     if (key === 'Do' || key === 'C') return 'C';
     if (key === 'Sib' || key === 'Bb' || key === 'Si♭') return 'Bb';
     return 'C';

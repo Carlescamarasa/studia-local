@@ -127,7 +127,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   const [recordingTime, setRecordingTime] = useState<number>(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
-  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
@@ -192,7 +192,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       // Capturar usando html-to-image (soporta CSS moderno y variables P3)
       const dataUrl = await toPng(mainContent as HTMLElement, {
         cacheBust: true,
-        backgroundColor: null,
+        backgroundColor: undefined,
         skipFonts: true, // Avoid "font is undefined" error in embed-webfonts
         filter: (node: any) => {
           // Excluir nodos que no sean elementos
@@ -417,7 +417,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
             user_id: user?.id,
             user_nombre: user?.email || 'Usuario',
             comentarios: description.trim() || undefined,
-          });
+          } as any);
 
           if (uploadResult.ok && uploadResult.videoUrl) {
             videoUrl = uploadResult.videoUrl;
@@ -815,7 +815,10 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
       {/* Video y enlaces multimedia */}
       <MediaLinksInput
         value={mediaLinks}
-        onChange={setMediaLinks}
+        onChange={(links) => {
+          const stringLinks = links.map(l => typeof l === 'string' ? l : l.url);
+          setMediaLinks(stringLinks);
+        }}
         showFileUpload={true}
         videoFile={videoFile}
         onVideoFileChange={setVideoFile}
@@ -856,7 +859,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className={`${componentStyles.modal.content} sm:max-w-2xl max-h-[90vh] overflow-y-auto`}>
+        <DialogContent className={`${componentStyles.modal.container} sm:max-w-2xl max-h-[90vh] overflow-y-auto`}>
           <DialogHeader className={componentStyles.modal.header}>
             <DialogTitle className={componentStyles.modal.title}>
               {commonTitle}

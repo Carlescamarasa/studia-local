@@ -4,7 +4,7 @@
  */
 
 export function debugHorizontalOverflow() {
-    const results = [];
+    const results: any[] = [];
     const elements = document.querySelectorAll('*');
     const viewportWidth = window.innerWidth;
 
@@ -60,8 +60,10 @@ export function debugHorizontalOverflow() {
         console.groupEnd();
 
         // Highlight element with red outline
-        item.element.style.outline = '3px solid red';
-        item.element.style.outlineOffset = '-3px';
+        if (item.element instanceof HTMLElement) {
+            item.element.style.outline = '3px solid red';
+            item.element.style.outlineOffset = '-3px';
+        }
     });
 
     console.groupEnd();
@@ -74,8 +76,10 @@ export function debugHorizontalOverflow() {
  */
 export function clearDebugHighlights() {
     document.querySelectorAll('*').forEach(el => {
-        el.style.outline = '';
-        el.style.outlineOffset = '';
+        if (el instanceof HTMLElement) {
+            el.style.outline = '';
+            el.style.outlineOffset = '';
+        }
     });
 }
 
@@ -83,7 +87,7 @@ export function clearDebugHighlights() {
  * Auto-run debug on window resize (debounced)
  */
 export function enableAutoDebug() {
-    let timeout;
+    let timeout: any;
     const handler = () => {
         clearTimeout(timeout);
         timeout = setTimeout(() => {

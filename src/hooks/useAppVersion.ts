@@ -7,7 +7,15 @@ import { toast } from 'sonner';
  * Hook para gestionar versiones de la aplicación
  * @returns {Object} { currentVersion, history, refresh, createVersion, activateVersion }
  */
-export function useAppVersion(options = {}) {
+export interface UseAppVersionOptions {
+  fetchHistory?: boolean;
+}
+
+/**
+ * Hook para gestionar versiones de la aplicación
+ * @returns {Object} { currentVersion, history, refresh, createVersion, activateVersion }
+ */
+export function useAppVersion(options: UseAppVersionOptions = {}) {
   const { fetchHistory = false } = options;
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -66,7 +74,7 @@ export function useAppVersion(options = {}) {
 
   // Mutación para crear versión (y activarla automáticamente)
   const createVersionMutation = useMutation({
-    mutationFn: async ({ version, codename, notes }) => {
+    mutationFn: async ({ version, codename, notes }: { version: string; codename?: string; notes?: string }) => {
       if (!user?.id) {
         throw new Error('Usuario no autenticado');
       }
@@ -96,7 +104,7 @@ export function useAppVersion(options = {}) {
 
   // Mutación para activar versión existente
   const activateVersionMutation = useMutation({
-    mutationFn: (versionId) => versionClient.activateVersion(versionId),
+    mutationFn: (versionId: string) => versionClient.activateVersion(versionId),
     onSuccess: () => {
       // Invalidar queries para refrescar datos
       queryClient.invalidateQueries({ queryKey: ['appVersion'] });
@@ -137,7 +145,7 @@ export function useAppVersion(options = {}) {
 
       // UPDATE LOCAL CACHE IMMEDIATELY
       // This ensures UI shows new version even if Supabase sync fails
-      queryClient.setQueryData(['appVersion', 'production'], (old) => ({
+      queryClient.setQueryData(['appVersion', 'production'], (old: any) => ({
         ...old,
         ...vData
       }));
@@ -171,7 +179,7 @@ export function useAppVersion(options = {}) {
         await versionClient.activateVersion(result.id);
 
         return { success: true, version: vData.versionName, hasReleaseNotes: rData !== null };
-      } catch (dbError) {
+      } catch (dbError: any) {
         console.error("[Version] Sync failed (Supabase)", dbError);
         // Return success=false but don't throw, so we keep the UI clean
         return { success: false, error: dbError, version: vData.versionName };
@@ -205,20 +213,15 @@ export function useAppVersion(options = {}) {
 
   /**
    * Crea una nueva versión y la activa
-   * @param {Object} params
-   * @param {string} params.version
-   * @param {string} [params.codename]
-   * @param {string} [params.notes]
    */
-  const createVersion = ({ version, codename, notes }) => {
+  const createVersion = ({ version, codename, notes }: { version: string; codename?: string; notes?: string }) => {
     createVersionMutation.mutate({ version, codename, notes });
   };
 
   /**
    * Activa una versión existente
-   * @param {string} versionId
    */
-  const activateVersion = (versionId) => {
+  const activateVersion = (versionId: string) => {
     activateVersionMutation.mutate(versionId);
   };
 

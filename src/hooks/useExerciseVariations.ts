@@ -1,3 +1,5 @@
+import { Bloque, Variation } from "@/features/shared/types/domain";
+
 /**
  * useExerciseVariations
  * 
@@ -7,11 +9,11 @@
 
 /**
  * Filtra las variaciones disponibles de un bloque basándose en el nivel técnico del usuario.
- * @param {Object} bloque - El objeto ejercicio completo (con propiedad variations)
+ * @param {Bloque} bloque - El objeto ejercicio completo (con propiedad variations)
  * @param {number} userLevel - Nivel técnico del usuario (1-100)
- * @returns {Array|null} Array de variaciones válidas o null si no hay ninguna apta (Fallback a Full Mode).
+ * @returns {Variation[]|null} Array de variaciones válidas o null si no hay ninguna apta (Fallback a Full Mode).
  */
-export function getValidVariations(bloque, userLevel) {
+export function getValidVariations(bloque: Bloque, userLevel: number): Variation[] | null {
     // Si no hay variaciones definidas, retorno inmediato (Full Mode)
     if (!bloque || !bloque.variations || !Array.isArray(bloque.variations) || bloque.variations.length === 0) {
         return null;
@@ -19,7 +21,7 @@ export function getValidVariations(bloque, userLevel) {
 
     // Filtrar por nivel mínimo requerido
     // Asumimos que variation.min_level es el campo correcto según el schema
-    const valid = bloque.variations.filter(v => {
+    const valid = bloque.variations.filter((v: Variation & { minLevel?: number; min_level?: number }) => {
         const minLevel = v.min_level || v.minLevel || 0;
         return minLevel <= userLevel;
     });
@@ -35,10 +37,10 @@ export function getValidVariations(bloque, userLevel) {
 /**
  * Selecciona una variación aleatoria de un pool de variaciones válidas.
  * Usado para el "Modo Repaso" (Review Mode).
- * @param {Array} validVariations - Array de variaciones pre-validado
- * @returns {Object|null} La variación seleccionada o null.
+ * @param {Variation[]} validVariations - Array de variaciones pre-validado
+ * @returns {Variation|null} La variación seleccionada o null.
  */
-export function pickRandomVariation(validVariations) {
+export function pickRandomVariation(validVariations: Variation[]): Variation | null {
     if (!validVariations || !Array.isArray(validVariations) || validVariations.length === 0) {
         return null;
     }

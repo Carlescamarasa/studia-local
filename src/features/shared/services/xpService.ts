@@ -41,21 +41,23 @@ export async function computePracticeXP(
     try {
         // Get all completed blocks for the student (RegistroBloque) - Filtered to avoid N+1/Full scan
         const allBlocks = await localDataClient.entities.RegistroBloque.filter({ alumnoId: studentId });
+        console.log(`[XPService] computePracticeXP(${studentId}) Found blocks:`, allBlocks.length);
 
         // Filter blocks completed in the last N days for this student
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - windowDays);
+        const cutoffISO = cutoffDate.toISOString();
 
         const recentBlocks = allBlocks.filter((block: any) => {
-            if (block.alumnoId !== studentId) return false;
-            if (block.estado !== 'completado') return false;
-            if (!block.completadoEn) return false;
-            const completedDate = new Date(block.completadoEn);
-            return completedDate >= cutoffDate;
+            const blockDate = block.created_at || block.createdAt || block.inicioISO; // Fallback
+            if (!blockDate) return false;
+            return blockDate >= cutoffISO;
         });
 
+        console.log(`[XPService] Recent blocks (${windowDays}d):`, recentBlocks.length);
+
         // Accumulate XP per skill
-        const xp: RecentXPResult = {
+        const result: RecentXPResult = {
             motricidad: 0,
             articulacion: 0,
             flexibilidad: 0
@@ -67,12 +69,12 @@ export async function computePracticeXP(
 
             // Distribute XP to relevant skills based on block type
             // For now, distribute evenly - this can be refined later
-            xp.motricidad += earnedXP / 3;
-            xp.articulacion += earnedXP / 3;
-            xp.flexibilidad += earnedXP / 3;
+            result.motricidad += earnedXP / 3;
+            result.articulacion += earnedXP / 3;
+            result.flexibilidad += earnedXP / 3;
         });
 
-        return xp;
+        return result;
     } catch (error) {
         console.error('Error computing practice XP:', error);
         return { motricidad: 0, articulacion: 0, flexibilidad: 0 };
@@ -124,20 +126,27 @@ export async function computeLifetimePracticeXP(
  * @param block - RegistroBloque object
  * @returns XP amount (base 0-100)
  */
-function calculateXPFromBlock(block: any): number {
-    // Check if block has BPM data
-    if (!block.ppmObjetivo || !block.ppmAlcanzado?.bpm) return 0;
+export function calculateXPFromBlock(block: any): number {
+    // Requirements: Completed status AND Performance data
+    if (block.estado !== 'completado') return 0;
 
-    const target = block.ppmObjetivo.bpm;
-    const achieved = block.ppmAlcanzado.bpm;
-    const ratio = achieved / target;
+    // Debug
+    if (Math.random() < 0.005) console.log('[XPService] Checking Block XP props:', { id: block.id, ppmObjetivo: block.ppmObjetivo, ppmAlcanzado: block.ppmAlcanzado });
+
+    // Handle various data shapes for targets
+    const target = typeof block.ppmObjetivo === 'object' ? (block.ppmObjetivo?.bpm || 0) : Number(block.ppmObjetivo);
+    const reached = typeof block.ppmAlcanzado === 'object' ? (block.ppmAlcanzado?.bpm || 0) : Number(block.ppmAlcanzado);
+
+    if (!target || !reached) return 0;
+
+    // Calculate ratio
+    const ratio = reached / target;
 
     // XP scales with performance
     if (ratio >= 1.0) return 100; // Met or exceeded target
-    if (ratio >= 0.9) return 80;  // Close to target
-    if (ratio >= 0.75) return 60; // Moderate achievement
-    if (ratio >= 0.5) return 40;  // Partial achievement
-    return 20; // Minimum for attempting
+    if (ratio >= 0.8) return 80;  // Close
+    if (ratio >= 0.5) return 50;  // Halfway
+    return 25;                    // Attempted
 }
 
 /**

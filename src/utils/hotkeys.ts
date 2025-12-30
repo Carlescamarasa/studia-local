@@ -21,7 +21,15 @@ export const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(
  * @param {EventTarget | null} target - El elemento target del evento
  * @returns {boolean} - true si es un campo editable, false en caso contrario
  */
-export function isEditableTarget(target) {
+/**
+ * Determina si el target del evento es un campo editable donde
+ * el usuario puede estar escribiendo. Los hotkeys globales no deben
+ * activarse cuando el usuario está editando texto.
+ * 
+ * @param {EventTarget | null} target - El elemento target del evento
+ * @returns {boolean} - true si es un campo editable, false en caso contrario
+ */
+export function isEditableTarget(target: EventTarget | null): boolean {
   if (!target || !(target instanceof HTMLElement)) {
     return false;
   }
@@ -40,7 +48,8 @@ export function isEditableTarget(target) {
 
   // Inputs son editables excepto algunos tipos especiales
   if (tag === 'INPUT') {
-    const type = target.type?.toLowerCase();
+    const inputTarget = target as HTMLInputElement;
+    const type = inputTarget.type?.toLowerCase();
     // Estos tipos de input son editables:
     const editableTypes = ['text', 'email', 'password', 'search', 'tel', 'url', 'number'];
     // Los checkboxes, radio, button, submit, etc. NO son editables para escribir texto
@@ -61,7 +70,13 @@ export function isEditableTarget(target) {
  * @param {KeyboardEvent} event - El evento de teclado
  * @returns {boolean} - true si se debe ignorar el hotkey, false si se debe procesar
  */
-export function shouldIgnoreHotkey(event) {
+/**
+ * Verifica si se debe ignorar un hotkey porque el usuario está editando texto.
+ * 
+ * @param {KeyboardEvent} event - El evento de teclado
+ * @returns {boolean} - true si se debe ignorar el hotkey, false si se debe procesar
+ */
+export function shouldIgnoreHotkey(event: KeyboardEvent): boolean {
   return isEditableTarget(event.target);
 }
 
@@ -76,7 +91,7 @@ export function shouldIgnoreHotkey(event) {
  * @param {boolean} useCmdOnMac - Si es true, usa ⌘ en Mac (solo para feedback-submit)
  * @returns {string} - Combinación formateada para mostrar
  */
-export function formatShortcut(combo, useCmdOnMac = false) {
+export function formatShortcut(combo: string, useCmdOnMac = false): string {
   const parts = combo.split('+').map(p => p.trim());
   const hasAlt = parts.includes('alt');
   const formatted = parts.map(p => {
@@ -123,7 +138,7 @@ export function formatShortcut(combo, useCmdOnMac = false) {
  * @param {boolean} useCmdOnMac - Si es true, usa ⌘ en Mac (solo para feedback-submit)
  * @returns {boolean} - true si el evento coincide con la combinación
  */
-export function matchesCombo(event, combo, useCmdOnMac = false) {
+export function matchesCombo(event: KeyboardEvent, combo: string, useCmdOnMac = false): boolean {
   const parts = combo.split('+').map(p => p.trim().toLowerCase());
   const key = event.key?.toLowerCase();
   const code = event.code?.toLowerCase();
@@ -224,7 +239,7 @@ export function matchesCombo(event, combo, useCmdOnMac = false) {
   if (needsShift !== hasShift) return false;
 
   // Mapeo de teclas especiales
-  const keyMap = {
+  const keyMap: Record<string, string> = {
     'arrowleft': 'arrowleft',
     'arrowright': 'arrowright',
     'arrowup': 'arrowup',
@@ -239,7 +254,7 @@ export function matchesCombo(event, combo, useCmdOnMac = false) {
 
   // Mapeo de caracteres especiales producidos por Alt en Mac a sus teclas base
   // En Mac, Alt+M produce µ, Alt+E produce €, etc.
-  const macAltCharMap = {
+  const macAltCharMap: Record<string, string> = {
     'µ': 'm',  // Alt+M
     '€': 'e',  // Alt+E
     '§': 's',  // Alt+S
@@ -280,10 +295,10 @@ export function matchesCombo(event, combo, useCmdOnMac = false) {
   // Normalizar tecla del evento
   // Si estamos en Mac y hay Alt presionado, puede que key sea un carácter especial
   // En ese caso, intentamos mapearlo o usar code
-  let normalizedEventKey = keyMap[key] || key;
+  let normalizedEventKey = key && (keyMap[key] || key);
 
   // Si key es un carácter especial de Alt en Mac, mapearlo a la tecla base
-  if (isMac && hasAlt && macAltCharMap[key]) {
+  if (isMac && hasAlt && key && macAltCharMap[key]) {
     normalizedEventKey = macAltCharMap[key];
   }
 
@@ -601,7 +616,7 @@ export const HOTKEYS_CONFIG = [
  * @param {Object} hotkey - Objeto de configuración del hotkey
  * @returns {Array<string>} - Array de combinaciones válidas
  */
-export function getHotkeyCombos(hotkey) {
+export function getHotkeyCombos(hotkey: any): string[] {
   if (!hotkey) return [];
   const combos = [hotkey.primary];
   if (hotkey.aliases && Array.isArray(hotkey.aliases)) {
@@ -617,7 +632,7 @@ export function getHotkeyCombos(hotkey) {
  * @param {Object} hotkey - Objeto de configuración del hotkey
  * @returns {boolean} - true si el evento coincide con el hotkey
  */
-export function matchesHotkey(event, hotkey) {
+export function matchesHotkey(event: KeyboardEvent, hotkey: any): boolean {
   if (!hotkey) return false;
   const combos = getHotkeyCombos(hotkey);
   const useCmdOnMac = hotkey.useCmdOnMac || false;
@@ -631,7 +646,7 @@ export function matchesHotkey(event, hotkey) {
  * @param {string} scope - Scope del hotkey ('global', 'study', 'feedback', 'create')
  * @returns {Array} - Array de hotkeys filtrados
  */
-export function getHotkeysForRole(role, scope = 'global') {
+export function getHotkeysForRole(role: string, scope = 'global'): typeof HOTKEYS_CONFIG {
   return HOTKEYS_CONFIG.filter(hk =>
     hk.scope === scope && hk.roles.includes(role)
   );
@@ -643,7 +658,7 @@ export function getHotkeysForRole(role, scope = 'global') {
  * @param {string} id - ID del hotkey
  * @returns {Object|null} - Configuración del hotkey o null si no se encuentra
  */
-export function getHotkeyById(id) {
+export function getHotkeyById(id: string) {
   return HOTKEYS_CONFIG.find(hk => hk.id === id) || null;
 }
 

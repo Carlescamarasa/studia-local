@@ -27,6 +27,38 @@ export function useRecentXP(studentId: string, windowDays: number = 30) {
 }
 
 /**
+ * Hook to fetch recent XP for multiple students (Average)
+ */
+export function useRecentXPMultiple(studentIds: string[], windowDays: number = 30) {
+    return useQuery<RecentXPResult>({
+        queryKey: ['recent-xp-multiple', studentIds, windowDays],
+        queryFn: async () => {
+            if (studentIds.length === 0) return { motricidad: 0, articulacion: 0, flexibilidad: 0 };
+
+            // Run in parallel
+            const promises = studentIds.map(id => computePracticeXP(id, windowDays));
+            const results = await Promise.all(promises);
+
+            // Average results
+            const sum = results.reduce((acc, curr) => ({
+                motricidad: acc.motricidad + curr.motricidad,
+                articulacion: acc.articulacion + curr.articulacion,
+                flexibilidad: acc.flexibilidad + curr.flexibilidad
+            }), { motricidad: 0, articulacion: 0, flexibilidad: 0 });
+
+            // Return average
+            return {
+                motricidad: Math.min(100, sum.motricidad / studentIds.length),
+                articulacion: Math.min(100, sum.articulacion / studentIds.length),
+                flexibilidad: Math.min(100, sum.flexibilidad / studentIds.length)
+            };
+        },
+        enabled: studentIds.length > 0,
+        staleTime: 1000 * 60 * 5,
+    });
+}
+
+/**
  * Hook to fetch recent Evaluation XP (Sonido/Cognición)
  */
 export function useRecentEvaluationXP(studentId: string, windowDays: number = 30) {
@@ -53,6 +85,35 @@ export function useRecentManualXP(studentId: string, windowDays: number = 30) {
         enabled: !!studentId,
         staleTime: 1000 * 60 * 5,
         refetchOnWindowFocus: false,
+    });
+}
+
+/**
+ * Hook to fetch recent Manual XP for multiple students (Average)
+ */
+export function useRecentManualXPMultiple(studentIds: string[], windowDays: number = 30) {
+    return useQuery<{ motricidad: number; articulacion: number; flexibilidad: number }>({
+        queryKey: ['recent-manual-xp-multiple', studentIds, windowDays],
+        queryFn: async () => {
+            if (studentIds.length === 0) return { motricidad: 0, articulacion: 0, flexibilidad: 0 };
+
+            const promises = studentIds.map(id => computeManualXP(id, windowDays));
+            const results = await Promise.all(promises);
+
+            const sum = results.reduce((acc, curr) => ({
+                motricidad: acc.motricidad + curr.motricidad,
+                articulacion: acc.articulacion + curr.articulacion,
+                flexibilidad: acc.flexibilidad + curr.flexibilidad
+            }), { motricidad: 0, articulacion: 0, flexibilidad: 0 });
+
+            return {
+                motricidad: sum.motricidad / studentIds.length,
+                articulacion: sum.articulacion / studentIds.length,
+                flexibilidad: sum.flexibilidad / studentIds.length
+            };
+        },
+        enabled: studentIds.length > 0,
+        staleTime: 1000 * 60 * 5,
     });
 }
 

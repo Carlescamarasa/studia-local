@@ -105,9 +105,9 @@ export async function canPromote(studentId: string, currentLevel: number, provid
     // 1. Get Config for CURRENT level (requirements to EXIT current level)
     let allConfigs = providedConfigs;
     if (!allConfigs) {
-        allConfigs = await localDataClient.entities.LevelConfig.list();
+        allConfigs = (await localDataClient.entities.LevelConfig.list()) as unknown as LevelConfig[];
     }
-    const config = allConfigs.find((c: any) => c.level === currentLevel);
+    const config = allConfigs.find((c: LevelConfig) => c.level === currentLevel);
 
     if (!config) {
         // No config for current level means we can promote freely (or it's level 0)

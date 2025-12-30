@@ -12,7 +12,9 @@ import {
     useAggregateLevelGoals,
     useRecentXP, // [NEW] Import for Forma mode (30 days)
     useRecentEvaluationXP, // [NEW]
-    useRecentManualXP // [NEW]
+    useRecentManualXP, // [NEW]
+    useRecentXPMultiple, // [NEW] Multi-student support
+    useRecentManualXPMultiple // [NEW] Multi-student support
 } from '../hooks/useXP';
 import { Activity, Target, Star, Layers, Info, TrendingUp, BookOpen, PieChart, CheckCircle2, Circle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/features/shared/components/ui/tooltip';
@@ -112,36 +114,6 @@ export default function HabilidadesView({
     // FORMA / RANGO LOGIC (STRICT SEPARATION)
     // =========================================================================
 
-    // 1. FORMA DATA (Last 30 Days) - Remote Fetch
-    const { data: recentPracticeXP, isLoading: isLoadingRecentP } = useRecentXP(singleId, 30);
-    const { data: recentEvalXP, isLoading: isLoadingRecentE } = useRecentEvaluationXP(singleId, 30);
-    const { data: recentManualXP, isLoading: isLoadingRecentM } = useRecentManualXP(singleId, 30);
-
-    const formaTotalXP = useMemo(() => {
-        const practice = recentPracticeXP || { motricidad: 0, articulacion: 0, flexibilidad: 0 };
-        const manual = recentManualXP || { motricidad: 0, articulacion: 0, flexibilidad: 0 };
-
-        // Forma = Practice(30d) + Manual(30d) + Eval(0-100? No, recent eval is singular. We treat it as score)
-        // Wait, for Radar, we need Accumulated XP for dimensions? 
-        // No, "Forma" radar is 0-100 normalized score.
-        // RecentXP service returns 0-100 based.
-        // EvalXP service returns 0-100 based.
-        // ManualXP service returns 0-100 based.
-        // So we can just merge them for the Radar.
-
-        return {
-            // Use MAX to pick the best representation of ability
-            motricidad: Math.max(practice.motricidad, manual.motricidad),
-            articulacion: Math.max(practice.articulacion, manual.articulacion),
-            flexibilidad: Math.max(practice.flexibilidad, manual.flexibilidad),
-            // Evaluation props are separate (Sonido, Cognicion)
-            sonido: recentEvalXP?.sonido || 0,
-            cognicion: recentEvalXP?.cognicion || 0
-        };
-    }, [recentPracticeXP, recentEvalXP, recentManualXP]);
-
-
-
     // =========================================================================
     // QUALITATIVE DATA HOOKS (Moved Up for Dependency)
     // =========================================================================
@@ -161,6 +133,56 @@ export default function HabilidadesView({
     const isLoadingStats = isLoadingXP || isLoadingQual;
 
 
+    // 1. FORMA DATA (Last 30 Days) - Remote Fetch
+    // Single student hooks
+    const { data: recentPracticeXPSingle, isLoading: isLoadingRecentPSingle } = useRecentXP(singleId, 30);
+    const { data: recentEvalXPSingle, isLoading: isLoadingRecentESingle } = useRecentEvaluationXP(singleId, 30);
+    const { data: recentManualXPSingle, isLoading: isLoadingRecentMSingle } = useRecentManualXP(singleId, 30);
+
+    // Multi student hooks (average)
+    const { data: recentPracticeXPMultiple, isLoading: isLoadingRecentPMultiple } = useRecentXPMultiple(isMultiple ? effectiveIds : [], 30);
+    const { data: recentManualXPMultiple, isLoading: isLoadingRecentMMultiple } = useRecentManualXPMultiple(isMultiple ? effectiveIds : [], 30);
+
+    // Use relevant data based on selection
+    const recentPracticeXP = isMultiple ? recentPracticeXPMultiple : recentPracticeXPSingle;
+    // For qualitative (Eval), we prefer the UNIFIED LOGIC 'radarStatsRaw' (Stateful Latest).
+    // The RPC 'recentEvalXP' is only for single student and follows strict window logic.
+    // To match our "Latest Evaluation" rule, we should stick to 'radarStatsRaw' for Sonido/Cognicion in all modes.
+    const recentEvalXP = isMultiple ? null : recentEvalXPSingle;
+    const recentManualXP = isMultiple ? recentManualXPMultiple : recentManualXPSingle;
+
+    const formaTotalXP = useMemo(() => {
+        const practice = recentPracticeXP || { motricidad: 0, articulacion: 0, flexibilidad: 0 };
+        const manual = recentManualXP || { motricidad: 0, articulacion: 0, flexibilidad: 0 };
+
+        // Debug Forma
+        console.log('[HabilidadesView] Forma Debug:', {
+            recentPracticeXP,
+            recentManualXP,
+            unifiedSonido: radarStatsRaw?.combinedData?.find((d: any) => d.subject === 'Sonido'),
+            isMultiple
+        });
+
+        // Use UNIFIED logic for Sonido/Cognicion (Stateful Latest)
+        // This ensures mismatch between Radar and Card is impossible.
+        const unifiedSonido = radarStatsRaw?.combinedData?.find((d: any) => d.subject === 'Sonido')?.original || 0;
+        const unifiedCognicion = radarStatsRaw?.combinedData?.find((d: any) => d.subject === 'Cognición')?.original || 0;
+
+        return {
+            // Use MAX to pick the best representation of ability
+            motricidad: Math.max(practice.motricidad, manual.motricidad),
+            articulacion: Math.max(practice.articulacion, manual.articulacion),
+            flexibilidad: Math.max(practice.flexibilidad, manual.flexibilidad),
+            // Use unified logic
+            sonido: unifiedSonido,
+            cognicion: unifiedCognicion
+        };
+    }, [recentPracticeXP, recentManualXP, radarStatsRaw]);
+
+
+
+
+
     // 2. RANGO DATA (Selected Range) - Client-side Calculation
     const rangeTotalXP = useMemo(() => {
         if (!xpData) return { motricidad: 0, articulacion: 0, flexibilidad: 0, sonido: 0, cognicion: 0 };
@@ -168,20 +190,29 @@ export default function HabilidadesView({
         // A. Practice XP (Computed from selected sessions)
         const practiceResult = { motricidad: 0, articulacion: 0, flexibilidad: 0 };
 
+        console.log('[HabilidadesView] Rango Debug: xpData length', xpData.length);
+
         // Helper to calc XP
         const calcBlockXP = (block: any) => {
-            if (!block.ppmObjetivo || !block.ppmAlcanzado?.bpm) return 0;
-            const ratio = block.ppmAlcanzado.bpm / block.ppmObjetivo.bpm;
+            const target = typeof block.ppmObjetivo === 'object' ? (block.ppmObjetivo?.bpm || 0) : Number(block.ppmObjetivo);
+            const reached = typeof block.ppmAlcanzado === 'object' ? (block.ppmAlcanzado?.bpm || 0) : Number(block.ppmAlcanzado);
+
+            if (!target || !reached) return 0;
+            const ratio = reached / target;
+
+            // XP scales with performance
             if (ratio >= 1.0) return 100;
-            if (ratio >= 0.9) return 80;
-            if (ratio >= 0.75) return 60;
-            if (ratio >= 0.5) return 40;
-            return 20;
+            if (ratio >= 0.8) return 80;
+            if (ratio >= 0.5) return 50;
+            return 25;
         };
 
         xpData.forEach((session: any) => {
             if (session.registrosBloque) {
                 session.registrosBloque.forEach((block: any) => {
+                    // Log first block to see structure
+                    if (Math.random() < 0.01) console.log('[HabilidadesView] Block Sample:', block);
+
                     if (block.estado === 'completado' && block.ppmObjetivo && block.ppmAlcanzado) {
                         const earned = calcBlockXP(block);
                         // Distribute evenly and normalize? 
@@ -204,10 +235,11 @@ export default function HabilidadesView({
             }
         });
 
-        // Cap at 100 for Radar consistency
-        practiceResult.motricidad = Math.min(practiceResult.motricidad, 100);
-        practiceResult.articulacion = Math.min(practiceResult.articulacion, 100);
-        practiceResult.flexibilidad = Math.min(practiceResult.flexibilidad, 100);
+        // For Rango mode counters, we want ACTUAL VOLUME, so we do NOT cap here.
+        // The Radar normalization happens later or in the Chart data prep.
+        // practiceResult.motricidad = Math.min(practiceResult.motricidad, 100);
+        // practiceResult.articulacion = Math.min(practiceResult.articulacion, 100);
+        // practiceResult.flexibilidad = Math.min(practiceResult.flexibilidad, 100);
 
 
         // B. Evaluation XP - Use the centralized hook logic via radarStatsRaw
@@ -468,9 +500,21 @@ export default function HabilidadesView({
     };
 
     const getXPValues = (skill: 'motricidad' | 'articulacion' | 'flexibilidad') => {
-        const totalVal = total[skill] || 0;
-        const practiceVal = practice[skill] || 0;
+        // [FIX] Use `radarData` (Forma/Rango filtered) if we are in Habilidades tab (hideViewModeToggle=false)
+        // If we are in Resumen tab (hideViewModeToggle=true), keep using Lifetime `total` and `practice`.
+        const sourceData = hideViewModeToggle ? total : radarData;
+        const practiceData = hideViewModeToggle ? practice : radarData;
+
+        // Note: `radarData` already contains the correct "Total" (Forma/Rango Logic) in its properties.
+        // `total` contains Lifetime total.
+
+        const totalVal = sourceData[skill] || 0;
+        const practiceVal = practiceData[skill] || 0;
+
+        // For Filtered views (Forma/Rango), "Evaluation" is implicitly part of the score or 0 if pure practice.
+        // Let's rely on standard logic: Total - Practice = Evaluation (if valid)
         const evaluationVal = Math.max(0, totalVal - practiceVal);
+
         const maxXP = getRequiredXP(skill);
         return { practiceVal, evaluationVal, totalVal, maxXP };
     };

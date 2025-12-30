@@ -17,7 +17,7 @@ export const log = {
    * Debug - Solo en desarrollo
    * @param {...any} args - Argumentos a loguear
    */
-  debug: (...args) => {
+  debug: (...args: any[]) => {
     if (!isProduction && isDevelopment) {
       console.debug('[DEBUG]', ...args);
     }
@@ -27,7 +27,7 @@ export const log = {
    * Info - Solo en desarrollo
    * @param {...any} args - Argumentos a loguear
    */
-  info: (...args) => {
+  info: (...args: any[]) => {
     if (!isProduction && isDevelopment) {
       console.info('[INFO]', ...args);
     }
@@ -37,7 +37,7 @@ export const log = {
    * Warn - Solo en desarrollo (advertencias no críticas)
    * @param {...any} args - Argumentos a loguear
    */
-  warn: (...args) => {
+  warn: (...args: any[]) => {
     if (!isProduction && isDevelopment) {
       console.warn('[WARN]', ...args);
     }
@@ -47,7 +47,7 @@ export const log = {
    * Error - Siempre loguea (incluso en producción)
    * @param {...any} args - Argumentos a loguear
    */
-  error: (...args) => {
+  error: (...args: any[]) => {
     // En producción, podrías enviar a un servicio de tracking de errores aquí
     console.error('[ERROR]', ...args);
   },
