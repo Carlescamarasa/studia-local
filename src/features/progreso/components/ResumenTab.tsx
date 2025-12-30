@@ -25,7 +25,7 @@ export interface ResumenTabProps {
 export default function ResumenTab({ kpis }: ResumenTabProps) {
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 border-b border-[var(--color-border-default)] pb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4 border-b border-[var(--color-border-default)] pb-6">
                 {/* 1. Tiempo Total */}
                 <KpiTile
                     icon={Timer}

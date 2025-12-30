@@ -840,7 +840,7 @@ function ProgresoPageContent() {
     // ============================================================================
 
     return (
-        <div className="studia-section space-y-6 pb-20 md:pb-0">
+        <div className="space-y-6 pb-20 md:pb-0">
             {/* Header: Using PageHeader for consistency */}
             <PageHeaderAny
                 icon={Activity}
@@ -874,7 +874,7 @@ function ProgresoPageContent() {
             />
 
             {/* Navigation Tabs (Bloque 1) - Manual State Management */}
-            <div className="w-full">
+            <div className="studia-section">
                 {/* Mobile Tab Select */}
                 <div className="md:hidden w-full mb-4">
                     <SelectAny value={tabActiva} onValueChange={setTabActiva} >

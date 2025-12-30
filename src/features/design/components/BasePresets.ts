@@ -68,6 +68,7 @@ const PRESET_STUDIA: DesignPreset = {
         controls: 'lg',           // 12px - inputs/botones moderados
         pill: 'full',             // Pills completamente redondeadas
         modal: 'xl',              // 16px - modales elegantes
+        table: 'lg',              // 12px - tablas con radius moderado
       },
       shadow: 'card',             // Sombras suaves elegantes
       density: 'normal',          // Densidad media (equilibrio)
@@ -136,11 +137,19 @@ const PRESET_STUDIA: DesignPreset = {
     },
     chrome: {
       sidebar: {
-        background: '#F9FAFB',     // Sidebar gris frío claro
+        surface: '#F9FAFB',       // Sidebar gris frío claro
+        text: '#1A1F2E',          // Texto oscuro legible
         border: '#E2E8F0',        // Borde frío suave
         activeItemBg: '#FFF5ED',  // Item activo con primary soft
         activeItemText: '#1A1F2E', // Texto oscuro legible
         mutedItemText: '#718096', // Texto muted frío
+        hoverItemBg: '#F3F4F6',   // Hover gris claro
+        itemRadius: 'md',
+        itemPadding: '0.5rem 0.75rem',
+        itemGap: '0.5rem',
+        dividerColor: '#E2E8F0',
+        paddingX: '0.5rem',
+        paddingY: '0.5rem',
       },
       header: {
         background: '#FFFFFF',     // Header blanco puro

@@ -78,8 +78,8 @@ export const VISIBILITY_STATUS = {
  * Get visibility status for a control by id.
  * Returns { visibility: 'visible'|'emit-only'|'broken', consumerHint: string }
  */
-export function getControlVisibility(controlId) {
-    return VISIBILITY_STATUS[controlId] || { visibility: 'emit-only', consumerHint: 'Unknown - check coverage report' };
+export function getControlVisibility(controlId: string): { visibility: string; consumerHint: string } {
+    return (VISIBILITY_STATUS as Record<string, { visibility: string; consumerHint: string }>)[controlId] || { visibility: 'emit-only', consumerHint: 'Unknown - check coverage report' };
 }
 
 
