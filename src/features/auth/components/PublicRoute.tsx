@@ -10,9 +10,9 @@ import { roleHome } from '@/features/auth/components/roleMap';
  * - Si el usuario está autenticado y está en /login, redirige a su página de inicio según su rol
  * - Si el usuario está autenticado y está en /reset-password, permite el acceso (para cambiar contraseña)
  */
-export default function PublicRoute({ children }) {
+export default function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, appRole } = useAuth();
-  
+
   // Si está cargando, mostrar loader
   if (loading) {
     return (
@@ -24,14 +24,14 @@ export default function PublicRoute({ children }) {
       </div>
     );
   }
-  
+
   // Si el usuario está autenticado y está en /login, redirigir a su página de inicio
   if (user && window.location.pathname === '/login') {
     const targetPage = roleHome[appRole] || roleHome.ESTU;
     const pageName = targetPage.replace(/^\//, '');
     return <Navigate to={createPageUrl(pageName)} replace />;
   }
-  
+
   // Para otras rutas públicas (como /reset-password), permitir acceso incluso si está autenticado
   return children;
 }

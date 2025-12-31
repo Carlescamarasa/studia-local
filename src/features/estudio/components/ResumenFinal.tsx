@@ -3,7 +3,7 @@ import { Button } from "@/features/shared/components/ui/button";
 import { Textarea } from "@/features/shared/components/ui/textarea";
 import { CheckCircle, XCircle, Clock, RotateCcw, Home, Loader2 } from "lucide-react";
 import MediaPreviewModal from "@/features/shared/components/media/MediaPreviewModal";
-import MediaLinksInput from "@/features/shared/components/media/MediaLinksInput";
+import MediaLinksInput, { MediaItem } from "@/features/shared/components/media/MediaLinksInput";
 import { componentStyles } from "@/design/componentStyles";
 import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
 import { toast } from "sonner";
@@ -101,7 +101,7 @@ export default function ResumenFinal({
 }: ResumenFinalProps) {
     const [calidad, setCalidad] = useState(3);
     const [notas, setNotas] = useState("");
-    const [mediaLinks, setMediaLinks] = useState<string[]>([]);
+    const [mediaLinks, setMediaLinks] = useState<(string | MediaItem)[]>([]);
     const [videoFile, setVideoFile] = useState<File | null>(null);
     const [uploadingVideo, setUploadingVideo] = useState(false);
     const [guardado, setGuardado] = useState(false);
@@ -143,7 +143,7 @@ export default function ResumenFinal({
     }, [open, calidad, guardado, uploadingVideo]);
 
     const handleGuardarFeedback = async () => {
-        let finalMediaLinks = [...mediaLinks];
+        let finalMediaLinks = mediaLinks.map(l => (typeof l === 'string' ? l : l.url));
 
         // Si hay vídeo, subirlo primero
         if (videoFile && userId && userProfile) {
@@ -336,7 +336,7 @@ export default function ResumenFinal({
 
             {showPreview && (
                 <MediaPreviewModal
-                    urls={mediaLinks}
+                    urls={mediaLinks.map(l => (typeof l === 'string' ? l : l.url))}
                     initialIndex={previewIndex}
                     open={showPreview}
                     onClose={() => setShowPreview(false)}

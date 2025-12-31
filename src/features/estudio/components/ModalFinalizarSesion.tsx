@@ -5,7 +5,7 @@ import { Label } from "@/features/shared/components/ui/label";
 import { Textarea } from "@/features/shared/components/ui/textarea";
 import { X, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/features/shared/components/ui/alert";
-import MediaLinksInput from "@/features/shared/components/media/MediaLinksInput";
+import MediaLinksInput, { MediaItem } from "@/features/shared/components/media/MediaLinksInput";
 import MediaPreviewModal from "@/features/shared/components/media/MediaPreviewModal";
 import { componentStyles } from "@/design/componentStyles";
 
@@ -27,7 +27,7 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }: ModalF
     const [motivo, setMotivo] = useState("terminado");
     const [calificacion, setCalificacion] = useState<number | null>(null);
     const [notas, setNotas] = useState("");
-    const [mediaLinks, setMediaLinks] = useState<string[]>([]);
+    const [mediaLinks, setMediaLinks] = useState<(string | MediaItem)[]>([]);
     const [showPreview, setShowPreview] = useState(false);
     const [previewIndex, setPreviewIndex] = useState(0);
 
@@ -135,7 +135,10 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }: ModalF
                             Cancelar
                         </Button>
                         <Button
-                            onClick={() => onConfirmar({ motivo, calificacion, notas, mediaLinks })}
+                            onClick={() => {
+                                const finalLinks = mediaLinks.map(l => (typeof l === 'string' ? l : l.url));
+                                onConfirmar({ motivo, calificacion, notas, mediaLinks: finalLinks });
+                            }}
                             className="flex-1 bg-brand-500 hover:bg-brand-600"
                         >
                             <CheckCircle className="w-4 h-4 mr-2" />
@@ -147,7 +150,7 @@ export default function ModalFinalizarSesion({ onConfirmar, onCancelar }: ModalF
 
             {showPreview && (
                 <MediaPreviewModal
-                    urls={mediaLinks}
+                    urls={mediaLinks.map(l => (typeof l === 'string' ? l : l.url))}
                     initialIndex={previewIndex}
                     open={showPreview}
                     onClose={() => setShowPreview(false)}

@@ -13,6 +13,7 @@ import UnifiedTable from "@/features/shared/components/tables/UnifiedTable";
 import { Badge } from "@/features/shared/components/ds";
 import { componentStyles } from "@/design/componentStyles";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
+import { Pieza } from "@/features/editor/types";
 
 export default function PiezasTab() {
   const queryClient = useQueryClient();
@@ -30,7 +31,7 @@ export default function PiezasTab() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => entities.Pieza.delete(id),
+    mutationFn: async (id: string) => { await entities.Pieza.delete(id); },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['piezas'] });
       toast.success('✅ Pieza eliminada');
@@ -38,11 +39,11 @@ export default function PiezasTab() {
   });
 
   const duplicarMutation = useMutation({
-    mutationFn: async (pieza) => {
+    mutationFn: async (pieza: any) => {
       const copia = {
-        ...pieza,
+        ...(pieza as any),
         nombre: `${pieza.nombre} (copia)`,
-        profesorId: effectiveUser?.id,
+        profesorId: (effectiveUser as any)?.id,
       };
       delete copia.id;
       delete copia.created_at;
@@ -66,19 +67,19 @@ export default function PiezasTab() {
     setShowEditor(true);
   };
 
-  const handleEdit = (pieza) => {
-    setEditingPieza(pieza);
+  const handleEdit = (pieza: Pieza) => {
+    setEditingPieza(pieza as any);
     setShowEditor(true);
   };
 
-  const handleDelete = async (pieza) => {
+  const handleDelete = async (pieza: Pieza) => {
     if (window.confirm(`¿Eliminar "${pieza.nombre}"?`)) {
       deleteMutation.mutate(pieza.id);
     }
   };
 
-  const handleDuplicate = (pieza) => {
-    duplicarMutation.mutate(pieza);
+  const handleDuplicate = (pieza: Pieza) => {
+    duplicarMutation.mutate(pieza as any);
   };
 
   const handleClose = () => {
@@ -88,7 +89,7 @@ export default function PiezasTab() {
 
   // Removed nivelColors
 
-  const nivelVariants = { // Added nivelVariants
+  const nivelVariants: Record<string, "success" | "warning" | "info" | "danger" | "neutral"> = { // Added nivelVariants
     principiante: 'success',
     intermedio: 'warning',
     avanzado: 'info',
@@ -152,34 +153,37 @@ export default function PiezasTab() {
               columns={[
                 { key: 'nombre', label: 'Nombre', sortable: true, render: (p) => <span className="font-medium">{p.nombre}</span> },
                 {
-                  key: 'nivel', label: 'Nivel', sortable: true, render: (p) => (
-                    <Badge variant={nivelVariants[p.nivel]}>{nivelLabels[p.nivel]}</Badge> // Changed Badge variant
+                  key: 'nivel', label: 'Nivel', sortable: true, render: (p: Pieza) => (
+                    <Badge variant={nivelVariants[p.nivel as keyof typeof nivelVariants] || 'neutral'}>{nivelLabels[p.nivel as keyof typeof nivelLabels] || p.nivel}</Badge> // Changed Badge variant
                   )
                 },
                 { key: 'elementos', label: 'Elementos', sortable: true, render: (p) => <span className="text-sm text-[var(--color-text-secondary)]">{p.elementos?.length || 0}</span>, sortValue: (p) => p.elementos?.length || 0 },
                 { key: 'tiempo', label: 'Tiempo', sortable: true, render: (p) => <span className="text-sm text-[var(--color-text-secondary)]">{Math.floor((p.tiempoObjetivoSeg || 0) / 60)} min</span>, sortValue: (p) => p.tiempoObjetivoSeg || 0 }
               ]}
-              data={filteredPiezas}
+              data={filteredPiezas as unknown as Pieza[]}
               selectable={true}
               bulkActions={[
                 {
                   id: 'duplicate',
                   label: 'Duplicar',
                   icon: Copy,
-                  onClick: (ids) => {
+                  onClick: (ids?: any[]) => {
+                    if (!ids) return;
                     const piezasParaDuplicar = filteredPiezas.filter(p => ids.includes(p.id));
-                    piezasParaDuplicar.forEach(p => handleDuplicate(p));
+                    piezasParaDuplicar.forEach(p => handleDuplicate(p as any));
                   },
                 },
                 {
                   id: 'delete',
                   label: 'Eliminar',
                   icon: Trash2,
-                  onClick: (ids) => {
-                    if (window.confirm(`¿Eliminar ${ids.length} pieza${ids.length > 1 ? 's' : ''}?`)) {
-                      ids.forEach(id => {
+                  onClick: (ids?: any[]) => {
+                    if (!ids) return;
+                    const idStrings = ids as string[];
+                    if (window.confirm(`¿Eliminar ${idStrings.length} pieza${idStrings.length > 1 ? 's' : ''}?`)) {
+                      idStrings.forEach(id => {
                         const pieza = filteredPiezas.find(p => p.id === id);
-                        if (pieza) {
+                        if (pieza && pieza.id) {
                           deleteMutation.mutate(pieza.id);
                         }
                       });
@@ -187,12 +191,12 @@ export default function PiezasTab() {
                   },
                 },
               ]}
-              getRowActions={(p) => [ // Changed from 'actions' to 'getRowActions'
+              getRowActions={(p: Pieza) => [ // Changed from 'actions' to 'getRowActions'
                 { id: 'edit', label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => handleEdit(p) },
                 { id: 'duplicate', label: 'Duplicar', icon: <Copy className="w-4 h-4" />, onClick: () => handleDuplicate(p) },
                 { id: 'delete', label: 'Eliminar', icon: <Trash2 className="w-4 h-4" />, onClick: () => handleDelete(p) }
               ]}
-              onRowClick={(p) => handleEdit(p)}
+              onRowClick={(p: Pieza) => handleEdit(p)}
               keyField="id"
             />
           </div>
@@ -205,9 +209,9 @@ export default function PiezasTab() {
                     <div className="flex items-start justify-between gap-2">
                       <div
                         className="flex-1 min-w-0 cursor-pointer"
-                        onClick={() => handleEdit(pieza)}
+                        onClick={() => handleEdit(pieza as any)}
                       >
-                        <Badge variant={nivelVariants[pieza.nivel]} className="mb-2"> {/* Changed Badge variant and removed rounded-full */}
+                        <Badge variant={nivelVariants[pieza.nivel as keyof typeof nivelVariants] || 'neutral'} className="mb-2"> {/* Changed Badge variant and removed rounded-full */}
                           {nivelLabels[pieza.nivel]}
                         </Badge>
                         <h3 className="font-semibold text-base mb-1">{pieza.nombre}</h3>
@@ -221,7 +225,7 @@ export default function PiezasTab() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleEdit(pieza)}
+                        onClick={() => handleEdit(pieza as any)}
                         className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
                         aria-label="Editar pieza"
                       >
@@ -230,7 +234,7 @@ export default function PiezasTab() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDuplicate(pieza)}
+                        onClick={() => handleDuplicate(pieza as any)}
                         className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
                         aria-label="Duplicar pieza"
                       >
@@ -239,7 +243,7 @@ export default function PiezasTab() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(pieza)}
+                        onClick={() => handleDelete(pieza as any)}
                         className={`${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle} px-3`}
                       >
                         <Trash2 className="w-4 h-4" />

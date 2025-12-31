@@ -10,7 +10,7 @@ import { componentStyles } from "@/design/componentStyles";
 
 export default function BloquesTab() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingBloque, setEditingBloque] = useState(null);
+  const [editingBloque, setEditingBloque] = useState<any | null>(null);
   const [showEditor, setShowEditor] = useState(false);
 
   // Usar hook centralizado para bloques
@@ -113,7 +113,7 @@ export default function BloquesTab() {
 
       {showEditor && (
         <ExerciseEditor
-          bloque={editingBloque}
+          ejercicio={editingBloque}
           onClose={() => {
             setShowEditor(false);
             setEditingBloque(null);

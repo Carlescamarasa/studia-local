@@ -8,14 +8,14 @@ export const uid = () => Math.random().toString(36).slice(2, 9);
 /**
  * Asegura que cada ronda tenga ID estable
  */
-export function ensureRondaIds(sesion) {
+export function ensureRondaIds(sesion: any) {
   if (!sesion) return sesion;
-  
-  const withIds = (sesion.rondas || []).map((r, i) => ({ 
-    ...r, 
-    id: r.id || `r_${i}` 
+
+  const withIds = (sesion.rondas || []).map((r: any, i: number) => ({
+    ...r,
+    id: r.id || `r_${i}`
   }));
-  
+
   return { ...sesion, rondas: withIds };
 }
 
@@ -23,22 +23,22 @@ export function ensureRondaIds(sesion) {
  * Construye una secuencia por defecto cuando no existe
  * Por defecto: ejercicios sueltos (los que NO están en rondas) seguidos de las rondas
  */
-export function buildDefaultSecuencia(sesion) {
+export function buildDefaultSecuencia(sesion: any) {
   const S = ensureRondaIds(sesion);
-  const codesEnRondas = new Set((S.rondas || []).flatMap(r => r.bloques || []));
-  
+  const codesEnRondas = new Set((S.rondas || []).flatMap((r: any) => r.bloques || []));
+
   return [
     ...(S.bloques || [])
-      .filter(b => !codesEnRondas.has(b.code))
-      .map(b => ({ kind: 'BLOQUE', code: b.code })),
-    ...(S.rondas || []).map(r => ({ kind: 'RONDA', id: r.id })),
+      .filter((b: any) => !codesEnRondas.has(b.code))
+      .map((b: any) => ({ kind: 'BLOQUE', code: b.code })),
+    ...(S.rondas || []).map((r: any) => ({ kind: 'RONDA', id: r.id })),
   ];
 }
 
 /**
  * Devuelve la secuencia efectiva (preferir s.secuencia si existe)
  */
-export function getSecuencia(sesion) {
+export function getSecuencia(sesion: any) {
   const S = ensureRondaIds(sesion);
   return (S.secuencia && S.secuencia.length) ? S.secuencia : buildDefaultSecuencia(S);
 }
@@ -47,20 +47,20 @@ export function getSecuencia(sesion) {
  * Cálculo único del tiempo de sesión
  * No cuenta AD, y las rondas suman repeticiones
  */
-export function calcularTiempoSesion(sesion) {
+export function calcularTiempoSesion(sesion: any) {
   if (!sesion) return 0;
-  
+
   const S = ensureRondaIds(sesion);
-  
+
   // Tiempo base de ejercicios (excluyendo AD)
   const base = (S.bloques || [])
-    .filter(b => b.tipo !== 'AD')
-    .reduce((acc, b) => acc + (b.duracionSeg || 0), 0);
+    .filter((b: any) => b.tipo !== 'AD')
+    .reduce((acc: number, b: any) => acc + (b.duracionSeg || 0), 0);
 
   // Tiempo de rondas (suma ejercicios × repeticiones)
-  const fromRounds = (S.rondas || []).reduce((acc, r) => {
-    const sumRonda = r.bloques.reduce((sum, code) => {
-      const b = S.bloques?.find(x => x.code === code);
+  const fromRounds = (S.rondas || []).reduce((acc: number, r: any) => {
+    const sumRonda = r.bloques.reduce((sum: number, code: string) => {
+      const b = S.bloques?.find((x: any) => x.code === code);
       return (!b || b.tipo === 'AD') ? sum : sum + (b.duracionSeg || 0);
     }, 0);
     return acc + sumRonda * Math.max(1, r.repeticiones || 1);
@@ -72,7 +72,7 @@ export function calcularTiempoSesion(sesion) {
 /**
  * Shuffle simple (in-place) – NO persistir resultado
  */
-export function shuffle(array) {
+export function shuffle(array: any[]) {
   const arr = array.slice();
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -84,7 +84,7 @@ export function shuffle(array) {
 /**
  * Orden para reproducir la ronda (baraja si aleatoria==true)
  */
-export function ordenRondaParaPlay(ronda) {
+export function ordenRondaParaPlay(ronda: any) {
   const arr = ronda.bloques.slice();
   return ronda.aleatoria ? shuffle(arr) : arr;
 }
@@ -92,8 +92,8 @@ export function ordenRondaParaPlay(ronda) {
 /**
  * Crea un mapa code -> bloque para lookup rápido
  */
-export function mapBloquesByCode(sesion) {
+export function mapBloquesByCode(sesion: any) {
   const m = new Map();
-  (sesion?.bloques || []).forEach(b => m.set(b.code, b));
+  (sesion?.bloques || []).forEach((b: any) => m.set(b.code, b));
   return m;
 }

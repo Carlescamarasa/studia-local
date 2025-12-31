@@ -5,7 +5,7 @@
  * @param {string} email - Email a validar
  * @returns {boolean} - true si el email es válido
  */
-export function validateEmail(email) {
+export function validateEmail(email: string) {
   if (!email || typeof email !== 'string') return false;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email.trim());
@@ -18,7 +18,7 @@ export function validateEmail(email) {
  * @param {number} maxLength - Longitud máxima
  * @returns {boolean} - true si cumple con la longitud
  */
-export function validateEmailLength(email, minLength = 5, maxLength = 254) {
+export function validateEmailLength(email: string, minLength = 5, maxLength = 254) {
   if (!email || typeof email !== 'string') return false;
   const trimmed = email.trim();
   return trimmed.length >= minLength && trimmed.length <= maxLength;
@@ -30,7 +30,7 @@ export function validateEmailLength(email, minLength = 5, maxLength = 254) {
  * @param {number} minLength - Longitud mínima
  * @returns {boolean} - true si cumple con la longitud
  */
-export function validatePasswordLength(password, minLength = 8) {
+export function validatePasswordLength(password: string, minLength = 8) {
   if (!password || typeof password !== 'string') return false;
   return password.length >= minLength;
 }
@@ -41,33 +41,33 @@ export function validatePasswordLength(password, minLength = 8) {
  * @param {string} password - Contraseña a validar
  * @returns {{ valid: boolean; errors: string[] }} - Resultado de la validación con lista de errores
  */
-export function validatePasswordStrength(password) {
-  const errors = [];
-  
+export function validatePasswordStrength(password: string) {
+  const errors: string[] = [];
+
   if (!password || typeof password !== 'string') {
     return { valid: false, errors: ['La contraseña es requerida'] };
   }
-  
+
   // Mínimo 8 caracteres
   if (password.length < 8) {
     errors.push('La contraseña debe tener al menos 8 caracteres');
   }
-  
+
   // Al menos una mayúscula
   if (!/[A-Z]/.test(password)) {
     errors.push('La contraseña debe contener al menos una letra mayúscula');
   }
-  
+
   // Al menos una minúscula
   if (!/[a-z]/.test(password)) {
     errors.push('La contraseña debe contener al menos una letra minúscula');
   }
-  
+
   // Al menos un número
   if (!/[0-9]/.test(password)) {
     errors.push('La contraseña debe contener al menos un número');
   }
-  
+
   return {
     valid: errors.length === 0,
     errors,
@@ -79,7 +79,7 @@ export function validatePasswordStrength(password) {
  * @param {string} value - Valor a validar
  * @returns {boolean} - true si está vacío
  */
-export function isEmpty(value) {
+export function isEmpty(value: string | null | undefined) {
   if (value === null || value === undefined) return true;
   if (typeof value === 'string') return value.trim().length === 0;
   return false;
@@ -90,7 +90,7 @@ export function isEmpty(value) {
  * @param {string} email - Email a normalizar
  * @returns {string} - Email normalizado (lowercase, trimmed)
  */
-export function normalizeEmail(email) {
+export function normalizeEmail(email: string) {
   if (!email || typeof email !== 'string') return '';
   return email.trim().toLowerCase();
 }

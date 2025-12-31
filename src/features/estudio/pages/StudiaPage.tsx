@@ -1239,7 +1239,7 @@ function StudiaPageContent() {
                                             <span>🎯</span>
                                             <span>Tempo objetivo (Nivel {target.nivel}): {target.unidad || 'Negra'} = {target.bpm} bpm</span>
                                         </div>
-                                        <Metronomo initialBpm={target.bpm} onPpmChange={setPpmAlcanzado} />
+                                        <Metronomo initialBpm={target.bpm} onPpmChange={(data) => setPpmAlcanzado(data.bpm)} />
                                     </div>
                                 );
                             }

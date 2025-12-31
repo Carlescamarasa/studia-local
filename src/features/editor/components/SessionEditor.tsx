@@ -957,7 +957,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
                     <p className="text-sm mb-4 text-[var(--color-text-primary)]">Aún no hay ejercicios ni rondas en esta sesión.</p>
                   </div>
                 ) : (
-                  <DndProvider onDragEnd={handleDragEnd}>
+                  <DndProvider onDragEnd={(event: any) => handleDragEnd(event)}>
                     <SortableContext
                       items={formData.secuencia.map((_, i) => `seq-${i}`)}
                       strategy={verticalListSortingStrategy}

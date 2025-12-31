@@ -4,10 +4,10 @@ import { useAuth } from '@/auth/AuthProvider';
 import { supabase } from '@/lib/supabaseClient';
 import { isAuthError } from '@/lib/authHelpers';
 
-export default function RequireAuth({ children }) {
+export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading, checkSession, signOut } = useAuth();
-  const checkIntervalRef = useRef(null);
-  const lastCheckRef = useRef(null);
+  const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastCheckRef = useRef<number | null>(null);
 
   // Verificación optimizada de sesión: menos frecuente y solo cuando es necesario
   useEffect(() => {
@@ -34,13 +34,13 @@ export default function RequireAuth({ children }) {
 
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        
+
         // Si hay error de autenticación o no hay sesión, forzar cierre de sesión
         if (error && isAuthError(error)) {
           await signOut?.();
           return;
         }
-        
+
         if (!session) {
           // No hay sesión pero tenemos usuario en estado - forzar actualización
           await checkSession?.();

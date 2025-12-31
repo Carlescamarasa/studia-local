@@ -17,7 +17,7 @@ export default function EditorPage() {
 
   const effectiveUser = useEffectiveUser();
 
-  if (effectiveUser?.rolPersonalizado === 'ESTU') {
+  if ((effectiveUser as any)?.rolPersonalizado === 'ESTU') {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
         <Card className={`max-w-md ${componentStyles.containers.cardBase} border-[var(--color-danger)]`}>

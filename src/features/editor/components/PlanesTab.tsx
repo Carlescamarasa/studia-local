@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import UnifiedTable from "@/features/shared/components/tables/UnifiedTable";
 import { componentStyles } from "@/design/componentStyles";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
+import { Plan } from "@/features/editor/types";
 
 export default function PlanesTab() {
   const queryClient = useQueryClient();
@@ -29,7 +30,7 @@ export default function PlanesTab() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => localDataClient.entities.Plan.delete(id),
+    mutationFn: (id: string) => localDataClient.entities.Plan.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['planes'] });
       toast.success('✅ Plan eliminado');
@@ -37,11 +38,11 @@ export default function PlanesTab() {
   });
 
   const duplicarMutation = useMutation({
-    mutationFn: async (plan) => {
+    mutationFn: async (plan: Plan) => {
       const copia = {
-        ...plan,
+        ...(plan as any),
         nombre: `${plan.nombre} (copia)`,
-        profesorId: effectiveUser?.id,
+        profesorId: (effectiveUser as any)?.id,
       };
       delete copia.id;
       delete copia.created_date;
@@ -66,19 +67,19 @@ export default function PlanesTab() {
     setShowEditor(true);
   };
 
-  const handleEdit = (plan) => {
-    setSelectedPlan(plan);
+  const handleEdit = (plan: Plan) => {
+    setSelectedPlan(plan as any); // PlanEditor might expect a slightly different shape or implicit check
     setShowEditor(true); // Ensure editor shows on edit
   };
 
-  const handleDelete = (plan) => {
-    if (window.confirm(`¿Eliminar "${plan.nombre}"?`)) {
+  const handleDelete = (plan: Plan) => {
+    if (plan.id && window.confirm(`¿Eliminar "${plan.nombre}"?`)) {
       deleteMutation.mutate(plan.id);
     }
   };
 
-  const handleDuplicate = (plan) => {
-    duplicarMutation.mutate(plan);
+  const handleDuplicate = (plan: Plan) => {
+    duplicarMutation.mutate(plan as any);
   };
 
   const focoLabels = {
@@ -90,12 +91,16 @@ export default function PlanesTab() {
     COG: 'Cognitivo',
   };
 
-  const focoVariants = { // New object
+  const focoVariants: Record<string, "neutral" | "info" | "warning" | "success" | "primary"> = {
     GEN: 'neutral',
     LIG: 'info',
     RIT: 'warning',
     ART: 'success',
     'S&A': 'primary',
+    SON: 'info',
+    FLX: 'warning',
+    MOT: 'success',
+    COG: 'primary',
   };
 
   return (
@@ -148,9 +153,9 @@ export default function PlanesTab() {
               columns={[
                 { key: 'nombre', label: 'Nombre', sortable: true, render: (p) => <span className="font-medium">{p.nombre}</span> },
                 {
-                  key: 'foco', label: 'Foco', sortable: true, render: (p) => p.focoGeneral ? (
-                    <Badge variant={focoVariants[p.focoGeneral]}>{focoLabels[p.focoGeneral]}</Badge>
-                  ) : <span className="text-[var(--color-text-secondary)]">—</span>, sortValue: (p) => p.focoGeneral
+                  key: 'foco', label: 'Foco', sortable: true, render: (p: Plan) => p.focoGeneral ? (
+                    <Badge variant={focoVariants[p.focoGeneral] || 'neutral'}>{focoLabels[p.focoGeneral as keyof typeof focoLabels] || p.focoGeneral}</Badge>
+                  ) : <span className="text-[var(--color-text-secondary)]">—</span>, sortValue: (p: Plan) => p.focoGeneral
                 },
                 { key: 'semanas', label: 'Semanas', sortable: true, render: (p) => <span className="text-sm text-[var(--color-text-secondary)]">{p.semanas?.length || 0}</span>, sortValue: (p) => p.semanas?.length || 0 }
               ]}
@@ -161,7 +166,8 @@ export default function PlanesTab() {
                   id: 'duplicate',
                   label: 'Duplicar',
                   icon: Copy,
-                  onClick: (ids) => {
+                  onClick: (ids?: any[]) => {
+                    if (!ids) return;
                     const planesParaDuplicar = filteredPlanes.filter(p => ids.includes(p.id));
                     planesParaDuplicar.forEach(p => handleDuplicate(p));
                   },
@@ -170,11 +176,13 @@ export default function PlanesTab() {
                   id: 'delete',
                   label: 'Eliminar',
                   icon: Trash2,
-                  onClick: (ids) => {
-                    if (window.confirm(`¿Eliminar ${ids.length} plan${ids.length > 1 ? 'es' : ''}?`)) {
-                      ids.forEach(id => {
+                  onClick: (ids?: any[]) => {
+                    if (!ids) return;
+                    const idStrings = ids as string[];
+                    if (window.confirm(`¿Eliminar ${idStrings.length} plan${idStrings.length > 1 ? 'es' : ''}?`)) {
+                      idStrings.forEach(id => {
                         const plan = filteredPlanes.find(p => p.id === id);
-                        if (plan) {
+                        if (plan && plan.id) {
                           deleteMutation.mutate(plan.id);
                         }
                       });
@@ -182,12 +190,12 @@ export default function PlanesTab() {
                   },
                 },
               ]}
-              getRowActions={(p) => [ // Changed from 'actions' to 'getRowActions' and updated structure
+              getRowActions={(p: Plan) => [ // Changed from 'actions' to 'getRowActions' and updated structure
                 { id: 'edit', label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => handleEdit(p) },
                 { id: 'duplicate', label: 'Duplicar', icon: <Copy className="w-4 h-4" />, onClick: () => handleDuplicate(p) },
                 { id: 'delete', label: 'Eliminar', icon: <Trash2 className="w-4 h-4" />, onClick: () => handleDelete(p) }
               ]}
-              onRowClick={(p) => handleEdit(p)}
+              onRowClick={(p: Plan) => handleEdit(p)}
               keyField="id"
             />
           </div>
@@ -203,8 +211,8 @@ export default function PlanesTab() {
                         onClick={() => handleEdit(plan)}
                       >
                         {plan.focoGeneral && (
-                          <Badge variant={focoVariants[plan.focoGeneral]} className="mb-2"> {/* Changed to variant */}
-                            {focoLabels[plan.focoGeneral]}
+                          <Badge variant={focoVariants[plan.focoGeneral] || 'neutral'} className="mb-2"> {/* Changed to variant */}
+                            {focoLabels[plan.focoGeneral as keyof typeof focoLabels] || plan.focoGeneral}
                           </Badge>
                         )}
                         <h3 className="font-semibold text-base mb-1">{plan.nombre}</h3>

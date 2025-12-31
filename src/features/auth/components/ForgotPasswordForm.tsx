@@ -8,12 +8,19 @@ import { componentStyles } from '@/design/componentStyles';
 import { validateEmail, isEmpty, normalizeEmail } from '../utils/validation';
 import { authMessages } from '../config/authMessages';
 
-export function ForgotPasswordForm({ onSubmit, isLoading, initialEmail, onBack }) {
+interface ForgotPasswordFormProps {
+  onSubmit: (email: string) => void;
+  isLoading: boolean;
+  initialEmail?: string;
+  onBack: () => void;
+}
+
+export function ForgotPasswordForm({ onSubmit, isLoading, initialEmail, onBack }: ForgotPasswordFormProps) {
   const [email, setEmail] = useState(initialEmail || '');
   const [error, setError] = useState('');
   const [touched, setTouched] = useState(false);
 
-  const validateEmailField = (value) => {
+  const validateEmailField = (value: string) => {
     if (isEmpty(value)) {
       setError(authMessages.forgotPassword.validation.emailRequired);
       return false;
@@ -25,7 +32,7 @@ export function ForgotPasswordForm({ onSubmit, isLoading, initialEmail, onBack }
     return true;
   };
 
-  const handleEmailChange = (value) => {
+  const handleEmailChange = (value: string) => {
     setEmail(value);
     if (authConfig.ux.validateOnChange && touched) {
       validateEmailField(value);
@@ -39,7 +46,7 @@ export function ForgotPasswordForm({ onSubmit, isLoading, initialEmail, onBack }
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
     if (validateEmailField(email)) {
@@ -57,7 +64,7 @@ export function ForgotPasswordForm({ onSubmit, isLoading, initialEmail, onBack }
         >
           ← Volver al inicio de sesión
         </button>
-        
+
         <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--color-text-primary)' }}>
           Recuperar contraseña
         </h3>

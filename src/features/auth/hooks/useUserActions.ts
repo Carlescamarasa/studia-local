@@ -11,7 +11,7 @@ export function useUserActions() {
   const [isLoading, setIsLoading] = useState(false);
   const { appRole } = useAuth();
 
-  const executeAction = useCallback(async ({ action, userId, email }) => {
+  const executeAction = useCallback(async ({ action, userId, email }: { action: string; userId: string; email: string }) => {
     setIsLoading(true);
     try {
       if (appRole !== 'ADMIN' && appRole !== 'PROF') {
@@ -40,7 +40,7 @@ export function useUserActions() {
       const data = await response.json();
       toast.success(data.message || 'Acción ejecutada correctamente');
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error en useUserActions:', error);
       toast.error(error.message || 'Error al ejecutar la acción');
       throw error;
@@ -49,15 +49,15 @@ export function useUserActions() {
     }
   }, [appRole]);
 
-  const sendMagicLink = useCallback(async (userId, email) => {
+  const sendMagicLink = useCallback(async (userId: string, email: string) => {
     return executeAction({ action: 'magic_link', userId, email });
   }, [executeAction]);
 
-  const sendResetPassword = useCallback(async (userId, email) => {
+  const sendResetPassword = useCallback(async (userId: string, email: string) => {
     return executeAction({ action: 'reset_password', userId, email });
   }, [executeAction]);
 
-  const resendInvitation = useCallback(async (userId, email) => {
+  const resendInvitation = useCallback(async (userId: string, email: string) => {
     return executeAction({ action: 'resend_invitation', userId, email });
   }, [executeAction]);
 

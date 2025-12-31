@@ -25,6 +25,7 @@ const TYPE_MAP = {
   'FM': { label: 'Fragmento Musical', color: 'text-pink-600 bg-pink-50' },
   'VC': { label: 'Vuelta a la Calma', color: 'text-green-600 bg-green-50' },
   'AD': { label: 'Aviso/Descanso', color: 'text-slate-600 bg-slate-50' },
+  'TM': { label: 'Teoría Musical', color: 'text-indigo-600 bg-indigo-50' },
 };
 
 
@@ -37,11 +38,11 @@ export default function EjerciciosTab() {
   const [typeFilter, setTypeFilter] = useState('all');
 
   // Dashboard Accordion
-  const [expandedVarId, setExpandedVarId] = useState(null);
+  const [expandedVarId, setExpandedVarId] = useState<string | null>(null);
 
   // Editor State
   const [showEditor, setShowEditor] = useState(false);
-  const [ejercicioActual, setEjercicioActual] = useState(null);
+  const [ejercicioActual, setEjercicioActual] = useState<any | null>(null);
 
   // --- Data Loading with centralized hook ---
   const { data: bloques = [], isLoading: loading, refetch } = useBloques();
@@ -49,15 +50,15 @@ export default function EjerciciosTab() {
   // Transform bloques to localExercises format (memoized)
   const localExercises = useMemo(() => {
     return bloques.map((b) => {
-      let vars = [];
+      let vars: any[] = [];
 
       // PRIORITY 1: Use real content from Supabase if available
       if (b.content && Array.isArray(b.content) && b.content.length > 0) {
         vars = b.content;
       }
 
-      const categoryInfo = TYPE_MAP[b.tipo] || { label: 'General', color: 'text-slate-600 bg-slate-50' };
-      const dur = Math.round((b.duracion_seg || b.duracionSeg || 300) / 60);
+      const categoryInfo = TYPE_MAP[b.tipo as keyof typeof TYPE_MAP] || { label: 'General', color: 'text-slate-600 bg-slate-50' };
+      const dur = Math.round(((b as any).duracion_seg || b.duracionSeg || 300) / 60);
 
       return {
         id: b.id,
@@ -82,7 +83,7 @@ export default function EjerciciosTab() {
   });
 
   // --- Handlers ---
-  const handleOpenEditor = (exercise = null) => {
+  const handleOpenEditor = (exercise: any = null) => {
     if (exercise) {
       // Convert snake_case raw data to camelCase for ExerciseEditor
       const raw = exercise.raw || exercise;
@@ -115,7 +116,7 @@ export default function EjerciciosTab() {
     setShowEditor(true);
   };
 
-  const handleDeleteExercise = async (id) => {
+  const handleDeleteExercise = async (id: string) => {
     if (!confirm("¿Seguro que quieres borrar este ejercicio?")) return;
     try {
       await remoteDataAPI.bloques.delete(id);
@@ -145,7 +146,7 @@ export default function EjerciciosTab() {
             <SelectContent>
               <SelectItem value="all">Todos los tipos</SelectItem>
               {Object.keys(TYPE_MAP).map(key => (
-                <SelectItem key={key} value={key}>{TYPE_MAP[key].label} ({key})</SelectItem>
+                <SelectItem key={key} value={key}>{TYPE_MAP[key as keyof typeof TYPE_MAP].label} ({key})</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -171,7 +172,7 @@ export default function EjerciciosTab() {
           </thead>
           <tbody className="divide-y divide-[var(--color-border-default)]">
             {filteredExercises.length === 0 ? (
-              <tr><td colSpan="6" className="p-8 text-center text-[var(--color-text-secondary)]">
+              <tr><td colSpan={6} className="p-8 text-center text-[var(--color-text-secondary)]">
                 {loading ? 'Cargando...' : 'No se encontraron ejercicios'}
               </td></tr>
             ) : filteredExercises.map(ex => (
@@ -204,7 +205,7 @@ export default function EjerciciosTab() {
                   <td className="px-4 py-3 text-center">
                     {/* Media Icons */}
                     <div className="flex justify-center gap-1">
-                      {(ex.raw.media_links?.length > 0 || ex.raw.mediaLinks?.length > 0) && (
+                      {((ex.raw as any).media_links?.length > 0 || (ex.raw as any).mediaLinks?.length > 0) && (
                         <div title="Multimedia" className="text-[var(--color-text-secondary)]">
                           <LayoutIcon className="w-4 h-4" />
                         </div>
@@ -240,7 +241,7 @@ export default function EjerciciosTab() {
                 {/* ACCORDION */}
                 {expandedVarId === ex.id && ex.variations.length > 0 && (
                   <tr className="bg-[var(--color-surface-elevated)]/50">
-                    <td colSpan="6" className="px-4 py-2 p-0">
+                    <td colSpan={6} className="px-4 py-2 p-0">
                       <div className="ml-16 border-l-2 border-[var(--color-border-default)] pl-4 space-y-2 mb-3 mt-1">
                         <div className="text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">Variaciones ({ex.variations.length})</div>
                         {ex.variations.map((v, idx) => (
