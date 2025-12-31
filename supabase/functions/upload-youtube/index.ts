@@ -20,11 +20,11 @@ function getCurrentDateString(): string {
     month: '2-digit',
     day: '2-digit',
   }).formatToParts(now);
-  
+
   const year = madridTime.find(p => p.type === 'year')?.value || now.getFullYear().toString();
   const month = madridTime.find(p => p.type === 'month')?.value || String(now.getMonth() + 1).padStart(2, '0');
   const day = madridTime.find(p => p.type === 'day')?.value || String(now.getDate()).padStart(2, '0');
-  
+
   return `${year}-${month}-${day}`;
 }
 
@@ -42,7 +42,7 @@ function getCurrentDateTimeString(): string {
     minute: '2-digit',
     hour12: false,
   }).format(now);
-  
+
   return `${madridTime} (Europa/Madrid)`;
 }
 
@@ -53,9 +53,9 @@ function getContextoText(contexto: string | null | undefined): string {
   if (!contexto || typeof contexto !== 'string') {
     return 'Vídeo de práctica';
   }
-  
+
   const contextoLower = contexto.toLowerCase().trim();
-  
+
   switch (contextoLower) {
     case 'sesion_estudio':
       return 'Sesión de estudio';
@@ -77,17 +77,17 @@ function generateVideoTitle(metadata: Record<string, any> | null): string {
   const alumnoNombre = metadata?.alumno_nombre || metadata?.alumnoNombre || 'Alumno sin nombre';
   const contexto = getContextoText(metadata?.contexto);
   const comentarios = metadata?.comentarios || metadata?.comentario || '';
-  
+
   // Construir título
   let title = `[${dateStr}] ${alumnoNombre} – ${contexto}`;
-  
+
   // Añadir comentario si existe y no está vacío
   if (comentarios && typeof comentarios === 'string' && comentarios.trim().length > 0) {
     // Limitar comentario a 50 caracteres para no hacer el título demasiado largo
     const comentarioCorto = comentarios.trim().substring(0, 50);
     title += ` – ${comentarioCorto}`;
   }
-  
+
   return title;
 }
 
@@ -104,18 +104,18 @@ function generateVideoDescription(metadata: Record<string, any> | null): string 
   const sesionId = metadata?.sesion_id || metadata?.sesionId || null;
   const ticketId = metadata?.ticket_id || metadata?.ticketId || null;
   const fechaSubida = getCurrentDateTimeString();
-  
+
   let description = 'Estudio de trompeta con Studia 🎺\n\n';
   description += `Alumno: ${alumnoNombre}\n`;
   description += `Profesor: ${profesorNombre}\n`;
   description += `Contexto: ${contexto}\n`;
   description += `Fecha subida: ${fechaSubida}\n`;
-  
+
   if (comentarios && typeof comentarios === 'string' && comentarios.trim().length > 0) {
     description += '\nComentarios del alumno/profesor:\n';
     description += `${comentarios.trim()}\n`;
   }
-  
+
   description += '\nID interno:\n';
   if (alumnoId) {
     description += `- alumno_id: ${alumnoId}\n`;
@@ -129,7 +129,7 @@ function generateVideoDescription(metadata: Record<string, any> | null): string 
   if (ticketId) {
     description += `- ticket_id: ${ticketId}\n`;
   }
-  
+
   return description.trim();
 }
 
@@ -140,16 +140,16 @@ function normalizeMetadata(metaString: string | null): Record<string, any> | nul
   if (!metaString || typeof metaString !== 'string' || metaString.trim().length === 0) {
     return null;
   }
-  
+
   try {
     const parsed = JSON.parse(metaString);
-    
+
     // Asegurar que es un objeto
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
       console.warn('[upload-youtube] Metadata no es un objeto válido:', parsed);
       return null;
     }
-    
+
     return parsed as Record<string, any>;
   } catch (e) {
     console.warn('[upload-youtube] Error parsing meta JSON:', e);
@@ -197,13 +197,13 @@ function createErrorResponse(message: string, error: string, metadata: Record<st
   };
 }
 
-// @ts-ignore - Deno está disponible en el entorno de Supabase Edge Functions
+// @ts-expect-error - Deno está disponible en el entorno de Supabase Edge Functions
 Deno.serve(async (req) => {
   // Manejar CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
+    return new Response(null, {
       status: 200,
-      headers: corsHeaders 
+      headers: corsHeaders
     });
   }
 
@@ -225,7 +225,7 @@ Deno.serve(async (req) => {
 
     // Leer formData (multipart/form-data)
     const formData = await req.formData();
-    
+
     // Obtener el archivo
     const file = formData.get('file') as File | null;
 

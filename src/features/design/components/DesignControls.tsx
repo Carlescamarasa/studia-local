@@ -429,7 +429,7 @@ export function DesignControls({ design, setDesignPartial, componentStyles }: De
             {/* Empty State for Search */}
             {filteredControls.length === 0 && (
                 <div className="text-center py-10 text-[var(--color-text-muted)]">
-                    <p>No se encontraron controles que coincidan con "{searchQuery}".</p>
+                    <p>No se encontraron controles que coincidan con &quot;{searchQuery}&quot;.</p>
                     <Button variant="link" onClick={() => setSearchQuery('')}>Limpiar búsqueda</Button>
                 </div>
             )}

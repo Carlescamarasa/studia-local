@@ -162,7 +162,7 @@ function SemanaPageContent() {
 
     // Ordenar por timestamp descendente (más reciente primero)
     return items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }, [feedbacksProfesor, registrosSesionesAlumno, userIdActual, semanaActualISO]);
+  }, [feedbacksProfesor, registrosSesionesAlumno, semanaActualISO]);
 
   // Mapa de usuarios para mostrar nombres
   const usuariosMap = useMemo(() => {
@@ -362,7 +362,7 @@ function SemanaPageContent() {
                     </p>
                     {semanaDelPlan.objetivo && (
                       <p className="text-xs text-[var(--color-text-secondary)] italic mt-1 break-words">
-                        "{semanaDelPlan.objetivo}"
+                        &quot;{semanaDelPlan.objetivo}&quot;
                       </p>
                     )}
                   </div>
@@ -552,7 +552,7 @@ function SemanaPageContent() {
                               </div>
                               {feedback.notaProfesor && (
                                 <p className="text-sm text-[var(--color-text-primary)] italic break-words">
-                                  "{feedback.notaProfesor}"
+                                  &quot;{feedback.notaProfesor}&quot;
                                 </p>
                               )}
                               {feedback.mediaLinks && feedback.mediaLinks.length > 0 && (
@@ -618,7 +618,7 @@ function SemanaPageContent() {
                               </p>
                               {registro.notas && registro.notas.trim() && (
                                 <p className="text-sm text-[var(--color-text-primary)] italic break-words mb-2">
-                                  "{registro.notas.trim()}"
+                                  &quot;{registro.notas.trim()}&quot;
                                 </p>
                               )}
                               {registro.mediaLinks && Array.isArray(registro.mediaLinks) && registro.mediaLinks.length > 0 && (

@@ -114,7 +114,7 @@ export default function UserTable({
             columns={columns}
             data={users}
             selectable={true}
-            // @ts-ignore - UnifiedTable props type mismatch
+
             bulkActions={[
                 {
                     id: 'assign_profesor_bulk',
@@ -158,7 +158,7 @@ export default function UserTable({
                 {
                     id: 'export',
                     label: 'Exportar CSV',
-                    // @ts-ignore - UnifiedTable icon type mismatch
+
                     icon: FileDownIcon,
                     onClick: (ids?: any[]) => bulkActions.onBulkExport((ids || []) as string[]),
                 },
@@ -177,7 +177,7 @@ export default function UserTable({
                     },
                 }] : []),
             ]}
-            // @ts-ignore - UnifiedTable props type mismatch
+
             getRowActions={(u: User) => {
                 const role = u.rolPersonalizado || u.role || 'ESTU';
                 const isActive = u.isActive !== false && u.is_active !== false;

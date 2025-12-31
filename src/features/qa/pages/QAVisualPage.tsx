@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/features/shared/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/features/shared/components/ds";
 import { Badge } from "@/features/shared/components/ds";
@@ -40,7 +40,7 @@ function QAVisualContent({ embedded = false }: QAVisualContentProps) {
   const [checks, setChecks] = useState<CheckResult[]>([]);
   const [activeTab, setActiveTab] = useState('components');
 
-  const runChecks = () => {
+  const runChecks = useCallback(() => {
     const results = [];
 
     // 1. Verificar CSS Variables
@@ -142,7 +142,7 @@ function QAVisualContent({ embedded = false }: QAVisualContentProps) {
     });
 
     setChecks(results);
-  };
+  }, [config]);
 
   useEffect(() => {
     runChecks();

@@ -5,10 +5,8 @@ import {
     Notebook, Music, PlayCircle, ChevronRight, MessageSquare,
     Edit, Trash2
 } from "lucide-react";
-// @ts-ignore
 import UserActionsMenu from "@/features/shared/components/common/UserActionsMenu";
 import SessionContentView from "@/features/shared/components/study/SessionContentView";
-// @ts-ignore
 import MediaLinksBadges from "@/features/shared/components/media/MediaLinksBadges";
 import { calcularTiempoSesion } from "@/features/estudio/components/sessionSequence";
 import { displayName } from "@/features/shared/utils/helpers";
@@ -94,7 +92,6 @@ export default function EstudianteCard({
                         )}
                     </div>
                 </div>
-                {/* @ts-ignore UserActionsMenu types mismatch */}
                 <UserActionsMenu user={alumno} usuarios={usuarios} />
             </div>
 
@@ -203,15 +200,11 @@ interface FeedbackDisplayProps {
 }
 
 function FeedbackDisplay({ feedback, usuarios, userIdActual, isAdmin, onEdit, onDelete, onPreviewMedia }: FeedbackDisplayProps) {
-    // @ts-ignore - legacy check
     const habilidades = feedback.habilidades || {};
-    // @ts-ignore
     const xpDeltas = habilidades.xpDeltas || {};
-    // @ts-ignore
     const hasXP = xpDeltas.motricidad || xpDeltas.articulacion || xpDeltas.flexibilidad;
     const profesor = usuarios.find(u => u.id === feedback.profesorId);
-    // @ts-ignore
-    const profesorNombre = profesor?.nombre || profesor?.email?.split('@')[0] || 'Profesor';
+    const profesorNombre = profesor ? displayName(profesor) : 'Profesor';
     const fechaEdicion = feedback.created_date // Fallback for lastEditedAt if missing in shared type?
         ? new Date(feedback.created_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
         : null;
@@ -242,7 +235,7 @@ function FeedbackDisplay({ feedback, usuarios, userIdActual, isAdmin, onEdit, on
             </div>
 
             {feedback.notaProfesor && (
-                <p className="text-sm italic text-foreground/80 line-clamp-3">"{feedback.notaProfesor}"</p>
+                <p className="text-sm italic text-foreground/80 line-clamp-3">&quot;{feedback.notaProfesor}&quot;</p>
             )}
 
             {(habilidades.sonido != null || habilidades.cognicion != null) && (

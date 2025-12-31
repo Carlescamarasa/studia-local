@@ -14,9 +14,7 @@ import {
     displayName
 } from "@/features/shared/utils/helpers";
 import { isoWeekNumber, parseLocalDate } from "../utils";
-// @ts-ignore - ModalFeedbackSemanal types might be missing or loose
 import ModalFeedbackSemanal from "@/features/shared/components/feedback/ModalFeedbackSemanal";
-// @ts-ignore - MediaPreviewModal types might be missing or loose
 import MediaPreviewModal from "@/features/shared/components/media/MediaPreviewModal";
 import EstudianteCard from "./EstudianteCard";
 import { Asignacion, FeedbackSemanal } from "@/types/data.types";
@@ -73,7 +71,6 @@ export default function CuadernoEstudiantesTab({ semanaActualISO, searchTerm }: 
     const asignaciones = useMemo(() =>
         asignacionesRaw.filter((a) => {
             if (!a.alumnoId) return false;
-            // @ts-ignore - legacy plan structure check
             if (!a.plan || !Array.isArray(a.plan.semanas) || a.plan.semanas.length === 0) return false;
             if (!a.semanaInicioISO) return false;
             return true;
@@ -109,7 +106,6 @@ export default function CuadernoEstudiantesTab({ semanaActualISO, searchTerm }: 
                 if (a.alumnoId !== alumno.id) return false;
                 if (a.estado !== 'publicada' && a.estado !== 'en_curso') return false;
                 const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
-                // @ts-ignore
                 return offset >= 0 && offset < (a.plan?.semanas?.length || 0);
             });
 
@@ -120,7 +116,6 @@ export default function CuadernoEstudiantesTab({ semanaActualISO, searchTerm }: 
 
             const semanaIdx = asignacionActiva ?
                 calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO) : 0;
-            // @ts-ignore
             const semana = asignacionActiva?.plan?.semanas?.[semanaIdx];
 
             return { id: alumno.id, alumno, asignacionActiva, semana, semanaIdx, feedback };

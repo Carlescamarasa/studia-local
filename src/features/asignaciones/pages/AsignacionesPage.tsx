@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
 import { useUsers } from "@/features/shared/hooks/useUsers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
@@ -9,7 +9,7 @@ import { Button } from "@/features/shared/components/ui/button";
 import { Badge } from "@/features/shared/components/ds";
 import { Input } from "@/features/shared/components/ui/input";
 import {
-  Target, Eye, Edit, Copy, Trash2, FileDown, Search, X, Plus, RotateCcw, XCircle, User, Users, ChevronLeft, ChevronRight, Calendar
+  Target, Copy, Trash2, FileDown, X, Plus, XCircle, User, Users
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -18,7 +18,7 @@ import RequireRole from "@/features/auth/components/RequireRole";
 import UnifiedTable from "@/features/shared/components/tables/UnifiedTable";
 import FormularioRapido from "@/features/asignaciones/components/FormularioRapido";
 import StudentSearchBar from "@/features/asignaciones/components/StudentSearchBar";
-import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, resolveUserIdActual, startOfMonday, calcularLunesSemanaISO, calcularOffsetSemanas, isoWeekNumberLocal } from "@/features/shared/utils/helpers";
+import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, resolveUserIdActual, startOfMonday, isoWeekNumberLocal } from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
 import MultiSelect from "@/features/shared/components/ui/MultiSelect";
@@ -57,8 +57,6 @@ function AsignacionesPageContent() {
     return formatLocalDate(startOfMonday(hoy));
   });
 
-  // Helper para convertir ISO a Date (compatibilidad con código existente)
-  const semanaSeleccionada = parseLocalDate(semanaSeleccionadaISO);
 
   const cambiarSemana = (direccion: number) => {
     const base = parseLocalDate(semanaSeleccionadaISO);
@@ -78,7 +76,6 @@ function AsignacionesPageContent() {
   const [showAsignarEstudianteDialog, setShowAsignarEstudianteDialog] = useState(false);
   const [asignacionParaAsignar, setAsignacionParaAsignar] = useState<string | null>(null);
   const [idsParaAsignar, setIdsParaAsignar] = useState<string[] | null>(null);
-  const [tipoAsignacion, setTipoAsignacion] = useState<'profesor' | 'estudiante' | null>(null); // 'profesor' o 'estudiante'
   const [profesorSeleccionado, setProfesorSeleccionado] = useState('');
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState('');
 
@@ -278,31 +275,6 @@ function AsignacionesPageContent() {
     }
   };
 
-  const exportarCSV = () => {
-    const headers = ['Estudiante', 'Profesor', 'Pieza', 'Plan', 'Inicio', 'Estado', 'Semanas'];
-    const rows = asignacionesFinales.map(a => {
-      const alumno = usuarios.find(u => u.id === a.alumnoId);
-      const profesor = usuarios.find(u => u.id === a.profesorId);
-      return [
-        getNombreVisible(alumno),
-        getNombreVisible(profesor),
-        a.piezaSnapshot?.nombre || '',
-        a.plan?.nombre || '',
-        a.semanaInicioISO,
-        a.estado,
-        a.plan?.semanas?.length || 0,
-      ];
-    });
-
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `asignaciones_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
 
   // Todos los profesores pueden ver todas las asignaciones (no se filtra por profesor)
   // Solo se filtran por estado y búsqueda
@@ -383,7 +355,7 @@ function AsignacionesPageContent() {
 
         // La asignación está activa si offsetWeeks está en el rango [0, numSemanas)
         return offsetWeeks >= 0 && offsetWeeks < numSemanas;
-      } catch (error) {
+      } catch {
         return false;
       }
     });
@@ -495,7 +467,7 @@ function AsignacionesPageContent() {
                 i === offsetWeeks ? '●' : '○'
               ).join(' ');
             }
-          } catch (error) {
+          } catch {
             // Si hay error, no mostrar indicador
           }
         }
@@ -532,7 +504,7 @@ function AsignacionesPageContent() {
         }
         try {
           return <p className="text-sm">{parseLocalDate(a.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</p>;
-        } catch (error) {
+        } catch {
           return <p className="text-sm text-ui/60">-</p>;
         }
       },
@@ -548,7 +520,6 @@ function AsignacionesPageContent() {
     },
   ];
 
-  const isAdminOrProf = (effectiveUser as any)?.rolPersonalizado === 'ADMIN' || (effectiveUser as any)?.rolPersonalizado === 'PROF';
 
   return (
     <div className="min-h-screen bg-background">
@@ -665,7 +636,6 @@ function AsignacionesPageContent() {
                     if (!ids) return;
                     setIdsParaAsignar(ids as string[]);
                     setAsignacionParaAsignar(null);
-                    setTipoAsignacion('profesor');
                     setProfesorSeleccionado('');
                     setShowAsignarProfesorDialog(true);
                   },
@@ -678,7 +648,6 @@ function AsignacionesPageContent() {
                     if (!ids) return;
                     setIdsParaAsignar(ids as string[]);
                     setAsignacionParaAsignar(null);
-                    setTipoAsignacion('estudiante');
                     setEstudianteSeleccionado('');
                     setShowAsignarEstudianteDialog(true);
                   },
@@ -769,7 +738,6 @@ function AsignacionesPageContent() {
                     onClick: () => {
                       setAsignacionParaAsignar(a.id);
                       setIdsParaAsignar(null);
-                      setTipoAsignacion('profesor');
                       setProfesorSeleccionado(a.profesorId || '');
                       setShowAsignarProfesorDialog(true);
                     },
@@ -781,7 +749,6 @@ function AsignacionesPageContent() {
                     onClick: () => {
                       setAsignacionParaAsignar(a.id);
                       setIdsParaAsignar(null);
-                      setTipoAsignacion('estudiante');
                       setEstudianteSeleccionado(a.alumnoId || '');
                       setShowAsignarEstudianteDialog(true);
                     },

@@ -71,7 +71,8 @@ serve(async (req) => {
 
     // Parsear el body de la petición
     const body = await req.json();
-    let { action, userId, email } = body;
+    const { action, userId } = body;
+    let email = body.email;
 
     // Normalizar email a lowercase si se proporciona
     if (email) {

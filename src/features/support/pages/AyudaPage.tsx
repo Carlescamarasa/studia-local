@@ -28,7 +28,7 @@ export default function AyudaPage() {
     if (newTab !== activeTab) {
       setActiveTab(newTab);
     }
-  }, [searchParams]);
+  }, [searchParams, activeTab]);
 
   const tabs = [
     {

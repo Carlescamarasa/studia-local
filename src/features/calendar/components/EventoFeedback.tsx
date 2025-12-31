@@ -135,7 +135,7 @@ export default function EventoFeedback({ feedback, usuarios, onClick, variant = 
                 </div>
                 {feedback.notaProfesor && feedback.notaProfesor.trim() && (
                     <p className="text-sm text-[var(--color-text-primary)] italic break-words mb-2 line-clamp-2">
-                        "{feedback.notaProfesor.trim()}"
+                        &quot;{feedback.notaProfesor.trim()}&quot;
                     </p>
                 )}
                 {feedback.mediaLinks && Array.isArray(feedback.mediaLinks) && feedback.mediaLinks.length > 0 && (

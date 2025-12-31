@@ -95,7 +95,7 @@ export default function TopEjercicioModal({
             ultimaFecha,
             distribucionSemanas,
         };
-    }, [ejercicio, bloquesFiltrados, registrosFiltrados]);
+    }, [ejercicio, bloquesFiltrados]);
 
     if (!ejercicio || !estadisticas) return null;
 

@@ -27,11 +27,9 @@ export default function InvitationPage() {
   const [userEmail, setUserEmail] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
-  // @ts-ignore - useAuth user type inference is not perfect yet
   const { user, loading: authLoading, appRole } = useAuth() as any;
   const appName = getAppName();
   const { design, activeMode, setActiveMode } = useDesign();
-  // @ts-ignore - design possibly null
   const primaryColor = design?.colors?.primary || '#fd9840';
 
   useEffect(() => {

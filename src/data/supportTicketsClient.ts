@@ -265,7 +265,7 @@ function mapTicketFromDB(db: any): SupportTicket {
     updated_at: db.updated_at,
     cerradoAt: db.cerrado_at,
     ultimaRespuestaDe: db.ultima_respuesta_de,
-    // @ts-ignore - Extended properties for UI (not in base type)
+    // Dependencias UI opcionales
     _alumnoNombre: alumnoNombre,
     _profesorNombre: profesorNombre,
   };
@@ -314,7 +314,7 @@ function mapMensajeFromDB(db: any): SupportMensaje {
     texto: db.texto,
     mediaLinks,
     created_at: db.created_at,
-    // @ts-ignore - Extended property for UI (not in base type)
+    // Dependencia UI opcional
     _autorNombre: autorNombre,
   };
 }

@@ -67,7 +67,7 @@ const SkeletonText = React.forwardRef<HTMLDivElement, SkeletonTextProps>(({
 });
 SkeletonText.displayName = "SkeletonText";
 
-interface SkeletonCardProps extends React.HTMLAttributes<HTMLDivElement> { }
+type SkeletonCardProps = React.HTMLAttributes<HTMLDivElement>;
 
 /**
  * SkeletonCard - Helper para skeleton de card completa

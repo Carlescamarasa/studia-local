@@ -128,7 +128,7 @@ export default function UserModals({
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
-                        {/* @ts-ignore */}
+
                         <FormField label="Profesor">
                             <Select
                                 value={profesorSeleccionado}
@@ -179,7 +179,7 @@ export default function UserModals({
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
-                        {/* @ts-ignore */}
+
                         <FormField label="Estudiantes">
                             <MultiSelect
                                 label="Estudiantes"
@@ -216,19 +216,19 @@ export default function UserModals({
             </Dialog>
 
             {/* Dialog de confirmación para eliminar */}
-            {/* @ts-ignore - AlertDialog components from JSX mismatch */}
+
             <AlertDialog open={deleteUserState.open} onOpenChange={deleteUserState.setOpen}>
-                {/* @ts-ignore */}
+
                 <AlertDialogContent>
-                    {/* @ts-ignore */}
+
                     <AlertDialogHeader>
-                        {/* @ts-ignore */}
+
                         <AlertDialogTitle>
                             {deleteUserState.users.length > 1
                                 ? `¿Eliminar ${deleteUserState.users.length} usuarios?`
                                 : '¿Eliminar usuario?'}
                         </AlertDialogTitle>
-                        {/* @ts-ignore */}
+
                         <AlertDialogDescription>
                             Esta acción no se puede deshacer. Se eliminarán permanentemente:
                             <ul className="list-disc list-inside mt-2 space-y-1">
@@ -243,16 +243,16 @@ export default function UserModals({
                             </ul>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    {/* @ts-ignore */}
+
                     <AlertDialogFooter>
-                        {/* @ts-ignore */}
+
                         <AlertDialogCancel
                             onClick={() => deleteUserState.setOpen(false)}
                             disabled={isActionLoading}
                         >
                             Cancelar
                         </AlertDialogCancel>
-                        {/* @ts-ignore */}
+
                         <AlertDialogAction
                             onClick={(e: React.MouseEvent) => {
                                 e.preventDefault();

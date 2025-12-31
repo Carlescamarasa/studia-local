@@ -390,13 +390,13 @@ export default function AppVersionContent() {
                                                 <TableCell>
                                                     {version.codename ? (
                                                         <span className="text-[var(--color-text-secondary)] italic">
-                                                            "{version.codename}"
+                                                            &quot;{version.codename}&quot;
                                                         </span>
                                                     ) : (
                                                         <span className="text-[var(--color-text-secondary)]">—</span>
                                                     )}
                                                 </TableCell>
-                                                {/* @ts-ignore */}
+
                                                 <TableCell>
                                                     <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
                                                         <Calendar className="w-4 h-4" />

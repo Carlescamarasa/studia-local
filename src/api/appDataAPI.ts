@@ -72,61 +72,61 @@ export interface EntityAPI<T, CreateInput, UpdateInput> {
 /**
  * API de usuarios
  */
-export interface UserAPI extends EntityAPI<StudiaUser, CreateStudiaUserInput, UpdateStudiaUserInput> { }
+export type UserAPI = EntityAPI<StudiaUser, CreateStudiaUserInput, UpdateStudiaUserInput>;
 
 /**
  * API de piezas
  */
-export interface PiezaAPI extends EntityAPI<Pieza, CreatePiezaInput, UpdatePiezaInput> { }
+export type PiezaAPI = EntityAPI<Pieza, CreatePiezaInput, UpdatePiezaInput>;
 
 /**
  * API de bloques
  */
-export interface BloqueAPI extends EntityAPI<Bloque, CreateBloqueInput, UpdateBloqueInput> { }
+export type BloqueAPI = EntityAPI<Bloque, CreateBloqueInput, UpdateBloqueInput>;
 
 /**
  * API de planes
  */
-export interface PlanAPI extends EntityAPI<Plan, CreatePlanInput, UpdatePlanInput> { }
+export type PlanAPI = EntityAPI<Plan, CreatePlanInput, UpdatePlanInput>;
 
 /**
  * API de asignaciones
  */
-export interface AsignacionAPI extends EntityAPI<Asignacion, CreateAsignacionInput, UpdateAsignacionInput> { }
+export type AsignacionAPI = EntityAPI<Asignacion, CreateAsignacionInput, UpdateAsignacionInput>;
 
 /**
  * API de registros de sesión
  */
-export interface RegistroSesionAPI extends EntityAPI<RegistroSesion, CreateRegistroSesionInput, UpdateRegistroSesionInput> { }
+export type RegistroSesionAPI = EntityAPI<RegistroSesion, CreateRegistroSesionInput, UpdateRegistroSesionInput>;
 
 /**
  * API de registros de bloque
  */
-export interface RegistroBloqueAPI extends EntityAPI<RegistroBloque, CreateRegistroBloqueInput, UpdateRegistroBloqueInput> { }
+export type RegistroBloqueAPI = EntityAPI<RegistroBloque, CreateRegistroBloqueInput, UpdateRegistroBloqueInput>;
 
 /**
  * API de feedbacks semanales
  */
-export interface FeedbackSemanalAPI extends EntityAPI<FeedbackSemanal, CreateFeedbackSemanalInput, UpdateFeedbackSemanalInput> { }
+export type FeedbackSemanalAPI = EntityAPI<FeedbackSemanal, CreateFeedbackSemanalInput, UpdateFeedbackSemanalInput>;
 
 /**
  * API de eventos del calendario
  */
-export interface EventoCalendarioAPI extends EntityAPI<EventoCalendario, CreateEventoCalendarioInput, UpdateEventoCalendarioInput> { }
+export type EventoCalendarioAPI = EntityAPI<EventoCalendario, CreateEventoCalendarioInput, UpdateEventoCalendarioInput>;
 
 /**
  * API de evaluaciones técnicas
  */
-export interface EvaluacionTecnicaAPI extends EntityAPI<EvaluacionTecnica, CreateEvaluacionTecnicaInput, UpdateEvaluacionTecnicaInput> { }
+export type EvaluacionTecnicaAPI = EntityAPI<EvaluacionTecnica, CreateEvaluacionTecnicaInput, UpdateEvaluacionTecnicaInput>;
 
-export interface LevelConfigAPI extends EntityAPI<LevelConfig, CreateLevelConfigInput, UpdateLevelConfigInput> { }
-export interface LevelKeyCriteriaAPI extends EntityAPI<LevelKeyCriteria, CreateLevelKeyCriteriaInput, UpdateLevelKeyCriteriaInput> { }
-export interface StudentCriteriaStatusAPI extends EntityAPI<StudentCriteriaStatus, CreateStudentCriteriaStatusInput, UpdateStudentCriteriaStatusInput> { }
+export type LevelConfigAPI = EntityAPI<LevelConfig, CreateLevelConfigInput, UpdateLevelConfigInput>;
+export type LevelKeyCriteriaAPI = EntityAPI<LevelKeyCriteria, CreateLevelKeyCriteriaInput, UpdateLevelKeyCriteriaInput>;
+export type StudentCriteriaStatusAPI = EntityAPI<StudentCriteriaStatus, CreateStudentCriteriaStatusInput, UpdateStudentCriteriaStatusInput>;
 // StudentLevelHistory no tiene UpdateInput definido exportado, usare Partial<...> & {id: string} o any si falla, pero usare CreateStudentLevelHistoryInput como update type temporal o any
-export interface StudentLevelHistoryAPI extends EntityAPI<StudentLevelHistory, CreateStudentLevelHistoryInput, any> { }
-export interface StudentXPTotalAPI extends EntityAPI<StudentXPTotal, CreateStudentXPTotalInput, UpdateStudentXPTotalInput> { }
-export interface StudentBackpackAPI extends EntityAPI<StudentBackpackItem, any, any> { }
-export interface MediaAssetAPI extends EntityAPI<MediaAsset, CreateMediaAssetInput, UpdateMediaAssetInput> { }
+export type StudentLevelHistoryAPI = EntityAPI<StudentLevelHistory, CreateStudentLevelHistoryInput, any>;
+export type StudentXPTotalAPI = EntityAPI<StudentXPTotal, CreateStudentXPTotalInput, UpdateStudentXPTotalInput>;
+export type StudentBackpackAPI = EntityAPI<StudentBackpackItem, any, any>;
+export type MediaAssetAPI = EntityAPI<MediaAsset, CreateMediaAssetInput, UpdateMediaAssetInput>;
 
 /**
  * Interfaz principal AppDataAPI

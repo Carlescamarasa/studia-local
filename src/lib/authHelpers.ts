@@ -63,10 +63,10 @@ export function getAppBaseUrl(): string {
   }
 
   // Para Edge Functions (Deno)
-  // @ts-ignore - Deno is only available in Edge Functions runtime
-  if (typeof globalThis.Deno !== 'undefined') {
-    // @ts-ignore - Deno runtime
-    const supabaseUrl = globalThis.Deno.env.get('SUPABASE_URL') || '';
+  // Para Edge Functions (Deno)
+  const globalAny = globalThis as any;
+  if (typeof globalAny.Deno !== 'undefined') {
+    const supabaseUrl = globalAny.Deno.env.get('SUPABASE_URL') || '';
     if (supabaseUrl) {
       return new URL(supabaseUrl).origin;
     }

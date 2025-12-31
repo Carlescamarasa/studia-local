@@ -70,7 +70,7 @@ serve(async (req) => {
     }
 
     // Parsear el body
-    let { email, ...extra } = await req.json();
+    const { email, ...extra } = await req.json();
 
     // Normalizar email a lowercase
     if (email) {
@@ -103,7 +103,7 @@ serve(async (req) => {
     // porque significa que el usuario ya tiene cuenta
     const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       email,
-      { 
+      {
         data: extra,
         redirectTo: getInvitationRedirectUrl(),
       }
@@ -111,30 +111,30 @@ serve(async (req) => {
 
     if (error) {
       // Si el error es que el usuario ya existe, verificar su estado antes de reenviar invitación
-      if (error.message?.includes('already registered') || 
-          error.message?.includes('already exists') ||
-          error.message?.includes('User already registered')) {
+      if (error.message?.includes('already registered') ||
+        error.message?.includes('already exists') ||
+        error.message?.includes('User already registered')) {
         // Verificar el estado del usuario antes de reenviar invitación
         try {
           const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email);
-          
+
           if (existingUser?.user) {
             const user = existingUser.user;
             // Verificar si el usuario ya tiene cuenta activa
             // email_confirmed_at se establece cuando el usuario confirma su email (al establecer contraseña)
             const hasConfirmedEmail = !!user.email_confirmed_at;
-            
+
             if (hasConfirmedEmail) {
               // Usuario ya tiene cuenta activa, no reenviar invitación
               return new Response(
-                JSON.stringify({ 
-                  success: false, 
-                  message: 'El usuario ya existe y tiene una cuenta activa. No se puede reenviar la invitación.' 
+                JSON.stringify({
+                  success: false,
+                  message: 'El usuario ya existe y tiene una cuenta activa. No se puede reenviar la invitación.'
                 }),
                 { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
               );
             }
-            
+
             // Usuario existe pero no tiene cuenta activa, generar link de invitación
             const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
               type: 'invite',
@@ -146,37 +146,37 @@ serve(async (req) => {
 
             if (linkError) {
               return new Response(
-                JSON.stringify({ 
-                  success: false, 
-                  message: `Error al generar link de invitación: ${linkError.message}` 
+                JSON.stringify({
+                  success: false,
+                  message: `Error al generar link de invitación: ${linkError.message}`
                 }),
                 { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
               );
             }
 
             return new Response(
-              JSON.stringify({ 
-                success: true, 
+              JSON.stringify({
+                success: true,
                 message: 'Invitación reenviada al usuario existente',
-                user: linkData 
+                user: linkData
               }),
               { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
           } else {
             // Usuario no encontrado a pesar del error
             return new Response(
-              JSON.stringify({ 
-                success: false, 
-                message: 'Error al verificar el estado del usuario' 
+              JSON.stringify({
+                success: false,
+                message: 'Error al verificar el estado del usuario'
               }),
               { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
           }
         } catch (linkErr) {
           return new Response(
-            JSON.stringify({ 
-              success: false, 
-              message: `Error al verificar usuario: ${linkErr.message || linkErr}` 
+            JSON.stringify({
+              success: false,
+              message: `Error al verificar usuario: ${linkErr.message || linkErr}`
             }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );

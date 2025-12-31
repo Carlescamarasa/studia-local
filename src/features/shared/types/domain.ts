@@ -472,6 +472,10 @@ export interface SupportTicket {
   updated_at: string;
   cerradoAt: string | null;
   ultimaRespuestaDe: 'alumno' | 'profesor' | null;
+  /** UI Helper: Nombre del alumno */
+  _alumnoNombre?: string | null;
+  /** UI Helper: Nombre del profesor */
+  _profesorNombre?: string | null;
 }
 
 export type CreateSupportTicketInput = Omit<SupportTicket, 'id' | 'created_at' | 'updated_at' | 'cerradoAt' | 'ultimaRespuestaDe'>;
@@ -490,6 +494,8 @@ export interface SupportMensaje {
   texto: string;
   mediaLinks: string[]; // Array de URLs
   created_at: string;
+  /** UI Helper: Nombre del autor */
+  _autorNombre?: string | null;
 }
 
 export type CreateSupportMensajeInput = Omit<SupportMensaje, 'id' | 'created_at'>;

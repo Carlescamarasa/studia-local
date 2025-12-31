@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+/* eslint-disable react/prop-types */
+import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabaseClient";
 import { remoteDataAPI, fetchBloquesPreview, fetchPiezasPreview, fetchFeedbacksSemanales, fetchRegistrosSesionMultimedia, fetchSupportMensajes } from "@/api/remoteDataAPI";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/features/shared/components/ds";
 
@@ -17,16 +17,10 @@ interface MediaAsset {
     [key: string]: any;
 }
 
-interface LegacyContent {
-    mediaLinks?: string[];
-    media_links?: string[];
-    variations?: any[];
-    [key: string]: any;
-}
 
 import { Button } from "@/features/shared/components/ui/button";
 import { Input } from "@/features/shared/components/ui/input";
-import { Search, X, FileVideo, FileAudio, Image as ImageIcon, FileText, Trash2, ExternalLink, Database, RefreshCw } from "lucide-react";
+import { X, FileVideo, FileAudio, Image as ImageIcon, FileText, Trash2, ExternalLink, Database, RefreshCw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
 import { toast } from "sonner";
 import UnifiedTable from "@/features/shared/components/tables/UnifiedTable";
@@ -97,7 +91,7 @@ function deriveAssetDisplayName(asset: MediaAsset) {
                     if (v) return `YouTube: ${v}`;
                     return `YouTube: ${urlObj.pathname.replace(/^\//, '')}`;
                 }
-            } catch (e) { /* ignore */ }
+            } catch { /* ignore */ }
         }
 
         // Priority C: Storage Path
@@ -109,7 +103,7 @@ function deriveAssetDisplayName(asset: MediaAsset) {
             try {
                 const urlObj = new URL(asset.url);
                 candidate = urlObj.pathname.split('/').pop();
-            } catch (e) {
+            } catch {
                 candidate = asset.url;
             }
         }
@@ -118,7 +112,7 @@ function deriveAssetDisplayName(asset: MediaAsset) {
     if (!candidate) return "(Sin nombre)";
 
     // 2. Cleaning Steps
-    try { candidate = decodeURIComponent(candidate); } catch (e) { /* Intentionally swallowed */ }
+    try { candidate = decodeURIComponent(candidate); } catch { /* Intentionally swallowed */ }
 
     // Remove Supabase Timestamp prefix (10-14 digits + underscores)
     // Supports pattern: 1765679404599_lq6ece_filename.pdf -> filename.pdf
@@ -141,11 +135,6 @@ const FILE_TYPE_ICONS = {
     [MEDIA_FILE_TYPES.OTHER]: <Database className="w-4 h-4 text-gray-500" />,
 };
 
-const STATE_BADGES = {
-    active: "success",
-    archived: "default",
-    deleted: "danger",
-};
 
 
 import { getYouTubeTitle } from "@/features/shared/utils/media";
@@ -234,7 +223,6 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
 
         setIsMigrating(true);
         let addedCount = 0;
-        let skippedCount = 0;
         let scannedCount = 0;
 
         try {
@@ -252,7 +240,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                     const urlObj = new URL(url);
                     const lastSegment = urlObj.pathname.split('/').pop();
                     if (lastSegment) return decodeURIComponent(lastSegment);
-                } catch (e) { /* ignore */ }
+                } catch { /* ignore */ }
                 return url.split('/').pop(); // Fallback
             };
 
@@ -277,8 +265,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                             storagePath: null as any
                         });
                         addedCount++;
-                    } catch (err) {
-                        skippedCount++;
+                    } catch {
                     }
                 }
             };
@@ -528,7 +515,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Todos los tipos</SelectItem>
-                        {Object.entries(MEDIA_FILE_TYPES).map(([key, value]) => (
+                        {Object.entries(MEDIA_FILE_TYPES).map(([, value]) => (
                             <SelectItem key={value} value={value}>
                                 {MEDIA_FILE_TYPE_LABELS[value]}
                             </SelectItem>
@@ -541,7 +528,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Todos los orígenes</SelectItem>
-                        {Object.entries(MEDIA_ORIGIN_TYPES).map(([key, value]) => (
+                        {Object.entries(MEDIA_ORIGIN_TYPES).map(([, value]) => (
                             <SelectItem key={value} value={value}>
                                 {MEDIA_ORIGIN_TYPE_LABELS[value]}
                             </SelectItem>

@@ -210,7 +210,7 @@ export default function ModalFeedbackDetalle({
                         <div className="space-y-1.5 pb-2 border-b border-[var(--color-border-default)]">
                             <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">Comentarios</h4>
                             <div className="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed italic bg-[var(--color-surface-muted)]/50 p-3 rounded-md border border-[var(--color-border-default)]">
-                                "{feedback.notaProfesor}"
+                                &quot;{feedback.notaProfesor}&quot;
                             </div>
                         </div>
                     )}

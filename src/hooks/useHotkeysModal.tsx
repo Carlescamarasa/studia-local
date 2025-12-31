@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useState, createContext, useContext } from "react";
 import { Keyboard } from "lucide-react";
 import { Button } from "@/features/shared/components/ui/button";

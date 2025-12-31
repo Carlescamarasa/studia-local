@@ -245,7 +245,7 @@ function DebugSubidaYTPageContent() {
                   rows={8}
                 />
                 <p className="text-xs text-[var(--color-text-secondary)]">
-                  JSON opcional con metadatos del vídeo. Contexto puede ser: "sesion_estudio", "ticket_alumno", "ticket_profesor"
+                  JSON opcional con metadatos del vídeo. Contexto puede ser: &quot;sesion_estudio&quot;, &quot;ticket_alumno&quot;, &quot;ticket_profesor&quot;
                 </p>
               </div>
 

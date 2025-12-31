@@ -432,7 +432,7 @@ export default function StudiaConceptPage() {
                                 <h1 className="text-2xl font-bold text-slate-900">Gestión del Estudiante</h1>
                             </div>
                             <div className="flex items-center gap-3">
-                                <span className="text-sm text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{totalLoad}' / {dailyBudget}' carga</span>
+                                <span className="text-sm text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{totalLoad}&apos; / {dailyBudget}&apos; carga</span>
                             </div>
                         </header>
 
@@ -474,7 +474,7 @@ export default function StudiaConceptPage() {
                                             <div key={ex.id} className="p-4 rounded-lg border transition-all bg-white border-slate-200 hover:border-slate-300 shadow-sm">
                                                 <div className="flex justify-between items-start mb-2">
                                                     <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider bg-slate-100 px-1.5 py-0.5 rounded">{ex.type}</span>
-                                                    <span className="text-xs font-mono text-slate-500">{ex.dur}'</span>
+                                                    <span className="text-xs font-mono text-slate-500">{ex.dur}&apos;</span>
                                                 </div>
                                                 <h4 className="font-semibold text-slate-800 text-sm mb-1">{ex.title}</h4>
                                                 <div className="mt-2 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
@@ -599,7 +599,7 @@ export default function StudiaConceptPage() {
                                                                 {ex.title}
                                                             </td>
                                                             <td className="px-4 py-3"><span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500">{ex.type}</span></td>
-                                                            <td className="px-4 py-3 text-slate-500 font-mono">{ex.dur}'</td>
+                                                            <td className="px-4 py-3 text-slate-500 font-mono">{ex.dur}&apos;</td>
                                                             <td className="px-4 py-3 text-xs text-slate-300 font-mono">{ex.id.slice(0, 8)}...</td>
                                                             <td className="px-4 py-3 text-right">
                                                                 <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -689,7 +689,7 @@ export default function StudiaConceptPage() {
                                             <div key={ses.id} className="bg-white p-4 rounded-lg border border-slate-200 flex items-center justify-between">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center font-bold">
-                                                        {Math.round(durReal / 60)}'
+                                                        {Math.round(durReal / 60)}&apos;
                                                     </div>
                                                     <div>
                                                         <h4 className="font-semibold text-slate-800">Sesión Completada</h4>
@@ -697,7 +697,7 @@ export default function StudiaConceptPage() {
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <div className="text-sm font-medium text-slate-600">{Math.round(durObj / 60)}' Objetivo</div>
+                                                    <div className="text-sm font-medium text-slate-600">{Math.round(durObj / 60)}&apos; Objetivo</div>
                                                     <div className="text-xs text-slate-400">ID: {ses.id.slice(0, 8)}...</div>
                                                 </div>
                                             </div>
@@ -823,7 +823,7 @@ export default function StudiaConceptPage() {
                         {studentItinerary.items.length === 0 && (
                             <div className="text-center py-10 text-slate-400">
                                 <p>No se encontraron ejercicios activos para generar una sesión.</p>
-                                <p className="text-sm mt-2">Asegúrate de tener ejercicios en 'Learning' o 'Review' en el Dashboard.</p>
+                                <p className="text-sm mt-2">Asegúrate de tener ejercicios en &apos;Learning&apos; o &apos;Review&apos; en el Dashboard.</p>
                             </div>
                         )}
                     </div>

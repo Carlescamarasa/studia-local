@@ -71,7 +71,8 @@ serve(async (req) => {
 
     // Parsear el body de la petición
     const body = await req.json();
-    let { email, full_name, nivel, profesor_asignado_id } = body;
+    let { email } = body;
+    const { full_name, nivel, profesor_asignado_id } = body;
 
     // Normalizar email a lowercase
     if (email) {
@@ -126,17 +127,17 @@ serve(async (req) => {
           // email_confirmed_at se establece cuando el usuario confirma su email (al establecer contraseña)
           const user = existingUser.user;
           const hasConfirmedEmail = !!user.email_confirmed_at;
-          
+
           if (hasConfirmedEmail) {
             // Usuario ya tiene cuenta activa, no reenviar invitación
             return new Response(
-              JSON.stringify({ 
-                error: 'El usuario ya existe y tiene una cuenta activa. No se puede reenviar la invitación.' 
+              JSON.stringify({
+                error: 'El usuario ya existe y tiene una cuenta activa. No se puede reenviar la invitación.'
               }),
               { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
           }
-          
+
           // Usuario existe pero no tiene cuenta activa, reenviar invitación
           authUser = user;
           authError = null;
@@ -147,7 +148,7 @@ serve(async (req) => {
               redirectTo: redirectUrl,
             },
           });
-          
+
           if (linkError) {
             return new Response(
               JSON.stringify({ error: `Error al generar link de invitación: ${linkError.message}` }),

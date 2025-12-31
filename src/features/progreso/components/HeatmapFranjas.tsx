@@ -137,7 +137,7 @@ export default function HeatmapFranjas({ registrosFiltrados = [], periodoInicio,
                 return { columnas: cols, granularidad: 'dia' };
             }
         }
-    }, [effectiveInicio, effectiveFin, isMobile, heatmapMode]);
+    }, [effectiveInicio, effectiveFin, heatmapMode]);
 
     // Crear matriz [franjas x columnas]
     const { matriz, maxSesiones } = useMemo(() => {

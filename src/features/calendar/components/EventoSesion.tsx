@@ -186,7 +186,7 @@ export default function EventoSesion({ sesion, usuarios, onClick, variant = 'def
                 </div>
                 {sesion.notas && sesion.notas.trim() && (
                     <p className="text-sm text-[var(--color-text-primary)] italic break-words line-clamp-2">
-                        "{sesion.notas.trim()}"
+                        &quot;{sesion.notas.trim()}&quot;
                     </p>
                 )}
                 {sesion.mediaLinks && Array.isArray(sesion.mediaLinks) && sesion.mediaLinks.length > 0 && (

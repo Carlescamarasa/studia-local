@@ -108,6 +108,7 @@ export default function MediaPreviewModal({ urls = [], initialIndex = 0, open, o
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, currentIndex, normalizedUrls.length]);
 
     // Bloquear scroll del body

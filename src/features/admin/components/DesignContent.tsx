@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-// @ts-ignore - Migrated from legacy
+
 import { DesignPageContent } from '@/features/design/components/DesignPageContent';
 
 interface DesignContentProps {

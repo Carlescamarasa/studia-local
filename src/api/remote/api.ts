@@ -18,13 +18,52 @@ import { generateId } from './id';
  * que podrían perderse en la conversión snakeToCamel si no están
  * explícitamente manejadas o si hay conflictos.
  */
-function safeSnakeToCamel<T>(data: any): T {
-  const originalRole = data.role;
+interface DbProfile {
+  id: string;
+  full_name?: string | null;
+  role?: string | null;
+  profesor_asignado_id?: string | null;
+  is_active?: boolean | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  nivel?: string | null;
+  nivel_tecnico?: number | null;
+  telefono?: string | null;
+  [key: string]: unknown;
+}
+
+interface DbBloque {
+  id: string;
+  nombre: string;
+  code: string;
+  tipo: string;
+  duracion_seg: number;
+  instrucciones?: string;
+  indicador_logro?: string;
+  materiales_requeridos?: string[];
+  media_links?: string[];
+  elementos_ordenados?: any[];
+  pieza_ref_id?: string;
+  profesor_id: string;
+  skill_tags?: string[];
+  target_ppms?: number[];
+  content?: any;
+  [key: string]: unknown;
+}
+
+/**
+ * Helper seguro para preservar propiedades críticas (como 'role')
+ * que podrían perderse en la conversión snakeToCamel si no están
+ * explícitamente manejadas o si hay conflictos.
+ */
+function safeSnakeToCamel<T>(data: unknown): T {
+  // Use a safer checks for object properties
+  const record = data as Record<string, unknown>;
+  const originalRole = record?.role;
   const camel = snakeToCamel<T>(data);
-  // @ts-ignore - Acceso dinámico a propiedad conocida
-  if (originalRole && !camel.role) {
-    // @ts-ignore
-    camel.role = originalRole;
+  // Preservar role si se perdió
+  if (originalRole && !(camel as any).role) {
+    (camel as any).role = originalRole;
   }
   return camel;
 }
@@ -80,6 +119,7 @@ import {
 
 
 import type {
+  UserRole,
   StudiaUser,
   Pieza,
   Bloque,
@@ -170,7 +210,7 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 /**
  * Obtiene un usuario de la caché si está disponible
  */
-function getCachedUser(id: string): any | null {
+function getCachedUser(id: string): StudiaUser | null {
   const now = Date.now();
   if (now - usersCacheTimestamp > CACHE_TTL) {
     // Caché expirada, limpiar
@@ -184,7 +224,7 @@ function getCachedUser(id: string): any | null {
 /**
  * Almacena usuarios en la caché
  */
-function cacheUsers(users: any[]) {
+function cacheUsers(users: StudiaUser[]) {
   users.forEach(user => {
     if (user?.id) {
       usersCache.set(user.id, user);
@@ -205,7 +245,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         // Obtener perfiles desde Supabase - INCLUIR EXPLÍCITAMENTE el campo role
         // Usar paginación para obtener TODOS los usuarios (Supabase tiene límite por defecto)
         const PAGE_SIZE = 1000; // Límite máximo de Supabase por página
-        let allData: any[] = [];
+        let allData: DbProfile[] = [];
         let from = 0;
         let hasMore = true;
 
@@ -226,12 +266,12 @@ export function createRemoteDataAPI(): AppDataAPI {
             throw error;
           }
 
-          if (data && (data as any[]).length > 0) {
-            allData = allData.concat(data);
+          if (data && (data as DbProfile[]).length > 0) {
+            allData = allData.concat(data as DbProfile[]);
             from += PAGE_SIZE;
             // Si obtenemos menos registros que PAGE_SIZE, hemos llegado al final
             // O si el count indica que ya tenemos todos
-            hasMore = (data as any[]).length === PAGE_SIZE && (count === null || count === undefined || allData.length < count);
+            hasMore = (data as DbProfile[]).length === PAGE_SIZE && (count === null || count === undefined || allData.length < count);
           } else {
             hasMore = false;
           }
@@ -247,7 +287,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         // Obtener emails usando función SQL si está disponible, o usar el usuario autenticado
         let emailsMap = new Map<string, string>();
         try {
-          const userIds = (data as any[] || []).map((u: any) => u.id);
+          const userIds = (data as DbProfile[] || []).map((u: DbProfile) => u.id);
           emailsMap = await getEmailsForUsers(userIds);
           // Añadir email del usuario autenticado al mapa si coincide
           if (currentUserId && currentUserEmail && userIds.includes(currentUserId)) {
@@ -263,9 +303,9 @@ export function createRemoteDataAPI(): AppDataAPI {
         // OPTIMIZACIÓN: Obtener todos los profesores asignados en una sola query
         // Identificar IDs únicos de profesores asignados que no están ya en la lista
         const profesorIdsSet = new Set<string>();
-        const existingUserIdsSet = new Set((data || []).map((u: any) => u.id));
+        const existingUserIdsSet = new Set((data || []).map((u: DbProfile) => u.id));
 
-        (data || []).forEach((u: any) => {
+        (data || []).forEach((u: DbProfile) => {
           const profesorId = u.profesor_asignado_id;
           if (profesorId && !existingUserIdsSet.has(profesorId)) {
             profesorIdsSet.add(profesorId);
@@ -287,7 +327,7 @@ export function createRemoteDataAPI(): AppDataAPI {
 
             if (!profesoresError && profesoresData && Array.isArray(profesoresData)) {
               // Crear mapa de profesores por ID
-              profesoresData.forEach((prof: any) => {
+              (profesoresData as unknown as DbProfile[]).forEach((prof: DbProfile) => {
                 profesoresMap.set(prof.id, prof);
               });
             }
@@ -298,7 +338,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         }
 
         // Normalizar usuarios y asociar datos de profesores
-        const normalizedUsers = (data as any[] || []).map((u: any) => {
+        const normalizedUsers = (data as DbProfile[] || []).map((u: DbProfile) => {
           // Usar helper seguro
           const camelUser = safeSnakeToCamel<StudiaUser>(u);
 
@@ -337,7 +377,7 @@ export function createRemoteDataAPI(): AppDataAPI {
 
             if (!currentUserError && currentUserProfile) {
               // Cast explícito para evitar error 'unknown'
-              const profile = currentUserProfile as any;
+              const profile = currentUserProfile as unknown as DbProfile;
               const camelUser = safeSnakeToCamel<StudiaUser>(profile);
 
               const email = currentUserEmail || camelUser.email;
@@ -362,16 +402,20 @@ export function createRemoteDataAPI(): AppDataAPI {
         // Añadir profesores obtenidos adicionales a la lista (si no están ya incluidos)
         // Esto evita queries individuales cuando el frontend busca el profesor asignado
         if (profesoresMap.size > 0) {
-          const existingIdsSet = new Set(finalUsers.map((u: any) => u.id));
+          const existingIdsSet = new Set(finalUsers.map((u: StudiaUser) => u.id));
           const profesoresAdicionales = Array.from(profesoresMap.values())
-            .filter((prof: any) => !existingIdsSet.has(prof.id))
-            .map((prof: any) => {
-              const camelProf = safeSnakeToCamel<StudiaUser>(prof);
+            .filter((prof: unknown) => {
+              const p = prof as DbProfile;
+              return !existingIdsSet.has(p.id);
+            })
+            .map((prof: unknown) => {
+              const p = prof as DbProfile;
+              const camelProf = safeSnakeToCamel<StudiaUser>(p);
 
-              const email = emailsMap.get(prof.id) || camelProf.email;
+              const email = emailsMap.get(p.id) || camelProf.email;
               const normalized = normalizeSupabaseUser(camelProf, email);
 
-              const originalRole = prof.role;
+              const originalRole = p.role;
               if (originalRole) {
                 const roleUpper = String(originalRole).toUpperCase().trim();
                 if (['ADMIN', 'PROF', 'ESTU'].includes(roleUpper)) {
@@ -443,7 +487,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         const normalized = normalizeSupabaseUser(camelUser, email);
 
         // Verificación CRÍTICA: forzar el rol desde el valor original de Supabase
-        const originalRole = (data as any).role;
+        const originalRole = (data as unknown as DbProfile).role;
         if (originalRole) {
           const roleUpper = String(originalRole).toUpperCase().trim();
           if (['ADMIN', 'PROF', 'ESTU'].includes(roleUpper)) {
@@ -482,7 +526,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           // Ignorar si no hay usuario autenticado
         }
 
-        return (data as any[] || []).map((u: any) => {
+        return (data as DbProfile[] || []).map((u: DbProfile) => {
           // Preservar el campo 'role' ANTES de snakeToCamel
           const originalRole = u.role;
 
@@ -490,7 +534,7 @@ export function createRemoteDataAPI(): AppDataAPI {
 
           // Asegurar que el campo 'role' se preserve
           if (originalRole && !camelUser.role) {
-            camelUser.role = originalRole;
+            camelUser.role = originalRole as UserRole;
           }
 
           // Usar email del usuario autenticado si coincide con el ID, sino usar el del usuario
@@ -527,9 +571,9 @@ export function createRemoteDataAPI(): AppDataAPI {
         const camelUser = safeSnakeToCamel<StudiaUser>(result);
         return normalizeSupabaseUser(camelUser, data.email);
       },
-      update: async (id: string, updates: any): Promise<StudiaUser> => {
+      update: async (id: string, updates: Partial<StudiaUser>): Promise<StudiaUser> => {
         // Mapear campos del frontend a campos de Supabase
-        const supabaseUpdates: any = {};
+        const supabaseUpdates: Partial<DbProfile> = {};
 
         // Mapear nombreCompleto → full_name
         // También aceptar full_name directamente para sincronización explícita
@@ -693,7 +737,7 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         const { data, error } = await query;
         if (error) throw error;
-        return (data as any[] || []).map((b: any) => {
+        return (data as DbBloque[] || []).map((b: DbBloque) => {
           const camel = snakeToCamel<Bloque>(b);
           // Fix targetPPMs mapping (snakeToCamel produces targetPpms)
           if ((camel as any).targetPpms) {
@@ -723,10 +767,6 @@ export function createRemoteDataAPI(): AppDataAPI {
             } else if (rawContent.variations && Array.isArray(rawContent.variations)) {
               camel.variations = rawContent.variations;
             }
-          }
-          // DEBUG LOG - can be removed after fixing
-          if (camel.variations && camel.variations.length > 0) {
-            console.log(`[remoteDataAPI.bloques.list] Bloque ${camel.code} has ${camel.variations.length} variations`, camel.variations);
           }
           return camel;
         });
@@ -774,7 +814,7 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         const { data, error } = await query;
         if (error) throw error;
-        return (data as any[] || []).map((b: any) => {
+        return (data as DbBloque[] || []).map((b: DbBloque) => {
           const camel = snakeToCamel<Bloque>(b);
           // Fix targetPPMs mapping (snakeToCamel produces targetPpms)
           if ((camel as any).targetPpms) {
@@ -859,7 +899,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (error) throw error;
         return snakeToCamel<Bloque>(result);
       },
-      update: async (id: string, updates: any) => {
+      update: async (id: string, updates: Partial<Bloque>) => {
         // Only send fields that exist in the bloques table schema
         // DB columns: id, nombre, code, tipo, duracion_seg, instrucciones, indicador_logro, 
         // materiales_requeridos, media_links, elementos_ordenados, pieza_ref_id, profesor_id,
@@ -872,7 +912,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         ]);
 
         // Filter out fields not in DB schema
-        const filteredUpdates: any = {};
+        const filteredUpdates: Partial<Bloque> = {};
 
         // DEBUG: Log what we receive
         console.log('[remoteDataAPI.bloques.update] Received updates:', {
@@ -883,6 +923,7 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         for (const [key, value] of Object.entries(updates)) {
           if (allowedFields.has(key)) {
+            // @ts-ignore - Valid field check done via allowedFields set
             filteredUpdates[key] = value;
           } else {
             // Silently log non-DB fields (don't spam console with warnings)
@@ -896,11 +937,12 @@ export function createRemoteDataAPI(): AppDataAPI {
         const snakeUpdates = camelToSnake(filteredUpdates);
 
         // Fix targetPPMs mapping (camelToSnake produces target_pp_ms)
-        if (snakeUpdates.target_pp_ms) {
-          snakeUpdates.target_ppms = snakeUpdates.target_pp_ms;
-          delete snakeUpdates.target_pp_ms;
+        const record = snakeUpdates as Record<string, unknown>;
+        if (record.target_pp_ms) {
+          record.target_ppms = record.target_pp_ms;
+          delete record.target_pp_ms;
         } else if (filteredUpdates.targetPPMs) {
-          snakeUpdates.target_ppms = filteredUpdates.targetPPMs;
+          record.target_ppms = filteredUpdates.targetPPMs;
         }
 
         // DEBUG: Log snake case version

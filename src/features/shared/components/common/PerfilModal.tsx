@@ -1,19 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { localDataClient } from "@/api/localDataClient";
-import { remoteDataAPI } from "@/api/remote/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUsers } from "@/features/shared/hooks/useUsers";
 import { Button } from "@/features/shared/components/ui/button";
-import { Card, CardContent } from "@/features/shared/components/ds";
-import { Badge } from "@/features/shared/components/ds";
 import { Input } from "@/features/shared/components/ui/input";
 import { Label } from "@/features/shared/components/ui/label";
-import { Textarea } from "@/features/shared/components/ui/textarea";
 import { Alert, AlertDescription } from "@/features/shared/components/ds";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
 import {
-  User, Mail, Shield, Target, Music,
-  Save, AlertCircle, Sun, Moon, Monitor, X, MessageCircle, Search, Lock
+  User, Mail, Shield, Save, AlertCircle, Lock
 } from "lucide-react";
 import { toast } from "sonner";
 import { displayName, displayNameById } from "@/features/shared/utils/helpers";
@@ -21,7 +16,6 @@ import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import MediaLinksInput from "@/features/shared/components/media/MediaLinksInput";
 import { LoadingSpinner } from "@/features/shared/components/ds";
 import { componentStyles } from "@/design/componentStyles";
-import { useDesign } from "@/features/design/components/DesignProvider";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +27,6 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { log } from "@/utils/log";
 import { sendPasswordResetEmailFor } from "@/lib/authPasswordHelpers";
-import { useUserActions } from "@/features/auth/hooks/useUserActions";
 
 interface PerfilModalProps {
   open: boolean;
@@ -47,7 +40,7 @@ export default function PerfilModal({
   userId = null
 }: PerfilModalProps) {
   const queryClient = useQueryClient();
-  const { design, setDesignPartial } = useDesign();
+  /* const { design } = useDesign(); // Removed unused design */
 
   const [editedData, setEditedData] = useState<any>(null);
   const [saveResult, setSaveResult] = useState<any>(null);
@@ -58,12 +51,6 @@ export default function PerfilModal({
   });
   const [passwordResult, setPasswordResult] = useState<any>(null);
   const [phoneCountryCode, setPhoneCountryCode] = useState('+34'); // Default: España
-  const [phoneSearch, setPhoneSearch] = useState(''); // Para búsqueda/filtrado de teléfono
-  const [isEditingPhone, setIsEditingPhone] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Detectar modo oscuro inicial desde la clase del documento
-    return typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
-  });
 
   // Lista de prefijos de país comunes con longitud estándar de número y formato de placeholder
   const countryCodes = [
@@ -87,31 +74,7 @@ export default function PerfilModal({
     { code: '+351', country: '🇵🇹 Portugal', digits: 9, placeholder: '912 345 678' },
   ];
 
-  // Obtener placeholder según el país seleccionado
-  const getPhonePlaceholder = (countryCode: string) => {
-    const country = countryCodes.find(cc => cc.code === countryCode);
-    return country?.placeholder || '600 000 000';
-  };
 
-  // Actualizar isDarkMode cuando cambie el tema o se abra el modal
-  useEffect(() => {
-    const checkDarkMode = () => {
-      const dark = document.documentElement.classList.contains('dark');
-      setIsDarkMode(dark);
-    };
-
-    // Verificar inmediatamente
-    checkDarkMode();
-
-    // Observar cambios en la clase del documento
-    const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-
-    return () => observer.disconnect();
-  }, [design?.theme, open]);
 
   // Usar el nuevo provider de impersonación
   const { effectiveUserId, effectiveEmail, isImpersonating } = useEffectiveUser();
@@ -203,7 +166,7 @@ export default function PerfilModal({
         if (!supabaseUrl) return null;
 
         const headers: Record<string, string> = {
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${session.access_token} `,
           'Content-Type': 'application/json',
         };
 
@@ -211,7 +174,7 @@ export default function PerfilModal({
           headers['apikey'] = supabaseAnonKey;
         }
 
-        const response = await fetch(`${supabaseUrl}/functions/v1/get-user-emails`, {
+        const response = await fetch(`${supabaseUrl} /functions/v1 / get - user - emails`, {
           method: 'POST',
           headers,
           body: JSON.stringify({ userIds: [targetUserId] }),
@@ -294,7 +257,7 @@ export default function PerfilModal({
   }, [allUsers, targetUser?.profesorAsignadoId, targetUser?.profesor_asignado_id, editedData?.profesorAsignadoId, profesorAsignadoDirecto]);
 
   // Extraer código de país del teléfono si existe
-  const extractCountryCodeFromPhone = (phone: string | null | undefined) => {
+  const extractCountryCodeFromPhone = useCallback((phone: string | null | undefined) => {
     if (!phone) return '+34';
 
     // Buscar si el teléfono empieza con un código de país conocido
@@ -314,16 +277,11 @@ export default function PerfilModal({
     }
 
     return '+34'; // Default
-  };
+  }, []);
 
-  // Filtrar y normalizar entrada de teléfono (solo permitir números, espacios, guiones)
-  const filterPhoneInput = (value: string) => {
-    // Permitir solo números, espacios, guiones, paréntesis y puntos
-    return value.replace(/[^\d\s().-]/g, '');
-  };
 
   // Normalizar número de teléfono (eliminar espacios, guiones, paréntesis, etc.)
-  const normalizePhoneNumber = (phone: string | null | undefined, countryCode: string) => {
+  const normalizePhoneNumber = useCallback((phone: string | null | undefined, countryCode: string) => {
     if (!phone) return '';
 
     // Eliminar código de país si está presente
@@ -344,30 +302,9 @@ export default function PerfilModal({
     cleaned = cleaned.replace(/[\s().-]/g, '');
 
     return cleaned;
-  };
+  }, []);
 
-  // Obtener longitud de dígitos estándar para un código de país
-  const getCountryDigits = (countryCode: string) => {
-    const country = countryCodes.find(cc => cc.code === countryCode);
-    return country?.digits || 9; // Default: 9 dígitos (España)
-  };
 
-  // Generar link de WhatsApp (solo si el número tiene la longitud correcta)
-  const getWhatsAppLink = (phone: string | null | undefined, countryCode: string) => {
-    if (!phone) return null;
-
-    const normalized = normalizePhoneNumber(phone, countryCode);
-    if (!normalized) return null;
-
-    // Verificar que el número tenga la longitud estándar del país
-    const requiredDigits = getCountryDigits(countryCode);
-    if (normalized.length !== requiredDigits) return null;
-
-    // Combinar código de país + número normalizado
-    const fullNumber = countryCode.replace('+', '') + normalized;
-
-    return `https://wa.me/${fullNumber}`;
-  };
 
   useEffect(() => {
     if (targetUser && open) {
@@ -378,7 +315,6 @@ export default function PerfilModal({
         : telefono.replace(/^\+34\s*/, ''); // Si ya tiene +34, quitarlo
 
       setPhoneCountryCode(extractedCode);
-      setIsEditingPhone(false); // Resetear modo edición al cargar usuario
 
       // Asegurar que profesorAsignadoId se carga correctamente desde targetUser
       // Puede venir como profesorAsignadoId o profesor_asignado_id
@@ -406,7 +342,7 @@ export default function PerfilModal({
       });
       setSaveResult(null);
     }
-  }, [targetUser, open, targetUserEmail]); // Añadir targetUserEmail como dependencia para actualizar cuando cambie
+  }, [targetUser, open, targetUserEmail, extractCountryCodeFromPhone, normalizePhoneNumber]); // Añadir targetUserEmail como dependencia para actualizar cuando cambie
 
   const updateUserMutation = useMutation<any, Error, any>({
     mutationFn: async (data: any) => {
@@ -457,7 +393,7 @@ export default function PerfilModal({
 
       setSaveResult({ success: true, message: '✅ Usuario actualizado correctamente.' });
       toast.success('Perfil actualizado correctamente.');
-      setIsEditingPhone(false); // Salir del modo edición después de guardar
+      toast.success('Perfil actualizado correctamente.');
 
       if (targetUser?.id === effectiveUser?.id && editedData.rolPersonalizado !== effectiveUser.rolPersonalizado) {
         setTimeout(() => {
@@ -471,66 +407,11 @@ export default function PerfilModal({
       }
     },
     onError: (error) => {
-      setSaveResult({ success: false, message: `❌ Error: ${error.message}` });
-      toast.error(`Error al actualizar el perfil: ${error.message}`);
+      setSaveResult({ success: false, message: `❌ Error: ${error.message} ` });
+      toast.error(`Error al actualizar el perfil: ${error.message} `);
     },
   });
 
-  // Función para guardar solo el teléfono
-  const handleSavePhone = async () => {
-    if (!editedData) return;
-
-    // Normalizar y guardar teléfono con código de país
-    let telefonoFinal = null;
-    if (editedData.telefono && editedData.telefono.trim()) {
-      const normalized = normalizePhoneNumber(editedData.telefono, phoneCountryCode);
-      if (normalized) {
-        // Guardar con formato: +[código][número normalizado]
-        telefonoFinal = `${phoneCountryCode}${normalized}`;
-      }
-    }
-
-    const dataToSave = {
-      telefono: telefonoFinal,
-    };
-
-    try {
-      if (!targetUser?.id) {
-        throw new Error('Usuario no encontrado');
-      }
-
-      if (targetUser.id === effectiveUser?.id) {
-        // Si estamos actualizando nuestro propio perfil, usar updateMe
-        // Pasar el ID del effectiveUser para que funcione en modo Supabase
-        await localDataClient.auth.updateMe(dataToSave, effectiveUser?.id || targetUser.id);
-      } else {
-        await localDataClient.entities.User.update(targetUser.id, dataToSave);
-      }
-
-      // Actualizar el targetUser localmente para reflejar el cambio
-      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      await queryClient.invalidateQueries({ queryKey: ['currentProfile'] }); // Fix: Invalidate correct key
-      await queryClient.invalidateQueries({ queryKey: ['targetUser', userId] });
-      await queryClient.invalidateQueries({ queryKey: ['users'] });
-      await queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-
-      // Refetch inmediato para actualizar el targetUser
-      await queryClient.refetchQueries({ queryKey: ['targetUser', userId] });
-
-      // También refetch de users para asegurar que se actualice
-      await queryClient.refetchQueries({ queryKey: ['users'] });
-
-      // Salir del modo edición
-      setIsEditingPhone(false);
-      toast.success('Teléfono guardado correctamente');
-    } catch (error: any) {
-      log.error('[PerfilModal] Error al guardar teléfono:', {
-        error: error?.message || error,
-        code: error?.code,
-      });
-      toast.error(`Error al guardar el teléfono: ${error.message || 'Error desconocido'}`);
-    }
-  };
 
   const handleSave = async () => {
     if (!editedData) return;
@@ -584,7 +465,7 @@ export default function PerfilModal({
       const normalized = normalizePhoneNumber(editedData.telefono, phoneCountryCode);
       if (normalized) {
         // Guardar con formato: +[código][número normalizado]
-        telefonoFinal = `${phoneCountryCode}${normalized}`;
+        telefonoFinal = `${phoneCountryCode}${normalized} `;
       }
     }
 
@@ -673,9 +554,9 @@ export default function PerfilModal({
       const errorMessage = error.message || 'No se pudo enviar el correo';
       setPasswordResult({
         success: false,
-        message: `❌ Error: ${errorMessage}`
+        message: `❌ Error: ${errorMessage} `
       });
-      toast.error(`Error al enviar el correo: ${errorMessage}`);
+      toast.error(`Error al enviar el correo: ${errorMessage} `);
     },
   });
 
@@ -738,9 +619,9 @@ export default function PerfilModal({
       const errorMessage = error.message || 'No se pudo actualizar la contraseña';
       setPasswordResult({
         success: false,
-        message: `❌ Error: ${errorMessage}`
+        message: `❌ Error: ${errorMessage} `
       });
-      toast.error(`Error al actualizar la contraseña: ${errorMessage}`);
+      toast.error(`Error al actualizar la contraseña: ${errorMessage} `);
     },
   });
 
@@ -803,10 +684,8 @@ export default function PerfilModal({
 
   // Permisos de edición según rol
   const canEditNombreCompleto = userRole === 'ADMIN' || userRole === 'PROF' || userRole === 'ESTU'; // Todos pueden editar
-  const canEditEmail = false; // Nadie puede editar
   const canEditRole = userRole === 'ADMIN'; // Solo ADMIN
   const canEditProfesor = userRole === 'ADMIN'; // Solo ADMIN (antes también PROF)
-  const canEditTelefono = userRole === 'ADMIN' || userRole === 'PROF' || userRole === 'ESTU'; // Todos pueden editar
   const canEditNivel = userRole === 'ADMIN' || userRole === 'PROF'; // Solo ADMIN y PROF pueden editar
 
   const isEstudiante = targetUser?.rolPersonalizado === 'ESTU';
@@ -821,7 +700,7 @@ export default function PerfilModal({
               <User className="w-5 h-5 text-[var(--color-primary)]" />
               {isLoading || !targetUser
                 ? 'Cargando perfil...'
-                : (isEditingOwnProfile ? 'Mi Perfil' : `Perfil de ${getNombreCompleto(targetUser)}`)
+                : (isEditingOwnProfile ? 'Mi Perfil' : `Perfil de ${getNombreCompleto(targetUser)} `)
               }
             </DialogTitle>
           </div>
@@ -866,7 +745,7 @@ export default function PerfilModal({
                         id="nombreCompleto"
                         value={editedData.nombreCompleto}
                         disabled
-                        className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
+                        className={`${componentStyles.controls.inputDefault} bg - [var(--color - surface - muted)]cursor - not - allowed`}
                       />
                     )}
                     <p className="text-xs text-[var(--color-text-secondary)]">Este es el nombre visible en toda la aplicación</p>
@@ -879,7 +758,7 @@ export default function PerfilModal({
                       type="email"
                       value={editedData.email}
                       disabled
-                      className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
+                      className={`${componentStyles.controls.inputDefault} bg - [var(--color - surface - muted)]cursor - not - allowed`}
                     />
                     <p className="text-xs text-[var(--color-text-secondary)]">El email no se puede modificar</p>
                   </div>
@@ -917,7 +796,7 @@ export default function PerfilModal({
                           </SelectContent>
                         </Select>
                         {editedData.rolPersonalizado === 'ADMIN' && targetUser?.rolPersonalizado === 'ADMIN' && (
-                          <p className={`${componentStyles.typography.smallMetaText} flex items-center gap-1`}>
+                          <p className={`${componentStyles.typography.smallMetaText} flex items - center gap - 1`}>
                             <AlertCircle className="w-3 h-3 text-[var(--color-warning)]" />
                             Verifica que no sea el último administrador antes de cambiar
                           </p>
@@ -929,7 +808,7 @@ export default function PerfilModal({
                           id="role"
                           value={roleLabels[editedData.rolPersonalizado as keyof typeof roleLabels] || editedData.rolPersonalizado}
                           disabled
-                          className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
+                          className={`${componentStyles.controls.inputDefault} bg - [var(--color - surface - muted)]cursor - not - allowed`}
                         />
                         <p className="text-xs mt-1 text-[var(--color-text-secondary)]">Solo administradores pueden cambiar el perfil</p>
                       </div>
@@ -1052,7 +931,7 @@ export default function PerfilModal({
                             return prof ? getNombreCompleto(prof) : 'Sin asignar';
                           })() : 'Sin asignar'}
                           disabled
-                          className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
+                          className={`${componentStyles.controls.inputDefault} bg - [var(--color - surface - muted)]cursor - not - allowed`}
                         />
                       )}
                       <p className="text-xs text-[var(--color-text-secondary)]">
@@ -1071,7 +950,7 @@ export default function PerfilModal({
                         id="nivel"
                         value={editedData.nivel ? editedData.nivel.charAt(0).toUpperCase() + editedData.nivel.slice(1) : 'Sin especificar'}
                         disabled
-                        className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
+                        className={`${componentStyles.controls.inputDefault} bg - [var(--color - surface - muted)]cursor - not - allowed`}
                       />
                       <p className="text-xs text-[var(--color-text-secondary)]">Se actualiza automáticamente según el Nivel Técnico</p>
                     </div>
@@ -1113,7 +992,7 @@ export default function PerfilModal({
                           id="nivelTecnico"
                           value={editedData.nivelTecnico || 'Sin especificar'}
                           disabled
-                          className={`${componentStyles.controls.inputDefault} bg-[var(--color-surface-muted)] cursor-not-allowed`}
+                          className={`${componentStyles.controls.inputDefault} bg - [var(--color - surface - muted)]cursor - not - allowed`}
                         />
                       )}
                       <p className="text-xs text-[var(--color-text-secondary)]">Nivel técnico objetivo para cálculo de BPMs</p>
@@ -1275,7 +1154,7 @@ export default function PerfilModal({
                           setPasswordResult(null);
                           try {
                             await changePasswordMutation.mutateAsync();
-                          } catch (error) {
+                          } catch {
                             // Error ya manejado en la mutation
                           }
                         }}
@@ -1314,7 +1193,6 @@ export default function PerfilModal({
             <div className="flex items-center justify-end gap-3 w-full">
               <Button
                 onClick={() => {
-                  setIsEditingPhone(false);
                   onOpenChange(false);
                 }}
                 disabled={updateUserMutation.isPending}

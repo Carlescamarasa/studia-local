@@ -281,7 +281,7 @@ export default function FeedbackUnificadoTab({
                     </div>
                     {/* Basic legacy display */}
                     {evaluacion.notas && (
-                        <p className="text-sm text-[var(--color-text-secondary)] italic break-words line-clamp-2">"{evaluacion.notas}"</p>
+                        <p className="text-sm text-[var(--color-text-secondary)] italic break-words line-clamp-2">&quot;{evaluacion.notas}&quot;</p>
                     )}
                 </div>
             </div>

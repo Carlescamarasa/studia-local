@@ -277,7 +277,7 @@ export default function EjerciciosPage() {
                         {ex.title}
                       </td>
                       <td className="px-4 py-3"><span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500">{ex.type}</span></td>
-                      <td className="px-4 py-3 text-slate-500 font-mono">{ex.dur}'</td>
+                      <td className="px-4 py-3 text-slate-500 font-mono">{ex.dur}&apos;</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={(e) => { e.stopPropagation(); handleOpenModal(ex); }} className="p-1 hover:bg-slate-200 rounded text-slate-500">
@@ -335,7 +335,7 @@ export default function EjerciciosPage() {
                 <div key={ex.id} className="p-4 rounded-lg border transition-all bg-white border-slate-200 hover:border-slate-300 shadow-sm">
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider bg-slate-100 px-1.5 py-0.5 rounded">{ex.type}</span>
-                    <span className="text-xs font-mono text-slate-500">{ex.dur}'</span>
+                    <span className="text-xs font-mono text-slate-500">{ex.dur}&apos;</span>
                   </div>
                   <h4 className="font-semibold text-slate-800 text-sm mb-1">{ex.title}</h4>
                   <div className="mt-2 flex justify-end">

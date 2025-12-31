@@ -9,6 +9,7 @@
  * para sobrevivir refrescos de página.
  */
 
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
 import { UserRole } from '@/features/shared/types/domain';

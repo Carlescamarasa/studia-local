@@ -89,15 +89,14 @@ function isValidUserId(id: string | null | undefined): boolean {
  */
 export function fixUsers(data: LocalData): LocalData {
   const usuarios = data.usuarios || [];
-  // @ts-ignore - localUsers type mismatch with Usuario interface
-  const usuariosValidos = localUsers.filter(u => VALID_USER_IDS.includes(u.id));
+  const localUsersAny = localUsers as any[];
+  const usuariosValidos = localUsersAny.filter(u => VALID_USER_IDS.includes(u.id));
 
   console.log(`🔧 Reparando usuarios: ${usuarios.length} -> ${usuariosValidos.length}`);
 
   return {
     ...data,
-    // @ts-ignore
-    usuarios: usuariosValidos,
+    usuarios: usuariosValidos as Usuario[],
   };
 }
 
@@ -313,11 +312,9 @@ export async function rebuildAllLocalData(options: RebuildOptions = {}) {
 
   try {
     // 1. Obtener usuarios base
-    // @ts-ignore
-    const usuarios = [...localUsers];
+    const usuarios = [...(localUsers as any[])];
     const estudiantes = usuarios.filter(u => u.rolPersonalizado === 'ESTU');
     const profesores = usuarios.filter(u => u.rolPersonalizado === 'PROF' || u.rolPersonalizado === 'ADMIN');
-    // @ts-ignore
     const profesor = profesores[0] || usuarios.find(u => u.rolPersonalizado === 'ADMIN');
 
     if (estudiantes.length === 0) {
@@ -367,8 +364,7 @@ export async function rebuildAllLocalData(options: RebuildOptions = {}) {
     const ejerciciosBase: Record<string, Bloque> = {};
 
     for (const tipo of tiposRequeridos) {
-      // @ts-ignore
-      let ejercicio = bloques.find(b => b.tipo === tipo && b.code?.includes('SEED'));
+      let ejercicio = bloques.find((b: any) => b.tipo === tipo && b.code?.includes('SEED'));
       if (!ejercicio) {
         const configs = {
           CA: { nombre: 'Calentamiento A', duracion: 300 },
@@ -638,16 +634,13 @@ export async function rebuildAllLocalData(options: RebuildOptions = {}) {
             id: generateId('registroSesion'),
             asignacionId: asignacion.id,
             alumnoId: estudiante.id,
-            // @ts-ignore
-            profesorAsignadoId: profesorAsignado.id,
+            profesorAsignadoId: profesorAsignado.id as any,
             semanaIdx,
             sesionIdx,
             semanaIndex: offsetSemana + numSemanas, // Added for compatibility
             sesionIndex: i + 1, // Added for compatibility
-            // @ts-ignore
-            inicioISO: fechaSesion.toISOString(),
-            // @ts-ignore
-            finISO: fechaFin.toISOString(),
+            inicioISO: fechaSesion.toISOString() as any,
+            finISO: fechaFin.toISOString() as any,
             fecha: formatLocalDate(fechaSesion), // Added for compatibility
             duracionRealSeg: duracionSesion,
             duracionObjetivoSeg: duracionObjetivo,
@@ -760,8 +753,7 @@ export async function rebuildAllLocalData(options: RebuildOptions = {}) {
       evaluacionesTecnicas: [],
       eventosCalendario: [],
     };
-    // @ts-ignore
-    setLocalDataRef({ ...loadedData, loading: false });
+    setLocalDataRef({ ...loadedData, loading: false } as any);
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
 

@@ -356,7 +356,6 @@ export async function updateAsignacion(id: string, updates: any): Promise<Asigna
     if (camposNoPermitidos.length > 0) {
         const errorMsg = `Campos no permitidos en actualización de asignación: ${camposNoPermitidos.join(', ')}. Solo se pueden actualizar: notas, foco, estado, semanaInicioISO, piezaId, planId, planAdaptado (y piezaSnapshot si piezaId cambia).`;
         console.warn('[remoteDataAPI]', errorMsg);
-        // @ts-ignore
         if (import.meta.env.DEV) {
             console.warn('[remoteDataAPI] Campos eliminados del update:', camposNoPermitidos);
         }
@@ -396,7 +395,6 @@ export async function updateAsignacion(id: string, updates: any): Promise<Asigna
         throw new Error('No se pueden actualizar asignaciones con un objeto vacío. Debe incluir al menos un campo válido.');
     }
 
-    // @ts-ignore
     if (import.meta.env.DEV) {
         console.log('[remoteDataAPI] Actualizando asignación:', {
             id,

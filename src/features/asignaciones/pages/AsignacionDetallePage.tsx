@@ -633,7 +633,7 @@ export default function AsignacionDetallePage() {
                       </span>
                     </div>
                     {semana.objetivo && expandedSemanas.has(semanaIndex) && (
-                      <p className="text-sm text-[var(--color-text-secondary)] italic mb-2">"{semana.objetivo}"</p>
+                      <p className="text-sm text-[var(--color-text-secondary)] italic mb-2">&quot;{semana.objetivo}&quot;</p>
                     )}
                   </div>
                 </div>

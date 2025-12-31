@@ -313,6 +313,7 @@ export default function DateRangePicker({
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, dateRange]);
 
   const handleSelect = useCallback((range: DateRange | undefined) => {

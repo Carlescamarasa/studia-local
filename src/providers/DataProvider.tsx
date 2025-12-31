@@ -5,7 +5,8 @@
  * Mantiene compatibilidad con LocalDataProvider durante la transición.
  */
 
-import React, { createContext, useContext, useMemo } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import type { AppDataAPI } from '@/api/appDataAPI';
 import { createLocalDataAPI } from '@/api/localDataAPI';
 import { createRemoteDataAPI } from '@/api/remoteDataAPI';

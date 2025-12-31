@@ -190,7 +190,6 @@ let cachedRemoteAPI: any = null;
 let cachedMode: string | null = null;
 
 function getDataAPI() {
-    // @ts-ignore - import.meta.env
     if (import.meta.env.VITE_DISABLE_LOCAL_DATA === 'true') {
         if (!cachedRemoteAPI) {
             cachedRemoteAPI = createRemoteDataAPI();
@@ -198,7 +197,6 @@ function getDataAPI() {
         return cachedRemoteAPI;
     }
 
-    // @ts-ignore
     let dataSource = import.meta.env.VITE_DATA_SOURCE;
 
     if (!dataSource) {

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Utilidades para resolución y normalización de URLs multimedia
  * Soporta: YouTube, Vimeo, SoundCloud, Google Drive, archivos directos

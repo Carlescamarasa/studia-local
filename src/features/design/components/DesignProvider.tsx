@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, {
   createContext,
   useContext,
@@ -19,18 +20,15 @@ import {
   diffDesignPartitioned,
   applyChangeToOverlay,
   revertChangeInOverlay,
-  DARK_MODE_DEFAULTS,
 } from "./designConfig";
 import {
   getAllPresets,
-  saveCustomPreset,
   deleteCustomPreset,
   isBuiltInPreset,
 } from "./DesignPresets";
 import {
   DESIGN_PRESETS,
   findPresetById,
-  getDefaultPreset,
 } from "./BasePresets";
 
 // ============================================================================
@@ -418,14 +416,6 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Legacy revertChange (needs scope extraction)
-  const legacyRevertChange = (path: any, originalValue: any) => {
-    // Find which scope this path is in
-    const partitioned = getPartitionedDiff();
-    let scope = 'common';
-    if (partitioned.light.some(c => c.path === path)) scope = 'light';
-    else if (partitioned.dark.some(c => c.path === path)) scope = 'dark';
-    revertChange(path, scope);
-  };
 
   // ============================================================================
   // CONTEXT VALUE

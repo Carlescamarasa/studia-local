@@ -178,7 +178,7 @@ function SortableSesionAdaptar({
           className={`${componentStyles.buttons.actionCompact} ${componentStyles.buttons.editSubtle}`}
         >
           <Edit className="w-3 h-3 mr-1" />
-          Editar "{sesion.nombre}"
+          Editar &quot;{sesion.nombre}&quot;
         </Button>
         <Button
           size="sm"
@@ -190,7 +190,7 @@ function SortableSesionAdaptar({
           className={`${componentStyles.buttons.actionCompact} ${componentStyles.buttons.deleteSubtle}`}
         >
           <Trash2 className="w-3 h-3 mr-1" />
-          Eliminar "{sesion.nombre}"
+          Eliminar &quot;{sesion.nombre}&quot;
         </Button>
       </div>
     </div>
@@ -301,7 +301,7 @@ function SortableSemanaAdaptar({
             </span>
           </div>
           {semana.objetivo && expandedSemanas.has(semanaIndex) && (
-            <p className="text-sm text-ui/80 italic mb-2">"{semana.objetivo}"</p>
+            <p className="text-sm text-ui/80 italic mb-2">&quot;{semana.objetivo}&quot;</p>
           )}
         </div>
 

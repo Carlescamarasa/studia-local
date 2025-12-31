@@ -15,16 +15,11 @@ import { useUsers } from "@/features/shared/hooks/useUsers";
 import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
 import { useBloques } from "@/features/dashboard/hooks/useBloques";
 import { updateBackpackFromSession } from '@/features/shared/services/backpackService';
-import { createRemoteDataAPI } from "@/api/remoteDataAPI";
 import { localDataClient } from "@/api/localDataClient";
-import { useQuery } from "@tanstack/react-query";
 import {
     StudiaUser,
-    Asignacion,
     RegistroSesion,
     RegistroBloque,
-    Bloque,
-    PlanSemana,
     PlanSesion
 } from "@/features/shared/types/domain";
 
@@ -34,13 +29,9 @@ import { toast } from "sonner";
 
 // Reuse existing components and helpers from hoy.jsx
 import {
-    calcularOffsetSemanas,
     aplanarSesion,
-    formatLocalDate,
-    parseLocalDate,
 } from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { ensureRondaIds, getSecuencia } from "@/features/estudio/components/sessionSequence";
 import ResumenFinal from "@/features/estudio/components/ResumenFinal";
 import ModalCancelar from "@/features/estudio/components/ModalCancelar";
 import { shouldIgnoreHotkey } from "@/utils/hotkeys";
@@ -72,10 +63,8 @@ import {
     PlayCircle,
     AlertTriangle,
     List,
-    HelpCircle,
     FileText,
     Lightbulb,
-    Film,
     Sun,
     Moon,
     Bug,
@@ -87,14 +76,11 @@ import { useDesign } from "@/features/design/components/DesignProvider";
 import { componentStyles } from "@/design/componentStyles";
 import Metronomo from "@/features/estudio/components/Metronomo";
 import PianoPanel from "@/features/estudio/components/PianoPanel";
-import SessionContentView from "@/features/shared/components/study/SessionContentView";
 import MediaEmbed from "@/features/shared/components/media/MediaEmbed";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/features/shared/components/ui/tooltip";
 import { useDockToFooterOffset } from "@/hooks/useDockToFooterOffset";
 
-// Create remote API instance
-const remoteDataAPI = createRemoteDataAPI();
 
 export default function StudiaPage() {
     return (
@@ -122,7 +108,7 @@ function StudiaPageContent() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const { showHotkeysModal, setShowHotkeysModal } = useHotkeysModal();
-    const { design, activeMode, setActiveMode } = useDesign();
+    const { activeMode, setActiveMode } = useDesign();
 
     // Parse query params
     const asignacionIdParam = searchParams.get('asignacionId');
@@ -148,14 +134,13 @@ function StudiaPageContent() {
     const [timerCollapsed, setTimerCollapsed] = useState(false);
     const [mostrarPiano, setMostrarPiano] = useState(false);
     const [ppmAlcanzado, setPpmAlcanzado] = useState<number | null>(null);
-    const [footerHeight, setFooterHeight] = useState(80);
+    const [footerHeight] = useState(80);
     const [instruccionesOpen, setInstruccionesOpen] = useState(true);
     const [objetivoOpen, setObjetivoOpen] = useState(true);
     const footerRef = useRef(null);
-    const chevronRef = useRef(null);
 
     // Use dock hook for precise Piano-Footer sync using real DOM measurements
-    const { syncNow, startTracking, attachTransitionListeners } = useDockToFooterOffset({
+    const { syncNow, attachTransitionListeners } = useDockToFooterOffset({
         anchorRef: footerRef,
         cssVarName: '--footer-offset',
         enabled: true,
@@ -202,7 +187,6 @@ function StudiaPageContent() {
     // Timing state
     const [registroSesionId, setRegistroSesionId] = useState<string | null>(null);
     const [timestampInicio, setTimestampInicio] = useState<number | null>(null);
-    const [timestampUltimoPausa, setTimestampUltimoPausa] = useState<number | null>(null);
     const [tiempoAcumuladoAntesPausa, setTiempoAcumuladoAntesPausa] = useState(0);
     const bloquesPendientesRef = useRef<Partial<RegistroBloque>[]>([]);
     const colaOfflineRef = useRef<any[]>([]);
@@ -322,7 +306,6 @@ function StudiaPageContent() {
         setRegistroSesionId(null);
         bloquesPendientesRef.current = [];
         setTimestampInicio(Date.now());
-        setTimestampUltimoPausa(null);
         setTiempoAcumuladoAntesPausa(0);
     }, [isTryMode, tryCodes, sesionActiva, bloquesActuales]);
 
@@ -410,9 +393,8 @@ function StudiaPageContent() {
         setRegistroSesionId(null);
         bloquesPendientesRef.current = [];
         setTimestampInicio(Date.now());
-        setTimestampUltimoPausa(null);
         setTiempoAcumuladoAntesPausa(0);
-    }, [sesionDelPlan, bloquesActuales, alumnoActual, sesionActiva]);
+    }, [sesionDelPlan, bloquesActuales, alumnoActual, sesionActiva, isTryMode]);
 
     // Timer logic
     useEffect(() => {
@@ -456,16 +438,15 @@ function StudiaPageContent() {
                 const ahora = Date.now();
                 setTimestampInicio(ahora);
                 setTiempoAcumuladoAntesPausa(0);
-                setTimestampUltimoPausa(null);
                 setCronometroActiva(true);
             }
         } else {
             setCronometroActiva(false);
             setTimestampInicio(null);
             setTiempoAcumuladoAntesPausa(0);
-            setTimestampUltimoPausa(null);
         }
         setPpmAlcanzado(null);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [indiceActual, sesionActiva, sesionFinalizada]);
 
     // Listen for Report Modal events
@@ -503,7 +484,7 @@ function StudiaPageContent() {
             setCronometroActiva(true);
             setPausadoPorModal(false);
         }
-    }, [mostrarModalCancelar, mostrarItinerario, showHotkeysModal, reportModalAbierto, pausadoPorModal, sesionFinalizada]);
+    }, [mostrarModalCancelar, mostrarItinerario, showHotkeysModal, reportModalAbierto, pausadoPorModal, sesionFinalizada, cronometroActivo, timestampInicio]);
 
     // Helper functions
     const guardarRegistroBloque = async (indice: number, estado: string, duracionReal = 0) => {
@@ -548,7 +529,6 @@ function StudiaPageContent() {
         setDatosFinal(null);
         setRegistroSesionId(null);
         setTimestampInicio(null);
-        setTimestampUltimoPausa(null);
         setTiempoAcumuladoAntesPausa(0);
 
         // Navigate back
@@ -565,7 +545,6 @@ function StudiaPageContent() {
         setDatosFinal(null);
         const ahora = Date.now();
         setTimestampInicio(ahora);
-        setTimestampUltimoPausa(null);
         setTiempoAcumuladoAntesPausa(0);
     };
 
@@ -574,12 +553,10 @@ function StudiaPageContent() {
         if (cronometroActivo) {
             const tiempoDesdeInicio = timestampInicio ? Math.floor((ahora - timestampInicio) / 1000) : 0;
             setTiempoAcumuladoAntesPausa(prev => prev + tiempoDesdeInicio);
-            setTimestampUltimoPausa(ahora);
             setTimestampInicio(null);
             setCronometroActiva(false);
         } else {
             setTimestampInicio(ahora);
-            setTimestampUltimoPausa(null);
             setCronometroActiva(true);
         }
     };
@@ -592,7 +569,6 @@ function StudiaPageContent() {
             const ahora = Date.now();
             setTimestampInicio(ahora);
             setTiempoAcumuladoAntesPausa(0);
-            setTimestampUltimoPausa(null);
         }
     };
 
@@ -616,7 +592,6 @@ function StudiaPageContent() {
             const ahora = Date.now();
             setTimestampInicio(ahora);
             setTiempoAcumuladoAntesPausa(0);
-            setTimestampUltimoPausa(null);
         }
     };
 
@@ -638,7 +613,6 @@ function StudiaPageContent() {
             const ahora = Date.now();
             setTimestampInicio(ahora);
             setTiempoAcumuladoAntesPausa(0);
-            setTimestampUltimoPausa(null);
         }
     };
 
@@ -827,6 +801,7 @@ function StudiaPageContent() {
 
         window.addEventListener('keydown', handleKeyDown, true);
         return () => window.removeEventListener('keydown', handleKeyDown, true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sesionActiva, sesionFinalizada, indiceActual, mostrarModalCancelar, mostrarItinerario, reportModalAbierto, showHotkeysModal, mostrarPiano]);
 
     // Loading state

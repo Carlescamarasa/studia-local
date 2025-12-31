@@ -200,7 +200,7 @@ export default function ModalSesion({
                                 <div className="pt-1">
                                     <p className="text-xs text-[var(--color-text-secondary)] mb-1">Notas:</p>
                                     <p className="text-sm italic whitespace-pre-wrap break-words bg-[var(--color-surface-muted)] p-2 rounded">
-                                        "{registroSesion.notas.trim()}"
+                                        &quot;{registroSesion.notas.trim()}&quot;
                                     </p>
                                 </div>
                             )}

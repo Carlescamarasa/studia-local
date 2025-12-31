@@ -11,30 +11,24 @@ import {
     useLifetimePracticeXPMultiple,
     useAggregateLevelGoals,
     useRecentXP, // [NEW] Import for Forma mode (30 days)
-    useRecentEvaluationXP, // [NEW]
     useRecentManualXP, // [NEW]
     useRecentXPMultiple, // [NEW] Multi-student support
     useRecentManualXPMultiple // [NEW] Multi-student support
 } from '../hooks/useXP';
 import { calculateXPFromBlock } from '@/features/shared/services/xpService';
-import { Activity, Target, Star, Layers, Info, TrendingUp, BookOpen, PieChart, CheckCircle2, Circle } from 'lucide-react';
+import { Activity, Target, TrendingUp, CheckCircle2, Circle, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/features/shared/components/ui/tooltip';
-import LevelBadge from '@/features/shared/components/common/LevelBadge';
-import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
 
 import {
     CompactCard,
-    HabilidadesRadarChart,
-    TotalXPDisplay
+    HabilidadesRadarChart
 } from './index';
-import { useQuery } from '@tanstack/react-query';
 import { localDataClient } from '@/api/localDataClient';
 import { useUsers } from '@/features/admin/hooks/useUsers';
 import { useLevelConfig } from '@/features/admin/hooks/useLevelsConfig';
 import { cn } from '@/lib/utils';
 import { computeKeyCriteriaStatus, CriteriaStatusResult } from '@/utils/levelLogic';
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { Checkbox } from '@/features/shared/components/ui/checkbox';
 
 interface HabilidadesViewProps {
     alumnosSeleccionados?: string[];
@@ -136,20 +130,19 @@ export default function HabilidadesView({
 
     // 1. FORMA DATA (Last 30 Days) - Remote Fetch
     // Single student hooks
-    const { data: recentPracticeXPSingle, isLoading: isLoadingRecentPSingle } = useRecentXP(singleId, 30);
-    const { data: recentEvalXPSingle, isLoading: isLoadingRecentESingle } = useRecentEvaluationXP(singleId, 30);
-    const { data: recentManualXPSingle, isLoading: isLoadingRecentMSingle } = useRecentManualXP(singleId, 30);
+    const { data: recentPracticeXPSingle } = useRecentXP(singleId, 30);
+    // [FIX] Unused vars removed: recentEvalXPSingle, recentManualXPSingle
+    const { data: recentManualXPSingle } = useRecentManualXP(singleId, 30);
 
     // Multi student hooks (average)
-    const { data: recentPracticeXPMultiple, isLoading: isLoadingRecentPMultiple } = useRecentXPMultiple(isMultiple ? effectiveIds : [], 30);
-    const { data: recentManualXPMultiple, isLoading: isLoadingRecentMMultiple } = useRecentManualXPMultiple(isMultiple ? effectiveIds : [], 30);
+    const { data: recentPracticeXPMultiple } = useRecentXPMultiple(isMultiple ? effectiveIds : [], 30);
+    const { data: recentManualXPMultiple } = useRecentManualXPMultiple(isMultiple ? effectiveIds : [], 30);
 
     // Use relevant data based on selection
     const recentPracticeXP = isMultiple ? recentPracticeXPMultiple : recentPracticeXPSingle;
     // For qualitative (Eval), we prefer the UNIFIED LOGIC 'radarStatsRaw' (Stateful Latest).
     // The RPC 'recentEvalXP' is only for single student and follows strict window logic.
     // To match our "Latest Evaluation" rule, we should stick to 'radarStatsRaw' for Sonido/Cognicion in all modes.
-    const recentEvalXP = isMultiple ? null : recentEvalXPSingle;
     const recentManualXP = isMultiple ? recentManualXPMultiple : recentManualXPSingle;
 
     const formaTotalXP = useMemo(() => {
@@ -235,7 +228,7 @@ export default function HabilidadesView({
             cognicion: maxCognicion
         };
 
-    }, [xpData, evaluations, radarStatsRaw]);
+    }, [xpData, radarStatsRaw]);
 
 
     // 3. EFFECTIVE DATA SELECTION
@@ -261,28 +254,6 @@ export default function HabilidadesView({
     // - Big Numbers (Counters): Mode-specific (Volume)
     // - Level Progress: Always Lifetime (Contextual)
 
-    const displayCounters = useMemo(() => {
-        if (effectiveViewMode === 'forma') {
-            // Uncapped volume for counters? 
-            // `useRecentXP` returns NON-CAPPED data? No, it caps at 100 in the hook?
-            // `useRecentXP` calls `capXPForDisplay`.
-            // We might need uncapped for counters if Forma is "Volume last 30 days".
-            // But usually "Forma" = "Fitness Level" (0-100).
-            // Let's stick to using the RadarData values for consistency for now.
-            return {
-                motricidad: radarData.motricidad, // These are 0-100
-                articulacion: radarData.articulacion,
-                flexibilidad: radarData.flexibilidad
-            };
-        } else {
-            // Rango
-            return {
-                motricidad: radarData.motricidad,
-                articulacion: radarData.articulacion,
-                flexibilidad: radarData.flexibilidad
-            };
-        }
-    }, [effectiveViewMode, radarData]);
 
 
     // Need separate Lifetime stats for the Level Progress Bars?
@@ -294,7 +265,7 @@ export default function HabilidadesView({
 
 
     // OPTIMIZED: Use useUsers() for all user data (both single and multiple students)
-    const { data: usersFromHook = [], isLoading: isLoadingUsers } = useUsers();
+    const { data: usersFromHook = [] } = useUsers();
 
     // Single student profile - lookup from cache instead of individual query
     const studentProfile = useMemo(() => {
@@ -353,7 +324,6 @@ export default function HabilidadesView({
     // =========================================================================
     const effectiveUser = useEffectiveUser();
     const [currentLevelCriteria, setCurrentLevelCriteria] = useState<CriteriaStatusResult[]>([]);
-    const [loadingCriteria, setLoadingCriteria] = useState(false);
 
     // Load level criteria when single student is selected
     useEffect(() => {
@@ -362,15 +332,12 @@ export default function HabilidadesView({
                 setCurrentLevelCriteria([]);
                 return;
             }
-            setLoadingCriteria(true);
             try {
                 const criteria = await computeKeyCriteriaStatus(singleId, currentLevel);
                 setCurrentLevelCriteria(criteria);
             } catch (error) {
                 console.error('Error loading criteria:', error);
                 setCurrentLevelCriteria([]);
-            } finally {
-                setLoadingCriteria(false);
             }
         };
         loadCriteria();
@@ -411,8 +378,6 @@ export default function HabilidadesView({
     const canEdit = effectiveUser?.effectiveRole === 'PROF' || effectiveUser?.effectiveRole === 'ADMIN';
 
     // Use appropriate data
-    const totalXP = isMultiple ? totalXPMultiple : totalXPSingle;
-    const practiceXP = isMultiple ? practiceXPMultiple : practiceXPSingle;
 
     // COUNTERS: Always show LIFETIME accumulated XP
     // RADAR: Changes based on Forma/Rango filter (uses radarData which is 0-100 normalized)
@@ -445,18 +410,6 @@ export default function HabilidadesView({
     // WE NEED TO OVERRIDE THE RADAR DATA LOCALLY for Rango.
 
     // Construct overridden stats object
-    const effectiveHabilidadesStats = useMemo(() => {
-        if (isMultiple) return null; // TODO: handle multi
-
-        return {
-            motricidad: radarData.motricidad,
-            articulacion: radarData.articulacion,
-            flexibilidad: radarData.flexibilidad,
-            sonido: radarData.sonido,
-            cognicion: radarData.cognicion,
-            // ... other fields if needed
-        };
-    }, [radarData, isMultiple]);
 
     // Qualitative Data Hooks moved up
 
@@ -508,11 +461,6 @@ export default function HabilidadesView({
     // =========================================================================
     // RADAR DATA (same logic as Resumen)
     // =========================================================================
-    const xpFilter = useMemo(() => {
-        if (sourceFilter === 'experiencia') return ['experiencia'];
-        if (sourceFilter === 'evaluaciones') return ['evaluaciones'];
-        return ['experiencia', 'evaluaciones'];
-    }, [sourceFilter]);
 
     const radarDataForChart = useMemo(() => {
         const normalize10 = (xp: number, maxXp: number) => {

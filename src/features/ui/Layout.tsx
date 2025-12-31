@@ -1,6 +1,4 @@
-
-// src/Layout.js
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { ROUTES, toConfiguracion, toProgreso } from "@/lib/routes";
@@ -152,14 +150,14 @@ function LayoutContent() {
     }
   }, [isCollapsed]);
 
-  const safeToggle = () => {
+  const safeToggle = useCallback(() => {
     const now = Date.now();
     if (now - toggleLockRef.current < 300) {
       return;
     }
     toggleLockRef.current = now;
     toggleSidebar();
-  };
+  }, [toggleSidebar]);
 
   const handleHeaderClick = (e: React.MouseEvent) => {
     const el = (e.target as HTMLElement).closest('button, a, input, select, textarea');
@@ -385,7 +383,7 @@ function LayoutContent() {
       document.removeEventListener("pointerup", onEnd);
       document.removeEventListener("pointercancel", onEnd);
     };
-  }, [isMobile, abierto, pointerStart, closeSidebar]);
+  }, [isMobile, abierto, pointerStart, closeSidebar, safeToggle]);
 
   /* Bloquear scroll debajo cuando el sidebar está abierto en mobile */
   useEffect(() => {
@@ -778,86 +776,64 @@ function LayoutContent() {
                       </Link>
                     );
                   })}
-                </div>
-              </div>
+                </div >
+              </div >
             ))}
-          </div>
+          </div >
 
           {/* Pie del sidebar */}
           <div className={`border-t border-[var(--color-border-default)]/30 ${isCollapsed ? 'p-2 space-y-2' : 'p-4 pt-3 space-y-3'} text-[var(--color-text-secondary)]`}>
 
             {/* COLLAPSED MODE LOGIC */}
-            {isCollapsed ? (
-              <>
-                {!collapsedFooterOpen ? (
-                  /* 1. Closed State: Just the "More" button */
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => setCollapsedFooterOpen(true)}
-                          className={`flex items-center justify-center w-10 h-10 mx-auto rounded-xl hover:bg-[var(--color-surface-muted)] transition-all cursor-pointer text-[var(--color-text-secondary)]`}
-                          aria-label="Más opciones"
-                        >
-                          <MoreVertical className="w-5 h-5" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        <p>Más opciones</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : (
-                  /* 2. Open State: All buttons + Close button */
-                  <div className="flex flex-col gap-2 animate-in slide-in-from-bottom-2 duration-200">
-                    {/* Perfil Usuario (Collapsed) */}
+            {
+              isCollapsed ? (
+                <>
+                  {!collapsedFooterOpen ? (
+                    /* 1. Closed State: Just the "More" button */
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button
-                            onClick={goProfile}
-                            className="flex items-center justify-center w-10 h-10 mx-auto rounded-xl hover:bg-[var(--color-surface-muted)] transition-all cursor-pointer"
-                            aria-label="Ver perfil"
+                            onClick={() => setCollapsedFooterOpen(true)}
+                            className={`flex items-center justify-center w-10 h-10 mx-auto rounded-xl hover:bg-[var(--color-surface-muted)] transition-all cursor-pointer text-[var(--color-text-secondary)]`}
+                            aria-label="Más opciones"
                           >
-                            <div className="w-8 h-8 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center">
-                              <span className="text-[var(--color-text-primary)] font-semibold text-xs">
-                                {(displayName(effectiveUserDisplay || { name: "U" })).slice(0, 1).toUpperCase()}
-                              </span>
-                            </div>
+                            <MoreVertical className="w-5 h-5" />
                           </button>
                         </TooltipTrigger>
                         <TooltipContent side="right">
-                          <p>{displayName(effectiveUserDisplay)}</p>
-                          <p className="text-xs text-[var(--color-text-secondary)]">{effectiveEmail}</p>
+                          <p>Más opciones</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
+                  ) : (
+                    /* 2. Open State: All buttons + Close button */
+                    <div className="flex flex-col gap-2 animate-in slide-in-from-bottom-2 duration-200">
+                      {/* Perfil Usuario (Collapsed) */}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={goProfile}
+                              className="flex items-center justify-center w-10 h-10 mx-auto rounded-xl hover:bg-[var(--color-surface-muted)] transition-all cursor-pointer"
+                              aria-label="Ver perfil"
+                            >
+                              <div className="w-8 h-8 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center">
+                                <span className="text-[var(--color-text-primary)] font-semibold text-xs">
+                                  {(displayName(effectiveUserDisplay || { name: "U" })).slice(0, 1).toUpperCase()}
+                                </span>
+                              </div>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>{displayName(effectiveUserDisplay)}</p>
+                            <p className="text-xs text-[var(--color-text-secondary)]">{effectiveEmail}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
 
-                    {/* Herramientas (Collapsed) */}
-                    {/* Reportar Error */}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              window.dispatchEvent(new CustomEvent('open-error-report', { detail: {} }));
-                            }}
-                            className={`w-10 h-10 p-0 justify-center text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 rounded-xl ${componentStyles.buttons.ghost}`}
-                            aria-label="Reportar error"
-                          >
-                            <Bug className="w-5 h-5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p>Reportar error</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    {/* Hardcode Finder */}
-                    {effectiveRole === 'ADMIN' && (
+                      {/* Herramientas (Collapsed) */}
+                      {/* Reportar Error */}
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -865,177 +841,177 @@ function LayoutContent() {
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                window.dispatchEvent(new CustomEvent('toggle-hardcode-inspector'));
+                                window.dispatchEvent(new CustomEvent('open-error-report', { detail: {} }));
                               }}
-                              className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
-                              aria-label="Hardcode Finder"
+                              className={`w-10 h-10 p-0 justify-center text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 rounded-xl ${componentStyles.buttons.ghost}`}
+                              aria-label="Reportar error"
                             >
-                              <Search className="w-5 h-5" />
+                              <Bug className="w-5 h-5" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="right">
-                            <p>Hardcode Finder</p>
+                            <p>Reportar error</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                    )}
 
-                    {/* Ayuda */}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(createPageUrl('ayuda'))}
-                            className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
-                            aria-label="Centro de Ayuda"
-                          >
-                            <HelpCircle className="w-5 h-5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p>Ayuda</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                      {/* Hardcode Finder */}
+                      {effectiveRole === 'ADMIN' && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  window.dispatchEvent(new CustomEvent('toggle-hardcode-inspector'));
+                                }}
+                                className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
+                                aria-label="Hardcode Finder"
+                              >
+                                <Search className="w-5 h-5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                              <p>Hardcode Finder</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
 
-                    {/* Tema */}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setActiveMode(activeMode === 'dark' ? 'light' : 'dark')}
-                            className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
-                            aria-label={activeMode === 'dark' ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-                          >
-                            {activeMode === 'dark' ? (
-                              <Sun className="w-5 h-5" />
-                            ) : (
-                              <Moon className="w-5 h-5" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p>{activeMode === 'dark' ? "Modo claro" : "Modo oscuro"}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    {/* Toggle Menu */}
-                    {!isMobile && (
+                      {/* Ayuda */}
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={safeToggle}
+                              onClick={() => navigate(createPageUrl('ayuda'))}
                               className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
-                              aria-label="Mostrar menú"
+                              aria-label="Centro de Ayuda"
                             >
-                              <PanelLeft className="w-5 h-5" />
+                              <HelpCircle className="w-5 h-5" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="right">
-                            <p>Mostrar menú</p>
+                            <p>Ayuda</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                    )}
 
-                    {/* Logout */}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={logout}
-                            className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
-                            aria-label="Cerrar sesión"
-                          >
-                            <LogOut className="w-4 h-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p>Cerrar sesión</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                      {/* Tema */}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setActiveMode(activeMode === 'dark' ? 'light' : 'dark')}
+                              className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
+                              aria-label={activeMode === 'dark' ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+                            >
+                              {activeMode === 'dark' ? (
+                                <Sun className="w-5 h-5" />
+                              ) : (
+                                <Moon className="w-5 h-5" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>{activeMode === 'dark' ? "Modo claro" : "Modo oscuro"}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
 
-                    {/* 3. CLOSE BUTTON (Chevron Down) */}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={() => setCollapsedFooterOpen(false)}
-                            className={`flex items-center justify-center w-10 h-10 mx-auto rounded-xl hover:bg-[var(--color-surface-muted)] transition-all cursor-pointer text-[var(--color-text-secondary)] mt-1 border-t border-[var(--color-border-default)]/50 pt-1`}
-                            aria-label="Colapsar menú"
-                          >
-                            <ChevronDown className="w-5 h-5" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p>Menos opciones</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                )}
-              </>
-            ) : (
-              /* EXPANDED MODE (Original Layout) */
-              <>
-                {/* Perfil Usuario */}
-                <button
-                  onClick={goProfile}
-                  className="flex items-center gap-3 px-2 w-full hover:bg-[var(--color-surface-muted)] rounded-xl py-2 transition-all cursor-pointer min-h-[44px]"
-                  aria-label="Ver perfil de usuario"
-                >
-                  <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center">
-                    <span className="text-[var(--color-text-primary)] font-semibold text-sm">
-                      {(displayName(effectiveUserDisplay || { name: "U" })).slice(0, 1).toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0 text-left">
-                    <p className="font-medium text-[var(--color-text-primary)] text-sm truncate">
-                      {displayName(effectiveUserDisplay) || "Usuario"}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs text-[var(--color-text-secondary)] truncate">{effectiveEmail}</p>
+                      {/* Toggle Menu */}
+                      {!isMobile && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={safeToggle}
+                                className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
+                                aria-label="Mostrar menú"
+                              >
+                                <PanelLeft className="w-5 h-5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                              <p>Mostrar menú</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+
+                      {/* Logout */}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={logout}
+                              className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
+                              aria-label="Cerrar sesión"
+                            >
+                              <LogOut className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>Cerrar sesión</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      {/* 3. CLOSE BUTTON (Chevron Down) */}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => setCollapsedFooterOpen(false)}
+                              className={`flex items-center justify-center w-10 h-10 mx-auto rounded-xl hover:bg-[var(--color-surface-muted)] transition-all cursor-pointer text-[var(--color-text-secondary)] mt-1 border-t border-[var(--color-border-default)]/50 pt-1`}
+                              aria-label="Colapsar menú"
+                            >
+                              <ChevronDown className="w-5 h-5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>Menos opciones</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
-                  </div>
-                </button>
+                  )}
+                </>
+              ) : (
+                /* EXPANDED MODE (Original Layout) */
+                <>
+                  {/* Perfil Usuario */}
+                  <button
+                    onClick={goProfile}
+                    className="flex items-center gap-3 px-2 w-full hover:bg-[var(--color-surface-muted)] rounded-xl py-2 transition-all cursor-pointer min-h-[44px]"
+                    aria-label="Ver perfil de usuario"
+                  >
+                    <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-surface-muted)] to-[var(--color-surface-muted)]/20 rounded-full flex items-center justify-center">
+                      <span className="text-[var(--color-text-primary)] font-semibold text-sm">
+                        {(displayName(effectiveUserDisplay || { name: "U" })).slice(0, 1).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="font-medium text-[var(--color-text-primary)] text-sm truncate">
+                        {displayName(effectiveUserDisplay) || "Usuario"}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-[var(--color-text-secondary)] truncate">{effectiveEmail}</p>
+                      </div>
+                    </div>
+                  </button>
 
-                <div className="flex flex-col gap-2 w-full mt-2">
-                  <div className="flex items-center flex-row justify-between w-full px-1">
-                    {/* Reportar Error */}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              window.dispatchEvent(new CustomEvent('open-error-report', { detail: {} }));
-                            }}
-                            className={`w-10 h-10 p-0 justify-center text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 rounded-xl ${componentStyles.buttons.ghost}`}
-                            aria-label="Reportar error"
-                          >
-                            <Bug className="w-5 h-5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">
-                          <p>Reportar error</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    {/* Hardcode Finder */}
-                    {effectiveRole === 'ADMIN' && (
+                  <div className="flex flex-col gap-2 w-full mt-2">
+                    <div className="flex items-center flex-row justify-between w-full px-1">
+                      {/* Reportar Error */}
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -1043,107 +1019,131 @@ function LayoutContent() {
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                window.dispatchEvent(new CustomEvent('toggle-hardcode-inspector'));
+                                window.dispatchEvent(new CustomEvent('open-error-report', { detail: {} }));
                               }}
-                              className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
-                              aria-label="Hardcode Finder"
+                              className={`w-10 h-10 p-0 justify-center text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 rounded-xl ${componentStyles.buttons.ghost}`}
+                              aria-label="Reportar error"
                             >
-                              <Search className="w-5 h-5" />
+                              <Bug className="w-5 h-5" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="top">
-                            <p>Hardcode Finder</p>
+                            <p>Reportar error</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                    )}
 
-                    {/* Ayuda */}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(createPageUrl('ayuda'))}
-                            className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
-                            aria-label="Centro de Ayuda"
-                          >
-                            <HelpCircle className="w-5 h-5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">
-                          <p>Ayuda</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                      {/* Hardcode Finder */}
+                      {effectiveRole === 'ADMIN' && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  window.dispatchEvent(new CustomEvent('toggle-hardcode-inspector'));
+                                }}
+                                className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
+                                aria-label="Hardcode Finder"
+                              >
+                                <Search className="w-5 h-5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              <p>Hardcode Finder</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
 
-                    {/* Tema */}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setActiveMode(activeMode === 'dark' ? 'light' : 'dark')}
-                            className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
-                            aria-label={activeMode === 'dark' ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-                          >
-                            {activeMode === 'dark' ? (
-                              <Sun className="w-5 h-5" />
-                            ) : (
-                              <Moon className="w-5 h-5" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">
-                          <p>{activeMode === 'dark' ? "Modo claro" : "Modo oscuro"}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    {/* Toggle */}
-                    {!isMobile && (
+                      {/* Ayuda */}
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={safeToggle}
+                              onClick={() => navigate(createPageUrl('ayuda'))}
                               className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
-                              aria-label="Ocultar menú"
+                              aria-label="Centro de Ayuda"
                             >
-                              <PanelLeft className="w-5 h-5" />
+                              <HelpCircle className="w-5 h-5" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="top">
-                            <p>Ocultar menú</p>
+                            <p>Ayuda</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                    )}
-                  </div>
 
-                  {/* Botón Logout */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={logout}
-                    className={`w-full justify-start gap-2 mt-1 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
-                    aria-label="Cerrar sesión"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Cerrar sesión
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        </aside>
+                      {/* Tema */}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setActiveMode(activeMode === 'dark' ? 'light' : 'dark')}
+                              className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
+                              aria-label={activeMode === 'dark' ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+                            >
+                              {activeMode === 'dark' ? (
+                                <Sun className="w-5 h-5" />
+                              ) : (
+                                <Moon className="w-5 h-5" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            <p>{activeMode === 'dark' ? "Modo claro" : "Modo oscuro"}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      {/* Toggle */}
+                      {!isMobile && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={safeToggle}
+                                className={`w-10 h-10 p-0 justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] rounded-xl ${componentStyles.buttons.ghost}`}
+                                aria-label="Ocultar menú"
+                              >
+                                <PanelLeft className="w-5 h-5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              <p>Ocultar menú</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
+
+                    {/* Botón Logout */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={logout}
+                      className={`w-full justify-start gap-2 mt-1 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] min-h-[44px] h-10 rounded-xl ${componentStyles.buttons.ghost}`}
+                      aria-label="Cerrar sesión"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Cerrar sesión
+                    </Button>
+                  </div>
+                </>
+              )
+            }
+          </div >
+        </aside >
 
         {/* Contenido principal - Solo desktop empuja contenido */}
-        <main
+        < main
           className="min-h-screen transition-all duration-200 flex flex-col overflow-x-hidden min-w-0"
           style={{
             // Desktop/Tablet: 16rem si abierto, 4rem (rail) si cerrado
