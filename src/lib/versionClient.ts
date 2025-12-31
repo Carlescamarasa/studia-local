@@ -1,5 +1,21 @@
 import { supabase } from './supabaseClient';
 
+interface UpsertVersionParams {
+  version: string;
+  commit_hash?: string;
+  git_author?: string;
+  build_date?: string;
+  release_notes?: object;
+  author_id?: string;
+}
+
+interface CreateVersionParams {
+  version: string;
+  codename?: string;
+  notes?: string;
+  authorId: string;
+}
+
 /**
  * Cliente para gestionar versiones de la aplicación
  */
@@ -100,7 +116,7 @@ export const versionClient = {
    * @param {string} params.authorId - ID del autor (auth.uid())
    * @returns {Promise<Object>} Versión creada
    */
-  async createVersion({ version, codename, notes, authorId }) {
+  async createVersion({ version, codename, notes, authorId }: CreateVersionParams) {
     try {
       const { data, error } = await supabase
         .from('version_history')
@@ -125,7 +141,7 @@ export const versionClient = {
    * @param {string} versionId - ID de la versión a activar
    * @returns {Promise<Object>} app_meta actualizado
    */
-  async activateVersion(versionId) {
+  async activateVersion(versionId: string) {
     try {
       // Primero verificar que la versión existe
       const { data: version, error: versionError } = await supabase
@@ -188,7 +204,7 @@ export const versionClient = {
    * @param {string} [params.author_id] - ID del usuario que sincroniza
    * @returns {Promise<Object>} Versión upsertada
    */
-  async upsertVersion({ version, commit_hash, git_author, build_date, release_notes, author_id }) {
+  async upsertVersion({ version, commit_hash, git_author, build_date, release_notes, author_id }: UpsertVersionParams) {
     try {
       // Intentar encontrar si ya existe por el campo 'version'
       const { data: existing, error: findError } = await supabase
@@ -197,7 +213,7 @@ export const versionClient = {
         .eq('version', version)
         .maybeSingle();
 
-      const payload = {
+      const payload: Record<string, any> = {
         version: version.trim(),
         commit_hash,
         git_author,

@@ -4,6 +4,12 @@ import { calcularLunesSemanaISO } from "@/features/shared/utils/helpers";
 import { supabase } from "@/lib/supabaseClient";
 import { getCachedAuthUser } from "@/auth/authUserCache";
 
+interface CreateManualSessionParams {
+    studentId: string;
+    exerciseCodes: string[];
+    source?: string;
+}
+
 /**
  * Creates a manual "draft" session for the given student and exercises.
  * If an existing draft Asignacion exists for the same student/week, adds a new session to it.
@@ -15,7 +21,7 @@ import { getCachedAuthUser } from "@/auth/authUserCache";
  * @param {string} params.source - Origin of the session: 'mochila' | 'hoy' | 'biblioteca' etc.
  * @returns {Promise<{ sessionId: string, asignacionId: string, semanaIdx: number, sesionIdx: number }>}
  */
-export async function createManualSessionDraft({ studentId, exerciseCodes, source = 'manual' }) {
+export async function createManualSessionDraft({ studentId, exerciseCodes, source = 'manual' }: CreateManualSessionParams) {
     if (!studentId) throw new Error("Student ID is required");
     if (!exerciseCodes || exerciseCodes.length === 0) throw new Error("At least one exercise code is required");
 
@@ -42,7 +48,7 @@ export async function createManualSessionDraft({ studentId, exerciseCodes, sourc
 
     // Construct the blocks for the new session
     const bloques = uniqueCodes.map((code, index) => ({
-        tipo: 'PR', // Practice
+        tipo: 'AD' as const, // Ad-hoc practice - must be valid SesionBloque tipo
         code: code,
         nombre: `Ejercicio ${index + 1}`, // Placeholder, real name loaded by StudiaPage
         duracionSeg: 300, // Default 5 min per exercise for draft
@@ -54,7 +60,8 @@ export async function createManualSessionDraft({ studentId, exerciseCodes, sourc
     const nuevaSesion = {
         nombre: `Práctica Manual - ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
         foco: 'GEN',
-        bloques: bloques
+        bloques: bloques,
+        rondas: [] // Required by PlanSesion interface
     };
 
     if (existingDrafts.length > 0) {

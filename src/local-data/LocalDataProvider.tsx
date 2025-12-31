@@ -5,12 +5,34 @@ import { loadFromStorage, bootstrapFromSnapshot, saveToStorage } from '@/data/lo
 import { rebuildAllLocalData } from './rebuildLocalData';
 import { supabase } from '@/lib/supabaseClient';
 
-const LocalDataContext = createContext(null);
+interface LocalDataContextType {
+  asignaciones: any[];
+  bloques: any[];
+  feedbacksSemanal: any[];
+  piezas: any[];
+  planes: any[];
+  registrosBloque: any[];
+  registrosSesion: any[];
+  eventosCalendario: any[];
+  usuarios: any[];
+  loading: boolean;
+  getUsuarioById: (id: string) => any;
+  getAsignaciones: () => any[];
+  getBloques: () => any[];
+  getFeedbacksSemanal: () => any[];
+  getPiezas: () => any[];
+  getPlanes: () => any[];
+  getRegistrosBloque: () => any[];
+  getRegistrosSesion: () => any[];
+  getUsuarios: () => any[];
+}
+
+const LocalDataContext = createContext<LocalDataContextType | null>(null);
 
 /**
  * Normaliza un usuario asegurando que tenga nombreCompleto
  */
-function normalizeUser(user) {
+function normalizeUser(user: any) {
   if (!user) return user;
 
   // Si ya tiene nombreCompleto, retornar tal cual
@@ -62,7 +84,7 @@ function normalizeUser(user) {
 /**
  * Migra usuarios para asegurar que todos tengan nombreCompleto
  */
-function migrateUsers(usuarios) {
+function migrateUsers(usuarios: any[]) {
   if (!Array.isArray(usuarios)) {
     return { usuarios: usuarios || [], needsUpdate: false };
   }
@@ -77,7 +99,7 @@ function migrateUsers(usuarios) {
   return { usuarios: normalized, needsUpdate };
 }
 
-export function LocalDataProvider({ children }) {
+export function LocalDataProvider({ children }: { children: React.ReactNode }) {
   const disableLocalData = import.meta.env.VITE_DISABLE_LOCAL_DATA === 'true';
 
   const [data, setData] = useState({
@@ -189,7 +211,7 @@ export function LocalDataProvider({ children }) {
     loadData();
   }, []);
 
-  const getUsuarioById = (id) => {
+  const getUsuarioById = (id: string) => {
     return data.usuarios.find(u => u.id === id);
   };
 

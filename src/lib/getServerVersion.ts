@@ -44,10 +44,11 @@ export async function getServerVersion(timeoutMs = 4000) {
         };
     } catch (error) {
         clearTimeout(timeoutId);
-        if (error.name === 'AbortError') {
+        const err = error as Error;
+        if (err.name === 'AbortError') {
             console.warn('[getServerVersion] Request timed out');
         } else {
-            console.warn('[getServerVersion] Fetch error:', error.message);
+            console.warn('[getServerVersion] Fetch error:', err.message);
         }
         return null;
     }

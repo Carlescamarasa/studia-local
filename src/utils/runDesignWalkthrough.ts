@@ -10,7 +10,35 @@
  *   console.table(results);
  */
 
-const CHECKS = [
+// Extend Window interface for global exposure
+declare global {
+    interface Window {
+        runDesignWalkthrough?: typeof runDesignWalkthrough;
+    }
+}
+
+interface Check {
+    id: number;
+    name: string;
+    cssVar: string;
+    selector: string;
+    property: string;
+    testValue: string;
+    description: string;
+}
+
+interface CheckResult {
+    id: number;
+    name: string;
+    status: string;
+    before: string | null;
+    after: string | null;
+    ok: boolean;
+    reason: string;
+    selector: string | null;
+}
+
+const CHECKS: Check[] = [
     {
         id: 1,
         name: 'Font Size Base',
@@ -62,10 +90,10 @@ const CHECKS = [
 /**
  * Wait for 2 animation frames
  */
-function waitFrames() {
+function waitFrames(): Promise<void> {
     return new Promise(resolve => {
         requestAnimationFrame(() => {
-            requestAnimationFrame(resolve);
+            requestAnimationFrame(() => resolve());
         });
     });
 }
@@ -75,7 +103,7 @@ function waitFrames() {
  * Priority: data-testid="page-header" > .header-modern
  * Selects visible elements closest to viewport top
  */
-function findHeaderElement() {
+function findHeaderElement(): { element: Element | null; usedSelector: string | null } {
     // 1. Try data-testid first
     const byTestId = document.querySelector('[data-testid="page-header"]');
     if (byTestId && byTestId.getClientRects().length > 0) {
@@ -89,9 +117,9 @@ function findHeaderElement() {
     }
 
     // Find visible elements and select the one closest to top
-    let bestElement = null;
+    let bestElement: Element | null = null;
     let bestTop = Infinity;
-    let usedSelector = '.header-modern';
+    const usedSelector = '.header-modern';
 
     for (const el of headerModerns) {
         // Check if visible
@@ -115,7 +143,7 @@ function findHeaderElement() {
 /**
  * Find element using selector with fallback
  */
-function findElement(selector) {
+function findElement(selector: string): { element: Element | null; usedSelector: string | null } {
     const selectors = selector.split(', ');
     for (const sel of selectors) {
         const el = document.querySelector(sel.trim());
@@ -127,22 +155,22 @@ function findElement(selector) {
 /**
  * Get computed style value
  */
-function getComputedValue(element, property) {
+function getComputedValue(element: Element | null, property: string): string | null {
     if (!element) return null;
     const computed = getComputedStyle(element);
-    return computed[property] || null;
+    return (computed as any)[property] || null;
 }
 
 /**
  * Run Check 5 (Header Height) with special logic
  */
-async function runCheck5() {
+async function runCheck5(): Promise<CheckResult> {
     // 200px ensures we exceed content natural height (~156px on /usuarios)
     const TEST_VALUE_PX = 200;
     const DELTA_THRESHOLD = 10;
     const CLOSENESS_TOLERANCE = 20;
 
-    const result = {
+    const result: CheckResult = {
         id: 5,
         name: 'Header Height',
         status: 'pending',
@@ -177,7 +205,7 @@ async function runCheck5() {
         root.style.setProperty('--header-height', `${TEST_VALUE_PX}px`);
 
         // Force reflow and wait 2 frames
-        void element.offsetHeight;
+        void (element as HTMLElement).offsetHeight;
         await waitFrames();
 
         // Capture AFTER
@@ -220,13 +248,13 @@ async function runCheck5() {
 /**
  * Run a single check (generic)
  */
-async function runCheck(check) {
+async function runCheck(check: Check): Promise<CheckResult> {
     // Check 5 has special handling
     if (check.id === 5) {
         return runCheck5();
     }
 
-    const result = {
+    const result: CheckResult = {
         id: check.id,
         name: check.name,
         status: 'pending',
@@ -257,7 +285,7 @@ async function runCheck(check) {
     root.style.setProperty(check.cssVar, check.testValue);
 
     // Wait for layout
-    void element.offsetHeight;
+    void (element as HTMLElement).offsetHeight;
     await waitFrames();
 
     // Capture AFTER
@@ -287,10 +315,10 @@ async function runCheck(check) {
 /**
  * Run all walkthrough checks
  */
-async function runDesignWalkthrough() {
+async function runDesignWalkthrough(): Promise<CheckResult[]> {
     console.log('🎨 Design System Walkthrough - Starting validation...\n');
 
-    const results = [];
+    const results: CheckResult[] = [];
 
     for (const check of CHECKS) {
         console.log(`  Check ${check.id}: ${check.name}...`);
@@ -321,4 +349,3 @@ if (typeof window !== 'undefined') {
 }
 
 export { runDesignWalkthrough, runCheck, CHECKS };
-

@@ -11,13 +11,13 @@
  */
 export function isAuthError(error: any): boolean {
   if (!error) return false;
-  
+
   // Verificar código de estado HTTP
   const status = error.status || error.code;
   if (status === 401 || status === 403) {
     return true;
   }
-  
+
   // Verificar mensaje de error
   const message = error.message?.toLowerCase() || '';
   if (
@@ -31,7 +31,7 @@ export function isAuthError(error: any): boolean {
   ) {
     return true;
   }
-  
+
   // Verificar código de error de Supabase
   const errorCode = error.code?.toLowerCase() || '';
   if (
@@ -44,7 +44,7 @@ export function isAuthError(error: any): boolean {
       return true;
     }
   }
-  
+
   return false;
 }
 
@@ -61,15 +61,17 @@ export function getAppBaseUrl(): string {
     }
     return window.location.origin;
   }
-  
+
   // Para Edge Functions (Deno)
-  if (typeof Deno !== 'undefined') {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+  // @ts-ignore - Deno is only available in Edge Functions runtime
+  if (typeof globalThis.Deno !== 'undefined') {
+    // @ts-ignore - Deno runtime
+    const supabaseUrl = globalThis.Deno.env.get('SUPABASE_URL') || '';
     if (supabaseUrl) {
       return new URL(supabaseUrl).origin;
     }
   }
-  
+
   // Fallback
   return 'https://studia.latrompetasonara.com';
 }

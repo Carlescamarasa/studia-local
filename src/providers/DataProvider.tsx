@@ -15,9 +15,9 @@ const DataContext = createContext<AppDataAPI | null>(null);
 /**
  * DataProvider que selecciona la implementación según VITE_DATA_SOURCE
  */
-export function DataProvider({ children }) {
+export function DataProvider({ children }: { children: React.ReactNode }) {
   const dataSource = import.meta.env.VITE_DATA_SOURCE || 'local';
-  
+
   const api = useMemo(() => {
     if (dataSource === 'remote') {
       return createRemoteDataAPI();
@@ -50,7 +50,7 @@ export function useData(): AppDataAPI {
  */
 export function useDataEntities() {
   const api = useData();
-  
+
   return useMemo(() => ({
     User: {
       list: api.usuarios.list,

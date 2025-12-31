@@ -160,13 +160,14 @@ function generatePlan(piezaId: string, bloques: any[]): any {
         id: generateId('bloque'),
       }));
 
-      const sesion = {
+      const sesion: any = {
         id: generateId('sesion'),
         nombre: `Sesión ${sesionIdx + 1}`,
         objetivo: `Objetivo de sesión ${sesionIdx + 1} semana ${semanaIdx + 1}`,
         bloques: sesionBloques,
         rondas: [],
         secuencia: sesionBloques.filter(b => b.tipo !== 'AD').map(b => ({ kind: 'BLOQUE', code: b.code })),
+        tiempoEstimado: 0, // Will be calculated below
       };
 
       // Calcular tiempo estimado usando la función unificada
@@ -199,7 +200,7 @@ function generatePlan(piezaId: string, bloques: any[]): any {
  * Genera asignaciones para los estudiantes
  */
 function generateAsignaciones(planes: any[], pieza: any, estudiantes: any[], profesores: any[]): any[] {
-  const asignaciones = [];
+  const asignaciones: any[] = [];
   const hoy = new Date();
   const lunesSemana = startOfMonday(hoy);
 
@@ -232,7 +233,7 @@ function generateAsignaciones(planes: any[], pieza: any, estudiantes: any[], pro
  * Genera registros de sesión de ejemplo
  */
 function generateRegistrosSesion(asignaciones: any[], estudiantes: any[]): any[] {
-  const registros = [];
+  const registros: any[] = [];
   const hoy = new Date();
 
   asignaciones.forEach((asignacion) => {
@@ -245,7 +246,7 @@ function generateRegistrosSesion(asignaciones: any[], estudiantes: any[]): any[]
     const primeraSemana = plan.semanas[0];
     if (!primeraSemana || !primeraSemana.sesiones || !Array.isArray(primeraSemana.sesiones)) return;
 
-    primeraSemana.sesiones.slice(0, 2).forEach((sesion, sesionIdx) => {
+    primeraSemana.sesiones.slice(0, 2).forEach((sesion: any, sesionIdx: number) => {
       const fecha = new Date(hoy);
       fecha.setDate(fecha.getDate() - (2 - sesionIdx));
 
@@ -271,7 +272,7 @@ function generateRegistrosSesion(asignaciones: any[], estudiantes: any[]): any[]
  * Genera registros de bloque basados en registros de sesión
  */
 function generateRegistrosBloque(registrosSesion: any[], asignaciones: any[]): any[] {
-  const registros = [];
+  const registros: any[] = [];
 
   registrosSesion.forEach((registroSesion) => {
     const asignacion = asignaciones.find(a => a.id === registroSesion.asignacionId);
@@ -312,7 +313,7 @@ function generateRegistrosBloque(registrosSesion: any[], asignaciones: any[]): a
  * Genera feedbacks semanales
  */
 function generateFeedbacks(asignaciones: any[], estudiantes: any[], profesores: any[]): any[] {
-  const feedbacks = [];
+  const feedbacks: any[] = [];
   const hoy = new Date();
 
   asignaciones.forEach((asignacion) => {
@@ -341,7 +342,7 @@ function generateFeedbacks(asignaciones: any[], estudiantes: any[], profesores: 
  * Genera evaluaciones técnicas de ejemplo
  */
 function generateEvaluacionesTecnicas(estudiantes: any[], profesores: any[]): any[] {
-  const evaluaciones = [];
+  const evaluaciones: any[] = [];
   const hoy = new Date();
   const profesor = profesores[0];
 

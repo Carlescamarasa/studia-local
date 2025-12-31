@@ -40,7 +40,7 @@ window.migrateSkills = async function () {
 
 console.log("🛠️ DevTools: Run `window.migrateSkills()` to backfill skills data.");
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
     <App />
   </BrowserRouter>
